@@ -11,6 +11,8 @@ Nova Studio は、作品・話数・Scene・制作アプリをひとつのホー
 - Wordはファイル名のみを表示します。
 - 長文貼り付け用テキストエリアを追加しました。
 - 読み込み履歴（日時、ファイル名、種類）をlocalStorageへ保存します。
+- ホーム画面の主要カードを「続きから」「作品ダッシュボード」「📥 資料取り込み（Import Center）」「Universe」の4枚に整理しました。
+- Import Center画面にPDF、Word、TXT、Markdown、JSON、長文貼り付けの取り込み方法カードと「ホームへ戻る」ボタンを表示します。
 - iPad Safariを優先し、Import Centerの主要ボタンを大きくしました。
 
 今回は実際の本文解析やAI分類は実装していません。既存機能、既存データ、`localStorage` の保存キーは変更しません。
@@ -18,7 +20,7 @@ Nova Studio は、作品・話数・Scene・制作アプリをひとつのホー
 ## 主な機能
 
 - 作品、話数、Scene、キャラクター、世界観、用語、年表、アイデアを管理できます。
-- ホームから制作アプリ、Import Center、最近開いた項目、お気に入りへ移動できます。
+- ホームから「続きから」「作品ダッシュボード」「資料取り込み（Import Center）」「Universe」へ移動できます。
 - 全体検索から、作品・話数・Scene・設定・制作メモを直接開けます。
 - 統一カードUIで、作品・話数・キャラクター・世界観・用語・アイデアを一覧できます。
 - Scene詳細から、イラスト、Viduプロンプト、生成動画、動画編集、音声、YouTube用メモを管理できます。
@@ -37,7 +39,7 @@ Import Center は、将来の素材取り込み・整理機能の入口です。
 - JSON
 - 長文貼り付け
 
-TXT、Markdown、JSONは内容を表示します。PDFはページ数、ファイル名、サイズのみ、Wordはファイル名のみ表示します。読み込み履歴はNova Studioの既存localStorageキー内へ保存します。
+Import Center画面にはPDF、Word、TXT、Markdown、JSON、長文貼り付けのカードを表示します。TXT、Markdown、JSONは内容を表示します。PDFはページ数、ファイル名、サイズのみ、Wordはファイル名のみ表示します。読み込み履歴はNova Studioの既存localStorageキー内へ保存します。「ホームへ戻る」ボタンからホーム画面へ戻れます。
 
 ## 現在接続する制作アプリ
 

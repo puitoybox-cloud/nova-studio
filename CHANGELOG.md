@@ -14,13 +14,17 @@
 - Wordのファイル名表示を追加
 - 長文貼り付け用テキストエリアを追加
 - 読み込み履歴（日時、ファイル名、種類）をlocalStorageへ保存
+- ホーム画面の主要導線を「続きから」「作品ダッシュボード」「📥 資料取り込み（Import Center）」「Universe」の4カードに整理
+- 資料取り込みカードからImport Center画面へ移動できる導線を追加
+- Import Center画面にPDF、Word、TXT、Markdown、JSON、長文貼り付けの取り込み方法カードを表示
+- Import Center画面に「ホームへ戻る」ボタンを表示
 - iPad Safari向けにImport Centerの主要ボタンを大型化
 
 注意：
 
 - 解析やAI分類は未実装
 - localStorageキーは `novaStudio_v01` のまま変更しない
-- 既存画面は変更せず、Import Centerのみを実装
+- 既存データとlocalStorageキーは変更せず、ホーム導線とImport Center表示のみを更新
 
 ## Version 0.2.1
 
