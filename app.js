@@ -513,7 +513,7 @@ saveStoryItem=function(collection,id=''){
 
 // Nova Studio Version 1.2.3: keep edit modals open after save and preserve draft state.
 let novaEditSaveMessageTimer=null;
-function novaEditStatusHtml(){return `<span class="nova-edit-save-status" aria-live="polite">未保存の変更があります</span>`}
+function novaEditStatusHtml(){return `<div class="nova-edit-save-status quiet" role="status" aria-live="polite" aria-atomic="true">未保存の変更はありません</div>`}
 function novaSetEditStatus(text,quiet=false){
  const el=document.querySelector('#modalBody .nova-edit-save-status');
  if(el){el.textContent=text;el.classList.toggle('quiet',!!quiet)}
@@ -530,8 +530,10 @@ function novaRefreshSaveButtonsId(id){
  });
 }
 function novaPersistEdit(){
- try{novaSetEditStatus('保存中…');saveState(true);novaSetEditStatus('保存しました');return true}
- catch(e){console.error(e);novaSetEditStatus('保存に失敗しました');toast('保存に失敗しました');return false}
+ novaSetEditStatus('保存中…');
+ const ok=saveState(true);
+ if(ok){novaSetEditStatus('保存しました');return true}
+ novaSetEditStatus('保存に失敗しました');toast('保存に失敗しました');return false
 }
 function novaAfterEditSaved(id){
  const form=novaMarkSavedForm();
@@ -545,7 +547,11 @@ function novaEnhanceEditModalV123(collection){
  const form=novaCurrentModalForm();
  if(!form)return;
  novaPreventSubmit(form);
- if(!form.querySelector('.nova-edit-save-status'))form.insertAdjacentHTML('beforeend',novaEditStatusHtml());
+ if(!form.querySelector('.nova-edit-save-status')){
+  const firstAction=[...form.querySelectorAll('button')].find(b=>/保存|一覧へ戻る/.test(b.textContent||''));
+  if(firstAction)firstAction.insertAdjacentHTML('beforebegin',novaEditStatusHtml());
+  else form.insertAdjacentHTML('beforeend',novaEditStatusHtml());
+ }
  novaSetEditStatus('未保存の変更はありません',true);
  form.addEventListener('input',()=>novaSetEditStatus('未保存の変更があります'),{passive:true});
  form.addEventListener('change',()=>novaSetEditStatus('未保存の変更があります'),{passive:true});
