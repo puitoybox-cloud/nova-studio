@@ -445,3 +445,68 @@ saveStoryItem=function(collection,id=''){
   else render();
  }
 };
+
+// Nova Studio Version 1.2.2: common dirty-state save/close handling for add/edit modals.
+const NOVA_DIRTY_COLLECTION_VIEWS={projects:'projects',episodes:'episodes',characters:'characters',worlds:'worlds',terms:'terms',timelines:'timelines',ideas:'ideas',scenes:'scenes'};
+let novaSaveInProgress=false;
+function novaSerializeForm(form){
+ if(!form)return '';
+ const data=[];
+ form.querySelectorAll('input,textarea,select').forEach(el=>{
+  if(!el.id&&!el.name)return;
+  const key=el.id||el.name;
+  if(el.type==='checkbox'||el.type==='radio')data.push([key,!!el.checked]);
+  else if(el.tagName==='SELECT'&&el.multiple)data.push([key,[...el.selectedOptions].map(o=>o.value)]);
+  else data.push([key,el.value]);
+ });
+ return JSON.stringify(data);
+}
+function novaRegisterCleanForm(form){
+ if(!form)return;
+ form.dataset.dirty='false';
+ form.dataset.initialValue=novaSerializeForm(form);
+ form.oninput=form.onchange=()=>{form.dataset.dirty=String(novaSerializeForm(form)!==form.dataset.initialValue)};
+}
+function novaMarkSavedForm(){
+ const form=$('#modalBody form[data-dirty]');
+ if(form){form.dataset.initialValue=novaSerializeForm(form);form.dataset.dirty='false'}
+ return form;
+}
+function novaEnhanceEditModal(collection){
+ const body=$('#modalBody'),form=body?.querySelector('form');
+ if(!body||!form)return;
+ novaRegisterCleanForm(form);
+ const view=NOVA_DIRTY_COLLECTION_VIEWS[collection];
+ if(view&&!body.querySelector('[data-nova-back-to-list]')&&!body.querySelector('#characterBackToList')){
+  form.insertAdjacentHTML('beforeend',`<button type="button" data-nova-back-to-list onclick="closeModal(false)&&setView('${view}')">一覧へ戻る</button>${novaModalFallbackHtml()}`);
+ }
+}
+function novaRunSingleSave(fn){
+ if(novaSaveInProgress)return false;
+ novaSaveInProgress=true;
+ const buttons=[...document.querySelectorAll('#modalBody button')];
+ buttons.filter(b=>/保存/.test(b.textContent||'')).forEach(b=>b.disabled=true);
+ novaMarkSavedForm();
+ try{return fn()}finally{novaSaveInProgress=false}
+}
+const nova122OldEditProject=editProject;
+editProject=function(id=''){nova122OldEditProject(id);novaEnhanceEditModal('projects')};
+const nova122OldSaveProject=saveProject;
+saveProject=function(id=''){
+ return novaRunSingleSave(()=>{nova122OldSaveProject(id);setSaveStatus('保存しました');toast('保存しました')});
+};
+const nova122OldEditEpisode=editEpisode;
+editEpisode=function(id=''){nova122OldEditEpisode(id);novaEnhanceEditModal('episodes')};
+const nova122OldSaveEpisode=saveEpisode;
+saveEpisode=function(id=''){
+ return novaRunSingleSave(()=>{nova122OldSaveEpisode(id);setSaveStatus('保存しました');toast('保存しました')});
+};
+const nova122OldEditStoryItem=editStoryItem;
+editStoryItem=function(collection,id=''){
+ nova122OldEditStoryItem(collection,id);
+ novaEnhanceEditModal(collection);
+};
+const nova122BaseSaveStoryItem=typeof novaSafeOldSaveStoryItem==='function'?novaSafeOldSaveStoryItem:saveStoryItem;
+saveStoryItem=function(collection,id=''){
+ return novaRunSingleSave(()=>{nova122BaseSaveStoryItem(collection,id);setSaveStatus('保存しました');toast('保存しました')});
+};
