@@ -1,5 +1,20 @@
 const STORAGE_KEY='novaStudio_v01';let saveTimer=null;
-function mergeDefaults(d){const base=initialData();if(!d)return base;const normalize=(items)=>items.map(x=>({...x,status:x.status||'仮設定',tags:Array.isArray(x.tags)?x.tags:[],createdAt:x.createdAt||now(),updatedAt:x.updatedAt||x.createdAt||now()}));return {...base,...d,apps:(d.apps&&d.apps.length?d.apps:base.apps),projects:normalize(d.projects&&d.projects.length?d.projects:base.projects),episodes:normalize(d.episodes&&d.episodes.length?d.episodes:base.episodes),favorites:d.favorites||base.favorites,recentItems:d.recentItems||base.recentItems,settings:{...base.settings,...(d.settings||{})},backupStatus:{...base.backupStatus,...(d.backupStatus||{})}}}
+function mergeDefaults(d){
+ const base=initialData();
+ if(!d)return base;
+ const normalizeCollection=(key,items)=>{const source=Array.isArray(items)&&items.length?items:base[key]||[];return source.map(x=>normalizeCommonItem(x,COLLECTION_TYPE_MAP[key]||key.slice(0,-1)))};
+ const normalized={...base,...d};
+ COMMON_COLLECTIONS.forEach(k=>normalized[k]=normalizeCollection(k,d[k]));
+ normalized.apps=(Array.isArray(d.apps)&&d.apps.length?d.apps:base.apps).map(x=>normalizeCommonItem(x,COLLECTION_TYPE_MAP.apps));
+ normalized.favorites=d.favorites||base.favorites;
+ normalized.recentItems=d.recentItems||base.recentItems;
+ normalized.settings={...base.settings,...(d.settings||{})};
+ normalized.backupStatus={...base.backupStatus,...(d.backupStatus||{})};
+ normalized.schemaVersion=SCHEMA_VERSION;
+ normalized.appVersion=NOVA_VERSION;
+ normalized.activeContext={...base.activeContext,...(d.activeContext||{})};
+ return normalized;
+}
 function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return initialData();toast('保存データを復元しました');return mergeDefaults(JSON.parse(raw))}catch(e){console.error(e);toast('保存データの復元に失敗しました。初期データで表示します。');return initialData()}}
 function saveState(immediate=false){if(!state.settings?.autoSave&&!immediate)return;clearTimeout(saveTimer);const run=()=>{try{setSaveStatus('保存中…');state.updatedAt=now();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setSaveStatus('保存しました')}catch(e){console.error(e);setSaveStatus('保存に失敗しました')}}; immediate?run():saveTimer=setTimeout(run,350)}
 function setSaveStatus(text){const el=document.querySelector('#saveStatus');if(el)el.textContent=text}
