@@ -319,3 +319,33 @@ const v09OldConsultView=consultView;consultView=function(){return novaHomeView()
 const v09OldRender=render;render=function(){ensureV09();const v=(location.hash||'#home').slice(1);if(v==='consult'||v==='nova')return shell(consultView());v09OldRender()}
 const v09OldShell=shell;shell=function(main){v09OldShell(main);const nav=document.querySelector('nav');if(nav&&!nav.dataset.v09){nav.dataset.v09='1';[...nav.querySelectorAll('button')].filter(b=>b.textContent.includes('ノヴァ')).forEach(b=>{b.textContent='💬 ノヴァ';b.setAttribute('onclick',"setView('consult')")})}}
 ensureV09();saveState(true);render();
+
+// Version 1.0 RC polish: iPad usability, faster production navigation, direct search, safer rendering.
+function navigateToItem(collection,id){
+ const item=(state[collection]||[]).find(x=>x.id===id); if(!item)return toast('対象が見つかりません');
+ closeModal();
+ if(collection==='apps')return openApp(id);
+ if(collection==='viduTemplates')return setView('viduTemplates');
+ if(collection==='projects'){selectContext(id,'');return setView('projects')}
+ if(collection==='episodes'){selectContext(item.projectId,id);return setView('episodes')}
+ if(item.projectId)selectContext(item.projectId,item.episodeId||state.activeContext.episodeId||'');
+ const viewMap={scenes:'scenes',characters:'characters',worlds:'worlds',terms:'terms',images:'cards',videos:'cards',ideas:'ideas',timelines:'timelines',tasks:'home',changeHistory:'history'};
+ setView(viewMap[collection]||'cards');
+ setTimeout(()=>{ if(collection==='scenes')openSceneDetail(id); else if(['characters','worlds','terms','ideas','timelines'].includes(collection))openStoryDetail(collection,id); },0);
+}
+openSearchResult=function(collection,id){navigateToItem(collection,id)};
+searchAll=function(q,show=false){
+ const box=show?$('#searchResults'):null, headerBox=!show?$('#searchResults'):null; if(!q){if(box)box.innerHTML='';return}
+ const query=String(q).toLowerCase().trim(); if(!query){if(box)box.innerHTML='';return}
+ const source=(typeof novaAllSearchItems==='function'?novaAllSearchItems():searchableItems());
+ const hits=source.filter(({item,title,project,type})=>[title,project,type,item.summary,item.description,item.memo,item.content,item.script,item.reading,item.category,item.role,item.vidu?.japanesePrompt,item.vidu?.englishPrompt,...(item.tags||[])].join(' ').toLowerCase().includes(query)).slice(0,40);
+ const html=hits.map(({collection,item,type,title})=>`<div class="row search-hit"><span><b>${esc(title||'無題')}</b><br><small>${esc(typeLabel(type))} / 更新:${esc(item.updatedAt||'未記録')}</small></span><button onclick="navigateToItem('${collection}','${item.id}')">直接開く</button></div>`).join('')||'<p class="meta">該当する項目はありません。</p>';
+ if(box)box.innerHTML=html; else { setView('search'); setTimeout(()=>{const r=$('#searchResults'),i=$('#searchPage'); if(i)i.value=q; if(r)r.innerHTML=html},0)}
+};
+searchView=function(){return `<h1>全体検索</h1><p class="meta">検索結果から作品・話数・Scene・キャラクター・Vidu・用語へ直接移動できます。</p><input id="searchPage" placeholder="検索語" inputmode="search" autocomplete="off" oninput="searchAll(this.value,true)" autofocus><div id="searchResults"></div>`};
+function quickProductionPath(){const p=currentProject(), eps=p?state.episodes.filter(e=>e.projectId===p.id&&!e.isArchived).sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0)):[], e=currentEpisode(), scenes=e?state.scenes.filter(s=>s.episodeId===e.id&&!s.isArchived).sort((a,b)=>(+a.sortOrder||0)-(+b.sortOrder||0)):[];return `<section class="quick-path"><h2>最短制作ルート</h2><div class="path-grid"><label>作品<select onchange="selectContext(this.value,'')">${state.projects.filter(x=>!x.isArchived).map(x=>`<option value="${x.id}" ${p?.id===x.id?'selected':''}>${esc(x.title)}</option>`).join('')}</select></label><label>話数<select onchange="selectContext('${p?.id||''}',this.value)">${eps.map(x=>`<option value="${x.id}" ${e?.id===x.id?'selected':''}>${esc(x.numberLabel+' '+(x.subtitle||''))}</option>`).join('')}</select></label><label>Scene<select onchange="this.value&&openSceneDetail(this.value)"><option value="">Sceneを開く</option>${scenes.map(x=>`<option value="${x.id}">${esc(storyTitle('scenes',x))}</option>`).join('')}</select></label><button class="primary-action" onclick="quickNewScene()">＋ 新しいScene</button></div></section>`}
+const rcOldHomeView=homeView;homeView=function(){return quickProductionPath()+rcOldHomeView()};
+function quickNewScene(){ if(!currentProject())return toast('先に作品を選択してください'); if(!currentEpisode())return toast('先に話数を選択してください'); editStoryItem('scenes'); setTimeout(()=>($('#s_title')||$('#s_sceneNumber')||$('#modalBody textarea'))?.focus(),0) }
+const rcOldStoryCollectionView=storyCollectionView;storyCollectionView=function(collection){const html=rcOldStoryCollectionView(collection); if(collection!=='scenes')return html; return html.replace('＋ シーンを追加','＋ 新しいScene').replace("editStoryItem('scenes')","quickNewScene()")}
+const rcOldOpenSceneDetail=openSceneDetail;openSceneDetail=function(id){try{return rcOldOpenSceneDetail(id)}catch(e){console.error(e);toast('Scene表示でエラーが発生しました。基本情報を表示します。');const s=state.scenes.find(x=>x.id===id); if(s)modal(`<h2>${esc(storyTitle('scenes',s))}</h2><p>${esc(s.summary||s.memo||'')}</p><button onclick="editStoryItem('scenes','${id}')">編集</button>`)}}
+const rcOldRender=render;render=function(){try{return rcOldRender()}catch(e){console.error(e);document.querySelector('#app').innerHTML='<main class="safe-error"><section><h1>表示エラー</h1><p>画面の表示で問題が発生しましたが、保存データは保持されています。</p><button onclick="setView(\'home\')">ホームへ戻る</button><button onclick="exportBackup()">JSONを書き出す</button></section></main>';toast('表示エラーから復帰しました')}};
