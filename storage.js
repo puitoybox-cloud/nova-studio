@@ -6,8 +6,8 @@ function mergeDefaults(d){
  const normalized={...base,...d};
  COMMON_COLLECTIONS.forEach(k=>normalized[k]=normalizeCollection(k,d[k]));
  normalized.apps=(Array.isArray(d.apps)&&d.apps.length?d.apps:base.apps).map(x=>normalizeCommonItem(x,COLLECTION_TYPE_MAP.apps));
- normalized.favorites=d.favorites||base.favorites;
- normalized.recentItems=d.recentItems||base.recentItems;
+ normalized.favorites=normalizeFavorites(d.favorites||base.favorites,normalized);
+ normalized.recentItems=(d.recentItems||base.recentItems).map(x=>({...x,updatedAt:x.updatedAt||x.openedAt||now()}));
  normalized.settings={...base.settings,...(d.settings||{})};
  normalized.backupStatus={...base.backupStatus,...(d.backupStatus||{})};
  normalized.schemaVersion=SCHEMA_VERSION;
@@ -15,6 +15,12 @@ function mergeDefaults(d){
  normalized.activeContext={...base.activeContext,...(d.activeContext||{})};
  return normalized;
 }
+function normalizeFavorites(items,data){
+ const list=(Array.isArray(items)?items:[]).map(f=>({...f,createdAt:f.createdAt||now()}));
+ [...COMMON_COLLECTIONS,'apps'].forEach(collection=>{(data[collection]||[]).forEach(item=>{if(!item.favorite)return;const type=item.type||COLLECTION_TYPE_MAP[collection],targetId=item.id;if(!list.some(f=>f.type===type&&f.targetId===targetId)){list.push({id:uid('favorite'),type,targetId,projectId:item.projectId||item.id||'',episodeId:collection==='episodes'?item.id:(item.episodeId||''),title:itemTitle(collection,item),sortOrder:list.length+1,createdAt:item.updatedAt||item.createdAt||now()})}})});
+ return list.filter(f=>f&&f.type&&f.targetId).map((f,i)=>({...f,sortOrder:f.sortOrder||i+1}));
+}
+function itemTitle(collection,item){if(collection==='apps')return item.name||item.title||'';if(collection==='episodes')return `${item.numberLabel||item.title||''} ${item.subtitle||''}`.trim();return item.title||item.name||item.numberLabel||item.id||''}
 function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return initialData();toast('保存データを復元しました');return mergeDefaults(JSON.parse(raw))}catch(e){console.error(e);toast('保存データの復元に失敗しました。初期データで表示します。');return initialData()}}
 function saveState(immediate=false){if(!state.settings?.autoSave&&!immediate)return;clearTimeout(saveTimer);const run=()=>{try{setSaveStatus('保存中…');state.updatedAt=now();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setSaveStatus('保存しました')}catch(e){console.error(e);setSaveStatus('保存に失敗しました')}}; immediate?run():saveTimer=setTimeout(run,350)}
 function setSaveStatus(text){const el=document.querySelector('#saveStatus');if(el)el.textContent=text}
