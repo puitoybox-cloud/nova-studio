@@ -1,5 +1,27 @@
 # Nova Studio Changelog
 
+## Version 0.2.2
+
+実装日：2026-07-14
+
+追加：
+
+- Version表記を `0.2.2` に更新
+- Import CenterでPDF、TXT、Markdown(.md)、JSON、Word(.docx)のファイル選択に対応
+- 選択ファイルのファイル名、サイズ、種類、更新日時を表示
+- TXT、Markdown、JSONの内容プレビューを追加
+- PDFのページ数、ファイル名、サイズ表示を追加（本文解析は未実装）
+- Wordのファイル名表示を追加
+- 長文貼り付け用テキストエリアを追加
+- 読み込み履歴（日時、ファイル名、種類）をlocalStorageへ保存
+- iPad Safari向けにImport Centerの主要ボタンを大型化
+
+注意：
+
+- 解析やAI分類は未実装
+- localStorageキーは `novaStudio_v01` のまま変更しない
+- 既存画面は変更せず、Import Centerのみを実装
+
 ## Version 0.2.1
 
 実装日：2026-07-14

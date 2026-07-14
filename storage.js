@@ -17,6 +17,7 @@ function mergeDefaults(d){
  normalized.lastLocation={...base.lastLocation,...(d.lastLocation||{})};
  normalized.universeSettings={...base.universeSettings,...(d.universeSettings||{}),visibleTypes:{...(base.universeSettings?.visibleTypes||{}),...(d.universeSettings?.visibleTypes||{})}};
  normalized.backupStatus={...base.backupStatus,...(d.backupStatus||{})};
+ normalized.importCenter={...base.importCenter,...(d.importCenter||{}),history:Array.isArray(d.importCenter?.history)?d.importCenter.history:[]};
  normalized.schemaVersion=SCHEMA_VERSION;
  normalized.appVersion=NOVA_VERSION;
  normalized.activeContext={...base.activeContext,...(d.activeContext||{})};
