@@ -12,6 +12,7 @@ function mergeDefaults(d){
  normalized.tasks=Array.isArray(d.tasks)?d.tasks.map(x=>normalizeTask(x)):base.tasks;
  normalized.viduTemplates=Array.isArray(d.viduTemplates)?d.viduTemplates:base.viduTemplates;
  normalized.viduCharacterSettings=Array.isArray(d.viduCharacterSettings)?d.viduCharacterSettings:base.viduCharacterSettings;
+ normalized.nova={...base.nova,...(d.nova||{}),consultations:Array.isArray(d.nova?.consultations)?d.nova.consultations:[],recentOpened:Array.isArray(d.nova?.recentOpened)?d.nova.recentOpened:[],recommendationState:{...(base.nova?.recommendationState||{}),...(d.nova?.recommendationState||{})}};
  normalized.progress={...base.progress,...(d.progress||{}),manualAdjustments:{...(base.progress?.manualAdjustments||{}),...(d.progress?.manualAdjustments||{})}};
  normalized.lastLocation={...base.lastLocation,...(d.lastLocation||{})};
  normalized.universeSettings={...base.universeSettings,...(d.universeSettings||{}),visibleTypes:{...(base.universeSettings?.visibleTypes||{}),...(d.universeSettings?.visibleTypes||{})}};
