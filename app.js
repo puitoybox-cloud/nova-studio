@@ -510,3 +510,99 @@ const nova122BaseSaveStoryItem=typeof novaSafeOldSaveStoryItem==='function'?nova
 saveStoryItem=function(collection,id=''){
  return novaRunSingleSave(()=>{nova122BaseSaveStoryItem(collection,id);setSaveStatus('保存しました');toast('保存しました')});
 };
+
+// Nova Studio Version 1.2.3: keep edit modals open after save and preserve draft state.
+let novaEditSaveMessageTimer=null;
+function novaEditStatusHtml(){return `<span class="nova-edit-save-status" aria-live="polite">未保存の変更があります</span>`}
+function novaSetEditStatus(text,quiet=false){
+ const el=document.querySelector('#modalBody .nova-edit-save-status');
+ if(el){el.textContent=text;el.classList.toggle('quiet',!!quiet)}
+ setSaveStatus(text);
+ if(novaEditSaveMessageTimer)clearTimeout(novaEditSaveMessageTimer);
+ if(text==='保存しました')novaEditSaveMessageTimer=setTimeout(()=>novaSetEditStatus('未保存の変更はありません',true),3200);
+}
+function novaCurrentModalForm(){return document.querySelector('#modalBody form[data-dirty]')}
+function novaPreventSubmit(form){if(form)form.onsubmit=e=>{e.preventDefault();return false}}
+function novaRefreshSaveButtonsId(id){
+ document.querySelectorAll('#modalBody button[onclick*="saveProject"],#modalBody button[onclick*="saveEpisode"],#modalBody button[onclick*="saveStoryItem"]').forEach(btn=>{
+  const old=btn.getAttribute('onclick')||'';
+  btn.setAttribute('onclick',old.replace(/,''\)|,''\)/g,`,\'${id}\')`).replace(/saveProject\(''\)/,`saveProject('${id}')`).replace(/saveEpisode\(''\)/,`saveEpisode('${id}')`).replace(/saveStoryItem\('([^']+)'\s*,\s*''\)/,`saveStoryItem('$1','${id}')`));
+ });
+}
+function novaPersistEdit(){
+ try{novaSetEditStatus('保存中…');saveState(true);novaSetEditStatus('保存しました');return true}
+ catch(e){console.error(e);novaSetEditStatus('保存に失敗しました');toast('保存に失敗しました');return false}
+}
+function novaAfterEditSaved(id){
+ const form=novaMarkSavedForm();
+ if(form){form.dataset.savedId=id||form.dataset.savedId||'';novaPreventSubmit(form)}
+ if(id)novaRefreshSaveButtonsId(id);
+ ['p_id','e_id'].forEach(fieldId=>{const el=document.getElementById(fieldId);if(el)el.readOnly=true});
+ toast('保存しました');
+}
+function novaEnhanceEditModalV123(collection){
+ novaEnhanceEditModal(collection);
+ const form=novaCurrentModalForm();
+ if(!form)return;
+ novaPreventSubmit(form);
+ if(!form.querySelector('.nova-edit-save-status'))form.insertAdjacentHTML('beforeend',novaEditStatusHtml());
+ novaSetEditStatus('未保存の変更はありません',true);
+ form.addEventListener('input',()=>novaSetEditStatus('未保存の変更があります'),{passive:true});
+ form.addEventListener('change',()=>novaSetEditStatus('未保存の変更があります'),{passive:true});
+}
+editProject=function(id=''){nova122OldEditProject(id);novaEnhanceEditModalV123('projects')};
+editEpisode=function(id=''){nova122OldEditEpisode(id);novaEnhanceEditModalV123('episodes')};
+editStoryItem=function(collection,id=''){nova122OldEditStoryItem(collection,id);novaEnhanceEditModalV123(collection)};
+saveProject=function(id=''){
+ const form=novaCurrentModalForm();
+ id=id||form?.dataset.savedId||'';
+ return novaRunSingleSave(()=>{
+  let p=id?state.projects.find(x=>x.id===id):null;
+  if(!p){p={};id=$('#p_id')?.value||uid('project')}
+  ['id','title','reading','shortName','englishTitle','genre','summary','themeColor'].forEach(k=>p[k]=$('#p_'+k)?.value||'');
+  p.productionStatus=$('#p_productionStatus')?.value||p.productionStatus||'';p.status=$('#p_status')?.value||p.status||'';p.tags=parseTags($('#p_tags')?.value||'');touch(p);
+  if(!state.projects.some(x=>x.id===p.id)){p.sortOrder=state.projects.length+1;p.isArchived=false;state.projects.push(p);state.episodes.push(episode(uid('episode'),p.id,'作品全体',1),episode(uid('episode'),p.id,'未分類',2))}
+  addRecentItem('project',p);
+  if(novaPersistEdit())novaAfterEditSaved(p.id);
+ });
+};
+saveEpisode=function(id=''){
+ const form=novaCurrentModalForm();
+ id=id||form?.dataset.savedId||'';
+ return novaRunSingleSave(()=>{
+  let e=id?state.episodes.find(x=>x.id===id):null;
+  if(!e)e={id:$('#e_id')?.value||uid('episode'),projectId:currentProject().id,createdAt:now(),sortOrder:state.episodes.length+1,isArchived:false,type:'episode'};
+  ['id','numberLabel','subtitle','chapter','summary','memo','completionRate'].forEach(k=>e[k]=$('#e_'+k)?.value||'');
+  e.relatedCharacters=selectedIds('s_relatedCharacters');e.relatedTerms=selectedIds('s_relatedTerms');e.relatedWorlds=selectedIds('s_relatedWorlds');e.relatedIds=[...new Set([...e.relatedCharacters,...e.relatedTerms,...e.relatedWorlds])];
+  e.productionStatus=$('#e_productionStatus')?.value||'';e.status=$('#e_status')?.value||'';e.tags=parseTags($('#e_tags')?.value||'');touch(e);
+  if(!state.episodes.some(x=>x.id===e.id))state.episodes.push(e);
+  addRecentItem('episode',e);
+  if(novaPersistEdit())novaAfterEditSaved(e.id);
+ });
+};
+saveStoryItem=function(collection,id=''){
+ const form=novaCurrentModalForm();
+ id=id||form?.dataset.savedId||'';
+ return novaRunSingleSave(()=>{
+  const type=COLLECTION_TYPE_MAP[collection];let item=id?state[collection].find(x=>x.id===id):null;
+  if(!item)item=normalizeCommonItem({id:uid(type),projectId:currentProject()?.id||'',episodeId:collection==='scenes'?currentEpisode()?.id:'',sortOrder:(state[collection]||[]).length+1},type);
+  const before=JSON.stringify(item);
+  STORY_FIELDS[collection].forEach(f=>{const el=$('#s_'+f);if(el)item[f]=f==='tags'?parseTags(el.value):el.value});
+  ['relatedCharacters','relatedEpisodes','relatedTerms','relatedWorlds'].forEach(f=>item[f]=selectedIds('s_'+f));item.relatedIds=[...new Set([...(item.relatedCharacters||[]),...(item.relatedEpisodes||[]),...(item.relatedTerms||[]),...(item.relatedWorlds||[])])];
+  item.title=item.title||item.name||item.sceneNumber||item.eraLabel||'無題';touch(item);
+  if(!state[collection].some(x=>x.id===item.id))state[collection].push(item);
+  recordHistory(item,before);
+  if(novaPersistEdit())novaAfterEditSaved(item.id);
+ });
+};
+
+// Keep save buttons usable after an in-place save because the modal is no longer re-rendered.
+novaRunSingleSave=function(fn){
+ if(novaSaveInProgress)return false;
+ novaSaveInProgress=true;
+ const buttons=[...document.querySelectorAll('#modalBody button')];
+ const saveButtons=buttons.filter(b=>/保存/.test(b.textContent||''));
+ saveButtons.forEach(b=>b.disabled=true);
+ novaMarkSavedForm();
+ try{return fn()}finally{novaSaveInProgress=false;saveButtons.forEach(b=>b.disabled=false)}
+};
