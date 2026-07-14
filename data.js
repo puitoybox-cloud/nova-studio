@@ -1,4 +1,4 @@
-const NOVA_VERSION='0.4',SCHEMA_VERSION='1.4',APP_NAME='Nova Studio';
+const NOVA_VERSION='0.5',SCHEMA_VERSION='1.5',APP_NAME='Nova Studio';
 const PRODUCTION_STATUSES=['構想中','設定制作中','台本制作中','絵コンテ制作中','映像制作中','公開中','休止中','完結','保留'];
 const ITEM_STATUSES=['確定','仮設定','要確認'];
 const COMMON_ITEM_TYPES={PROJECT:'project',EPISODE:'episode',CHARACTER:'character',WORLD:'world',TERM:'term',IMAGE:'image',VIDEO:'video',IDEA:'idea',SCENE:'scene',TIMELINE:'timeline',HISTORY:'history',APP:'app'};
