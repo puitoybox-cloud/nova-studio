@@ -376,3 +376,72 @@ const nova12OldHomeView=homeView;
 homeView=function(){return nova12OldHomeView()+nova12ManagementCards()}
 const nova12OldProjectDashboardView=typeof projectDashboardView==='function'?projectDashboardView:null;
 if(nova12OldProjectDashboardView)projectDashboardView=function(){return nova12OldProjectDashboardView()+nova12ManagementCards()}
+
+// Nova Studio Version 1.2.1: safer character edit save/close flow for iPad Safari.
+let novaModalScrollY=0;
+let novaModalLastOpenedAt=0;
+const novaBaseModal=modal;
+modal=function(html){
+ novaModalScrollY=window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0;
+ novaModalLastOpenedAt=Date.now();
+ document.documentElement.classList.add('modal-open');
+ document.body.classList.add('modal-open');
+ document.body.style.top=`-${novaModalScrollY}px`;
+ novaBaseModal(html);
+ $('#modal').removeAttribute('aria-hidden');
+ $('#modal').style.display='';
+ const fallback=$('#modalFallbackClose');
+ if(fallback)fallback.onclick=()=>closeModal(true);
+};
+function novaRestoreScroll(){
+ document.documentElement.classList.remove('modal-open');
+ document.body.classList.remove('modal-open');
+ document.body.style.top='';
+ requestAnimationFrame(()=>window.scrollTo(0,novaModalScrollY||0));
+}
+closeModal=function(force=false){
+ const modalEl=$('#modal');
+ const form=$('#modalBody form[data-dirty="true"]');
+ if(!force&&form&&!confirm('未保存内容があります。閉じますか？'))return false;
+ if(form)form.dataset.dirty='false';
+ modalEl.classList.add('hidden');
+ modalEl.setAttribute('aria-hidden','true');
+ novaRestoreScroll();
+ setTimeout(()=>{
+  if(!modalEl.classList.contains('hidden')){
+   modalEl.classList.add('hidden');
+   modalEl.style.display='none';
+   novaRestoreScroll();
+   toast('閉じる処理を復旧しました');
+  }else modalEl.style.display='';
+ },80);
+ return true;
+};
+$('#modalClose').onclick=()=>closeModal(false);
+$('#modal').addEventListener('click',e=>{if(e.target&&e.target.id==='modal'&&Date.now()-novaModalLastOpenedAt>250)closeModal(false)});
+
+function novaModalFallbackHtml(){return `<p class="meta"><button type="button" id="modalFallbackClose">閉じる操作が効かない場合はこちら</button></p>`}
+const novaSafeOldEditStoryItem=editStoryItem;
+editStoryItem=function(collection,id=''){
+ novaSafeOldEditStoryItem(collection,id);
+ if(collection==='characters'){
+  const body=$('#modalBody');
+  const form=body?.querySelector('form');
+  if(form&&!body.querySelector('#characterBackToList')){
+   form.insertAdjacentHTML('beforeend',`<button type="button" id="characterBackToList" onclick="closeModal(true);setView('characters')">一覧へ戻る</button>${novaModalFallbackHtml()}`);
+  }
+ }
+};
+const novaSafeOldSaveStoryItem=saveStoryItem;
+saveStoryItem=function(collection,id=''){
+ const form=$('#modalBody form[data-dirty]');
+ if(form)form.dataset.dirty='false';
+ novaSafeOldSaveStoryItem(collection,id);
+ if(collection==='characters'){
+  setSaveStatus('保存しました');
+  toast('保存しました');
+  closeModal(true);
+  if((location.hash||'')!=='#characters')setView('characters');
+  else render();
+ }
+};
