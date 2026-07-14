@@ -10,6 +10,8 @@ function mergeDefaults(d){
  normalized.recentItems=(d.recentItems||base.recentItems).map(x=>({...x,updatedAt:x.updatedAt||x.openedAt||now()}));
  normalized.settings={...base.settings,...(d.settings||{})};
  normalized.tasks=Array.isArray(d.tasks)?d.tasks.map(x=>normalizeTask(x)):base.tasks;
+ normalized.viduTemplates=Array.isArray(d.viduTemplates)?d.viduTemplates:base.viduTemplates;
+ normalized.viduCharacterSettings=Array.isArray(d.viduCharacterSettings)?d.viduCharacterSettings:base.viduCharacterSettings;
  normalized.progress={...base.progress,...(d.progress||{}),manualAdjustments:{...(base.progress?.manualAdjustments||{}),...(d.progress?.manualAdjustments||{})}};
  normalized.lastLocation={...base.lastLocation,...(d.lastLocation||{})};
  normalized.universeSettings={...base.universeSettings,...(d.universeSettings||{}),visibleTypes:{...(base.universeSettings?.visibleTypes||{}),...(d.universeSettings?.visibleTypes||{})}};
