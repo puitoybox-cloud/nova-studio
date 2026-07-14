@@ -619,3 +619,15 @@ novaRunSingleSave=function(fn){
  novaMarkSavedForm();
  try{return fn()}finally{novaSaveInProgress=false;saveButtons.forEach(b=>b.disabled=false)}
 };
+
+// Version 0.2.1 Import Center: home entry and placeholder import workspace.
+function importMethodCards(){
+ const methods=[['PDF','PDF原稿や資料'],['Word','Word文書'],['TXT','テキストファイル'],['Markdown','Markdown原稿'],['JSON','JSONデータ'],['長文貼り付け','長い文章を直接貼り付け']];
+ return methods.map(([name,desc])=>`<article class="import-method-card"><h3>${esc(name)}</h3><p class="meta">${esc(desc)}の取り込み入口です。</p><button onclick="toast('Version 0.2.1では読み込み処理はダミーです')">選択</button></article>`).join('')
+}
+function importCenterHomeCard(){return `<section class="home-panel import-center-card"><div><p class="eyebrow">Import</p><h2>📥 Import Center</h2><p>PDF、Word、TXT、Markdown、JSON、長文貼り付けから素材を取り込むための新しい入口です。</p><p class="meta">Version 0.2.1ではホーム画面とダミー導線のみを追加しています。</p></div><button class="primary-action" onclick="setView('importCenter')">Import Centerを開く</button></section>`}
+function importCenterView(){return `<section class="hero import-hero"><h1>📥 Import Center</h1><p>外部素材をNova Studioへ取り込むための準備画面です。</p><p class="meta">今回は実際のファイル解析やAI分類は行いません。</p><button onclick="setView('home')">ホームへ戻る</button></section><section><div class="section-head"><div><p class="eyebrow">Methods</p><h2>取り込み方法</h2></div><button class="primary-action" onclick="toast('Version 0.2.1では読み込み開始はダミーです')">読み込み開始</button></div><div class="import-method-grid">${importMethodCards()}</div></section><section><h2>取り込み履歴</h2><p class="empty-note">取り込み履歴はまだありません。</p></section><section><h2>ノヴァ整理</h2><p class="empty-note">ノヴァ整理の結果はまだありません。</p></section><section><button onclick="setView('home')">ホームへ戻る</button></section>`}
+const nova021OldHomeView=homeView;
+homeView=function(){return importCenterHomeCard()+nova021OldHomeView()}
+const nova021OldRender=render;
+render=function(){const v=(location.hash||'#home').slice(1);if(v==='importCenter')return shell(importCenterView());nova021OldRender()}
