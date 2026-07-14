@@ -1,7 +1,7 @@
 function downloadJson(obj,name){downloadText(JSON.stringify(obj,null,2),name,'application/json')}
 function downloadText(text,name,type='text/plain'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function stamp(){return now().replace(/[-: ]/g,'-')}
-function exportCore(scope='all'){let out={format:'nova-studio-core',schemaVersion:SCHEMA_VERSION,appVersion:NOVA_VERSION,exportedAt:now(),projects:state.projects,episodes:state.episodes,characters:state.characters,worlds:state.worlds,terms:state.terms,images:state.images,videos:state.videos,ideas:state.ideas,activeContext:state.activeContext,apps:state.apps,favorites:state.favorites,recentItems:state.recentItems,settings:state.settings};if(scope==='projects')out={...out,episodes:[],apps:[],favorites:[],recentItems:[]};if(scope==='episodes')out={...out,projects:[],apps:[],favorites:[],recentItems:[]};if(scope==='apps')out={...out,projects:[],episodes:[],favorites:[],recentItems:[]};if(scope==='favorites')out={...out,projects:[],episodes:[],apps:[]};state.backupStatus.lastExportedAt=now();saveState(true);downloadJson(out,`nova-studio-core-${stamp()}.json`)}
+function exportCore(scope='all'){let out={format:'nova-studio-core',schemaVersion:SCHEMA_VERSION,appVersion:NOVA_VERSION,exportedAt:now(),projects:state.projects,episodes:state.episodes,characters:state.characters,worlds:state.worlds,terms:state.terms,images:state.images,videos:state.videos,ideas:state.ideas,scenes:state.scenes,timelines:state.timelines,changeHistory:state.changeHistory,activeContext:state.activeContext,apps:state.apps,favorites:state.favorites,recentItems:state.recentItems,settings:state.settings};if(scope==='projects')out={...out,episodes:[],apps:[],favorites:[],recentItems:[]};if(scope==='episodes')out={...out,projects:[],apps:[],favorites:[],recentItems:[]};if(scope==='apps')out={...out,projects:[],episodes:[],favorites:[],recentItems:[]};if(scope==='favorites')out={...out,projects:[],episodes:[],apps:[]};state.backupStatus.lastExportedAt=now();saveState(true);downloadJson(out,`nova-studio-core-${stamp()}.json`)}
 function exportBackup(auto=false){const out={format:'nova-studio-backup',schemaVersion:SCHEMA_VERSION,appVersion:NOVA_VERSION,exportedAt:now(),data:state};state.backupStatus.lastExportedAt=now();saveState(true);downloadJson(out,`${auto?'auto-':''}nova-studio-backup-${stamp()}.json`)}
 function analyzeImport(obj){const d=obj.format==='nova-studio-backup'?obj.data:obj;const count=k=>Array.isArray(d?.[k])?d[k].length:0;const collections=[...COMMON_COLLECTIONS,'apps'];const ids=new Set(collections.flatMap(k=>(state[k]||[]).map(x=>x.id)));const incoming=collections.flatMap(k=>d[k]||[]);return{data:d,summary:`JSON形式：${obj.format||'不明'}
 schemaVersion：${obj.schemaVersion||''}
@@ -14,6 +14,9 @@ schemaVersion：${obj.schemaVersion||''}
 画像数：${count('images')}
 動画数：${count('videos')}
 アイデア数：${count('ideas')}
+シーン数：${count('scenes')}
+年表数：${count('timelines')}
+変更履歴数：${count('changeHistory')}
 アプリ設定数：${count('apps')}
 お気に入り数：${count('favorites')}
 履歴数：${count('recentItems')}
