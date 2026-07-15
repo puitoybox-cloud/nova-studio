@@ -15,10 +15,14 @@
 - Story Archive画面からダミーデータを1件登録して編集・削除できる動作確認導線を追加
 - Story Archiveカードを既存 `novaStudio_v01` localStorageキー内に保存
 - JSON書き出し・読み込みにStory Archiveカードを含めるよう更新
+- 設定画面に「Story Archive URL」入力欄を追加
+- 「Story Archiveを開く」ボタンが登録済みURLを開くように変更
+- Story Archive URL未登録時に「Story ArchiveのURLが登録されていません」と表示
 
 注意：
 
 - 既存localStorageキーは変更しない
+- 既存データは変更しない
 - Import Center自動登録、AI自動分類、全文検索、自動要約は未実装
 
 補足（同バージョン内の既存更新）：
