@@ -9,6 +9,8 @@ Nova Studio は、作品・話数・Scene・制作アプリをひとつのホー
 - カテゴリは「概要」「世界観」「キャラクター」「時系列」「用語」「場所」「アイテム」「組織・種族」「エピソード」「台本」「アイデア」「伏線」「変更履歴」「作品設定」に対応します。
 - 状態は「確定」「仮設定」「検討中」「保留」に対応します。
 - Story Archive画面でカードの作成、取得（一覧表示）、編集、削除ができます。
+- 設定画面に「Story Archive URL」入力欄を追加し、保存したURLを「Story Archiveを開く」ボタンから開けます。
+- Story Archive URLが未登録の場合は「Story ArchiveのURLが登録されていません」と表示します。
 - Story Archive画面からダミーデータを1件登録し、編集・削除の確認ができます。
 - Story Archiveカードは既存の `novaStudio_v01` localStorageキー内に保存し、既存キーは変更しません。
 - Import CenterでPDF、TXT、Markdown、JSON、長文貼り付けの内容をプレビューし、登録候補を確認してからStory Archiveへ登録できます。
@@ -75,5 +77,6 @@ python3 -m http.server 8000
 
 - Version 0.2.5 のStory Archiveは共通データ構造と手動CRUDの土台です。Import Center自動登録、AI自動分類、全文検索、自動要約は未実装です。
 - 既存制作アプリのリポジトリやデータは変更しません。
+- Story Archive URLは既存のアプリURL設定に保存し、既存データは変更しません。
 - JSON読み込み時に自動上書きしません。
 - 重要な置き換え前にはバックアップを保存してください。
