@@ -1,5 +1,27 @@
 # Nova Studio Changelog
 
+## Version 0.2.6
+
+実装日：2026-07-15
+
+追加：
+
+- Version表記を `0.2.6` に更新
+- Story Archiveの「＋カード作成」から実際のカードを登録できるように変更
+- Story Archiveカードに関連作品・関連話数の入力、保存、一覧表示を追加
+- Story Archiveカードを既存 `novaStudio_v01` localStorageキー内へ保存し、既存データを変更せず追記・編集・削除できるように維持
+- Story Archive画面にタイトル、カテゴリ、本文、タグ、関連作品、関連話数を対象にした検索を追加
+- Story ArchiveアプリURLが未登録でもNova Studio内のStory Archive画面を開けるように変更
+
+変更：
+
+- Story Archive画面のダミーデータ登録ボタンを削除し、実際のカード登録のみ使用する導線に変更
+
+注意：
+
+- 既存localStorageキーは変更しない
+- 既存データは変更しない
+
 ## Version 0.2.5
 
 実装日：2026-07-15
