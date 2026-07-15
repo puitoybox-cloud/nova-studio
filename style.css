@@ -68,3 +68,16 @@ html.modal-open,body.modal-open{overflow:hidden}body.modal-open{position:fixed;w
 
 /* Version 0.2.9 production-ready Story Archive image material manager */
 .archive-hero-actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}.archive-hero-actions button{min-height:60px}.vidu-one-tap{background:#12395d!important;color:#fff!important;font-weight:800}.archive-image-editor-grid{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);gap:1rem;align-items:start}.archive-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}.archive-switches{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.archive-switches label{border:1px solid var(--line);border-radius:14px;background:#fbffff;padding:.85rem;margin:.2rem 0}.vidu-selection-gallery .archive-image-card{border-color:#12395d;box-shadow:0 10px 28px #12395d18}@media(max-width:1024px){.archive-image-editor-grid{grid-template-columns:1fr}.archive-form-grid{grid-template-columns:1fr 1fr}.archive-hero-actions{display:grid;grid-template-columns:1fr 1fr}.archive-hero-actions button{width:100%;margin:0;min-height:68px}}@media(max-width:760px){.archive-form-grid,.archive-switches,.archive-hero-actions{grid-template-columns:1fr}.archive-image-editor-grid .file{width:100%;min-height:64px}.gallery-tabs .vidu-one-tap{grid-column:1/-1}}
+
+/* Version 0.3.0 enhanced image material manager */
+.archive-image-toolbar.enhanced{grid-template-columns:minmax(220px,2fr) repeat(4,minmax(130px,1fr));align-items:end}
+.archive-gallery-large{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.archive-image-row{position:relative;min-height:280px}
+.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:170px}
+.archive-select{display:flex;align-items:center;gap:.35rem;min-height:44px;margin:0;color:var(--navy);font-weight:800}
+.archive-select input{margin:0;width:auto;transform:scale(1.25)}
+.archive-bulk-bar,.archive-list-summary{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:16px;background:#fbffff;padding:.65rem;margin:.65rem 0}
+.archive-list-summary span{color:var(--muted)}
+.archive-bulk-bar button{min-height:46px}
+@media(max-width:1024px){.archive-image-toolbar.enhanced{grid-template-columns:1fr 1fr}.archive-gallery-large{grid-template-columns:repeat(2,minmax(0,1fr))}.archive-image-row{min-height:300px}.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:190px}.archive-bulk-bar{display:grid;grid-template-columns:1fr 1fr}.archive-bulk-bar .primary-action{grid-column:1/-1;width:100%}}
+@media(max-width:760px){.archive-image-toolbar.enhanced,.archive-gallery-large,.archive-bulk-bar{grid-template-columns:1fr}.archive-image-row{min-height:0;padding:.8rem}.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:160px}.archive-select{min-height:52px}.archive-list-summary{display:block}.archive-bulk-bar button{width:100%;min-height:56px}}
