@@ -1,5 +1,23 @@
 # Nova Studio Changelog
 
+## Version 0.2.3
+
+実装日：2026-07-15
+
+追加：
+
+- Version表記を `0.2.3` に更新
+- URLパラメータ `project`、`episode`、`source`、`returnUrl` の受け取りに対応
+- 起動時に `project` と `episode` に一致する作品・話数を自動選択
+- 画面上部に「Nova Studioへ戻る」ボタンを追加
+- `returnUrl` がある場合はそのURLへ戻り、無い場合はトップへ戻る動作を追加
+
+注意：
+
+- localStorageキーは `novaStudio_v01` のまま変更しない
+- 既存データを別キーへ移動せず、既存localStorageを壊さない
+- 双方向同期、制作データの自動取り込み、外部API連携は未実装
+
 ## Version 0.2.2
 
 実装日：2026-07-14
