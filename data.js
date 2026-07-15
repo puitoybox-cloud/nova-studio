@@ -1,4 +1,4 @@
-const NOVA_VERSION='0.2.7',SCHEMA_VERSION='2.0',APP_NAME='Nova Studio';
+const NOVA_VERSION='0.2.8',SCHEMA_VERSION='2.0',APP_NAME='Nova Studio';
 const PRODUCTION_STATUSES=['構想中','設定制作中','台本制作中','絵コンテ制作中','映像制作中','公開中','休止中','完結','保留'];
 const ITEM_STATUSES=['確定','仮設定','検討中','保留','要確認'];
 const STORY_ARCHIVE_CATEGORIES=['概要','世界観','キャラクター','時系列','用語','場所','背景','アイテム','小物','組織・種族','エピソード','台本','アイデア','伏線','変更履歴','作品設定'];
