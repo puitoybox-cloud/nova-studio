@@ -642,3 +642,22 @@ const nova021OldRender=render;
 render=function(){const v=(location.hash||'#home').slice(1);if(v==='importCenter')return shell(importCenterView());nova021OldRender()}
 
 function saveProductionDashboardUrl(value){const d=dashboardApp();if(!d)return;d.url=String(value||'').trim();touch(d);saveState(true);render()}
+
+// Version 0.2.3 Nova Studio basic bridge: receive URL params and return safely.
+const novaBridgeParams=new URLSearchParams(location.search);
+const novaBridge={
+ project:novaBridgeParams.get('project')||'',
+ episode:novaBridgeParams.get('episode')||'',
+ source:novaBridgeParams.get('source')||'',
+ returnUrl:novaBridgeParams.get('returnUrl')||''
+};
+function novaFindProject(value){if(!value)return null;return state.projects.find(p=>p.id===value)||state.projects.find(p=>p.title===value||p.shortName===value||p.englishTitle===value)||null}
+function novaFindEpisode(projectId,value){if(!value)return null;return state.episodes.find(e=>e.projectId===projectId&&e.id===value)||state.episodes.find(e=>e.projectId===projectId&&(e.numberLabel===value||e.title===value||e.subtitle===value))||null}
+function applyNovaBridgeParams(){const p=novaFindProject(novaBridge.project);if(!p)return false;const e=novaFindEpisode(p.id,novaBridge.episode)||state.episodes.find(x=>x.projectId===p.id&&x.numberLabel==='作品全体')||state.episodes.find(x=>x.projectId===p.id);state.activeContext={projectId:p.id,episodeId:e?.id||'',updatedAt:now()};state.lastLocation={...(state.lastLocation||{}),projectId:p.id,episodeId:e?.id||'',openedAt:now()};saveState(true);return true}
+function novaStudioReturnTarget(){if(novaBridge.returnUrl)return novaBridge.returnUrl;return `${location.origin}${location.pathname}`}
+function returnToNovaStudio(){window.location.href=novaStudioReturnTarget()}
+function novaBridgeButtonHtml(){return `<button class="nova-return" onclick="returnToNovaStudio()">Nova Studioへ戻る</button>`}
+const nova023Shell=shell;
+shell=function(main){nova023Shell(main);const header=document.querySelector('header');if(header&&!header.querySelector('.nova-return'))header.insertAdjacentHTML('afterbegin',novaBridgeButtonHtml())}
+applyNovaBridgeParams();
+render();
