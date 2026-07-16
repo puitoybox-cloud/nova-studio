@@ -99,3 +99,21 @@ html.modal-open,body.modal-open{overflow:hidden}body.modal-open{position:fixed;w
 .archive-list-fields dt{color:var(--muted);font-weight:800}
 .archive-list-fields dd{margin:0;color:var(--ink)}
 @media(max-width:760px){.image-first-archive-grid{grid-template-columns:1fr}.archive-list-image img,.archive-list-image .archive-thumb-empty{min-height:210px}.archive-list-fields dl{grid-template-columns:1fr}.image-first-card{margin:.85rem 0}}
+
+/* Version 0.2.9 final polish: make Story Archive detail image-led. */
+.modal-box{width:min(1180px,100%)}
+.archive-detail h2{margin:.1rem 0 .65rem;font-size:clamp(2rem,4.8vw,3.4rem)}
+.archive-detail-hero{display:block;padding:clamp(.6rem,1.4vw,1rem);border-radius:28px;background:linear-gradient(180deg,#ffffff,#eefbfc);box-shadow:0 14px 42px #12395d18}
+.archive-hero-copy{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin:0 0 .55rem}
+.archive-hero-copy .eyebrow,.archive-hero-copy .meta{margin:0}
+.archive-representative{width:100%;border-radius:24px;background:#f7fdfe;box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.archive-representative img,.archive-representative .archive-thumb-empty{width:100%;max-height:min(72vh,760px);min-height:clamp(360px,58vh,720px);object-fit:contain;border-radius:24px;background:#f7fdfe}
+.archive-representative .archive-thumb-wrap{border-radius:24px}
+.archive-gallery-panel{padding:.8rem}.archive-gallery-panel .section-head{margin-bottom:.45rem}
+.archive-gallery{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.5rem;margin:.55rem 0}
+.archive-gallery-large{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.5rem}
+.archive-image-card{padding:.5rem;border-radius:18px}
+.archive-image-row{min-height:330px}
+.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:230px;border-radius:14px}
+@media(max-width:1024px){.archive-gallery,.archive-gallery-large{grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}.archive-representative img,.archive-representative .archive-thumb-empty{max-height:68vh;min-height:clamp(340px,52vh,620px)}.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:220px}}
+@media(max-width:760px){.archive-gallery,.archive-gallery-large{grid-template-columns:1fr;gap:.45rem}.archive-representative img,.archive-representative .archive-thumb-empty{min-height:58vh;max-height:70vh}.archive-image-row{padding:.55rem}.archive-image-row img,.archive-image-row .archive-thumb-empty{min-height:240px}.archive-detail h2{font-size:clamp(1.8rem,8vw,2.5rem)}}
