@@ -238,3 +238,71 @@ span {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Production flow mobile rebuild: keep iPhone layouts to one safe column. */
+.flow-guide {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.flow-guide button {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  line-height: 1.3;
+}
+
+@media(max-width:1024px) and (min-width:601px) {
+  .flow-guide {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .45rem;
+    overflow-x: visible;
+  }
+
+  .flow-guide span {
+    display: none;
+  }
+}
+
+@media(max-width:600px) {
+  .flow-guide {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .45rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: .55rem;
+    margin: 0 0 1rem;
+    overflow-x: visible;
+    box-sizing: border-box;
+  }
+
+  .flow-guide span {
+    display: none;
+  }
+
+  .flow-guide button {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: .78rem .6rem;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+    line-height: 1.32;
+  }
+}
