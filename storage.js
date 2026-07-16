@@ -19,6 +19,7 @@ function mergeDefaults(d){
  normalized.backupStatus={...base.backupStatus,...(d.backupStatus||{})};
  normalized.storyArchiveFolders=Array.isArray(d.storyArchiveFolders)?d.storyArchiveFolders:(base.storyArchiveFolders||[]);
  normalized.importCenter={...base.importCenter,...(d.importCenter||{}),history:Array.isArray(d.importCenter?.history)?d.importCenter.history:[]};
+ normalized.threadImporter={...(d.threadImporter||{}),history:Array.isArray(d.threadImporter?.history)?d.threadImporter.history:[]};
  normalized.schemaVersion=SCHEMA_VERSION;
  normalized.appVersion=NOVA_VERSION;
  normalized.activeContext={...base.activeContext,...(d.activeContext||{})};
