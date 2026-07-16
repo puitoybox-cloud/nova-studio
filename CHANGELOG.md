@@ -1,5 +1,11 @@
 # Nova Studio Changelog
 
+## 2026-07-16
+
+- ChatGPT連携画面を追加し、現在の作品・話数・Scene・関連Story Archiveカード・制作状況・使用画像/動画/音声を文章またはJSONでコピーできるようにしました。
+- ChatGPTが返した更新用JSONを貼り付け、追加・更新・削除のプレビュー確認後に反映できる安全な読み込み導線を追加しました。
+- ChatGPT連携の送信コピー・JSON読込履歴と、JSON反映前の自動バックアップを保存するようにしました。
+
 ## Version 1.0.0
 
 - Story ArchiveをVersion 1.0へ更新
