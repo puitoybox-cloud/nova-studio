@@ -83,6 +83,17 @@ Import Center画面では読み込み後にプレビューを表示し、「Nova
 
 Asset Library、Voice Studio、Planner は今後追加予定です。
 
+
+## ChatGPT連携
+
+Nova Studioは、ChatGPTとの直接自動同期ではなく、コピー＆貼り付けとJSON入出力で安全に連携できます。
+
+- 「ChatGPT連携」画面または「ノヴァに相談」から、現在選択中の作品・話数・Scene・関連Story Archiveカード・制作状況・使用画像/動画/音声を、文章またはJSONとしてまとめられます。
+- 「ChatGPT用にコピー」ボタンで、iPhone、iPad、Macのブラウザのクリップボードへコピーします。自動コピーできない環境では、出力欄を選択して手動コピーできます。
+- ChatGPTが返した `nova-chatgpt-update` JSONは、貼り付け後に追加・更新・削除のプレビューを確認してから反映します。
+- JSON反映前には自動バックアップを作成し、送信コピーとJSON読込を連携履歴として保存します。
+- コピー生成とJSON反映処理は `chatgpt-bridge.js` に分離しているため、将来公式APIなどへ直接連携する場合も拡張しやすい構造です。
+
 ## ファイル構成
 
 - `index.html`：画面の入口。
@@ -91,6 +102,7 @@ Asset Library、Voice Studio、Planner は今後追加予定です。
 - `storage.js`：`localStorage` の読み書き、自動保存、旧データ補完。
 - `navigation.js`：アプリURL作成、履歴、現在の作品・話数選択。
 - `import-export.js`：JSON書き出し・読み込み、相談用文章。
+- `chatgpt-bridge.js`：ChatGPT向けコピー、更新用JSONプレビュー/反映、連携履歴、自動バックアップ。
 - `app.js`：画面描画、フォーム操作、検索、お気に入り、Scene制作UI、Import Center画面、Story Archive画面。
 - `README.md`：この説明書。
 - `CHANGELOG.md`：変更履歴。
