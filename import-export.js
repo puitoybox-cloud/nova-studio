@@ -32,10 +32,46 @@ function makeConsultText(type,body){const p=currentProject(),e=currentEpisode();
 
 // Version 1.0 RC: faster large JSON export/import and legacy JSON tolerance.
 function downloadJson(obj,name){downloadText(JSON.stringify(obj),name,'application/json')}
+function slugForImport(text,prefix='item'){return prefix+'_'+String(text||prefix).normalize('NFKC').trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_+|_+$/g,'').slice(0,80)||prefix+'_'+Date.now().toString(36)}
+function templateDataFromImportFields(category,fields={}){
+ const keyMap={
+  キャラクター:{'役割':'role','プロフィール':'profile','目的':'goal','性格':'personality','外見':'appearance','髪型':'appearance','特徴':'importantSettings','重要設定':'importantSettings','声・話し方':'voice'},
+  世界観:{'概要':'overview','世界のルール':'rules','歴史':'history','文化':'culture','対立・問題':'conflict'},
+  場所:{'種別':'locationType','説明':'description','雰囲気':'atmosphere','関係者':'residents','起きる出来事':'events'},
+  アイテム:{'種別':'itemType','所有者':'owner','説明':'description','効果・能力':'ability','由来':'origin','制約':'limits'},
+  用語:{'読み':'reading','意味':'meaning','使い方':'usage','関連概念':'relatedConcepts'},
+  ストーリー:{'あらすじ':'synopsis','テーマ':'theme','プロット':'plot','葛藤':'conflict','結末':'resolution','伏線':'foreshadowing'}
+ };
+ return Object.entries(fields||{}).reduce((out,[label,value])=>{const key=keyMap[category]?.[label]||label;out[key]=out[key]?[out[key],value].filter(Boolean).join('\n'):String(value||'');return out},{});
+}
+function normalizeNestedStoryArchivePayload(obj){
+ if(!obj||!Array.isArray(obj.projects))return null;
+ const out={schemaVersion:obj.schemaVersion||SCHEMA_VERSION,importSyncId:obj.syncId||'',exportedAt:obj.createdAt||now(),projects:[],episodes:[],storyArchiveCards:[]};
+ obj.projects.forEach((projectInput,projectIndex)=>{
+  const projectId=projectInput.id||slugForImport(projectInput.title||projectInput.name||`project_${projectIndex+1}`,'project');
+  out.projects.push({id:projectId,title:projectInput.title||projectInput.name||'無題の作品',sortOrder:projectIndex+1,status:projectInput.status||'仮設定',createdAt:obj.createdAt||now(),updatedAt:obj.createdAt||now()});
+  (projectInput.episodes||[]).forEach((episodeInput,episodeIndex)=>{
+   const episodeId=episodeInput.id||slugForImport(`${projectId}_${episodeInput.title||episodeInput.numberLabel||episodeIndex+1}`,'episode');
+   out.episodes.push({id:episodeId,projectId,numberLabel:episodeInput.title||episodeInput.numberLabel||`第${episodeIndex+1}話`,sortOrder:episodeIndex+1,status:episodeInput.status||'仮設定',createdAt:obj.createdAt||now(),updatedAt:obj.createdAt||now()});
+   (episodeInput.cards||[]).forEach((cardInput,cardIndex)=>{
+    const category=cardInput.category||cardInput.templateCategory||'概要';
+    const templateData={...templateDataFromImportFields(category,cardInput.fields),...(cardInput.templateData||{})};
+    out.storyArchiveCards.push({id:cardInput.id||slugForImport(`${episodeId}_${cardInput.title||cardIndex+1}`,'archive'),type:COMMON_ITEM_TYPES.STORY_ARCHIVE_CARD,title:cardInput.title||'無題',body:cardInput.body||cardInput.content||cardInput.memo||'',category,templateCategory:category,status:cardInput.status||'仮設定',isConfirmed:cardInput.status==='確定'||Boolean(cardInput.isConfirmed),tags:Array.isArray(cardInput.tags)?cardInput.tags:parseTags(cardInput.tags||''),projectId,episodeId,relatedTitles:Array.isArray(cardInput.relatedTitles)?cardInput.relatedTitles:parseTags(cardInput.relatedTitles||''),relatedIds:Array.isArray(cardInput.relatedIds)?cardInput.relatedIds:[],templateData,importFields:cardInput.fields||{},images:Array.isArray(cardInput.images)?cardInput.images:[],imageSets:Array.isArray(cardInput.imageSets)?cardInput.imageSets:[],createdAt:obj.createdAt||now(),updatedAt:obj.createdAt||now()});
+   });
+  });
+ });
+ out.storyArchiveCards.forEach(card=>{
+  const titleLinks=(card.relatedTitles||[]).map(title=>out.storyArchiveCards.find(c=>c.title===title)?.id).filter(Boolean);
+  card.relatedIds=[...new Set([...(card.relatedIds||[]),...titleLinks])];
+ });
+ return out;
+}
 function normalizeImportPayload(obj){
  if(obj?.format==='nova-studio-backup')return obj.data||{};
  if(obj?.format==='nova-studio-core')return obj;
  if(obj?.data&&typeof obj.data==='object')return obj.data;
+ const nested=normalizeNestedStoryArchivePayload(obj);
+ if(nested)return nested;
  if(obj&&typeof obj==='object'&&(['projects','episodes','scenes','characters','terms'].some(k=>Array.isArray(obj[k]))))return obj;
  return null;
 }
