@@ -306,3 +306,6 @@ span {
     line-height: 1.32;
   }
 }
+
+/* Thread Import Assistant */
+.thread-import-panel,.thread-import-entry{border:1px solid var(--line);border-radius:20px;background:#fbffff;padding:1rem;margin:1rem 0}.thread-import-textarea{min-height:38vh;line-height:1.65;font-size:1rem;resize:vertical}.thread-import-grid,.thread-import-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem}.thread-import-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}.thread-candidate-list{display:grid;gap:.85rem}.thread-candidate{border:1px solid var(--line);border-radius:16px;background:#fff;padding:.9rem;overflow-wrap:anywhere}.thread-candidate.conflict{border-color:#f0c36a;background:#fff9e8}.thread-candidate label{margin:.55rem 0}.thread-candidate textarea{min-height:7rem}.thread-candidate details{margin-top:.5rem}.hidden{display:none!important}@media(max-width:760px){.thread-import-panel,.thread-import-entry,.thread-candidate{padding:.75rem}.thread-import-actions button,.thread-import-entry button,.thread-candidate select{width:100%;min-height:52px}.thread-candidate .section-head{display:block}.thread-import-textarea{min-height:46vh}.thread-import-grid,.thread-import-filters{grid-template-columns:1fr}}
