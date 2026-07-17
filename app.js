@@ -1,4 +1,11 @@
 let state=loadState();const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const HOME_ROUTE='home';
+function normalizeInitialHomeRoute(){
+  if((location.hash||'#home').slice(1)!==HOME_ROUTE){
+    history.replaceState(null,'',`${location.pathname}${location.search}#${HOME_ROUTE}`);
+  }
+}
+normalizeInitialHomeRoute();
 function setView(v){location.hash=v;render()}
 function modal(html){$('#modalBody').innerHTML=html;$('#modal').classList.remove('hidden');$('#modalBody').querySelector('input,select,textarea,button')?.focus()}
 function closeModal(){ $('#modal').classList.add('hidden') }
@@ -1111,8 +1118,8 @@ function currentProductionInfo(p,e){
   const info=homeProductionStatus(p,e);
   return `<section class="home-current-production atelier-current" aria-label="現在の制作"><p class="eyebrow">Current Work</p><h2>${esc(info.project)}</h2><dl><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section>`;
 }
-function homeView(){
+homeView=function(){
   const p=currentProject(),e=currentEpisode(),info=homeProductionStatus(p,e);
   return `<div class="atelier-home">${homeHiddenCharacterPreload()}<section class="atelier-hero" aria-label="ノヴァの案内エリア"><div class="atelier-hero-copy"><p class="eyebrow">Nova Guide</p><h1>おかえり、ティア。</h1><p class="atelier-lead">今日は何から始めようか？</p><div class="atelier-status" aria-label="現在の作品名、話数、制作状況"><span><small>現在の作品名</small>${esc(info.project)}</span><span><small>現在の話数</small>${esc(info.episode)}</span><span><small>制作状況</small>${esc(info.status)}</span></div></div><div class="atelier-hero-characters" aria-label="ノヴァ・ティア・ひよこ">${homeCharacterImage('tiaFront','tia-front','ティア')}${homeCharacterImage('chickFront','chick-front','ひよこ')}</div></section>${currentProductionInfo(p,e)}<section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div><p class="eyebrow">Continue</p><h2>制作を続ける</h2><p>前回の制作場所、または選択中の話数へ戻ります。</p></div>${homeCharacterImage('tiaSide','tia-side','ティア')}</section><section class="atelier-hint" aria-label="お知らせとヒント"><div>${homeCharacterImage('chickFront','hint-chick','ひよこ')}</div><div><p class="eyebrow">Notice & Hint</p><h2>ひよこからの制作メモ</h2><p>設定、画像、シーンの断片はStory Archiveに集めると、次の制作へ迷わず戻れます。</p></div></section><section class="atelier-actions" aria-label="メイン操作">${homeStudioAction('story','Story Archive','設定、資料、画像カードを開きます。','openStoryArchive()','priority')}${homeStudioAction('dashboard','Production Dashboard','作品全体の進捗を確認します。','openProductionDashboard()')}${homeStudioAction('prompt','Prompt Studio','Vidu用プロンプトを組み立てます。',"openApp('promptStudio')")}${homeStudioAction('music','Music Studio','歌詞や音楽制作の補助を開きます。',"openApp('musicStudio')")}${homeStudioAction('universe','Universe','作品内のつながりを俯瞰します。',"setView('universe')")}</section>${backupSettingsCard()}</div>`;
-}
+};
 render();
