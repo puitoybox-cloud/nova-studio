@@ -1086,11 +1086,11 @@ render();
 
 /* Version 1.2.6 official character atelier home */
 const HOME_CHARACTER_IMAGE_PATHS={
-  tiaFront:'assets/images/home/tia-mini-front.png',
-  tiaBack:'assets/images/home/tia-mini-back.png',
-  tiaSide:'assets/images/home/tia-mini-side.png',
-  chickFront:'assets/images/home/chick-front.png',
-  chickBack:'assets/images/home/chick-back.png'
+  tiaFront:'./assets/images/home/tia-mini-front.png',
+  tiaBack:'./assets/images/home/tia-mini-back.png',
+  tiaSide:'./assets/images/home/tia-mini-side.png',
+  chickFront:'./assets/images/home/chick-front.png',
+  chickBack:'./assets/images/home/chick-back.png'
 };
 function homeCharacterImage(key,cls,label=''){
   const src=HOME_CHARACTER_IMAGE_PATHS[key];
