@@ -1046,3 +1046,31 @@ storyArchiveView=function(){
   return `<section class="hero archive-hero"><h1>Story Archive</h1><p>制作資料を画像中心に確認するカード一覧です。 <span class="ver">Version ${NOVA_VERSION}</span></p><div class="archive-hero-actions"><button class="primary-action" onclick="editStoryArchiveCard()">＋カード作成</button><button class="secondary" onclick="openMemorySync()">Memory Sync</button><button class="secondary vidu-one-tap" onclick="openArchiveViduReferences()">Vidu参照画像だけ表示（${archiveViduReferenceImages().length}）</button></div><input id="archiveSearch" placeholder="タイトル・カテゴリ・状態・タグ・関連カードを検索" value="${esc($('#archiveSearch')?.value||'')}" oninput="render()"></section><section><div class="archive-category-grid image-first-archive-grid">${archiveListCategories(filtered).map(cat=>`<article class="archive-category image-first-category"><h3>${esc(cat)} <span class="meta">${(byCat[cat]||[]).length}件</span></h3>${(byCat[cat]||[]).map(c=>`<article class="archive-card image-first-card" role="button" tabindex="0" onclick="openStoryArchiveDetail('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' ')openStoryArchiveDetail('${c.id}')">${archiveCardListImage(c)}${archiveCardListMeta(c)}<div class="archive-card-actions"><button onclick="event.stopPropagation();editStoryArchiveCard('${c.id}')">編集</button><button class="danger" onclick="event.stopPropagation();deleteStoryArchiveCard('${c.id}')">削除</button></div></article>`).join('')||'<p class="empty-note">カードなし</p>'}</article>`).join('')}</div></section><section><h2>Memory Sync履歴</h2>${memorySyncHistoryRows()}</section>`;
 };
 render();
+
+/* Version 1.2.5 Nova atelier home redesign */
+function novaOrbIcon(cls=''){
+  return `<span class="nova-orb-icon ${cls}" aria-hidden="true"><span></span></span>`;
+}
+function novaLineIcon(name){return `<span class="line-icon ${name}" aria-hidden="true"></span>`}
+function homeAppAction(id,title,desc,action,variant=''){
+  return `<article class="home-studio-card ${variant}" role="button" tabindex="0" onclick="${action}" onkeydown="if(event.key==='Enter'||event.key===' ')${action}"><div class="home-studio-icon">${id==='consult'?novaOrbIcon('small'):novaLineIcon(id)}</div><div><h3>${esc(title)}</h3><p>${esc(desc)}</p></div><button class="secondary" onclick="event.stopPropagation();${action}">開く</button></article>`;
+}
+function currentProductionInfo(p,e){
+  return `<section class="home-current-production" aria-label="選択中の作品と話数"><p class="eyebrow">Current Work</p><h2>${esc(p?.title||'作品未選択')}</h2><p>${esc(e?.numberLabel||'話数未選択')}${e?.subtitle?' / '+esc(e.subtitle):''}</p><button class="secondary" onclick="showContext()">作品と話数を変更</button></section>`;
+}
+function backupSettingsCard(){
+  return `<section class="home-management-card"><h2>バックアップと設定</h2><p class="meta">保存データを守るための管理機能です。localStorageのキーや保存形式は変更していません。</p><div class="home-management-actions"><button class="secondary" onclick="setView('backup')">${novaLineIcon('backup')}バックアップ</button><button class="secondary" onclick="setView('settings')">${novaLineIcon('settings')}設定</button></div></section>`;
+}
+function homeView(){
+  const p=currentProject(),e=currentEpisode();
+  return `<section class="nova-guide" aria-label="ノヴァの案内"><div class="nova-portrait">${novaOrbIcon('large')}</div><div class="nova-message"><p class="eyebrow">Nova</p><h1>ノヴァ</h1><p class="nova-quote">「今日は何から始めようか？」</p></div></section>${currentProductionInfo(p,e)}<section class="home-studio-main" role="button" tabindex="0" onclick="openLastLocation()" onkeydown="if(event.key==='Enter'||event.key===' ')openLastLocation()"><div>${novaLineIcon('continue')}<p class="eyebrow">Main</p><h2>続きを作る</h2><p>前回の制作画面や選択中の作品へ戻ります。物語、台本、素材づくりの続きから始めましょう。</p></div><button class="primary-action" onclick="event.stopPropagation();openLastLocation()">続きを開く</button></section><section class="nova-consult-card" role="button" tabindex="0" onclick="setView('consult')" onkeydown="if(event.key==='Enter'||event.key===' ')setView('consult')"><div class="consult-face">${novaOrbIcon('medium')}</div><div><h2>ノヴァに相談</h2><p>設定、台本、制作の続きを一緒に考える</p></div><button onclick="event.stopPropagation();setView('consult')">相談を始める</button></section><section class="home-studio-stack" aria-label="制作機能">${homeAppAction('story','Story Archive','設定カード、キャラクター、世界観、資料を整理する制作アーカイブです。','openStoryArchive()','priority')}${homeAppAction('dashboard','Production Dashboard','選択中の作品と話数の制作進行を確認します。','openProductionDashboard()')}${homeAppAction('prompt','Prompt Studio','Vidu用プロンプトや場面テンプレートを整えます。',"openApp('promptStudio')")}${homeAppAction('universe','Universe','作品・話数・設定カードのつながりを俯瞰します。',"setView('universe')")}${homeAppAction('import','Import Center','資料ファイルや長文を取り込み、Story Archive候補へ整理します。',"setView('importCenter')")}</section>${backupSettingsCard()}`;
+}
+const nova125ShellBase=shell;
+shell=function(main){
+  nova125ShellBase(main);
+  document.querySelectorAll('header button, nav button, .bottom button').forEach(b=>{b.innerHTML=b.innerHTML.replace(/[💬💾⚙🏠🧰🗂📚🎬🎞👤🌍📖🕰💡🔎📝🌌✅📈🎥]/gu,'').trim()});
+  document.querySelectorAll('button[onclick="setView(\'consult\')"]').forEach(b=>{if(!b.closest('.nova-consult-card'))b.innerHTML=`${novaOrbIcon('tiny')}<span>ノヴァ</span>`});
+};
+const nova125RenderBase=render;
+render=function(){const v=(location.hash||'#home').slice(1);if(v==='home')return shell(homeView());nova125RenderBase()};
+render();
