@@ -359,3 +359,9 @@ button{box-shadow:0 6px 18px #12395d10}.primary-action{background:linear-gradien
 .atelier-action button{justify-self:start;margin:0;background:#12395d}.atelier-action.priority{border-color:#18aebf;box-shadow:0 16px 34px #18aebf20}
 @media(max-width:1024px){.atelier-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.atelier-hero-characters{min-height:280px}}
 @media(max-width:760px){.atelier-actions{grid-template-columns:1fr}.atelier-hero-characters{min-height:220px}.atelier-hero-characters .tia-front{right:50%;width:min(76vw,255px)}.atelier-hero-characters .chick-front{left:8%;width:min(24vw,82px)}}
+
+/* Home-only final: do not generate the legacy shell around the home screen. */
+.home-only{display:block;max-width:1040px;margin:0 auto;padding:clamp(1rem,3vw,2rem)}
+.home-only .atelier-hero{margin-top:0}
+.home-only .atelier-action p:empty{display:none}
+@media(max-width:760px){.home-only{padding:.8rem .8rem 2rem}.home-only .atelier-actions{grid-template-columns:1fr}}
