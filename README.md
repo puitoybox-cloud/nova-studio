@@ -1,7 +1,13 @@
 # Nova Studio
 
-Nova Studio は、作品・話数・Scene・制作アプリをひとつのホームから安全に開くための、創作制作環境の入口です。Version 1.0.0 では、Story Archiveにカテゴリ別テンプレート、確定／未確定、変更履歴、双方向リンク、時系列表示、フォルダ階層管理を追加しました。
+Nova Studio は、作品・話数・Scene・制作アプリをひとつのホームから安全に開くための、創作制作環境の入口です。Version 0.2.9 では、Story Archiveを制作資料の画像確認を優先するUIへ更新しました。
 
+
+## Version 0.2.9 追補
+
+- 最新のStory Archive詳細画面でも、画像中心の表示順（タイトル、代表画像、画像ギャラリー、基本設定・本文、関連カード、折りたたみ管理情報）が最後に有効になるようにしました。
+- Version表示を `0.2.9` に合わせ、ホームやStory Archive一覧の表示とドキュメントの表記を揃えました。
+- Memory Sync、Import Center、Production Dashboard、Universe連携を残したまま、一覧と詳細を画像ファーストの導線へ統一しました。
 
 ## Version 1.0.0で追加したこと
 
