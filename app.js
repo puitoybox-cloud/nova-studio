@@ -1083,3 +1083,35 @@ shell=function(main){
 const nova125RenderBase=render;
 render=function(){const v=(location.hash||'#home').slice(1);if(v==='home')return shell(homeView());nova125RenderBase()};
 render();
+
+/* Version 1.2.6 official character atelier home */
+const HOME_CHARACTER_IMAGE_PATHS={
+  tiaFront:'assets/images/home/tia-mini-front.png',
+  tiaBack:'assets/images/home/tia-mini-back.png',
+  tiaSide:'assets/images/home/tia-mini-side.png',
+  chickFront:'assets/images/home/chick-front.png',
+  chickBack:'assets/images/home/chick-back.png'
+};
+function homeCharacterImage(key,cls){
+  const src=HOME_CHARACTER_IMAGE_PATHS[key];
+  return `<figure class="home-character ${cls}" data-character="${key}"><img src="${src}" alt="" loading="lazy" decoding="async" onerror="this.closest('.home-character')?.remove()"></figure>`;
+}
+function homeHiddenCharacterPreload(){
+  return `<div class="home-character-preload" aria-hidden="true">${homeCharacterImage('tiaBack','preload-tia-back')}${homeCharacterImage('chickBack','preload-chick-back')}</div>`;
+}
+function homeStudioAction(id,title,desc,action,variant=''){
+  return `<article class="atelier-action ${variant}" role="button" tabindex="0" onclick="${action}" onkeydown="if(event.key==='Enter'||event.key===' ')${action}"><div><h3>${esc(title)}</h3><p>${esc(desc)}</p></div><button class="secondary" onclick="event.stopPropagation();${action}">開く</button></article>`;
+}
+function homeProductionStatus(p,e){
+  const featured=homeFeaturedEpisode(p,e);
+  return {project:p?.title||'作品未選択',episode:featured?.numberLabel||e?.numberLabel||'話数未選択',status:featured?.productionStatus||p?.productionStatus||featured?.status||p?.status||'制作中'};
+}
+function currentProductionInfo(p,e){
+  const info=homeProductionStatus(p,e);
+  return `<section class="home-current-production atelier-current" aria-label="現在の制作"><p class="eyebrow">Current Work</p><h2>${esc(info.project)}</h2><dl><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section>`;
+}
+function homeView(){
+  const p=currentProject(),e=currentEpisode(),info=homeProductionStatus(p,e);
+  return `<div class="atelier-home">${homeHiddenCharacterPreload()}<section class="atelier-hero" aria-label="ノヴァの案内エリア"><div class="atelier-hero-copy"><p class="eyebrow">Nova Guide</p><h1>おかえり、ティア。</h1><p class="atelier-lead">今日は何から始めようか？</p><div class="atelier-status" aria-label="現在の作品と制作状況"><span>${esc(info.project)}</span><span>${esc(info.episode)}</span><span>${esc(info.status)}</span></div></div><div class="atelier-hero-characters">${homeCharacterImage('tiaFront','tia-front')}${homeCharacterImage('chickFront','chick-front')}</div></section>${currentProductionInfo(p,e)}<section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div><p class="eyebrow">Continue</p><h2>制作を続ける</h2><p>前回の制作場所、または選択中の話数へ戻ります。</p></div>${homeCharacterImage('tiaSide','tia-side')}</section><section class="atelier-actions" aria-label="メイン操作">${homeStudioAction('consult','ノヴァに相談','制作メモや次の作業を相談します。',"setView('consult')",'consult')}${homeStudioAction('story','Story Archive','設定、資料、画像カードを開きます。','openStoryArchive()','priority')}${homeStudioAction('dashboard','Production Dashboard','作品全体の進捗を確認します。','openProductionDashboard()')}${homeStudioAction('prompt','Prompt Studio','Vidu用プロンプトを組み立てます。',"openApp('promptStudio')")}${homeStudioAction('music','Music Studio','歌詞や音楽制作の補助を開きます。',"openApp('musicStudio')")}${homeStudioAction('universe','Universe','作品内のつながりを俯瞰します。',"setView('universe')")}${homeStudioAction('import','Import Center','資料を取り込み、登録候補を整理します。',"setView('importCenter')")}</section>${backupSettingsCard()}</div>`;
+}
+render();
