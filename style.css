@@ -573,8 +573,8 @@ body:has(.atelier-home.home-only){
 /* Home background switcher. */
 body:has(.atelier-home.home-only){
   background:
-    radial-gradient(circle at 16% 8%,rgba(255,247,223,.38),transparent 28%),
-    linear-gradient(180deg,rgba(248,254,255,.58),rgba(226,243,248,.72)),
+    radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
+    linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
     var(--home-background-image,url('./assets/images/home/glass_fantasy_ui_background.jpg')) center/cover fixed no-repeat;
 }
 body[data-home-background="glass"]{--home-background-image:url('./assets/images/home/glass_fantasy_background.jpg')}
@@ -588,7 +588,7 @@ body:has(.atelier-home.home-only)::before{
   inset:0;
   z-index:-1;
   pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(213,238,248,.24));
+  background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(213,238,248,.10));
 }
 .home-top-tools{
   display:flex;
