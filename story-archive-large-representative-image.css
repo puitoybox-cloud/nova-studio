@@ -1,0 +1,37 @@
+/* Version 1.3.4: make the representative image the visual focus when a card has images. */
+.archive-detail-hero:not(.archive-empty-image-hero){
+  display:grid;
+  grid-template-columns:1fr;
+  gap:.8rem;
+  padding:1rem;
+}
+.archive-detail-hero:not(.archive-empty-image-hero) .archive-hero-copy{
+  display:flex;
+  justify-content:space-between;
+  gap:1rem;
+  align-items:end;
+}
+.archive-detail-hero:not(.archive-empty-image-hero) .archive-representative{
+  width:100%;
+  min-height:clamp(360px,62vh,760px);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:22px;
+  background:#eef8f9;
+  cursor:zoom-in;
+}
+.archive-detail-hero:not(.archive-empty-image-hero) .archive-representative img{
+  width:100%;
+  height:100%;
+  max-height:760px;
+  object-fit:contain;
+}
+.archive-detail-hero:not(.archive-empty-image-hero) .archive-representative .archive-thumb-empty{
+  min-height:360px;
+}
+@media(max-width:760px){
+  .archive-detail-hero:not(.archive-empty-image-hero){padding:.75rem}
+  .archive-detail-hero:not(.archive-empty-image-hero) .archive-hero-copy{display:block}
+  .archive-detail-hero:not(.archive-empty-image-hero) .archive-representative{min-height:clamp(280px,52vh,560px);border-radius:18px}
+}
