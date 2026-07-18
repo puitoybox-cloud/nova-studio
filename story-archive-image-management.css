@@ -1,0 +1,18 @@
+/* Version 1.4.2: Story Archive image management workspace. */
+.archive-image-manager{display:grid;gap:1rem}
+.archive-image-manager-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.archive-image-manager-head h2{margin:.1rem 0 0}
+.archive-image-manager-summary{display:flex;gap:.5rem;flex-wrap:wrap}
+.archive-image-manager-summary span{display:inline-flex;align-items:center;min-height:32px;padding:.3rem .7rem;border-radius:999px;background:#eef8f8;font-weight:700}
+.archive-image-manager-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+.archive-image-manager-card{display:grid;grid-template-columns:140px 1fr;gap:.8rem;padding:.8rem;border:1px solid rgba(67,114,120,.16);border-radius:18px;background:#fbfefe}
+.archive-image-manager-preview{width:140px;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#edf5f5;display:grid;place-items:center}
+.archive-image-manager-preview img{width:100%;height:100%;object-fit:contain}
+.archive-image-manager-fields{display:grid;gap:.55rem}
+.archive-image-manager-fields label{display:grid;gap:.25rem;font-weight:700}
+.archive-image-manager-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}
+.archive-image-manager-checks label{display:flex;align-items:center;gap:.4rem;font-weight:600}
+.archive-image-manager-actions{display:flex;justify-content:flex-end}
+.archive-image-manager-empty{padding:1rem;border:1px dashed rgba(67,114,120,.28);border-radius:16px;text-align:center;color:#5e7276}
+@media(max-width:900px){.archive-image-manager-list{grid-template-columns:1fr}}
+@media(max-width:620px){.archive-image-manager-card{grid-template-columns:1fr}.archive-image-manager-preview{width:100%;aspect-ratio:16/10}.archive-image-manager-checks{grid-template-columns:1fr}.archive-image-manager-actions button{width:100%}}
