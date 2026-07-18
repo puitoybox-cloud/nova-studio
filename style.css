@@ -649,6 +649,8 @@ body:has(.atelier-home.home-only)::before{
 }
 @media(max-width:1024px){body:has(.atelier-home.home-only){background-attachment:scroll}}
 @media(max-width:760px){
-  .home-top-tools{justify-content:center;margin-bottom:.55rem}
-  .home-background-picker{width:100%}.home-background-picker summary{width:100%}.home-background-picker div{left:0;right:0;width:100%;border-radius:0 0 18px 18px}
+  .home-top-tools{justify-content:flex-end;margin-bottom:.55rem}
+  .home-background-picker{width:auto;max-width:min(100%,220px)}
+  .home-background-picker summary{width:auto}
+  .home-background-picker div{right:0;width:min(78vw,220px);border-radius:18px 0 18px 18px}
 }
