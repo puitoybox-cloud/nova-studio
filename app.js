@@ -1092,34 +1092,21 @@ render=function(){const v=(location.hash||'#home').slice(1);if(v==='home')return
 render();
 
 /* Version 1.2.6 official character atelier home */
-const HOME_CHARACTER_IMAGE_PATHS={
-  logo:'./NovaStudio_Logo_Film.png',
-  background:'./glass_fantasy_ui_background.jpg',
-  novaHappy:'./Nova_Happy.png',
-  tiaWelcome:'./Tia_Chibi_Welcome.png',
-  tiaThinking:'./Tia_Chibi_Thinking.png',
-  storyArchive:'./Nova_Thinking.png',
-  productionDashboard:'./Nova_Stand.png',
-  promptStudio:'./Nova_Sparkle.png',
-  musicStudio:'./Nova_Joy.png',
-  universe:'./Nova_Flying.png'
+const HOME_HOME_IMAGE_ALTS={
+  'NovaStudio_Logo_Film.png':'Nova Studioロゴ',
+  'Nova_Happy.png':'ノヴァ',
+  'Nova_Joy.png':'喜ぶノヴァ',
+  'Nova_Sparkle.png':'きらめくノヴァ',
+  'Nova_Thinking.png':'考え中のノヴァ',
+  'Tia_Chibi_Welcome.png':'ティア',
+  'Tia_Chibi_Thinking.png':'考え中のティア'
 };
-const HOME_CHARACTER_FALLBACK_PATHS={
-  logo:'./assets/images/home/tia-mini-front.png',
-  novaHappy:'./assets/images/home/chick-front.png',
-  tiaWelcome:'./assets/images/home/tia-mini-front.png',
-  tiaThinking:'./assets/images/home/tia-mini-side.png',
-  storyArchive:'./assets/images/home/chick-front-v2.png',
-  productionDashboard:'./assets/images/home/chick-back-v2.png',
-  promptStudio:'./assets/images/home/chick-front.png',
-  musicStudio:'./assets/images/home/chick-back.png',
-  universe:'./assets/images/home/tia-mini-back.png'
-};
-function homeCharacterImage(key,cls,label=''){
-  const src=HOME_CHARACTER_IMAGE_PATHS[key];
-  const alt=label||({logo:'Nova Studioロゴ',novaHappy:'ノヴァ',tiaWelcome:'ティア',tiaThinking:'考え中のティア',storyArchive:'考え中のノヴァ',productionDashboard:'立っているノヴァ',promptStudio:'きらめくノヴァ',musicStudio:'喜ぶノヴァ',universe:'飛ぶノヴァ'}[key]||'ホーム画像');
-  const fallback=HOME_CHARACTER_FALLBACK_PATHS[key]||'';
-  return `<figure class="home-character ${cls}" data-character="${esc(key)}"><img src="${src}" alt="${esc(alt)}" loading="eager" decoding="async" data-fallback-src="${fallback}" onerror="if(this.dataset.fallbackSrc&&!this.dataset.fallbackUsed){this.dataset.fallbackUsed='true';this.src=this.dataset.fallbackSrc}else{this.closest('.home-character')?.classList.add('image-missing')}"></figure>`;
+function homeImage(fileName,cls,label=''){
+  const alt=label||HOME_HOME_IMAGE_ALTS[fileName]||'ホーム画像';
+  return `<figure class="home-character ${cls}" data-character="${esc(fileName)}"><img src="./${fileName}" alt="${esc(alt)}" loading="eager" decoding="async" onerror="this.closest('.home-character')?.classList.add('image-missing')"></figure>`;
+}
+function homeCharacterImage(fileName,cls,label=''){
+  return homeImage(fileName,cls,label);
 }
 function homeStudioAction(id,title,desc,action,variant=''){
   return `<article class="atelier-action ${variant}" role="button" tabindex="0" onclick="${action}" onkeydown="if(event.key==='Enter'||event.key===' ')${action}">${homeCharacterImage(id,'action-character',title)}<div class="atelier-action-copy"><h3>${esc(title)}</h3><p>${esc(desc)}</p></div><button class="secondary" onclick="event.stopPropagation();${action}">開く</button></article>`;
@@ -1159,7 +1146,7 @@ function homeFooterPanel(title,body,action=''){
 }
 homeView=function(){
   const p=currentProject(),e=currentEpisode(),info=homeProductionStatus(p,e);
-  return `<main class="atelier-home home-only" aria-label="Nova Studio"><header class="home-logo-bar">${homeCharacterImage('logo','home-logo','Nova Studioロゴ')}</header><section class="atelier-hero" aria-label="ティアへの挨拶"><div class="atelier-hero-copy"><p class="eyebrow">Creative Atelier</p><h1>おかえり、ティア。</h1><p class="atelier-lead">今日は何から始めようか？</p></div><div class="atelier-hero-characters" aria-label="ノヴァとティアのイラスト">${homeCharacterImage('tiaWelcome','tia-welcome','ティア')}${homeCharacterImage('novaHappy','nova-happy','ノヴァ')}</div></section><section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div><p class="eyebrow">Continue</p><h2>制作を続ける</h2><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></div>${homeCharacterImage('tiaThinking','tia-thinking','考え中のティア')}</section><section class="atelier-actions" aria-label="制作メニュー">${homeStudioAction('storyArchive','Story Archive','物語の記憶と設定カードを開く','openStoryArchive()','priority')}${homeStudioAction('productionDashboard','Production Dashboard','作品と話数の進行を確認する','openProductionDashboard()')}${homeStudioAction('promptStudio','Prompt Studio','映像生成プロンプトを整える',"openApp('promptStudio')")}${homeStudioAction('musicStudio','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')")}${homeStudioAction('universe','Universe','作品世界のつながりを見る',"setView('universe')")}</section><section class="atelier-footer-grid" aria-label="ホーム概要">${homeFooterPanel('最近開いた作品',homeRecentSummary())}${homeFooterPanel('今日やること',homeTaskSummary(),'<button class="secondary" onclick="editTask()">追加</button>')}${homeFooterPanel('保存状況',homeSaveSummary())}${homeFooterPanel('バックアップ',homeBackupSummary())}</section></main>`;
+  return `<main class="atelier-home home-only" aria-label="Nova Studio"><header class="home-logo-bar">${homeImage('NovaStudio_Logo_Film.png','home-logo','Nova Studioロゴ')}</header><section class="atelier-hero" aria-label="ティアへの挨拶"><div class="atelier-hero-copy"><p class="eyebrow">Creative Atelier</p><h1>おかえり、ティア。</h1><p class="atelier-lead">今日は何から始めようか？</p></div><div class="atelier-hero-characters" aria-label="ノヴァとティアのイラスト">${homeImage('Tia_Chibi_Welcome.png','tia-welcome','ティア')}${homeImage('Nova_Happy.png','nova-happy','ノヴァ')}</div></section><section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div><p class="eyebrow">Continue</p><h2>制作を続ける</h2><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></div>${homeImage('Tia_Chibi_Thinking.png','tia-thinking','考え中のティア')}</section><section class="atelier-actions" aria-label="制作メニュー">${homeStudioAction('Nova_Thinking.png','Story Archive','物語の記憶と設定カードを開く','openStoryArchive()','priority')}${homeStudioAction('Nova_Thinking.png','Production Dashboard','作品と話数の進行を確認する','openProductionDashboard()')}${homeStudioAction('Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"openApp('promptStudio')")}${homeStudioAction('Nova_Joy.png','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')")}${homeStudioAction('Nova_Happy.png','Universe','作品世界のつながりを見る',"setView('universe')")}</section><section class="atelier-footer-grid" aria-label="ホーム概要">${homeFooterPanel('最近開いた作品',homeRecentSummary())}${homeFooterPanel('今日やること',homeTaskSummary(),'<button class="secondary" onclick="editTask()">追加</button>')}${homeFooterPanel('保存状況',homeSaveSummary())}${homeFooterPanel('バックアップ',homeBackupSummary())}</section></main>`;
 };
 render=function(){const v=(location.hash||'#home').slice(1);if(v==='home'){document.querySelector('#app').innerHTML=homeView();return;}nova125RenderBase();};
 render();
