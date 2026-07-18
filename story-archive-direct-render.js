@@ -12,7 +12,9 @@
     document.body.classList.remove('is-home-route');
     document.body.classList.add('is-management-route');
     try{
-      shell(storyArchiveView());
+      const app=document.querySelector('#app');
+      if(!app)throw new Error('Nova Studio root element was not found');
+      app.innerHTML=`<div class="story-archive-standalone"><div class="story-archive-standalone-nav"><button class="secondary" onclick="setView('home')">← Nova Studioへ戻る</button></div>${storyArchiveView()}</div>`;
     }catch(error){
       console.error('Direct Story Archive render failed',error);
       try{ render(); }catch(renderError){ console.error('Story Archive fallback render failed',renderError); }
