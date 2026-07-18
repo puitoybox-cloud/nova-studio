@@ -664,3 +664,39 @@ body.is-management-route #app{min-height:100vh;width:100%;overflow-x:clip}.manag
 @media(max-width:760px){.hamburger{display:inline-block}.management-header{position:sticky}.management-header input{flex:1 1 100%}.management-layout{display:block;padding:.75rem;padding-bottom:5rem}.management-nav{position:fixed;top:0;bottom:0;left:0;z-index:30;width:min(86vw,320px);max-height:none;padding:1rem;background:#fff;box-shadow:18px 0 50px #12395d30;transform:translateX(-105%);transition:transform .2s ease}.nav-open .management-nav{transform:translateX(0)}.nav-open .mobile-nav-backdrop{display:block;position:fixed;inset:0;z-index:20;background:#12395d55}.management-side{display:block}.management-side .card{width:100%;margin-right:0}.management-bottom{display:grid}body.is-management-route main,body.is-management-route section,body.is-management-route .card,body.is-management-route details{max-width:100%;min-width:0}body.is-management-route button{max-width:100%;white-space:normal}}
 @media(min-width:761px) and (max-width:1024px){.atelier-actions,.atelier-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atelier-home{width:min(100%,920px);margin:auto}.management-layout{grid-template-columns:190px minmax(0,1fr);padding:.85rem}}
 @media(max-width:760px){.atelier-home{width:100%;padding:.75rem}.atelier-actions,.atelier-footer-grid{grid-template-columns:1fr}.atelier-hero,.atelier-continue{grid-template-columns:1fr}.home-logo-bar{position:relative}.home-character img{max-width:100%;height:auto}}
+
+/* Final home/shell isolation: the home route owns #app directly and never inherits management layout. */
+body.is-home-route #app{
+  width:100%;
+  min-height:100svh;
+  display:grid;
+  justify-items:center;
+  align-items:start;
+  overflow-x:hidden;
+}
+body.is-home-route .management-header,
+body.is-home-route .management-layout,
+body.is-home-route .management-nav,
+body.is-home-route .management-side,
+body.is-home-route .management-bottom,
+body.is-home-route .flow-guide{
+  display:none!important;
+}
+body.is-management-route #app{
+  width:100%;
+  overflow-x:hidden;
+}
+.home-top-tools{
+  position:absolute;
+  top:max(.85rem,env(safe-area-inset-top));
+  right:max(.85rem,env(safe-area-inset-right));
+  z-index:4;
+}
+@media(max-width:760px){
+  .home-top-tools{
+    position:static;
+    display:flex;
+    justify-content:flex-end;
+    margin:0 0 .65rem;
+  }
+}

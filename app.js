@@ -27,7 +27,7 @@ function shell(main){const p=currentProject(),e=currentEpisode();$('#app').inner
 function productionAppButtons(){return ['storyArchive','productionDashboard','promptStudio','musicStudio'].map(id=>`<button class="${id==='storyArchive'?'story-archive-priority':''}" onclick="${id==='storyArchive'?'openStoryArchive()':`openApp(\'${id}\')`}">${esc(state.apps.find(a=>a.id===id)?.subtitle)}を開く</button>`).join('')}
 function mobileProductionPanel(){const p=currentProject(),e=currentEpisode();return `<section class="mobile-production-panel" aria-label="現在の制作"><div><p class="eyebrow">現在の制作</p><h2>${esc(p?.title||'未選択')}</h2><p class="meta">${esc(e?.numberLabel||'未選択')}</p></div><div class="mobile-production-actions"><button class="primary-action story-archive-priority" onclick="openStoryArchive()">Story Archiveを開く</button><button class="secondary" onclick="openProductionDashboard()">Production Dashboardを開く</button></div><details class="mobile-production-more"><summary>制作アプリを開く</summary><div>${productionAppButtons()}</div></details></section>`}
 function side(){const p=currentProject(),e=currentEpisode();return `<section class="card"><h3>現在の制作</h3><p>${esc(p?.title)}<br>${esc(e?.numberLabel)}<br>状態：${esc(p?.productionStatus)}</p>${productionAppButtons()}</section><section class="card"><h3>バックアップ状況</h3><p>最後の書き出し：${esc(state.backupStatus.lastExportedAt)||'なし'}<br>最後の読み込み：${esc(state.backupStatus.lastImportedAt)||'なし'}<br>保存データ件数：${state.projects.length+state.episodes.length+state.apps.length}</p></section>`}
-function render(){const v=(location.hash||'#home').slice(1); if(v==='apps')return shell(appsView()); if(v==='cards')return shell(cardsView()); if(v==='projects')return shell(projectsView()); if(v==='episodes')return shell(episodesView()); if(v==='scenes')return shell(storyCollectionView('scenes')); if(v==='characters')return shell(storyCollectionView('characters')); if(v==='worlds')return shell(storyCollectionView('worlds')); if(v==='terms')return shell(storyCollectionView('terms')); if(v==='timelines')return shell(storyCollectionView('timelines')); if(v==='ideas')return shell(storyCollectionView('ideas')); if(v==='history')return shell(historyView()); if(v==='settings')return shell(settingsView()); if(v==='backup')return shell(backupView()); if(v==='consult')return shell(consultView()); if(v==='search')return shell(searchView()); shell(homeView())}
+function render(){const v=(location.hash||'#home').slice(1); if(v==='apps')return shell(appsView()); if(v==='cards')return shell(cardsView()); if(v==='projects')return shell(projectsView()); if(v==='episodes')return shell(episodesView()); if(v==='scenes')return shell(storyCollectionView('scenes')); if(v==='characters')return shell(storyCollectionView('characters')); if(v==='worlds')return shell(storyCollectionView('worlds')); if(v==='terms')return shell(storyCollectionView('terms')); if(v==='timelines')return shell(storyCollectionView('timelines')); if(v==='ideas')return shell(storyCollectionView('ideas')); if(v==='history')return shell(historyView()); if(v==='settings')return shell(settingsView()); if(v==='backup')return shell(backupView()); if(v==='consult')return shell(consultView()); if(v==='search')return shell(searchView()); document.querySelector('#app').innerHTML=homeView();return}
 function homeView(){const p=currentProject(),e=currentEpisode(),recent=homeRecentItems(),fav=state.favorites.slice(0,state.settings.favoriteLimit||10);return `<section class="home-hero"><div class="nova-logo" aria-label="Nova Studioロゴ"><span class="nova-mark">✦</span><span><b>Nova Studio</b><small>Version ${NOVA_VERSION}</small></span></div><div><p class="eyebrow">Home</p><h1>創る、繋がる、育っていく。</h1><p class="catch">作品と話数を選び、制作アプリへすぐ戻るためのホーム画面です。</p></div></section>${homeSelectors(p,e)}<section class="home-panel"><div class="section-head"><div><p class="eyebrow">Apps</p><h2>制作アプリ一覧</h2></div><button onclick="showUrlRegistration()">URL登録画面を開く</button></div><div class="app-grid">${appCards()}</div></section><section class="home-columns"><div class="home-panel"><h2>最近開いた項目</h2>${recent.length?recent.map(r=>`<div class="home-row"><span><b>${esc(r.title)}</b><small>${esc(TYPE_LABELS[r.type]||r.type)} / 更新：${esc(r.updatedAt)}</small></span><button onclick="openHomeRecent('${r.id||''}','${r.collection||''}','${r.item?.id||''}')">開く</button></div>`).join(''):'<p class="empty-note">まだ最近開いた項目はありません。</p>'}</div><div class="home-panel"><h2>お気に入り</h2>${fav.length?fav.map(f=>`<div class="home-row"><span><b>★ ${esc(f.title)}</b><small>${esc(f.createdAt||'')}</small></span><button onclick="openFavorite('${f.id}')">開く</button><button class="favorite active" onclick="toggleFavorite('${f.type}','${f.targetId}','${f.projectId}','${f.episodeId}')">解除</button></div>`).join(''):'<p class="empty-note">お気に入りはまだありません。アプリカードの☆で登録できます。</p>'}</div></section>`}
 
 function homeRecentItems(){const limit=state.settings.recentLimit||10;if(state.recentItems?.length){return state.recentItems.slice().sort((a,b)=>(b.openedAt||b.updatedAt||'').localeCompare(a.openedAt||a.updatedAt||'')).slice(0,limit).map(r=>({...r,type:r.type||(r.appId?'app':'item'),updatedAt:r.openedAt||r.updatedAt||''}))}return continueItems()}
@@ -1088,7 +1088,7 @@ shell=function(main){
   document.querySelectorAll('button[onclick="setView(\'consult\')"]').forEach(b=>{if(!b.closest('.nova-consult-card'))b.innerHTML=`${novaOrbIcon('tiny')}<span>ノヴァ</span>`});
 };
 const nova125RenderBase=render;
-render=function(){const v=(location.hash||'#home').slice(1);if(v==='home')return shell(homeView());nova125RenderBase()};
+render=function(){const v=(location.hash||'#home').slice(1);if(v==='home'){document.querySelector('#app').innerHTML=homeView();return;}nova125RenderBase()};
 render();
 
 
@@ -1220,6 +1220,11 @@ storyArchiveView=function(){memorySyncInitConstants?.();const cards=storyArchive
 render();
 
 /* Final layout separation: home and management are exclusive views. */
+function novaRenderHomeOnly(){
+  document.body.classList.add('is-home-route');
+  document.body.classList.remove('is-management-route','nav-open');
+  document.querySelector('#app').innerHTML=homeView();
+}
 function novaReturnHome(){setView(HOME_ROUTE)}
 function managementNavSection(title,items,open=false){
   return `<details class="management-nav-section" ${open?'open':''}><summary>${esc(title)}</summary>${items.map(item=>`<button onclick="${item.action}">${esc(item.label)}</button>`).join('')}</details>`;
@@ -1238,10 +1243,12 @@ function managementViewForRoute(v){
 render=function(){
   ensureV06?.();
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
-  document.body.classList.toggle('is-home-route',v===HOME_ROUTE);
-  document.body.classList.toggle('is-management-route',v!==HOME_ROUTE);
-  document.body.classList.remove('nav-open');
-  if(v===HOME_ROUTE){document.querySelector('#app').innerHTML=homeView();return;}
+  if(v===HOME_ROUTE){
+    novaRenderHomeOnly();
+    return;
+  }
+  document.body.classList.remove('is-home-route','nav-open');
+  document.body.classList.add('is-management-route');
   recordLastLocation?.({view:v});
   shell(managementViewForRoute(v));
 };
