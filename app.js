@@ -1218,3 +1218,56 @@ openArchiveImageDetail=function(cardId,imgId){const card=normalizeStoryArchiveCa
 const archive030OldCloseModal=closeModal;closeModal=function(){document.body.classList.remove('archive-lightbox-open');archive030OldCloseModal()};
 storyArchiveView=function(){memorySyncInitConstants?.();const cards=storyArchiveCards().map(normalizeStoryArchiveCardV1),q=($('#archiveSearch')?.value||'').toLowerCase();const filtered=q?cards.filter(c=>[c.title,c.category,c.status,c.updatedAt,c.timelineAt,(c.tags||[]).join(' '),(c.images||[]).map(i=>[i.name,i.fileName,i.materialType,i.angle,i.description,(i.tags||[]).join(' ')].join(' ')).join(' '),archiveRelatedIds(c).map(id=>getStoryArchiveCard(id)?.title||'').join(' ')].join(' ').toLowerCase().includes(q)):cards;const byCat=Object.groupBy?Object.groupBy(filtered,c=>c.category||'未分類'):filtered.reduce((a,c)=>((a[c.category||'未分類']=a[c.category||'未分類']||[]).push(c),a),{});return `<section class="hero archive-hero"><h1>Story Archive</h1><p>設定資料集の代わりに毎日使う、画像資料中心のカード一覧です。 <span class="ver">Version 0.3.0</span></p><div class="archive-hero-actions"><button class="primary-action" onclick="editStoryArchiveCard()">＋カード作成</button><button class="secondary" onclick="openMemorySync()">Memory Sync</button><button class="secondary vidu-one-tap" onclick="openArchiveViduReferences()">Vidu参照画像だけ表示（${archiveViduReferenceImages().length}）</button></div><input id="archiveSearch" placeholder="タイトル・画像名・ファイル名・カテゴリ・状態・タグ・関連カードを検索" value="${esc($('#archiveSearch')?.value||'')}" oninput="render()"></section><section><div class="archive-category-grid image-first-archive-grid">${archiveListCategories(filtered).map(cat=>`<article class="archive-category image-first-category"><h3>${esc(cat)} <span class="meta">${(byCat[cat]||[]).length}件</span></h3>${(byCat[cat]||[]).map(c=>`<article class="archive-card image-first-card" role="button" tabindex="0" onclick="openStoryArchiveDetail('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' ')openStoryArchiveDetail('${c.id}')">${archiveCardListImage(c)}${archiveCardListMeta(c)}<div class="archive-card-actions"><button onclick="event.stopPropagation();editStoryArchiveCard('${c.id}')">編集</button><button class="danger" onclick="event.stopPropagation();deleteStoryArchiveCard('${c.id}')">削除</button></div></article>`).join('')||'<p class="empty-note">カードなし</p>'}</article>`).join('')}</div></section><section><h2>Memory Sync履歴</h2>${memorySyncHistoryRows()}</section>`};
 render();
+
+/* Final layout separation: home and management are exclusive views. */
+function novaReturnHome(){setView(HOME_ROUTE)}
+function managementNavSection(title,items,open=false){
+  return `<details class="management-nav-section" ${open?'open':''}><summary>${esc(title)}</summary>${items.map(item=>`<button onclick="${item.action}">${esc(item.label)}</button>`).join('')}</details>`;
+}
+function managementNav(){
+  return `<nav class="management-nav" aria-label="管理メニュー"><button class="management-home-button" onclick="novaReturnHome()">ホーム</button>${managementNavSection('制作',[{label:'作品',action:"setView('projects')"},{label:'話数',action:"setView('episodes')"},{label:'シーン',action:"setView('scenes')"},{label:'Story Archive',action:'openStoryArchive()'},{label:'Production Dashboard',action:'openProductionDashboard()'},{label:'Prompt Studio',action:"openApp('promptStudio')"},{label:'Music Studio',action:"openApp('musicStudio')"}],true)}${managementNavSection('世界設定',[{label:'キャラクター',action:"setView('characters')"},{label:'世界観',action:"setView('worlds')"},{label:'用語',action:"setView('terms')"},{label:'年表',action:"setView('timelines')"},{label:'Universe',action:"setView('universe')"}])}${managementNavSection('管理',[{label:'今日やること',action:"setView('tasks')"},{label:'進捗',action:"setView('progress')"},{label:'アイデア',action:"setView('ideas')"},{label:'検索',action:"setView('search')"},{label:'変更履歴',action:"setView('history')"}])}${managementNavSection('設定',[{label:'バックアップ',action:"setView('backup')"},{label:'設定',action:"setView('settings')"}])}</nav>`;
+}
+shell=function(main){
+  const p=currentProject(),e=currentEpisode();
+  document.querySelector('#app').innerHTML=`<header class="management-header"><button class="brand return-home" onclick="novaReturnHome()"><b>Nova Studioへ戻る</b><small>アトリエホーム</small></button><button class="hamburger" onclick="document.body.classList.toggle('nav-open')" aria-label="メニューを開閉">☰</button><button onclick="showContext()">作品：${esc(p?.title||'未選択')}</button><button onclick="showContext()">話数：${esc(e?.numberLabel||'未選択')}</button><input id="globalSearch" aria-label="全体検索" placeholder="全体検索" oninput="searchAll(this.value)"><button onclick="setView('consult')">ノヴァに相談</button><button onclick="setView('backup')">バックアップ</button><button onclick="setView('settings')">設定</button><span id="saveStatus">保存しました</span></header><div class="management-layout">${managementNav()}<main class="management-main">${productionFlowNav?productionFlowNav():''}${main}</main><aside class="management-side">${side()}</aside></div><div class="mobile-nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div><div class="bottom management-bottom"><button onclick="novaReturnHome()">ホーム</button><button onclick="openStoryArchive()">Archive</button><button onclick="openProductionDashboard()">Dashboard</button><button onclick="setView('search')">検索</button><button onclick="setView('settings')">設定</button></div><div id="toast"></div>`;
+};
+function managementViewForRoute(v){
+  const views={apps:appsView,cards:cardsView,projects:projectsView,episodes:episodesView,history:historyView,settings:settingsView,backup:backupView,consult:consultView,search:searchView,universe:universeView,tasks:tasksView,progress:progressView,projectDashboard:projectDashboardView,importCenter:importCenterView,storyArchive:storyArchiveView,scenes:()=>storyCollectionView('scenes'),characters:()=>storyCollectionView('characters'),worlds:()=>storyCollectionView('worlds'),terms:()=>storyCollectionView('terms'),timelines:()=>storyCollectionView('timelines'),ideas:()=>storyCollectionView('ideas')};
+  return (views[v]||appsView)();
+}
+render=function(){
+  ensureV06?.();
+  const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
+  document.body.classList.toggle('is-home-route',v===HOME_ROUTE);
+  document.body.classList.toggle('is-management-route',v!==HOME_ROUTE);
+  document.body.classList.remove('nav-open');
+  if(v===HOME_ROUTE){document.querySelector('#app').innerHTML=homeView();return;}
+  recordLastLocation?.({view:v});
+  shell(managementViewForRoute(v));
+};
+render();
+
+/* Final route aliases for production app entries inside the management shell. */
+function appWorkspaceView(appId){
+  const a=state.apps.find(x=>x.id===appId)||{name:appId,subtitle:'制作アプリ',description:'URL未登録の制作アプリです。',url:''};
+  return `<section class="hero"><p class="eyebrow">Production App</p><h1>${esc(a.name||a.subtitle||appId)}</h1><p>${esc(a.description||a.subtitle||'')}</p><p class="meta">URL：${a.url?esc(a.url):'未登録'} / 最終閲覧：${esc(a.lastOpenedAt||'なし')}</p><button class="primary-action" onclick="editApp('${esc(appId)}')">URL登録・設定</button>${a.url?`<button class="secondary" onclick="window.open('${esc(a.url)}','_blank','noopener')">登録URLを開く</button>`:''}</section>`;
+}
+const novaFinalOpenAppBase=openApp;
+openApp=function(appId,urlOverride){
+  if(!urlOverride&&['promptStudio','musicStudio'].includes(appId)&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
+  return novaFinalOpenAppBase(appId,urlOverride);
+};
+const novaFinalOpenProductionDashboardBase=typeof openProductionDashboard==='function'?openProductionDashboard:null;
+openProductionDashboard=function(){
+  const app=state.apps.find(a=>a.id==='productionDashboard');
+  if(app?.url&&novaFinalOpenProductionDashboardBase)return novaFinalOpenProductionDashboardBase();
+  setView('productionDashboard');
+};
+const novaFinalManagementViewForRouteBase=managementViewForRoute;
+managementViewForRoute=function(v){
+  if(v==='productionDashboard')return projectDashboardView();
+  if(v==='promptStudio')return appWorkspaceView('promptStudio');
+  if(v==='musicStudio')return appWorkspaceView('musicStudio');
+  return novaFinalManagementViewForRouteBase(v);
+};
+render();
