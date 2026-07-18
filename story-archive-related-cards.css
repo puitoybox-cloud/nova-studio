@@ -1,0 +1,19 @@
+/* Version 1.4.3: Related Cards layout. */
+.archive-related-list{display:grid;gap:.75rem;margin:1rem 0}
+.archive-related-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid rgba(74,111,123,.18);border-radius:18px;background:rgba(255,255,255,.72)}
+.archive-related-row h3{margin:.25rem 0}
+.archive-related-row p{margin:.25rem 0 0}
+.archive-related-category{display:inline-flex;padding:.22rem .58rem;border-radius:999px;background:#edf7f8;font-size:.78rem;font-weight:700}
+.archive-related-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+.archive-related-form{display:grid;grid-template-columns:1.3fr .8fr;gap:.85rem;padding:1rem;border-radius:18px;background:#f5fafb}
+.archive-related-wide,.archive-related-check{grid-column:1/-1}
+.archive-related-check{display:flex!important;align-items:center;gap:.6rem}
+.archive-related-check input{width:auto!important;margin:0}
+.archive-related-empty{padding:1rem;border:1px dashed rgba(74,111,123,.28);border-radius:16px;text-align:center;color:#58717a}
+@media(max-width:760px){
+  .archive-related-row{align-items:stretch;flex-direction:column}
+  .archive-related-actions{justify-content:stretch}
+  .archive-related-actions button{flex:1}
+  .archive-related-form{grid-template-columns:1fr}
+  .archive-related-wide,.archive-related-check{grid-column:auto}
+}
