@@ -1093,16 +1093,16 @@ render();
 
 /* Version 1.2.6 official character atelier home */
 const HOME_CHARACTER_IMAGE_PATHS={
-  logo:'./assets/images/home/NovaStudio_Logo_Film.png',
-  background:'./assets/images/home/glass_fantasy_ui_background.jpg',
-  novaHappy:'./assets/images/home/Nova_Happy.png',
-  tiaWelcome:'./assets/images/home/Tia_Chibi_Welcome.png',
-  tiaThinking:'./assets/images/home/Tia_Chibi_Thinking.png',
-  storyArchive:'./assets/images/home/Nova_Thinking.png',
-  productionDashboard:'./assets/images/home/Nova_Stand.png',
-  promptStudio:'./assets/images/home/Nova_Sparkle.png',
-  musicStudio:'./assets/images/home/Nova_Joy.png',
-  universe:'./assets/images/home/Nova_Flying.png'
+  logo:'./NovaStudio_Logo_Film.png',
+  background:'./glass_fantasy_ui_background.jpg',
+  novaHappy:'./Nova_Happy.png',
+  tiaWelcome:'./Tia_Chibi_Welcome.png',
+  tiaThinking:'./Tia_Chibi_Thinking.png',
+  storyArchive:'./Nova_Thinking.png',
+  productionDashboard:'./Nova_Stand.png',
+  promptStudio:'./Nova_Sparkle.png',
+  musicStudio:'./Nova_Joy.png',
+  universe:'./Nova_Flying.png'
 };
 const HOME_CHARACTER_FALLBACK_PATHS={
   logo:'./assets/images/home/tia-mini-front.png',
