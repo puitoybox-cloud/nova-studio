@@ -5,7 +5,20 @@ function storyArchiveApp(){return state.apps.find(a=>a.id==='storyArchive')||nul
 function saveStoryArchiveUrl(value){const a=storyArchiveApp();if(!a)return;a.url=String(value||'').trim();touch(a);saveState(true);render()}
 function openStoryArchiveSettings(){closeModal();setView('settings');setTimeout(()=>document.getElementById('storyArchiveUrl')?.focus(),0)}
 function showStoryArchiveUrlMissing(){modal(`<h2>Story Archive</h2><p class="empty-note">Story ArchiveのURLが登録されていません</p><p class="meta">設定画面でStory Archive URLを登録してください。</p><button class="primary-action" onclick="openStoryArchiveSettings()">設定画面を開く</button>`)}
-function openStoryArchive(){return setView('storyArchive')}
+function openStoryArchive(){
+  const next='#storyArchive';
+  if(location.hash!==next)history.pushState(null,'',`${location.pathname}${location.search}${next}`);
+  document.body.classList.remove('is-home-route');
+  document.body.classList.add('is-management-route');
+  const app=document.querySelector('#app');
+  if(!app)return;
+  try{
+    app.innerHTML=`<div class="story-archive-standalone"><div class="story-archive-standalone-nav"><button class="secondary" onclick="setView('home')">← Nova Studioへ戻る</button></div>${storyArchiveView()}</div>`;
+  }catch(error){
+    console.error('Story Archive direct render failed',error);
+    render();
+  }
+}
 function buildAppUrl(app){try{const u=new URL(app.url,location.href);const p=currentProject(),e=currentEpisode();if(p?.id)u.searchParams.set('project',p.id);if(e?.id)u.searchParams.set('episode',e.id);u.searchParams.set('source','nova-studio');const ret=location.href;if(ret.length<300)u.searchParams.set('returnUrl',ret);return u.toString()}catch{return ''}}
 function openDashboardSettings(){closeModal();setView('settings');setTimeout(()=>document.getElementById('productionDashboardUrl')?.focus(),0)}
 function showDashboardUrlMissing(){modal(`<h2>AIアニメ制作ダッシュボード</h2><p class="empty-note">AIアニメ制作ダッシュボードのURLが登録されていません</p><p class="meta">設定画面でURLを登録すると、現在選択中の作品ID・話数IDをURLパラメータとして渡して開けます。</p><button class="primary-action" onclick="openDashboardSettings()">設定画面を開く</button>`)}
