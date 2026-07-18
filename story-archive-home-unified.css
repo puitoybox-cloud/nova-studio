@@ -1,0 +1,261 @@
+/* Story Archive home alignment and shared background assets. */
+body.is-home-route{
+  background:
+    linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
+    var(--home-background-image),
+    linear-gradient(180deg,#effbff,#fff7ed);
+  background-size:auto,cover,auto;
+  background-position:center;
+  background-attachment:fixed;
+}
+
+body:has(.atelier-home.home-only){
+  background:
+    radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
+    linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
+    var(--home-background-image,url('./glass_fantasy_ui_background.jpg')) center/cover fixed no-repeat;
+}
+
+body[data-home-background="glass"]{--home-background-image:url('./glass_fantasy_background.jpg')}
+body[data-home-background="glassUi"]{--home-background-image:url('./glass_fantasy_ui_background.jpg')}
+body[data-home-background="nightSky"]{--home-background-image:url('./night_sky_background.jpg')}
+body[data-home-background="shootingStars"]{--home-background-image:url('./shooting_stars_background.jpg')}
+body[data-home-background="fantasyAtelier"]{--home-background-image:url('./fantasy_atelier_background.png')}
+
+body.is-story-archive-route{
+  background:
+    radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
+    linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
+    var(--home-background-image),
+    linear-gradient(180deg,#effbff,#fff7ed);
+  background-size:auto,auto,cover,auto;
+  background-position:center;
+  background-attachment:fixed;
+}
+
+body.is-story-archive-route .management-layout{
+  width:100%;
+  max-width:1500px;
+  align-items:start;
+}
+
+body.is-story-archive-route .management-main{
+  width:100%;
+  max-width:1120px;
+  margin:0 auto;
+}
+
+.archive-home-page{
+  position:relative;
+  width:min(100%,1120px);
+  margin:0 auto;
+  padding:clamp(.2rem,1.2vw,.8rem) 0 calc(1.4rem + env(safe-area-inset-bottom));
+}
+
+.archive-home-page,
+.archive-home-page *{
+  min-width:0;
+}
+
+.archive-home-page .home-top-tools{
+  position:static;
+  justify-content:flex-end;
+  margin:0 0 .7rem;
+}
+
+.archive-home-hero{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(203,232,235,.9);
+  background:
+    radial-gradient(circle at 88% 18%,rgba(255,247,223,.35),transparent 30%),
+    radial-gradient(circle at 18% 82%,rgba(216,251,255,.5),transparent 34%),
+    linear-gradient(135deg,rgba(18,57,93,.96),rgba(28,127,148,.9));
+  box-shadow:0 24px 62px rgba(18,57,93,.18);
+  backdrop-filter:blur(18px);
+}
+
+.archive-home-hero .nova-logo{
+  align-self:stretch;
+  background:rgba(255,255,255,.16);
+}
+
+.archive-home-hero .nova-mark{
+  width:72px;
+  height:72px;
+  font-size:.95rem;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.archive-home-hero .catch{
+  margin:.35rem 0 .5rem;
+}
+
+.archive-home-page .home-panel,
+.archive-home-detail .home-panel,
+.archive-home-detail .archive-detail-hero,
+.archive-home-detail .archive-gallery-panel,
+.archive-home-detail .archive-management,
+.archive-overview-hub,
+.archive-overview-placeholder{
+  border:1px solid rgba(216,237,240,.95);
+  background:rgba(255,255,255,.82);
+  box-shadow:0 14px 34px rgba(18,57,93,.12);
+  backdrop-filter:blur(14px);
+}
+
+.archive-home-filter-grid{
+  grid-template-columns:minmax(260px,2fr) minmax(160px,1fr) repeat(3,minmax(142px,1fr));
+}
+
+.archive-home-filter-grid .check-row{
+  margin:0;
+  padding:.65rem .7rem;
+  border-color:rgba(216,237,240,.95);
+  background:rgba(251,255,255,.82);
+}
+
+.archive-home-grid{
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+}
+
+.archive-home-card{
+  border-radius:24px;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(246,253,254,.82));
+  backdrop-filter:blur(14px);
+}
+
+.archive-home-card .app-icon{
+  width:auto;
+  min-width:52px;
+  padding:0 .65rem;
+  border-radius:16px;
+  font-size:.78rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
+.archive-home-thumb{
+  aspect-ratio:16/10;
+}
+
+.archive-home-thumb .archive-list-image,
+.archive-home-thumb .archive-list-image img,
+.archive-home-thumb .archive-list-image .archive-thumb-empty{
+  width:100%;
+  height:100%;
+  min-height:0;
+}
+
+.archive-home-thumb .archive-list-image img{
+  object-fit:cover;
+}
+
+.archive-home-card h3{
+  font-size:1.08rem;
+  line-height:1.35;
+}
+
+.archive-home-card .meta{
+  line-height:1.55;
+}
+
+.archive-home-card .app-actions button,
+.archive-detail-actions button,
+.archive-hero-actions button{
+  margin:0;
+}
+
+.archive-home-detail{
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(246,252,253,.9));
+  border-radius:26px;
+}
+
+.archive-home-detail .archive-gallery-panel .section-head,
+.archive-home-detail .archive-image-actions,
+.archive-home-detail .gallery-tabs,
+.archive-home-detail .archive-bulk-bar{
+  gap:.55rem;
+}
+
+.archive-home-detail .archive-image-actions button,
+.archive-home-detail .gallery-tabs button,
+.archive-home-detail .archive-bulk-bar button{
+  margin:0;
+}
+
+@media(max-width:1180px){
+  body.is-story-archive-route .management-layout{
+    grid-template-columns:190px minmax(0,1fr);
+  }
+
+  body.is-story-archive-route .management-side{
+    display:none;
+  }
+}
+
+@media(max-width:1024px){
+  body.is-home-route,
+  body.is-story-archive-route{
+    background-attachment:scroll;
+  }
+
+  .archive-home-page{
+    width:min(100%,880px);
+  }
+
+  .archive-home-filter-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .archive-home-filter-grid label:first-child{
+    grid-column:1/-1;
+  }
+}
+
+@media(max-width:760px){
+  body.is-story-archive-route .management-layout{
+    display:block;
+    padding:.75rem;
+    padding-bottom:5rem;
+  }
+
+  .archive-home-page{
+    padding:0 0 calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .archive-home-hero{
+    grid-template-columns:1fr;
+    border-radius:24px;
+  }
+
+  .archive-home-hero .nova-logo{
+    align-items:center;
+  }
+
+  .archive-home-filter-grid,
+  .archive-home-grid,
+  .archive-hero-actions,
+  .archive-detail-actions{
+    grid-template-columns:1fr;
+  }
+
+  .archive-home-page .section-head{
+    display:block;
+  }
+
+  .archive-home-page .section-head button,
+  .archive-hero-actions button,
+  .archive-detail-actions button{
+    width:100%;
+  }
+
+  .archive-home-card{
+    border-radius:22px;
+  }
+
+  .archive-home-thumb{
+    aspect-ratio:4/3;
+  }
+}
