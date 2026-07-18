@@ -365,3 +365,96 @@ button{box-shadow:0 6px 18px #12395d10}.primary-action{background:linear-gradien
 .home-only .atelier-hero{margin-top:0}
 .home-only .atelier-action p:empty{display:none}
 @media(max-width:760px){.home-only{padding:.8rem .8rem 2rem}.home-only .atelier-actions{grid-template-columns:1fr}}
+
+/* Home image integration using existing main-branch assets. */
+body:has(.atelier-home.home-only){
+  min-height:100vh;
+  background:
+    linear-gradient(180deg,rgba(248,254,255,.62),rgba(238,248,249,.72)),
+    url('./assets/images/home/glass_fantasy_ui_background.jpg') center/cover fixed no-repeat;
+}
+.home-logo-bar{
+  position:relative;
+  justify-content:center;
+  padding:0 0 clamp(.7rem,2vw,1.1rem);
+  margin:0 auto;
+  border:0;
+  background:transparent;
+  backdrop-filter:none;
+}
+.home-logo{
+  width:min(72vw,460px);
+  margin:0 auto;
+  filter:drop-shadow(0 18px 24px rgba(18,57,93,.2));
+}
+.home-logo img,
+.atelier-home .home-character img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  object-fit:contain;
+}
+.home-only .atelier-hero{
+  overflow:hidden;
+  background:linear-gradient(135deg,rgba(255,255,255,.88),rgba(240,250,251,.72));
+}
+.atelier-hero-characters .nova-happy{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:min(42%,190px);
+  filter:drop-shadow(0 18px 22px rgba(18,57,93,.2));
+}
+.atelier-hero-characters .tia-welcome{
+  position:absolute;
+  right:3%;
+  bottom:0;
+  width:min(72%,330px);
+  filter:drop-shadow(0 22px 24px rgba(18,57,93,.22));
+}
+.atelier-continue{
+  overflow:hidden;
+}
+.tia-thinking{
+  align-self:end;
+  justify-self:end;
+  width:min(100%,165px);
+  filter:drop-shadow(0 16px 18px rgba(18,57,93,.22));
+}
+.atelier-action .action-character{
+  justify-self:center;
+  align-self:end;
+  width:min(100%,150px);
+  max-height:140px;
+  filter:drop-shadow(0 14px 18px rgba(18,57,93,.18));
+}
+.atelier-action .action-character img{
+  max-height:140px;
+}
+.atelier-action-copy{
+  min-width:0;
+  text-align:left;
+}
+@media(max-width:1024px){
+  body:has(.atelier-home.home-only){background-attachment:scroll}
+  .home-logo{width:min(78vw,390px)}
+  .atelier-action{grid-template-columns:minmax(92px,130px) minmax(0,1fr) auto;align-items:center;min-height:132px}
+  .atelier-action .action-character,.atelier-action .action-character img{max-height:118px}
+}
+@media(max-width:760px){
+  .home-logo-bar{padding-bottom:.65rem}
+  .home-logo{width:min(86vw,320px)}
+  .atelier-hero-characters .nova-happy{left:4%;width:min(34vw,118px)}
+  .atelier-hero-characters .tia-welcome{right:50%;transform:translateX(50%);width:min(72vw,250px)}
+  .tia-thinking{width:min(30vw,104px)}
+  .atelier-action{grid-template-columns:minmax(82px,108px) minmax(0,1fr);gap:.7rem;min-height:116px}
+  .atelier-action .action-character,.atelier-action .action-character img{max-height:104px}
+  .atelier-action button{grid-column:1/-1;width:100%}
+  .atelier-action-copy{text-align:left}
+}
+@media(max-width:390px){
+  .atelier-action{grid-template-columns:1fr;text-align:center}
+  .atelier-action-copy{text-align:center}
+  .atelier-action .action-character{width:min(42vw,110px)}
+}
