@@ -1,0 +1,83 @@
+/* Version 1.4.0: full-feature placement for Story Archive detail. */
+.archive-overview-hub,
+.archive-overview-placeholder{
+  border:1px solid rgba(67,114,120,.16);
+  border-radius:22px;
+  background:rgba(255,255,255,.9);
+  box-shadow:0 12px 30px rgba(39,78,84,.07);
+  padding:1rem;
+  margin:1rem 0;
+}
+.archive-overview-heading,
+.archive-overview-placeholder-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+}
+.archive-overview-heading h2,
+.archive-overview-placeholder h2{margin:.1rem 0 0}
+.archive-overview-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:.35rem .75rem;
+  border-radius:999px;
+  background:#e9f7f7;
+  color:#2d686d;
+  font-weight:700;
+  white-space:nowrap;
+}
+.archive-overview-lead{margin:.7rem 0 1rem;color:#52666a}
+.archive-overview-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.75rem;
+}
+.archive-overview-tile{
+  min-height:112px;
+  display:flex;
+  align-items:flex-start;
+  gap:.75rem;
+  text-align:left;
+  padding:.9rem;
+  border:1px solid rgba(67,114,120,.17);
+  border-radius:17px;
+  background:#f8fcfc;
+  color:inherit;
+}
+.archive-overview-tile:hover,
+.archive-overview-tile:focus-visible{
+  background:#eef9f9;
+  transform:translateY(-1px);
+}
+.archive-overview-icon,
+.archive-overview-placeholder-icon{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:#e8f5f5;
+  font-size:1.2rem;
+}
+.archive-overview-tile span:last-child{display:grid;gap:.28rem}
+.archive-overview-tile b{font-size:1rem}
+.archive-overview-tile small{line-height:1.45;color:#627579}
+.archive-overview-placeholder{
+  scroll-margin-top:1rem;
+  background:linear-gradient(180deg,#fff,#f8fcfc);
+}
+.archive-overview-placeholder p:last-child{margin-bottom:0}
+@media(max-width:900px){
+  .archive-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .archive-overview-hub,
+  .archive-overview-placeholder{border-radius:18px;padding:.8rem}
+  .archive-overview-heading{align-items:flex-start;flex-direction:column}
+  .archive-overview-grid{grid-template-columns:1fr;gap:.6rem}
+  .archive-overview-tile{min-height:86px}
+  .archive-overview-badge{font-size:.85rem}
+}
