@@ -1,0 +1,13 @@
+/* Version 1.4.5: Story Archive story materials workspace. */
+.archive-story-workspace{display:grid;gap:1rem}
+.archive-story-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.archive-story-head h2{margin:.1rem 0 0}
+.archive-story-tabs{display:flex;gap:.5rem;flex-wrap:wrap}
+.archive-story-tabs button{border-radius:999px}
+.archive-story-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+.archive-story-grid label{display:grid;gap:.35rem;font-weight:700}
+.archive-story-wide{grid-column:1/-1}
+.archive-story-summary{display:flex;gap:.5rem;flex-wrap:wrap}
+.archive-story-summary span{display:inline-flex;align-items:center;min-height:32px;padding:.3rem .7rem;border-radius:999px;background:#eef8f8;font-weight:700}
+.archive-story-actions{display:flex;justify-content:flex-end}
+@media(max-width:760px){.archive-story-grid{grid-template-columns:1fr}.archive-story-wide{grid-column:auto}.archive-story-actions button{width:100%}}
