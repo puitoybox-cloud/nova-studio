@@ -371,7 +371,7 @@ body:has(.atelier-home.home-only){
   min-height:100vh;
   background:
     linear-gradient(180deg,rgba(248,254,255,.62),rgba(238,248,249,.72)),
-    url('./glass_fantasy_ui_background.jpg') center/cover fixed no-repeat;
+    url('./assets/images/home/glass_fantasy_ui_background.jpg') center/cover fixed no-repeat;
 }
 .home-logo-bar{
   position:relative;
@@ -466,7 +466,7 @@ body:has(.atelier-home.home-only){
   background:
     radial-gradient(circle at 16% 8%,rgba(255,247,223,.46),transparent 28%),
     linear-gradient(180deg,rgba(248,254,255,.6),rgba(235,248,250,.78)),
-    url('./glass_fantasy_ui_background.jpg') center/cover fixed no-repeat;
+    url('./assets/images/home/glass_fantasy_ui_background.jpg') center/cover fixed no-repeat;
 }
 .atelier-home.home-only{
   width:min(100%,1120px);
@@ -575,13 +575,13 @@ body:has(.atelier-home.home-only){
   background:
     radial-gradient(circle at 16% 8%,rgba(255,247,223,.38),transparent 28%),
     linear-gradient(180deg,rgba(248,254,255,.58),rgba(226,243,248,.72)),
-    var(--home-background-image,url('./glass_fantasy_ui_background.jpg')) center/cover fixed no-repeat;
+    var(--home-background-image,url('./assets/images/home/glass_fantasy_ui_background.jpg')) center/cover fixed no-repeat;
 }
-body[data-home-background="glass"]{--home-background-image:url('./glass_fantasy_background.jpg')}
-body[data-home-background="glassUi"]{--home-background-image:url('./glass_fantasy_ui_background.jpg')}
-body[data-home-background="nightSky"]{--home-background-image:url('./night_sky_background.jpg')}
-body[data-home-background="shootingStars"]{--home-background-image:url('./shooting_stars_background.jpg')}
-body[data-home-background="fantasyAtelier"]{--home-background-image:url('./fantasy_atelier_background.png')}
+body[data-home-background="glass"]{--home-background-image:url('./assets/images/home/glass_fantasy_background.jpg')}
+body[data-home-background="glassUi"]{--home-background-image:url('./assets/images/home/glass_fantasy_ui_background.jpg')}
+body[data-home-background="nightSky"]{--home-background-image:url('./assets/images/home/night_sky_background.jpg')}
+body[data-home-background="shootingStars"]{--home-background-image:url('./assets/images/home/shooting_stars_background.jpg')}
+body[data-home-background="fantasyAtelier"]{--home-background-image:url('./assets/images/home/fantasy_atelier_background.png')}
 body:has(.atelier-home.home-only)::before{
   content:"";
   position:fixed;
