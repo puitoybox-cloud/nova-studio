@@ -2,17 +2,28 @@
 (function(){
   'use strict';
 
+  const CONTROL_IDS=['archiveSearch','archiveTypeFilter','archiveOnlyOfficial','archiveOnlyVidu','archiveOnlyImages'];
   let cachedQuery='';
   let updating=false;
   let composing=false;
-  let compositionTarget=null;
 
   function isArchiveControl(target){
-    return target&&['archiveSearch','archiveTypeFilter','archiveOnlyOfficial','archiveOnlyVidu','archiveOnlyImages'].includes(target.id);
+    return target&&CONTROL_IDS.includes(target.id);
+  }
+
+  function stripInlineHandlers(root=document){
+    CONTROL_IDS.forEach(id=>{
+      const el=root.querySelector?.('#'+id);
+      if(!el)return;
+      el.removeAttribute('oninput');
+      el.removeAttribute('onchange');
+      el.oninput=null;
+      el.onchange=null;
+    });
   }
 
   function syncControlState(sourceRoot,targetRoot){
-    ['archiveSearch','archiveTypeFilter','archiveOnlyOfficial','archiveOnlyVidu','archiveOnlyImages'].forEach(id=>{
+    CONTROL_IDS.forEach(id=>{
       const source=sourceRoot.querySelector('#'+id);
       const target=targetRoot.querySelector('#'+id);
       if(!source||!target)return;
@@ -35,67 +46,70 @@
     holder.innerHTML=storyArchiveView();
     syncControlState(document,holder);
 
-    const nextList=holder.querySelector('.archive-list-panel, .archive-grid-panel');
-    const liveList=currentPage.querySelector('.archive-list-panel, .archive-grid-panel');
-    if(nextList&&liveList)liveList.innerHTML=nextList.innerHTML;
+    const pairs=[
+      ['.archive-list-panel, .archive-grid-panel','.archive-list-panel, .archive-grid-panel'],
+      ['.archive-search-resultbar','.archive-search-resultbar'],
+      ['.archive-search-panel .stats','.archive-search-panel .stats'],
+      ['.archive-home-hero .meta, .archive-title-block .meta','.archive-home-hero .meta, .archive-title-block .meta']
+    ];
 
-    const nextResult=holder.querySelector('.archive-search-resultbar');
-    const liveResult=currentPage.querySelector('.archive-search-resultbar');
-    if(nextResult&&liveResult)liveResult.innerHTML=nextResult.innerHTML;
-
-    const nextStats=holder.querySelector('.archive-search-panel .stats');
-    const liveStats=currentPage.querySelector('.archive-search-panel .stats');
-    if(nextStats&&liveStats)liveStats.innerHTML=nextStats.innerHTML;
-
-    const nextMeta=holder.querySelector('.archive-home-hero .meta, .archive-title-block .meta');
-    const liveMeta=currentPage.querySelector('.archive-home-hero .meta, .archive-title-block .meta');
-    if(nextMeta&&liveMeta)liveMeta.innerHTML=nextMeta.innerHTML;
-
-    requestAnimationFrame(()=>{
-      updating=false;
+    pairs.forEach(([nextSelector,liveSelector])=>{
+      const next=holder.querySelector(nextSelector);
+      const live=currentPage.querySelector(liveSelector);
+      if(next&&live)live.innerHTML=next.innerHTML;
     });
+
+    stripInlineHandlers(currentPage);
+    requestAnimationFrame(()=>{ updating=false; });
   }
 
   document.addEventListener('compositionstart',event=>{
     if(event.target?.id!=='archiveSearch')return;
+    stripInlineHandlers();
     composing=true;
-    compositionTarget=event.target;
   },true);
 
   document.addEventListener('compositionupdate',event=>{
-    if(event.target?.id!=='archiveSearch')return;
-    cachedQuery=event.target.value;
+    if(event.target?.id==='archiveSearch')cachedQuery=event.target.value;
   },true);
 
   document.addEventListener('compositionend',event=>{
     if(event.target?.id!=='archiveSearch')return;
+    event.preventDefault();
     event.stopImmediatePropagation();
     cachedQuery=event.target.value;
     composing=false;
-    compositionTarget=null;
-    requestAnimationFrame(updateArchiveResults);
+    setTimeout(updateArchiveResults,0);
   },true);
 
   document.addEventListener('input',event=>{
     const target=event.target;
     if(target?.id!=='archiveSearch'||updating)return;
+    stripInlineHandlers();
     event.stopImmediatePropagation();
     cachedQuery=target.value;
-    if(composing||event.isComposing||event.inputType==='insertCompositionText'||compositionTarget===target)return;
+    if(composing||event.isComposing||event.inputType==='insertCompositionText')return;
     updateArchiveResults();
   },true);
 
   document.addEventListener('change',event=>{
     const target=event.target;
     if(!isArchiveControl(target)||target.id==='archiveSearch'||updating||composing)return;
+    stripInlineHandlers();
     event.stopImmediatePropagation();
     cachedQuery=document.querySelector('#archiveSearch')?.value||cachedQuery;
     updateArchiveResults();
   },true);
 
   document.addEventListener('focusin',event=>{
-    if(event.target?.id==='archiveSearch')cachedQuery=event.target.value||cachedQuery;
+    if(event.target?.id!=='archiveSearch')return;
+    stripInlineHandlers();
+    cachedQuery=event.target.value||cachedQuery;
   },true);
+
+  const observer=new MutationObserver(()=>stripInlineHandlers());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  stripInlineHandlers();
 
   const previousCurrentQuery=window.archiveSearchCurrentQuery;
   window.archiveSearchCurrentQuery=function(){
