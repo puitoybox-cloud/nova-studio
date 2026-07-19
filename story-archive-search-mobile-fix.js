@@ -28,11 +28,7 @@
     if(!app||!currentPage)return;
 
     updating=true;
-    const scrollY=window.scrollY;
     const input=document.querySelector('#archiveSearch');
-    const hadFocus=document.activeElement===input;
-    const selectionStart=input?.selectionStart??null;
-    const selectionEnd=input?.selectionEnd??null;
     cachedQuery=input?.value||cachedQuery;
 
     const holder=document.createElement('div');
@@ -56,17 +52,6 @@
     if(nextMeta&&liveMeta)liveMeta.innerHTML=nextMeta.innerHTML;
 
     requestAnimationFrame(()=>{
-      window.scrollTo(0,scrollY);
-      if(hadFocus){
-        const liveInput=document.querySelector('#archiveSearch');
-        if(liveInput){
-          liveInput.value=cachedQuery;
-          liveInput.focus({preventScroll:true});
-          if(selectionStart!==null&&selectionEnd!==null){
-            try{liveInput.setSelectionRange(selectionStart,selectionEnd)}catch(_){ }
-          }
-        }
-      }
       updating=false;
     });
   }
