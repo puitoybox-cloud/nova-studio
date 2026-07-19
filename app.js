@@ -1321,3 +1321,8 @@ storyArchiveView=function(){const p=currentProject(),cards=archiveUiCards(),f=ar
 function archiveHomeDetailSummary(card){return `<section class="home-panel"><div class="section-head"><div><p class="eyebrow">Archive Detail</p><h2>${esc(card.title||'無題')}</h2><p class="meta">${esc(card.category||'その他')} / ${card.isConfirmed||card.status==='確定'?'正式採用':'検討中'} / 画像 ${(card.images||[]).length}枚</p></div><div class="app-actions archive-detail-actions"><button class="primary-action" onclick="editStoryArchiveCard('${card.id}')">カード編集</button><button class="secondary" onclick="closeModal()">閉じる</button></div></div><p>${esc(card.body||'本文は未入力です。')}</p></section>`}
 openStoryArchiveDetail=function(id,mode='all'){const card=normalizeStoryArchiveCardV1?normalizeStoryArchiveCardV1(getStoryArchiveCard(id)):normalizeStoryArchiveCard(getStoryArchiveCard(id));if(!card)return;modal(`<article class="archive-detail archive-home-detail">${archiveHomeDetailSummary(card)}${archiveRepresentativeHero(card)}${archiveDetailGallerySection(card,mode)}<section class="home-panel"><h3>基本設定</h3>${archiveV1TemplateForm({ ...card, templateData: card.templateData||{} }).replaceAll('<textarea','<textarea readonly')}</section><section class="home-panel"><h3>関連カード</h3>${archiveRelatedLinks(card)}</section>${archiveManagementDetails(card)}</article>`) }
 render();
+
+// Load the isolated LINK-02 / LINK-03 adapter after all existing overrides.
+const dreamArchitectLinkScript=document.createElement('script');
+dreamArchitectLinkScript.src='./dream-architect-link.js?v=1.0.0';
+document.body.appendChild(dreamArchitectLinkScript);
