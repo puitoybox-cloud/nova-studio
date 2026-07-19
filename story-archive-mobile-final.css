@@ -1,0 +1,177 @@
+/* Final Story Archive mobile polish: tighter spacing, clearer cards and easier touch targets. */
+@media(max-width:620px){
+  .archive-home-page,
+  .archive-shell{
+    overflow-x:hidden;
+  }
+
+  .archive-home-page .home-panel,
+  .archive-home-page .home-hero,
+  .archive-shell .archive-grid-panel,
+  .archive-shell .archive-filters{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .archive-home-page .home-panel,
+  .archive-home-page .home-hero{
+    padding:18px!important;
+    border-radius:22px!important;
+  }
+
+  .archive-home-page .section-head,
+  .archive-home-page .archive-hero-actions,
+  .archive-home-page .app-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .archive-home-page button,
+  .archive-shell button,
+  #modalBody button{
+    min-height:52px;
+    font-size:1rem;
+    line-height:1.35;
+    white-space:normal;
+  }
+
+  .archive-search-grid{
+    grid-template-columns:1fr!important;
+    gap:14px!important;
+  }
+
+  .archive-search-grid label,
+  .archive-search-grid .check-row{
+    min-width:0;
+    width:100%;
+    box-sizing:border-box;
+  }
+
+  .archive-search-grid input,
+  .archive-search-grid select{
+    width:100%!important;
+    min-width:0!important;
+    min-height:54px!important;
+    font-size:16px!important;
+  }
+
+  .archive-search-grid .check-row{
+    min-height:82px;
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+
+  .archive-search-grid .check-row input{
+    flex:0 0 34px;
+    width:34px!important;
+    height:34px!important;
+  }
+
+  .archive-search-resultbar,
+  .archive-search-panel .stats{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .archive-home-grid,
+  .archive-board-grid{
+    grid-template-columns:1fr!important;
+    gap:16px!important;
+  }
+
+  .archive-home-card,
+  .archive-search-card,
+  .archive-board-grid .app-card{
+    width:100%;
+    min-width:0;
+    padding:16px!important;
+    border-radius:20px!important;
+    box-sizing:border-box;
+  }
+
+  .archive-home-thumb,
+  .archive-card-image,
+  .archive-card-image img{
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  .archive-home-thumb img,
+  .archive-card-image img{
+    display:block;
+    aspect-ratio:4/3;
+    object-fit:contain;
+    background:#fff;
+    border-radius:16px;
+  }
+
+  .archive-home-card h3,
+  .archive-search-card h3{
+    font-size:1.3rem!important;
+    line-height:1.4;
+    overflow-wrap:anywhere;
+  }
+
+  .archive-home-card dl,
+  .archive-search-card dl{
+    grid-template-columns:auto 1fr!important;
+    gap:8px 12px!important;
+  }
+
+  .modal-box>.icon.close,
+  #modalClose{
+    position:sticky;
+    top:max(8px,env(safe-area-inset-top));
+    z-index:30;
+    width:100%;
+    margin:0 0 12px!important;
+    background:rgba(235,247,249,.96)!important;
+    backdrop-filter:blur(10px);
+  }
+
+  #modalBody .archive-detail-hero,
+  #modalBody .archive-overview-hub,
+  #modalBody .archive-overview-placeholder,
+  #modalBody .archive-workspace-section{
+    padding:16px!important;
+    border-radius:20px!important;
+  }
+
+  #modalBody .archive-gallery,
+  #modalBody .archive-image-gallery{
+    grid-template-columns:1fr!important;
+    gap:14px!important;
+  }
+
+  #modalBody .archive-gallery img,
+  #modalBody .archive-image-gallery img{
+    width:100%!important;
+    max-height:68vh;
+    object-fit:contain;
+    background:#fff;
+    border-radius:18px;
+  }
+
+  #modalBody input,
+  #modalBody select,
+  #modalBody textarea{
+    width:100%!important;
+    min-width:0!important;
+    font-size:16px!important;
+  }
+
+  #modalBody textarea{
+    min-height:120px;
+  }
+
+  #modalBody h1,
+  #modalBody h2,
+  #modalBody h3,
+  #modalBody p,
+  #modalBody label,
+  #modalBody summary{
+    overflow-wrap:anywhere;
+  }
+}
