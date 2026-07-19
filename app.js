@@ -169,6 +169,21 @@ const oldHomeView=homeView;homeView=function(){const p=currentProject(),last=sta
 
 render();
 
+/* NS-02–NS-05 is isolated so existing routes and stored data stay untouched. */
+(function scheduleNovaStudioSections(){
+ window.addEventListener('load',function loadNovaStudioSections(){
+  if(document.querySelector('script[data-nova-studio-sections]'))return;
+  const stylesheet=document.createElement('link');
+  stylesheet.rel='stylesheet';
+  stylesheet.href='./nova-studio-sections.css?v=1.5.0';
+  document.head.appendChild(stylesheet);
+  const script=document.createElement('script');
+  script.src='./nova-studio-sections.js?v=1.5.0';
+  script.dataset.novaStudioSections='true';
+  document.body.appendChild(script);
+ },{once:true});
+})();
+
 // Version 0.7 Vidu scene production management
 const VIDU_STATUSES=['未着手','プロンプト作成','画像準備','生成中','完成','採用','保留'];
 const VIDU_PROGRESS={未着手:0,プロンプト作成:20,画像準備:40,生成中:65,完成:85,採用:100,保留:50};
