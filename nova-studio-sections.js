@@ -24,7 +24,17 @@
     {group:'assist',icon:'✦',title:'Gemini',description:'Gemini連携の入口です。',status:'planned',action:"setView('gemini')"},
     {group:'system',icon:'💾',title:'Backup',description:'Studio全体のJSON書き出しと読み込みを行います。',status:'complete',action:"setView('backup')"},
     {group:'system',icon:'⚙️',title:'Settings',description:'表示と外部アプリの設定を管理します。',status:'complete',action:"setView('settings')"},
-    {group:'system',icon:'🏛️',title:'Dream Architect Studio',description:'作品世界を設計する外部スタジオの入口です。',status:'planned',action:"setView('dream-architect')"}
+    {group:'system',icon:'🏛️',title:'Dream Architect Studio',description:'映像・漫画・音楽などの制作アプリをまとめたスタジオです。',status:'complete',action:"setView('dream-architect')"}
+  ];
+  const DREAM_APPS=[
+    {icon:'🎬',title:'AIアニメ制作',description:'作品と話数の制作工程を確認します。',status:'complete',action:'openProductionDashboard()'},
+    {icon:'✨',title:'Viduプロンプト作成',description:'Vidu向けプロンプトを構成します。',status:'complete',action:"openApp('promptStudio')"},
+    {icon:'📖',title:'漫画作成',description:'漫画制作ワークスペースは準備中です。',status:'planned',route:'dream-comic'},
+    {icon:'💬',title:'LINEスタンプ作成',description:'LINEスタンプ制作ワークスペースは準備中です。',status:'planned',route:'dream-line-stickers'},
+    {icon:'🌐',title:'ホームページ作成',description:'ホームページ制作ワークスペースは準備中です。',status:'planned',route:'dream-website'},
+    {icon:'🎹',title:'MIDI作曲',description:'既存のMusic StudioでMIDI制作を支援します。',status:'complete',action:"openApp('musicStudio')"},
+    {icon:'🎵',title:'音楽制作支援',description:'既存のMusic Studioで歌詞・音楽制作を支援します。',status:'complete',action:"openApp('musicStudio')"},
+    {icon:'🎙️',title:'音声制作',description:'Voice Studioは準備中です。',status:'planned',route:'dream-voice'}
   ];
 
   function statusBadge(status){return `<span class="nova-section-status is-${status}">${STATUS[status]}</span>`}
@@ -39,15 +49,25 @@
     return `<section class="home-panel nova-placeholder"><div class="nova-placeholder-title"><span class="nova-section-icon" aria-hidden="true">${item.icon}</span><div><p class="eyebrow">Nova Studio Feature</p><div class="nova-section-heading"><h1>${esc(item.title)}</h1>${statusBadge(item.status)}</div></div></div><p>${esc(item.description)}</p><p class="meta">この入口はNova Studio全体の画面構成を先に揃えるために用意されています。既存の保存データやlocalStorageは変更しません。</p><div class="nova-placeholder-actions">${related?`<button class="primary-action" onclick="${related.action}">${related.label}</button>`:''}<button class="${related?'secondary':'primary-action'}" onclick="novaReturnHome()">ホームへ戻る</button></div></section>`
   }
   function conflictsView(){const content=typeof novaConflictsHtml==='function'?novaConflictsHtml():'<p class="empty-note">矛盾検出は準備中です。</p>';return `<section class="home-panel nova-placeholder"><p class="eyebrow">Consistency Check</p><div class="nova-section-heading"><h1>矛盾検出</h1>${statusBadge('working')}</div><p>現在登録されているデータを変更せず、確認候補だけを表示します。</p><section><h2>確認候補</h2>${content}</section><div class="nova-placeholder-actions"><button class="primary-action" onclick="novaReturnHome()">ホームへ戻る</button><button class="secondary" onclick="history.back()">前の画面へ戻る</button></div></section>`}
+  function dreamAppCard(item){const action=item.action||`setView('${item.route}')`;return `<article class="dream-app-card is-${item.status}"><div class="nova-section-card-top"><span class="nova-section-icon" aria-hidden="true">${item.icon}</span>${statusBadge(item.status)}</div><h2>${esc(item.title)}</h2><p>${esc(item.description)}</p><button class="${item.status==='complete'?'primary-action':'secondary'}" onclick="${action}">${item.status==='complete'?'開く':'準備中ページを見る'}</button></article>`}
+  function dreamArchitectView(){return `<main class="dream-architect-home" aria-label="Dream Architect Studio"><header class="dream-architect-hero"><div><p class="eyebrow">Creation App Hub</p><h1>Dream Architect Studio</h1><p>つくりたい表現から、制作アプリへ。</p></div><button class="secondary" onclick="novaReturnHome()">← Nova Studioへ戻る</button></header><section class="home-panel"><div class="section-head"><div><p class="eyebrow">Creative Apps</p><h2>制作アプリ</h2><p class="meta">実装済みの入口は既存機能を利用し、未実装の機能は準備中として表示します。</p></div></div><div class="dream-app-grid">${DREAM_APPS.map(dreamAppCard).join('')}</div></section></main>`}
+  function dreamPlaceholderView(route){const item=DREAM_APPS.find(app=>app.route===route);if(!item)return '';return `<section class="home-panel nova-placeholder dream-placeholder"><div class="nova-placeholder-title"><span class="nova-section-icon" aria-hidden="true">${item.icon}</span><div><p class="eyebrow">Dream Architect Studio</p><div class="nova-section-heading"><h1>${esc(item.title)}</h1>${statusBadge('planned')}</div></div></div><p>${esc(item.description)}</p><p class="meta">この画面は今後の制作アプリ用の仮ページです。既存データや保存形式は変更しません。</p><div class="nova-placeholder-actions"><button class="primary-action" onclick="setView('dream-architect')">Dream Architect Studioへ戻る</button><button class="secondary" onclick="novaReturnHome()">Nova Studioへ戻る</button></div></section>`}
 
   const baseHomeView=window.homeView;
   if(typeof baseHomeView==='function')window.homeView=function(){return insertSections(baseHomeView())};
   const baseManagementViewForRoute=window.managementViewForRoute;
   if(typeof baseManagementViewForRoute==='function')window.managementViewForRoute=function(route){
-    if(['locations','items','images','scripts','gemini','dream-architect'].includes(route))return placeholderView(route);
+    if(route==='dream-architect')return dreamArchitectView();
+    if(route.startsWith('dream-'))return dreamPlaceholderView(route);
+    if(['locations','items','images','scripts','gemini'].includes(route))return placeholderView(route);
     if(route==='ns-conflicts')return conflictsView();
     return baseManagementViewForRoute(route);
   };
   window.NOVA_STUDIO_SECTIONS=SECTIONS.map(item=>({...item}));
+  window.DREAM_ARCHITECT_APPS=DREAM_APPS.map(item=>({...item}));
+  window.addEventListener('hashchange',function renderNovaStudioSectionRoute(){
+    const route=(location.hash||'').slice(1);
+    if(route==='dream-architect'||route.startsWith('dream-')||['locations','items','images','scripts','gemini','ns-conflicts'].includes(route))render?.();
+  });
   render?.();
 })();
