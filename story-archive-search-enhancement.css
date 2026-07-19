@@ -1,0 +1,118 @@
+/* Story Archive realtime search presentation. */
+.archive-search-panel .section-head{
+  align-items:flex-start;
+}
+
+.archive-search-grid{
+  grid-template-columns:minmax(280px,2fr) minmax(150px,.8fr) repeat(3,minmax(132px,1fr));
+}
+
+.archive-search-grid input[type="search"]{
+  appearance:none;
+  width:100%;
+  min-height:44px;
+}
+
+.archive-keyword-field{
+  position:relative;
+}
+
+.archive-search-resultbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.45rem .7rem;
+  margin:.95rem 0 0;
+  padding:.72rem .85rem;
+  border:1px solid rgba(216,237,240,.95);
+  border-radius:18px;
+  background:rgba(251,255,255,.78);
+  color:#2e5265;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.archive-search-resultbar b{
+  color:#12395d;
+  font-size:1rem;
+}
+
+.archive-search-resultbar span{
+  font-size:.9rem;
+}
+
+.archive-search-query{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  color:#21616f;
+  font-weight:800;
+}
+
+.archive-search-mark{
+  padding:0 .12em;
+  border-radius:.3em;
+  background:linear-gradient(180deg,rgba(255,238,155,.95),rgba(255,248,200,.92));
+  color:#20313b;
+  box-shadow:0 0 0 1px rgba(213,168,58,.2);
+}
+
+.archive-search-card .archive-card-project{
+  margin:.72rem 0 .15rem;
+  color:#21616f;
+  font-size:.82rem;
+  font-weight:800;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+
+.archive-search-card h3,
+.archive-search-card .meta,
+.archive-search-card dd{
+  overflow-wrap:anywhere;
+}
+
+.archive-search-hits{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.35rem;
+  margin:.7rem 0 .2rem;
+}
+
+.archive-search-hits span{
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:.2rem .5rem;
+  border:1px solid rgba(76,145,157,.18);
+  border-radius:999px;
+  background:rgba(234,250,252,.82);
+  color:#21616f;
+  font-size:.76rem;
+  font-weight:800;
+}
+
+@media(max-width:1024px){
+  .archive-search-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .archive-search-grid .archive-keyword-field{
+    grid-column:1/-1;
+  }
+}
+
+@media(max-width:760px){
+  .archive-search-panel .section-head{
+    display:grid;
+    gap:.75rem;
+  }
+
+  .archive-search-grid{
+    grid-template-columns:1fr;
+  }
+
+  .archive-search-resultbar{
+    display:grid;
+    gap:.28rem;
+    border-radius:16px;
+  }
+}
