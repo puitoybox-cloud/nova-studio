@@ -4,6 +4,8 @@
 
   let cachedQuery='';
   let updating=false;
+  let composing=false;
+  let compositionTarget=null;
 
   function isArchiveControl(target){
     return target&&['archiveSearch','archiveTypeFilter','archiveOnlyOfficial','archiveOnlyVidu','archiveOnlyImages'].includes(target.id);
@@ -20,7 +22,7 @@
   }
 
   function updateArchiveResults(){
-    if(updating||typeof storyArchiveView!=='function')return;
+    if(updating||composing||typeof storyArchiveView!=='function')return;
     const app=document.querySelector('#app');
     const currentPage=app?.querySelector('.archive-home-page, .archive-shell');
     if(!app||!currentPage)return;
@@ -69,17 +71,38 @@
     });
   }
 
+  document.addEventListener('compositionstart',event=>{
+    if(event.target?.id!=='archiveSearch')return;
+    composing=true;
+    compositionTarget=event.target;
+  },true);
+
+  document.addEventListener('compositionupdate',event=>{
+    if(event.target?.id!=='archiveSearch')return;
+    cachedQuery=event.target.value;
+  },true);
+
+  document.addEventListener('compositionend',event=>{
+    if(event.target?.id!=='archiveSearch')return;
+    event.stopImmediatePropagation();
+    cachedQuery=event.target.value;
+    composing=false;
+    compositionTarget=null;
+    requestAnimationFrame(updateArchiveResults);
+  },true);
+
   document.addEventListener('input',event=>{
     const target=event.target;
     if(target?.id!=='archiveSearch'||updating)return;
     event.stopImmediatePropagation();
     cachedQuery=target.value;
+    if(composing||event.isComposing||event.inputType==='insertCompositionText'||compositionTarget===target)return;
     updateArchiveResults();
   },true);
 
   document.addEventListener('change',event=>{
     const target=event.target;
-    if(!isArchiveControl(target)||target.id==='archiveSearch'||updating)return;
+    if(!isArchiveControl(target)||target.id==='archiveSearch'||updating||composing)return;
     event.stopImmediatePropagation();
     cachedQuery=document.querySelector('#archiveSearch')?.value||cachedQuery;
     updateArchiveResults();
