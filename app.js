@@ -1322,7 +1322,12 @@ function archiveHomeDetailSummary(card){return `<section class="home-panel"><div
 openStoryArchiveDetail=function(id,mode='all'){const card=normalizeStoryArchiveCardV1?normalizeStoryArchiveCardV1(getStoryArchiveCard(id)):normalizeStoryArchiveCard(getStoryArchiveCard(id));if(!card)return;modal(`<article class="archive-detail archive-home-detail">${archiveHomeDetailSummary(card)}${archiveRepresentativeHero(card)}${archiveDetailGallerySection(card,mode)}<section class="home-panel"><h3>基本設定</h3>${archiveV1TemplateForm({ ...card, templateData: card.templateData||{} }).replaceAll('<textarea','<textarea readonly')}</section><section class="home-panel"><h3>関連カード</h3>${archiveRelatedLinks(card)}</section>${archiveManagementDetails(card)}</article>`) }
 render();
 
-// Load the isolated LINK-02 / LINK-03 adapter after all existing overrides.
-const dreamArchitectLinkScript=document.createElement('script');
-dreamArchitectLinkScript.src='./dream-architect-link.js?v=1.0.0';
-document.body.appendChild(dreamArchitectLinkScript);
+// Load the isolated LINK-02 to LINK-06 adapter after all existing overrides.
+const dreamArchitectCoreScript=document.createElement('script');
+dreamArchitectCoreScript.src='./dream-architect-transfer-core.js?v=2.0.0';
+dreamArchitectCoreScript.onload=()=>{
+ const dreamArchitectLinkScript=document.createElement('script');
+ dreamArchitectLinkScript.src='./dream-architect-link.js?v=2.0.0';
+ document.body.appendChild(dreamArchitectLinkScript);
+};
+document.body.appendChild(dreamArchitectCoreScript);

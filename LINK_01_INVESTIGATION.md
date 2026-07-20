@@ -1,6 +1,6 @@
 # LINK-01 実装前調査
 
-今回は調査のみで、本実装は行わない。
+LINK-01時点の調査記録。LINK-02〜LINK-06の実装仕様は `DREAM_ARCHITECT_LINK_SPEC.md` に分離した。
 
 ## 現在の選択作品と保存場所
 
@@ -15,6 +15,10 @@
 - ホーム背景：`novaStudioHomeBackground`。
 - Story Archive背景：`novaStudioStoryArchiveBackground`。
 - ChatGPT取込前バックアップ：`novaStudio_v01_chatgpt_backup_<id>`。
+- Dream Architect共有（現行）：`novaStudio_dreamArchitectLink_v2`。
+- Dream Architect共有（旧LINK-03・読込専用）：`novaStudio_dreamArchitectLink_v1`。
+- Dream Architect制作結果候補：`novaStudio_dreamArchitectResults_v1`。
+- Dream Architect簡易履歴：`novaStudio_dreamArchitectHistory_v1`。
 
 ## 既存の相互起動処理
 
@@ -40,3 +44,12 @@
 - 外部アプリから未知のIDが戻った場合は現在選択を維持する。
 - `returnUrl` にハッシュと既存クエリを保ち、戻る操作で履歴を二重追加しない。
 - Story Archive、Memory Sync、バックアップの既存保存処理へ共有処理を混ぜない。
+
+## LINK-04〜LINK-06で確定した方針
+
+- `novaStudio_v01` と既存バックアップJSONは変更せず、連携専用キーへ隔離する。
+- キャラクターと素材は配列として複数選択可能にし、欠損した任意値は空欄で扱う。
+- Story Archiveカード内の画像と画像管理メタデータを読み取るが、元データへ書き戻さない。
+- blob URL、filesystem URL、data URLは共有用の永続参照にしない。
+- 制作結果は専用候補領域へ保存し、確認なしの上書き・正式採用・既存素材登録をしない。
+- 外部アプリの実体とURLが未確定のため、送信はlocalStorage準備までとし、外部接続はLINK-07へ送る。
