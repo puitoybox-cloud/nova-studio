@@ -51,3 +51,11 @@ MS-01はホームの骨組みに限定し、新しい保存処理を持たない
 ## MS-02
 
 新しい音楽プロジェクトの最小作成フォーム、MS-00B Version 1契約validator、保存アダプターinterfaceを実装する。保存方式を確定するまではNova StudioのlocalStorageへMusic Studioプロジェクトを混在させない。
+
+## MS-01F｜Music Studio独立表示修正
+
+状態：🔵 ティア確認待ち
+
+Dream Architect Studioから開くホスト内ルートでは、Nova Studioのmanagement shellがMusic Studioの外側に残り、特にiPhone相当幅で共通下部ナビが表示されていた。Music Studioホームと全子ルートを判定する `is-music-studio-route` bodyクラスを追加し、このクラスの間だけNova Studio共通ヘッダー、サイドナビ、制作フロー、下部ナビを非表示にする。
+
+Music Studioルートを離れる操作、ハッシュ変更、既存route rendererの呼び出しでクラスを解除する。Nova Studio共通ナビのHTMLと通常時のCSSは変更しない。単体起動 `music-studio.html#music-studio` は引き続きNova Studio shellを読み込まない。

@@ -52,13 +52,18 @@
     return `<main class="music-studio-shell music-placeholder" aria-labelledby="musicPlaceholderTitle"><button class="music-secondary music-back" onclick="${back}">← Music Studioホームへ戻る</button><section class="music-placeholder-panel"><div class="music-card-top"><span class="music-feature-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>${statusBadge(item.status)}</div><p class="music-kicker">Music Studio</p><h1 id="musicPlaceholderTitle">${escapeHtml(item.title)}</h1><p class="music-lead">${escapeHtml(item.description)}</p>${detail}<div class="music-placeholder-actions"><button class="music-primary" onclick="${back}">ホームへ戻る</button><button class="music-secondary" onclick="history.length>1?history.back():${back}">前の画面へ戻る</button></div></section></main>`;
   }
   function renderRoute(route,options={}){return route===HOME_ROUTE?homeView(options):placeholderView(route,options)}
+  function isMusicRoute(route){return route===HOME_ROUTE||route.startsWith(`${HOME_ROUTE}/`)}
+  function syncHostChrome(route){root.document?.body?.classList?.toggle('is-music-studio-route',isMusicRoute(route))}
   function installHostRoutes(){
     if(typeof root.managementViewForRoute!=='function')return false;
     const base=root.managementViewForRoute;
-    root.managementViewForRoute=function(route){return route===HOME_ROUTE||route.startsWith(`${HOME_ROUTE}/`)?renderRoute(route):base(route)};
+    root.managementViewForRoute=function(route){syncHostChrome(route);return isMusicRoute(route)?renderRoute(route):base(route)};
+    const baseSetView=typeof root.setView==='function'?root.setView:null;
+    if(baseSetView)root.setView=function(route){syncHostChrome(route);return baseSetView(route)};
     const baseOpenApp=typeof root.openApp==='function'?root.openApp:null;
     if(baseOpenApp)root.openApp=function(appId,urlOverride){if(appId==='musicStudio'&&!urlOverride)return root.setView(HOME_ROUTE);return baseOpenApp(appId,urlOverride)};
-    root.addEventListener?.('hashchange',()=>{const route=(root.location.hash||'').slice(1);if(route===HOME_ROUTE||route.startsWith(`${HOME_ROUTE}/`))root.render?.()});
+    root.addEventListener?.('hashchange',()=>{const route=(root.location.hash||'').slice(1);syncHostChrome(route);if(isMusicRoute(route))root.render?.()});
+    syncHostChrome((root.location.hash||'').slice(1));
     root.render?.();
     return true;
   }
@@ -68,6 +73,6 @@
     root.addEventListener('hashchange',paint);paint();
   }
 
-  root.MusicStudio={HOME_ROUTE,FEATURES:FEATURES.map(item=>({...item})),STATUS_LABELS:{...STATUS_LABELS},homeView,placeholderView,renderRoute,installHostRoutes,mountStandalone};
+  root.MusicStudio={HOME_ROUTE,FEATURES:FEATURES.map(item=>({...item})),STATUS_LABELS:{...STATUS_LABELS},homeView,placeholderView,renderRoute,isMusicRoute,installHostRoutes,mountStandalone};
   if(root.document){if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes()}
 })(typeof window!=='undefined'?window:globalThis);
