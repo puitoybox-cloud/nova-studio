@@ -1331,3 +1331,18 @@ dreamArchitectCoreScript.onload=()=>{
  document.body.appendChild(dreamArchitectLinkScript);
 };
 document.body.appendChild(dreamArchitectCoreScript);
+
+/* MS-01 loads the isolated Music Studio shell without changing Nova Studio data. */
+if(!document.querySelector('link[data-music-studio]')){
+ const musicStudioStylesheet=document.createElement('link');
+ musicStudioStylesheet.rel='stylesheet';
+ musicStudioStylesheet.href='./music-studio.css?v=1.0.0';
+ musicStudioStylesheet.dataset.musicStudio='true';
+ document.head.appendChild(musicStudioStylesheet);
+}
+if(!document.querySelector('script[data-music-studio]')){
+ const musicStudioScript=document.createElement('script');
+ musicStudioScript.src='./music-studio.js?v=1.0.0';
+ musicStudioScript.dataset.musicStudio='true';
+ document.body.appendChild(musicStudioScript);
+}
