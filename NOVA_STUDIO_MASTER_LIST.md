@@ -70,11 +70,16 @@
 | Viduプロンプト作成 | ✅ | Prompt Studio（内部画面または設定URL） | 外部URL時はURLパラメータを付与 |
 | MIDI作曲 | ✅ | Music Studio（内部画面または設定URL） | 外部URL時はURLパラメータを付与 |
 | 音楽制作支援 | ✅ | Music Studio（内部画面または設定URL） | MIDI作曲と同じ既存入口を利用 |
-| 漫画作成 | ⬜ | `dream-comic` 準備中画面 | 保存処理なし |
+| 歌詞・音符割付 | ✅ | Music Studio（内部画面または設定URL） | 歌詞変換・音符割付の既存機能を利用 |
+| 画像制作 | 🟡 | `dream-image` 準備中画面 | 連携準備中、保存処理なし |
+| 漫画制作 | ⬜ | `dream-comic` 準備中画面 | 保存処理なし |
 | LINEスタンプ作成 | ⬜ | `dream-line-stickers` 準備中画面 | 保存処理なし |
 | ホームページ作成 | ⬜ | `dream-website` 準備中画面 | 保存処理なし |
+| 動画制作 | 🟡 | `dream-video` 準備中画面 | 連携準備中、保存処理なし |
+| プロンプト管理 | 🟡 | `dream-prompt-management` 準備中画面 | 連携準備中、保存処理なし |
 | 音声制作 | ⬜ | `dream-voice` 準備中画面 | Voice Studioは未実装 |
-| Dream Architect Studioホーム | ✅ | `dream-architect` | 上記8入口とNova Studioへの戻り導線 |
+| 今後追加する制作アプリ | 🟡 | `dream-future-apps` 準備中画面 | 接続仕様確認待ち |
+| Dream Architect Studioホーム | 🟡 | `dream-architect` | 上記13入口、4カテゴリ、共有情報とNova Studioへの戻り導線。ティア確認待ち |
 | Dream Architect連携確認 | 🟡 | `dream-architect-link` | LINK-04/05の複数選択・送信前確認。外部送信なし、ティア確認待ち |
 | Dream Architect結果候補 | 🟡 | `dream-architect-link` | LINK-06の検証・登録・保留・却下。既存素材へ自動登録しない |
 
@@ -103,7 +108,7 @@
 - 制作管理：`projects`, `episodes`, `scenes`, `characters`, `worlds`, `terms`, `timelines`, `ideas`, `cards`, `universe`
 - 制作支援：`storyArchive`, `projectDashboard`, `productionDashboard`, `promptStudio`, `musicStudio`, `importCenter`, `memorySync`
 - Nova Studio拡張：`locations`, `items`, `images`, `scripts`, `gemini`, `ns-conflicts`
-- Dream Architect Studio：`dream-architect`, `dream-architect-link`, `dream-comic`, `dream-line-stickers`, `dream-website`, `dream-voice`
+- Dream Architect Studio：`dream-architect`, `dream-architect-link`, `dream-image`, `dream-comic`, `dream-line-stickers`, `dream-video`, `dream-website`, `dream-prompt-management`, `dream-voice`, `dream-future-apps`
 
 ## 8. 互換性と変更禁止範囲
 
