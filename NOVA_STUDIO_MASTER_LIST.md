@@ -75,6 +75,8 @@
 | ホームページ作成 | ⬜ | `dream-website` 準備中画面 | 保存処理なし |
 | 音声制作 | ⬜ | `dream-voice` 準備中画面 | Voice Studioは未実装 |
 | Dream Architect Studioホーム | ✅ | `dream-architect` | 上記8入口とNova Studioへの戻り導線 |
+| Dream Architect連携確認 | 🟡 | `dream-architect-link` | LINK-04/05の複数選択・送信前確認。外部送信なし、ティア確認待ち |
+| Dream Architect結果候補 | 🟡 | `dream-architect-link` | LINK-06の検証・登録・保留・却下。既存素材へ自動登録しない |
 
 ## 6. 保存・バックアップ・設定
 
@@ -89,6 +91,9 @@
 | 設定 | ✅ | 外部アプリURL、起動確認、新規タブ、自動保存など |
 | ホーム背景 | ✅ | `novaStudioHomeBackground` |
 | Story Archive背景 | ✅ | `novaStudioStoryArchiveBackground` |
+| Dream Architect共有 | 🟡 | `novaStudio_dreamArchitectLink_v2`（旧v1を読込可能） |
+| Dream Architect結果候補 | 🟡 | `novaStudio_dreamArchitectResults_v1` |
+| Dream Architect簡易履歴 | 🟡 | `novaStudio_dreamArchitectHistory_v1`（最大100件） |
 | ChatGPT取込前バックアップ | ✅ | `novaStudio_v01_chatgpt_backup_<id>` |
 | Memory Syncバックアップ | ✅ | `novaStudio_v01_memory_sync_backup_<id>` |
 
@@ -98,7 +103,7 @@
 - 制作管理：`projects`, `episodes`, `scenes`, `characters`, `worlds`, `terms`, `timelines`, `ideas`, `cards`, `universe`
 - 制作支援：`storyArchive`, `projectDashboard`, `productionDashboard`, `promptStudio`, `musicStudio`, `importCenter`, `memorySync`
 - Nova Studio拡張：`locations`, `items`, `images`, `scripts`, `gemini`, `ns-conflicts`
-- Dream Architect Studio：`dream-architect`, `dream-comic`, `dream-line-stickers`, `dream-website`, `dream-voice`
+- Dream Architect Studio：`dream-architect`, `dream-architect-link`, `dream-comic`, `dream-line-stickers`, `dream-website`, `dream-voice`
 
 ## 8. 互換性と変更禁止範囲
 
@@ -110,8 +115,8 @@
 
 ## 9. 今後の優先順
 
-1. NS-06〜NS-08の受入確認を完了する。
-2. LINK-01の共有範囲、戻り値反映、永続化要否を決定する。
-3. 未実装専用画面とDream Architect Studio各アプリは、個別の要件・保存設計・受入基準を追加してから着手する。
+1. LINK-04〜LINK-06のMac・iPad実機受入と既存データ回帰を完了する。
+2. LINK-07でDream Architect Studio実体のURL、通信、認証、ファイル転送範囲を正式決定する。
+3. LINK-09の完全な履歴画面と未実装制作アプリは、個別要件・保存設計・受入基準を追加してから着手する。
 
 最終更新日：2026-07-20
