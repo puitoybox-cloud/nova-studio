@@ -7,9 +7,13 @@ const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
 
 function loadMusicStudio(){
-  const window={addEventListener(){},location:{hash:'#home'},history:{length:1},managementViewForRoute:route=>`base:${route}`,openApp:()=>{},setView(){},novaReturnHome(){},render(){}};
+  const classes=new Set();
+  const location={hash:'#home'};
+  const document={body:{classList:{toggle(name,active){active?classes.add(name):classes.delete(name)},contains:name=>classes.has(name)}}};
+  const window={addEventListener(){},location,history:{length:1},managementViewForRoute:route=>`base:${route}`,openApp:()=>{},setView(route){location.hash=`#${route}`},novaReturnHome(){},render(){}};
   window.window=window;
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});
+  window.document=document;
   return window;
 }
 
@@ -48,5 +52,23 @@ test('host route wrapper preserves unrelated routes',()=>{
   const window=loadMusicStudio();
   assert.equal(window.MusicStudio.installHostRoutes(),true);
   assert.match(window.managementViewForRoute('music-studio'),/Music Studio/);
+  assert.equal(window.document.body.classList.contains('is-music-studio-route'),true);
   assert.equal(window.managementViewForRoute('storyArchive'),'base:storyArchive');
+  assert.equal(window.document.body.classList.contains('is-music-studio-route'),false);
+});
+
+test('host chrome isolation follows home, placeholder, and Nova routes',()=>{
+  const window=loadMusicStudio();
+  window.MusicStudio.installHostRoutes();
+  window.setView('music-studio/logic-pro');
+  assert.equal(window.document.body.classList.contains('is-music-studio-route'),true);
+  window.setView('home');
+  assert.equal(window.document.body.classList.contains('is-music-studio-route'),false);
+});
+
+test('Music Studio CSS hides only host chrome on Music Studio routes',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/body\.is-music-studio-route \.management-bottom/);
+  assert.match(css,/body\.is-music-studio-route \.management-header/);
+  assert.doesNotMatch(css,/(^|\n)\.management-bottom\s*\{[^}]*display\s*:\s*none/);
 });

@@ -1,5 +1,13 @@
 # Nova Studio Changelog
 
+## MS-01F（Music Studio独立表示修正）
+
+- Music Studioルート専用のbodyクラスを追加し、ホームと全仮ページでNova Studio共通ヘッダー、サイドナビ、制作フロー、下部ナビを非表示に変更
+- Music Studioルートを離れる時は専用クラスを即時解除し、Nova Studio本体の共通ナビ表示を維持
+- ホスト内のMusic Studioを全幅・専用背景で表示し、単体起動時と不自然な差が出ない構成へ修正
+- Nova Studio共通ナビのHTML、通常ルートのCSS、既存保存データ形式は変更なし
+- ホスト内ルート、単体ルート、Music Studio子ルート、Nova Studioへの復帰を対象に回帰テストを追加
+
 ## MS-01（Music Studioホーム）
 
 - Logic Pro X中心の音楽制作支援アプリであることを示すMusic Studio専用ホームを追加
