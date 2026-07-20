@@ -26,10 +26,10 @@ test('defines all 15 requested home entries and three statuses',()=>{
 
 test('home explains product role, states, and host context',()=>{
   const html=loadMusicStudio().MusicStudio.homeView();
-  assert.match(html,/Logic Pro Xを中心/);
+  assert.match(html,/Logic Pro X centered creative support/);
   for(const status of ['使用可能','作業中','未実装'])assert.match(html,new RegExp(status));
   assert.match(html,/Dream Architect Studioから開いています/);
-  assert.match(html,/ai-music-helperデータは変更しません/);
+  assert.match(html,/ai-music-helperの保存データを変更しません/);
 });
 
 test('standalone home is natural without the host',()=>{
@@ -40,12 +40,25 @@ test('standalone home is natural without the host',()=>{
 
 test('unfinished routes always render safe placeholders with return actions',()=>{
   const app=loadMusicStudio().MusicStudio;
-  for(const item of app.FEATURES.filter(item=>!item.action)){
+  for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects'].includes(item.id))){
     const html=app.renderRoute(`music-studio/${item.id}`);
     assert.match(html,new RegExp(item.title));
     assert.match(html,/Music Studioホームへ戻る/);
-    assert.match(html,/既存データを変更|データを作成・変更しません|プロジェクト保存はMS-02/);
+    assert.match(html,/既存データを変更/);
   }
+});
+
+test('project routes render real accessible management screens',()=>{
+  const app=loadMusicStudio().MusicStudio;
+  const create=app.renderRoute('music-studio/new-project');
+  assert.match(create,/id="msProjectName"/);
+  assert.match(create,/for="msProjectName"/);
+  assert.match(create,/value="120"/);
+  assert.match(create,/>4\/4</);
+  assert.match(create,/>未設定</);
+  const list=app.renderRoute('music-studio/recent-projects');
+  assert.match(list,/JSONを読み込む/);
+  assert.match(list,/プロジェクトを検索/);
 });
 
 test('host route wrapper preserves unrelated routes',()=>{
