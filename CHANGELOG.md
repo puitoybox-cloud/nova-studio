@@ -1,5 +1,13 @@
 # Nova Studio Changelog
 
+## MS-00A〜MS-00C（Music Studio基礎設計）
+
+- Dream Architect Studio / Nova Studioと既存 `ai-music-helper` の構造、保存キー、JSON入出力、連携境界を調査
+- Music Studioを独立リポジトリで管理し、Nova Studioには入口と連携アダプターだけを置く分離方針を決定
+- `aiMusicHelperProject` Version 4を壊さないコピー変換、Version 1プロジェクト契約、確認型handoffを設計
+- アプリ名・版・エディションを差し替えられる製品設定と、販売ビルド用ライセンス台帳を設計
+- MS-00A〜MS-00Cをティア確認待ち、MS-01を次の実装作業として記録
+
 ## Version 0.2.9（画像中心Story Archive仕上げ）
 
 - Version表示を `0.2.9` へ更新
