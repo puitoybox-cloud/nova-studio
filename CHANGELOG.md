@@ -1,5 +1,15 @@
 # Nova Studio Changelog
 
+## MS-01（Music Studioホーム）
+
+- Logic Pro X中心の音楽制作支援アプリであることを示すMusic Studio専用ホームを追加
+- 新規プロジェクト、最近使ったプロジェクト、Logic Pro X連携、MIDI Composer、歌詞・音符割付、AI作曲データ取り込み、楽器別MIDI、音色・プラグイン管理、ミックス、マスタリング、ファイル、バックアップ、設定、Dream Architect Studio、Nova Studioの15入口を追加
+- `使用可能`、`作業中`、`未実装`の状態表示と、未実装機能が白画面にならない共通準備中画面を追加
+- Nova Studio内の `#music-studio` と子ルート、および単体起動用 `music-studio.html#music-studio` を追加
+- Music StudioのJS/CSS/HTMLを専用ファイルへ分離し、既存 `novaStudio_v01`、Dream Architect連携キー、`aiMusicHelperProject` を読み書きしない構成を維持
+- Mac、iPad、iPhone相当幅のレスポンシブ構成、キーボードフォーカス、見出し・ランドマークを追加
+- MS-02の範囲を新規プロジェクト作成、Version 1 validator、保存アダプターinterfaceとして記録
+
 ## MS-00A〜MS-00C（Music Studio基礎設計）
 
 - Dream Architect Studio / Nova Studioと既存 `ai-music-helper` の構造、保存キー、JSON入出力、連携境界を調査
