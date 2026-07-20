@@ -22,10 +22,26 @@ function loadShell(stored={},selection={}){
   return sandbox;
 }
 
-test('13 app entries are defined once',()=>{
+test('15 organized app entries are defined once',()=>{
   const shell=loadShell();
-  assert.equal(shell.window.DREAM_ARCHITECT_APPS.length,13);
-  assert.equal(new Set(shell.window.DREAM_ARCHITECT_APPS.map(app=>app.id)).size,13);
+  assert.equal(shell.window.DREAM_ARCHITECT_APPS.length,15);
+  assert.equal(new Set(shell.window.DREAM_ARCHITECT_APPS.map(app=>app.id)).size,15);
+});
+
+test('home groups apps into the five requested categories with quick navigation',()=>{
+  const shell=loadShell();
+  const html=shell.window.managementViewForRoute('dream-architect');
+  for(const label of ['映像・アニメ','音楽・音声','イラスト・漫画','公開・Web','AI・プロンプト'])assert.match(html,new RegExp(label));
+  for(const label of ['Story Archive','Production Dashboard','Music Studio','Prompt Studio'])assert.match(html,new RegExp(label));
+  for(const status of ['利用可能','優先制作','準備中','未実装','確認待ち'])assert.match(html,new RegExp(status));
+});
+
+test('current production highlights project episode and status without changing storage',()=>{
+  const shell=loadShell({}, {project:{id:'p1',title:'制作中作品'},episode:{id:'e1',numberLabel:'第3話',productionStatus:'編集待ち'}});
+  const html=shell.window.managementViewForRoute('dream-architect');
+  assert.match(html,/作品名<\/dt><dd>制作中作品/);
+  assert.match(html,/話数<\/dt><dd>第3話/);
+  assert.match(html,/制作状況<\/dt><dd>編集待ち/);
 });
 
 test('no selected work shows a safe guidance message',()=>{
@@ -40,7 +56,7 @@ test('v2 shared data displays work, episode and counts',()=>{
   const shell=loadShell({novaStudio_dreamArchitectLink_v2:JSON.stringify(payload),novaStudio_dreamArchitectResults_v1:JSON.stringify([{resultId:'r1'}])});
   const html=shell.window.managementViewForRoute('dream-architect');
   assert.match(html,/共有作品/);assert.match(html,/project_1/);assert.match(html,/第2話/);
-  assert.match(html,/共有キャラクター<\/dt><dd>1件/);assert.match(html,/共有素材<\/dt><dd>2件/);assert.match(html,/受け取り候補<\/dt><dd>1件/);
+  assert.match(html,/共有キャラクター 1件/);assert.match(html,/共有素材 2件/);assert.match(html,/受け取り候補 1件/);
 });
 
 test('legacy data is readable and malformed JSON is non-fatal',()=>{
