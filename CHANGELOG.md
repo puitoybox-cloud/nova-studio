@@ -1,5 +1,16 @@
 # Nova Studio Changelog
 
+## MS-03（Music Studio設定・保存設定・バックアップ基盤）
+
+- `music-studio-settings` Version 1の12分類設定画面、検証、保存・再読み込み、初期値復元、設定JSON入出力を追加
+- IndexedDB `music-studio-projects` をVersion 2へ非破壊更新し、既存 `projects` storeを維持して専用 `settings` storeを追加
+- BPM、拍子、キー、制作状態、目的、メモを新規プロジェクトだけへ反映し、既存Version 1プロジェクトは変更しない互換連携を追加
+- 有効・無効、定期・入力停止後保存、手動保存、4状態表示、失敗通知、離脱警告、多重タイマー防止を備えた自動保存基盤を追加
+- `music-studio-backup` Version 1の全体JSON、内容プレビュー、設定・プロジェクト選択、復元前安全コピー、ID重複時の追加統合、部分失敗報告を追加
+- バックアップに外部ファイル本体を埋め込まず、参照メタ情報と再選択フラグだけを保存
+- 設定とバックアップをホームで使用可能へ更新し、単体ルート、レスポンシブ、aria-live、キーボードフォーカスを整備
+- `novaStudio_v01`、Dream Architect連携キー、`aiMusicHelperProject`、既存プロジェクト形式は変更なし
+
 ## MS-02（Music Studioプロジェクト管理）
 
 - `music-studio-project` Version 1の新規作成、更新順一覧、検索、最近使ったプロジェクト、編集と未保存表示を実装

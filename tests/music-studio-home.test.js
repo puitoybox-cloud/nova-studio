@@ -40,12 +40,14 @@ test('standalone home is natural without the host',()=>{
 
 test('unfinished routes always render safe placeholders with return actions',()=>{
   const app=loadMusicStudio().MusicStudio;
-  for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects'].includes(item.id))){
+  for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects','settings','backup'].includes(item.id))){
     const html=app.renderRoute(`music-studio/${item.id}`);
     assert.match(html,new RegExp(item.title));
     assert.match(html,/Music Studioホームへ戻る/);
     assert.match(html,/既存データを変更/);
   }
+  assert.match(app.renderRoute('music-studio/settings'),/Music Studio設定/);
+  assert.match(app.renderRoute('music-studio/backup'),/Music Studioバックアップ/);
 });
 
 test('project routes render real accessible management screens',()=>{
