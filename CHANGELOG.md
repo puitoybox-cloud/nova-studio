@@ -1,5 +1,16 @@
 # Nova Studio Changelog
 
+## MS-02（Music Studioプロジェクト管理）
+
+- `music-studio-project` Version 1の新規作成、更新順一覧、検索、最近使ったプロジェクト、編集と未保存表示を実装
+- 新しいIDと日時での複製、対象名を示す確認付き個別削除、キャンセル導線を追加
+- 1プロジェクト単位のJSON書き出しと、形式・版・必須値を検証する安全な読み込みを追加
+- JSON読込時のID重複は新しいIDで複製し、壊れたJSON・別形式・未知のmajor版は既存データを変更せず拒否
+- 正本を専用IndexedDB `music-studio-projects` / `projects` に分離し、最近開いたIDだけを `musicStudio_lastProjectId_v1` に保存
+- `novaStudio_v01`、Dream Architect連携キー、`aiMusicHelperProject`、既存バックアップJSON形式は変更なし
+- Mac・iPad・iPhone相当幅に対応するフォーム、一覧、危険操作の視覚区別、ラベル関連付けを追加
+- MS-03の対象を制作セクションとMIDI Composerへの最小参照境界に限定し、MIDI本体編集は未実装として維持
+
 ## MS-01F（Music Studio独立表示修正）
 
 - Music Studioルート専用のbodyクラスを追加し、ホームと全仮ページでNova Studio共通ヘッダー、サイドナビ、制作フロー、下部ナビを非表示に変更

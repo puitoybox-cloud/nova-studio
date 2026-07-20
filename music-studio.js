@@ -1,12 +1,22 @@
-/* MS-01: isolated Music Studio home and safe placeholder routes. */
+/* MS-02: isolated Music Studio project management and Version 1 persistence. */
 (function(root){
   'use strict';
 
   const HOME_ROUTE='music-studio';
+  const PROJECTS_ROUTE=`${HOME_ROUTE}/recent-projects`;
+  const NEW_ROUTE=`${HOME_ROUTE}/new-project`;
+  const EDIT_ROUTE=`${HOME_ROUTE}/project`;
+  const FORMAT='music-studio-project';
+  const SCHEMA_VERSION='1.0';
+  const APP_VERSION='1.0.0';
+  const DB_NAME='music-studio-projects';
+  const STORE_NAME='projects';
+  const LAST_PROJECT_KEY='musicStudio_lastProjectId_v1';
   const STATUS_LABELS={available:'使用可能',working:'作業中',planned:'未実装'};
+  const PROJECT_STATUS_LABELS={idea:'アイデア',draft:'制作中',review:'確認中',complete:'完成',paused:'保留'};
   const FEATURES=[
-    {id:'new-project',icon:'＋',title:'新しい音楽プロジェクト',description:'曲名や制作目的を決めて、新しい制作を始める入口です。',status:'working'},
-    {id:'recent-projects',icon:'◷',title:'最近使ったプロジェクト',description:'最近編集したMusic Studioプロジェクトへ戻る一覧です。',status:'working'},
+    {id:'new-project',icon:'＋',title:'新しい音楽プロジェクト',description:'曲名や制作目的を決めて、新しい制作を始める入口です。',status:'available'},
+    {id:'recent-projects',icon:'◷',title:'最近使ったプロジェクト',description:'最近編集したMusic Studioプロジェクトへ戻る一覧です。',status:'available'},
     {id:'logic-pro',icon:'LP',title:'Logic Pro X連携',description:'Logic Pro Xとのファイル受け渡しと制作手順を管理します。',status:'planned'},
     {id:'midi-composer',icon:'♬',title:'MIDI Composer',description:'メロディや伴奏のMIDI制作を支援します。',status:'planned'},
     {id:'lyrics-notes',icon:'あ',title:'歌詞・音符割付',description:'歌詞の読みと音符の対応を確認・調整します。',status:'planned'},
@@ -16,63 +26,110 @@
     {id:'mixing',icon:'Mx',title:'ミックス支援',description:'音量、定位、エフェクトなどのミックスメモを整理します。',status:'planned'},
     {id:'mastering',icon:'Ms',title:'マスタリング支援',description:'完成音源の確認項目と書き出しメモを管理します。',status:'planned'},
     {id:'files',icon:'▤',title:'ファイル管理',description:'MIDI、音声、歌詞などの参照ファイルを整理します。',status:'planned'},
-    {id:'backup',icon:'⇩',title:'バックアップ',description:'Music Studioプロジェクトを安全に書き出し・復元します。',status:'planned'},
+    {id:'backup',icon:'⇩',title:'バックアップ',description:'Music Studioプロジェクトを安全に書き出し・復元します。',status:'working'},
     {id:'settings',icon:'⚙',title:'Music Studio設定',description:'保存先、表示、連携先、製品情報を確認します。',status:'working'},
     {id:'dream-architect',icon:'DA',title:'Dream Architect Studioへ戻る',description:'制作アプリをまとめるDream Architect Studioへ戻ります。',status:'available',action:'dream'},
     {id:'send-nova',icon:'N',title:'Nova Studioへ送る',description:'楽曲情報を自動登録せず、確認してNova Studioへ渡す入口です。',status:'working'}
   ];
+  const state={projects:[],loaded:false,notice:'',noticeKind:'info',search:'',dirty:false,currentDraft:null};
 
-  function escapeHtml(value){return String(value??'').replace(/[&<>"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[char]))}
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+  function uuid(){return root.crypto?.randomUUID?.()||`ms-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`}
+  function now(){return new Date().toISOString()}
+  function clone(value){return JSON.parse(JSON.stringify(value))}
+  function safeStorage(){try{return root.localStorage||null}catch(_){return null}}
+  function setLastProject(id){try{const storage=safeStorage();if(id)storage?.setItem(LAST_PROJECT_KEY,id);else storage?.removeItem(LAST_PROJECT_KEY)}catch(error){console.warn('Music Studio: last project could not be saved',error)}}
+  function getLastProject(){try{return safeStorage()?.getItem(LAST_PROJECT_KEY)||''}catch(_){return ''}}
+  function makeProject(input={},timestamp=now()){
+    const bpm=Number(input.bpm??input.musicalSettings?.bpm??120);
+    const signature=String(input.timeSignature||'4/4').split('/').map(Number);
+    const project={
+      format:FORMAT,schemaVersion:SCHEMA_VERSION,appVersion:APP_VERSION,projectId:input.projectId||uuid(),revision:Number(input.revision)||1,
+      projectName:String(input.projectName||'').trim(),songTitle:String(input.songTitle||'').trim(),purpose:String(input.purpose||'').trim(),status:input.status||'idea',
+      musicalSettings:{bpm,timeSignature:{numerator:signature[0]||input.musicalSettings?.timeSignature?.numerator||4,denominator:signature[1]||input.musicalSettings?.timeSignature?.denominator||4},key:input.key===''||input.key==null?(input.musicalSettings?.key??null):input.key,bars:input.musicalSettings?.bars??null},
+      productionNotes:String(input.productionNotes??input.notes??'').trim(),sections:[],chordProgressions:[],melodies:[],instruments:[],midiAssets:[],audioAssets:[],
+      lyrics:{versions:[],activeVersionId:null},syllableAssignments:[],soundSelections:[],plugins:[],mixNotes:[],masteringNotes:[],productionHistory:[],
+      fileReferences:Array.isArray(input.fileReferences)?clone(input.fileReferences):[],integrations:{dreamArchitect:[],novaStudio:[],logicPro:[]},
+      legacy:{sourceFormat:null,sourceVersion:null,extensions:{}},createdAt:input.createdAt||timestamp,updatedAt:input.updatedAt||timestamp
+    };
+    const preserve=['sections','chordProgressions','melodies','instruments','midiAssets','audioAssets','lyrics','syllableAssignments','soundSelections','plugins','mixNotes','masteringNotes','productionHistory','integrations','legacy'];
+    preserve.forEach(key=>{if(input[key]!=null)project[key]=clone(input[key])});
+    return project;
+  }
+  function validateProject(value){
+    const errors=[];
+    if(!value||typeof value!=='object'||Array.isArray(value))return{valid:false,errors:['JSONのルートがオブジェクトではありません。']};
+    if(value.format!==FORMAT)errors.push(`形式は ${FORMAT} である必要があります。`);
+    if(value.schemaVersion!==SCHEMA_VERSION)errors.push(`schemaVersion ${value.schemaVersion||'未設定'} には対応していません。`);
+    if(typeof value.projectName!=='string'||!value.projectName.trim())errors.push('プロジェクト名は必須です。');
+    if(typeof value.projectId!=='string'||!value.projectId.trim())errors.push('projectIdは必須です。');
+    if(!Number.isInteger(value.revision)||value.revision<1)errors.push('revisionは1以上の整数である必要があります。');
+    const bpm=Number(value.musicalSettings?.bpm);
+    if(!Number.isFinite(bpm)||bpm<20||bpm>400)errors.push('BPMは20〜400で入力してください。');
+    const ts=value.musicalSettings?.timeSignature;
+    if(!Number.isInteger(ts?.numerator)||ts.numerator<1||![1,2,4,8,16,32].includes(ts?.denominator))errors.push('拍子が正しい形式ではありません。');
+    for(const field of ['createdAt','updatedAt'])if(typeof value[field]!=='string'||Number.isNaN(Date.parse(value[field])))errors.push(`${field}はISO 8601日時である必要があります。`);
+    return{valid:errors.length===0,errors};
+  }
+
+  function memoryRepository(initial=[]){
+    const records=new Map(initial.map(item=>[item.projectId,clone(item)]));
+    return{kind:'memory',async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async put(item){records.set(item.projectId,clone(item));return clone(item)},async delete(id){records.delete(id)},async has(id){return records.has(id)}};
+  }
+  function indexedDbRepository(){
+    if(!root.indexedDB)return memoryRepository();
+    const database=new Promise((resolve,reject)=>{const request=root.indexedDB.open(DB_NAME,1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE_NAME)){const store=request.result.createObjectStore(STORE_NAME,{keyPath:'projectId'});store.createIndex('updatedAt','updatedAt')}};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
+    const request=(mode,operation)=>database.then(db=>new Promise((resolve,reject)=>{const transaction=db.transaction(STORE_NAME,mode);const result=operation(transaction.objectStore(STORE_NAME));result.onsuccess=()=>resolve(result.result);result.onerror=()=>reject(result.error);transaction.onabort=()=>reject(transaction.error)}));
+    return{kind:'indexeddb',async list(){return request('readonly',store=>store.getAll())},async get(id){return request('readonly',store=>store.get(id))},async put(item){await request('readwrite',store=>store.put(clone(item)));return clone(item)},async delete(id){await request('readwrite',store=>store.delete(id))},async has(id){return Boolean(await request('readonly',store=>store.getKey(id)))}};
+  }
+  let repository=indexedDbRepository();
+  function setRepository(next){repository=next}
+  async function refresh(){state.projects=(await repository.list()).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint()}
+  function notice(message,kind='info'){state.notice=message;state.noticeKind=kind;requestPaint()}
+  function routeTo(route){if(root.document?.body?.dataset.musicStudioStandalone==='true')root.location.hash=route;else if(typeof root.setView==='function')root.setView(route);else root.location.hash=route}
+  function currentRoute(){return (root.location?.hash||`#${HOME_ROUTE}`).slice(1)||HOME_ROUTE}
+  function requestPaint(){if(root.document?.body?.dataset.musicStudioStandalone==='true')paintStandalone();else root.render?.()}
   function statusBadge(status){return `<span class="music-status is-${status}">${STATUS_LABELS[status]}</span>`}
   function routeFor(item){return `${HOME_ROUTE}/${item.id}`}
-  function navAction(item,standalone){
-    if(item.action==='dream')return standalone?"location.href='./index.html#dream-architect'":"setView('dream-architect')";
-    return standalone?`location.hash='${routeFor(item)}'`:`setView('${routeFor(item)}')`;
-  }
-  function card(item,standalone){
-    const label=item.status==='available'?'開く':item.status==='working'?'入口を見る':'準備中ページを見る';
-    return `<article class="music-feature-card is-${item.status}" data-music-feature-id="${escapeHtml(item.id)}"><div class="music-card-top"><span class="music-feature-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>${statusBadge(item.status)}</div><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.description)}</p><button class="${item.status==='available'?'music-primary':'music-secondary'}" onclick="${navAction(item,standalone)}">${label}</button></article>`;
-  }
-  function contextNote(standalone){
-    if(standalone)return `<aside class="music-context-note" role="status"><b>Music Studioを単体で開いています</b><span>Nova StudioやDream Architect Studioに接続しなくても、Music Studioの入口を確認できます。</span></aside>`;
-    return `<aside class="music-context-note" role="status"><b>Dream Architect Studioから開いています</b><span>Music Studioの保存領域はNova Studioと分離されます。MS-01では既存データの読み書きを行いません。</span></aside>`;
-  }
-  function homeView(options={}){
-    const standalone=Boolean(options.standalone);
-    const counts=Object.keys(STATUS_LABELS).map(status=>`<div><b>${FEATURES.filter(item=>item.status===status).length}</b><span>${STATUS_LABELS[status]}</span></div>`).join('');
-    return `<main class="music-studio-shell" aria-labelledby="musicStudioTitle"><header class="music-hero"><div><p class="music-kicker">Logic Pro X centered creative support</p><h1 id="musicStudioTitle">Music Studio</h1><p class="music-lead">Logic Pro Xを中心に、MIDI、歌詞、音色、ミックスから完成までの音楽制作を支援するアプリです。</p></div><span class="music-version">MS-01 / Home</span></header>${contextNote(standalone)}<nav class="music-quick-nav" aria-label="Music Studio主要ナビゲーション"><button class="music-secondary" onclick="${standalone?"location.href='./index.html#dream-architect'":"setView('dream-architect')"}">← Dream Architect Studio</button><button class="music-secondary" onclick="${standalone?"location.href='./index.html#home'":"novaReturnHome()"}">Nova Studio</button></nav><section class="music-status-summary" aria-label="機能の状態">${counts}</section><section aria-labelledby="musicFeaturesTitle"><div class="music-section-heading"><div><p class="music-kicker">Workspace</p><h2 id="musicFeaturesTitle">制作メニュー</h2></div><p>各機能の役割と現在の状態を確認できます。</p></div><div class="music-feature-grid">${FEATURES.map(item=>card(item,standalone)).join('')}</div></section><footer class="music-footer"><p><b>安全な骨組み：</b>未実装機能は準備中画面へ接続し、既存のNova Studio保存データとai-music-helperデータは変更しません。</p></footer></main>`;
-  }
-  function placeholderView(route,options={}){
-    const standalone=Boolean(options.standalone);
-    const id=route.replace(`${HOME_ROUTE}/`,'');
-    const item=FEATURES.find(feature=>feature.id===id&&!feature.action);
-    if(!item)return homeView(options);
-    const detail=item.id==='recent-projects'?'<p class="music-empty">最近使ったプロジェクトはまだありません。プロジェクト保存はMS-02以降で実装します。</p>':item.id==='new-project'?'<p class="music-empty">プロジェクト作成フォームと保存処理はMS-02で実装します。現在はデータを作成・変更しません。</p>':'<p class="music-empty">この機能は今後のMS作業で実装します。現在は既存データを変更しない安全な準備中画面です。</p>';
-    const back=standalone?`location.hash='${HOME_ROUTE}'`:`setView('${HOME_ROUTE}')`;
-    return `<main class="music-studio-shell music-placeholder" aria-labelledby="musicPlaceholderTitle"><button class="music-secondary music-back" onclick="${back}">← Music Studioホームへ戻る</button><section class="music-placeholder-panel"><div class="music-card-top"><span class="music-feature-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>${statusBadge(item.status)}</div><p class="music-kicker">Music Studio</p><h1 id="musicPlaceholderTitle">${escapeHtml(item.title)}</h1><p class="music-lead">${escapeHtml(item.description)}</p>${detail}<div class="music-placeholder-actions"><button class="music-primary" onclick="${back}">ホームへ戻る</button><button class="music-secondary" onclick="history.length>1?history.back():${back}">前の画面へ戻る</button></div></section></main>`;
-  }
-  function renderRoute(route,options={}){return route===HOME_ROUTE?homeView(options):placeholderView(route,options)}
+  function navAction(item,standalone){if(item.action==='dream')return standalone?"location.href='./index.html#dream-architect'":"setView('dream-architect')";return standalone?`location.hash='${routeFor(item)}'`:`setView('${routeFor(item)}')`}
+  function card(item,standalone){const label=item.status==='available'?'開く':item.status==='working'?'入口を見る':'準備中ページを見る';return `<article class="music-feature-card is-${item.status}" data-music-feature-id="${escapeHtml(item.id)}"><div class="music-card-top"><span class="music-feature-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>${statusBadge(item.status)}</div><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.description)}</p><button class="${item.status==='available'?'music-primary':'music-secondary'}" onclick="${navAction(item,standalone)}">${label}</button></article>`}
+  function contextNote(standalone){return standalone?`<aside class="music-context-note" role="status"><b>Music Studioを単体で開いています</b><span>Nova StudioやDream Architect Studioに接続しなくても、プロジェクトを管理できます。</span></aside>`:`<aside class="music-context-note" role="status"><b>Dream Architect Studioから開いています</b><span>Music Studioは専用IndexedDBへ保存し、Nova Studioとai-music-helperの保存データを変更しません。</span></aside>`}
+  function recentProjects(limit=3){const last=getLastProject();return [...state.projects].sort((a,b)=>a.projectId===last?-1:b.projectId===last?1:(b.updatedAt||'').localeCompare(a.updatedAt||'')).slice(0,limit)}
+  function homeView(options={}){const standalone=Boolean(options.standalone);const counts=Object.keys(STATUS_LABELS).map(status=>`<div><b>${FEATURES.filter(item=>item.status===status).length}</b><span>${STATUS_LABELS[status]}</span></div>`).join('');const recent=recentProjects().map(project=>`<button class="music-recent-item" onclick="MusicStudio.openProject('${escapeHtml(project.projectId)}')"><b>${escapeHtml(project.projectName)}</b><span>${escapeHtml(project.songTitle||'曲名未設定')} · ${formatDate(project.updatedAt)}</span></button>`).join('')||'<p class="music-empty">プロジェクトはまだありません。「新しい音楽プロジェクト」から始められます。</p>';return `<main class="music-studio-shell" aria-labelledby="musicStudioTitle"><header class="music-hero"><div><p class="music-kicker">Logic Pro X centered creative support</p><h1 id="musicStudioTitle">Music Studio</h1><p class="music-lead">音楽制作プロジェクトを安全に作成・保存・管理できます。</p></div><span class="music-version">MS-02 / Projects</span></header>${contextNote(standalone)}<nav class="music-quick-nav" aria-label="Music Studio主要ナビゲーション"><button class="music-primary" onclick="${navAction(FEATURES[0],standalone)}">＋ 新しい音楽プロジェクト</button><button class="music-secondary" onclick="${navAction(FEATURES[1],standalone)}">プロジェクト一覧</button><button class="music-secondary" onclick="${standalone?"location.href='./index.html#dream-architect'":"setView('dream-architect')"}">← Dream Architect Studio</button></nav><section class="music-recent" aria-labelledby="musicRecentTitle"><div class="music-section-heading"><div><p class="music-kicker">Recent</p><h2 id="musicRecentTitle">最近使ったプロジェクト</h2></div></div>${recent}</section><section class="music-status-summary" aria-label="機能の状態">${counts}</section><section aria-labelledby="musicFeaturesTitle"><div class="music-section-heading"><div><p class="music-kicker">Workspace</p><h2 id="musicFeaturesTitle">制作メニュー</h2></div></div><div class="music-feature-grid">${FEATURES.map(item=>card(item,standalone)).join('')}</div></section><footer class="music-footer"><p><b>独立保存：</b>Music Studio専用領域を使用し、既存アプリの保存データは変更しません。</p></footer></main>`}
+  function backButton(label='Music Studioホームへ戻る'){return `<button class="music-secondary music-back" onclick="MusicStudio.goHome()">← ${label}</button>`}
+  function noticeView(){return state.notice?`<div class="music-notice is-${state.noticeKind}" role="status"><span>${escapeHtml(state.notice)}</span><button type="button" aria-label="通知を閉じる" onclick="MusicStudio.clearNotice()">×</button></div>`:''}
+  function formFields(project={}){const ts=project.musicalSettings?.timeSignature;const signature=ts?`${ts.numerator}/${ts.denominator}`:'4/4';const key=project.musicalSettings?.key??'';return `<div class="music-form-grid"><label for="msProjectName">プロジェクト名 <span aria-hidden="true">*</span><input id="msProjectName" name="projectName" required maxlength="120" value="${escapeHtml(project.projectName||'')}"></label><label for="msSongTitle">曲名<input id="msSongTitle" name="songTitle" maxlength="120" value="${escapeHtml(project.songTitle||'')}"></label><label class="music-span-2" for="msPurpose">制作目的または使用作品<input id="msPurpose" name="purpose" maxlength="240" value="${escapeHtml(project.purpose||'')}"></label><label for="msBpm">BPM<input id="msBpm" name="bpm" type="number" min="20" max="400" inputmode="numeric" required value="${escapeHtml(project.musicalSettings?.bpm??120)}"></label><label for="msTimeSignature">拍子<select id="msTimeSignature" name="timeSignature">${['2/4','3/4','4/4','5/4','6/8','12/8'].map(value=>`<option ${signature===value?'selected':''}>${value}</option>`).join('')}</select></label><label for="msKey">キー<select id="msKey" name="key"><option value="">未設定</option>${['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'].map(value=>`<option ${key===value?'selected':''}>${value}</option>`).join('')}</select></label><label for="msStatus">制作状態<select id="msStatus" name="status">${Object.entries(PROJECT_STATUS_LABELS).map(([value,label])=>`<option value="${value}" ${(project.status||'idea')===value?'selected':''}>${label}</option>`).join('')}</select></label><label class="music-span-2" for="msProductionNotes">制作メモ<textarea id="msProductionNotes" name="productionNotes" rows="6" maxlength="10000">${escapeHtml(project.productionNotes||'')}</textarea></label></div>`}
+  function createView(){return `<main class="music-studio-shell music-project-page" aria-labelledby="musicCreateTitle">${backButton()}${noticeView()}<section class="music-project-panel"><p class="music-kicker">New project</p><h1 id="musicCreateTitle">新しい音楽プロジェクト</h1><p class="music-lead">入力内容はMusic Studio専用領域へ保存されます。</p><form id="musicProjectForm" oninput="MusicStudio.markDirty()" onsubmit="MusicStudio.submitCreate(event)">${formFields()}<div class="music-form-actions"><button class="music-primary" type="submit">作成して保存</button><button class="music-secondary" type="button" onclick="MusicStudio.cancelEdit()">キャンセル</button><span class="music-save-state" data-dirty="${state.dirty}">${state.dirty?'未保存の変更があります':'未変更'}</span></div></form></section></main>`}
+  function projectRow(project){return `<article class="music-project-row"><div><h2>${escapeHtml(project.projectName)}</h2><p>${escapeHtml(project.songTitle||'曲名未設定')} · ${escapeHtml(PROJECT_STATUS_LABELS[project.status]||project.status)} · BPM ${escapeHtml(project.musicalSettings?.bpm)} · ${escapeHtml(project.musicalSettings?.key||'キー未設定')}</p><small>最終更新：${formatDate(project.updatedAt)}</small></div><button class="music-primary" onclick="MusicStudio.openProject('${escapeHtml(project.projectId)}')">開く</button></article>`}
+  function listView(){const query=state.search.trim().toLocaleLowerCase('ja');const items=state.projects.filter(project=>!query||[project.projectName,project.songTitle,project.purpose].some(value=>String(value||'').toLocaleLowerCase('ja').includes(query))).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));return `<main class="music-studio-shell music-project-page" aria-labelledby="musicProjectsTitle">${backButton()}${noticeView()}<section class="music-project-panel"><div class="music-section-heading"><div><p class="music-kicker">Projects</p><h1 id="musicProjectsTitle">音楽プロジェクト</h1></div><button class="music-primary" onclick="MusicStudio.goNew()">＋ 新規作成</button></div><label class="music-search" for="musicProjectSearch">プロジェクトを検索<input id="musicProjectSearch" type="search" value="${escapeHtml(state.search)}" placeholder="プロジェクト名・曲名・使用作品" oninput="MusicStudio.searchProjects(this.value)"></label><div class="music-project-list">${state.loaded?(items.map(projectRow).join('')||`<div class="music-empty"><p>${query?'検索条件に一致するプロジェクトはありません。':'プロジェクトはまだありません。'}</p><button class="music-primary" onclick="MusicStudio.goNew()">最初のプロジェクトを作る</button></div>`):'<p class="music-empty">プロジェクトを読み込んでいます…</p>'}</div><div class="music-import-box"><label for="musicProjectImport">JSONから読み込む<input id="musicProjectImport" type="file" accept="application/json,.json" onchange="MusicStudio.importFile(this.files[0]);this.value=''" hidden></label><button class="music-secondary" onclick="document.querySelector('#musicProjectImport').click()">JSONを読み込む</button><p>既存データを消さず、Version 1形式を新規または複製として追加します。</p></div></section></main>`}
+  function editView(id){const project=state.projects.find(item=>item.projectId===id);if(!project)return `<main class="music-studio-shell music-project-page">${backButton('プロジェクト一覧へ戻る')}<div class="music-empty"><h1>プロジェクトが見つかりません</h1><p>削除済みか、URLが正しくない可能性があります。</p><button class="music-primary" onclick="MusicStudio.goProjects()">一覧へ戻る</button></div></main>`;return `<main class="music-studio-shell music-project-page" aria-labelledby="musicEditTitle"><button class="music-secondary music-back" onclick="MusicStudio.goProjects()">← プロジェクト一覧へ戻る</button>${noticeView()}<section class="music-project-panel"><div class="music-section-heading"><div><p class="music-kicker">Project</p><h1 id="musicEditTitle">${escapeHtml(project.projectName)}</h1><p>作成：${formatDate(project.createdAt)} / 更新：${formatDate(project.updatedAt)} / Revision ${project.revision}</p></div></div><form id="musicProjectForm" oninput="MusicStudio.markDirty()" onsubmit="MusicStudio.submitEdit(event,'${escapeHtml(project.projectId)}')">${formFields(project)}<div class="music-form-actions"><button class="music-primary" type="submit">変更を保存</button><button class="music-secondary" type="button" onclick="MusicStudio.cancelEdit('${escapeHtml(project.projectId)}')">キャンセル</button><span class="music-save-state" data-dirty="${state.dirty}">${state.dirty?'未保存の変更があります':'保存済み'}</span></div></form><div class="music-project-tools"><button class="music-secondary" onclick="MusicStudio.duplicateProject('${escapeHtml(project.projectId)}')">複製</button><button class="music-secondary" onclick="MusicStudio.exportProject('${escapeHtml(project.projectId)}')">JSON書き出し</button><button class="music-danger" onclick="MusicStudio.askDelete('${escapeHtml(project.projectId)}')">このプロジェクトを削除</button></div></section></main>`}
+  function placeholderView(route,options={}){const id=route.replace(`${HOME_ROUTE}/`,'');const item=FEATURES.find(feature=>feature.id===id&&!feature.action);if(!item)return homeView(options);return `<main class="music-studio-shell music-placeholder" aria-labelledby="musicPlaceholderTitle">${backButton()}<section class="music-placeholder-panel"><div class="music-card-top"><span class="music-feature-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>${statusBadge(item.status)}</div><p class="music-kicker">Music Studio</p><h1 id="musicPlaceholderTitle">${escapeHtml(item.title)}</h1><p class="music-lead">${escapeHtml(item.description)}</p><p class="music-empty">この機能は今後のMS作業で実装します。現在は既存データを変更しない安全な準備中画面です。</p><button class="music-primary" onclick="MusicStudio.goHome()">ホームへ戻る</button></section></main>`}
+  function parseEditId(route){return route.startsWith(`${EDIT_ROUTE}/`)?decodeURIComponent(route.slice(EDIT_ROUTE.length+1)):''}
+  function renderRoute(route,options={}){if(route===HOME_ROUTE)return homeView(options);if(route===NEW_ROUTE)return createView();if(route===PROJECTS_ROUTE)return listView();const editId=parseEditId(route);if(editId)return editView(editId);return placeholderView(route,options)}
+  function formValue(){const form=root.document?.querySelector('#musicProjectForm');if(!form)throw Error('フォームが見つかりません。');const get=name=>form.elements[name]?.value??'';return{projectName:get('projectName'),songTitle:get('songTitle'),purpose:get('purpose'),bpm:get('bpm'),timeSignature:get('timeSignature'),key:get('key'),status:get('status'),productionNotes:get('productionNotes')}}
+  async function submitCreate(event){event?.preventDefault?.();try{const project=makeProject(formValue());const checked=validateProject(project);if(!checked.valid){notice(checked.errors.join(' '),'error');return}await repository.put(project);setLastProject(project.projectId);state.dirty=false;await refresh();notice('新しい音楽プロジェクトを保存しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(project.projectId)}`)}catch(error){console.error(error);notice('保存できませんでした。既存データは変更されていません。','error')}}
+  async function submitEdit(event,id){event?.preventDefault?.();try{const current=await repository.get(id);if(!current){notice('編集対象が見つかりません。','error');return}const input=formValue();const updated={...current,...input,revision:(current.revision||1)+1,musicalSettings:{...current.musicalSettings,bpm:Number(input.bpm),timeSignature:(()=>{const [numerator,denominator]=input.timeSignature.split('/').map(Number);return{numerator,denominator}})(),key:input.key||null},updatedAt:now()};delete updated.bpm;delete updated.timeSignature;delete updated.key;const checked=validateProject(updated);if(!checked.valid){notice(checked.errors.join(' '),'error');return}await repository.put(updated);setLastProject(id);state.dirty=false;await refresh();notice('変更を保存しました。','success')}catch(error){console.error(error);notice('保存できませんでした。既存データは変更されていません。','error')}}
+  async function duplicateProject(id){try{const source=await repository.get(id);if(!source)return;const timestamp=now();const duplicate={...clone(source),projectId:uuid(),projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp};await repository.put(duplicate);setLastProject(duplicate.projectId);await refresh();notice('元のプロジェクトを変更せず複製しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(duplicate.projectId)}`)}catch(error){console.error(error);notice('複製できませんでした。','error')}}
+  async function askDelete(id){const project=await repository.get(id);if(!project)return;const confirmed=root.confirm?.(`「${project.projectName}」を削除しますか？\nこの操作はこのプロジェクトだけに影響します。`)??false;if(!confirmed){notice('削除をキャンセルしました。','info');return}try{await repository.delete(id);if(getLastProject()===id)setLastProject('');state.dirty=false;await refresh();notice('プロジェクトを削除しました。ほかのプロジェクトは変更していません。','success');routeTo(PROJECTS_ROUTE)}catch(error){console.error(error);notice('削除できませんでした。','error')}}
+  function safeFileName(name){return String(name||'music-project').normalize('NFKC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/\s+/g,'-').slice(0,80)||'music-project'}
+  async function exportProject(id){const project=await repository.get(id);if(!project)return;const exported={...clone(project),midiAssets:(project.midiAssets||[]).map(markExternal),audioAssets:(project.audioAssets||[]).map(markExternal),fileReferences:(project.fileReferences||[]).map(markExternal)};const text=JSON.stringify(exported,null,2);const date=now().slice(0,10);const filename=`${safeFileName(project.projectName)}-${date}.json`;if(!root.document||!root.Blob||!root.URL?.createObjectURL)return{filename,text};const url=root.URL.createObjectURL(new Blob([text],{type:'application/json'}));const link=root.document.createElement('a');link.href=url;link.download=filename;root.document.body.appendChild(link);link.click();link.remove();setTimeout(()=>root.URL.revokeObjectURL(url),1000);notice('JSONを書き出しました。MIDI・音声本体は含まれません。','success');return{filename,text}}
+  function markExternal(asset){return{...clone(asset),storage:{...(asset.storage||{}),requiresReselection:true}}}
+  async function importText(text){let parsed;try{parsed=JSON.parse(text)}catch(_){return{ok:false,message:'JSONが壊れているため読み込めません。既存データは変更していません。'}}const checked=validateProject(parsed);if(!checked.valid)return{ok:false,message:`読み込めません：${checked.errors.join(' ')}`};const incoming=clone(parsed);let duplicated=false;if(await repository.has(incoming.projectId)){incoming.projectId=uuid();incoming.projectName=`${incoming.projectName}（読み込み）`;incoming.createdAt=now();duplicated=true}incoming.updatedAt=now();incoming.revision=Math.max(1,Number(incoming.revision)||1);await repository.put(incoming);setLastProject(incoming.projectId);await refresh();return{ok:true,project:incoming,duplicated,message:duplicated?'ID重複を検出し、新しいIDで安全に読み込みました。':'プロジェクトを読み込みました。'}}
+  async function importFile(file){if(!file)return;try{const result=await importText(await file.text());notice(result.message,result.ok?'success':'error');if(result.ok)routeTo(`${EDIT_ROUTE}/${encodeURIComponent(result.project.projectId)}`)}catch(error){console.error(error);notice('ファイルを読み込めません。既存データは変更していません。','error')}}
+  function formatDate(value){try{return new Intl.DateTimeFormat('ja-JP',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value))}catch(_){return String(value||'')}}
+  function markDirty(){if(!state.dirty){state.dirty=true;const indicator=root.document?.querySelector('.music-save-state');if(indicator){indicator.dataset.dirty='true';indicator.textContent='未保存の変更があります'}}}
+  function cancelEdit(id=''){if(state.dirty&&(root.confirm?.('未保存の変更を破棄しますか？')??false)===false)return;state.dirty=false;routeTo(id?`${EDIT_ROUTE}/${encodeURIComponent(id)}`:HOME_ROUTE);requestPaint()}
+  function guardLeave(){return !state.dirty||(root.confirm?.('未保存の変更を破棄して移動しますか？')??false)}
+  function go(route){if(guardLeave()){state.dirty=false;state.notice='';routeTo(route)}}
   function isMusicRoute(route){return route===HOME_ROUTE||route.startsWith(`${HOME_ROUTE}/`)}
   function syncHostChrome(route){root.document?.body?.classList?.toggle('is-music-studio-route',isMusicRoute(route))}
-  function installHostRoutes(){
-    if(typeof root.managementViewForRoute!=='function')return false;
-    const base=root.managementViewForRoute;
-    root.managementViewForRoute=function(route){syncHostChrome(route);return isMusicRoute(route)?renderRoute(route):base(route)};
-    const baseSetView=typeof root.setView==='function'?root.setView:null;
-    if(baseSetView)root.setView=function(route){syncHostChrome(route);return baseSetView(route)};
-    const baseOpenApp=typeof root.openApp==='function'?root.openApp:null;
-    if(baseOpenApp)root.openApp=function(appId,urlOverride){if(appId==='musicStudio'&&!urlOverride)return root.setView(HOME_ROUTE);return baseOpenApp(appId,urlOverride)};
-    root.addEventListener?.('hashchange',()=>{const route=(root.location.hash||'').slice(1);syncHostChrome(route);if(isMusicRoute(route))root.render?.()});
-    syncHostChrome((root.location.hash||'').slice(1));
-    root.render?.();
-    return true;
-  }
-  function mountStandalone(){
-    const target=root.document?.querySelector('#music-studio-app');if(!target)return;
-    const paint=()=>{const route=(root.location.hash||`#${HOME_ROUTE}`).slice(1)||HOME_ROUTE;target.innerHTML=renderRoute(route,{standalone:true});root.document.title=route===HOME_ROUTE?'Music Studio':'Music Studio — 準備中'};
-    root.addEventListener('hashchange',paint);paint();
-  }
+  function installHostRoutes(){if(typeof root.managementViewForRoute!=='function')return false;const base=root.managementViewForRoute;root.managementViewForRoute=function(route){syncHostChrome(route);return isMusicRoute(route)?renderRoute(route):base(route)};const baseSetView=typeof root.setView==='function'?root.setView:null;if(baseSetView)root.setView=function(route){syncHostChrome(route);return baseSetView(route)};const baseOpenApp=typeof root.openApp==='function'?root.openApp:null;if(baseOpenApp)root.openApp=function(appId,urlOverride){if(appId==='musicStudio'&&!urlOverride)return root.setView(HOME_ROUTE);return baseOpenApp(appId,urlOverride)};root.addEventListener?.('hashchange',()=>{const route=currentRoute();syncHostChrome(route);if(isMusicRoute(route))root.render?.()});syncHostChrome(currentRoute());root.render?.();return true}
+  let standaloneTarget=null;
+  function paintStandalone(){standaloneTarget=standaloneTarget||root.document?.querySelector('#music-studio-app');if(!standaloneTarget)return;const route=currentRoute();standaloneTarget.innerHTML=renderRoute(route,{standalone:true});root.document.title=route===HOME_ROUTE?'Music Studio':'Music Studio — プロジェクト管理'}
+  function mountStandalone(){root.addEventListener?.('hashchange',paintStandalone);paintStandalone()}
+  async function initialize(){try{await refresh()}catch(error){console.error('Music Studio storage could not be opened',error);repository=memoryRepository();state.loaded=true;notice('専用保存領域を開けないため、このセッションでは一時保存になります。','error')}}
 
-  root.MusicStudio={HOME_ROUTE,FEATURES:FEATURES.map(item=>({...item})),STATUS_LABELS:{...STATUS_LABELS},homeView,placeholderView,renderRoute,isMusicRoute,installHostRoutes,mountStandalone};
-  if(root.document){if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes()}
+  const api={HOME_ROUTE,PROJECTS_ROUTE,NEW_ROUTE,EDIT_ROUTE,FORMAT,SCHEMA_VERSION,APP_VERSION,DB_NAME,STORE_NAME,LAST_PROJECT_KEY,FEATURES:FEATURES.map(item=>({...item})),STATUS_LABELS:{...STATUS_LABELS},PROJECT_STATUS_LABELS:{...PROJECT_STATUS_LABELS},state,makeProject,validateProject,memoryRepository,indexedDbRepository,setRepository,refresh,homeView,createView,listView,editView,placeholderView,renderRoute,isMusicRoute,installHostRoutes,mountStandalone,initialize,submitCreate,submitEdit,duplicateProject,askDelete,exportProject,importText,importFile,markDirty,cancelEdit,clearNotice(){state.notice='';requestPaint()},searchProjects(value){state.search=value;const query=value.trim().toLocaleLowerCase('ja');const items=state.projects.filter(project=>!query||[project.projectName,project.songTitle,project.purpose].some(field=>String(field||'').toLocaleLowerCase('ja').includes(query))).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));const target=root.document?.querySelector('.music-project-list');if(target)target.innerHTML=items.map(projectRow).join('')||`<div class="music-empty"><p>${query?'検索条件に一致するプロジェクトはありません。':'プロジェクトはまだありません。'}</p><button class="music-primary" onclick="MusicStudio.goNew()">最初のプロジェクトを作る</button></div>`},openProject(id){state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`)},goHome(){go(HOME_ROUTE)},goProjects(){go(PROJECTS_ROUTE)},goNew(){go(NEW_ROUTE)}};
+  root.MusicStudio=api;
+  if(root.document){if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
 })(typeof window!=='undefined'?window:globalThis);
