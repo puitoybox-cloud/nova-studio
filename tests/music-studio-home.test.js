@@ -48,7 +48,7 @@ test('unfinished routes always render safe placeholders with return actions',()=
   }
   assert.match(app.renderRoute('music-studio/settings'),/Music Studio設定/);
   assert.match(app.renderRoute('music-studio/backup'),/Music Studioバックアップ/);
-  assert.match(app.renderRoute('music-studio/logic-pro'),/書き出したMIDIを再検査/);
+  assert.match(app.renderRoute('music-studio/logic-pro'),/Logic ProからMIDIを取り込む/);
 });
 
 test('project routes render real accessible management screens',()=>{

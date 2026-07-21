@@ -1336,21 +1336,29 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.3.0';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.0';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
 if(!document.querySelector('script[data-music-studio-midi]')){
  const musicStudioMidiScript=document.createElement('script');
- musicStudioMidiScript.src='./music-studio-midi.js?v=1.3.0';
+ musicStudioMidiScript.src='./music-studio-midi.js?v=1.4.0';
  musicStudioMidiScript.dataset.musicStudioMidi='true';
  document.body.appendChild(musicStudioMidiScript);
 }
+if(!document.querySelector('script[data-music-studio-midi-parser]')){
+ const parserScript=document.createElement('script');
+ parserScript.src='./music-studio-midi-parser.js?v=1.4.0';
+ parserScript.dataset.musicStudioMidiParser='true';
+ const midiScript=document.querySelector('script[data-music-studio-midi]');
+ if(window.MusicStudioMidi)document.body.appendChild(parserScript);
+ else midiScript.addEventListener('load',()=>document.body.appendChild(parserScript),{once:true});
+}
 if(!document.querySelector('script[data-music-studio]')){
  const musicStudioScript=document.createElement('script');
- musicStudioScript.src='./music-studio.js?v=1.3.0';
+ musicStudioScript.src='./music-studio.js?v=1.4.0';
  musicStudioScript.dataset.musicStudio='true';
- const midiScript=document.querySelector('script[data-music-studio-midi]');
- if(window.MusicStudioMidi)document.body.appendChild(musicStudioScript);
- else midiScript.addEventListener('load',()=>document.body.appendChild(musicStudioScript),{once:true});
+ const parserScript=document.querySelector('script[data-music-studio-midi-parser]');
+ if(window.MusicStudioMidiParser)document.body.appendChild(musicStudioScript);
+ else parserScript.addEventListener('load',()=>document.body.appendChild(musicStudioScript),{once:true});
 }

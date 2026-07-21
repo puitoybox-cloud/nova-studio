@@ -1,5 +1,14 @@
 # Nova Studio Changelog
 
+## MS-06（MIDI読み込み・解析・安全な再編集基盤）
+
+- DOM非依存のStandard MIDI File Type 0／1 parser、厳格なheader／track境界、VLQ decode、Running Status、Meta／SysEx／channel event、tempo／拍子map、note組立、Program／Control Change保持を追加
+- Type 2、未知format、SMPTE division、途中切れ、不正長を日本語で安全拒否し、元MIDIと既存projectを変更しない境界を実装
+- 保存前preview、新規project取り込み、現在projectの複製取り込み、解析のみ、metadata専用読み込み履歴を追加。直接上書きとbinary保存は不採用
+- IndexedDB Version 5へ`midiImportHistory`を非破壊追加し、Version 1 project、設定、backup、Nova Studio、Dream Architect Studio、ai-music-helperの領域を維持
+- MS-05生成→MS-06解析→Version 1保存候補→MS-05再生成の往復testと自前fixture、性能・responsive・回帰検証を追加
+- 正式仕様、端末案内、性能上限、license、既知の制限と次のMS-07を文書化
+
 ## MS-05（Standard MIDI File Type 1書き出し・検証基盤）
 
 - 外部依存なしの`music-studio-midi.js`でMThd、tempo／拍子track、複数note track、UTF-8 track名、channel、velocity、Program Change、VLQ、End of Trackを持つSMF Type 1を生成

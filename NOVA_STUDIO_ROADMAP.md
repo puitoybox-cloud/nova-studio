@@ -71,8 +71,12 @@
 | MS-03 / MS-03N | ✅ 完成 | 設定、backup、自動保存・夜間安全策 | 設定APIをMS-04以降の正本にする。 |
 | MS-04 | 🔵 ティア確認待ち | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復を採用。専用案内、事前検証、音声一時参照を実装。実機受入後に完成判定。 |
 | MS-05 | 🟨 ティア確認待ち | Standard MIDI File生成・検証基盤 | 依存なしType 1 writer、tempo・拍子・UTF-8 track名、複数track、内部再解析、履歴、無data無出力、118テスト。Logic Pro実機確認待ち。 |
+| MS-06 | 🟨 ティア確認待ち | Logic Pro MIDI読み込み・解析・安全な再編集基盤 | 独立Type 0/1 parser、Running Status、Meta／channel event、tempo／拍子map、note組立、Program／CC保持、preview、新規／複製、履歴、MS-05往復。 |
+| MS-07 | ⬜ 次の正式作業 | MIDI Composerホーム・骨組み | MS-06解析基盤を再利用し編集入口と責務境界を整備する。 |
 
 MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_INTEGRATION.md` を正本とする。Logic Proの自動起動・直接操作・project file編集、外部送信は採用しない。
+
+MS-06の解析仕様、保存境界、性能上限、既知の制限は `docs/music-studio/MS-06_MIDI_IMPORT.md` を正本とする。
 
 ## LINK-01着手前にティアが決めること
 
