@@ -1287,7 +1287,14 @@ openProductionDashboard=function(){
   setView('productionDashboard');
 };
 const novaFinalManagementViewForRouteBase=managementViewForRoute;
+function musicStudioHostRouteView(route,studio=window.MusicStudio){
+  if(route!=='music-studio'&&!String(route||'').startsWith('music-studio/'))return null;
+  if(studio&&typeof studio.renderRoute==='function')return studio.renderRoute(route);
+  return '<main class="music-studio-shell" data-music-studio-loading="true" aria-busy="true"><p class="music-empty">Music Studioを読み込んでいます…</p></main>';
+}
 managementViewForRoute=function(v){
+  const musicStudioView=musicStudioHostRouteView(v);
+  if(musicStudioView!==null)return musicStudioView;
   if(v==='productionDashboard')return projectDashboardView();
   if(v==='promptStudio')return appWorkspaceView('promptStudio');
   if(v==='musicStudio')return appWorkspaceView('musicStudio');
@@ -1341,25 +1348,17 @@ if(!document.querySelector('link[data-music-studio]')){
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
-if(!document.querySelector('script[data-music-studio-midi]')){
- const musicStudioMidiScript=document.createElement('script');
- musicStudioMidiScript.src='./music-studio-midi.js?v=1.4.0';
- musicStudioMidiScript.dataset.musicStudioMidi='true';
- document.body.appendChild(musicStudioMidiScript);
+function loadMusicStudioScript(datasetKey,src,ready){
+ if(ready())return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  let script=document.querySelector(`script[data-${datasetKey}]`);
+  if(!script){script=document.createElement('script');script.src=src;script.dataset[datasetKey.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase())]='true';document.body.appendChild(script)}
+  if(ready())return resolve();
+  script.addEventListener('load',()=>ready()?resolve():reject(Error(`${src} did not initialize`)),{once:true});
+  script.addEventListener('error',()=>reject(Error(`${src} could not be loaded`)),{once:true});
+ });
 }
-if(!document.querySelector('script[data-music-studio-midi-parser]')){
- const parserScript=document.createElement('script');
- parserScript.src='./music-studio-midi-parser.js?v=1.4.0';
- parserScript.dataset.musicStudioMidiParser='true';
- const midiScript=document.querySelector('script[data-music-studio-midi]');
- if(window.MusicStudioMidi)document.body.appendChild(parserScript);
- else midiScript.addEventListener('load',()=>document.body.appendChild(parserScript),{once:true});
-}
-if(!document.querySelector('script[data-music-studio]')){
- const musicStudioScript=document.createElement('script');
- musicStudioScript.src='./music-studio.js?v=1.4.0';
- musicStudioScript.dataset.musicStudio='true';
- const parserScript=document.querySelector('script[data-music-studio-midi-parser]');
- if(window.MusicStudioMidiParser)document.body.appendChild(musicStudioScript);
- else parserScript.addEventListener('load',()=>document.body.appendChild(musicStudioScript),{once:true});
-}
+loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.0',()=>Boolean(window.MusicStudioMidi))
+ .then(()=>loadMusicStudioScript('music-studio-midi-parser','./music-studio-midi-parser.js?v=1.4.0',()=>Boolean(window.MusicStudioMidiParser)))
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.0',()=>Boolean(window.MusicStudio)))
+ .catch(error=>console.error('Music Studio scripts could not be initialized',error));

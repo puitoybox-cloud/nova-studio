@@ -94,3 +94,24 @@ test('all host Music Studio entrances ignore a configured legacy URL and open th
   assert.match(hostSource,/if\(appId==='musicStudio'&&!urlOverride\)return setView\('music-studio'\)/);
   assert.doesNotMatch(hostSource,/\['promptStudio','musicStudio'\]\.includes\(appId\).*\.url\)return setView\(appId\)/);
 });
+
+test('host router renders new Music Studio routes and preserves unrelated routes',()=>{
+  const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  const match=hostSource.match(/function musicStudioHostRouteView[\s\S]*?\n\}/);
+  assert.ok(match,'Music Studio host route dispatcher is defined');
+  const window={};window.window=window;
+  vm.runInNewContext(`${match[0]};window.routeView=musicStudioHostRouteView`,{window,globalThis:window});
+  const studio={renderRoute:route=>`music:${route}`};
+  assert.equal(window.routeView('music-studio',studio),'music:music-studio');
+  assert.equal(window.routeView('music-studio/logic-pro',studio),'music:music-studio/logic-pro');
+  assert.equal(window.routeView('storyArchive',studio),null);
+  assert.match(window.routeView('music-studio'),/data-music-studio-loading="true"/);
+  assert.match(hostSource,/const musicStudioView=musicStudioHostRouteView\(v\)/);
+});
+
+test('Music Studio dependencies load sequentially without querying detached scripts',()=>{
+  const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
+  assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
+  assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
+});
