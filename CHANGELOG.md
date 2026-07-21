@@ -1,5 +1,16 @@
 # Nova Studio Changelog
 
+## MS-05（Standard MIDI File Type 1書き出し・検証基盤）
+
+- 外部依存なしの`music-studio-midi.js`でMThd、tempo／拍子track、複数note track、UTF-8 track名、channel、velocity、Program Change、VLQ、End of Trackを持つSMF Type 1を生成
+- BPM、拍子、PPQ、channel、pitch、velocity、tick、duration、note数を事前検証し、演奏dataなしや範囲外値ではdownloadしない安全境界を実装
+- 独立parserでheader、chunk長、Type、track数、PPQ、VLQ、event範囲、End of Track、file末尾、Note On／Off数を生成直後と再選択時に検査
+- Logic Pro連携画面へ書き出し前summary、test project、安全filename、二重実行防止、`audio/midi` Blob download、Object URL解放、端末別案内を追加
+- IndexedDB Version 4へmetadata専用`midiExportHistory` storeを非破壊追加。MIDI本体はproject、history、JSON、backupへ保存しない
+- `midiData`は存在するprojectだけ保持し既存Version 1を強制移行しない。Nova Studio、Dream Architect Studio、ai-music-helperの保存領域は変更なし
+- 自前test MIDIでType 1、3 track、PPQ 480、120／132 BPM、主要拍子、日本語名、10 notesを検査し、全118自動test成功
+- 外部library、fixture、追加packageなし。Logic Pro実機での読込・再生確認はティア確認待ち
+
 ## MS-04（Logic Pro X連携方式の調査・設計）
 
 - Logic Proへの最初の連携をStandard MIDI File Type 1の手動往復とし、Type 0、WAV、AIFF、CAF、MusicXML、JSON／text、tempo・拍子・marker等の維持範囲を公式資料基準で整理
