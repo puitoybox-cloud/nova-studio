@@ -1151,7 +1151,7 @@ const HOME_HOME_IMAGE_ALTS={
 };
 function homeImage(fileName,cls,label=''){
   const alt=label||HOME_HOME_IMAGE_ALTS[fileName]||'ホーム画像';
-  return `<figure class="home-character ${cls}" data-character="${esc(fileName)}"><img src="./assets/images/home/${fileName}" alt="${esc(alt)}" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='root';this.src='./${fileName}'}else{this.closest('.home-character')?.classList.add('image-missing')}"></figure>`;
+  return `<figure class="home-character ${cls}" data-character="${esc(fileName)}"><img src="./${fileName}" alt="${esc(alt)}" loading="eager" decoding="async" onerror="this.hidden=true;this.closest('.home-character')?.classList.add('image-missing')"></figure>`;
 }
 function homeCharacterImage(fileName,cls,label=''){
   return homeImage(fileName,cls,label);
