@@ -1151,7 +1151,7 @@ const HOME_HOME_IMAGE_ALTS={
 };
 function homeImage(fileName,cls,label=''){
   const alt=label||HOME_HOME_IMAGE_ALTS[fileName]||'ホーム画像';
-  return `<figure class="home-character ${cls}" data-character="${esc(fileName)}"><img src="./assets/images/home/${fileName}" alt="${esc(alt)}" loading="eager" decoding="async" onerror="if(!this.dataset.fallback){this.dataset.fallback='root';this.src='./${fileName}'}else{this.closest('.home-character')?.classList.add('image-missing')}"></figure>`;
+  return `<figure class="home-character ${cls}" data-character="${esc(fileName)}"><img src="./${fileName}" alt="${esc(alt)}" loading="eager" decoding="async" onerror="this.hidden=true;this.closest('.home-character')?.classList.add('image-missing')"></figure>`;
 }
 function homeCharacterImage(fileName,cls,label=''){
   return homeImage(fileName,cls,label);
@@ -1336,13 +1336,13 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.0.1';
+ musicStudioStylesheet.href='./music-studio.css?v=1.1.0';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
 if(!document.querySelector('script[data-music-studio]')){
  const musicStudioScript=document.createElement('script');
- musicStudioScript.src='./music-studio.js?v=1.0.1';
+ musicStudioScript.src='./music-studio.js?v=1.1.0';
  musicStudioScript.dataset.musicStudio='true';
  document.body.appendChild(musicStudioScript);
 }
