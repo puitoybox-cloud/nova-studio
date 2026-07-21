@@ -1336,13 +1336,21 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.2.0';
+ musicStudioStylesheet.href='./music-studio.css?v=1.3.0';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
+if(!document.querySelector('script[data-music-studio-midi]')){
+ const musicStudioMidiScript=document.createElement('script');
+ musicStudioMidiScript.src='./music-studio-midi.js?v=1.3.0';
+ musicStudioMidiScript.dataset.musicStudioMidi='true';
+ document.body.appendChild(musicStudioMidiScript);
+}
 if(!document.querySelector('script[data-music-studio]')){
  const musicStudioScript=document.createElement('script');
- musicStudioScript.src='./music-studio.js?v=1.2.0';
+ musicStudioScript.src='./music-studio.js?v=1.3.0';
  musicStudioScript.dataset.musicStudio='true';
- document.body.appendChild(musicStudioScript);
+ const midiScript=document.querySelector('script[data-music-studio-midi]');
+ if(window.MusicStudioMidi)document.body.appendChild(musicStudioScript);
+ else midiScript.addEventListener('load',()=>document.body.appendChild(musicStudioScript),{once:true});
 }

@@ -70,7 +70,7 @@
 | MS-02 | ✅ 完成 | Version 1 project管理 | 非破壊JSON入出力と専用IndexedDB。 |
 | MS-03 / MS-03N | ✅ 完成 | 設定、backup、自動保存・夜間安全策 | 設定APIをMS-04以降の正本にする。 |
 | MS-04 | 🔵 ティア確認待ち | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復を採用。専用案内、事前検証、音声一時参照を実装。実機受入後に完成判定。 |
-| MS-05 | ⬜ 未着手 | Standard MIDI File生成・検証基盤 | Type 1最小writer、tempo・拍子・track名、相互運用fixture、無data無出力。MIDI Composer本体は分離。 |
+| MS-05 | 🟨 ティア確認待ち | Standard MIDI File生成・検証基盤 | 依存なしType 1 writer、tempo・拍子・UTF-8 track名、複数track、内部再解析、履歴、無data無出力、118テスト。Logic Pro実機確認待ち。 |
 
 MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_INTEGRATION.md` を正本とする。Logic Proの自動起動・直接操作・project file編集、外部送信は採用しない。
 

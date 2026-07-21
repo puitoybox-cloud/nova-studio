@@ -15,6 +15,7 @@
 | MS-LIC-003 | Nova / Tia画像と背景画像 | 画像素材 | `puitoybox-cloud/nova-studio` | 未確認 | Music Studioへ同梱しない |
 | MS-LIC-004 | ブラウザ標準API | プラットフォームAPI | Web Audio、File、IndexedDB等 | ライブラリ同梱なし | 利用可。対応ブラウザを記録 |
 | MS-LIC-005 | MIDI / 音声のテスト素材 | 制作素材 | 未選定 | 未確認 | 自作または明示許諾済み素材だけ採用 |
+| MS-LIC-006 | MS-05 SMF writer／inspector／test MIDI | 自社コード・自前生成data | 本repository | 外部licenseなし | 外部library・fixtureなし。browser標準APIのみ |
 | MS-LIC-006 | MS-03 / MS-03N設定・保存・バックアップ | 自作コード | `nova-studio` Music Studio専用実装 | 第三者ライブラリ追加なし | ブラウザ標準APIだけを使用。外部素材を追加しない |
 
 ## 新規登録テンプレート
