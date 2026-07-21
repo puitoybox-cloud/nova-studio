@@ -1,5 +1,15 @@
 # Nova Studio Changelog
 
+## MS-04（Logic Pro X連携方式の調査・設計）
+
+- Logic Proへの最初の連携をStandard MIDI File Type 1の手動往復とし、Type 0、WAV、AIFF、CAF、MusicXML、JSON／text、tempo・拍子・marker等の維持範囲を公式資料基準で整理
+- `music-studio/logic-pro` に専用画面を追加し、MS-03設定の一元表示、初心者向け手順、対応／未対応形式、端末別制限、空履歴を表示
+- MIDI Composer未実装時はdownloadを開始せず、説明だけを表示する安全境界を追加
+- Logic ProからのMIDI選択に16 MB上限、拡張子、`MThd` headerの事前検証を追加し、元file・既存projectを変更しない将来parser境界を定義
+- WAV／AIFF／CAFは名前・MIME・sizeだけを一時確認し、本体・絶対path・File objectをIndexedDBやbackupへ保存しない参照骨組みを追加
+- `music-studio-project` Version 1、Nova Studio、Dream Architect Studio、`ai-music-helper` の保存形式・領域は変更なし。Logic Pro自動起動、直接操作、`.logicx`編集、MIDI生成・高度解析は未実装
+- 正式roadmapをMS-04ティア確認待ちへ更新し、次の正式作業をMS-05 Standard MIDI File生成・検証基盤と定義
+
 ## MS-03N（Music Studio夜間追加実装）
 
 - Music Studio起動時だけ期限を確認する端末内自動バックアップ、内容重複防止、4MB上限、自動記録だけの保持件数整理、一覧・明示復元を追加
