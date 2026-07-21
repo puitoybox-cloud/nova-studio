@@ -1276,7 +1276,8 @@ function appWorkspaceView(appId){
 }
 const novaFinalOpenAppBase=openApp;
 openApp=function(appId,urlOverride){
-  if(!urlOverride&&['promptStudio','musicStudio'].includes(appId)&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
+  if(appId==='musicStudio'&&!urlOverride)return setView('music-studio');
+  if(appId==='promptStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
   return novaFinalOpenAppBase(appId,urlOverride);
 };
 const novaFinalOpenProductionDashboardBase=typeof openProductionDashboard==='function'?openProductionDashboard:null;

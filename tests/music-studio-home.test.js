@@ -88,3 +88,9 @@ test('Music Studio CSS hides only host chrome on Music Studio routes',()=>{
   assert.match(css,/body\.is-music-studio-route \.management-header/);
   assert.doesNotMatch(css,/(^|\n)\.management-bottom\s*\{[^}]*display\s*:\s*none/);
 });
+
+test('all host Music Studio entrances ignore a configured legacy URL and open the new home',()=>{
+  const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  assert.match(hostSource,/if\(appId==='musicStudio'&&!urlOverride\)return setView\('music-studio'\)/);
+  assert.doesNotMatch(hostSource,/\['promptStudio','musicStudio'\]\.includes\(appId\).*\.url\)return setView\(appId\)/);
+});
