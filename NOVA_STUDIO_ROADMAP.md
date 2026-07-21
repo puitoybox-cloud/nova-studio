@@ -61,6 +61,19 @@
 - その後：LINK-07（外部アプリ接続方式の正式設計）へ進む。
 - 最終更新日：2026-07-20
 
+## Music Studio正式ロードマップ
+
+| ID | 状態 | 作業内容 | 完了条件・次作業 |
+| --- | --- | --- | --- |
+| MS-00〜MS-00C | ✅ 完成 | 分離基盤、Version 1契約、ライセンス台帳 | 単体配布可能な保存・route境界を維持。 |
+| MS-01 / MS-01F | ✅ 完成 | 専用home、独立表示 | 共通navigationをMusic Studio routeだけで非表示。 |
+| MS-02 | ✅ 完成 | Version 1 project管理 | 非破壊JSON入出力と専用IndexedDB。 |
+| MS-03 / MS-03N | ✅ 完成 | 設定、backup、自動保存・夜間安全策 | 設定APIをMS-04以降の正本にする。 |
+| MS-04 | 🔵 ティア確認待ち | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復を採用。専用案内、事前検証、音声一時参照を実装。実機受入後に完成判定。 |
+| MS-05 | ⬜ 未着手 | Standard MIDI File生成・検証基盤 | Type 1最小writer、tempo・拍子・track名、相互運用fixture、無data無出力。MIDI Composer本体は分離。 |
+
+MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_INTEGRATION.md` を正本とする。Logic Proの自動起動・直接操作・project file編集、外部送信は採用しない。
+
 ## LINK-01着手前にティアが決めること
 
 1. 選択情報の共有範囲を同一ページ内だけにするか、外部サイトにも渡すか。

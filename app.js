@@ -1336,13 +1336,13 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.1.0';
+ musicStudioStylesheet.href='./music-studio.css?v=1.2.0';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
 if(!document.querySelector('script[data-music-studio]')){
  const musicStudioScript=document.createElement('script');
- musicStudioScript.src='./music-studio.js?v=1.1.0';
+ musicStudioScript.src='./music-studio.js?v=1.2.0';
  musicStudioScript.dataset.musicStudio='true';
  document.body.appendChild(musicStudioScript);
 }
