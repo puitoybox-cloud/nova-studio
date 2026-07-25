@@ -84,3 +84,49 @@ test('regeneration preparation refuses an all-locked range',()=>{
   assert.equal(result.ok,false);
   assert.match(result.reason,/固定/);
 });
+test('measure selection and locks remain independent for all three parts',()=>{
+  const core=load(),session=core.createSession(project());
+  core.setSelectedMeasures(session,[2]);core.toggleLockSelected(session);
+  core.selectPart(session,'drums');core.setSelectedMeasures(session,[3,4]);core.toggleLockSelected(session);
+  core.selectPart(session,'bass');core.setSelectedMeasures(session,[5]);
+  core.selectPart(session,'melody');
+  assert.equal(JSON.stringify(session.selectedMeasures),'[2]');
+  assert.equal(JSON.stringify(session.lockedMeasures),'[2]');
+  core.selectPart(session,'drums');
+  assert.equal(JSON.stringify(session.selectedMeasures),'[3,4]');
+  assert.equal(JSON.stringify(session.lockedMeasures),'[3,4]');
+  assert.equal(JSON.stringify(session.midiData.editor.parts.bass.selectedMeasures),'[5]');
+});
+test('drum candidates preview safely and apply only to the Drums channel 10 track',()=>{
+  const core=load(),session=core.createSession(project()),melodyBefore=JSON.stringify(session.midiData.tracks.find(track=>track.part==='melody').notes);
+  core.selectPart(session,'drums');core.addNote(session,{pitch:46,startTick:0});
+  const before=JSON.stringify(core.currentTrack(session).notes),candidate=core.setCandidate(session,'drums','basic');
+  assert.ok(candidate.notes.length>0);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.applyCandidate(session,'drums');
+  assert.equal(core.currentTrack(session).channel,10);
+  assert.equal(core.currentTrack(session).notes.length,candidate.notes.length);
+  assert.equal(JSON.stringify(session.midiData.tracks.find(track=>track.part==='melody').notes),melodyBefore);
+});
+test('bass candidate receives Melody and chord context before explicit adoption',()=>{
+  const core=load(),source=project();source.chordProgressions=[{measure:1,chord:'C'}];
+  const session=core.createSession(source);core.selectPart(session,'bass');
+  const before=JSON.stringify(core.currentTrack(session).notes),candidate=core.setCandidate(session,'bass','root');
+  assert.equal(candidate.context.melodyNoteCount,1);
+  assert.equal(candidate.context.chordProgressionCount,1);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.applyCandidate(session,'bass');
+  assert.equal(core.currentTrack(session).channel,2);
+  assert.ok(core.currentTrack(session).notes.length>0);
+});
+test('Drums and Bass regeneration requests use each part fixed range without rewriting notes',()=>{
+  const core=load(),session=core.createSession(project());
+  for(const part of ['drums','bass']){
+    core.selectPart(session,part);core.setSelectedMeasures(session,[1]);core.toggleLockSelected(session);core.setSelectedMeasures(session,[1,2]);
+    const before=JSON.stringify(core.currentTrack(session).notes),result=core.prepareRegeneration(session,'2026-07-25T00:00:00.000Z');
+    assert.equal(result.ok,true);
+    assert.equal(result.request.part,part);
+    assert.equal(JSON.stringify(result.request.targetMeasures),'[2]');
+    assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  }
+});
