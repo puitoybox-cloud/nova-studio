@@ -24,3 +24,14 @@ test('inspector rejects a truncated track',()=>{const midi=load(),result=midi.cr
 test('inspector rejects trailing data',()=>{const midi=load(),result=midi.createMidiFile(base(midi)),bytes=new Uint8Array(result.bytes.length+1);bytes.set(result.bytes);assert.equal(midi.inspectMidiBytes(bytes).ok,false)});
 test('validation warns about duplicate IDs',()=>{const midi=load(),data=base(midi);data.tracks[0].notes[1].id=data.tracks[0].notes[0].id;assert.match(midi.validateMidiProjectData(data).warnings.join(''),/重複/)});
 test('program values are optional but bounded',()=>{const midi=load(),data=base(midi);data.tracks[0].program=128;assert.equal(midi.validateMidiProjectData(data).ok,false);delete data.tracks[0].program;assert.equal(midi.validateMidiProjectData(data).ok,true)});
+test('Melody, Drums and Bass export as separate named MIDI tracks',()=>{
+  const midi=load(),data={version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m1',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
+    {id:'drums',name:'Drums',channel:10,notes:[{id:'d1',pitch:36,startTick:0,durationTicks:120,velocity:110}]},
+    {id:'bass',name:'Bass',channel:2,program:32,notes:[{id:'b1',pitch:36,startTick:0,durationTicks:960,velocity:88}]}
+  ]},result=midi.createMidiFile(data);
+  assert.equal(result.inspection.trackCount,4);
+  assert.equal(JSON.stringify(result.inspection.tracks.slice(1).map(track=>track.name)),JSON.stringify(['Melody','Drums','Bass']));
+  assert.equal(result.inspection.noteOnCount,3);
+  assert.equal(result.inspection.noteOffCount,3);
+});
