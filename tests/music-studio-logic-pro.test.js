@@ -37,3 +37,22 @@ test('part and All exports keep tempo, PPQ, note timing, velocity and channel th
   const all=app.midiExportSummary(project,'all'),roundTrip=window.MusicStudioMidiParser.parseMidiFile(window.MusicStudioMidi.createMidiFile(all.input).bytes).normalized;
   assert.equal(all.filename,'NOVA-MIDI-Test_All.mid');assert.equal(all.validation.trackCount,3);assert.equal(roundTrip.tracks.filter(track=>track.noteCount).length,3);assert.equal(roundTrip.totalNotes,3);
 });
+test('Drums editor export uses its explicit project instead of stale Piano project data',async()=>{
+  const{app,values,window}=load(),repo=app.memoryRepository();app.setRepository(repo);
+  const piano=app.makeProject({projectId:'piano-project',projectName:'Old Piano',midiData:window.MusicStudioMidi.createTestMidiData()});
+  const drums=app.makeProject({projectId:'drums-project',projectName:'MS-RESTART-06 Drums Test',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[
+      {id:'kick',pitch:36,startTick:0,durationTicks:240,velocity:108},
+      {id:'snare',pitch:38,startTick:480,durationTicks:240,velocity:100},
+      {id:'hat',pitch:42,startTick:0,durationTicks:120,velocity:86}
+    ]}
+  ]}});
+  await repo.put(piano);await repo.put(drums);app.state.projects=[piano,drums];values.set(app.LAST_PROJECT_KEY,piano.projectId);
+  app.state.midiEditor={projectId:drums.projectId,part:'drums',midiData:drums.midiData};
+  window.URL={createObjectURL:()=>`blob:test`,revokeObjectURL(){}};
+  window.document={body:{dataset:{},appendChild(){}},createElement:()=>({click(){},remove(){}})};
+  const exported=await app.performMidiExport('drums',drums.projectId);
+  const parsed=window.MusicStudioMidiParser.parseMidiFile(exported.bytes).normalized,track=parsed.tracks.find(item=>item.noteCount);
+  assert.equal(exported.ok,true);assert.equal(exported.history.projectId,drums.projectId);assert.equal(exported.filename,'MS-RESTART-06-Drums-Test_Drums.mid');
+  assert.equal(track.name,'Drums');assert.equal(track.channel,10);assert.equal(track.drumCandidate,true);assert.deepEqual([...new Set(track.notes.map(note=>note.pitch))].sort((a,b)=>a-b),[36,38,42]);assert.equal(track.programChanges.length,0);
+});
