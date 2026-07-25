@@ -32,6 +32,16 @@ test('orphan and unfinished notes remain warnings and are not invented',()=>{con
 test('channel 10 is a drum candidate and pitch bend is held',()=>{const p=load().parser,t=p.parseMidiFile(smf(0,[track([0,201,0,0,233,0,64,...meta(0,47,[])])])).normalized.tracks[0];assert.equal(t.drumCandidate,true);assert.equal(t.pitchBends[0].signedValue,0)})
 test('conversion never embeds source bytes or paths',()=>{const{writer,parser}=load(),made=writer.createMidiFile(writer.createTestMidiData()),parsed=parser.parseMidiFile(made.bytes),data=parser.convertParsedMidiToProjectData(parsed,{fileName:'roundtrip.mid',fileSize:made.bytes.length,mimeType:'audio/midi'}),json=JSON.stringify(data);assert.equal(data.sourceFormat,1);assert.equal(data.tracks.reduce((n,t)=>n+t.notes.length,0),10);assert.equal(json.includes('ArrayBuffer'),false);assert.equal(json.includes('/Users/'),false);assert.equal(data.importSource.fileName,'roundtrip.mid')})
 test('converted project data re-exports with MS-05 key information',()=>{const{writer,parser}=load(),first=writer.createMidiFile(writer.createTestMidiData()),data=parser.convertParsedMidiToProjectData(parser.parseMidiFile(first.bytes),{fileName:'first.mid'}),second=writer.createMidiFile(data),again=parser.parseMidiFile(second.bytes).normalized;assert.equal(again.ppq,480);assert.equal(again.tempo,120);assert.equal(`${again.timeSignature.numerator}/${again.timeSignature.denominator}`,'4/4');assert.equal(again.totalNotes,10);assert.equal(again.tracks.filter(t=>t.noteCount).length,2)})
+test('track assignment maps Melody, channel 10 Drums and Bass without duplicate parts',()=>{
+  const{writer,parser}=load(),data={version:1,ppq:480,tempo:126,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'lead',name:'Lead Melody',channel:1,program:0,notes:[{id:'m',pitch:64,startTick:120,durationTicks:360,velocity:91}]},
+    {id:'kit',name:'Studio Kit',channel:10,notes:[{id:'d',pitch:38,startTick:0,durationTicks:120,velocity:109}]},
+    {id:'low',name:'Electric Bass',channel:2,program:33,notes:[{id:'b',pitch:40,startTick:0,durationTicks:960,velocity:84}]}
+  ]},parsed=parser.parseMidiFile(writer.createMidiFile(data).bytes),converted=parser.convertParsedMidiToProjectData(parsed,{fileName:'three.mid'});
+  assert.equal(JSON.stringify(converted.tracks.map(track=>track.part)),JSON.stringify(['melody','drums','bass']));
+  assert.equal(JSON.stringify(converted.importSource.trackAssignments.map(item=>item.part)),JSON.stringify(['melody','drums','bass']));
+  assert.equal(converted.tracks[1].channel,10);
+});
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
