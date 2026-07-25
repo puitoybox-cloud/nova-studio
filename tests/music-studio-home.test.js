@@ -43,7 +43,9 @@ test('unfinished routes always render safe placeholders with return actions',()=
   for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects','settings','backup','logic-pro','midi-composer'].includes(item.id))){
     const html=app.renderRoute(`music-studio/${item.id}`);
     assert.match(html,new RegExp(item.title));
-    assert.match(html,/Music Studioホームへ戻る/);
+    assert.match(html,/← 戻る/);
+    assert.match(html,/次へ →/);
+    assert.match(html,/Music Studioホーム/);
     assert.match(html,/既存データを変更/);
   }
   assert.match(app.renderRoute('music-studio/settings'),/Music Studio設定/);
