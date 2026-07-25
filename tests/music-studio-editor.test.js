@@ -58,3 +58,29 @@ test('Melody, Drums and Bass share the same note operations',()=>{
   for(const part of ['melody','drums','bass']){core.selectPart(session,part);core.addNote(session);assert.equal(core.currentTrack(session).notes.length>0,true)}
   assert.equal(session.midiData.tracks.find(track=>track.part==='drums').channel,10);
 });
+test('selected melody measures can be locked and unlocked without changing notes',()=>{
+  const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
+  core.setSelectedMeasures(session,[2,3]);core.toggleLockSelected(session);
+  assert.equal(JSON.stringify(session.lockedMeasures),'[2,3]');
+  assert.equal(JSON.stringify(session.midiData.editor.lockedMeasures),'[2,3]');
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.toggleLockSelected(session);
+  assert.equal(JSON.stringify(session.lockedMeasures),'[]');
+});
+test('regeneration preparation excludes locked measures and never rewrites melody',()=>{
+  const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
+  core.setSelectedMeasures(session,[1,2,3]);core.toggleLockSelected(session);
+  core.setSelectedMeasures(session,[2,3,4]);
+  const result=core.prepareRegeneration(session,'2026-07-25T00:00:00.000Z');
+  assert.equal(result.ok,true);
+  assert.equal(JSON.stringify(result.request.targetMeasures),'[4]');
+  assert.equal(result.request.status,'prepared');
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+});
+test('regeneration preparation refuses an all-locked range',()=>{
+  const core=load(),session=core.createSession(project());
+  core.setSelectedMeasures(session,[1]);core.toggleLockSelected(session);
+  const result=core.prepareRegeneration(session);
+  assert.equal(result.ok,false);
+  assert.match(result.reason,/固定/);
+});
