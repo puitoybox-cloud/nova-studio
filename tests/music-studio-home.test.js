@@ -120,8 +120,9 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.1/);
+  assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.1/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.4/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.5/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -141,6 +142,11 @@ test('Web MIDI state changes keep a stable three-device list and selected input'
   assert.equal(app.state.midiInput.selectedId,'keyboard');
   access.onstatechange();
   assert.equal(requests,1);assert.equal(paints,paintsAfterSelection);assert.equal(app.state.midiInput.selectedId,'keyboard');
+  const staleKeyboard=inputs[2],replacementKeyboard={id:'keyboard',name:'MIDI Keyboard'};
+  access.inputs.set('keyboard',replacementKeyboard);access.onstatechange();
+  assert.equal(staleKeyboard.onmidimessage,null);
+  assert.equal(typeof replacementKeyboard.onmidimessage,'function');
+  assert.equal(paints,paintsAfterSelection);
   access.inputs.delete('ur22c-2');access.onstatechange();
   assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+1);
 });
