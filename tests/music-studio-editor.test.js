@@ -130,3 +130,27 @@ test('Drums and Bass regeneration requests use each part fixed range without rew
     assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
   }
 });
+test('recorded notes are added to the shared Melody model as one undoable change',()=>{
+  const core=load(),session=core.createSession(project()),before=core.currentTrack(session).notes.length;
+  core.addNotes(session,[{pitch:67,startTick:17,durationTicks:231,velocity:94,inputChannel:3,inputMethod:'midi-keyboard'}]);
+  const note=core.currentTrack(session).notes.at(-1);
+  assert.equal(note.pitch,67);assert.equal(note.velocity,94);assert.equal(note.inputChannel,3);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
+  core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+1);
+});
+test('correction preview is non-destructive, cancel restores Original, and Apply supports Undo Redo',()=>{
+  const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
+  track.notes=[{id:'human',pitch:64,startTick:119,durationTicks:251,velocity:88}];
+  const original=JSON.stringify(track.notes),result=core.previewCorrection(session,'1/16',true);
+  assert.equal(result.ok,true);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  assert.equal(result.preview.correctedNotes[0].startTick,120);assert.equal(result.preview.correctedNotes[0].durationTicks,240);
+  core.cancelCorrection(session);assert.equal(session.correctionPreview,null);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  core.previewCorrection(session,'1/16',true);core.applyCorrection(session);
+  assert.equal(core.currentTrack(session).notes[0].durationTicks,240);
+  core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick,120);
+});
+test('all supported quantize resolutions derive from project PPQ',()=>{
+  const core=load();
+  assert.deepEqual(['1/4','1/8','1/16','1/32'].map(value=>core.quantizeTicks(480,value)),[480,240,120,60]);
+});
