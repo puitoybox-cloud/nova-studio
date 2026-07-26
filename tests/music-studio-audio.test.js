@@ -40,6 +40,27 @@ test('MIDI note-on and note-off create and release the matching Web Audio voice'
   assert.equal(synth.noteOn(69,100,2),true);assert.equal(synth.context.oscillators[0].frequency.events[0][1],440);
   assert.equal(synth.noteOff(69,2),true);assert.ok(synth.context.oscillators[0].stopped.length>0);
 });
+test('duplicate Note On while a key is held creates only one oscillator',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();
+  assert.equal(synth.noteOn(60,90,1),true);
+  assert.equal(synth.noteOn(60,90,1),false);
+  assert.equal(synth.context.oscillators.length,1);
+  assert.equal(synth.liveVoices,1);
+  assert.equal(synth.noteOff(60,1),true);
+  assert.equal(synth.noteOff(60,1),false);
+  assert.equal(synth.liveVoices,0);
+});
+test('the same key can sound once per press before during and after recording lifecycle',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();
+  for(let phase=0;phase<3;phase++){
+    assert.equal(synth.noteOn(64,88,1),true);
+    assert.equal(synth.noteOn(64,88,1),false);
+    assert.equal(synth.noteOff(64,1),true);
+  }
+  assert.equal(synth.context.oscillators.length,3);
+  assert.equal(synth.liveVoices,0);
+  assert.equal(synth.context.oscillators.every(oscillator=>oscillator.stopped.length===1),true);
+});
 test('Melody playback schedules notes from PPQ and tempo without changing note data',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[{pitch:60,startTick:480,durationTicks:240,velocity:80}],before=JSON.stringify(notes);await synth.unlock();
   const result=synth.playNotes(notes,{ppq:480,tempo:120}),oscillator=synth.context.oscillators[0];
