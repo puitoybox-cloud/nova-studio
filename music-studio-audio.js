@@ -17,9 +17,9 @@
       const item={oscillator,gain,stop(when=ctx.currentTime){const release=Math.max(when,start+.01);gain.gain.cancelScheduledValues(release);gain.gain.setValueAtTime(Math.max(.0001,gain.gain.value||.0001),release);gain.gain.linearRampToValueAtTime(.0001,release+.12);try{oscillator.stop(release+.13)}catch(_){}}};
       if(group)group.add(item);if(stopAt!==null)item.stop(stopAt);return item
     }
-    function noteOn(pitch,velocity=100,channel=1){const ctx=ensure();if(!ctx)return false;const id=`${channel}:${pitch}`,stack=live.get(id)||[],item=voice(pitch,velocity,ctx.currentTime);if(item){stack.push(item);live.set(id,stack)}return Boolean(item)}
-    function noteOff(pitch,channel=1){const id=`${channel}:${pitch}`,stack=live.get(id);if(!stack?.length)return false;stack.shift().stop();if(!stack.length)live.delete(id);return true}
-    function allNotesOff(){for(const stack of live.values())for(const item of stack)item.stop();live.clear()}
+    function noteOn(pitch,velocity=100,channel=1){const ctx=ensure();if(!ctx)return false;const id=`${channel}:${pitch}`;if(live.has(id))return false;const item=voice(pitch,velocity,ctx.currentTime);if(item)live.set(id,item);return Boolean(item)}
+    function noteOff(pitch,channel=1){const id=`${channel}:${pitch}`,item=live.get(id);if(!item)return false;live.delete(id);item.stop();return true}
+    function allNotesOff(){for(const item of live.values())item.stop();live.clear()}
     function stopPlayback(){for(const item of playback)item.stop();playback.clear()}
     function playNotes(notes=[],timing={}){
       const ctx=ensure();if(!ctx)return{ok:false,noteCount:0,durationMs:0};stopPlayback();
@@ -29,7 +29,7 @@
     }
     function previewNote(pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;voice(pitch,velocity,ctx.currentTime,ctx.currentTime+clamp(duration,.05,2),playback);return true}
     function dispose(){allNotesOff();stopPlayback();context?.close?.();context=null;master=null}
-    return{supported,unlock,noteOn,noteOff,allNotesOff,playNotes,stopPlayback,previewNote,dispose,frequency,volume,get context(){return context},get playingVoices(){return playback.size}};
+    return{supported,unlock,noteOn,noteOff,allNotesOff,playNotes,stopPlayback,previewNote,dispose,frequency,volume,get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size}};
   }
   root.MusicStudioAudio={createSynth,frequency};
 })(typeof window!=='undefined'?window:globalThis);
