@@ -39,3 +39,44 @@ test('requestAccess exposes connected MIDI inputs',async()=>{
   const result=await midi.requestAccess();
   assert.equal(result.supported,true);assert.equal(result.inputs[0].id,'keyboard-1');
 });
+test('duplicate delivery of three different key presses creates exactly three notes',()=>{
+  const midi=load({}),recorder=midi.createRecorder({ppq:480,tempo:120});
+  recorder.start(0);
+  [[60,0,125],[64,250,500],[67,625,1000]].forEach(([pitch,on,off])=>{
+    recorder.handleMessage([0x90,pitch,90],on);
+    recorder.handleMessage([0x90,pitch,90],on);
+    recorder.handleMessage([0x80,pitch,0],off);
+    recorder.handleMessage([0x80,pitch,0],off);
+  });
+  const notes=recorder.stop(1100);
+  assert.equal(notes.length,3);
+  assert.equal(notes.map(note=>note.pitch).join(','),'60,64,67');
+  assert.equal(notes.map(note=>note.durationTicks).join(','),'120,240,360');
+});
+test('three consecutive presses of the same key create exactly three notes',()=>{
+  const midi=load({}),recorder=midi.createRecorder({ppq:480,tempo:120});
+  recorder.start(0);
+  [[0,100],[200,350],[500,750]].forEach(([on,off])=>{
+    recorder.handleMessage([0x90,60,82],on);
+    recorder.handleMessage([0x90,60,82],on);
+    recorder.handleMessage([0x80,60,0],off);
+    recorder.handleMessage([0x80,60,0],off);
+  });
+  const notes=recorder.stop(800);
+  assert.equal(notes.length,3);
+  assert.equal(notes.map(note=>note.durationTicks).join(','),'96,144,240');
+});
+test('Record Stop Record cycles do not retain notes or duplicate-message state',()=>{
+  const midi=load({}),recorder=midi.createRecorder({ppq:480,tempo:120});
+  for(let cycle=0;cycle<3;cycle++){
+    const start=cycle*1000;
+    recorder.start(start);
+    recorder.handleMessage([0x90,60,75],start+10);
+    recorder.handleMessage([0x90,60,75],start+10);
+    recorder.handleMessage([0x80,60,0],start+210);
+    recorder.handleMessage([0x80,60,0],start+210);
+    const notes=recorder.stop(start+250);
+    assert.equal(notes.length,1);
+    assert.equal(notes[0].durationTicks,192);
+  }
+});
