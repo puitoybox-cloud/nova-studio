@@ -68,6 +68,19 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
 });
+test('stop then replay cancels old scheduled voices before scheduling each note once',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),notes=[
+    {pitch:60,startTick:0,durationTicks:480,velocity:80},
+    {pitch:64,startTick:480,durationTicks:480,velocity:80}
+  ];await synth.unlock();
+  assert.equal(synth.playNotes(notes,{ppq:480,tempo:120}).noteCount,2);
+  const firstRun=synth.context.oscillators.slice();
+  synth.stopPlayback();
+  assert.equal(firstRun.every(oscillator=>oscillator.stopped.at(-1)<10.01),true);
+  assert.equal(synth.playNotes(notes,{ppq:480,tempo:120}).noteCount,2);
+  assert.equal(synth.context.oscillators.length,4);
+  assert.equal(synth.playingVoices,2);
+});
 test('missing Web Audio API is non-fatal',async()=>{
   const synth=load().createSynth({AudioContext:null});
   assert.equal(synth.supported(),false);assert.equal(await synth.unlock(),false);
