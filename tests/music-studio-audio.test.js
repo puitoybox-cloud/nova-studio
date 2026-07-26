@@ -65,8 +65,34 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   const synth=load().createSynth({AudioContext:Context}),notes=[{pitch:60,startTick:480,durationTicks:240,velocity:80}],before=JSON.stringify(notes);await synth.unlock();
   const result=synth.playNotes(notes,{ppq:480,tempo:120}),oscillator=synth.context.oscillators[0];
   assert.equal(result.ok,true);assert.equal(result.noteCount,1);assert.equal(JSON.stringify(notes),before);
+  assert.equal(result.oscillatorCount,1);assert.equal(oscillator.type,'sine');
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
+});
+test('three Melody notes make exactly three voice calls and three oscillators',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),notes=[
+    {pitch:60,startTick:0,durationTicks:120,velocity:80},
+    {pitch:64,startTick:120,durationTicks:120,velocity:80},
+    {pitch:67,startTick:240,durationTicks:120,velocity:80}
+  ];await synth.unlock();
+  const result=synth.playNotes(notes,{ppq:480,tempo:120});
+  assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,3);
+  assert.equal(synth.diagnostics.playbackVoicesCreated,3);
+  assert.equal(synth.diagnostics.voiceCalls,3);
+  assert.equal(synth.context.oscillators.length,3);
+});
+test('three repeated pitches still make one oscillator per Piano Roll note',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),notes=[0,120,240].map(startTick=>({pitch:60,startTick,durationTicks:120,velocity:80}));await synth.unlock();
+  const result=synth.playNotes(notes,{ppq:480,tempo:120});
+  assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,3);
+  assert.equal(synth.diagnostics.playbackVoicesCreated,3);
+});
+test('screen-key preview uses one sine oscillator through its separate preview path',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();
+  assert.equal(synth.previewNote(60,100,.35),true);
+  assert.equal(synth.diagnostics.previewVoicesCreated,1);
+  assert.equal(synth.diagnostics.oscillatorsCreated,1);
+  assert.equal(synth.context.oscillators[0].type,'sine');
 });
 test('stop then replay cancels old scheduled voices before scheduling each note once',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[
