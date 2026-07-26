@@ -120,7 +120,26 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.1/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.2/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.3/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
+});
+
+test('Web MIDI state changes keep a stable three-device list and selected input',async()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio,inputs=[
+    {id:'ur22c-1',name:'Steinberg UR22C ポート1'},
+    {id:'ur22c-2',name:'Steinberg UR22C ポート2'},
+    {id:'keyboard',name:'MIDI Keyboard'}
+  ],access={inputs:new Map(inputs.map(input=>[input.id,input]))};
+  let requests=0,paints=0;window.render=()=>{paints++};window.navigator={};window.document.body.dataset={};
+  window.MusicStudioMidiInput={isSupported:()=>true,requestAccess:async()=>{requests++;return{supported:true,access,inputs}}};
+  await app.editorInitializeMidi();
+  assert.equal(requests,1);assert.equal(app.state.midiInput.inputs.length,3);assert.equal(app.state.midiInput.selectedId,'ur22c-1');
+  app.editorSelectMidiInput('keyboard');
+  const paintsAfterSelection=paints;
+  assert.equal(app.state.midiInput.selectedId,'keyboard');
+  access.onstatechange();
+  assert.equal(requests,1);assert.equal(paints,paintsAfterSelection);assert.equal(app.state.midiInput.selectedId,'keyboard');
+  access.inputs.delete('ur22c-2');access.onstatechange();
+  assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+1);
 });
