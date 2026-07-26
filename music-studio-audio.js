@@ -14,13 +14,13 @@
       oscillator.type='triangle';oscillator.frequency.setValueAtTime(frequency(pitch),start);
       gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(peak,start+.008);gain.gain.linearRampToValueAtTime(Math.max(.0001,peak*.32),start+.16);
       oscillator.connect(gain);gain.connect(master);oscillator.start(start);
-      const item={oscillator,gain,stop(when=ctx.currentTime){const release=Math.max(when,start+.01);gain.gain.cancelScheduledValues(release);gain.gain.setValueAtTime(Math.max(.0001,gain.gain.value||.0001),release);gain.gain.linearRampToValueAtTime(.0001,release+.12);try{oscillator.stop(release+.13)}catch(_){}}};
+      let cancelled=false;const item={oscillator,gain,stop(when=ctx.currentTime){if(cancelled)return;const release=Math.max(when,start+.01);gain.gain.cancelScheduledValues(release);gain.gain.setValueAtTime(Math.max(.0001,gain.gain.value||.0001),release);gain.gain.linearRampToValueAtTime(.0001,release+.12);try{oscillator.stop(release+.13)}catch(_){}},cancel(when=ctx.currentTime){if(cancelled)return;cancelled=true;gain.gain.cancelScheduledValues(when);gain.gain.setValueAtTime(Math.max(.0001,gain.gain.value||.0001),when);gain.gain.linearRampToValueAtTime(.0001,when+.005);try{oscillator.stop(when+.006)}catch(_){}}};
       if(group)group.add(item);if(stopAt!==null)item.stop(stopAt);return item
     }
     function noteOn(pitch,velocity=100,channel=1){const ctx=ensure();if(!ctx)return false;const id=`${channel}:${pitch}`;if(live.has(id))return false;const item=voice(pitch,velocity,ctx.currentTime);if(item)live.set(id,item);return Boolean(item)}
     function noteOff(pitch,channel=1){const id=`${channel}:${pitch}`,item=live.get(id);if(!item)return false;live.delete(id);item.stop();return true}
     function allNotesOff(){for(const item of live.values())item.stop();live.clear()}
-    function stopPlayback(){for(const item of playback)item.stop();playback.clear()}
+    function stopPlayback(){const ctx=ensure();if(!ctx)return;for(const item of playback)item.cancel(ctx.currentTime);playback.clear()}
     function playNotes(notes=[],timing={}){
       const ctx=ensure();if(!ctx)return{ok:false,noteCount:0,durationMs:0};stopPlayback();
       const ppq=clamp(timing.ppq||480,24,9600),tempo=clamp(timing.tempo||120,20,400),secondsPerTick=60/(tempo*ppq),lead=.04;

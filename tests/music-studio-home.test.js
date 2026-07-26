@@ -121,9 +121,9 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
-  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.1/);
+  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.1/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.5/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.6/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -150,4 +150,23 @@ test('Web MIDI state changes keep a stable three-device list and selected input'
   assert.equal(paints,paintsAfterSelection);
   access.inputs.delete('ur22c-2');access.onstatechange();
   assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+1);
+});
+
+test('concurrent Melody play requests schedule the note array only once',async()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio;
+  window.document.body.dataset={};
+  let releaseUnlock,playCalls=0,stopCalls=0;
+  const unlockGate=new Promise(resolve=>{releaseUnlock=resolve}),synth={
+    supported:()=>true,unlock:()=>unlockGate,
+    playNotes(notes){playCalls++;assert.equal(notes.length,1);return{ok:true,noteCount:1,durationMs:500}},
+    stopPlayback(){stopCalls++}
+  };
+  window.MusicStudioAudio={createSynth:()=>synth};
+  app.state.midiEditor={playheadTick:0,midiData:{ppq:480,tempo:120,tracks:[{part:'melody',notes:[{pitch:60,startTick:0,durationTicks:240,velocity:90}]}]}};
+  const first=app.editorPlayMelody(),second=await app.editorPlayMelody();
+  assert.equal(second.reason,'already-playing');
+  releaseUnlock(true);await first;
+  assert.equal(playCalls,1);
+  app.editorStopMelody(false);
+  assert.equal(stopCalls,2);
 });
