@@ -57,6 +57,15 @@ test('multiple selected notes copy and paste together as one undoable edit',()=>
   core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
   core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+2);
 });
+test('normal note selection collapses an existing multi-selection to the clicked note',()=>{
+  const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:240,durationTicks:240,velocity:76});
+  const core=load(),session=core.createSession(source);
+  core.selectNote(session,'n1');core.selectNote(session,'n2',{toggle:true});
+  assert.deepEqual(Array.from(core.selectedIds(session)),['n1','n2']);
+  core.selectNote(session,'n1');
+  assert.deepEqual(Array.from(core.selectedIds(session)),['n1']);
+  assert.equal(session.selectedNoteId,'n1');
+});
 test('multiple notes move resize change velocity and delete as single history steps',()=>{
   const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:480,durationTicks:240,velocity:76});
   const core=load(),session=core.createSession(source);
