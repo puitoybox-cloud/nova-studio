@@ -21,6 +21,16 @@ test('every major and placeholder route has one unified back and next navigation
   for(const route of routes){const html=app.renderRoute(route),navs=html.match(/class="music-flow-nav"/g)||[];assert.equal(navs.length,1,route);assert.match(html,/← 戻る/);assert.match(html,/次へ →/)}
   const editor=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(editor,/MIDI書き出し・Logic Pro連携/);assert.match(editor,new RegExp(`openLogicPro\\('${project.projectId}'\\)`));
 });
+test('correction and history buttons add smaller Japanese guidance without changing actions',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/editorUndo\(\)" disabled>Undo <span class="music-button-note">（元に戻す）<\/span>/);
+  assert.match(html,/editorRedo\(\)" disabled>Redo <span class="music-button-note">（やり直す）<\/span>/);
+  app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/editorApplyCorrection\(\)">Apply <span class="music-button-note">（適用）<\/span>/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-button-note\{font-size:\.72em;font-weight:600;opacity:\.78;white-space:nowrap\}/);
+});
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const before=JSON.stringify(app.state.midiEditor.midiData),hash=window.location.hash;
