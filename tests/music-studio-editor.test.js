@@ -91,6 +91,25 @@ test('multiple notes move resize change velocity and delete as single history st
   core.undo(session);assert.equal(core.currentTrack(session).notes.length,2);
   core.undo(session);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.velocity),[90,76]);
 });
+test('selected notes can match the representative duration and velocity with Undo and Redo',()=>{
+  const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
+  track.notes=[
+    {id:'first',pitch:60,startTick:0,durationTicks:120,velocity:42},
+    {id:'representative',pitch:64,startTick:480,durationTicks:360,velocity:108}
+  ];
+  core.selectNote(session,'first');
+  core.selectNote(session,'representative',{additive:true});
+  core.matchSelectedDuration(session);
+  assert.equal(JSON.stringify(track.notes.map(note=>note.durationTicks)),'[360,360]');
+  core.matchSelectedVelocity(session);
+  assert.equal(JSON.stringify(track.notes.map(note=>note.velocity)),'[108,108]');
+  core.undo(session);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes.map(note=>note.velocity)),'[42,108]');
+  core.undo(session);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes.map(note=>note.durationTicks)),'[120,360]');
+  core.redo(session);core.redo(session);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes.map(note=>[note.durationTicks,note.velocity])),'[[360,108],[360,108]]');
+});
 test('multi-note moves clamp safely without dropping note extension metadata',()=>{
   const core=load(),session=core.createSession(project());
   core.selectNote(session,'n1');core.moveSelected(session,-999,-999);
