@@ -100,6 +100,23 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
   assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
 });
+test('adding empty measures persists song length without inventing MIDI notes',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'empty-measures',projectName:'Empty measures'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/曲の長さ：4小節/);
+  assert.match(html,/＋ 小節を追加/);
+  const beforeNotes=app.state.midiEditor.midiData.tracks.reduce((count,track)=>count+track.notes.length,0);
+  app.editorAddMeasures();await app.state.midiEditorSavePromise;
+  const stored=await repo.get(project.projectId);
+  assert.equal(stored.midiData.editor.measureCount,8);
+  assert.equal(stored.midiData.tracks.reduce((count,track)=>count+track.notes.length,0),beforeNotes);
+  app.state.midiEditor=null;app.state.projects=[stored];
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/曲の長さ：8小節/);
+  assert.match(html,/小節 8/);
+  assert.equal(app.midiExportInput(stored,'all').tracks.reduce((count,track)=>count+track.notes.length,0),beforeNotes);
+});
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const before=JSON.stringify(app.state.midiEditor.midiData),hash=window.location.hash;

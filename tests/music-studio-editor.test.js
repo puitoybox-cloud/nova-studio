@@ -25,6 +25,19 @@ test('old project without MIDI opens as optional blank three-part session',()=>{
   assert.equal(session.midiData.tempo,100);
   assert.equal(session.dirty,false);
 });
+test('empty timeline measures persist as undoable editor metadata',()=>{
+  const core=load(),session=core.createSession(project());
+  assert.equal(session.midiData.editor.measureCount,4);
+  core.extendTimelineMeasures(session,4);
+  assert.equal(session.midiData.editor.measureCount,8);
+  assert.equal(session.dirty,true);
+  core.undo(session);
+  assert.equal(session.midiData.editor.measureCount,4);
+  core.redo(session);
+  assert.equal(session.midiData.editor.measureCount,8);
+  const imported=core.normalizeMidiData({...project().midiData,totalTick:15360},project());
+  assert.equal(imported.editor.measureCount,8);
+});
 test('add, update and delete notes are undoable and redoable',()=>{
   const core=load(),session=core.createSession(project());
   core.addNote(session,{pitch:64,startTick:480,durationTicks:240,velocity:100});
