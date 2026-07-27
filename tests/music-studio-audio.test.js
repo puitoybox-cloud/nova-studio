@@ -14,6 +14,7 @@ class Param{
   setValueAtTime(value,time){this.value=value;this.events.push(['set',value,time])}
   linearRampToValueAtTime(value,time){this.value=value;this.events.push(['ramp',value,time])}
   cancelScheduledValues(time){this.events.push(['cancel',time])}
+  cancelAndHoldAtTime(time){this.events.push(['hold',time])}
 }
 class Node{constructor(){this.connections=[]}connect(target){this.connections.push(target)}}
 class Oscillator extends Node{
@@ -68,6 +69,15 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   assert.equal(result.oscillatorCount,1);assert.equal(oscillator.type,'sine');
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
+});
+test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();
+  synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:68}],{ppq:480,tempo:120});
+  const voiceGain=synth.context.gains[1],events=voiceGain.gain.events;
+  assert.equal(events.some(event=>event[0]==='hold'),true);
+  assert.equal(events.some(event=>event[0]==='set'&&event[1]===1),false);
+  const releaseRamp=events.at(-1);
+  assert.equal(releaseRamp[0],'ramp');assert.equal(releaseRamp[1],.0001);
 });
 test('three Melody notes make exactly three voice calls and three oscillators',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[
