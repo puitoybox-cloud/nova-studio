@@ -67,6 +67,54 @@ test('MIDI edits made while save is pending remain dirty after the older save co
   assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
   assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes.length,2);
 });
+test('normal MIDI editing schedules one 750ms save while preview and Cancel do not save',()=>{
+  const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'debounced-actions',projectName:'Debounced actions'}),timers=[],cleared=[];
+  app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.setTimeout=(fn,delay)=>{const timer={id:timers.length+1,fn,delay};timers.push(timer);return timer.id};window.clearTimeout=id=>cleared.push(id);
+  app.editorAddNote();assert.equal(timers.at(-1).delay,750);
+  const scheduledAfterAdd=timers.length;app.editorPreviewCorrection();app.editorCancelCorrection();assert.equal(timers.length,scheduledAfterAdd);
+  app.editorUndo();assert.equal(app.state.midiEditor.dirty,false);assert.equal(timers.length,scheduledAfterAdd);assert.deepEqual(cleared,[1]);
+  app.editorRedo();assert.equal(timers.at(-1).delay,750);
+  app.editorPreviewCorrection();app.editorApplyCorrection();assert.equal(timers.length,scheduledAfterAdd+2);
+  app.editorDeleteNote();assert.equal(timers.length,scheduledAfterAdd+3);
+  app.editorPianoInput(64);assert.equal(timers.length,scheduledAfterAdd+4);
+  const note=app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes.at(-1);
+  app.editorUpdateSelected({preventDefault(){},target:{elements:{pitch:{value:note.pitch},startTick:{value:119},durationTicks:{value:251},velocity:{value:91}}}});
+  assert.equal(timers.length,scheduledAfterAdd+5);
+});
+test('debounced MIDI save persists a normal note through the existing repository',async()=>{
+  const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'debounced-save',projectName:'Debounced save'}),timers=[];
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.setTimeout=(fn,delay)=>{timers.push({fn,delay});return timers.length};window.clearTimeout=()=>{};
+  app.editorAddNote();assert.equal(app.state.midiEditor.dirty,true);assert.equal((await repo.get(project.projectId)).midiData,undefined);
+  const result=await timers[0].fn(),stored=await repo.get(project.projectId);
+  assert.equal(result.ok,true);assert.equal(app.state.midiEditor.dirty,false);
+  assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
+  assert.match(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/>保存済み<\/button>/);
+});
+test('an edit during debounced save is serialized and the final state is persisted',async()=>{
+  const{app,window}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'debounced-race',projectName:'Debounced race'}),timers=[];await base.put(project);
+  let release,puts=0;const repo={...base,async put(value){puts++;if(puts===1)await new Promise(resolve=>{release=resolve});return base.put(value)}};
+  app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.setTimeout=(fn,delay)=>{timers.push({fn,delay});return timers.length};window.clearTimeout=()=>{};
+  app.editorAddNote();const firstSave=timers[0].fn();await Promise.resolve();await Promise.resolve();
+  app.editorAddNote();const deferred=await timers[1].fn();assert.equal(deferred.deferred,true);
+  release();await firstSave;
+  assert.equal(app.state.midiEditor.dirty,true);assert.equal(timers.length,3);
+  await timers[2].fn();
+  const stored=await base.get(project.projectId);
+  assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,2);
+  assert.equal(app.state.midiEditor.dirty,false);
+});
+test('debounced MIDI save failure keeps the edited notes dirty in memory',async()=>{
+  const{app,window}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'debounced-failure',projectName:'Debounced failure'}),timers=[];await base.put(project);
+  app.setRepository({...base,async put(){throw Error('storage unavailable')}});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.setTimeout=(fn,delay)=>{timers.push({fn,delay});return timers.length};window.clearTimeout=()=>{};
+  app.editorAddNote();const originalError=console.error;console.error=()=>{};let result;try{result=await timers[0].fn()}finally{console.error=originalError}
+  assert.equal(result.ok,false);assert.equal(app.state.midiEditor.dirty,true);
+  assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
+  assert.equal((await base.get(project.projectId)).midiData,undefined);
+});
 test('Apply is reflected in latest unsaved MIDI export input without touching other parts',()=>{
   const{app}=load(),project=app.makeProject({projectId:'latest-export',projectName:'Latest export',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
     {id:'melody',part:'melody',name:'Melody',channel:1,notes:[{id:'m',pitch:60,startTick:119,durationTicks:251,velocity:90}]},

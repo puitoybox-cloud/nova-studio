@@ -116,6 +116,8 @@ test('host router renders new Music Studio routes and preserves unrelated routes
 
 test('Music Studio dependencies load sequentially without querying detached scripts',()=>{
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+  const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  assert.match(indexSource,/app\.js\?v=1\.4\.8/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
