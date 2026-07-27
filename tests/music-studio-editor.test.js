@@ -150,6 +150,62 @@ test('correction preview is non-destructive, cancel restores Original, and Apply
   core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
   core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick,120);
 });
+test('Undo and Redo close a stale correction preview before changing edit history',()=>{
+  const core=load(),session=core.createSession(project()),original=JSON.stringify(core.currentTrack(session).notes);
+  core.addNote(session,{pitch:65,startTick:119,durationTicks:251});
+  core.previewCorrection(session,'1/16',true);
+  assert.ok(session.correctionPreview);
+  core.undo(session);
+  assert.equal(session.correctionPreview,null);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  assert.equal(session.dirty,false);
+  core.previewCorrection(session,'1/16',true);
+  core.redo(session);
+  assert.equal(session.correctionPreview,null);
+  assert.equal(core.currentTrack(session).notes.length,2);
+  assert.equal(session.dirty,true);
+});
+test('part changes discard Melody correction preview without mixing track state',()=>{
+  const core=load(),session=core.createSession(project()),tracks=JSON.stringify(session.midiData.tracks);
+  core.previewCorrection(session,'1/16',true);
+  core.selectPart(session,'drums');
+  assert.equal(session.correctionPreview,null);
+  assert.equal(core.currentTrack(session).part,'drums');
+  core.selectPart(session,'bass');assert.equal(core.currentTrack(session).part,'bass');
+  core.selectPart(session,'melody');assert.equal(JSON.stringify(session.midiData.tracks),tracks);
+});
+test('saved correction baseline drives dirty state through Undo and Redo',()=>{
+  const core=load(),session=core.createSession(project());
+  core.currentTrack(session).notes[0].startTick=119;
+  core.previewCorrection(session,'1/16',true);core.applyCorrection(session);
+  assert.equal(session.dirty,true);
+  core.markSaved(session);assert.equal(session.dirty,false);
+  core.undo(session);assert.equal(session.dirty,true);
+  core.redo(session);assert.equal(session.dirty,false);
+});
+test('manual Melody edit invalidates preview and correction remains one undoable change',()=>{
+  const core=load(),session=core.createSession(project()),note=core.currentTrack(session).notes[0];
+  core.updateNote(session,note.id,{startTick:119,durationTicks:251});
+  const manuallyEdited=JSON.stringify(core.currentTrack(session).notes);
+  core.previewCorrection(session,'1/16',true);
+  core.updateNote(session,note.id,{velocity:91});
+  assert.equal(session.correctionPreview,null);
+  core.previewCorrection(session,'1/16',true);core.applyCorrection(session);
+  assert.equal(core.currentTrack(session).notes[0].startTick,120);
+  core.undo(session);assert.equal(core.currentTrack(session).notes[0].startTick,119);
+  core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),manuallyEdited);
+  core.redo(session);core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick,120);
+});
+test('legacy and imported Version 1 MIDI data need no correction persistence fields',()=>{
+  const core=load(),legacy={projectId:'legacy',musicalSettings:{bpm:120},midiData:{ppq:960,tracks:[{name:'Imported Piano',channel:1,notes:[{pitch:62,startTick:239,durationTicks:481,velocity:87}]}]}};
+  const session=core.createSession(legacy),before=JSON.stringify(legacy);
+  core.previewCorrection(session,'1/16',true);core.applyCorrection(session);
+  assert.equal(core.currentTrack(session).notes[0].startTick,240);
+  assert.equal(core.currentTrack(session).notes[0].durationTicks,480);
+  assert.equal(JSON.stringify(legacy),before);
+  assert.equal(Object.hasOwn(session.midiData,'savedMidiData'),false);
+  assert.equal(Object.hasOwn(session.midiData,'correctionPreview'),false);
+});
 test('short same-pitch overlap is trimmed only in preview and Apply remains undoable',()=>{
   const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
   track.notes=[
