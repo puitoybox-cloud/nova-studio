@@ -45,6 +45,36 @@ test('copy and paste offsets a new note by one beat',()=>{
   assert.equal(pasted.startTick,480);
   assert.notEqual(pasted.id,'n1');
 });
+test('multiple selected notes copy and paste together as one undoable edit',()=>{
+  const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:240,durationTicks:240,velocity:76});
+  const core=load(),session=core.createSession(source),before=core.currentTrack(session).notes.length;
+  core.selectNote(session,'n1');core.selectNote(session,'n2',{toggle:true});core.copy(session);
+  assert.equal(session.clipboard.length,2);
+  core.paste(session);
+  assert.equal(core.currentTrack(session).notes.length,before+2);
+  assert.equal(core.selectedNotes(session).length,2);
+  assert.deepEqual(Array.from(core.selectedNotes(session),note=>note.startTick),[480,720]);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
+  core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+2);
+});
+test('multiple notes move resize change velocity and delete as single history steps',()=>{
+  const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:480,durationTicks:240,velocity:76});
+  const core=load(),session=core.createSession(source);
+  core.selectAllNotes(session);
+  core.moveSelected(session,120,2);
+  assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>[note.startTick,note.pitch]),[[120,62],[600,66]]);
+  core.resizeSelected(session,120);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.durationTicks),[600,360]);
+  core.setSelectedVelocity(session,55);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.velocity),[55,55]);
+  core.deleteSelected(session);assert.equal(core.currentTrack(session).notes.length,0);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.length,2);
+  core.undo(session);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.velocity),[90,76]);
+});
+test('multi-note moves clamp safely without dropping note extension metadata',()=>{
+  const core=load(),session=core.createSession(project());
+  core.selectNote(session,'n1');core.moveSelected(session,-999,-999);
+  const note=core.currentTrack(session).notes[0];
+  assert.equal(note.startTick,0);assert.equal(note.pitch,0);assert.equal(note.releaseVelocity,12);
+});
 test('measure selection and measure/beat calculation use PPQ and signature',()=>{
   const core=load(),session=core.createSession(project());
   core.toggleMeasure(session,2);
@@ -57,6 +87,18 @@ test('Melody, Drums and Bass share the same note operations',()=>{
   const core=load(),session=core.createSession(project());
   for(const part of ['melody','drums','bass']){core.selectPart(session,part);core.addNote(session);assert.equal(core.currentTrack(session).notes.length>0,true)}
   assert.equal(session.midiData.tracks.find(track=>track.part==='drums').channel,10);
+});
+test('multi-select movement copy paste and delete stay isolated in Melody Drums and Bass',()=>{
+  const core=load(),session=core.createSession(project());
+  for(const part of ['melody','drums','bass']){
+    core.selectPart(session,part);const otherTracks=JSON.stringify(session.midiData.tracks.filter(track=>track.part!==part));
+    core.addNotes(session,[{pitch:40,startTick:960},{pitch:43,startTick:1440}]);core.selectAllNotes(session);
+    const count=core.currentTrack(session).notes.length;core.moveSelected(session,120,1);core.copy(session);core.paste(session);
+    assert.equal(core.currentTrack(session).notes.length,count*2);
+    core.deleteSelected(session);assert.equal(core.currentTrack(session).notes.length,count);
+    assert.equal(JSON.stringify(session.midiData.tracks.filter(track=>track.part!==part)),otherTracks);
+    core.undo(session);assert.equal(core.currentTrack(session).notes.length,count*2);
+  }
 });
 test('selected melody measures can be locked and unlocked without changing notes',()=>{
   const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
