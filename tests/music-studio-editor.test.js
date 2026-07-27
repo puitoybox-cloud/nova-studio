@@ -150,6 +150,45 @@ test('correction preview is non-destructive, cancel restores Original, and Apply
   core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
   core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick,120);
 });
+test('short same-pitch overlap is trimmed only in preview and Apply remains undoable',()=>{
+  const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
+  track.notes=[
+    {id:'first',pitch:69,startTick:1262,durationTicks:594,velocity:90,inputChannel:1,inputMethod:'midi-keyboard'},
+    {id:'second',pitch:69,startTick:1720,durationTicks:300,velocity:90,inputChannel:1,inputMethod:'midi-keyboard'}
+  ];
+  const original=JSON.stringify(track.notes),cleanup=core.trimShortSamePitchOverlaps(track.notes,480);
+  assert.equal(cleanup.adjustments.length,1);assert.equal(cleanup.adjustments[0].overlapTicks,136);
+  assert.equal(cleanup.notes[0].durationTicks,458);assert.equal(JSON.stringify(track.notes),original);
+  const result=core.previewCorrection(session,'1/32',false,true);
+  assert.equal(JSON.stringify(track.notes),original);assert.equal(result.preview.overlapAdjustments.length,1);
+  const corrected=result.preview.correctedNotes;
+  assert.equal(corrected[0].startTick+corrected[0].durationTicks,corrected[1].startTick);
+  core.cancelCorrection(session);assert.equal(JSON.stringify(track.notes),original);
+  core.previewCorrection(session,'1/32',false,true);core.applyCorrection(session);
+  assert.equal(core.currentTrack(session).notes[0].startTick+core.currentTrack(session).notes[0].durationTicks,core.currentTrack(session).notes[1].startTick);
+  core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick+core.currentTrack(session).notes[0].durationTicks,core.currentTrack(session).notes[1].startTick);
+});
+test('long or intentional overlaps and different pitches are preserved',()=>{
+  const core=load(),notes=[
+    {id:'long-a',pitch:69,startTick:0,durationTicks:1000,velocity:90,inputChannel:1},
+    {id:'other-pitch',pitch:72,startTick:200,durationTicks:700,velocity:90,inputChannel:1},
+    {id:'long-b',pitch:69,startTick:500,durationTicks:300,velocity:90,inputChannel:1}
+  ],result=core.trimShortSamePitchOverlaps(notes,480);
+  assert.equal(result.adjustments.length,0);
+  assert.equal(result.notes.find(note=>note.id==='long-a').durationTicks,1000);
+  assert.equal(result.notes.find(note=>note.id==='other-pitch').durationTicks,700);
+});
+test('short overlap cleanup can be disabled without affecting quantize or duration correction',()=>{
+  const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
+  track.notes=[
+    {id:'first',pitch:69,startTick:119,durationTicks:251,velocity:90},
+    {id:'second',pitch:69,startTick:300,durationTicks:240,velocity:90}
+  ];
+  const result=core.previewCorrection(session,'1/16',true,false);
+  assert.equal(result.preview.cleanShortOverlaps,false);assert.equal(result.preview.overlapAdjustments.length,0);
+  assert.equal(result.preview.correctedNotes[0].startTick,120);assert.equal(result.preview.correctedNotes[0].durationTicks,240);
+});
 test('all supported quantize resolutions derive from project PPQ',()=>{
   const core=load();
   assert.deepEqual(['1/4','1/8','1/16','1/32'].map(value=>core.quantizeTicks(480,value)),[480,240,120,60]);
