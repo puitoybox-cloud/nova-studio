@@ -31,6 +31,19 @@ test('correction and history buttons add smaller Japanese guidance without chang
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-button-note\{font-size:\.72em;font-weight:600;opacity:\.78;white-space:nowrap\}/);
 });
+test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/？ 操作ガイド/);
+  assert.match(html,/クリック／タップ：ノートを選択/);
+  assert.match(html,/ノート本体をドラッグ：左右移動／上下で音程変更/);
+  assert.match(html,/右端の ↔ ハンドル：ノートの長さを変更/);
+  assert.match(html,/本体の指カーソルと右端の横矢印カーソル/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-note-resize\{[^}]*width:16px/);
+  assert.match(css,/\.music-note-resize::after\{[^}]*content:'↔'/);
+});
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const before=JSON.stringify(app.state.midiEditor.midiData),hash=window.location.hash;
