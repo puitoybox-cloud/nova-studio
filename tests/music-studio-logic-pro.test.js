@@ -57,11 +57,14 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/Snap <span>（スナップ）/);
   for(const value of ['measure','1/2','1/4','1/8','1/16','1/32'])assert.match(html,new RegExp(`value="${value}"`));
   assert.match(html,/velocity-low/);assert.match(html,/velocity-medium/);assert.match(html,/velocity-high/);
-  assert.match(html,/C4 · V30/);assert.match(html,/editorPreviewPitch\(60\)/);
+  assert.match(html,/C4 · V30/);assert.match(html,/onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitch\(60\)"/);
+  assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
   assert.match(html,/？ ショートカット/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
-  let previewed=null;app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,previewNote:(...args)=>{previewed=args}};
-  await app.editorPreviewPitch(60);assert.equal(JSON.stringify(previewed),'[60,100,0.35]');
+  let previewed=null,finishUnlock;app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),previewNote:(...args)=>{previewed=args;return true}};
+  const previewPromise=app.editorPreviewPitch(60);
+  assert.equal(JSON.stringify(previewed),'[60,100,0.35]');
+  finishUnlock(true);assert.equal(await previewPromise,true);
   app.editorMatchDuration();app.editorMatchVelocity(111);
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[360,111],[360,111]]');
   app.editorUndo();app.editorUndo();
