@@ -67,6 +67,7 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   const result=synth.playNotes(notes,{ppq:480,tempo:120}),oscillator=synth.context.oscillators[0];
   assert.equal(result.ok,true);assert.equal(result.noteCount,1);assert.equal(JSON.stringify(notes),before);
   assert.equal(result.oscillatorCount,1);assert.equal(oscillator.type,'sine');
+  assert.equal(result.playbackStart,10.04);assert.equal(result.secondsPerTick,60/(120*480));assert.equal(result.endTick,720);
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
 });
