@@ -121,9 +121,9 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
-  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.4/);
+  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.5/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.2/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.8/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.9/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -169,4 +169,20 @@ test('concurrent Melody play requests schedule the note array only once',async()
   assert.equal(playCalls,1);
   app.editorStopMelody(false);
   assert.equal(stopCalls,2);
+});
+
+test('Melody playhead follows AudioContext time and resets on natural end and manual stop',async()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio,line={style:{left:'0%'}},context={currentTime:20};
+  let frame=null,frameId=0,finish=null,cancelled=[];
+  window.document.body.dataset={};window.document.querySelector=selector=>selector==='.music-playhead'?line:null;
+  window.requestAnimationFrame=callback=>{frame=callback;return++frameId};window.cancelAnimationFrame=id=>cancelled.push(id);
+  window.setTimeout=callback=>{finish=callback;return 9};window.clearTimeout=()=>{};
+  const synth={context,supported:()=>true,unlock:async()=>true,stopPlayback(){},playNotes(){return{ok:true,noteCount:1,durationMs:690,playbackStart:context.currentTime+.04,secondsPerTick:60/(120*480),endTick:480}}};
+  window.MusicStudioAudio={createSynth:()=>synth};
+  app.state.midiEditor={part:'melody',playheadTick:0,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{part:'melody',notes:[{pitch:60,startTick:0,durationTicks:480,velocity:90}]}]}};
+  await app.editorPlayMelody();context.currentTime=20.29;frame();
+  assert.equal(Math.round(app.state.midiEditor.playheadTick),240);assert.equal(line.style.left,'3.125%');
+  finish();assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(line.style.left,'0%');assert.ok(cancelled.length>0);
+  context.currentTime=30;await app.editorPlayMelody();context.currentTime=30.54;frame();assert.equal(Math.round(app.state.midiEditor.playheadTick),480);
+  app.editorStopMelody(false);assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(line.style.left,'0%');
 });
