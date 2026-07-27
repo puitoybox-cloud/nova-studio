@@ -60,13 +60,31 @@ test('Piano Roll tap sets a quantized optional insertion point for Add Note',asy
   assert.match(html,/空いている場所をタップ：次のノート追加位置/);
   assert.match(html,/class="music-insert-marker"/);
 });
-test('editor layout prioritizes Piano Roll width and selected notes follow touch drag together',()=>{
+test('editor layout places a two-column note inspector below the full-width Piano Roll',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 210px/);
-  assert.match(css,/@media\(max-width:900px\)\{\.music-editor-layout\{grid-template-columns:1fr\}/);
+  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\);/);
+  assert.match(css,/\.music-note-inspector\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media\(max-width:600px\)\{\.music-part-tabs[^\n]*\.music-note-inspector\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
+});
+test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable range',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'full-pitch-range',projectName:'Full pitch range'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'low-note',pitch:0,startTick:0,durationTicks:120,velocity:90});
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'high-note',pitch:127,startTick:480,durationTicks:120,velocity:100});
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-piano-viewport"[^>]*onscroll="MusicStudio\.editorRememberPitchScroll\(this\)"/);
+  assert.match(html,/data-pitch-min="0" data-pitch-max="127"/);
+  assert.match(html,/Note 0 \/ 0 tick/);
+  assert.match(html,/Note 127 \/ 480 tick/);
+  assert.match(html,/上下スクロール：MIDI Note 0〜127を表示/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-piano-viewport\{height:508px;overflow-y:auto/);
+  assert.match(css,/\.music-piano-roll\{position:relative;height:3072px/);
+  app.editorRememberPitchScroll({scrollTop:1234});
+  assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
 });
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
