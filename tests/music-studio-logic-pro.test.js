@@ -60,9 +60,9 @@ test('Piano Roll tap sets a quantized optional insertion point for Add Note',asy
   assert.match(html,/空いている場所をタップ：次のノート追加位置/);
   assert.match(html,/class="music-insert-marker"/);
 });
-test('editor layout widens the inspector and selected notes follow touch drag together',()=>{
+test('editor layout prioritizes Piano Roll width and selected notes follow touch drag together',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 300px/);
+  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 210px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-layout\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
