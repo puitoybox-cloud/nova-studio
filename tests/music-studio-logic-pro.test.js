@@ -81,10 +81,24 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(html,/Note 127 \/ 480 tick/);
   assert.match(html,/上下スクロール：MIDI Note 0〜127を表示/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-piano-viewport\{height:508px;overflow-y:auto/);
+  assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
   assert.match(css,/\.music-piano-roll\{position:relative;height:3072px/);
-  app.editorRememberPitchScroll({scrollTop:1234});
+  app.editorRememberPitchScroll({scrollTop:1234,scrollLeft:567});
   assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
+  assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
+});
+test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll state',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'time-zoom',projectName:'Time zoom'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/時間軸 Zoom/);
+  assert.match(html,/class="music-piano-content" style="width:100%"/);
+  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-piano-content" style="width:200%"/);
+  assert.match(html,/時間軸 Zoom後に横スクロール：前後の小節へ移動/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
+  assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
+  assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
 });
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
