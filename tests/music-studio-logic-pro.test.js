@@ -59,18 +59,58 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/velocity-low/);assert.match(html,/velocity-medium/);assert.match(html,/velocity-high/);
   assert.match(html,/C4 · V30/);assert.match(html,/onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
+  assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
   assert.match(html,/？ ショートカット/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
   let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
   app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
-  assert.equal(JSON.stringify(pitchEvents),'[["off",60,"piano-roll-preview"],["on",60,100,"piano-roll-preview"]]');
+  assert.equal(JSON.stringify(pitchEvents),'[]');
   finishUnlock(true);assert.equal(await previewPromise,true);
+  assert.equal(JSON.stringify(pitchEvents),'[["off",60,"piano-roll-preview"],["on",60,100,"piano-roll-preview"]]');
   scheduledStop();assert.equal(JSON.stringify(pitchEvents.at(-1)),'["off",60,"piano-roll-preview"]');
   app.editorMatchDuration();app.editorMatchVelocity(111);
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[360,111],[360,111]]');
   app.editorUndo();app.editorUndo();
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[120,30],[360,120]]');
+});
+test('Piano Roll note body previews only a simple click while drag resize and cancel stay silent',async()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'note-preview',projectName:'Note preview'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor;
+  core.addNotes(app.state.midiEditor,[
+    {id:'first',pitch:60,startTick:0,durationTicks:240,velocity:37},
+    {id:'second',pitch:64,startTick:480,durationTicks:240,velocity:91}
+  ]);
+  const audioEvents=[];
+  app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>{audioEvents.push(['unlock']);return true},noteOn:(...args)=>{audioEvents.push(['on',...args]);return true},noteOff:(...args)=>{audioEvents.push(['off',...args]);return true}};
+  window.setTimeout=()=>9;window.clearTimeout=()=>{};
+  const flushPreview=()=>new Promise(resolve=>setImmediate(resolve));
+  const roll={dataset:{totalTicks:'7680',pitchMin:'0',pitchMax:'127'},getBoundingClientRect:()=>({left:0,width:800,height:3072}),querySelectorAll:()=>[]};
+  const noteTarget={style:{},closest:selector=>selector==='.music-piano-roll'?roll:null,setPointerCapture(){}};
+  const pointer=(extra={})=>({button:0,currentTarget:noteTarget,clientX:100,clientY:100,pointerId:1,preventDefault(){},...extra});
+
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(audioEvents),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["first"]');
+
+  const previewCount=audioEvents.length,startTick=core.currentTrack(app.state.midiEditor).notes[0].startTick;
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointermove({clientX:125,clientY:100});noteTarget.onpointerup();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+  assert.notEqual(core.currentTrack(app.state.midiEditor).notes[0].startTick,startTick);
+
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointercancel();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+
+  const noteElement={style:{width:'10%'}},resizeTarget={style:{},closest:selector=>selector==='.music-midi-note'?noteElement:selector==='.music-piano-roll'?roll:null,setPointerCapture(){}};
+  app.editorStartNoteResize({button:0,currentTarget:resizeTarget,clientX:100,pointerId:2,preventDefault(){},stopPropagation(){}},'first');
+  resizeTarget.onpointermove({clientX:125});resizeTarget.onpointerup();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+
+  core.selectNote(app.state.midiEditor,'second',{additive:true});
+  app.editorStartNoteDrag(pointer({shiftKey:true}),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second"]');
+  assert.equal(JSON.stringify(audioEvents.slice(-3)),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
 });
 test('Piano Roll shortcuts share button actions and never fire from an input',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'shortcuts',projectName:'Shortcuts'});
