@@ -95,12 +95,12 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/時間軸 Zoom：2x/);
   assert.match(html,/class="music-piano-content" style="width:200%"/);
-  for(let step=0;step<12;step++)app.editorZoom(1);
+  for(let step=0;step<25;step++)app.editorZoom(1);
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/時間軸 Zoom：10x/);
-  assert.match(html,/class="music-piano-content" style="width:1000%"/);
+  assert.match(html,/時間軸 Zoom：20x/);
+  assert.match(html,/class="music-piano-content" style="width:2000%"/);
   assert.match(html,/onclick="MusicStudio\.editorZoom\(1\)" disabled/);
-  for(let step=0;step<12;step++)app.editorZoom(-1);
+  for(let step=0;step<25;step++)app.editorZoom(-1);
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/時間軸 Zoom：1x/);
   assert.match(html,/onclick="MusicStudio\.editorZoom\(-1\)" disabled/);
@@ -109,6 +109,34 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
   assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
+});
+test('Piano Roll shows beat and zoom-sensitive subdivision grid',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'time-grid',projectName:'Time grid',timeSignature:'4/4'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-grid "/);
+  assert.doesNotMatch(html,/class="music-time-grid is-detailed"/);
+  assert.match(html,/--measure-size:25%;--beat-size:6\.25%;--subdivision-size:1\.5625%/);
+  for(let step=0;step<4;step++)app.editorZoom(1);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-grid is-detailed"/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-time-grid\{[^}]*--measure-size/);
+  assert.match(css,/\.music-time-grid\.is-detailed\{[^}]*--subdivision-size/);
+});
+test('time ruler moves and drags the playhead without changing note insertion point',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'playhead-ruler',projectName:'Playhead ruler'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),setPointerCapture(){}};
+  app.editorStartPlayheadMove({button:0,currentTarget:ruler,clientX:200,pointerId:1,preventDefault(){}});
+  assert.equal(app.state.midiEditor.playheadTick,1920);
+  ruler.onpointermove({clientX:600});
+  assert.equal(app.state.midiEditor.playheadTick,5760);
+  assert.equal(app.state.midiEditor.insertTick,undefined);
+  ruler.onpointerup();
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-ruler"[^>]*onpointerdown="MusicStudio\.editorStartPlayheadMove\(event\)"/);
+  assert.match(html,/時間ルーラーをクリック／タップ：再生位置を移動/);
+  assert.match(html,/class="music-playhead" style="left:75%"/);
 });
 test('adding empty measures persists song length without inventing MIDI notes',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'empty-measures',projectName:'Empty measures'});
