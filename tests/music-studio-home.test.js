@@ -117,7 +117,7 @@ test('host router renders new Music Studio routes and preserves unrelated routes
 test('Music Studio dependencies load sequentially without querying detached scripts',()=>{
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.4\.9/);
+  assert.match(indexSource,/app\.js\?v=1\.4\.10/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
@@ -125,7 +125,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.6/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.6/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.19/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.20/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });

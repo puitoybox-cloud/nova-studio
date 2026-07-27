@@ -61,10 +61,12 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
   assert.match(html,/？ ショートカット/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
-  let previewed=null,finishUnlock;app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),previewNote:(...args)=>{previewed=args;return true}};
+  let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
-  assert.equal(JSON.stringify(previewed),'[60,100,0.35]');
+  assert.equal(JSON.stringify(pitchEvents),'[["off",60,"piano-roll-preview"],["on",60,100,"piano-roll-preview"]]');
   finishUnlock(true);assert.equal(await previewPromise,true);
+  scheduledStop();assert.equal(JSON.stringify(pitchEvents.at(-1)),'["off",60,"piano-roll-preview"]');
   app.editorMatchDuration();app.editorMatchVelocity(111);
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[360,111],[360,111]]');
   app.editorUndo();app.editorUndo();
