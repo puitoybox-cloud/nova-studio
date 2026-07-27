@@ -33,6 +33,43 @@ test('stopping a MIDI recording persists its Melody notes through the existing p
   const result=await app.editorStopMidiRecording(),stored=await repo.get(project.projectId),melody=stored.midiData.tracks.find(track=>track.part==='melody');
   assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].durationTicks,360);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
 });
+test('recorded Melody correction survives save and editor reload',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'correction-reload',projectName:'Correction reload'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  app.state.midiInput.recording=true;app.state.midiInput.recorder={stop:()=>[{id:'played',pitch:64,startTick:119,durationTicks:251,velocity:91,channel:1}]};
+  await app.editorStopMidiRecording();
+  app.editorPreviewCorrection();app.editorApplyCorrection();
+  assert.equal(app.state.midiEditor.dirty,true);
+  await app.saveMidiEditor();
+  const stored=await repo.get(project.projectId),storedNote=stored.midiData.tracks.find(track=>track.part==='melody').notes[0];
+  assert.equal(storedNote.startTick,120);assert.equal(storedNote.durationTicks,240);
+  app.state.projects=[stored];app.state.midiEditor=null;app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const reloaded=app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes[0];
+  assert.equal(reloaded.startTick,120);assert.equal(reloaded.durationTicks,240);assert.equal(app.state.midiEditor.dirty,false);
+});
+test('MIDI edits made while save is pending remain dirty after the older save completes',async()=>{
+  const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'save-race',projectName:'Save race'});await base.put(project);
+  let release;const repo={...base,async put(value){await new Promise(resolve=>{release=resolve});return base.put(value)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  app.editorAddNote();const saving=app.saveMidiEditor();await Promise.resolve();await Promise.resolve();
+  app.editorAddNote();release();
+  const result=await saving,stored=await base.get(project.projectId);
+  assert.equal(result.stale,true);assert.equal(app.state.midiEditor.dirty,true);
+  assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
+  assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes.length,2);
+});
+test('Apply is reflected in latest unsaved MIDI export input without touching other parts',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'latest-export',projectName:'Latest export',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'melody',part:'melody',name:'Melody',channel:1,notes:[{id:'m',pitch:60,startTick:119,durationTicks:251,velocity:90}]},
+    {id:'drums',part:'drums',name:'Drums',channel:10,notes:[{id:'d',pitch:36,startTick:0,durationTicks:120,velocity:100}]},
+    {id:'bass',part:'bass',name:'Bass',channel:2,notes:[{id:'b',pitch:36,startTick:0,durationTicks:480,velocity:80}]}
+  ]}});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  app.editorPreviewCorrection();app.editorApplyCorrection();
+  const summary=app.midiExportSummary({...project,midiData:app.state.midiEditor.midiData},'all');
+  assert.equal(summary.input.tracks.find(track=>track.part==='melody').notes[0].startTick,120);
+  assert.equal(summary.input.tracks.find(track=>track.part==='drums').notes[0].startTick,0);
+  assert.equal(summary.input.tracks.find(track=>track.part==='bass').notes[0].durationTicks,480);
+});
 test('a failed recording autosave keeps the recorded notes dirty and available for manual retry',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'failed-recording',projectName:'Failed recording'});await base.put(project);
   const repo={...base,async put(value){if(value.midiData)throw Error('storage unavailable');return base.put(value)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
