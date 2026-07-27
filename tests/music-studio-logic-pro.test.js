@@ -62,7 +62,7 @@ test('Piano Roll tap sets a quantized optional insertion point for Add Note',asy
 });
 test('editor layout widens the inspector and selected notes follow touch drag together',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 300px/);
+  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 280px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-layout\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
