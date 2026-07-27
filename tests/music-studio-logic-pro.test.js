@@ -44,6 +44,30 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   assert.match(css,/\.music-note-resize\{[^}]*width:16px/);
   assert.match(css,/\.music-note-resize::after\{[^}]*content:'↔'/);
 });
+test('Piano Roll tap sets a quantized optional insertion point for Add Note',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'insert-point',projectName:'Insert point'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const roll={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800})};
+  app.editorSetInsertPosition({target:{closest:()=>null},currentTarget:roll,clientX:250});
+  assert.equal(app.state.midiEditor.insertTick,2400);
+  app.editorSetInsertPosition({target:{closest:()=>({})},currentTarget:roll,clientX:500});
+  assert.equal(app.state.midiEditor.insertTick,2400);
+  app.editorAddNote();await app.state.midiEditorSavePromise;
+  const stored=await repo.get(project.projectId),note=stored.midiData.tracks.find(track=>track.part==='melody').notes[0];
+  assert.equal(note.startTick,2400);
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/onpointerdown="MusicStudio\.editorSetInsertPosition\(event\)"/);
+  assert.match(html,/空いている場所をタップ：次のノート追加位置/);
+  assert.match(html,/class="music-insert-marker"/);
+});
+test('editor layout widens the inspector and selected notes follow touch drag together',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 300px/);
+  assert.match(css,/@media\(max-width:900px\)\{\.music-editor-layout\{grid-template-columns:1fr\}/);
+  assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
+  assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
+  assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
+});
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const before=JSON.stringify(app.state.midiEditor.midiData),hash=window.location.hash;
