@@ -35,7 +35,7 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/？ 操作ガイド/);
+  assert.match(html,/？ ショートカット \/ 操作ガイド/);
   assert.match(html,/ノート本体ドラッグ：移動／右端 ↔：長さ変更/);
   assert.match(html,/左の音名をタップ：その音を試聴/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -61,7 +61,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
-  assert.match(html,/？ ショートカット/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
+  assert.match(html,/<summary>ショートカット<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
   let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
   app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
@@ -153,11 +153,22 @@ test('Piano Roll tap moves the red playhead and Add Note uses the same position'
   assert.match(html,/赤い再生ライン：再生・ノート追加位置/);
   assert.doesNotMatch(html,/music-insert-marker|次のノート追加位置/);
 });
-test('editor layout places a two-column note inspector below the full-width Piano Roll',()=>{
+test('editor shell removes the persistent note inspector and keeps a full-width responsive Piano Roll',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'new-shell',projectName:'New shell'});
+  app.state.projects=[project];
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.doesNotMatch(html,/class="music-note-inspector"/);
+  assert.match(html,/class="music-editor-topbar"/);
+  assert.match(html,/class="music-loop-bar"/);
+  assert.match(html,/class="music-editor-bottom"/);
+  assert.match(html,/<h2>編集ツール<\/h2>/);
+  assert.match(html,/<h2>表示・編集補助<\/h2>/);
+  assert.match(html,/<h2>再生<\/h2>/);
   assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\);/);
-  assert.match(css,/\.music-note-inspector\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css,/@media\(max-width:600px\)\{\.music-part-tabs[^\n]*\.music-note-inspector\{grid-template-columns:1fr\}/);
+  assert.match(css,/\.music-editor-popover\{position:absolute/);
+  assert.match(css,/@media\(max-width:900px\)\{\.music-editor-bottom\{grid-template-columns:1fr 1fr\}/);
+  assert.match(css,/@media\(max-width:600px\)\{\.music-editor-bottom\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
