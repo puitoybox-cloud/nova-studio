@@ -121,11 +121,11 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.9/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.10/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.6/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.7/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.22/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.23/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -143,15 +143,17 @@ test('Web MIDI state changes keep a stable three-device list and selected input'
   app.editorSelectMidiInput('keyboard');
   const paintsAfterSelection=paints;
   assert.equal(app.state.midiInput.selectedId,'keyboard');
+  await app.editorSelectMidiInput('__rescan__');
+  assert.equal(requests,1);assert.equal(app.state.midiInput.selectedId,'keyboard');
   access.onstatechange();
-  assert.equal(requests,1);assert.equal(paints,paintsAfterSelection);assert.equal(app.state.midiInput.selectedId,'keyboard');
+  assert.equal(requests,1);assert.equal(paints,paintsAfterSelection+1);assert.equal(app.state.midiInput.selectedId,'keyboard');
   const staleKeyboard=inputs[2],replacementKeyboard={id:'keyboard',name:'MIDI Keyboard'};
   access.inputs.set('keyboard',replacementKeyboard);access.onstatechange();
   assert.equal(staleKeyboard.onmidimessage,null);
   assert.equal(typeof replacementKeyboard.onmidimessage,'function');
-  assert.equal(paints,paintsAfterSelection);
+  assert.equal(paints,paintsAfterSelection+1);
   access.inputs.delete('ur22c-2');access.onstatechange();
-  assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+1);
+  assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+2);
 });
 
 test('concurrent Melody play requests schedule the note array only once',async()=>{

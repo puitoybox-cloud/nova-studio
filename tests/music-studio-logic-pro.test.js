@@ -24,8 +24,8 @@ test('every major and placeholder route has one unified back and next navigation
 test('correction and history buttons add smaller Japanese guidance without changing actions',()=>{
   const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/editorUndo\(\)" disabled>Undo <span class="music-button-note">（元に戻す）<\/span>/);
-  assert.match(html,/editorRedo\(\)" disabled>Redo <span class="music-button-note">（やり直す）<\/span>/);
+  assert.match(html,/editorUndo\(\)" disabled title="Undo（元に戻す）" aria-label="Undo（元に戻す）">↶ <span>Undo<\/span>/);
+  assert.match(html,/editorRedo\(\)" disabled title="Redo（やり直す）" aria-label="Redo（やり直す）">↷ <span>Redo<\/span>/);
   app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/editorApplyCorrection\(\)"[^>]*>Apply <span class="music-button-note">（適用）<\/span>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -87,20 +87,20 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
   const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力機器）<select[^>]*disabled><option value="">MIDI入力機器なし<\/option>/);
+  assert.match(html,/MIDI Input（MIDI入力機器）<select[^>]*><option value="" selected>MIDI入力機器なし<\/option><option value="__rescan__"[^>]*>↻ 再検出<\/option>/);
   assert.doesNotMatch(html,/MIDI未接続|music-midi-status|MIDI Devices（デバイス一覧）/);
-  assert.match(html,/aria-label="Check Connection（接続確認）"[^>]*>↻ 再検出<\/button>/);
-  assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,1);
+  assert.doesNotMatch(html,/music-midi-rescan|Check Connection（接続確認）/);
+  assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,0);
   assert.match(html,/>Melody<\/button>/);assert.match(html,/>Drums<\/button>/);assert.match(html,/>Bass<\/button>/);
   assert.doesNotMatch(html,/>Melody<span>|>Drums<span>|>Bass<span>/);
-  assert.match(html,/Melody · 0ノート · 選択 0 · コピー 0/);
+  assert.doesNotMatch(html,/music-editor-status|Melody · 0ノート · 選択 0 · コピー 0/);
   const workflow=html.match(/<details class="music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
   assert.doesNotMatch(workflow,/editorInitializeMidi|editorStartMidiRecording|editorStopMidiRecording|MIDI Keyboard|MIDI Input|Record（録音）|Stop（停止）/);
   for(const label of ['Back（戻る）','Next（進む）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
   const keys={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},pads={id:'pads',name:'MPD218',onmidimessage:null};
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力機器）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);
+  assert.match(html,/MIDI Input（MIDI入力機器）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__" >↻ 再検出/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
@@ -198,7 +198,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
-  assert.match(html,/<summary>Shortcuts（ショートカット）<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
+  assert.match(html,/<summary title="Shortcuts（ショートカット）" aria-label="Shortcuts（ショートカット）">Shortcuts<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
   let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
   app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
@@ -382,9 +382,9 @@ test('editor layout prioritizes a compact header and a tall Piano Roll without c
   assert.match(css,/\.music-midi-editor-page\{width:100%;max-width:none;padding:10px 16px 18px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-flow-nav\{[^}]*margin:0 0 3px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-heading h1\{font-size:clamp\(1\.1rem,1\.7vw,1\.3rem\)/);
-  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:32px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:30px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-save\{margin-left:0/);
-  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(560px,calc\(100vh - 250px\),760px\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(560px,calc\(100vh - 224px\),780px\)/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{display:flex;min-height:104px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page\{padding:8px 10px 14px\}/);
 });
