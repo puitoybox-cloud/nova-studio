@@ -25,6 +25,16 @@ test('old project without MIDI opens as optional blank three-part session',()=>{
   assert.equal(session.midiData.tempo,100);
   assert.equal(session.dirty,false);
 });
+test('loop range is backward-compatible persisted editor state independent from bar selection',()=>{
+  const editor=load(),legacy=editor.createSession({projectId:'legacy'});
+  assert.equal(legacy.midiData.editor.loopEnabled,false);assert.equal(legacy.midiData.editor.loopStart,null);assert.equal(legacy.midiData.editor.loopEnd,null);
+  editor.toggleMeasure(legacy,2);editor.setLoopRange(legacy,240,1680,true);
+  assert.deepEqual(Array.from(legacy.selectedMeasures),[2]);assert.equal(legacy.midiData.editor.loopEnabled,true);assert.equal(legacy.midiData.editor.loopStart,240);assert.equal(legacy.midiData.editor.loopEnd,1680);
+  const restored=editor.createSession({projectId:'restored',midiData:legacy.midiData});
+  assert.equal(restored.midiData.editor.loopEnabled,true);assert.equal(restored.midiData.editor.loopStart,240);assert.equal(restored.midiData.editor.loopEnd,1680);assert.deepEqual(Array.from(restored.selectedMeasures),[2]);
+  editor.setLoopEnabled(restored,false);assert.equal(restored.midiData.editor.loopEnabled,false);assert.equal(restored.midiData.editor.loopStart,240);assert.equal(restored.midiData.editor.loopEnd,1680);
+  editor.setLoopRange(restored,null,null,false);assert.equal(restored.midiData.editor.loopStart,null);assert.equal(restored.midiData.editor.loopEnd,null);
+});
 test('empty timeline measures persist as undoable editor metadata',()=>{
   const core=load(),session=core.createSession(project());
   assert.equal(session.midiData.editor.measureCount,4);

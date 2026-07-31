@@ -344,6 +344,22 @@ test('Snap toggles grid alignment for add move and resize without changing the v
   assert.match(html,/onchange="MusicStudio\.editorSetSnap\(this\.value\)" disabled/);
   app.editorToggleSnap();assert.equal(session.view.snapEnabled,true);
 });
+test('loop ruler supports reverse creation, handle resize, locked-length move, save and clear',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'loop-range',projectName:'Loop range'});app.setRepository(repo);await repo.put(project);app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/Loop OFF/);assert.match(html,/小節選択とは別の再生範囲/);assert.match(html,/editorToggleMeasure\(1\)/);
+  let selection=null;const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),querySelector:()=>selection,insertAdjacentHTML(){selection={style:{}}},setPointerCapture(){}};
+  const target=part=>({closest:selector=>selector==='[data-loop-part]'&&part?{dataset:{loopPart:part}}:null});
+  app.editorStartLoopRange({button:0,currentTarget:ruler,target:target(null),clientX:700,pointerId:1,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:200});ruler.onpointerup();await app.state.midiEditorSavePromise;
+  let loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopEnabled,true);assert.equal(loop.loopStart,1920);assert.equal(loop.loopEnd,6720);
+  selection={style:{}};app.editorStartLoopRange({button:0,currentTarget:ruler,target:target('start'),clientX:200,pointerId:2,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:300});ruler.onpointerup();await app.state.midiEditorSavePromise;
+  loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopStart,2880);assert.equal(loop.loopEnd,6720);
+  selection={style:{}};app.editorStartLoopRange({button:0,currentTarget:ruler,target:target('move'),clientX:500,pointerId:3,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:600});ruler.onpointerup();await app.state.midiEditorSavePromise;
+  loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopStart,3840);assert.equal(loop.loopEnd,7680);
+  const stored=await repo.get(project.projectId);assert.equal(stored.midiData.editor.loopEnabled,true);assert.equal(stored.midiData.editor.loopStart,3840);assert.equal(stored.midiData.editor.loopEnd,7680);
+  app.editorToggleSnap();selection=null;app.editorStartLoopRange({button:0,currentTarget:ruler,target:target(null),clientX:101,pointerId:4,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:203});ruler.onpointerup();await app.state.midiEditorSavePromise;
+  loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopStart,970);assert.equal(loop.loopEnd,1949);
+  app.editorClearLoop();await app.state.midiEditorSavePromise;loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopEnabled,false);assert.equal(loop.loopStart,null);assert.equal(loop.loopEnd,null);
+});
 test('Piano Roll tap moves the red playhead and Add Note uses the same position',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'insert-point',projectName:'Insert point'});
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
