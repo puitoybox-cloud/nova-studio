@@ -414,6 +414,9 @@ test('editor layout prioritizes a compact header and a wide moderate-height Pian
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:60px\}/);assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(428px,calc\(100vh - 412px\),528px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(620px,calc\(100vh - 192px\),740px\)\}/);assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(540px,calc\(100vh - 364px\),640px\)\}\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-editor-page \.music-loop-ruler\{height:40px\}[\s\S]*?\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:76px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-loop-ruler\{height:22px\}/);assert.match(css,/\.music-midi-editor-page \.music-loop-handle::before\{[^}]*width:10px;height:16px/);assert.match(css,/\.music-midi-editor-page \.music-measure-row,\.music-midi-editor-page \.music-measure\{height:24px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:46px\}/);assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(634px,calc\(100vh - 178px\),754px\)\}/);
+  assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-editor-page \.music-loop-ruler\{height:28px\}[\s\S]*?\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:56px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{display:flex;min-height:104px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page\{padding:8px 10px 14px\}/);
   assert.match(css,/@media\(max-width:900px\)\{body\.is-management-route \.management-main>\.music-midi-editor-page\{padding:8px 10px 14px\}/);
