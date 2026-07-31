@@ -36,37 +36,223 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/？ 操作ガイド/);
-  assert.match(html,/クリック／タップ：ノートを選択/);
-  assert.match(html,/ノート本体をドラッグ：左右移動／上下で音程変更/);
-  assert.match(html,/右端の ↔ ハンドル：ノートの長さを変更/);
-  assert.match(html,/本体の指カーソルと右端の横矢印カーソル/);
+  assert.match(html,/ノート本体ドラッグ：移動／右端 ↔：長さ変更/);
+  assert.match(html,/左の音名をタップ：その音を試聴/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-note-resize\{[^}]*width:16px/);
   assert.match(css,/\.music-note-resize::after\{[^}]*content:'↔'/);
 });
-test('Piano Roll tap sets a quantized optional insertion point for Add Note',async()=>{
+test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matching, and Mac help',async()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'helpers',projectName:'Helpers'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor;
+  core.addNotes(app.state.midiEditor,[
+    {id:'quiet',pitch:60,startTick:0,durationTicks:120,velocity:30},
+    {id:'medium',pitch:62,startTick:480,durationTicks:240,velocity:70},
+    {id:'loud',pitch:64,startTick:960,durationTicks:360,velocity:120}
+  ]);
+  core.selectNote(app.state.midiEditor,'quiet');
+  core.selectNote(app.state.midiEditor,'loud',{additive:true});
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/Snap <span>（スナップ）/);
+  for(const value of ['measure','1/2','1/4','1/8','1/16','1/32'])assert.match(html,new RegExp(`value="${value}"`));
+  assert.match(html,/velocity-low/);assert.match(html,/velocity-medium/);assert.match(html,/velocity-high/);
+  assert.match(html,/C4 · V30/);assert.match(html,/onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitch\(60\)"/);
+  assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
+  assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
+  assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
+  assert.match(html,/？ ショートカット/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
+  let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
+  const previewPromise=app.editorPreviewPitch(60);
+  assert.equal(JSON.stringify(pitchEvents),'[]');
+  finishUnlock(true);assert.equal(await previewPromise,true);
+  assert.equal(JSON.stringify(pitchEvents),'[["off",60,"piano-roll-preview"],["on",60,100,"piano-roll-preview"]]');
+  scheduledStop();assert.equal(JSON.stringify(pitchEvents.at(-1)),'["off",60,"piano-roll-preview"]');
+  app.editorMatchDuration();app.editorMatchVelocity(111);
+  assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[360,111],[360,111]]');
+  app.editorUndo();app.editorUndo();
+  assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[120,30],[360,120]]');
+});
+test('Piano Roll note body previews only a simple click while drag resize and cancel stay silent',async()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'note-preview',projectName:'Note preview'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor;
+  core.addNotes(app.state.midiEditor,[
+    {id:'first',pitch:60,startTick:0,durationTicks:240,velocity:37},
+    {id:'second',pitch:64,startTick:480,durationTicks:240,velocity:91}
+  ]);
+  const audioEvents=[];
+  app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>{audioEvents.push(['unlock']);return true},noteOn:(...args)=>{audioEvents.push(['on',...args]);return true},noteOff:(...args)=>{audioEvents.push(['off',...args]);return true}};
+  window.setTimeout=()=>9;window.clearTimeout=()=>{};
+  const flushPreview=()=>new Promise(resolve=>setImmediate(resolve));
+  const roll={dataset:{totalTicks:'7680',pitchMin:'0',pitchMax:'127'},getBoundingClientRect:()=>({left:0,width:800,height:3072}),querySelectorAll:()=>[]};
+  const noteTarget={style:{},closest:selector=>selector==='.music-piano-roll'?roll:null,setPointerCapture(){}};
+  const pointer=(extra={})=>({button:0,currentTarget:noteTarget,clientX:100,clientY:100,pointerId:1,preventDefault(){},...extra});
+
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(audioEvents),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["first"]');
+
+  const previewCount=audioEvents.length,startTick=core.currentTrack(app.state.midiEditor).notes[0].startTick;
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointermove({clientX:125,clientY:100});noteTarget.onpointerup();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+  assert.notEqual(core.currentTrack(app.state.midiEditor).notes[0].startTick,startTick);
+
+  app.editorStartNoteDrag(pointer(),'first');noteTarget.onpointercancel();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+
+  const noteElement={style:{width:'10%'}},resizeTarget={style:{},closest:selector=>selector==='.music-midi-note'?noteElement:selector==='.music-piano-roll'?roll:null,setPointerCapture(){}};
+  app.editorStartNoteResize({button:0,currentTarget:resizeTarget,clientX:100,pointerId:2,preventDefault(){},stopPropagation(){}},'first');
+  resizeTarget.onpointermove({clientX:125});resizeTarget.onpointerup();await flushPreview();
+  assert.equal(audioEvents.length,previewCount);
+
+  core.selectNote(app.state.midiEditor,'second',{additive:true});
+  app.editorStartNoteDrag(pointer({shiftKey:true}),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second"]');
+  assert.equal(JSON.stringify(audioEvents.slice(-3)),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
+});
+test('Piano Roll shortcuts share button actions and never fire from an input',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'shortcuts',projectName:'Shortcuts'});
+  app.state.projects=[project];window.location.hash='#music-studio/midi-editor/shortcuts';
+  app.renderRoute('music-studio/midi-editor/shortcuts');
+  app.editorAddNote();const core=window.MusicStudioEditor,note=()=>core.currentTrack(app.state.midiEditor).notes[0];
+  const event=(key,extra={})=>{let prevented=false;return{key,target:{closest:()=>null},preventDefault(){prevented=true},get prevented(){return prevented},...extra}};
+  const inputEvent=event('Backspace',{target:{closest:()=>({})}});
+  assert.equal(app.editorHandleShortcut(inputEvent),false);assert.equal(inputEvent.prevented,false);
+  let e=event('ArrowRight');assert.equal(app.editorHandleShortcut(e),true);assert.equal(note().startTick,120);assert.equal(e.prevented,true);
+  app.editorHandleShortcut(event('ArrowUp',{shiftKey:true}));assert.equal(note().pitch,72);
+  app.editorHandleShortcut(event('ArrowRight',{altKey:true}));assert.equal(note().durationTicks,240);
+  app.editorHandleShortcut(event('c',{metaKey:true}));assert.equal(app.state.midiEditor.clipboard.length,1);
+  app.editorHandleShortcut(event('v',{metaKey:true}));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,2);
+  const selectAllEvent=event('a',{metaKey:true});assert.equal(app.editorHandleShortcut(selectAllEvent),true);assert.equal(selectAllEvent.prevented,true);
+  app.editorHandleShortcut(event('z',{metaKey:true}));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,1);
+  app.editorHandleShortcut(event('z',{metaKey:true,shiftKey:true}));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,2);
+  app.editorHandleShortcut(event('+',{metaKey:true}));assert.equal(app.state.midiEditor.view.zoom,2);
+  app.editorHandleShortcut(event('0',{metaKey:true}));assert.equal(app.state.midiEditor.view.zoom,1);
+  app.editorHandleShortcut(event('4'));assert.equal(app.state.midiEditor.view.snap,'1/32');
+  app.editorHandleShortcut(event('n'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,3);
+  let stopped=false;app.state.melodyAudio.synth={stopPlayback(){stopped=true}};app.state.melodyAudio.playing=true;
+  app.editorHandleShortcut(event(' '));assert.equal(stopped,true);assert.equal(app.state.melodyAudio.playing,false);
+  app.editorHandleShortcut(event('Escape'));assert.equal(core.selectedIds(app.state.midiEditor).length,0);
+  core.selectAllNotes(app.state.midiEditor);app.editorHandleShortcut(event('Delete'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,0);
+});
+test('Piano Roll tap moves the red playhead and Add Note uses the same position',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'insert-point',projectName:'Insert point'});
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   const roll={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800})};
-  app.editorSetInsertPosition({target:{closest:()=>null},currentTarget:roll,clientX:250});
-  assert.equal(app.state.midiEditor.insertTick,2400);
-  app.editorSetInsertPosition({target:{closest:()=>({})},currentTarget:roll,clientX:500});
-  assert.equal(app.state.midiEditor.insertTick,2400);
+  app.editorSetPlayheadPosition({target:{closest:()=>null},currentTarget:roll,clientX:250});
+  assert.equal(app.state.midiEditor.playheadTick,2400);
+  app.editorSetPlayheadPosition({target:{closest:()=>({})},currentTarget:roll,clientX:500});
+  assert.equal(app.state.midiEditor.playheadTick,2400);
   app.editorAddNote();await app.state.midiEditorSavePromise;
   const stored=await repo.get(project.projectId),note=stored.midiData.tracks.find(track=>track.part==='melody').notes[0];
   assert.equal(note.startTick,2400);
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/onpointerdown="MusicStudio\.editorSetInsertPosition\(event\)"/);
-  assert.match(html,/空いている場所をタップ：次のノート追加位置/);
-  assert.match(html,/class="music-insert-marker"/);
+  assert.match(html,/onpointerdown="MusicStudio\.editorSetPlayheadPosition\(event\)"/);
+  assert.match(html,/赤い再生ライン：再生・ノート追加位置/);
+  assert.doesNotMatch(html,/music-insert-marker|次のノート追加位置/);
 });
-test('editor layout widens the inspector and selected notes follow touch drag together',()=>{
+test('editor layout places a two-column note inspector below the full-width Piano Roll',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\) 300px/);
-  assert.match(css,/@media\(max-width:900px\)\{\.music-editor-layout\{grid-template-columns:1fr\}/);
+  assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\);/);
+  assert.match(css,/\.music-note-inspector\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media\(max-width:600px\)\{\.music-part-tabs[^\n]*\.music-note-inspector\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
+});
+test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable range',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'full-pitch-range',projectName:'Full pitch range'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'low-note',pitch:0,startTick:0,durationTicks:120,velocity:90});
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'high-note',pitch:127,startTick:480,durationTicks:120,velocity:100});
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-piano-viewport"[^>]*onscroll="MusicStudio\.editorRememberPitchScroll\(this\)"/);
+  assert.match(html,/data-pitch-min="0" data-pitch-max="127"/);
+  assert.match(html,/Note 0 \/ 0 tick/);
+  assert.match(html,/Note 127 \/ 480 tick/);
+  assert.match(html,/data-pitch-min="0" data-pitch-max="127"/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
+  assert.match(css,/\.music-piano-roll\{position:relative;height:3072px/);
+  app.editorRememberPitchScroll({scrollTop:1234,scrollLeft:567});
+  assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
+  assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
+});
+test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll state',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'time-zoom',projectName:'Time zoom'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/時間軸 Zoom：1x/);
+  assert.match(html,/class="music-piano-content" style="width:100%"/);
+  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/時間軸 Zoom：2x/);
+  assert.match(html,/class="music-piano-content" style="width:200%"/);
+  for(let step=0;step<35;step++)app.editorZoom(1);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/時間軸 Zoom：30x/);
+  assert.match(html,/class="music-piano-content" style="width:3000%"/);
+  assert.match(html,/onclick="MusicStudio\.editorZoom\(1\)" disabled/);
+  for(let step=0;step<35;step++)app.editorZoom(-1);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/時間軸 Zoom：1x/);
+  assert.match(html,/onclick="MusicStudio\.editorZoom\(-1\)" disabled/);
+  assert.match(html,/時間軸 Zoom：1x/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
+  assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
+  assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
+});
+test('Piano Roll shows beat and zoom-sensitive subdivision grid',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'time-grid',projectName:'Time grid',timeSignature:'4/4'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-grid"/);
+  assert.doesNotMatch(html,/class="music-time-grid is-detailed"/);
+  assert.match(html,/--measure-size:25%;--beat-size:6\.25%;--subdivision-size:1\.5625%/);
+  for(let step=0;step<4;step++)app.editorZoom(1);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-grid is-detailed"/);
+  for(let step=0;step<20;step++)app.editorZoom(1);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-grid is-detailed is-ultra"/);
+  assert.match(html,/--micro-size:0\.78125%/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-time-grid\{[^}]*--measure-size/);
+  assert.match(css,/\.music-time-grid\.is-detailed\{[^}]*--subdivision-size/);
+  assert.match(css,/\.music-time-grid\.is-ultra\{[^}]*--micro-size/);
+});
+test('time ruler moves and drags the playhead without changing note insertion point',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'playhead-ruler',projectName:'Playhead ruler'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),setPointerCapture(){}};
+  app.editorStartPlayheadMove({button:0,currentTarget:ruler,clientX:200,pointerId:1,preventDefault(){}});
+  assert.equal(app.state.midiEditor.playheadTick,1920);
+  ruler.onpointermove({clientX:600});
+  assert.equal(app.state.midiEditor.playheadTick,5760);
+  assert.equal(app.state.midiEditor.playheadTick,5760);
+  ruler.onpointerup();
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-time-ruler"[^>]*onpointerdown="MusicStudio\.editorStartPlayheadMove\(event\)"/);
+  assert.match(html,/ルーラーや空き位置で移動/);
+  assert.match(html,/class="music-playhead" style="left:75%"/);
+  assert.match(html,/class="music-playhead-handle" style="left:75%"/);
+});
+test('adding empty measures persists song length without inventing MIDI notes',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'empty-measures',projectName:'Empty measures'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/曲の長さ：4小節/);
+  assert.match(html,/＋ 小節を追加/);
+  const beforeNotes=app.state.midiEditor.midiData.tracks.reduce((count,track)=>count+track.notes.length,0);
+  app.editorAddMeasures();await app.state.midiEditorSavePromise;
+  const stored=await repo.get(project.projectId);
+  assert.equal(stored.midiData.editor.measureCount,8);
+  assert.equal(stored.midiData.tracks.reduce((count,track)=>count+track.notes.length,0),beforeNotes);
+  app.state.midiEditor=null;app.state.projects=[stored];
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/曲の長さ：8小節/);
+  assert.match(html,/小節 8/);
+  assert.equal(app.midiExportInput(stored,'all').tracks.reduce((count,track)=>count+track.notes.length,0),beforeNotes);
 });
 test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   const{app,values,window}=load(),project=app.makeProject({projectId:'dirty-project',projectName:'Dirty'});app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);

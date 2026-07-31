@@ -71,6 +71,16 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
 });
+test('Melody playback can start from a moved playhead without inventing notes',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),notes=[
+    {pitch:60,startTick:0,durationTicks:240,velocity:80},
+    {pitch:64,startTick:480,durationTicks:480,velocity:90}
+  ];await synth.unlock();
+  const result=synth.playNotes(notes,{ppq:480,tempo:120,startTick:600});
+  assert.equal(result.startTick,600);assert.equal(result.endTick,960);assert.equal(result.noteCount,1);
+  assert.equal(synth.context.oscillators.length,1);
+  assert.equal(Math.round(synth.context.oscillators[0].started[0]*100)/100,10.04);
+});
 test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();
   synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:68}],{ppq:480,tempo:120});
