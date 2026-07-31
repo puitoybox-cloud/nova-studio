@@ -40,7 +40,7 @@ test('Melody Correction is an overlay with complete basic controls and transient
     {id:'outside',pitch:64,startTick:480,durationTicks:240,velocity:90}
   ]}]}});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),core=window.MusicStudioEditor,session=app.state.midiEditor;
-  assert.match(html,/<summary>Melody Correction<\/summary>/);assert.match(html,/name="key"/);assert.match(html,/Pentatonic/);assert.match(html,/name="quantize"/);assert.match(html,/>OFF<\/option>/);assert.match(html,/name="strength" type="range"/);assert.match(html,/name="swing" type="range"/);assert.match(html,/value="selected"/);assert.match(html,/value="measures"/);assert.doesNotMatch(html,/class="music-correction-tools"/);assert.match(html,/AIメロディ生成：未実装/);
+  assert.match(html,/<summary>Melody Correction（メロディ補正）<\/summary>/);assert.match(html,/name="key"/);assert.match(html,/Pentatonic/);assert.match(html,/name="quantize"/);assert.match(html,/>OFF<\/option>/);assert.match(html,/name="strength" type="range"/);assert.match(html,/name="swing" type="range"/);assert.match(html,/value="selected"/);assert.match(html,/value="measures"/);assert.doesNotMatch(html,/class="music-correction-tools"/);assert.match(html,/AIメロディ生成：未実装/);
   core.selectNote(session,'target');
   const form={elements:{key:{value:'C'},scale:{value:'Major'},quantize:{value:'1/16'},strength:{value:'100'},swing:{value:'0'},target:{value:'selected'},measureFrom:{value:'1'},measureTo:{value:'1'}}};
   window.document={querySelector:selector=>selector==='#melodyCorrectionForm'?form:null};
@@ -90,7 +90,8 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
   const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力機器）<select[^>]*><option value="" selected>MIDI入力機器なし<\/option><option value="__rescan__"[^>]*>↻ 再検出<\/option>/);
+  assert.match(html,/MIDI Input（MIDI入力）<select[^>]*><option value="" selected>MIDI入力機器なし<\/option><option value="__rescan__"[^>]*>↻ 再検出<\/option>/);
+  assert.match(html,/editorStartMidiRecording\(\)" disabled aria-disabled="true"/);
   assert.doesNotMatch(html,/MIDI未接続|music-midi-status|MIDI Devices（デバイス一覧）/);
   assert.doesNotMatch(html,/music-midi-rescan|Check Connection（接続確認）/);
   assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,0);
@@ -103,7 +104,8 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   const keys={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},pads={id:'pads',name:'MPD218',onmidimessage:null};
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力機器）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__" >↻ 再検出/);
+  assert.match(html,/MIDI Input（MIDI入力）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__" >↻ 再検出/);
+  assert.match(html,/editorStartMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorStartMidiRecording\(\)" disabled/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
@@ -201,7 +203,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
-  assert.match(html,/<summary title="Shortcuts（ショートカット）" aria-label="Shortcuts（ショートカット）">Shortcuts<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
+  assert.match(html,/<summary title="Shortcuts（ショートカット）" aria-label="Shortcuts（ショートカット）">Shortcuts（ショートカット）<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
   let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
   app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
@@ -447,10 +449,12 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{[^}]*background:linear-gradient\(180deg,#c4b5fd,#a78bfa\)/);
   assert.match(css,/@media\(max-width:900px\)\{[^}]*\.music-midi-editor-page \.music-editor-topbar\{gap:7px;padding:7px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-menu\{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none\}/);
+  assert.match(css,/@media\(min-width:901px\)\{\.music-midi-editor-page \.music-editor-topbar\{display:grid;grid-template-columns:1fr 1fr 1\.35fr 1\.45fr \.9fr 1\.9fr/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{min-height:124px;margin:0;padding:14px;border-color:var\(--music-editor-border\);border-radius:12px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section>div>button\{flex:0 0 auto;max-width:100%\}/);
   assert.match(html,/<span class="music-record-dot" aria-hidden="true">●<\/span> Record（録音）/);
   for(const label of ['Loop Range（ループ範囲）','Clear Loop（ループ解除）','Play（再生）','Stop（停止）','Snap ON（スナップON）','Fit Range（音域を表示）','Add Measure（小節を追加）','Select（選択）','Add Note（ノート追加）','Eraser（消しゴム）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Match Length（長さを揃える）','Match Velocity（Velocityを揃える）'])assert.ok(html.includes(label));
+  for(const label of ['Project（プロジェクト情報）','Shortcuts（ショートカット）','Import / Export（読み込み／書き出し）','Melody Correction（メロディ補正）','Saved（保存済み）','MIDI Input（MIDI入力）'])assert.ok(html.includes(label));
   assert.match(html,/onclick="MusicStudio\.editorStopTransport\(\)"/);
   assert.match(css,/\.music-midi-editor-page \.music-record-dot\{color:#ef4444/);
   assert.match(css,/summary\[aria-label\^="Project"\]::before\{content:'ⓘ'\}/);assert.match(css,/button\[onclick\*="editorAddNote"\]::before\{content:'♩'\}/);
