@@ -443,7 +443,8 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{[^}]*background:linear-gradient\(180deg,#5b5fe8,#4338ca\)/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{[^}]*background:linear-gradient\(180deg,#c4b5fd,#a78bfa\)/);
   assert.match(css,/@media\(max-width:900px\)\{[^}]*\.music-midi-editor-page \.music-editor-topbar\{gap:7px;padding:7px\}/);
-  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{min-height:124px;padding:14px;border-color:var\(--music-editor-border\);border-radius:12px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-menu\{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{min-height:124px;margin:0;padding:14px;border-color:var\(--music-editor-border\);border-radius:12px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section>div>button\{flex:0 0 auto;max-width:100%\}/);
   assert.match(html,/<span class="music-record-dot" aria-hidden="true">●<\/span> Record（録音）/);
   assert.match(css,/\.music-midi-editor-page \.music-record-dot\{color:#ef4444/);

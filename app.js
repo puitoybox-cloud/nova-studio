@@ -1344,7 +1344,7 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.4.18';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.19';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
