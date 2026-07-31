@@ -173,6 +173,17 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
 });
+test('editor layout prioritizes a compact header and a tall Piano Roll without changing controls',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-midi-editor-page\{width:100%;max-width:none;padding:10px 16px 18px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-flow-nav\{[^}]*margin:0 0 3px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-heading h1\{font-size:clamp\(1\.1rem,1\.7vw,1\.3rem\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:32px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-save\{margin-left:0/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(560px,calc\(100vh - 250px\),760px\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{display:flex;min-height:104px/);
+  assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page\{padding:8px 10px 14px\}/);
+});
 test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable range',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'full-pitch-range',projectName:'Full pitch range'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
