@@ -346,7 +346,7 @@ test('Snap toggles grid alignment for add move and resize without changing the v
 });
 test('loop ruler supports reverse creation, handle resize, locked-length move, save and clear',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'loop-range',projectName:'Loop range'});app.setRepository(repo);await repo.put(project);app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/Loop OFF/);assert.match(html,/小節選択とは別の再生範囲/);assert.match(html,/editorToggleMeasure\(1\)/);
+  assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/class="music-loop-lane-label">Loop Range/);assert.match(html,/空きレーンをドラッグして作成/);assert.match(html,/Loop OFF/);assert.match(html,/小節選択とは別の再生範囲/);assert.match(html,/editorToggleMeasure\(1\)/);
   let selection=null;const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),querySelector:()=>selection,insertAdjacentHTML(){selection={style:{}}},setPointerCapture(){}};
   const target=part=>({closest:selector=>selector==='[data-loop-part]'&&part?{dataset:{loopPart:part}}:null});
   app.editorStartLoopRange({button:0,currentTarget:ruler,target:target(null),clientX:700,pointerId:1,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:200});ruler.onpointerup();await app.state.midiEditorSavePromise;
