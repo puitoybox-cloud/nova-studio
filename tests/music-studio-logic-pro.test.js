@@ -348,7 +348,7 @@ test('Snap toggles grid alignment for add move and resize without changing the v
 });
 test('loop ruler supports reverse creation, handle resize, locked-length move, save and clear',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'loop-range',projectName:'Loop range'});app.setRepository(repo);await repo.put(project);app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/class="music-loop-lane-label">Loop Range/);assert.match(html,/空きレーンをドラッグして作成/);assert.match(html,/Loop OFF/);assert.match(html,/小節選択とは別の再生範囲/);assert.match(html,/editorToggleMeasure\(1\)/);
+  assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/class="music-loop-lane-label">Loop Range/);assert.match(html,/空きレーンをドラッグして作成/);assert.doesNotMatch(html,/class="music-loop-bar"|小節選択とは別の再生範囲|\d+–\d+ tick/);assert.match(html,/editorToggleMeasure\(1\)/);
   let selection=null,captured=null,released=null;const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),querySelector:()=>selection,insertAdjacentHTML(){selection={style:{}}},setPointerCapture(id){captured=id},hasPointerCapture:id=>captured===id,releasePointerCapture(id){released=id;captured=null}};
   const target=part=>({closest:selector=>selector==='[data-loop-part]'&&part?{dataset:{loopPart:part}}:null});
   app.editorStartLoopRange({button:0,currentTarget:ruler,target:target(null),clientX:700,pointerId:1,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:200});ruler.onpointerup();await app.state.midiEditorSavePromise;
@@ -386,7 +386,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.doesNotMatch(html,/class="music-note-inspector"/);
   assert.match(html,/class="music-editor-topbar"/);
-  assert.match(html,/class="music-loop-bar"/);
+  assert.match(html,/class="music-loop-ruler"/);assert.doesNotMatch(html,/class="music-loop-bar"/);
   assert.match(html,/class="music-editor-bottom"/);
   assert.match(html,/<h2>編集ツール<\/h2>/);
   assert.match(html,/<h2>表示・編集補助<\/h2>/);
@@ -543,11 +543,11 @@ test('navigation blocks an unsaved MIDI editor without discarding notes',()=>{
   assert.equal(app.openLogicPro(project.projectId),false);assert.equal(window.location.hash,hash);assert.equal(JSON.stringify(app.state.midiEditor.midiData),before);assert.match(app.state.notice,/保存してから移動/);
 });
 test('stopping a MIDI recording persists its Melody notes through the existing project repository',async()=>{
-  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'recorded-project',projectName:'Recorded'});
+  const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'recorded-project',projectName:'Recorded'});
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  app.state.midiInput.recording=true;app.state.midiInput.recorder={stop:()=>[{id:'recorded-note',pitch:64,startTick:120,durationTicks:360,velocity:91,channel:1}]};
+  window.performance={now:()=>1750};app.state.midiEditor.playheadTick=960;Object.assign(app.state.midiInput,{recording:true,recordingStartedAt:1000,recordingStartTick:960,recorder:{stop:time=>{assert.equal(time,1750);return[{id:'recorded-note',pitch:64,startTick:120,durationTicks:360,velocity:91,channel:1}]}}});
   const result=await app.editorStopTransport(),stored=await repo.get(project.projectId),melody=stored.midiData.tracks.find(track=>track.part==='melody');
-  assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].durationTicks,360);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
+  assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].startTick,1080);assert.equal(melody.notes[0].durationTicks,360);assert.equal(Math.round(app.state.midiEditor.playheadTick),1680);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
 });
 test('recorded Melody correction survives save and editor reload',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'correction-reload',projectName:'Correction reload'});
