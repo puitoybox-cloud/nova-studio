@@ -70,6 +70,19 @@ test('Correction repaint preserves page Piano Roll and popover scroll while noti
   assert.match(css,/\.music-correction-popover\{right:0;left:auto;width:min\(720px,[^}]*overscroll-behavior:contain/);
   assert.ok(source.includes('},2600)||null'));
 });
+test('editor chrome is compact, Melody helpers stay intact, and Correction uses responsive side surfaces',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'compact-editor-surfaces',projectName:'Compact editor surfaces'});
+  app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(html,/class="music-editor-chrome"><nav class="music-flow-nav"/);
+  assert.match(html,/class="music-part-workflow music-melody-workflow"><summary><b>MIDI入力・演奏補助<\/b>/);
+  assert.doesNotMatch(html,/<p class="music-kicker">Melody workflow<\/p><h2[^>]*>メロディ制作<\/h2>/);
+  for(const preserved of ['MIDI Keyboard','editorStartMidiRecording','editorStopMidiRecording','melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
+  assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
+  assert.match(css,/\.music-editor-chrome\{display:grid;grid-template-columns:auto auto minmax\(120px,1fr\) auto/);
+  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\)/);
+  assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:minmax\(0,1fr\) auto;grid-template-rows:auto auto\}/);
+  assert.match(css,/\.music-correction-popover\{position:fixed;z-index:80;width:min\(400px/);
+});
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
