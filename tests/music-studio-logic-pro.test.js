@@ -411,6 +411,7 @@ test('editor layout prioritizes a compact header and a wide moderate-height Pian
   assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(400px,calc\(100vh - 440px\),500px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-loop-ruler\{height:28px\}/);assert.match(css,/\.music-midi-editor-page \.music-measure-row,\.music-midi-editor-page \.music-measure\{height:32px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:60px\}/);assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(428px,calc\(100vh - 412px\),528px\)\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(620px,calc\(100vh - 192px\),740px\)\}/);assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(540px,calc\(100vh - 364px\),640px\)\}\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-editor-page \.music-loop-ruler\{height:40px\}[\s\S]*?\.music-midi-editor-page \.music-piano-frame\{--music-piano-header-height:76px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{display:flex;min-height:104px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page\{padding:8px 10px 14px\}/);
@@ -431,7 +432,8 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
   assert.match(html,/music-piano-frame" style="--music-piano-row-height:18px;--music-piano-roll-height:2304px/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll\{height:var\(--music-piano-roll-height\)/);
-  assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{box-sizing:border-box;height:14px;padding:0 4px;font-size:\.62rem;line-height:12px\}/);assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{height:14px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{box-sizing:border-box;height:14px;padding:0 4px;font-size:\.62rem;line-height:12px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-sizing:border-box!important;height:12px!important;min-height:12px!important;max-height:12px!important;block-size:12px!important/);assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-shadow:inset 0 0 0 1px/);
   app.editorRememberPitchScroll({scrollTop:1234,scrollLeft:567});
   assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
   assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
