@@ -24,14 +24,15 @@ test('every major and placeholder route has one unified back and next navigation
 test('history buttons use Japanese rounded arrows at the right of the part tabs without changing actions',()=>{
   const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="元に戻す">↶ <span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="やり直す">↷ <span>進む<\/span>/);
+  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="元に戻す"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="やり直す"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
   assert.equal((html.match(/editorUndo\(\)/g)||[]).length,1);assert.equal((html.match(/editorRedo\(\)/g)||[]).length,1);
   assert.doesNotMatch(html,/class="[^"]*music-history-control"|>Undo<\/span>|>Redo<\/span>/);
   app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/editorApplyCorrection\(\)"[^>]*>Apply <span class="music-button-note">（適用）<\/span>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-button-note\{font-size:\.72em;font-weight:600;opacity:\.78;white-space:nowrap\}/);
-  assert.match(css,/\.music-history-controls\{display:flex;gap:5px;margin-left:auto\}/);assert.match(css,/border-radius:999px/);
+  assert.match(css,/\.music-history-controls\{display:flex;gap:5px;margin-left:auto\}/);assert.match(css,/border-radius:999px/);assert.match(css,/\.music-history-icon\{width:20px;height:20px;[^}]*stroke-linecap:round;stroke-linejoin:round\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{gap:4px;margin:4px 0 6px\}/);
 });
 test('Melody Correction is an overlay with complete basic controls and transient Preview Apply Cancel history',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'correction-popover',projectName:'Correction popover',midiData:{tracks:[{part:'melody',notes:[
