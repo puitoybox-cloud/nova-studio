@@ -112,6 +112,42 @@ test('Piano Roll note body previews only a simple click while drag resize and ca
   assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second"]');
   assert.equal(JSON.stringify(audioEvents.slice(-3)),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
 });
+test('mouse marquee replaces adds and toggles intersecting notes without competing with note drag',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'marquee',projectName:'Marquee'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;
+  core.addNotes(session,[
+    {id:'first',pitch:60,startTick:0,durationTicks:120,velocity:90},
+    {id:'second',pitch:62,startTick:240,durationTicks:120,velocity:90},
+    {id:'third',pitch:64,startTick:480,durationTicks:120,velocity:90}
+  ]);
+  const note=(id,left,top)=>({dataset:{noteId:id},getBoundingClientRect:()=>({left,right:left+20,top,bottom:top+20})});
+  const notes=[note('first',20,20),note('second',60,60),note('third',140,140)],children=[];
+  const roll={dataset:{totalTicks:'1920'},ownerDocument:{createElement:()=>({style:{},setAttribute(){},remove(){children.pop()}})},getBoundingClientRect:()=>({left:0,right:200,top:0,bottom:200,width:200,height:200}),querySelectorAll:selector=>selector==='.music-midi-note'?notes:[],appendChild:item=>children.push(item),setPointerCapture(){}};
+  const pointer=(extra={})=>({button:0,pointerType:'mouse',pointerId:1,target:{closest:()=>null},currentTarget:roll,clientX:5,clientY:5,preventDefault(){this.prevented=true},...extra});
+  const drag=(extra={})=>{app.editorStartMarqueeSelection(pointer(extra));roll.onpointermove(pointer({...extra,clientX:85,clientY:85}));assert.equal(children.length,1);roll.onpointerup(pointer({...extra,clientX:85,clientY:85}))};
+  drag();assert.deepEqual(Array.from(core.selectedIds(session)),['first','second']);
+  core.selectNote(session,'third');drag({shiftKey:true});assert.deepEqual(Array.from(core.selectedIds(session)),['third','first','second']);
+  drag({metaKey:true});assert.deepEqual(Array.from(core.selectedIds(session)),['third']);
+  const before=core.selectedIds(session);roll.onpointermove=null;app.editorStartMarqueeSelection(pointer({target:{closest:selector=>selector==='.music-midi-note'?notes[0]:null}}));assert.equal(roll.onpointermove,null);assert.deepEqual(core.selectedIds(session),before);
+});
+test('marquee threshold preserves empty click clearing and coarse-pointer scrolling path',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'marquee-safety',projectName:'Marquee safety'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;
+  core.addNote(session,{id:'selected',pitch:60,startTick:0,durationTicks:120,velocity:90});core.selectNote(session,'selected');
+  const roll={dataset:{totalTicks:'1920'},getBoundingClientRect:()=>({left:0,right:200,top:0,bottom:200,width:200,height:200}),querySelectorAll:()=>[],setPointerCapture(){}};
+  const pointer=(extra={})=>({button:0,pointerType:'mouse',pointerId:1,target:{closest:()=>null},currentTarget:roll,clientX:100,clientY:100,preventDefault(){},...extra});
+  app.editorStartMarqueeSelection(pointer());roll.onpointermove(pointer({clientX:103,clientY:103}));roll.onpointerup(pointer({clientX:103,clientY:103}));
+  assert.equal(core.selectedIds(session).length,0);assert.equal(session.playheadTick,960);
+  core.selectNote(session,'selected');app.editorStartMarqueeSelection(pointer({pointerType:'touch',clientX:50}));
+  assert.deepEqual(Array.from(core.selectedIds(session)),['selected']);assert.equal(roll.onpointermove,null);assert.equal(session.playheadTick,480);
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(html,/onpointerdown="MusicStudio\.editorStartMarqueeSelection\(event\)"/);
+  assert.match(html,/data-note-id="selected"/);
+  assert.match(css,/\.music-selection-marquee\{[^}]*background:rgba\(56,189,248,\.16\)/);
+  assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
+});
 test('Piano Roll shortcuts share button actions and never fire from an input',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'shortcuts',projectName:'Shortcuts'});
   app.state.projects=[project];window.location.hash='#music-studio/midi-editor/shortcuts';
@@ -180,7 +216,7 @@ test('Piano Roll tap moves the red playhead and Add Note uses the same position'
   const stored=await repo.get(project.projectId),note=stored.midiData.tracks.find(track=>track.part==='melody').notes[0];
   assert.equal(note.startTick,2400);
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/onpointerdown="MusicStudio\.editorSetPlayheadPosition\(event\)"/);
+  assert.match(html,/onpointerdown="MusicStudio\.editorStartMarqueeSelection\(event\)"/);
   assert.match(html,/赤い再生ライン：再生・ノート追加位置/);
   assert.doesNotMatch(html,/music-insert-marker|次のノート追加位置/);
 });
