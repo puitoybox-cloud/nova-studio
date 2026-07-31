@@ -14,18 +14,18 @@ function load(){
 function file(name,bytes,type='application/octet-stream'){const data=Uint8Array.from(bytes);return{name,size:data.length,type,async arrayBuffer(){return data.buffer},slice(start,end){const part=data.slice(start,end);return{async arrayBuffer(){return part.buffer}}}}}
 
 test('Logic Pro route opens standalone and includes safe round-trip actions',()=>{const {app}=load();const html=app.renderRoute('music-studio/logic-pro',{standalone:true});assert.match(html,/Logic Pro X連携/);assert.match(html,/Logic ProからMIDIを取り込む/);assert.match(html,/Type 1 MIDIを書き出す/);assert.match(html,/新規または複製/);assert.match(html,/読み込み履歴/);assert.match(html,/← 戻る/);assert.match(html,/次へ →/);assert.match(html,/Music Studio設定/);assert.match(html,/MIDI channel 10/);assert.match(html,/Drum Kit Designer/);assert.match(html,/Kick 36／Snare 38／Closed Hi-Hat 42/)});
-test('major routes keep flow navigation while the editor header uses Undo and Redo',()=>{
+test('every major and placeholder route has one unified back and next navigation',()=>{
   const{app,values}=load(),project=app.makeProject({projectId:'nav-project',projectName:'Navigation',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[{id:'d',pitch:36,startTick:0,durationTicks:120,velocity:100}]}]}});
   app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   const routes=['music-studio','music-studio/recent-projects','music-studio/new-project',`music-studio/project/${project.projectId}`,`music-studio/midi-editor/${project.projectId}`,'music-studio/logic-pro','music-studio/settings','music-studio/backup','music-studio/lyrics-notes'];
-  for(const route of routes){const html=app.renderRoute(route),navs=html.match(/class="music-flow-nav(?: music-history-nav)?"/g)||[];assert.equal(navs.length,1,route);if(route.includes('/midi-editor/')){assert.match(html,/↶ Undo（元に戻す）/);assert.match(html,/↷ Redo（やり直す）/)}else{assert.match(html,/← 戻る/);assert.match(html,/次へ →/)}}
-  const editor=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(editor,new RegExp(`openLogicPro\\('${project.projectId}'\\)`));
+  for(const route of routes){const html=app.renderRoute(route),navs=html.match(/class="music-flow-nav"/g)||[];assert.equal(navs.length,1,route);if(route.includes('/midi-editor/')){assert.match(html,/Back（戻る）/);assert.match(html,/Next（進む）/)}else{assert.match(html,/← 戻る/);assert.match(html,/次へ →/)}}
+  const editor=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(editor,/MIDI書き出し・Logic Pro連携/);assert.match(editor,new RegExp(`openLogicPro\\('${project.projectId}'\\)`));
 });
 test('correction and history buttons add smaller Japanese guidance without changing actions',()=>{
   const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/editorUndo\(\)" disabled><span>↶ Undo（元に戻す）<\/span>/);
-  assert.match(html,/editorRedo\(\)" disabled><span>↷ Redo（やり直す）<\/span>/);
+  assert.match(html,/editorUndo\(\)" disabled>Undo <span class="music-button-note">（元に戻す）<\/span>/);
+  assert.match(html,/editorRedo\(\)" disabled>Redo <span class="music-button-note">（やり直す）<\/span>/);
   app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/editorApplyCorrection\(\)"[^>]*>Apply <span class="music-button-note">（適用）<\/span>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -73,7 +73,7 @@ test('Correction repaint preserves page Piano Roll and popover scroll while noti
 test('editor chrome is compact, Melody helpers stay intact, and Correction uses responsive side surfaces',()=>{
   const{app}=load(),project=app.makeProject({projectId:'compact-editor-surfaces',projectName:'Compact editor surfaces'});
   app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(html,/class="music-editor-chrome"><nav class="music-flow-nav music-history-nav"/);
+  assert.match(html,/class="music-editor-chrome"><nav class="music-flow-nav"/);
   assert.match(html,/class="music-part-workflow music-melody-workflow"><summary><b>MIDI入力・演奏補助<\/b>/);
   assert.doesNotMatch(html,/<p class="music-kicker">Melody workflow<\/p><h2[^>]*>メロディ制作<\/h2>/);
   for(const preserved of ['Recording（録音）','editorStartMidiRecording','editorStopMidiRecording','melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
@@ -92,7 +92,7 @@ test('MIDI status is passive, connection opens the device list, and lower helper
   assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,1);
   const workflow=html.match(/<details class="music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
   assert.doesNotMatch(workflow,/editorInitializeMidi|MIDI Keyboard|Input（入力）/);
-  for(const label of ['Undo（元に戻す）','Redo（やり直す）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
+  for(const label of ['Back（戻る）','Next（進む）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
   await app.editorInitializeMidi();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/MIDI Devices（デバイス一覧）/);
   app.editorCloseMidiConnectionPanel();assert.doesNotMatch(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/MIDI Devices（デバイス一覧）/);
