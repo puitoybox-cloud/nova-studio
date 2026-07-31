@@ -76,7 +76,7 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   assert.match(html,/class="music-editor-chrome"><nav class="music-flow-nav"/);
   assert.match(html,/class="music-part-workflow music-melody-workflow"><summary><b>MIDI入力・演奏補助<\/b>/);
   assert.doesNotMatch(html,/<p class="music-kicker">Melody workflow<\/p><h2[^>]*>メロディ制作<\/h2>/);
-  for(const preserved of ['Recording（録音）','editorStartMidiRecording','editorStopMidiRecording','melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
+  for(const preserved of ['melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
   assert.match(css,/\.music-editor-chrome\{display:grid;grid-template-columns:auto minmax\(120px,1fr\) auto/);
@@ -91,14 +91,16 @@ test('MIDI status is passive, connection opens the device list, and lower helper
   assert.doesNotMatch(html,/MIDI Devices（デバイス一覧）/);
   assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,1);
   const workflow=html.match(/<details class="music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
-  assert.doesNotMatch(workflow,/editorInitializeMidi|MIDI Keyboard|Input（入力）/);
+  assert.doesNotMatch(workflow,/editorInitializeMidi|editorStartMidiRecording|editorStopMidiRecording|MIDI Keyboard|MIDI Input|Record（録音）|Stop（停止）/);
   for(const label of ['Back（戻る）','Next（進む）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
   await app.editorInitializeMidi();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/MIDI Devices（デバイス一覧）/);
   app.editorCloseMidiConnectionPanel();assert.doesNotMatch(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/MIDI Devices（デバイス一覧）/);
-  app.state.midiInput.inputs=[{id:'keys',name:'Keystation Mini 32 MK3'}];app.state.midiInput.selectedId='keys';
+  const keys={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},pads={id:'pads',name:'MPD218',onmidimessage:null};
+  app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/music-midi-status is-connected/);assert.match(html,/Keystation Mini 32 MK3/);
+  assert.match(html,/music-midi-status is-connected/);assert.match(html,/MIDI Input（MIDI入力機器）/);assert.match(html,/Keystation Mini 32 MK3/);assert.match(html,/MPD218/);
+  await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
 });
