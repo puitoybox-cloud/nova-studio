@@ -18,7 +18,7 @@ test('every major and placeholder route has one unified back and next navigation
   const{app,values}=load(),project=app.makeProject({projectId:'nav-project',projectName:'Navigation',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[{id:'d',pitch:36,startTick:0,durationTicks:120,velocity:100}]}]}});
   app.state.projects=[project];values.set(app.LAST_PROJECT_KEY,project.projectId);
   const routes=['music-studio','music-studio/recent-projects','music-studio/new-project',`music-studio/project/${project.projectId}`,`music-studio/midi-editor/${project.projectId}`,'music-studio/logic-pro','music-studio/settings','music-studio/backup','music-studio/lyrics-notes'];
-  for(const route of routes){const html=app.renderRoute(route),navs=html.match(/class="music-flow-nav"/g)||[];assert.equal(navs.length,1,route);assert.match(html,/← 戻る/);assert.match(html,/次へ →/)}
+  for(const route of routes){const html=app.renderRoute(route),navs=html.match(/class="music-flow-nav"/g)||[];assert.equal(navs.length,1,route);if(route.includes('/midi-editor/')){assert.match(html,/Back（戻る）/);assert.match(html,/Next（進む）/)}else{assert.match(html,/← 戻る/);assert.match(html,/次へ →/)}}
   const editor=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(editor,/MIDI書き出し・Logic Pro連携/);assert.match(editor,new RegExp(`openLogicPro\\('${project.projectId}'\\)`));
 });
 test('correction and history buttons add smaller Japanese guidance without changing actions',()=>{
@@ -82,6 +82,20 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\)/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:minmax\(0,1fr\) auto;grid-template-rows:auto auto\}/);
   assert.match(css,/\.music-correction-popover\{position:fixed;z-index:80;width:min\(400px/);
+});
+test('MIDI connection has one top status entry and editor actions use bilingual labels',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-editor-menu music-midi-status is-disconnected"><summary><span[^>]*><\/span>MIDI未接続/);
+  assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,1);
+  const workflow=html.match(/<details class="music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
+  assert.doesNotMatch(workflow,/editorInitializeMidi/);
+  for(const label of ['Back（戻る）','Next（進む）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
+  app.state.midiInput.inputs=[{id:'keys',name:'Keystation Mini 32 MK3'}];app.state.midiInput.selectedId='keys';
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/music-midi-status is-connected/);assert.match(html,/Keystation Mini 32 MK3/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
 });
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
@@ -150,7 +164,7 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/？ ショートカット \/ 操作ガイド/);
+  assert.match(html,/？ Shortcuts（ショートカット／操作ガイド）/);
   assert.match(html,/ノート本体ドラッグ：移動／右端 ↔：長さ変更/);
   assert.match(html,/左の音名をタップ：その音を試聴/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -176,7 +190,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitch\(60\)"/);
   assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
-  assert.match(html,/<summary>ショートカット<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
+  assert.match(html,/<summary>Shortcuts（ショートカット）<\/summary>/);assert.match(html,/画面ボタンだけでもすべて操作できます/);
   let finishUnlock,scheduledStop=null;const pitchEvents=[];window.setTimeout=callback=>{scheduledStop=callback;return 9};window.clearTimeout=()=>{};
   app.state.melodyAudio.synth={supported:()=>true,unlock:()=>new Promise(resolve=>{finishUnlock=resolve}),noteOn:(...args)=>{pitchEvents.push(['on',...args]);return true},noteOff:(...args)=>{pitchEvents.push(['off',...args]);return true}};
   const previewPromise=app.editorPreviewPitch(60);
@@ -446,7 +460,7 @@ test('adding empty measures persists song length without inventing MIDI notes',a
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];
   let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/曲の長さ：4小節/);
-  assert.match(html,/＋ 小節を追加/);
+  assert.match(html,/＋ Add Measure（小節を追加）/);
   const beforeNotes=app.state.midiEditor.midiData.tracks.reduce((count,track)=>count+track.notes.length,0);
   app.editorAddMeasures();await app.state.midiEditorSavePromise;
   const stored=await repo.get(project.projectId);
@@ -503,7 +517,7 @@ test('confirmed MIDI editing starts IndexedDB persistence without a debounce win
   await saving;const stored=await repo.get(project.projectId);
   assert.equal(app.state.midiEditor.dirty,false);
   assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
-  assert.match(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/>保存済み<\/button>/);
+  assert.match(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/>Saved（保存済み）<\/button>/);
   assert.match(source,/addEventListener\?\.\('pagehide'.*flushMidiEditorAutosave/);
   assert.match(source,/addEventListener\?\.\('visibilitychange'.*flushMidiEditorAutosave/);
 });
