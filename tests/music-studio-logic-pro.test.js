@@ -27,9 +27,26 @@ test('correction and history buttons add smaller Japanese guidance without chang
   assert.match(html,/editorUndo\(\)" disabled>Undo <span class="music-button-note">（元に戻す）<\/span>/);
   assert.match(html,/editorRedo\(\)" disabled>Redo <span class="music-button-note">（やり直す）<\/span>/);
   app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/editorApplyCorrection\(\)">Apply <span class="music-button-note">（適用）<\/span>/);
+  assert.match(html,/editorApplyCorrection\(\)"[^>]*>Apply <span class="music-button-note">（適用）<\/span>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-button-note\{font-size:\.72em;font-weight:600;opacity:\.78;white-space:nowrap\}/);
+});
+test('Melody Correction is an overlay with complete basic controls and transient Preview Apply Cancel history',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'correction-popover',projectName:'Correction popover',midiData:{tracks:[{part:'melody',notes:[
+    {id:'target',pitch:61,startTick:119,durationTicks:251,velocity:90},
+    {id:'outside',pitch:64,startTick:480,durationTicks:240,velocity:90}
+  ]}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),core=window.MusicStudioEditor,session=app.state.midiEditor;
+  assert.match(html,/<summary>Melody Correction<\/summary>/);assert.match(html,/name="key"/);assert.match(html,/Pentatonic/);assert.match(html,/name="quantize"/);assert.match(html,/>OFF<\/option>/);assert.match(html,/name="strength" type="range"/);assert.match(html,/name="swing" type="range"/);assert.match(html,/value="selected"/);assert.match(html,/value="measures"/);assert.doesNotMatch(html,/class="music-correction-tools"/);assert.match(html,/AIメロディ生成：未実装/);
+  core.selectNote(session,'target');
+  const form={elements:{key:{value:'C'},scale:{value:'Major'},quantize:{value:'1/16'},strength:{value:'100'},swing:{value:'0'},target:{value:'selected'},measureFrom:{value:'1'},measureTo:{value:'1'}}};
+  window.document={querySelector:selector=>selector==='#melodyCorrectionForm'?form:null};
+  const original=JSON.stringify(core.currentTrack(session).notes),result=app.editorPreviewCorrection();assert.equal(result.ok,true);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/is-correction-preview/);assert.match(html,/対象 1/);
+  assert.equal(app.editorToggleCorrectionPreview(),'original');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/is-correction-preview/);
+  app.editorCancelCorrection();assert.equal(session.correctionPreview,null);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  app.editorPreviewCorrection();app.editorApplyCorrection();assert.equal(core.currentTrack(session).notes[0].pitch,60);assert.equal(core.currentTrack(session).notes[0].startTick,120);
+  app.editorUndo();assert.equal(core.currentTrack(session).notes[0].pitch,61);app.editorRedo();assert.equal(core.currentTrack(session).notes[0].pitch,60);
 });
 test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});

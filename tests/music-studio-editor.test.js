@@ -252,6 +252,34 @@ test('correction preview is non-destructive, cancel restores Original, and Apply
   core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
   core.redo(session);assert.equal(core.currentTrack(session).notes[0].startTick,120);
 });
+test('Melody Correction targets selected notes and measures with key scale quantize strength and swing',()=>{
+  const core=load(),session=core.createSession({projectId:'correction-options',midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},tracks:[{part:'melody',notes:[
+    {id:'selected',pitch:61,startTick:119,durationTicks:251,velocity:90},
+    {id:'same-measure',pitch:66,startTick:480,durationTicks:240,velocity:90},
+    {id:'measure-two',pitch:70,startTick:2041,durationTicks:240,velocity:90}
+  ]}]}});
+  const original=JSON.stringify(core.currentTrack(session).notes);
+  core.selectNote(session,'selected');
+  let result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'1/16',strength:100,swing:0,target:'selected',measureFrom:1,measureTo:1});
+  assert.equal(result.ok,true);assert.equal(JSON.stringify(result.preview.targetNoteIds),'["selected"]');
+  let corrected=result.preview.correctedNotes;
+  assert.equal(JSON.stringify(corrected.map(note=>[note.id,note.pitch,note.startTick])),'[["selected",60,120],["same-measure",66,480],["measure-two",70,2041]]');
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  core.cancelCorrection(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  result=core.previewCorrection(session,{key:'C',scale:'Chromatic',quantize:'1/16',strength:100,swing:100,target:'measures',measureFrom:2,measureTo:2});
+  assert.equal(JSON.stringify(result.preview.targetNoteIds),'["measure-two"]');
+  corrected=result.preview.correctedNotes;assert.equal(corrected.find(note=>note.id==='measure-two').startTick,2100);
+  core.applyCorrection(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='measure-two').startTick,2100);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='measure-two').startTick,2041);
+  core.redo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='measure-two').startTick,2100);
+});
+test('Melody Correction rejects an empty selected-note target and Quantize OFF preserves timing',()=>{
+  const core=load(),session=core.createSession({projectId:'correction-off',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:240,velocity:90}]}]}});
+  let result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:100,target:'selected'});
+  assert.equal(result.ok,false);assert.match(result.reason,/選択/);
+  core.selectNote(session,'note');result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:100,target:'selected'});
+  assert.equal(result.preview.correctedNotes[0].startTick,119);assert.equal(result.preview.correctedNotes[0].pitch,60);
+});
 test('Undo and Redo close a stale correction preview before changing edit history',()=>{
   const core=load(),session=core.createSession(project()),original=JSON.stringify(core.currentTrack(session).notes);
   core.addNote(session,{pitch:65,startTick:119,durationTicks:251});
