@@ -74,6 +74,27 @@ test('Melody scale guide follows transient Correction settings and stays Melody-
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-scale-guide span\{[^}]*background:rgba\(250,204,21,\.12\)/);
 });
+test('Melody key transpose UI previews independently and Apply uses existing save history',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'transpose-ui',projectName:'Transpose UI',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:60,startTick:120,durationTicks:240,velocity:91}]}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor,core=window.MusicStudioEditor;
+  assert.match(html,/id="melodyTransposeTitle">キー一括移調/);
+  assert.match(html,/name="transposeFromKey"/);assert.match(html,/name="transposeToKey"/);
+  assert.match(html,/name="transposeTarget"/);assert.match(html,/name="transposeDirection"/);
+  assert.match(html,/C → C：\+0半音/);assert.doesNotMatch(html,/キー一括移調：未実装/);
+  const fields={transposeFromKey:{value:'C'},transposeToKey:{value:'D'},transposeMeasureFrom:{value:'1'},transposeMeasureTo:{value:'1'}},radios={transposeTarget:{value:'all'},transposeDirection:{value:'shortest'}};
+  const panel={querySelector(selector){const name=selector.match(/name="([^"]+)"/)?.[1];return selector.includes(':checked')?radios[name]:fields[name]}};
+  window.document={querySelector:selector=>selector==='#melodyTransposePanel'?panel:null};
+  const original=JSON.stringify(core.currentTrack(session).notes),guide=JSON.stringify(session.correctionSettings),result=app.editorPreviewTranspose();
+  assert.equal(result.ok,true);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/is-transpose-preview/);assert.match(html,/移調Preview/);assert.match(html,/C → D：\+2半音/);
+  app.editorCancelTranspose();assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  app.editorPreviewTranspose();app.editorApplyTranspose();assert.equal(core.currentTrack(session).notes[0].pitch,62);
+  assert.equal(core.currentTrack(session).notes[0].velocity,91);assert.equal(core.currentTrack(session).notes[0].startTick,120);assert.equal(core.currentTrack(session).notes[0].durationTicks,240);
+  assert.equal(JSON.stringify(session.correctionSettings),guide);
+  app.editorUndo();assert.equal(core.currentTrack(session).notes[0].pitch,60);app.editorRedo();assert.equal(core.currentTrack(session).notes[0].pitch,62);
+  app.editorSelectPart('drums');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyTransposeTitle/);
+  app.editorSelectPart('bass');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyTransposeTitle/);
+});
 test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();

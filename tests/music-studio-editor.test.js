@@ -280,6 +280,72 @@ test('scale guide pitch classes reuse Melody Correction key and scale definition
   assert.deepEqual([...core.correctionScalePitchClasses('D','Pentatonic')],[2,4,6,9,11]);
   assert.deepEqual([...core.correctionScalePitchClasses('C','Chromatic')],[]);
 });
+test('key transpose calculates shortest upward and downward semitone distances',()=>{
+  const core=load();
+  assert.equal(core.transposeSemitones('C','D','shortest'),2);
+  assert.equal(core.transposeSemitones('D','C','shortest'),-2);
+  assert.equal(core.transposeSemitones('C','B','shortest'),-1);
+  assert.equal(core.transposeSemitones('C','B','up'),11);
+  assert.equal(core.transposeSemitones('B','C','down'),-11);
+});
+test('key transpose previews all notes non-destructively and Apply is one Undo Redo step',()=>{
+  const core=load(),session=core.createSession({projectId:'transpose-all',midiData:{tracks:[{part:'melody',notes:[
+    {id:'a',pitch:60,startTick:120,durationTicks:240,velocity:87},
+    {id:'b',pitch:67,startTick:480,durationTicks:360,velocity:105}
+  ]}]}}),before=JSON.stringify(core.currentTrack(session).notes);
+  const result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'all'});
+  assert.equal(result.ok,true);assert.equal(result.preview.semitones,2);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  assert.deepEqual([...result.preview.transposedNotes.map(note=>[note.pitch,note.startTick,note.durationTicks,note.velocity])],[[62,120,240,87],[69,480,360,105]]);
+  core.cancelTranspose(session);assert.equal(session.transposePreview,null);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'all'});core.applyTranspose(session);
+  assert.deepEqual([...core.currentTrack(session).notes.map(note=>note.pitch)],[62,69]);assert.equal(session.undo.length,1);
+  core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.redo(session);assert.deepEqual([...core.currentTrack(session).notes.map(note=>note.pitch)],[62,69]);
+});
+test('key transpose isolates selected notes and measure ranges',()=>{
+  const core=load(),session=core.createSession({projectId:'transpose-targets',midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4},tracks:[{part:'melody',notes:[
+    {id:'first',pitch:60,startTick:0,durationTicks:240,velocity:80},
+    {id:'second',pitch:64,startTick:1920,durationTicks:240,velocity:90},
+    {id:'third',pitch:67,startTick:3840,durationTicks:240,velocity:100}
+  ]}]}});
+  core.selectNote(session,'second');let result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'selected'});
+  assert.deepEqual([...result.preview.transposedNotes.map(note=>note.pitch)],[60,66,67]);core.cancelTranspose(session);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'measures',measureFrom:3,measureTo:3});
+  assert.deepEqual([...result.preview.transposedNotes.map(note=>note.pitch)],[60,64,69]);
+});
+test('key transpose rejects empty targets invalid measures and any out-of-range note atomically',()=>{
+  const core=load(),empty=core.createSession({projectId:'empty'});
+  let result=core.previewTranspose(empty,{fromKey:'C',toKey:'D',direction:'shortest',target:'all'});assert.equal(result.ok,false);assert.match(result.reason,/ノートがありません/);
+  result=core.previewTranspose(empty,{fromKey:'C',toKey:'D',direction:'shortest',target:'selected'});assert.equal(result.ok,false);assert.match(result.reason,/選択/);
+  const session=core.createSession({projectId:'bounds',midiData:{editor:{measureCount:4},tracks:[{part:'melody',notes:[{id:'low',pitch:0,startTick:0,durationTicks:120,velocity:80},{id:'high',pitch:127,startTick:480,durationTicks:120,velocity:90}]}]}}),before=JSON.stringify(core.currentTrack(session).notes);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'B',direction:'shortest',target:'all'});assert.equal(result.ok,false);assert.equal(result.outOfRange[0].id,'low');assert.equal(session.transposePreview,null);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'all'});assert.equal(result.ok,false);assert.equal(result.outOfRange[0].id,'high');assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'measures',measureFrom:3,measureTo:2});assert.equal(result.ok,false);assert.match(result.reason,/小節範囲/);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'measures',measureFrom:5,measureTo:5});assert.equal(result.ok,false);assert.match(result.reason,/1〜4/);
+  result=core.previewTranspose(session,{fromKey:'C',toKey:'D',direction:'shortest',target:'measures',measureFrom:4,measureTo:4});assert.equal(result.ok,false);assert.match(result.reason,/ノートがありません/);
+});
+test('key transpose stays Melody-only and never changes scale-guide session settings',()=>{
+  const core=load(),session=core.createSession(project()),guide=JSON.stringify(session.correctionSettings),tracks=JSON.stringify(session.midiData.tracks);
+  core.selectPart(session,'drums');let result=core.previewTranspose(session,{fromKey:'C',toKey:'D',target:'all',direction:'shortest'});assert.equal(result.ok,false);assert.match(result.reason,/Melody専用/);
+  core.selectPart(session,'bass');result=core.previewTranspose(session,{fromKey:'C',toKey:'D',target:'all',direction:'shortest'});assert.equal(result.ok,false);
+  core.selectPart(session,'melody');core.previewTranspose(session,{fromKey:'C',toKey:'D',target:'all',direction:'shortest'});core.applyTranspose(session);
+  assert.equal(JSON.stringify(session.correctionSettings),guide);
+  const originalTracks=JSON.parse(tracks),current=session.midiData.tracks;
+  assert.equal(JSON.stringify(current.find(track=>track.part==='drums')),JSON.stringify(originalTracks.find(track=>track.part==='drums')));
+  assert.equal(JSON.stringify(current.find(track=>track.part==='bass')),JSON.stringify(originalTracks.find(track=>track.part==='bass')));
+  assert.equal(Object.hasOwn(session.midiData,'transposeSettings'),false);
+});
+test('key transpose Preview and Melody Correction Preview never coexist or overwrite MIDI data',()=>{
+  const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
+  core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:0,target:'all'});
+  assert.ok(session.correctionPreview);assert.equal(session.transposePreview,null);
+  core.previewTranspose(session,{fromKey:'C',toKey:'D',target:'all',direction:'shortest'});
+  assert.equal(session.correctionPreview,null);assert.ok(session.transposePreview);
+  core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:0,target:'all'});
+  assert.equal(session.transposePreview,null);assert.ok(session.correctionPreview);
+  assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+});
 test('Melody Correction rejects an empty selected-note target and Quantize OFF preserves timing',()=>{
   const core=load(),session=core.createSession({projectId:'correction-off',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:240,velocity:90}]}]}});
   let result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:100,target:'selected'});
