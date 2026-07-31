@@ -347,10 +347,10 @@ test('Snap toggles grid alignment for add move and resize without changing the v
 test('loop ruler supports reverse creation, handle resize, locked-length move, save and clear',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'loop-range',projectName:'Loop range'});app.setRepository(repo);await repo.put(project);app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-loop-ruler"[^>]*editorStartLoopRange/);assert.match(html,/class="music-loop-lane-label">Loop Range/);assert.match(html,/空きレーンをドラッグして作成/);assert.match(html,/Loop OFF/);assert.match(html,/小節選択とは別の再生範囲/);assert.match(html,/editorToggleMeasure\(1\)/);
-  let selection=null;const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),querySelector:()=>selection,insertAdjacentHTML(){selection={style:{}}},setPointerCapture(){}};
+  let selection=null,captured=null,released=null;const ruler={dataset:{totalTicks:'7680'},getBoundingClientRect:()=>({left:0,width:800}),querySelector:()=>selection,insertAdjacentHTML(){selection={style:{}}},setPointerCapture(id){captured=id},hasPointerCapture:id=>captured===id,releasePointerCapture(id){released=id;captured=null}};
   const target=part=>({closest:selector=>selector==='[data-loop-part]'&&part?{dataset:{loopPart:part}}:null});
   app.editorStartLoopRange({button:0,currentTarget:ruler,target:target(null),clientX:700,pointerId:1,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:200});ruler.onpointerup();await app.state.midiEditorSavePromise;
-  let loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopEnabled,true);assert.equal(loop.loopStart,1920);assert.equal(loop.loopEnd,6720);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/music-loop-selection[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'move'\)"/);assert.match(html,/music-loop-handle is-start[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'start'\)"/);assert.match(html,/music-loop-handle is-end[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'end'\)"/);
+  let loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopEnabled,true);assert.equal(loop.loopStart,1920);assert.equal(loop.loopEnd,6720);assert.equal(released,1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/music-loop-selection[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'move'\)"/);assert.match(html,/music-loop-handle is-start[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'start'\)"/);assert.match(html,/music-loop-handle is-end[^>]*onpointerdown="MusicStudio\.editorStartLoopRange\(event,'end'\)"/);assert.match(html,/Loop Range（ループ範囲）/);
   selection={style:{}};const touchStartHandle={closest:selector=>selector==='.music-loop-ruler'?ruler:null};app.editorStartLoopRange({button:0,pointerType:'touch',currentTarget:touchStartHandle,target:target('start'),clientX:200,pointerId:2,preventDefault(){},stopPropagation(){}},'start');ruler.onpointermove({pointerType:'touch',clientX:300});ruler.onpointerup({pointerType:'touch'});await app.state.midiEditorSavePromise;
   loop=app.state.midiEditor.midiData.editor;assert.equal(loop.loopStart,2880);assert.equal(loop.loopEnd,6720);
   selection={style:{}};app.editorStartLoopRange({button:0,currentTarget:ruler,target:target('move'),clientX:500,pointerId:3,preventDefault(){},stopPropagation(){}});ruler.onpointermove({clientX:600});ruler.onpointerup();await app.state.midiEditorSavePromise;
@@ -397,7 +397,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
 });
-test('editor layout prioritizes a compact header and a tall Piano Roll without changing controls',()=>{
+test('editor layout prioritizes a compact header and a wide moderate-height Piano Roll without changing controls',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page\{width:100%;max-width:none;padding:10px 16px 18px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-flow-nav\{[^}]*margin:0 0 3px/);
@@ -405,8 +405,11 @@ test('editor layout prioritizes a compact header and a tall Piano Roll without c
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:30px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-save\{margin-left:0/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(560px,calc\(100vh - 224px\),780px\)/);
+  assert.match(css,/body\.is-management-route \.management-main>\.music-midi-editor-page\{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:10px 16px 18px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(400px,calc\(100vh - 440px\),500px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{display:flex;min-height:104px/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-midi-editor-page\{padding:8px 10px 14px\}/);
+  assert.match(css,/@media\(max-width:900px\)\{body\.is-management-route \.management-main>\.music-midi-editor-page\{padding:8px 10px 14px\}/);
 });
 test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable range',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'full-pitch-range',projectName:'Full pitch range'});
@@ -447,6 +450,8 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{min-height:124px;margin:0;padding:14px;border-color:var\(--music-editor-border\);border-radius:12px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section>div>button\{flex:0 0 auto;max-width:100%\}/);
   assert.match(html,/<span class="music-record-dot" aria-hidden="true">●<\/span> Record（録音）/);
+  for(const label of ['Loop Range（ループ範囲）','Clear Loop（ループ解除）','Play（再生）','Stop（停止）','Snap ON（スナップON）','Fit Range（音域を表示）','Add Measure（小節を追加）','Select（選択）','Add Note（ノート追加）','Eraser（消しゴム）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Match Length（長さを揃える）','Match Velocity（Velocityを揃える）'])assert.ok(html.includes(label));
+  assert.match(html,/onclick="MusicStudio\.editorStopTransport\(\)"/);
   assert.match(css,/\.music-midi-editor-page \.music-record-dot\{color:#ef4444/);
   assert.match(css,/summary\[aria-label\^="Project"\]::before\{content:'ⓘ'\}/);assert.match(css,/button\[onclick\*="editorAddNote"\]::before\{content:'♩'\}/);
   for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorStartMidiRecording','editorPlayMelody'])assert.match(html,new RegExp(action));
@@ -534,7 +539,7 @@ test('stopping a MIDI recording persists its Melody notes through the existing p
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'recorded-project',projectName:'Recorded'});
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   app.state.midiInput.recording=true;app.state.midiInput.recorder={stop:()=>[{id:'recorded-note',pitch:64,startTick:120,durationTicks:360,velocity:91,channel:1}]};
-  const result=await app.editorStopMidiRecording(),stored=await repo.get(project.projectId),melody=stored.midiData.tracks.find(track=>track.part==='melody');
+  const result=await app.editorStopTransport(),stored=await repo.get(project.projectId),melody=stored.midiData.tracks.find(track=>track.part==='melody');
   assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].durationTicks,360);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
 });
 test('recorded Melody correction survives save and editor reload',async()=>{

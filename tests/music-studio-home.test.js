@@ -118,15 +118,15 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.4\.14/);
+  assert.match(indexSource,/app\.js\?v=1\.4\.15/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.19/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.19/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.20/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.20/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.30/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.30/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.31/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.31/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -155,6 +155,17 @@ test('Web MIDI state changes keep a stable three-device list and selected input'
   assert.equal(paints,paintsAfterSelection+1);
   access.inputs.delete('ur22c-2');access.onstatechange();
   assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+2);
+});
+
+test('Record starts from the transport and Stop ends the active recording',async()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio,input={id:'keyboard',name:'MIDI Keyboard',onmidimessage:null};
+  window.document.body.dataset={};window.MusicStudioAudio={createSynth:()=>({supported:()=>true,unlock:async()=>true,allNotesOff(){},stopPlayback(){}})};
+  let started=0,stopped=0;window.MusicStudioMidiInput={createMessageGate:()=>({reset(){},accept:()=>true}),createRecorder:()=>({start(){started++},stop(){stopped++;return[]}})};
+  app.state.midiEditor={part:'melody',playheadTick:0,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4},tracks:[{part:'melody',name:'Melody',notes:[]}]},view:{}};
+  Object.assign(app.state.midiInput,{initialized:true,supported:true,access:{},inputs:[input],selectedId:'keyboard',recording:false});
+  await app.editorStartMidiRecording();assert.equal(started,1);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof input.onmidimessage,'function');
+  const html=app.midiEditorView('missing');assert.equal(typeof app.editorStopTransport,'function');
+  await app.editorStopTransport();assert.equal(stopped,1);assert.equal(app.state.midiInput.recording,false);assert.match(app.state.midiInput.status,/録音を停止/);assert.ok(typeof html==='string');
 });
 
 test('concurrent Melody play requests schedule the note array only once',async()=>{
