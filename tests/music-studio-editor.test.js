@@ -346,6 +346,57 @@ test('key transpose Preview and Melody Correction Preview never coexist or overw
   assert.equal(session.transposePreview,null);assert.ok(session.correctionPreview);
   assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
 });
+test('batch note length converts regular dotted and triplet values from PPQ',()=>{
+  const core=load(),ppq=480;
+  assert.deepEqual(['1/1','1/2','1/4','1/8','1/16','1/32'].map(value=>core.noteLengthTicks(ppq,value)),[1920,960,480,240,120,60]);
+  assert.deepEqual(['dotted-1/4','dotted-1/8','dotted-1/16'].map(value=>core.noteLengthTicks(ppq,value)),[720,360,180]);
+  assert.deepEqual(['triplet-1/4','triplet-1/8','triplet-1/16'].map(value=>core.noteLengthTicks(ppq,value)),[320,160,80]);
+  assert.equal(core.noteLengthTicks(ppq,'current'),null);
+});
+test('batch note length previews all notes non-destructively and Apply is one Undo Redo step',()=>{
+  const core=load(),session=core.createSession({projectId:'length-all',midiData:{ppq:480,tracks:[{part:'melody',notes:[
+    {id:'a',pitch:60,startTick:0,durationTicks:120,velocity:81},
+    {id:'b',pitch:64,startTick:240,durationTicks:120,velocity:102}
+  ]}]}}),before=JSON.stringify(core.currentTrack(session).notes);
+  let result=core.previewNoteLength(session,{target:'all',length:'1/2'});
+  assert.equal(result.ok,true);assert.equal(result.preview.durationTicks,960);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  assert.deepEqual([...result.preview.changedNotes.map(note=>[note.pitch,note.startTick,note.durationTicks,note.velocity])],[[60,0,960,81],[64,240,960,102]]);
+  assert.ok(result.preview.changedNotes[0].startTick+result.preview.changedNotes[0].durationTicks>result.preview.changedNotes[1].startTick);
+  core.cancelNoteLength(session);assert.equal(session.noteLengthPreview,null);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.previewNoteLength(session,{target:'all',length:'1/2'});core.applyNoteLength(session);assert.deepEqual([...core.currentTrack(session).notes.map(note=>note.durationTicks)],[960,960]);assert.equal(session.undo.length,1);
+  core.undo(session);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);
+  core.redo(session);assert.deepEqual([...core.currentTrack(session).notes.map(note=>note.durationTicks)],[960,960]);
+});
+test('batch note length isolates selected notes and measure ranges',()=>{
+  const core=load(),session=core.createSession({projectId:'length-targets',midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4},tracks:[{part:'melody',notes:[
+    {id:'first',pitch:60,startTick:0,durationTicks:100,velocity:80},
+    {id:'second',pitch:64,startTick:1920,durationTicks:200,velocity:90},
+    {id:'third',pitch:67,startTick:3840,durationTicks:300,velocity:100}
+  ]}]}});
+  core.selectNote(session,'second');let result=core.previewNoteLength(session,{target:'selected',length:'1/4'});
+  assert.deepEqual([...result.preview.changedNotes.map(note=>note.durationTicks)],[100,480,300]);core.cancelNoteLength(session);
+  result=core.previewNoteLength(session,{target:'measures',measureFrom:3,measureTo:3,length:'1/8'});
+  assert.deepEqual([...result.preview.changedNotes.map(note=>note.durationTicks)],[100,200,240]);
+});
+test('batch note length rejects empty selection empty range and invalid measures',()=>{
+  const core=load(),empty=core.createSession({projectId:'length-empty'});
+  let result=core.previewNoteLength(empty,{target:'all',length:'1/4'});assert.equal(result.ok,false);assert.match(result.reason,/ノートがありません/);
+  result=core.previewNoteLength(empty,{target:'selected',length:'1/4'});assert.equal(result.ok,false);assert.match(result.reason,/選択/);
+  const session=core.createSession({projectId:'length-range',midiData:{editor:{measureCount:4},tracks:[{part:'melody',notes:[{id:'note',pitch:60,startTick:0,durationTicks:120,velocity:80}]}]}});
+  result=core.previewNoteLength(session,{target:'measures',measureFrom:3,measureTo:2,length:'1/4'});assert.equal(result.ok,false);assert.match(result.reason,/小節範囲/);
+  result=core.previewNoteLength(session,{target:'measures',measureFrom:4,measureTo:4,length:'1/4'});assert.equal(result.ok,false);assert.match(result.reason,/ノートがありません/);
+});
+test('batch note length stays Melody-only session-only and independent from other settings',()=>{
+  const core=load(),session=core.createSession(project()),guide=JSON.stringify(session.correctionSettings),transpose=JSON.stringify(session.transposeSettings),tracks=JSON.stringify(session.midiData.tracks);
+  core.selectPart(session,'drums');let result=core.previewNoteLength(session,{target:'all',length:'1/4'});assert.equal(result.ok,false);assert.match(result.reason,/Melody専用/);
+  core.selectPart(session,'bass');result=core.previewNoteLength(session,{target:'all',length:'1/4'});assert.equal(result.ok,false);
+  core.selectPart(session,'melody');core.previewNoteLength(session,{target:'all',length:'1/4'});assert.ok(session.noteLengthPreview);
+  core.previewTranspose(session,{fromKey:'C',toKey:'D',target:'all',direction:'shortest'});assert.equal(session.noteLengthPreview,null);assert.ok(session.transposePreview);
+  core.previewNoteLength(session,{target:'all',length:'1/8'});assert.equal(session.transposePreview,null);assert.ok(session.noteLengthPreview);
+  core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:0,target:'all'});assert.equal(session.noteLengthPreview,null);assert.ok(session.correctionPreview);
+  assert.equal(JSON.stringify(session.correctionSettings),guide);assert.equal(JSON.stringify(session.transposeSettings),transpose);
+  const original=JSON.parse(tracks);assert.equal(JSON.stringify(session.midiData.tracks.find(track=>track.part==='drums')),JSON.stringify(original.find(track=>track.part==='drums')));assert.equal(Object.hasOwn(session.midiData,'noteLengthSettings'),false);
+});
 test('Melody Correction rejects an empty selected-note target and Quantize OFF preserves timing',()=>{
   const core=load(),session=core.createSession({projectId:'correction-off',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:240,velocity:90}]}]}});
   let result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:100,target:'selected'});

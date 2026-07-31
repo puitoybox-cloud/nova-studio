@@ -95,6 +95,22 @@ test('Melody key transpose UI previews independently and Apply uses existing sav
   app.editorSelectPart('drums');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyTransposeTitle/);
   app.editorSelectPart('bass');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyTransposeTitle/);
 });
+test('Melody batch note length UI previews only duration and stays hidden for Drums Bass',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'note-length-ui',projectName:'Note length UI',midiData:{ppq:480,tracks:[{part:'melody',notes:[{id:'note',pitch:65,startTick:120,durationTicks:120,velocity:93}]}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor,core=window.MusicStudioEditor;
+  assert.match(html,/id="melodyNoteLengthTitle">ノート長一括変更/);assert.match(html,/name="noteLengthValue"/);
+  assert.match(html,/付点1\/4/);assert.match(html,/三連1\/16/);assert.doesNotMatch(html,/ノート長一括変更：未実装/);
+  const fields={noteLengthValue:{value:'dotted-1/4'},noteLengthMeasureFrom:{value:'1'},noteLengthMeasureTo:{value:'1'}},radios={noteLengthTarget:{value:'all'}};
+  const panel={querySelector(selector){const name=selector.match(/name="([^"]+)"/)?.[1];return selector.includes(':checked')?radios[name]:fields[name]}};
+  window.document={querySelector:selector=>selector==='#melodyNoteLengthPanel'?panel:null};
+  const original=JSON.stringify(core.currentTrack(session).notes),result=app.editorPreviewNoteLength();assert.equal(result.ok,true);assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/is-note-length-preview/);assert.match(html,/Note Length Preview/);
+  app.editorCancelNoteLength();assert.equal(JSON.stringify(core.currentTrack(session).notes),original);
+  app.editorPreviewNoteLength();app.editorApplyNoteLength();const note=core.currentTrack(session).notes[0];assert.deepEqual([note.pitch,note.startTick,note.durationTicks,note.velocity],[65,120,720,93]);
+  app.editorUndo();assert.equal(core.currentTrack(session).notes[0].durationTicks,120);app.editorRedo();assert.equal(core.currentTrack(session).notes[0].durationTicks,720);
+  app.editorSelectPart('drums');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyNoteLengthTitle/);
+  app.editorSelectPart('bass');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/melodyNoteLengthTitle/);
+});
 test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
