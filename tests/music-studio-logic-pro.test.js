@@ -71,6 +71,8 @@ test('Melody scale guide follows transient Correction settings and stays Melody-
   app.editorSelectPart('melody');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/data-key="C" data-scale="Major"/);
   assert.equal(Object.hasOwn(app.state.midiEditor.midiData,'correctionSettings'),false);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-scale-guide span\{[^}]*background:rgba\(250,204,21,\.12\)/);
 });
 test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
