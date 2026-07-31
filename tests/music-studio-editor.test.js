@@ -58,6 +58,25 @@ test('copy and paste offsets a new note by one beat',()=>{
   assert.equal(pasted.startTick,480);
   assert.notEqual(pasted.id,'n1');
 });
+test('paste targets the playhead while preserving relative note spacing and Undo Redo',()=>{
+  const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:240,durationTicks:240,velocity:76});
+  const core=load(),session=core.createSession(source),before=core.currentTrack(session).notes.length;
+  core.selectAllNotes(session);core.copy(session);core.paste(session,1920);
+  const pasted=core.selectedNotes(session);
+  assert.deepEqual(Array.from(pasted,note=>note.startTick),[1920,2160]);
+  assert.equal(core.currentTrack(session).notes.length,before+2);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
+  core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+2);
+});
+test('duplicate places selected notes immediately after their block as one undoable edit',()=>{
+  const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:240,durationTicks:240,velocity:76});
+  const core=load(),session=core.createSession(source),before=core.currentTrack(session).notes.length;
+  core.selectAllNotes(session);core.duplicateSelected(session);
+  assert.deepEqual(Array.from(core.selectedNotes(session),note=>note.startTick),[480,720]);
+  assert.equal(core.currentTrack(session).notes.length,before+2);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
+  core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+2);
+});
 test('multiple selected notes copy and paste together as one undoable edit',()=>{
   const source=project();source.midiData.tracks[0].notes.push({id:'n2',pitch:64,startTick:240,durationTicks:240,velocity:76});
   const core=load(),session=core.createSession(source),before=core.currentTrack(session).notes.length;

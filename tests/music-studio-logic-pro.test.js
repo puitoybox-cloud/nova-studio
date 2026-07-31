@@ -54,7 +54,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   core.selectNote(app.state.midiEditor,'quiet');
   core.selectNote(app.state.midiEditor,'loud',{additive:true});
   let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/Snap <span>（スナップ）/);
+  assert.match(html,/aria-pressed="true">Snap ON/);
   for(const value of ['measure','1/2','1/4','1/8','1/16','1/32'])assert.match(html,new RegExp(`value="${value}"`));
   assert.match(html,/velocity-low/);assert.match(html,/velocity-medium/);assert.match(html,/velocity-high/);
   assert.match(html,/C4 · V30/);assert.match(html,/onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitch\(60\)"/);
@@ -136,6 +136,37 @@ test('Piano Roll shortcuts share button actions and never fire from an input',()
   app.editorHandleShortcut(event(' '));assert.equal(stopped,true);assert.equal(app.state.melodyAudio.playing,false);
   app.editorHandleShortcut(event('Escape'));assert.equal(core.selectedIds(app.state.midiEditor).length,0);
   core.selectAllNotes(app.state.midiEditor);app.editorHandleShortcut(event('Delete'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,0);
+});
+test('copy paste duplicate and select all use the current part and playhead',async()=>{
+  const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'basic-editing',projectName:'Basic editing'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;
+  core.addNotes(session,[{id:'first',pitch:60,startTick:0,durationTicks:240},{id:'second',pitch:64,startTick:240,durationTicks:240}]);
+  app.editorSelectAllNotes();assert.equal(core.selectedIds(session).length,2);
+  app.editorCopy();session.playheadTick=1920;app.editorPaste();await app.state.midiEditorSavePromise;
+  assert.deepEqual(Array.from(core.selectedNotes(session),note=>note.startTick),[1920,2160]);
+  app.editorDuplicate();await app.state.midiEditorSavePromise;
+  assert.deepEqual(Array.from(core.currentTrack(session).notes.filter(note=>note.startTick>=2400),note=>note.startTick),[2400,2640]);
+  app.editorUndo();assert.equal(core.currentTrack(session).notes.length,4);
+  app.editorRedo();assert.equal(core.currentTrack(session).notes.length,6);
+  core.selectPart(session,'drums');assert.equal(core.selectedIds(session).length,0);
+});
+test('Snap toggles grid alignment for add move and resize without changing the visible grid',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'snap-toggle',projectName:'Snap toggle'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;
+  assert.match(html,/aria-pressed="true">Snap ON/);
+  assert.match(html,/class="music-time-grid"/);
+  app.editorToggleSnap();assert.equal(session.view.snapEnabled,false);
+  session.playheadTick=137;app.editorAddNote();
+  let note=core.selectedNotes(session)[0];assert.equal(note.startTick,137);assert.equal(note.durationTicks,session.midiData.ppq);
+  app.editorMoveSelected(13,0);app.editorResizeSelected(17);
+  note=core.selectedNotes(session)[0];assert.equal(note.startTick,150);assert.equal(note.durationTicks,session.midiData.ppq+17);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/aria-pressed="false">Snap OFF/);
+  assert.match(html,/class="music-time-grid"/);
+  assert.match(html,/onchange="MusicStudio\.editorSetSnap\(this\.value\)" disabled/);
+  app.editorToggleSnap();assert.equal(session.view.snapEnabled,true);
 });
 test('Piano Roll tap moves the red playhead and Add Note uses the same position',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'insert-point',projectName:'Insert point'});
