@@ -426,7 +426,8 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(html,/data-pitch-min="0" data-pitch-max="127"/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
-  assert.match(css,/\.music-piano-roll\{position:relative;height:3072px/);
+  assert.match(html,/music-piano-frame" style="--music-piano-row-height:18px;--music-piano-roll-height:2304px/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-roll\{height:var\(--music-piano-roll-height\)/);
   app.editorRememberPitchScroll({scrollTop:1234,scrollLeft:567});
   assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
   assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
@@ -435,6 +436,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   const{app}=load(),project=app.makeProject({projectId:'visual-polish',projectName:'Visual polish'});app.state.projects=[project];
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/class="is-white key-c"[^>]*aria-label="C4を試聴"/);assert.match(html,/class="is-black key-cs"[^>]*aria-label="C♯4を試聴"/);
+  assert.match(html,/class="is-white key-c" style="--pitch-y:1215px"[^>]*aria-label="C4を試聴"/);assert.match(html,/class="is-black key-cs" style="--pitch-y:1197px"[^>]*aria-label="C♯4を試聴"/);assert.match(html,/class="is-white key-d" style="--pitch-y:1179px"[^>]*aria-label="D4を試聴"/);
   for(const pitchClass of ['cs','ds','fs','gs','as'])assert.match(html,new RegExp(`class="is-black key-${pitchClass}"`));
   for(const pitchClass of ['c','d','e','f','g','a','b'])assert.match(html,new RegExp(`class="is-white key-${pitchClass}"`));
   assert.doesNotMatch(html,/class="is-black key-(?:c|d|e|f|g|a|b)"/);
@@ -443,7 +445,8 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:112px minmax\(0,1fr\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-white::before\{width:74px;background:linear-gradient/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{top:3px;bottom:3px;width:44px/);
-  assert.match(css,/button\.is-white\.key-d::before,[^}]*button\.is-white\.key-a::before\{top:-12px;height:48px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{top:calc\(var\(--music-piano-header-height\) \+ var\(--pitch-y\)\);height:var\(--music-piano-row-height\)/);
+  assert.match(css,/button\.is-white\.key-b::before\{top:1px;bottom:1px;height:auto\}/);
   assert.match(css,/\.music-midi-editor-page \.music-scale-guide span\{background:rgba\(99,102,241,\.09\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{[^}]*background:linear-gradient\(180deg,#5b5fe8,#4338ca\)/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{[^}]*background:linear-gradient\(180deg,#c4b5fd,#a78bfa\)/);
