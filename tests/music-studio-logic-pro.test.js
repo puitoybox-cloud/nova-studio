@@ -177,10 +177,11 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/？ Shortcuts（ショートカット／操作ガイド）/);
-  assert.match(html,/ノート本体ドラッグ：移動／右端 ↔：長さ変更/);
-  assert.match(html,/左の音名をタップ：その音を試聴/);
+  assert.match(html,/class="music-editor-popover music-shortcuts-popover"/);assert.match(html,/<h3>基本操作<\/h3>/);assert.match(html,/<dt>Space<\/dt><dd>再生／停止<\/dd>/);
+  assert.match(html,/<h3>編集<\/h3>/);assert.match(html,/<dt>⌘C<\/dt><dd>Copy（コピー）<\/dd>/);assert.match(html,/<h3>ノート操作<\/h3>/);
+  assert.match(html,/<dt>ドラッグ<\/dt><dd>移動／右端で長さ変更<\/dd>/);assert.match(html,/<dt>音名をタップ<\/dt><dd>その音を試聴<\/dd>/);assert.match(html,/<h3>Mac<\/h3>/);assert.match(html,/<h3>iPad<\/h3>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-shortcuts-popover\{display:grid;width:min\(560px,calc\(100vw - 40px\)\);max-height:calc\(100vh - 110px\)/);assert.match(css,/\.music-shortcuts-popover dl>div\{display:grid;grid-template-columns:150px minmax\(0,1fr\)/);
   assert.match(css,/\.music-note-resize\{[^}]*width:16px/);
   assert.match(css,/\.music-note-resize::after\{[^}]*content:'↔'/);
 });
