@@ -414,9 +414,10 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/class="is-white"[^>]*aria-label="C4を試聴"/);assert.match(html,/class="is-black"[^>]*aria-label="C♯4を試聴"/);
   assert.match(css,/\.music-midi-editor-page\{--music-editor-surface:#0b141f/);
-  assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:72px minmax\(0,1fr\)\}/);
-  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-white\{[^}]*background:linear-gradient/);
-  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black\{[^}]*width:68%/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:104px minmax\(0,1fr\)\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-white::before\{width:68px;background:linear-gradient/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{width:46px/);
+  assert.match(css,/@media\(max-width:900px\)\{[^}]*\.music-midi-editor-page \.music-editor-topbar\{gap:5px;padding:6px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{border-color:var\(--music-editor-border\);border-radius:12px/);
   assert.match(css,/summary\[aria-label\^="Project"\]::before\{content:'ⓘ'\}/);assert.match(css,/button\[onclick\*="editorAddNote"\]::before\{content:'♩'\}/);
   for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorStartMidiRecording','editorPlayMelody'])assert.match(html,new RegExp(action));
