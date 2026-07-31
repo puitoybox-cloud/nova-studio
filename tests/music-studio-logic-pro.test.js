@@ -434,6 +434,7 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll\{height:var\(--music-piano-roll-height\)/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{box-sizing:border-box;height:14px;padding:0 4px;font-size:\.62rem;line-height:12px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-sizing:border-box!important;height:12px!important;min-height:12px!important;max-height:12px!important;block-size:12px!important/);assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-shadow:inset 0 0 0 1px/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{height:16px!important;min-height:16px!important;max-height:16px!important;block-size:16px!important;line-height:14px!important\}/);
   app.editorRememberPitchScroll({scrollTop:1234,scrollLeft:567});
   assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);
   assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
@@ -453,6 +454,9 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{top:3px;bottom:3px;width:44px/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{top:calc\(var\(--music-piano-header-height\) \+ var\(--pitch-y\)\);height:var\(--music-piano-row-height\)/);
   assert.match(css,/button\.is-white\.key-b::before\{top:1px;bottom:1px;height:auto\}/);
+  assert.match(css,/button\.is-white\.key-c::before,[^}]*button\.is-white\.key-f::before\{top:-9px;bottom:auto;height:27px\}/);assert.match(css,/button\.is-white\.key-d::before,[^}]*button\.is-white\.key-a::before\{top:-9px;bottom:auto;height:36px\}/);assert.match(css,/button\.is-white\.key-e::before,[^}]*button\.is-white\.key-b::before\{top:0;bottom:auto;height:27px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{z-index:3;top:2px;bottom:2px;width:46px/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{height:var\(--music-piano-row-height\)!important;min-height:var\(--music-piano-row-height\)!important;max-height:var\(--music-piano-row-height\)!important\}/);
   assert.match(css,/\.music-midi-editor-page \.music-scale-guide span\{background:rgba\(99,102,241,\.09\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{[^}]*background:linear-gradient\(180deg,#5b5fe8,#4338ca\)/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{[^}]*background:linear-gradient\(180deg,#c4b5fd,#a78bfa\)/);
