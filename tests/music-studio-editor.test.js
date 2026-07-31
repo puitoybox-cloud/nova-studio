@@ -273,6 +273,13 @@ test('Melody Correction targets selected notes and measures with key scale quant
   core.undo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='measure-two').startTick,2041);
   core.redo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='measure-two').startTick,2100);
 });
+test('scale guide pitch classes reuse Melody Correction key and scale definitions',()=>{
+  const core=load();
+  assert.deepEqual([...core.correctionScalePitchClasses('C','Major')],[0,2,4,5,7,9,11]);
+  assert.deepEqual([...core.correctionScalePitchClasses('A','Minor')],[0,2,4,5,7,9,11]);
+  assert.deepEqual([...core.correctionScalePitchClasses('D','Pentatonic')],[2,4,6,9,11]);
+  assert.deepEqual([...core.correctionScalePitchClasses('C','Chromatic')],[]);
+});
 test('Melody Correction rejects an empty selected-note target and Quantize OFF preserves timing',()=>{
   const core=load(),session=core.createSession({projectId:'correction-off',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:240,velocity:90}]}]}});
   let result=core.previewCorrection(session,{key:'C',scale:'Major',quantize:'OFF',strength:100,swing:100,target:'selected'});

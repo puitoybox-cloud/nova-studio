@@ -48,6 +48,30 @@ test('Melody Correction is an overlay with complete basic controls and transient
   app.editorPreviewCorrection();app.editorApplyCorrection();assert.equal(core.currentTrack(session).notes[0].pitch,60);assert.equal(core.currentTrack(session).notes[0].startTick,120);
   app.editorUndo();assert.equal(core.currentTrack(session).notes[0].pitch,61);app.editorRedo();assert.equal(core.currentTrack(session).notes[0].pitch,60);
 });
+test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/name="guideEnabled" type="checkbox" checked/);
+  assert.match(html,/class="music-scale-guide" data-key="C" data-scale="Major"/);
+  const form=(key,scale,guideEnabled=true)=>({elements:{key:{value:key},scale:{value:scale},guideEnabled:{checked:guideEnabled}}});
+  app.editorUpdateCorrectionGuide(form('A','Minor'));html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-scale-guide" data-key="A" data-scale="Minor"/);
+  app.editorUpdateCorrectionGuide(form('D','Pentatonic'));html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/data-key="D" data-scale="Pentatonic"/);assert.match(html,/data-pitch="62"/);assert.doesNotMatch(html,/data-pitch="61"/);
+  app.editorUpdateCorrectionGuide(form('D','Chromatic'));html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.doesNotMatch(html,/class="music-scale-guide"/);
+  app.editorUpdateCorrectionGuide(form('C','Major',false));html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.doesNotMatch(html,/class="music-scale-guide"/);
+  app.editorUpdateCorrectionGuide(form('C','Major',true));html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-scale-guide"/);
+  app.editorSelectPart('drums');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.doesNotMatch(html,/class="music-scale-guide"/);
+  app.editorSelectPart('bass');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.doesNotMatch(html,/class="music-scale-guide"/);
+  app.editorSelectPart('melody');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/data-key="C" data-scale="Major"/);
+  assert.equal(Object.hasOwn(app.state.midiEditor.midiData,'correctionSettings'),false);
+});
 test('Piano Roll includes a compact pointer-independent operation guide and visible resize handle',()=>{
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
