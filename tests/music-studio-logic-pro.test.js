@@ -177,7 +177,7 @@ test('Piano Roll includes a compact pointer-independent operation guide and visi
   const{app}=load(),project=app.makeProject({projectId:'operation-guide',projectName:'Operation guide'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-editor-popover music-shortcuts-popover"/);assert.match(html,/<h3>基本操作<\/h3>/);assert.match(html,/<dt>Space<\/dt><dd>再生／停止<\/dd>/);
+  assert.match(html,/class="music-editor-popover music-shortcuts-popover"/);assert.match(html,/<h3>基本操作<\/h3>/);assert.match(html,/<dt>Space<\/dt><dd>再生／停止<\/dd>/);assert.match(html,/<dt>Enter／Return<\/dt><dd>Go to Start（先頭へ戻る）<\/dd>/);assert.equal((html.match(/<dt>Enter／Return<\/dt>/g)||[]).length,1);
   assert.match(html,/<h3>編集<\/h3>/);assert.match(html,/<dt>⌘C<\/dt><dd>Copy（コピー）<\/dd>/);assert.match(html,/<h3>ノート操作<\/h3>/);
   assert.match(html,/<dt>ドラッグ<\/dt><dd>移動／右端で長さ変更<\/dd>/);assert.match(html,/<dt>音名をタップ<\/dt><dd>その音を試聴<\/dd>/);assert.match(html,/<h3>Mac<\/h3>/);assert.match(html,/<h3>iPad<\/h3>/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -311,6 +311,7 @@ test('Piano Roll shortcuts share button actions and never fire from an input',as
   app.editorHandleShortcut(event('0',{metaKey:true}));assert.equal(app.state.midiEditor.view.zoom,1);
   app.editorHandleShortcut(event('4'));assert.equal(app.state.midiEditor.view.snap,'1/32');
   app.editorHandleShortcut(event('n'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,3);
+  app.state.midiEditor.playheadTick=480;const goToStart=event('Enter');assert.equal(app.editorHandleShortcut(goToStart),true);assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(goToStart.prevented,true);
   let played=0,stopped=0;app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,stopPlayback(){stopped++},playNotes(){played++;return{ok:true,noteCount:1,durationMs:10000,playbackStart:0,secondsPerTick:1/960,endTick:480}}};
   app.editorHandleShortcut(event(' '));await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,true);assert.equal(played,1);
   app.state.midiEditor.playheadTick=240;app.editorHandleShortcut(event(' '));await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,false);assert.equal(app.state.midiEditor.playheadTick,240);assert.ok(stopped>0);
