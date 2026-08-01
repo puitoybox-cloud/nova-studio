@@ -81,6 +81,16 @@ test('Melody playback can start from a moved playhead without inventing notes',a
   assert.equal(synth.context.oscillators.length,1);
   assert.equal(Math.round(synth.context.oscillators[0].started[0]*100)/100,10.04);
 });
+test('bounded playback clips crossing notes and excludes notes outside the loop',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),notes=[
+    {pitch:60,startTick:0,durationTicks:720,velocity:80},
+    {pitch:64,startTick:720,durationTicks:480,velocity:90},
+    {pitch:67,startTick:1440,durationTicks:240,velocity:90}
+  ];await synth.unlock();
+  const result=synth.playNotes(notes,{ppq:480,tempo:120,startTick:480,endTick:960});
+  assert.equal(result.noteCount,2);assert.equal(result.startTick,480);assert.equal(result.endTick,960);assert.equal(synth.context.oscillators.length,2);
+  assert.ok(synth.context.oscillators.every(item=>item.stopped[0]<=10.68));
+});
 test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();
   synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:68}],{ppq:480,tempo:120});
