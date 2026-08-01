@@ -29,8 +29,13 @@ test('menu provides all requested destinations and accessible state',()=>{
 test('SVG wordmark and responsive restrained panel are present',()=>{
   assert.match(html,/<svg viewBox="0 0 238 34"/);
   assert.match(html,/NOVA STUDIO/);
-  assert.match(css,/display:flex!important;visibility:visible!important;opacity:1!important/);
-  assert.match(css,/width:min\(340px,86vw\)/);
+  assert.match(css,/\.nova-menu-bar\{[^}]*display:contents[^}]*background:none[^}]*border:0[^}]*box-shadow:none/);
+  assert.match(css,/\.nova-menu-toggle\{[^}]*position:fixed|\.nova-menu-toggle,.nova-wordmark\{position:fixed/);
+  assert.match(css,/--nova-menu-control:48px/);
+  assert.match(css,/\.nova-wordmark svg\{[^}]*width:160px/);
+  assert.match(css,/width:min\(330px,86vw\)/);
+  assert.match(css,/pointer-events:none/);
+  assert.match(css,/backdrop-filter:blur\(18px\)/);
   assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/width:min\(320px,88vw\)/);
+  assert.match(css,/width:min\(318px,88vw\)/);
 });
