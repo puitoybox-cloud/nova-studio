@@ -425,6 +425,8 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   const{app,window}=load(),project=app.makeProject({projectId:'full-pitch-range',projectName:'Full pitch range'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'low-note',pitch:0,startTick:0,durationTicks:120,velocity:90});
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'middle-c-note',pitch:60,startTick:120,durationTicks:120,velocity:90});
+  window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'middle-e-note',pitch:64,startTick:240,durationTicks:120,velocity:90});
   window.MusicStudioEditor.addNote(app.state.midiEditor,{id:'high-note',pitch:127,startTick:480,durationTicks:120,velocity:100});
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-piano-viewport"[^>]*onscroll="MusicStudio\.editorRememberPitchScroll\(this\)"/);
@@ -436,6 +438,8 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
   assert.match(html,/music-piano-frame" style="--music-piano-row-height:18px;--music-piano-roll-height:2304px/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll\{height:var\(--music-piano-roll-height\)/);
+  for(const [pitch,y] of [[127,9],[64,1143],[60,1215],[0,2295]])assert.match(html,new RegExp(`class="music-midi-note[^>]*data-note-id="[^"]+" style="--pitch-y:${y}px;top:var\\(--pitch-y\\)`));
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button,\.music-midi-editor-page \.music-piano-roll \.music-midi-note\{margin:0\}/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.velocity-high\{box-sizing:border-box;height:14px;padding:0 4px;font-size:\.62rem;line-height:12px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-sizing:border-box!important;height:12px!important;min-height:12px!important;max-height:12px!important;block-size:12px!important/);assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{box-shadow:inset 0 0 0 1px/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-midi-note\.is-selected\{height:16px!important;min-height:16px!important;max-height:16px!important;block-size:16px!important;line-height:14px!important\}/);
