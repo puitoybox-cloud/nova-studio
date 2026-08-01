@@ -7,6 +7,7 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const source=fs.readFileSync(path.join(root,'nova-menu.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'nova-menu.css'),'utf8');
+const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 
 test('loads the independent menu without removing existing navigation',()=>{
   assert.match(html,/nova-menu\.css/);
@@ -38,4 +39,11 @@ test('SVG wordmark and responsive restrained panel are present',()=>{
   assert.match(css,/backdrop-filter:blur\(18px\)/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/width:min\(318px,88vw\)/);
+});
+
+test('home fixes the atelier background without showing a background picker',()=>{
+  assert.match(app,/const DEFAULT_HOME_BACKGROUND_ID='fantasyAtelier'/);
+  assert.match(app,/document\.body\.dataset\.homeBackground=DEFAULT_HOME_BACKGROUND_ID/);
+  assert.doesNotMatch(app,/function homeBackgroundPicker/);
+  assert.doesNotMatch(app,/home-top-tools/);
 });
