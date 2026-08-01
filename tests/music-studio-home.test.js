@@ -166,7 +166,7 @@ test('Record starts for a connected MIDI input and Stop ends the active recordin
   await app.editorStartMidiRecording();assert.equal(started,1);assert.equal(startTime,1000);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof input.onmidimessage,'function');
   clock=1500;frame();assert.equal(Math.round(app.state.midiEditor.playheadTick),1440);
   assert.equal(typeof app.editorStopTransport,'function');
-  clock=1750;await app.editorStopTransport();assert.equal(stopped,1);assert.equal(stopTime,1750);assert.equal(Math.round(app.state.midiEditor.playheadTick),1680);assert.equal(app.state.midiInput.recording,false);assert.equal(frame,null);assert.match(app.state.midiInput.status,/録音を停止/);
+  clock=1750;await app.editorStopTransport();assert.equal(stopped,1);assert.equal(stopTime,1750);assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(app.state.midiInput.recording,false);assert.equal(frame,null);assert.match(app.state.midiInput.status,/録音を停止/);
 });
 
 test('concurrent Melody play requests schedule the note array only once',async()=>{

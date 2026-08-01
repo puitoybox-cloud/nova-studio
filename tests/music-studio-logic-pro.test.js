@@ -291,7 +291,7 @@ test('marquee threshold preserves empty click clearing and coarse-pointer scroll
   assert.match(css,/\.music-selection-marquee\{[^}]*background:rgba\(56,189,248,\.16\)/);
   assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
 });
-test('Piano Roll shortcuts share button actions and never fire from an input',()=>{
+test('Piano Roll shortcuts share button actions and never fire from an input',async()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'shortcuts',projectName:'Shortcuts'});
   app.state.projects=[project];window.location.hash='#music-studio/midi-editor/shortcuts';
   app.renderRoute('music-studio/midi-editor/shortcuts');
@@ -311,8 +311,10 @@ test('Piano Roll shortcuts share button actions and never fire from an input',()
   app.editorHandleShortcut(event('0',{metaKey:true}));assert.equal(app.state.midiEditor.view.zoom,1);
   app.editorHandleShortcut(event('4'));assert.equal(app.state.midiEditor.view.snap,'1/32');
   app.editorHandleShortcut(event('n'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,3);
-  let stopped=false;app.state.melodyAudio.synth={stopPlayback(){stopped=true}};app.state.melodyAudio.playing=true;
-  app.editorHandleShortcut(event(' '));assert.equal(stopped,true);assert.equal(app.state.melodyAudio.playing,false);
+  let played=0,stopped=0;app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,stopPlayback(){stopped++},playNotes(){played++;return{ok:true,noteCount:1,durationMs:10000,playbackStart:0,secondsPerTick:1/960,endTick:480}}};
+  app.editorHandleShortcut(event(' '));await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,true);assert.equal(played,1);
+  app.state.midiEditor.playheadTick=240;app.editorHandleShortcut(event(' '));await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,false);assert.equal(app.state.midiEditor.playheadTick,0);assert.ok(stopped>0);
+  app.editorHandleShortcut(event(' '));await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,true);assert.equal(played,2);app.editorStopTransport();
   app.editorHandleShortcut(event('Escape'));assert.equal(core.selectedIds(app.state.midiEditor).length,0);
   core.selectAllNotes(app.state.midiEditor);app.editorHandleShortcut(event('Delete'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,0);
 });
@@ -322,7 +324,7 @@ test('R toggles the existing MIDI recording path without stealing reload typing 
   const event=(key,extra={})=>{let prevented=false;return{key,target:{closest:()=>null},preventDefault(){prevented=true},get prevented(){return prevented},...extra}};
   for(const blocked of [event('r',{metaKey:true}),event('r',{ctrlKey:true}),event('r',{repeat:true}),event('r',{isComposing:true}),event('r',{target:{closest:()=>({})}})]){assert.equal(app.editorHandleShortcut(blocked),false);assert.equal(blocked.prevented,false)}
   const start=event('r');assert.equal(app.editorHandleShortcut(start),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(start.prevented,true);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof frame,'function');
-  const stop=event('r');assert.equal(app.editorHandleShortcut(stop),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.midiInput.recording,false);assert.equal(app.state.midiInput.liveNotes.length,0);
+  app.state.midiEditor.playheadTick=240;const stop=event('r');assert.equal(app.editorHandleShortcut(stop),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.midiInput.recording,false);assert.equal(app.state.midiInput.liveNotes.length,0);assert.equal(app.state.midiEditor.playheadTick,0);
   const restart=event('r');assert.equal(app.editorHandleShortcut(restart),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.midiInput.recording,true);await app.editorToggleMidiRecording();assert.equal(app.state.midiInput.recording,false);
   assert.match(app.renderRoute('music-studio/midi-editor/record-shortcut'),/onclick="MusicStudio\.editorToggleMidiRecording\(\)"[^>]*aria-pressed="false"/);
 });
@@ -331,7 +333,7 @@ test('recording previews noteOn chords growth noteOff and Stop without duplicate
   let clock=1000,frame=null;window.performance={now:()=>clock};window.requestAnimationFrame=callback=>{frame=callback;return 9};window.cancelAnimationFrame=()=>{};app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,noteOn(){},noteOff(){},allNotesOff(){},stopPlayback(){}};Object.assign(app.state.midiInput,{initialized:true,supported:true,access:{},inputs:[input],selectedId:'keys'});await app.editorSelectMidiInput('keys');await app.editorStartMidiRecording();
   input.onmidimessage({data:[0x90,60,90],timeStamp:1000});input.onmidimessage({data:[0x90,64,100],timeStamp:1000});assert.equal(app.state.midiInput.liveNotes.length,2);assert.equal(app.state.midiInput.liveNotes.filter(note=>note.active).length,2);let html=app.renderRoute('music-studio/midi-editor/live-recording');assert.equal((html.match(/data-live-note-id=/g)||[]).length,2);assert.match(html,/--pitch-y:1215px/);assert.match(html,/--pitch-y:1143px/);
   clock=1500;frame();assert.ok(app.state.midiInput.liveNotes.every(note=>note.durationTicks===480));input.onmidimessage({data:[0x80,60,0],timeStamp:1500});assert.equal(app.state.midiInput.liveNotes.find(note=>note.pitch===60).active,false);input.onmidimessage({data:[0x90,64,0],timeStamp:1750});
-  clock=2000;const result=await app.editorStopMidiRecording();const notes=window.MusicStudioEditor.currentTrack(app.state.midiEditor).notes;assert.equal(result.ok,true);assert.equal(notes.length,2);assert.equal(new Set(notes.map(note=>note.pitch)).size,2);assert.equal(app.state.midiInput.liveNotes.length,0);html=app.renderRoute('music-studio/midi-editor/live-recording');assert.equal((html.match(/data-live-note-id=/g)||[]).length,0);assert.equal((html.match(/data-note-id=/g)||[]).length,2);
+  clock=2000;const result=await app.editorStopMidiRecording();const notes=window.MusicStudioEditor.currentTrack(app.state.midiEditor).notes;assert.equal(result.ok,true);assert.equal(notes.length,2);assert.equal(new Set(notes.map(note=>note.pitch)).size,2);assert.equal(app.state.midiInput.liveNotes.length,0);assert.equal(app.state.midiEditor.playheadTick,0);html=app.renderRoute('music-studio/midi-editor/live-recording');assert.equal((html.match(/data-live-note-id=/g)||[]).length,0);assert.equal((html.match(/data-note-id=/g)||[]).length,2);assert.equal((await repo.get('live-recording')).midiData.tracks.find(track=>track.part==='melody').notes.length,2);
 });
 test('copy paste duplicate and select all use the current part and playhead',async()=>{
   const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'basic-editing',projectName:'Basic editing'});
@@ -479,10 +481,10 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-white::before\{width:74px;background:linear-gradient/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{top:3px;bottom:3px;width:44px/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{top:calc\(var\(--music-piano-header-height\) \+ var\(--pitch-y\)\);height:var\(--music-piano-row-height\)/);
-  assert.match(css,/button\.is-white::before\{z-index:1;top:50%;bottom:auto;width:80px;height:32px/);
+  assert.match(css,/button\.is-white::before\{z-index:1;top:50%;bottom:auto;left:0;width:calc\(100% - 8px\);height:32px/);
   assert.match(css,/button\.is-white::before,[^}]*button\.is-white\.key-d::before[^}]*button\.is-white\.key-g::before[^}]*button\.is-white\.key-a::before[^}]*button\.is-white\.key-b::before\{top:50%;bottom:auto;height:32px;transform:translateY\(-50%\)\}/);
   assert.doesNotMatch(css,/button\.is-white\.key-(?:d|g|a)::before\{top:-9px;bottom:auto;height:36px\}/);
-  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{z-index:3;top:2px;bottom:2px;width:46px/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{z-index:3;top:2px;bottom:2px;left:6px;width:60%/);assert.match(css,/button\.is-black>span\{right:calc\(40% \+ 8px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{height:var\(--music-piano-row-height\)!important;min-height:var\(--music-piano-row-height\)!important;max-height:var\(--music-piano-row-height\)!important\}/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-recording\{pointer-events:none;border-color:#fca5a5/);assert.match(css,/content:'R';font-size:\.64rem/);assert.match(css,/Record \/ Stop Recording/);
   assert.match(css,/\.music-midi-editor-page \.music-scale-guide span\{background:rgba\(99,102,241,\.09\)\}/);
@@ -502,7 +504,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom \.music-transport-controls\{display:flex;flex-wrap:wrap/);
   assert.match(css,/\.music-midi-editor-page \.music-record-dot\{color:#ef4444/);
   assert.match(css,/summary\[aria-label\^="Project"\]::before\{content:'ⓘ'\}/);assert.match(css,/button\[onclick\*="editorAddNote"\]::before\{content:'♩'\}/);
-  for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorToggleMidiRecording','editorPlayMelody'])assert.match(html,new RegExp(action));
+  for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorToggleMidiRecording','editorToggleMelodyPlayback'])assert.match(html,new RegExp(action));
 });
 test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll state',()=>{
   const{app}=load(),project=app.makeProject({projectId:'time-zoom',projectName:'Time zoom'});
@@ -588,7 +590,7 @@ test('stopping a MIDI recording persists its Melody notes through the existing p
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   window.performance={now:()=>1750};app.state.midiEditor.playheadTick=960;Object.assign(app.state.midiInput,{recording:true,recordingStartedAt:1000,recordingStartTick:960,recorder:{stop:time=>{assert.equal(time,1750);return[{id:'recorded-note',pitch:64,startTick:120,durationTicks:360,velocity:91,channel:1}]}}});
   const result=await app.editorStopTransport(),stored=await repo.get(project.projectId),melody=stored.midiData.tracks.find(track=>track.part==='melody');
-  assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].startTick,1080);assert.equal(melody.notes[0].durationTicks,360);assert.equal(Math.round(app.state.midiEditor.playheadTick),1680);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
+  assert.equal(result.ok,true);assert.equal(melody.notes.length,1);assert.equal(melody.notes[0].pitch,64);assert.equal(melody.notes[0].startTick,1080);assert.equal(melody.notes[0].durationTicks,360);assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(app.state.midiEditor.dirty,false);assert.match(app.state.midiInput.status,/保存しました/);
 });
 test('recorded Melody correction survives save and editor reload',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'correction-reload',projectName:'Correction reload'});
