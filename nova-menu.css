@@ -1,0 +1,24 @@
+:root{--nova-menu-height:62px}
+body{padding-top:var(--nova-menu-height)}
+body>header{top:var(--nova-menu-height)}
+.nova-menu-root{position:relative;z-index:1000;color:#f5fbff}
+.nova-menu-bar{position:fixed;z-index:1002;top:0;left:0;right:0;height:var(--nova-menu-height);display:flex;align-items:center;gap:.35rem;padding:calc(env(safe-area-inset-top,0px) * .15) clamp(.55rem,2vw,1rem);background:rgba(7,14,25,.96);border-bottom:1px solid rgba(132,202,223,.2);box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(14px)}
+.nova-menu-bar button{margin:0;background:transparent;color:inherit;border-radius:10px;min-height:46px}
+.nova-menu-toggle{width:48px;padding:11px!important;display:grid;align-content:center;gap:5px;border:1px solid rgba(157,221,239,.22)!important}
+.nova-menu-toggle span{display:block;width:24px;height:2px;border-radius:999px;background:currentColor;transition:transform .18s,opacity .18s}
+.nova-menu-root.is-open .nova-menu-toggle span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nova-menu-root.is-open .nova-menu-toggle span:nth-child(2){opacity:0}
+.nova-menu-root.is-open .nova-menu-toggle span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.nova-wordmark{width:min(238px,calc(100vw - 74px));padding:.35rem .45rem!important;text-align:left}
+.nova-wordmark svg{display:block;width:min(220px,100%);height:34px}
+.nova-menu-bar button:focus-visible,.nova-menu-panel button:focus-visible{outline:3px solid #7ee7ff;outline-offset:2px}
+.nova-menu-scrim{position:fixed;z-index:1000;inset:var(--nova-menu-height) 0 0;background:rgba(0,0,0,.42)}
+.nova-menu-panel{position:fixed;z-index:1001;top:var(--nova-menu-height);left:0;width:min(340px,86vw);height:calc(100dvh - var(--nova-menu-height));padding:1rem;overflow-y:auto;background:linear-gradient(180deg,#101d2e,#08111e);border-right:1px solid rgba(126,231,255,.22);box-shadow:20px 0 45px rgba(0,0,0,.36);transform:translateX(-105%);visibility:hidden;transition:transform .22s ease,visibility .22s}
+.nova-menu-root.is-open .nova-menu-panel{transform:translateX(0);visibility:visible}
+.nova-menu-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 .8rem;padding:.25rem .25rem .75rem;color:#8ea6b9;border-bottom:1px solid rgba(255,255,255,.1);font-size:.78rem;font-weight:800;letter-spacing:.18em}
+.nova-menu-heading button{width:auto!important;color:#d7eaf2!important;font-size:.86rem!important}
+.nova-menu-panel button{display:flex;align-items:center;width:100%;min-height:50px;margin:.18rem 0;padding:.72rem .85rem;text-align:left;color:#f5fbff;background:transparent;border:1px solid transparent;border-radius:11px;font-weight:700}
+.nova-menu-panel button:hover{background:rgba(126,231,255,.1);border-color:rgba(126,231,255,.16);filter:none}
+.nova-menu-divider{height:1px;margin:.75rem .2rem;background:rgba(255,255,255,.1)}
+@media(max-width:760px){:root{--nova-menu-height:58px}.nova-menu-bar{padding-left:max(.5rem,env(safe-area-inset-left));padding-right:max(.5rem,env(safe-area-inset-right))}.nova-wordmark{width:min(220px,calc(100vw - 70px))}.nova-wordmark svg{width:min(205px,100%)}.nova-menu-panel{width:min(320px,88vw)}body>header{top:0}}
+@media(prefers-reduced-motion:reduce){.nova-menu-panel,.nova-menu-toggle span{transition:none}}
