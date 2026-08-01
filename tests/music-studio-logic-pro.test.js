@@ -91,7 +91,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/MIDI Input（MIDI入力）<select[^>]*><option value="" selected>MIDI入力機器なし<\/option><option value="__rescan__"[^>]*>↻ 再検出<\/option>/);
-  assert.match(html,/editorStartMidiRecording\(\)" disabled aria-disabled="true"/);
+  assert.match(html,/editorToggleMidiRecording\(\)" disabled aria-disabled="true"/);
   assert.doesNotMatch(html,/MIDI未接続|music-midi-status|MIDI Devices（デバイス一覧）/);
   assert.doesNotMatch(html,/music-midi-rescan|Check Connection（接続確認）/);
   assert.equal((html.match(/editorInitializeMidi\(\)/g)||[]).length,0);
@@ -105,7 +105,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};app.state.midiInput.recording=true;app.state.midiInput.recorder={recording:false};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/MIDI Input（MIDI入力）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__" >↻ 再検出/);
-  assert.match(html,/editorStartMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorStartMidiRecording\(\)" disabled/);
+  assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
@@ -323,6 +323,8 @@ test('R toggles the existing MIDI recording path without stealing reload typing 
   for(const blocked of [event('r',{metaKey:true}),event('r',{ctrlKey:true}),event('r',{repeat:true}),event('r',{isComposing:true}),event('r',{target:{closest:()=>({})}})]){assert.equal(app.editorHandleShortcut(blocked),false);assert.equal(blocked.prevented,false)}
   const start=event('r');assert.equal(app.editorHandleShortcut(start),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(start.prevented,true);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof frame,'function');
   const stop=event('r');assert.equal(app.editorHandleShortcut(stop),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.midiInput.recording,false);assert.equal(app.state.midiInput.liveNotes.length,0);
+  const restart=event('r');assert.equal(app.editorHandleShortcut(restart),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.midiInput.recording,true);await app.editorToggleMidiRecording();assert.equal(app.state.midiInput.recording,false);
+  assert.match(app.renderRoute('music-studio/midi-editor/record-shortcut'),/onclick="MusicStudio\.editorToggleMidiRecording\(\)"[^>]*aria-pressed="false"/);
 });
 test('recording previews noteOn chords growth noteOff and Stop without duplicate committed notes',async()=>{
   const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'live-recording',projectName:'Live recording'}),input={id:'keys',name:'Keys',onmidimessage:null};app.setRepository(repo);await repo.put(project);app.state.projects=[project];window.location.hash='#music-studio/midi-editor/live-recording';app.renderRoute('music-studio/midi-editor/live-recording');
@@ -477,8 +479,9 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-white::before\{width:74px;background:linear-gradient/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{top:3px;bottom:3px;width:44px/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{top:calc\(var\(--music-piano-header-height\) \+ var\(--pitch-y\)\);height:var\(--music-piano-row-height\)/);
-  assert.match(css,/button\.is-white\.key-b::before\{top:1px;bottom:1px;height:auto\}/);
-  assert.match(css,/button\.is-white::before,[^}]*button\.is-white\.key-d::before[^}]*button\.is-white\.key-g::before[^}]*button\.is-white\.key-a::before[^}]*button\.is-white\.key-b::before\{top:1px;bottom:1px;height:auto\}/);
+  assert.match(css,/button\.is-white::before\{z-index:1;top:50%;bottom:auto;width:80px;height:32px/);
+  assert.match(css,/button\.is-white::before,[^}]*button\.is-white\.key-d::before[^}]*button\.is-white\.key-g::before[^}]*button\.is-white\.key-a::before[^}]*button\.is-white\.key-b::before\{top:50%;bottom:auto;height:32px;transform:translateY\(-50%\)\}/);
+  assert.doesNotMatch(css,/button\.is-white\.key-(?:d|g|a)::before\{top:-9px;bottom:auto;height:36px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\.is-black::before\{z-index:3;top:2px;bottom:2px;width:46px/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-labels button\{height:var\(--music-piano-row-height\)!important;min-height:var\(--music-piano-row-height\)!important;max-height:var\(--music-piano-row-height\)!important\}/);
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-recording\{pointer-events:none;border-color:#fca5a5/);assert.match(css,/content:'R';font-size:\.64rem/);assert.match(css,/Record \/ Stop Recording/);
@@ -499,7 +502,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom \.music-transport-controls\{display:flex;flex-wrap:wrap/);
   assert.match(css,/\.music-midi-editor-page \.music-record-dot\{color:#ef4444/);
   assert.match(css,/summary\[aria-label\^="Project"\]::before\{content:'ⓘ'\}/);assert.match(css,/button\[onclick\*="editorAddNote"\]::before\{content:'♩'\}/);
-  for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorStartMidiRecording','editorPlayMelody'])assert.match(html,new RegExp(action));
+  for(const action of ['editorSelectPart','editorUndo','editorRedo','editorAddNote','editorCopy','editorPaste','editorToggleMidiRecording','editorPlayMelody'])assert.match(html,new RegExp(action));
 });
 test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll state',()=>{
   const{app}=load(),project=app.makeProject({projectId:'time-zoom',projectName:'Time zoom'});
