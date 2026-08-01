@@ -453,6 +453,35 @@ body:has(.atelier-home.home-only){
   .atelier-action button{grid-column:1/-1;width:100%}
   .atelier-action-copy{text-align:left}
 }
+
+/* Hero illustration slot: replace only the 1600x500 source asset. */
+.home-only .atelier-hero{
+  display:block;
+  width:100%;
+  height:clamp(180px,18vw,220px);
+  min-height:180px;
+  padding:clamp(.9rem,2vw,1.2rem);
+}
+.atelier-hero-media{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  border-radius:clamp(18px,2vw,26px);
+}
+.atelier-hero-media img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+@media(max-width:760px){
+  .home-only .atelier-hero{
+    height:180px;
+    min-height:180px;
+    padding:1rem;
+  }
+}
 @media(max-width:390px){
   .atelier-action{grid-template-columns:1fr;text-align:center}
   .atelier-action-copy{text-align:center}

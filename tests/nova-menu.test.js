@@ -51,3 +51,14 @@ test('home fixes the atelier background without showing a background picker',()=
   assert.doesNotMatch(app,/function homeBackgroundPicker/);
   assert.doesNotMatch(app,/home-top-tools/);
 });
+
+test('home Hero is a compact cover-ready illustration placeholder',()=>{
+  const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
+  assert.match(app,/nova-home-hero-placeholder\.svg/);
+  assert.match(app,/width="1600" height="500"/);
+  const finalHome=app.slice(app.lastIndexOf('homeView=function'));
+  assert.doesNotMatch(finalHome,/おかえり、ティア/);
+  assert.doesNotMatch(finalHome,/Nova_Happy\.png/);
+  assert.match(style,/\.home-only \.atelier-hero\{[^}]*height:clamp\(180px,18vw,220px\)/);
+  assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:cover/);
+});
