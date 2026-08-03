@@ -1,15 +1,12 @@
 :root{--nova-menu-control:48px;--nova-menu-edge:clamp(10px,2vw,18px)}
 .nova-menu-root{position:relative;z-index:2147483000;display:block!important;visibility:visible!important;opacity:1!important;color:#fff}
 .nova-menu-bar{position:static;display:contents;background:none;border:0;box-shadow:none}
-.nova-menu-toggle,.nova-wordmark{position:fixed;z-index:2147483002;top:max(var(--nova-menu-edge),env(safe-area-inset-top));margin:0!important;background:transparent!important;border:0!important;color:#fff;box-shadow:none!important}
+.nova-menu-toggle{position:fixed;z-index:2147483002;top:max(var(--nova-menu-edge),env(safe-area-inset-top));margin:0!important;background:transparent!important;border:0!important;color:#fff;box-shadow:none!important}
 .nova-menu-toggle{left:max(var(--nova-menu-edge),env(safe-area-inset-left));display:flex!important;width:var(--nova-menu-control);height:var(--nova-menu-control);min-height:var(--nova-menu-control);padding:0!important;align-items:center;justify-content:center;border-radius:0!important;text-shadow:0 1px 3px rgba(0,0,0,.38)}
 .nova-menu-toggle:hover,.nova-menu-toggle:active{background:transparent!important;color:#fff;filter:brightness(1.18)}
 .nova-menu-glyph{display:block!important;color:currentColor;font-size:27px;font-weight:400;line-height:1;transform:none;opacity:1!important;transition:transform .18s}
 .nova-menu-root.is-open .nova-menu-glyph{transform:rotate(90deg)}
-.nova-wordmark{left:calc(max(var(--nova-menu-edge),env(safe-area-inset-left)) + var(--nova-menu-control) + 2px);display:block!important;width:150px;height:var(--nova-menu-control);min-height:var(--nova-menu-control);padding:8px 5px!important;text-align:left;opacity:.9;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
-.nova-wordmark svg{display:block;width:140px;height:28px;max-width:100%}
-.nova-menu-root.is-open .nova-wordmark{visibility:hidden;opacity:0}
-.nova-menu-toggle:focus-visible,.nova-wordmark:focus-visible,.nova-menu-panel button:focus-visible{outline:3px solid #7ee7ff;outline-offset:2px}
+.nova-menu-toggle:focus-visible,.nova-menu-panel button:focus-visible{outline:3px solid #7ee7ff;outline-offset:2px}
 .nova-menu-scrim{position:fixed;z-index:2147483000;inset:0;background:rgba(0,0,0,.36)}
 .nova-menu-panel{position:fixed;z-index:2147483001;display:block!important;top:0;bottom:0;left:0;width:min(330px,86vw);height:100vh;height:100dvh;padding:max(76px,calc(env(safe-area-inset-top) + 66px)) 1rem max(1rem,env(safe-area-inset-bottom));overflow-y:auto;background:rgba(7,16,28,.86);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%);border-right:1px solid rgba(190,230,242,.14);box-shadow:18px 0 42px rgba(0,0,0,.24);transform:translateX(-105%);visibility:hidden;opacity:0;pointer-events:none;transition:transform .22s ease,visibility .22s,opacity .22s}
 .nova-menu-root.is-open .nova-menu-panel{transform:translateX(0);visibility:visible!important;opacity:1!important;pointer-events:auto}
@@ -18,5 +15,5 @@
 .nova-menu-panel button{display:flex;align-items:center;width:100%;min-height:50px;margin:.18rem 0;padding:.72rem .85rem;text-align:left;color:#f5fbff;background:transparent;border:1px solid transparent;border-radius:11px;font-weight:700}
 .nova-menu-panel button:hover,.nova-menu-panel button:active{background:rgba(126,231,255,.1);border-color:rgba(126,231,255,.14);filter:none}
 .nova-menu-divider{height:1px;margin:.75rem .2rem;background:rgba(255,255,255,.1)}
-@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-wordmark{width:142px;padding-top:9px!important}.nova-wordmark svg{width:132px;height:26px}.nova-menu-panel{width:min(318px,88vw)}}
-@media(prefers-reduced-motion:reduce){.nova-menu-panel,.nova-menu-glyph,.nova-wordmark{transition:none}}
+@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(318px,88vw)}}
+@media(prefers-reduced-motion:reduce){.nova-menu-panel,.nova-menu-glyph{transition:none}}

@@ -5,7 +5,6 @@
   const toggle=root.querySelector('.nova-menu-toggle');
   const panel=root.querySelector('.nova-menu-panel');
   const scrim=root.querySelector('.nova-menu-scrim');
-  const wordmark=root.querySelector('.nova-wordmark');
   let lastFocus=null;
 
   function menuItems(){return [...panel.querySelectorAll('button:not([disabled])')]}
@@ -29,7 +28,6 @@
   function go(route){closeMenu(false);if(typeof window.setView==='function')window.setView(route);else location.hash=route}
 
   toggle.addEventListener('click',()=>root.classList.contains('is-open')?closeMenu():openMenu());
-  wordmark.addEventListener('click',()=>go('home'));
   scrim.addEventListener('click',()=>closeMenu());
   root.querySelectorAll('[data-menu-close]').forEach(button=>button.addEventListener('click',()=>closeMenu()));
   root.querySelector('[data-menu-back]').addEventListener('click',()=>{closeMenu(false);history.length>1?history.back():go('home')});

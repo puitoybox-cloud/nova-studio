@@ -27,15 +27,14 @@ test('menu provides all requested destinations and accessible state',()=>{
   assert.match(source,/event\.key!=='Tab'/);
 });
 
-test('SVG wordmark and responsive restrained panel are present',()=>{
-  assert.match(html,/<svg viewBox="0 0 170 32"/);
-  assert.match(html,/>Nova Studio<\/text>/);
+test('the upper-left control is hamburger-only with a responsive restrained panel',()=>{
+  assert.doesNotMatch(html,/class="nova-wordmark"/);
+  assert.doesNotMatch(html,/>Nova Studio<\/text>/);
   assert.doesNotMatch(html,/<path d="M16 2l3\.4/);
   assert.doesNotMatch(html,/<circle cx="16"/);
   assert.match(css,/\.nova-menu-bar\{[^}]*display:contents[^}]*background:none[^}]*border:0[^}]*box-shadow:none/);
-  assert.match(css,/\.nova-menu-toggle\{[^}]*position:fixed|\.nova-menu-toggle,.nova-wordmark\{position:fixed/);
+  assert.match(css,/\.nova-menu-toggle\{[^}]*position:fixed/);
   assert.match(css,/--nova-menu-control:48px/);
-  assert.match(css,/\.nova-wordmark svg\{[^}]*width:140px/);
   assert.match(css,/\.nova-menu-toggle\{[^}]*border-radius:0!important/);
   assert.match(css,/\.nova-menu-toggle:hover[^}]*background:transparent!important[^}]*brightness\(1\.18\)/);
   assert.match(css,/width:min\(330px,86vw\)/);
