@@ -25,7 +25,15 @@
     panel.setAttribute('aria-hidden','true');
     if(restoreFocus)(lastFocus||toggle).focus();
   }
-  function go(route){closeMenu(false);if(typeof window.setView==='function')window.setView(route);else location.hash=route}
+  function go(route){
+    closeMenu(false);
+    if(document.body?.dataset.musicStudioStandalone==='true'){
+      if(route==='music-studio'){location.hash='music-studio';return}
+      location.href=`./index.html#${route}`;
+      return;
+    }
+    if(typeof window.setView==='function')window.setView(route);else location.hash=route;
+  }
 
   toggle.addEventListener('click',()=>root.classList.contains('is-open')?closeMenu():openMenu());
   scrim.addEventListener('click',()=>closeMenu());
