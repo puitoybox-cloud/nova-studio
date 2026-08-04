@@ -42,9 +42,18 @@ test('management destinations use one shared link panel and required home areas 
 
 test('Mac and iPad use five portrait columns and narrow mobile uses two columns',()=>{
   assert.match(css,/\.home-only \.atelier-card-section \.atelier-actions\{\s*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
-  assert.match(css,/\.home-only \.atelier-card-section \.atelier-action\{[\s\S]*?grid-template-columns:1fr;[\s\S]*?grid-template-rows:76px auto 1fr auto/);
+  assert.match(css,/\.home-only \.atelier-card-section \.atelier-action\{[\s\S]*?grid-template-columns:1fr;[\s\S]*?grid-template-rows:64px 35\.4px minmax\(29\.7px,auto\) 44px/);
+  assert.match(css,/\.home-only \.atelier-card-section \.atelier-action\{[\s\S]*?gap:\.15rem;[\s\S]*?padding:\.3rem/);
+  assert.match(css,/\.home-only \.atelier-card-section \.atelier-action-copy p\{[^}]*line-height:1\.22/);
   assert.doesNotMatch(css,/\.atelier-card-section[\s\S]*?\border\s*:/);
   assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.home-only \.atelier-card-section \.atelier-actions\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?grid-template-rows:60px 35\.4px minmax\(29\.7px,auto\) 44px/);
+});
+
+test('home and Universe share the same responsive outer width rule',()=>{
+  assert.match(css,/:root\{--nova-route-max-width:1120px;--nova-route-inline-padding:\.85rem\}/);
+  assert.match(css,/:is\(\.atelier-home\.home-only,\.universe-main\)\{width:min\(100%,var\(--nova-route-max-width\)\);max-width:none;margin-inline:auto;padding-inline:var\(--nova-route-inline-padding\)\}/);
+  assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?:root\{--nova-route-inline-padding:\.65rem\}/);
 });
 
 test('card art mixes Tia and Nova and preserves contained centered images',()=>{

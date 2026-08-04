@@ -901,19 +901,19 @@ body.is-management-route #app{
 .home-only .atelier-card-section .atelier-action{
   display:grid;
   grid-template-columns:1fr;
-  grid-template-rows:76px auto 1fr auto;
+  grid-template-rows:64px 35.4px minmax(29.7px,auto) 44px;
   align-items:start;
-  align-content:stretch;
-  gap:.35rem;
-  min-height:218px;
-  padding:.65rem;
+  align-content:start;
+  gap:.15rem;
+  min-height:0;
+  padding:.3rem;
   text-align:center;
 }
 .home-only .atelier-card-section .atelier-action .action-character,
 .home-only .atelier-card-section .atelier-action .action-character img{
   width:100%;
-  height:76px;
-  max-height:76px;
+  height:64px;
+  max-height:64px;
   object-fit:contain;
   object-position:center;
 }
@@ -930,7 +930,7 @@ body.is-management-route #app{
   align-self:start;
   margin:0;
   font-size:.76rem;
-  line-height:1.35;
+  line-height:1.22;
   text-align:center;
 }
 .home-only .atelier-card-section .atelier-action button{
@@ -974,9 +974,9 @@ body.is-management-route #app{
 .home-only .atelier-footer-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
 @media(max-width:760px){
   .home-only .atelier-card-section .atelier-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
-  .home-only .atelier-card-section .atelier-action{grid-template-columns:1fr;grid-template-rows:70px auto 1fr auto;min-height:222px;padding:.55rem;gap:.3rem}
+  .home-only .atelier-card-section .atelier-action{grid-template-columns:1fr;grid-template-rows:60px 35.4px minmax(29.7px,auto) 44px;min-height:0;padding:.3rem;gap:.15rem}
   .home-only .atelier-card-section .atelier-action .action-character,
-  .home-only .atelier-card-section .atelier-action .action-character img{width:100%;height:70px;max-height:70px}
+  .home-only .atelier-card-section .atelier-action .action-character img{width:100%;height:60px;max-height:60px}
   .home-only .atelier-card-section .atelier-action-copy h3{font-size:.86rem}
   .home-only .atelier-card-section .atelier-action-copy p{font-size:.71rem}
   .atelier-management-links{grid-template-columns:1fr}
@@ -986,7 +986,9 @@ body.is-management-route #app{
 
 /* Universe reuses the home atmosphere and panel language while keeping its own route. */
 body.is-management-route.is-universe-route{background:linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),url('./fantasy_atelier_background.png'),linear-gradient(180deg,#effbff,#fff7ed);background-size:auto,cover,auto;background-position:center;background-attachment:fixed}
-.universe-main{width:min(100%,1120px);margin:0 auto;padding:.85rem .85rem calc(1.4rem + env(safe-area-inset-bottom))}
+:root{--nova-route-max-width:1120px;--nova-route-inline-padding:.85rem}
+:is(.atelier-home.home-only,.universe-main){width:min(100%,var(--nova-route-max-width));max-width:none;margin-inline:auto;padding-inline:var(--nova-route-inline-padding)}
+.universe-main{padding-block:.85rem calc(1.4rem + env(safe-area-inset-bottom))}
 .universe-main>.atelier-hero{margin:0 0 .65rem}
 .universe-panel{margin:0;padding:clamp(.75rem,2vw,1rem)!important;border-radius:26px;background:rgba(255,255,255,.7)!important;box-shadow:0 14px 34px rgba(18,57,93,.12)!important;backdrop-filter:blur(14px)}
 .universe-intro{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.75rem;margin:0 0 .6rem;padding:0;background:transparent;box-shadow:none}
@@ -1012,7 +1014,8 @@ body.is-management-route.is-universe-route{background:linear-gradient(180deg,rgb
   .universe-main .u-card{margin:0;min-height:70px}
 }
 @media(max-width:760px){
-  .universe-main{padding:.75rem .65rem 1rem}
+  :root{--nova-route-inline-padding:.65rem}
+  .universe-main{padding-block:.75rem 1rem}
   .universe-intro{grid-template-columns:1fr;align-items:start}
   .universe-context{display:grid;grid-template-columns:1fr}.universe-context div{grid-template-columns:48px minmax(0,1fr)}.universe-context dd{max-width:none}
   .universe-main .universe-tools{grid-template-columns:1fr;padding:.45rem}
