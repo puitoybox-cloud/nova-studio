@@ -984,36 +984,41 @@ body.is-management-route #app{
   .home-only .atelier-footer-grid{grid-template-columns:1fr}
 }
 
-/* Universe has one focused route shell; navigation remains available from home/menu. */
-.universe-header{display:flex;align-items:center;min-height:60px;padding:.5rem clamp(.75rem,3vw,2rem);border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
-.universe-return-home{min-height:44px;margin:0;padding:.55rem .85rem;background:#12395d;color:#fff}
-.universe-main{width:min(1500px,100%);margin:0 auto;padding:.8rem clamp(.75rem,2vw,1.25rem) 1.25rem}
+/* Universe reuses the home atmosphere and panel language while keeping its own route. */
+body.is-management-route.is-universe-route{background:linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),url('./fantasy_atelier_background.png'),linear-gradient(180deg,#effbff,#fff7ed);background-size:auto,cover,auto;background-position:center;background-attachment:fixed}
+body.is-universe-route .nova-menu-toggle{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:48px;height:48px;min-height:48px;border:1px solid rgba(216,237,240,.9)!important;border-radius:16px!important;background:rgba(255,255,255,.78)!important;color:var(--navy);text-shadow:none;box-shadow:0 8px 24px rgba(18,57,93,.14)!important;backdrop-filter:blur(12px)}
+.universe-main{width:min(100%,1120px);margin:0 auto;padding:4.35rem .85rem calc(1.4rem + env(safe-area-inset-bottom))}
+.universe-panel{margin:0;padding:clamp(.75rem,2vw,1rem)!important;border-radius:26px;background:rgba(255,255,255,.7)!important;box-shadow:0 14px 34px rgba(18,57,93,.12)!important;backdrop-filter:blur(14px)}
 .universe-intro{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.75rem;margin:0 0 .6rem;padding:0;background:transparent;box-shadow:none}
 .universe-intro h1{margin:.05rem 0;font-size:clamp(1.65rem,3vw,2.15rem)}
 .universe-intro p{margin:0;line-height:1.4}
 .universe-context{display:flex;flex-wrap:wrap;gap:.4rem;margin:0}
 .universe-context div{display:grid;grid-template-columns:auto minmax(0,auto);gap:.3rem;padding:.35rem .55rem;border:1px solid var(--line);border-radius:12px;background:#fff}
 .universe-context dt{color:var(--muted);font-size:.72rem}.universe-context dd{max-width:24ch;margin:0;font-size:.78rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.universe-main .universe-tools{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr) auto;gap:.45rem;align-items:center;margin:0 0 .55rem;padding:.5rem;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.9)}
+.universe-main .universe-tools{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr) auto;gap:.45rem;align-items:center;margin:0 0 .55rem;padding:.5rem;border:1px solid rgba(216,237,240,.96);border-radius:18px;background:rgba(255,255,255,.72);box-shadow:0 8px 22px rgba(18,57,93,.08)}
 .universe-main .universe-tools input{min-width:0;min-height:44px;margin:0}
 .universe-filters{display:flex;flex-wrap:wrap;gap:.3rem;min-width:0}
 .universe-main .universe-toggle,.universe-zoom button{min-height:36px;margin:0;padding:.35rem .55rem;border:1px solid #c8dde2;background:#f2f8fa;color:var(--navy);font-size:.78rem}
 .universe-main .universe-toggle.is-active{border-color:var(--primary);background:var(--primary);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.32)}
 .universe-zoom{display:flex;align-items:center;gap:.25rem;white-space:nowrap}.universe-zoom output{min-width:3rem;text-align:center;font-size:.75rem;font-weight:700}
-.universe-main .universe{height:clamp(520px,68vh,760px);margin:0}
+.universe-main .universe{height:var(--universe-desktop-height);margin:0;border-color:rgba(216,237,240,.96);background-color:rgba(255,255,255,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 8px 24px rgba(18,57,93,.08)}
 .universe-unlinked{margin:.55rem 0 0;padding:.6rem .7rem}.universe-unlinked h2{margin:0 0 .35rem;font-size:1rem}
 .home-only .atelier-card-section .nova-action-character img{transform:scale(.8);transform-origin:center}
 @media(max-width:1024px){
   .universe-main .universe-tools{grid-template-columns:minmax(150px,200px) minmax(0,1fr)}
   .universe-zoom{grid-column:1/-1;justify-content:flex-end}
+  .universe-main .universe{height:var(--universe-compact-height)}
+  .universe-main .universe-canvas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;width:calc(100% / var(--universe-zoom));height:auto;min-width:0;padding:.5rem}
+  .universe-main .u-card{margin:0;min-height:70px}
 }
 @media(max-width:760px){
-  .universe-header{min-height:56px;padding:.35rem .65rem}
-  .universe-main{padding:.6rem .65rem 1rem}
+  body.is-universe-route .nova-menu-toggle{top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));width:46px;height:46px;min-height:46px}
+  .universe-main{padding:4rem .65rem 1rem}
   .universe-intro{grid-template-columns:1fr;align-items:start}
   .universe-context{display:grid;grid-template-columns:1fr}.universe-context div{grid-template-columns:48px minmax(0,1fr)}.universe-context dd{max-width:none}
   .universe-main .universe-tools{grid-template-columns:1fr;padding:.45rem}
   .universe-filters{gap:.25rem}.universe-main .universe-toggle{width:auto;min-height:40px;margin:0;flex:1 1 auto}
   .universe-zoom{grid-column:auto;justify-content:stretch}.universe-zoom button{width:auto;flex:1;margin:0}
-  .universe-main .universe{height:60vh}
+  .universe-main .universe{height:var(--universe-mobile-height)}
+  .universe-main .universe-canvas{grid-template-columns:1fr}
 }

@@ -56,15 +56,18 @@ test('card art mixes Tia and Nova and preserves contained centered images',()=>{
   assert.match(css,/\.nova-action-character img\{transform:scale\(\.8\)/);
 });
 
-test('Universe uses one focused shell with compact context filters and zoom controls',()=>{
-  assert.match(app,/class="universe-header"/);
-  assert.match(app,/class="universe-return-home"[^>]*aria-label="Nova Studioへ戻る"/);
+test('Universe uses one home-style panel with compact context filters and zoom controls',()=>{
+  assert.match(app,/class="atelier-card-section universe-panel"/);
+  assert.doesNotMatch(app,/class="universe-return-home"/);
   assert.match(app,/class="universe-context"/);
   assert.match(app,/class="universe-filters"/);
   assert.match(app,/aria-pressed="\$\{on\}"/);
   assert.match(app,/class="universe-zoom"/);
   assert.match(app,/if\(route==='universe'\)\{[\s\S]*?return;/);
-  assert.match(css,/\.universe-return-home\{[^}]*min-height:44px/);
+  assert.match(css,/body\.is-management-route\.is-universe-route\{[^}]*fantasy_atelier_background\.png/);
+  assert.match(css,/body\.is-universe-route \.nova-menu-toggle\{[^}]*width:48px[^}]*min-height:48px/);
+  assert.match(css,/\.universe-main \.universe\{height:var\(--universe-desktop-height\)/);
+  assert.match(app,/unlinked\.length\?`<section class="universe-unlinked"/);
 });
 
 test('legacy feature catalogs and Dream Architect entry stay available but are not injected into final home',()=>{
