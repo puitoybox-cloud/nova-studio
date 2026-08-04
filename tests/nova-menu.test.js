@@ -51,13 +51,13 @@ test('home fixes the atelier background without showing a background picker',()=
   assert.doesNotMatch(app,/home-top-tools/);
 });
 
-test('home Hero is a compact cover-ready illustration placeholder',()=>{
+test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
-  assert.match(app,/nova-home-hero-placeholder\.svg/);
-  assert.match(app,/width="1600" height="500"/);
+  assert.match(app,/nova-studio-home-hero-20260804\.png/);
+  assert.match(app,/width="1920" height="480"/);
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/おかえり、ティア/);
   assert.doesNotMatch(finalHome,/Nova_Happy\.png/);
-  assert.match(style,/\.home-only \.atelier-hero\{[^}]*height:clamp\(180px,18vw,220px\)/);
-  assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:cover/);
+  assert.match(style,/\.home-only \.atelier-hero\{[^}]*aspect-ratio:4\/1/);
+  assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
