@@ -61,3 +61,12 @@ test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   assert.match(style,/\.home-only \.atelier-hero\{[^}]*aspect-ratio:4\/1/);
   assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
+
+test('home uses the compact responsive Nova Studio logo above the Hero',()=>{
+  const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
+  assert.match(app,/assets\/images\/home\/nova-studio-home-logo-20260804\.png/);
+  assert.match(style,/\.home-logo\{width:min\(72vw,220px\)/);
+  assert.match(style,/@media\(max-width:1024px\)\{[\s\S]*?\.home-logo\{width:min\(72vw,190px\)/);
+  assert.match(style,/@media\(max-width:760px\)\{[\s\S]*?\.home-logo\{width:min\(86vw,158px\)/);
+  assert.match(style,/\.home-logo img,[\s\S]*?height:auto/);
+});
