@@ -5,7 +5,7 @@
 .nova-menu-toggle{left:max(var(--nova-menu-edge),env(safe-area-inset-left));display:flex!important;width:var(--nova-menu-control);height:var(--nova-menu-control);min-height:var(--nova-menu-control);padding:0!important;align-items:center;justify-content:center;border-radius:0!important;text-shadow:0 1px 3px rgba(0,0,0,.38)}
 .nova-menu-toggle:hover,.nova-menu-toggle:active{background:transparent!important;color:#fff;filter:brightness(1.18)}
 .nova-menu-glyph{display:block!important;color:currentColor;font-size:27px;font-weight:400;line-height:1;transform:none;opacity:1!important;transition:transform .18s}
-.nova-menu-root.is-open .nova-menu-glyph{transform:rotate(90deg)}
+body:has(.nova-menu-root.is-open) .nova-menu-glyph{transform:rotate(90deg)}
 .nova-menu-toggle:focus-visible,.nova-menu-panel button:focus-visible{outline:3px solid #7ee7ff;outline-offset:2px}
 .nova-menu-scrim{position:fixed;z-index:2147483000;inset:0;background:rgba(0,0,0,.36)}
 .nova-menu-panel{position:fixed;z-index:2147483001;display:block!important;top:0;bottom:0;left:0;width:min(330px,86vw);height:100vh;height:100dvh;padding:max(76px,calc(env(safe-area-inset-top) + 66px)) 1rem max(1rem,env(safe-area-inset-bottom));overflow-y:auto;background:rgba(7,16,28,.86);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%);border-right:1px solid rgba(190,230,242,.14);box-shadow:18px 0 42px rgba(0,0,0,.24);transform:translateX(-105%);visibility:hidden;opacity:0;pointer-events:none;transition:transform .22s ease,visibility .22s,opacity .22s}
@@ -16,4 +16,6 @@
 .nova-menu-panel button:hover,.nova-menu-panel button:active{background:rgba(126,231,255,.1);border-color:rgba(126,231,255,.14);filter:none}
 .nova-menu-divider{height:1px;margin:.75rem .2rem;background:rgba(255,255,255,.1)}
 @media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(318px,88vw)}}
+body.is-home-route .atelier-hero>.nova-menu-toggle{position:absolute;top:12px;left:12px;background:rgba(7,16,28,.32)!important;border-radius:10px!important;box-shadow:0 4px 14px rgba(0,0,0,.2)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+@media(max-width:760px){body.is-home-route .atelier-hero>.nova-menu-toggle{top:8px;left:8px}}
 @media(prefers-reduced-motion:reduce){.nova-menu-panel,.nova-menu-glyph{transition:none}}

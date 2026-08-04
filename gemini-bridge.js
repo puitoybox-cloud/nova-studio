@@ -253,7 +253,10 @@
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'home';
       button.textContent = '✨ Gemini';
-      button.addEventListener('click', openPanel);
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        openPanel();
+      });
       homeActions.appendChild(button);
     }
 

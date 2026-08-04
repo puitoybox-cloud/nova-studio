@@ -716,16 +716,35 @@ body.is-management-route #app{
   width:100%;
   overflow-x:hidden;
 }
-.home-gemini-actions{
-  display:flex;
-  justify-content:flex-end;
-  width:100%;
-  margin:-.35rem 0 .65rem;
+.home-only .atelier-continue{
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:auto auto;
+  gap:.35rem .7rem;
+  min-height:0;
+  padding:.6rem .8rem;
+  border-radius:22px;
 }
-.home-gemini-actions [data-gemini-bridge]{
-  flex:0 1 auto;
-  max-width:100%;
-  margin:0;
+.home-only .atelier-hero{backdrop-filter:none}
+.atelier-continue-heading{align-self:center}
+.home-only .atelier-continue h2{margin:0;font-size:clamp(1.35rem,2.6vw,1.65rem);line-height:1.05}
+.home-only .atelier-continue .eyebrow{margin:0 0 .1rem;font-size:.7rem}
+.atelier-continue-side{display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:flex-end;gap:.5rem}
+.home-only .atelier-continue dl{display:grid;grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin:0}
+.home-only .atelier-continue dl div{padding:.35rem .5rem;border-radius:12px}
+.home-only .atelier-continue dt{font-size:.68rem;line-height:1.2}
+.home-only .atelier-continue dd{margin:.1rem 0 0;font-size:.82rem;line-height:1.25;white-space:normal}
+.home-only .atelier-continue .tia-thinking{width:48px;height:56px;margin:0;filter:drop-shadow(0 8px 10px rgba(18,57,93,.2))}
+.home-only .atelier-continue .tia-thinking img{width:100%;height:100%;max-height:56px;object-fit:contain}
+.home-gemini-actions{display:flex;justify-content:flex-end;width:auto;margin:0}
+.home-gemini-actions [data-gemini-bridge]{flex:0 1 auto;min-height:38px;max-width:100%;margin:0;padding:.4rem .65rem}
+@media(max-width:760px){
+  .home-only .atelier-continue{grid-template-columns:minmax(0,1fr) auto;padding:.55rem .65rem;border-radius:18px}
+  .home-only .atelier-continue dl{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .home-only .atelier-continue dl div{padding:.3rem .4rem}
+  .home-only .atelier-continue dd{font-size:.76rem}
+  .home-only .atelier-continue .tia-thinking{width:42px;height:50px}
+  .home-only .atelier-continue .tia-thinking img{max-height:50px}
+  .home-gemini-actions [data-gemini-bridge]{min-height:36px;padding:.35rem .5rem;font-size:.8rem}
 }
 .home-top-tools{
   position:absolute;

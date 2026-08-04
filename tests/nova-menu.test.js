@@ -44,6 +44,10 @@ test('the upper-left control is hamburger-only with a responsive restrained pane
   assert.match(css,/backdrop-filter:blur\(18px\)/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/width:min\(318px,88vw\)/);
+  assert.match(source,/function placeToggle\(\)/);
+  assert.match(source,/querySelector\('\.home-only \.atelier-hero'\)/);
+  assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:12px[^}]*left:12px/);
+  assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:8px;left:8px/);
 });
 
 test('home fixes the atelier background without showing a background picker',()=>{
@@ -71,13 +75,16 @@ test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
 
-test('home removes the upper logo and moves Gemini below the Hero',()=>{
+test('home keeps Gemini and a cute Tia inside the compact Continue card',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/home-logo-bar|home-logo-subtitle|nova-studio-home-logo-20260804/);
-  assert.match(finalHome,/atelier-hero[\s\S]*home-gemini-actions[\s\S]*atelier-continue/);
+  assert.match(finalHome,/atelier-hero[\s\S]*atelier-continue[\s\S]*home-gemini-actions/);
+  assert.match(finalHome,/Tia_Chibi_Wink_Heart\.png/);
   assert.match(gemini,/querySelector\('\.home-gemini-actions'\)/);
   assert.match(gemini,/button\.dataset\.geminiBridge = 'home'/);
-  assert.match(gemini,/button\.addEventListener\('click', openPanel\)/);
-  assert.match(style,/\.home-gemini-actions\{[^}]*justify-content:flex-end[^}]*width:100%/);
+  assert.match(gemini,/event\.stopPropagation\(\);\s*openPanel\(\)/);
+  assert.match(style,/\.home-only \.atelier-continue\{[^}]*min-height:0[^}]*padding:\.6rem \.8rem/);
+  assert.match(style,/\.home-only \.atelier-continue dl\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(style,/\.home-gemini-actions\{[^}]*justify-content:flex-end[^}]*width:auto/);
 });
