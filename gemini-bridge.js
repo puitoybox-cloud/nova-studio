@@ -270,7 +270,7 @@
       header.insertBefore(button, settingsButton || null);
     }
 
-    const nav = document.querySelector('nav');
+    const nav = document.querySelector('nav:not(.atelier-management-links)');
     if (nav && !nav.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'nav';

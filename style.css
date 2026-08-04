@@ -885,3 +885,101 @@ body.is-management-route #app{
 @media(max-width:390px){
   .home-only .atelier-card-section .atelier-action{grid-template-columns:58px minmax(0,1fr) auto}
 }
+
+/* PR #159 final home: five-column portrait Studios and a shared management menu. */
+.home-only{padding-top:clamp(.65rem,1.5vw,1rem)}
+.home-only .atelier-hero,
+.home-only .atelier-continue,
+.home-only .atelier-card-section,
+.home-only .atelier-management-section{margin-bottom:.65rem}
+.home-only .atelier-card-section{padding:.75rem!important}
+.home-only .atelier-card-section .atelier-section-heading{margin-bottom:.55rem}
+.home-only .atelier-card-section .atelier-actions{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:.45rem;
+}
+.home-only .atelier-card-section .atelier-action{
+  display:grid;
+  grid-template-columns:1fr;
+  grid-template-rows:76px auto 1fr auto;
+  align-items:start;
+  align-content:stretch;
+  gap:.35rem;
+  min-height:218px;
+  padding:.65rem;
+  text-align:center;
+}
+.home-only .atelier-card-section .atelier-action .action-character,
+.home-only .atelier-card-section .atelier-action .action-character img{
+  width:100%;
+  height:76px;
+  max-height:76px;
+  object-fit:contain;
+  object-position:center;
+}
+.home-only .atelier-card-section .atelier-action-copy{display:contents;text-align:center}
+.home-only .atelier-card-section .atelier-action-copy h3{
+  align-self:center;
+  min-height:2.4em;
+  margin:0;
+  font-size:.92rem;
+  line-height:1.2;
+  text-align:center;
+}
+.home-only .atelier-card-section .atelier-action-copy p{
+  align-self:start;
+  margin:0;
+  font-size:.76rem;
+  line-height:1.35;
+  text-align:center;
+}
+.home-only .atelier-card-section .atelier-action button{
+  align-self:end;
+  width:100%;
+  min-height:44px;
+  padding:.45rem .5rem;
+}
+.atelier-management-section{
+  padding:.7rem .8rem;
+  border:1px solid rgba(216,237,240,.95);
+  border-radius:22px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 12px 30px rgba(18,57,93,.1);
+  backdrop-filter:blur(12px);
+}
+.atelier-management-section .atelier-section-heading{margin-bottom:.45rem}
+.atelier-management-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.atelier-management-links button{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr) auto;
+  align-items:center;
+  gap:.5rem;
+  min-width:0;
+  min-height:58px;
+  margin:0;
+  padding:.45rem .65rem;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--navy);
+  box-shadow:none;
+  text-align:left;
+}
+.atelier-management-links button+button{border-left:1px solid var(--line)}
+.management-link-icon{display:grid;place-items:center;font-size:1.05rem}
+.management-link-copy{display:grid;min-width:0;gap:.08rem}
+.management-link-copy b{font-size:.88rem;line-height:1.2}
+.management-link-copy small{color:var(--muted);font-size:.7rem;line-height:1.25}
+.management-link-arrow{font-weight:900}
+.home-only .atelier-footer-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
+@media(max-width:760px){
+  .home-only .atelier-card-section .atelier-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
+  .home-only .atelier-card-section .atelier-action{grid-template-columns:1fr;grid-template-rows:70px auto 1fr auto;min-height:222px;padding:.55rem;gap:.3rem}
+  .home-only .atelier-card-section .atelier-action .action-character,
+  .home-only .atelier-card-section .atelier-action .action-character img{width:100%;height:70px;max-height:70px}
+  .home-only .atelier-card-section .atelier-action-copy h3{font-size:.86rem}
+  .home-only .atelier-card-section .atelier-action-copy p{font-size:.71rem}
+  .atelier-management-links{grid-template-columns:1fr}
+  .atelier-management-links button+button{border-left:0;border-top:1px solid var(--line)}
+  .home-only .atelier-footer-grid{grid-template-columns:1fr}
+}

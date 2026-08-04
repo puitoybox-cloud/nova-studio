@@ -104,7 +104,7 @@
   window.createDreamArchitectMockData=function(kind='results'){if(new URLSearchParams(location.search).get('dreamArchitectDebug')!=='1')return null;return kind==='results'?[{resultId:'mock_result_1',transferId:'mock_transfer',projectId:activeProject()?.id||'mock_project',sourceApp:'dream-architect-studio',resultType:'image',title:'確認用画像候補',description:'開発確認用。通常利用時には表示されません。',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),status:'pending',assetMetadata:{},notes:''}]:Core.buildTransfer({project:{id:activeProject()?.id||'mock_project',name:activeProject()?.title||'確認用作品'}})};
 
   function entryCard(){return `<section class="dream-architect-entry" aria-labelledby="dreamArchitectEntryTitle"><div><p class="eyebrow">Studio Link</p><h2 id="dreamArchitectEntryTitle">Dream Architect Studio</h2><p>作品・話数に加えて、選択したキャラクターと素材を確認して共有します。制作結果は必ず確認してから候補登録します。</p></div><button class="primary-action" data-dream-architect-entry onclick="openDreamArchitectStudio()">連携内容を選ぶ</button></section>`}
-  const baseHomeView=homeView;homeView=function(){const html=baseHomeView(),entry=entryCard();return html.includes('</main>')?html.replace('</main>',`${entry}</main>`):`${html}${entry}`};
+  const baseHomeView=homeView;homeView=function(){const html=baseHomeView();if(html.includes('class="atelier-home home-only"'))return html;const entry=entryCard();return html.includes('</main>')?html.replace('</main>',`${entry}</main>`):`${html}${entry}`};
   const baseRender=render;render=function(){const route=(location.hash||'#home').slice(1)||'home';if(route!==ROUTE)return baseRender();renderSelection()};
   render();
 })();
