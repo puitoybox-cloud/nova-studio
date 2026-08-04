@@ -17,6 +17,7 @@ test('loads the independent menu without removing existing navigation',()=>{
   assert.match(fs.readFileSync(path.join(root,'app.js'),'utf8'),/<nav>/);
   assert.match(html,/class="nova-menu-toggle"/);
   assert.match(html,/>☰</);
+  assert.match(html,/class="nova-menu-label" aria-hidden="true">MENU</);
   assert.match(source,/querySelector\('\.nova-menu-root'\)/);
 });
 
@@ -29,7 +30,7 @@ test('menu provides all requested destinations and accessible state',()=>{
   assert.match(source,/event\.key!=='Tab'/);
 });
 
-test('the upper-left control is hamburger-only with a responsive restrained panel',()=>{
+test('the upper-left control is a minimal hamburger and MENU label with a responsive restrained panel',()=>{
   assert.doesNotMatch(html,/class="nova-wordmark"/);
   assert.doesNotMatch(html,/>Nova Studio<\/text>/);
   assert.doesNotMatch(html,/<path d="M16 2l3\.4/);
@@ -47,7 +48,18 @@ test('the upper-left control is hamburger-only with a responsive restrained pane
   assert.match(source,/function placeToggle\(\)/);
   assert.match(source,/querySelector\('\.home-only \.atelier-hero'\)/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:12px[^}]*left:12px/);
+  assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
+  assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);
   assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:8px;left:8px/);
+});
+
+test('home Studio cards use compact, readable dimensions',()=>{
+  const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
+  assert.match(style,/\.home-only \.atelier-action\{min-height:168px;padding:\.75rem \.8rem/);
+  assert.match(style,/\.home-only \.atelier-action \.action-character\{width:min\(100%,106px\);height:88px/);
+  assert.match(style,/\.home-only \.atelier-action button\{min-height:40px/);
+  assert.match(style,/@media\(max-width:1024px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:106px/);
+  assert.match(style,/@media\(max-width:760px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:94px/);
 });
 
 test('home fixes the atelier background without showing a background picker',()=>{
