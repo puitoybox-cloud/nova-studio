@@ -248,6 +248,18 @@
   }
 
   function injectButtons() {
+    const homeActions = document.querySelector('.home-gemini-actions');
+    if (homeActions && !homeActions.querySelector('[data-gemini-bridge]')) {
+      const button = document.createElement('button');
+      button.dataset.geminiBridge = 'home';
+      button.textContent = '✨ Gemini';
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        openPanel();
+      });
+      homeActions.appendChild(button);
+    }
+
     const header = document.querySelector('header');
     if (header && !header.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');

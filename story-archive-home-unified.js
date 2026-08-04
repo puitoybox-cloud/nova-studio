@@ -9,12 +9,14 @@
     {id:'fantasyAtelier',label:'幻想アトリエ',file:'fantasy_atelier_background.png'}
   ];
   const DEFAULT_BACKGROUND='glassUi';
+  const FIXED_HOME_BACKGROUND='fantasyAtelier';
   const hasBackground=id=>BACKGROUNDS.some(bg=>bg.id===id);
   const selectedBackground=()=>BACKGROUNDS.find(bg=>bg.id===(localStorage.getItem(BACKGROUND_KEY)||DEFAULT_BACKGROUND))||BACKGROUNDS.find(bg=>bg.id===DEFAULT_BACKGROUND)||BACKGROUNDS[0];
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
   window.applyHomeBackground=function(){
-    const bg=selectedBackground();
+    const route=(location.hash||'#home').slice(1)||'home';
+    const bg=route==='home'?BACKGROUNDS.find(item=>item.id===FIXED_HOME_BACKGROUND):selectedBackground();
     document.body.dataset.homeBackground=bg.id;
     document.body.style.setProperty('--home-background-image',`url('./${bg.file}')`);
   };
@@ -35,6 +37,7 @@
   window.render=function(){
     const route=(location.hash||'#home').slice(1)||'home';
     document.body.classList.toggle('is-story-archive-route',route==='storyArchive');
+    applyHomeBackground();
     return previousRender?.();
   };
 

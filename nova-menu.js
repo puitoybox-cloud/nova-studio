@@ -3,11 +3,17 @@
   if(!root)return;
 
   const toggle=root.querySelector('.nova-menu-toggle');
+  const menuBar=root.querySelector('.nova-menu-bar');
   const panel=root.querySelector('.nova-menu-panel');
   const scrim=root.querySelector('.nova-menu-scrim');
   let lastFocus=null;
 
   function menuItems(){return [...panel.querySelectorAll('button:not([disabled])')]}
+  function placeToggle(){
+    const hero=document.querySelector('.home-only .atelier-hero');
+    const target=hero||menuBar;
+    if(toggle.parentElement!==target)(hero?target.prepend(toggle):target.appendChild(toggle));
+  }
   function openMenu(){
     lastFocus=document.activeElement;
     root.classList.add('is-open');
@@ -49,4 +55,6 @@
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   });
   window.addEventListener('hashchange',()=>closeMenu(false));
+  new MutationObserver(placeToggle).observe(document.querySelector('#app'),{childList:true,subtree:true});
+  placeToggle();
 })();
