@@ -642,29 +642,29 @@ body:has(.atelier-home.home-only)::before{
 .atelier-section-heading h2{margin:0;color:var(--navy);font-size:clamp(1.25rem,2vw,1.55rem)}
 .atelier-card-section .atelier-actions{
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:.75rem;
+  gap:.55rem;
   margin:0;
 }
 .atelier-card-section .atelier-action{
-  grid-template-columns:86px minmax(0,1fr) auto;
+  grid-template-columns:64px minmax(0,1fr) auto;
   grid-template-rows:1fr;
   align-content:center;
   align-items:center;
-  gap:.65rem;
-  min-height:112px;
+  gap:.5rem;
+  min-height:90px;
   height:100%;
-  padding:.6rem .7rem;
+  padding:.3rem .5rem;
 }
 .atelier-card-section .atelier-action .action-character,
 .atelier-card-section .atelier-action .action-character img{
-  width:78px;
-  height:82px;
-  max-height:82px;
+  width:58px;
+  height:64px;
+  max-height:64px;
   object-fit:contain;
   object-position:center;
 }
 .atelier-card-section .atelier-action-copy h3{
-  min-height:2.4em;
+  min-height:1.2em;
   margin:0;
   font-size:1rem;
   line-height:1.2;
@@ -676,14 +676,13 @@ body:has(.atelier-home.home-only)::before{
 @media(max-width:760px){
   .atelier-card-section{padding:.75rem!important;border-radius:22px}
   .atelier-card-section .atelier-actions{grid-template-columns:1fr}
-  .atelier-card-section .atelier-action{grid-template-columns:72px minmax(0,1fr) auto;min-height:104px;padding:.55rem}
+  .atelier-card-section .atelier-action{grid-template-columns:64px minmax(0,1fr) auto;min-height:96px;padding:.35rem .45rem}
   .atelier-card-section .atelier-action .action-character,
-  .atelier-card-section .atelier-action .action-character img{width:66px;height:72px;max-height:72px}
+  .atelier-card-section .atelier-action .action-character img{width:58px;height:66px;max-height:66px}
   .atelier-card-section .atelier-action button{grid-column:auto;width:auto}
 }
 @media(max-width:390px){
-  .atelier-card-section .atelier-action{grid-template-columns:64px minmax(0,1fr)}
-  .atelier-card-section .atelier-action button{grid-column:1/-1;width:100%}
+  .atelier-card-section .atelier-action{grid-template-columns:58px minmax(0,1fr) auto}
 }
 .home-background-picker{
   position:relative;
@@ -873,17 +872,16 @@ body.is-management-route #app{
 
 /* Final specificity guard for the home catalog after legacy responsive rules. */
 .home-only .atelier-card-section .atelier-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
-.home-only .atelier-card-section .atelier-action{grid-template-columns:86px minmax(0,1fr) auto;min-height:112px;padding:.6rem .7rem;gap:.65rem;text-align:left}
+.home-only .atelier-card-section .atelier-action{grid-template-columns:64px minmax(0,1fr) auto;min-height:90px;padding:.3rem .5rem;gap:.5rem;text-align:left}
 .home-only .atelier-card-section .atelier-action .action-character,
-.home-only .atelier-card-section .atelier-action .action-character img{width:78px;height:82px;max-height:82px;object-fit:contain;object-position:center}
+.home-only .atelier-card-section .atelier-action .action-character img{width:58px;height:64px;max-height:64px;object-fit:contain;object-position:center}
 .home-only .atelier-card-section .atelier-action button{grid-column:auto;width:auto;min-height:44px}
 @media(max-width:760px){
   .home-only .atelier-card-section .atelier-actions{grid-template-columns:1fr}
-  .home-only .atelier-card-section .atelier-action{grid-template-columns:72px minmax(0,1fr) auto;min-height:104px;padding:.55rem;gap:.55rem}
+  .home-only .atelier-card-section .atelier-action{grid-template-columns:64px minmax(0,1fr) auto;min-height:96px;padding:.35rem .45rem;gap:.45rem}
   .home-only .atelier-card-section .atelier-action .action-character,
-  .home-only .atelier-card-section .atelier-action .action-character img{width:66px;height:72px;max-height:72px}
+  .home-only .atelier-card-section .atelier-action .action-character img{width:58px;height:66px;max-height:66px}
 }
 @media(max-width:390px){
-  .home-only .atelier-card-section .atelier-action{grid-template-columns:64px minmax(0,1fr)}
-  .home-only .atelier-card-section .atelier-action button{grid-column:1/-1;width:100%}
+  .home-only .atelier-card-section .atelier-action{grid-template-columns:58px minmax(0,1fr) auto}
 }

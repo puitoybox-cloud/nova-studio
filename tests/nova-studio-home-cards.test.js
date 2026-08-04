@@ -34,6 +34,8 @@ test('management cards remain in a separate section and required home areas rema
 
 test('Mac and iPad share two-column DOM-flow grid and only narrow mobile becomes one column',()=>{
   assert.match(css,/\.atelier-card-section \.atelier-actions\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.home-only \.atelier-card-section \.atelier-action\{[^}]*min-height:90px/);
+  assert.match(css,/\.atelier-card-section \.atelier-actions\{[^}]*gap:\.55rem/);
   assert.doesNotMatch(css,/\.atelier-card-section[\s\S]*?\border\s*:/);
   assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.atelier-card-section \.atelier-actions\{grid-template-columns:1fr\}/);
 });
