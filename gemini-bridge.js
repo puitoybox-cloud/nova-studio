@@ -260,7 +260,7 @@
       homeActions.appendChild(button);
     }
 
-    const header = document.querySelector('header');
+    const header = document.querySelector('header:not(.universe-header)');
     if (header && !header.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'header';

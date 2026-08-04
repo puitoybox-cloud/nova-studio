@@ -33,8 +33,10 @@ test('management destinations use one shared link panel and required home areas 
   assert.match(app,/function homeManagementSection\(\)/);
   assert.match(app,/class="atelier-management-links"/);
   assert.doesNotMatch(app,/homeCardSection\('Management & Archive','管理・保管'/);
-  for(const title of ['制作を続ける','最近開いた作品','今日やること','保存状況'])assert.match(app,new RegExp(title));
+  assert.match(app,/制作を続ける/);
   assert.match(app,/nova-studio-home-hero-20260804\.png/);
+  const finalHome=app.slice(app.lastIndexOf('homeView=function'),app.indexOf('render=function(){',app.lastIndexOf('homeView=function')));
+  for(const title of ['最近開いた作品','今日やること','保存状況'])assert.doesNotMatch(finalHome,new RegExp(title));
 });
 
 test('Mac and iPad use five portrait columns and narrow mobile uses two columns',()=>{
@@ -50,6 +52,19 @@ test('card art mixes Tia and Nova and preserves contained centered images',()=>{
   assert.ok((catalog.match(/Nova_/g)||[]).length>=3);
   assert.match(css,/\.atelier-card-section \.atelier-action \.action-character img\{[\s\S]*?object-fit:contain;[\s\S]*?object-position:center/);
   assert.match(css,/\.atelier-card-section \.atelier-action button\{[^}]*min-height:44px/);
+  assert.match(app,/nova-action-character/);
+  assert.match(css,/\.nova-action-character img\{transform:scale\(\.8\)/);
+});
+
+test('Universe uses one focused shell with compact context filters and zoom controls',()=>{
+  assert.match(app,/class="universe-header"/);
+  assert.match(app,/class="universe-return-home"[^>]*aria-label="Nova Studioへ戻る"/);
+  assert.match(app,/class="universe-context"/);
+  assert.match(app,/class="universe-filters"/);
+  assert.match(app,/aria-pressed="\$\{on\}"/);
+  assert.match(app,/class="universe-zoom"/);
+  assert.match(app,/if\(route==='universe'\)\{[\s\S]*?return;/);
+  assert.match(css,/\.universe-return-home\{[^}]*min-height:44px/);
 });
 
 test('legacy feature catalogs and Dream Architect entry stay available but are not injected into final home',()=>{
@@ -60,4 +75,5 @@ test('legacy feature catalogs and Dream Architect entry stay available but are n
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/homeBackupSummary\(\)/);
   assert.match(geminiBridge,/document\.querySelector\('nav:not\(\.atelier-management-links\)'\)/);
+  assert.match(geminiBridge,/document\.querySelector\('header:not\(\.universe-header\)'\)/);
 });
