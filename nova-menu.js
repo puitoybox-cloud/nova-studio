@@ -6,30 +6,49 @@
   const menuBar=root.querySelector('.nova-menu-bar');
   const panel=root.querySelector('.nova-menu-panel');
   const scrim=root.querySelector('.nova-menu-scrim');
-  let lastFocus=null;
 
-  function menuItems(){return [...panel.querySelectorAll('button:not([disabled])')]}
+  const studioPreviews={
+    'story-studio':['Story Studio','物語・構成・脚本をつくる'],
+    'video-studio':['Video Studio','動画素材と編集をまとめる'],
+    'comic-studio':['Comic Studio','漫画・制作日誌画像をつくる'],
+    'line-sns-studio':['LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる'],
+    'web-studio':['Web Studio','サイト・作品ページをつくる']
+  };
+  function menuItems(){return [...panel.querySelectorAll('button:not([disabled]),summary')]}
+  function currentRoute(){return (location.hash||'#home').slice(1)||'home'}
+  function updateActive(){
+    const route=currentRoute();
+    panel.querySelectorAll('button[data-route],button[data-active-route]').forEach(button=>{
+      const active=(button.dataset.activeRoute||button.dataset.route)===route;
+      button.classList.toggle('is-current',active);
+      if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    });
+  }
   function placeToggle(){
     const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero');
     const target=hero||menuBar;
     if(toggle.parentElement!==target)(hero?target.prepend(toggle):target.appendChild(toggle));
   }
   function openMenu(){
-    lastFocus=document.activeElement;
+    updateActive();
     root.classList.add('is-open');
     scrim.hidden=false;
     toggle.setAttribute('aria-expanded','true');
     toggle.setAttribute('aria-label','メインメニューを閉じる');
+    toggle.setAttribute('aria-hidden','true');
+    toggle.tabIndex=-1;
     panel.setAttribute('aria-hidden','false');
-    menuItems()[0]?.focus();
+    setTimeout(()=>menuItems()[0]?.focus(),0);
   }
   function closeMenu(restoreFocus=true){
     root.classList.remove('is-open');
     scrim.hidden=true;
     toggle.setAttribute('aria-expanded','false');
     toggle.setAttribute('aria-label','メインメニューを開く');
+    toggle.removeAttribute('aria-hidden');
+    toggle.tabIndex=0;
     panel.setAttribute('aria-hidden','true');
-    if(restoreFocus)(lastFocus||toggle).focus();
+    if(restoreFocus){toggle.focus();setTimeout(()=>toggle.focus(),0)}
   }
   function go(route){
     closeMenu(false);
@@ -40,21 +59,37 @@
     }
     if(typeof window.setView==='function')window.setView(route);else location.hash=route;
   }
+  function runCommand(command){
+    closeMenu(false);
+    if(studioPreviews[command]){
+      const [title,description]=studioPreviews[command];
+      window.openHomeStudioPreview?.(title,description);
+      return;
+    }
+    if(command==='prompt-studio')return window.openApp?.('promptStudio');
+    if(command==='music-studio')return window.openApp?.('musicStudio');
+    if(command==='voice-studio')return window.openApp?.('voiceStudio');
+    if(command==='story-archive')return window.openStoryArchive?.();
+    if(command==='production-dashboard')return window.openProductionDashboard?.();
+  }
 
   toggle.addEventListener('click',()=>root.classList.contains('is-open')?closeMenu():openMenu());
-  scrim.addEventListener('click',()=>closeMenu());
+  scrim.addEventListener('pointerdown',event=>event.preventDefault());
+  scrim.addEventListener('click',event=>{event.preventDefault();closeMenu()});
   root.querySelectorAll('[data-menu-close]').forEach(button=>button.addEventListener('click',()=>closeMenu()));
-  root.querySelector('[data-menu-back]').addEventListener('click',()=>{closeMenu(false);history.length>1?history.back():go('home')});
   root.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>go(button.dataset.route)));
+  root.querySelectorAll('[data-command]').forEach(button=>button.addEventListener('click',()=>runCommand(button.dataset.command)));
   document.addEventListener('keydown',event=>{
     if(!root.classList.contains('is-open'))return;
     if(event.key==='Escape'){event.preventDefault();closeMenu();return}
     if(event.key!=='Tab')return;
     const items=menuItems(),first=items[0],last=items[items.length-1];
-    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+    if(document.activeElement===panel||!panel.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first).focus()}
+    else if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   });
-  window.addEventListener('hashchange',()=>closeMenu(false));
+  window.addEventListener('hashchange',()=>{updateActive();closeMenu(false)});
   new MutationObserver(placeToggle).observe(document.querySelector('#app'),{childList:true,subtree:true});
   placeToggle();
+  updateActive();
 })();

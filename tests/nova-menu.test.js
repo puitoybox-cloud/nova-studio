@@ -21,13 +21,26 @@ test('loads the independent menu without removing existing navigation',()=>{
   assert.match(source,/querySelector\('\.nova-menu-root'\)/);
 });
 
-test('menu provides all requested destinations and accessible state',()=>{
-  for(const label of ['ホーム','プロジェクト','Music Studio','Dream Architect Studio','設定','戻る','閉じる'])assert.match(html,new RegExp(label));
+test('menu provides the current Studio and management destinations without legacy controls',()=>{
+  const labels=['ホーム','Story Studio','Prompt Studio','Music Studio','Character Studio','Background Studio','Voice Studio','Video Studio','Comic Studio','LINE・SNS Studio','Web Studio','Story Archive','Production Dashboard','Universe','プロジェクト','設定','バックアップ'];
+  let previous=-1;
+  for(const label of labels){const index=html.indexOf(`>${label}<`);assert.ok(index>previous,`${label} must follow the requested order`);previous=index}
+  assert.doesNotMatch(html,/Dream Architect Studio|data-menu-back|>戻る</);
+  assert.equal((html.match(/data-menu-close/g)||[]).length,1);
+  assert.match(html,/class="nova-menu-close"[^>]*aria-label="メニューを閉じる"><span aria-hidden="true">×<\/span>/);
+  assert.match(html,/<details class="nova-menu-group" open>[\s\S]*?<summary>制作Studio<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group" open>[\s\S]*?<summary>管理・保管<\/summary>/);
+  assert.match(html,/<h3 id="nova-menu-other-title">その他<\/h3>/);
   assert.match(html,/aria-controls="novaMenuPanel"/);
   assert.match(html,/aria-expanded="false"/);
   assert.match(html,/aria-hidden="true"/);
   assert.match(source,/event\.key==='Escape'/);
   assert.match(source,/event\.key!=='Tab'/);
+  assert.match(source,/scrim\.addEventListener\('click',event=>\{event\.preventDefault\(\);closeMenu\(\)\}\)/);
+  assert.match(source,/toggle\.setAttribute\('aria-hidden','true'\);[\s\S]*?toggle\.removeAttribute\('aria-hidden'\)/);
+  assert.match(source,/if\(restoreFocus\)\{toggle\.focus\(\);setTimeout\(\(\)=>toggle\.focus\(\),0\)\}/);
+  assert.match(source,/scrim\.addEventListener\('pointerdown',event=>event\.preventDefault\(\)\)/);
+  assert.match(source,/button\.setAttribute\('aria-current','page'\)/);
 });
 
 test('the upper-left control is a minimal hamburger and MENU label with a responsive restrained panel',()=>{
@@ -40,17 +53,19 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/--nova-menu-control:48px/);
   assert.match(css,/\.nova-menu-toggle\{[^}]*border-radius:0!important/);
   assert.match(css,/\.nova-menu-toggle:hover[^}]*background:transparent!important[^}]*brightness\(1\.18\)/);
-  assert.match(css,/width:min\(330px,86vw\)/);
+  assert.match(css,/width:min\(312px,86vw\)/);
   assert.match(css,/pointer-events:none/);
   assert.match(css,/backdrop-filter:blur\(18px\)/);
   assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/width:min\(318px,88vw\)/);
+  assert.match(css,/width:min\(300px,88vw\)/);
   assert.match(source,/function placeToggle\(\)/);
   assert.match(source,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero'\)/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:2px[^}]*left:12px/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);
   assert.match(css,/@media\(max-width:760px\)\{:is\(body\.is-home-route,body\.is-universe-route\) \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
+  assert.match(css,/body:has\(\.nova-menu-root\.is-open\) \.nova-menu-toggle\{opacity:0!important;pointer-events:none\}/);
+  assert.match(css,/\.nova-menu-panel button\.is-current\{[^}]*box-shadow:inset 3px 0 #7ee7ff/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{
