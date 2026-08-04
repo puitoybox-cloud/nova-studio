@@ -1217,9 +1217,12 @@ function homeBackupSummary(){
 function homeFooterPanel(title,body,action=''){
   return `<section class="atelier-footer-panel"><div class="section-head"><h2>${esc(title)}</h2>${action}</div>${body}</section>`;
 }
+function homeHeroSection(){
+  return `<section class="atelier-hero" aria-label="Nova Studio Hero"><div class="atelier-hero-media"><img src="./assets/images/home/nova-studio-home-hero-20260804.png" alt="Nova Studioの幻想世界を描いたHeroバナー" width="1920" height="480" loading="eager" decoding="async"></div></section>`;
+}
 homeView=function(){
   const p=currentProject(),e=currentEpisode(),info=homeProductionStatus(p,e);
-  return `<main class="atelier-home home-only" aria-label="Nova Studio"><section class="atelier-hero" aria-label="Nova Studio Hero"><div class="atelier-hero-media"><img src="./assets/images/home/nova-studio-home-hero-20260804.png" alt="Nova Studioの幻想世界を描いたHeroバナー" width="1920" height="480" loading="eager" decoding="async"></div></section><section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div class="atelier-continue-heading"><p class="eyebrow">Continue</p><h2>制作を続ける</h2></div><div class="atelier-continue-side"><div class="home-gemini-actions" aria-label="AI連携"></div>${homeImage('Tia_Chibi_Wink_Heart.png','tia-thinking','ハートを作るティア')}</div><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section>${homeCardSection('Creative Studios','Studios',HOME_STUDIOS,'studio-section')}${homeManagementSection()}</main>`;
+  return `<main class="atelier-home home-only" aria-label="Nova Studio">${homeHeroSection()}<section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div class="atelier-continue-heading"><p class="eyebrow">Continue</p><h2>制作を続ける</h2></div><div class="atelier-continue-side"><div class="home-gemini-actions" aria-label="AI連携"></div>${homeImage('Tia_Chibi_Wink_Heart.png','tia-thinking','ハートを作るティア')}</div><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section>${homeCardSection('Creative Studios','Studios',HOME_STUDIOS,'studio-section')}${homeManagementSection()}</main>`;
 };
 render=function(){
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
@@ -1276,7 +1279,7 @@ shell=function(main){
   const p=currentProject(),e=currentEpisode();
   const route=(location.hash||'#home').slice(1);
   if(route==='universe'){
-    document.querySelector('#app').innerHTML=`<main class="universe-main"><section class="atelier-card-section universe-panel">${main}</section></main><div id="toast"></div>`;
+    document.querySelector('#app').innerHTML=`<main class="universe-main">${homeHeroSection()}<section class="atelier-card-section universe-panel">${main}</section></main><div id="toast"></div>`;
     return;
   }
   document.querySelector('#app').innerHTML=`<header class="management-header"><button class="brand return-home" onclick="novaReturnHome()"><b>Nova Studioへ戻る</b><small>アトリエホーム</small></button><button class="hamburger" onclick="document.body.classList.toggle('nav-open')" aria-label="メニューを開閉">☰</button><button onclick="showContext()">作品：${esc(p?.title||'未選択')}</button><button onclick="showContext()">話数：${esc(e?.numberLabel||'未選択')}</button><input id="globalSearch" aria-label="全体検索" placeholder="全体検索" oninput="searchAll(this.value)"><button onclick="setView('consult')">ノヴァに相談</button><button onclick="setView('backup')">バックアップ</button><button onclick="setView('settings')">設定</button><span id="saveStatus">保存しました</span></header><div class="management-layout">${managementNav()}<main class="management-main">${productionFlowNav?productionFlowNav():''}${main}</main><aside class="management-side">${side()}</aside></div><div class="mobile-nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div><div class="bottom management-bottom"><button onclick="novaReturnHome()">ホーム</button><button onclick="openStoryArchive()">Archive</button><button onclick="openProductionDashboard()">Dashboard</button><button onclick="setView('search')">検索</button><button onclick="setView('settings')">設定</button></div><div id="toast"></div>`;

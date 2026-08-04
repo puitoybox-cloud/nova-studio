@@ -6,6 +6,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
+const menuCss=fs.readFileSync(path.join(root,'nova-menu.css'),'utf8');
 const sections=fs.readFileSync(path.join(root,'nova-studio-sections.js'),'utf8');
 const dreamLink=fs.readFileSync(path.join(root,'dream-architect-link.js'),'utf8');
 const geminiBridge=fs.readFileSync(path.join(root,'gemini-bridge.js'),'utf8');
@@ -58,6 +59,8 @@ test('card art mixes Tia and Nova and preserves contained centered images',()=>{
 
 test('Universe uses one home-style panel with compact context filters and zoom controls',()=>{
   assert.match(app,/class="atelier-card-section universe-panel"/);
+  assert.match(app,/function homeHeroSection\(\)/);
+  assert.match(app,/class="universe-main">\$\{homeHeroSection\(\)\}/);
   assert.doesNotMatch(app,/class="universe-return-home"/);
   assert.match(app,/class="universe-context"/);
   assert.match(app,/class="universe-filters"/);
@@ -65,7 +68,7 @@ test('Universe uses one home-style panel with compact context filters and zoom c
   assert.match(app,/class="universe-zoom"/);
   assert.match(app,/if\(route==='universe'\)\{[\s\S]*?return;/);
   assert.match(css,/body\.is-management-route\.is-universe-route\{[^}]*fantasy_atelier_background\.png/);
-  assert.match(css,/body\.is-universe-route \.nova-menu-toggle\{[^}]*width:48px[^}]*min-height:48px/);
+  assert.match(menuCss,/:is\(body\.is-home-route,body\.is-universe-route\) \.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px/);
   assert.match(css,/\.universe-main \.universe\{height:var\(--universe-desktop-height\)/);
   assert.match(app,/unlinked\.length\?`<section class="universe-unlinked"/);
 });

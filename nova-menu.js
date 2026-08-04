@@ -10,7 +10,7 @@
 
   function menuItems(){return [...panel.querySelectorAll('button:not([disabled])')]}
   function placeToggle(){
-    const hero=document.querySelector('.home-only .atelier-hero');
+    const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero');
     const target=hero||menuBar;
     if(toggle.parentElement!==target)(hero?target.prepend(toggle):target.appendChild(toggle));
   }

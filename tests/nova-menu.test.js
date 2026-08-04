@@ -46,11 +46,11 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/width:min\(318px,88vw\)/);
   assert.match(source,/function placeToggle\(\)/);
-  assert.match(source,/querySelector\('\.home-only \.atelier-hero'\)/);
+  assert.match(source,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero'\)/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:2px[^}]*left:12px/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);
-  assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
+  assert.match(css,/@media\(max-width:760px\)\{:is\(body\.is-home-route,body\.is-universe-route\) \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{
@@ -83,7 +83,7 @@ test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/おかえり、ティア/);
   assert.doesNotMatch(finalHome,/Nova_Happy\.png/);
-  assert.match(style,/\.home-only \.atelier-hero\{[^}]*aspect-ratio:4\/1/);
+  assert.match(style,/:is\(\.home-only,\.universe-main\)>\.atelier-hero\{[^}]*aspect-ratio:4\/1/);
   assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
 
@@ -91,7 +91,7 @@ test('home keeps Gemini and a cute Tia inside the compact Continue card',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/home-logo-bar|home-logo-subtitle|nova-studio-home-logo-20260804/);
-  assert.match(finalHome,/atelier-hero[\s\S]*atelier-continue[\s\S]*home-gemini-actions/);
+  assert.match(finalHome,/homeHeroSection\(\)[\s\S]*atelier-continue[\s\S]*home-gemini-actions/);
   assert.match(finalHome,/Tia_Chibi_Wink_Heart\.png/);
   assert.match(gemini,/querySelector\('\.home-gemini-actions'\)/);
   assert.match(gemini,/button\.dataset\.geminiBridge = 'home'/);
