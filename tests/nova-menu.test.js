@@ -8,6 +8,8 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const source=fs.readFileSync(path.join(root,'nova-menu.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'nova-menu.css'),'utf8');
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const gemini=fs.readFileSync(path.join(root,'gemini-bridge.js'),'utf8');
+const archiveHome=fs.readFileSync(path.join(root,'story-archive-home-unified.js'),'utf8');
 
 test('loads the independent menu without removing existing navigation',()=>{
   assert.match(html,/nova-menu\.css/);
@@ -45,10 +47,17 @@ test('the upper-left control is hamburger-only with a responsive restrained pane
 });
 
 test('home fixes the atelier background without showing a background picker',()=>{
+  const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
   assert.match(app,/const DEFAULT_HOME_BACKGROUND_ID='fantasyAtelier'/);
   assert.match(app,/document\.body\.dataset\.homeBackground=DEFAULT_HOME_BACKGROUND_ID/);
   assert.doesNotMatch(app,/function homeBackgroundPicker/);
   assert.doesNotMatch(app,/home-top-tools/);
+  assert.match(style,/body\[data-home-background="fantasyAtelier"\]\{--home-background-image:url\('\.\/fantasy_atelier_background\.png'\)/);
+  assert.match(style,/body\.is-home-route\{background:[^}]*var\(--home-background-image\)[^}]*background-size:auto,cover,auto[^}]*background-position:center[^}]*background-attachment:fixed/);
+  assert.doesNotMatch(style,/--home-bg-image/);
+  assert.match(archiveHome,/const FIXED_HOME_BACKGROUND='fantasyAtelier'/);
+  assert.match(archiveHome,/route==='home'\?BACKGROUNDS\.find\(item=>item\.id===FIXED_HOME_BACKGROUND\):selectedBackground\(\)/);
+  assert.match(archiveHome,/classList\.toggle\('is-story-archive-route',route==='storyArchive'\);\s*applyHomeBackground\(\)/);
 });
 
 test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
@@ -62,11 +71,13 @@ test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
 
-test('home uses the compact responsive Nova Studio logo above the Hero',()=>{
+test('home removes the upper logo and moves Gemini below the Hero',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
-  assert.match(app,/assets\/images\/home\/nova-studio-home-logo-20260804\.png/);
-  assert.match(style,/\.home-logo\{width:min\(72vw,220px\)/);
-  assert.match(style,/@media\(max-width:1024px\)\{[\s\S]*?\.home-logo\{width:min\(72vw,190px\)/);
-  assert.match(style,/@media\(max-width:760px\)\{[\s\S]*?\.home-logo\{width:min\(86vw,158px\)/);
-  assert.match(style,/\.home-logo img,[\s\S]*?height:auto/);
+  const finalHome=app.slice(app.lastIndexOf('homeView=function'));
+  assert.doesNotMatch(finalHome,/home-logo-bar|home-logo-subtitle|nova-studio-home-logo-20260804/);
+  assert.match(finalHome,/atelier-hero[\s\S]*home-gemini-actions[\s\S]*atelier-continue/);
+  assert.match(gemini,/querySelector\('\.home-gemini-actions'\)/);
+  assert.match(gemini,/button\.dataset\.geminiBridge = 'home'/);
+  assert.match(gemini,/button\.addEventListener\('click', openPanel\)/);
+  assert.match(style,/\.home-gemini-actions\{[^}]*justify-content:flex-end[^}]*width:100%/);
 });

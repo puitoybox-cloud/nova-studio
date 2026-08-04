@@ -607,11 +607,11 @@ body:has(.atelier-home.home-only){
     linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
     var(--home-background-image,url('./assets/images/home/glass_fantasy_ui_background.jpg')) center/cover fixed no-repeat;
 }
-body[data-home-background="glass"]{--home-background-image:url('./assets/images/home/glass_fantasy_background.jpg')}
-body[data-home-background="glassUi"]{--home-background-image:url('./assets/images/home/glass_fantasy_ui_background.jpg')}
-body[data-home-background="nightSky"]{--home-background-image:url('./assets/images/home/night_sky_background.jpg')}
-body[data-home-background="shootingStars"]{--home-background-image:url('./assets/images/home/shooting_stars_background.jpg')}
-body[data-home-background="fantasyAtelier"]{--home-background-image:url('./assets/images/home/fantasy_atelier_background.png')}
+body[data-home-background="glass"]{--home-background-image:url('./glass_fantasy_background.jpg')}
+body[data-home-background="glassUi"]{--home-background-image:url('./glass_fantasy_ui_background.jpg')}
+body[data-home-background="nightSky"]{--home-background-image:url('./night_sky_background.jpg')}
+body[data-home-background="shootingStars"]{--home-background-image:url('./shooting_stars_background.jpg')}
+body[data-home-background="fantasyAtelier"]{--home-background-image:url('./fantasy_atelier_background.png')}
 body:has(.atelier-home.home-only)::before{
   content:"";
   position:fixed;
@@ -686,7 +686,7 @@ body:has(.atelier-home.home-only)::before{
 }
 
 /* Final layout separation: atelier home and management shell never stack. */
-body.is-home-route{background:var(--home-bg-image),linear-gradient(180deg,#effbff,#fff7ed);background-size:cover;background-position:center;background-attachment:fixed}
+body.is-home-route{background:linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),var(--home-background-image),linear-gradient(180deg,#effbff,#fff7ed);background-size:auto,cover,auto;background-position:center;background-attachment:fixed}
 body.is-management-route{background:linear-gradient(180deg,#f7fcff,#edf6fb)}
 body.is-management-route .home-only,body.is-home-route .management-header,body.is-home-route .management-layout,body.is-home-route .management-bottom{display:none!important}
 body.is-management-route #app{min-height:100vh;width:100%;overflow-x:clip}.management-header{position:sticky;top:0;z-index:12;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}.management-header .return-home{background:#12395d;color:#fff;border:1px solid #d8edf0}.hamburger{display:none;background:#e7f7f9;color:var(--navy)}.management-layout{display:grid;grid-template-columns:220px minmax(0,1fr)290px;gap:1rem;width:min(1500px,100%);margin:0 auto;padding:1rem}.management-nav{position:sticky;top:92px;align-self:start;max-height:calc(100vh - 110px);overflow:auto}.management-nav button{display:block;width:100%;margin:.18rem 0;text-align:left;background:#e7f7f9;color:var(--navy)}.management-nav-section{padding:.4rem;margin:.5rem 0;background:#fff;border-radius:16px}.management-nav-section>summary{min-height:44px}.management-main,.management-side{min-width:0}.management-side{align-self:start}.mobile-nav-backdrop{display:none}
@@ -715,6 +715,17 @@ body.is-home-route .flow-guide{
 body.is-management-route #app{
   width:100%;
   overflow-x:hidden;
+}
+.home-gemini-actions{
+  display:flex;
+  justify-content:flex-end;
+  width:100%;
+  margin:-.35rem 0 .65rem;
+}
+.home-gemini-actions [data-gemini-bridge]{
+  flex:0 1 auto;
+  max-width:100%;
+  margin:0;
 }
 .home-top-tools{
   position:absolute;
