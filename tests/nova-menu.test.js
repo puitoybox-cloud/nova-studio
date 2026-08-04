@@ -47,19 +47,19 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/width:min\(318px,88vw\)/);
   assert.match(source,/function placeToggle\(\)/);
   assert.match(source,/querySelector\('\.home-only \.atelier-hero'\)/);
-  assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:5px[^}]*left:12px/);
+  assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:2px[^}]*left:12px/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);
-  assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:3px;left:8px/);
+  assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
-  assert.match(style,/\.home-only \.atelier-action\{min-height:150px;padding:\.55rem \.7rem/);
-  assert.match(style,/\.home-only \.atelier-action \.action-character\{width:min\(100%,96px\);height:78px/);
+  assert.match(style,/\.home-only \.atelier-action\{min-height:135px;padding:\.35rem \.6rem/);
+  assert.match(style,/\.home-only \.atelier-action \.action-character\{width:min\(100%,86px\);height:68px/);
   assert.match(style,/\.home-only \.atelier-action button\{min-height:40px/);
-  assert.match(style,/@media\(max-width:1024px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:96px/);
-  assert.match(style,/@media\(max-width:760px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:84px/);
+  assert.match(style,/@media\(max-width:1024px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:86px/);
+  assert.match(style,/@media\(max-width:760px\)\{[\s\S]*?\.home-only \.atelier-action\{[^}]*min-height:76px/);
 });
 
 test('home fixes the atelier background without showing a background picker',()=>{
