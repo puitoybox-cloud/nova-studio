@@ -40,7 +40,7 @@
     if(!opening)animation.addEventListener('finish',()=>{details.open=false},{once:true});
   }
   function placeToggle(){
-    const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero');
+    const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero, .nova-unified-page .atelier-hero');
     const target=hero||menuBar;
     if(toggle.parentElement!==target)(hero?target.prepend(toggle):target.appendChild(toggle));
   }

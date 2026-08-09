@@ -77,7 +77,7 @@ test('Universe uses one home-style panel with compact context filters and zoom c
   assert.match(app,/class="universe-zoom"/);
   assert.match(app,/if\(route==='universe'\)\{[\s\S]*?return;/);
   assert.match(css,/body\.is-management-route\.is-universe-route\{[^}]*fantasy_atelier_background\.png/);
-  assert.match(menuCss,/:is\(body\.is-home-route,body\.is-universe-route\) \.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px/);
+  assert.match(menuCss,/:is\(body\.is-home-route,body\.is-universe-route,body\.is-unified-route\) \.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px/);
   assert.match(css,/\.universe-main \.universe\{height:var\(--universe-desktop-height\)/);
   assert.match(app,/unlinked\.length\?`<section class="universe-unlinked"/);
 });
