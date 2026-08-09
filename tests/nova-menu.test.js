@@ -28,9 +28,10 @@ test('menu provides the current Studio and management destinations without legac
   assert.doesNotMatch(html,/Dream Architect Studio|data-menu-back|>戻る</);
   assert.equal((html.match(/data-menu-close/g)||[]).length,1);
   assert.match(html,/class="nova-menu-close"[^>]*aria-label="メニューを閉じる"><span aria-hidden="true">×<\/span>/);
-  assert.match(html,/<details class="nova-menu-group" open>[\s\S]*?<summary>制作Studio<\/summary>/);
-  assert.match(html,/<details class="nova-menu-group" open>[\s\S]*?<summary>管理・保管<\/summary>/);
-  assert.match(html,/<h3 id="nova-menu-other-title">その他<\/h3>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>制作Studio<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>管理・保管<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>その他<\/summary>/);
+  assert.equal((html.match(/<details class="nova-menu-group">/g)||[]).length,3);
   assert.match(html,/aria-controls="novaMenuPanel"/);
   assert.match(html,/aria-expanded="false"/);
   assert.match(html,/aria-hidden="true"/);
@@ -41,6 +42,7 @@ test('menu provides the current Studio and management destinations without legac
   assert.match(source,/if\(restoreFocus\)\{toggle\.focus\(\);setTimeout\(\(\)=>toggle\.focus\(\),0\)\}/);
   assert.match(source,/scrim\.addEventListener\('pointerdown',event=>event\.preventDefault\(\)\)/);
   assert.match(source,/button\.setAttribute\('aria-current','page'\)/);
+  assert.match(source,/function toggleGroup\(event\)/);
 });
 
 test('the upper-left control is a minimal hamburger and MENU label with a responsive restrained panel',()=>{
@@ -66,6 +68,8 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/@media\(max-width:760px\)\{:is\(body\.is-home-route,body\.is-universe-route\) \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
   assert.match(css,/body:has\(\.nova-menu-root\.is-open\) \.nova-menu-toggle\{opacity:0!important;pointer-events:none\}/);
   assert.match(css,/\.nova-menu-panel button\.is-current\{[^}]*box-shadow:inset 3px 0 #7ee7ff/);
+  assert.match(css,/\.nova-menu-toggle\{[^}]*white-space:nowrap/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group\{[^}]*background:rgba\(255,255,255,\.025\)[^}]*box-shadow:none/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{

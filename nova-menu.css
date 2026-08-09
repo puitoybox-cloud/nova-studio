@@ -2,7 +2,7 @@
 .nova-menu-root{position:relative;z-index:2147483000;display:block!important;visibility:visible!important;opacity:1!important;color:#fff}
 .nova-menu-bar{position:static;display:contents;background:none;border:0;box-shadow:none}
 .nova-menu-toggle{position:fixed;z-index:2147483002;top:max(var(--nova-menu-edge),env(safe-area-inset-top));margin:0!important;background:transparent!important;border:0!important;color:#fff;box-shadow:none!important}
-.nova-menu-toggle{left:max(var(--nova-menu-edge),env(safe-area-inset-left));display:flex!important;width:var(--nova-menu-control);height:var(--nova-menu-control);min-height:var(--nova-menu-control);padding:0!important;align-items:center;justify-content:center;border-radius:0!important;text-shadow:0 1px 3px rgba(0,0,0,.38)}
+.nova-menu-toggle{left:max(var(--nova-menu-edge),env(safe-area-inset-left));display:flex!important;width:var(--nova-menu-control);height:var(--nova-menu-control);min-height:var(--nova-menu-control);padding:0!important;align-items:center;justify-content:center;border-radius:0!important;text-shadow:0 1px 3px rgba(0,0,0,.38);white-space:nowrap}
 .nova-menu-toggle:hover,.nova-menu-toggle:active{background:transparent!important;color:#fff;filter:brightness(1.18)}
 .nova-menu-glyph{display:block!important;color:currentColor;font-size:27px;font-weight:400;line-height:1;transform:none;opacity:1!important;transition:transform .18s}
 .nova-menu-label{display:none;color:currentColor;font-size:10px;font-weight:900;line-height:1;letter-spacing:.08em}
@@ -10,25 +10,22 @@ body:has(.nova-menu-root.is-open) .nova-menu-glyph{transform:rotate(90deg)}
 body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-events:none}
 .nova-menu-toggle:focus-visible,.nova-menu-panel button:focus-visible,.nova-menu-panel summary:focus-visible{outline:3px solid #7ee7ff;outline-offset:2px}
 .nova-menu-scrim{position:fixed;z-index:2147483000;inset:0;background:rgba(0,0,0,.36)}
-.nova-menu-panel{position:fixed;z-index:2147483001;display:block!important;top:0;bottom:0;left:0;width:min(312px,86vw);height:100vh;height:100dvh;padding:max(.65rem,env(safe-area-inset-top)) .7rem max(.75rem,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;background:rgba(7,16,28,.86);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%);border-right:1px solid rgba(190,230,242,.14);box-shadow:18px 0 42px rgba(0,0,0,.24);transform:translateX(-105%);visibility:hidden;opacity:0;pointer-events:none;transition:transform .22s ease,visibility .22s,opacity .22s}
+.nova-menu-panel{position:fixed;z-index:2147483001;display:block!important;top:0;bottom:0;left:0;width:min(312px,86vw);height:100vh;height:100dvh;padding:max(.35rem,env(safe-area-inset-top)) .7rem max(.75rem,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;background:rgba(7,16,28,.9);-webkit-backdrop-filter:blur(18px) saturate(125%);backdrop-filter:blur(18px) saturate(125%);border-right:1px solid rgba(190,230,242,.14);box-shadow:18px 0 42px rgba(0,0,0,.24);transform:translateX(-105%);visibility:hidden;opacity:0;pointer-events:none;transition:transform .22s ease,visibility .22s,opacity .22s;scrollbar-width:thin;scrollbar-color:rgba(159,194,210,.35) transparent}
 .nova-menu-root.is-open .nova-menu-panel{transform:translateX(0);visibility:visible!important;opacity:1!important;pointer-events:auto}
 .nova-menu-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 .35rem;padding:0 0 .45rem .35rem;color:#eaf8ff;border-bottom:1px solid rgba(255,255,255,.13)}
-.nova-menu-heading h2{margin:0;font-size:.88rem;line-height:1;letter-spacing:.16em}
+.nova-menu-heading h2{margin:0;font-size:.88rem;line-height:1;letter-spacing:.16em;white-space:nowrap}
 .nova-menu-heading .nova-menu-close{display:grid!important;place-items:center;width:44px!important;height:44px;min-height:44px;margin:0;padding:0!important;border-radius:10px;font-size:1.45rem!important;line-height:1;color:#eaf8ff!important}
-.nova-menu-panel button{display:flex;align-items:center;width:100%;min-height:40px;margin:.05rem 0;padding:.45rem .65rem;text-align:left;color:#f5fbff;background:transparent;border:1px solid transparent;border-radius:9px;font-size:.83rem;font-weight:700;line-height:1.25}
+.nova-menu-panel button{display:flex;align-items:center;width:100%;min-height:44px;margin:0;padding:.35rem .65rem;text-align:left;color:#f5fbff;background:transparent;border:1px solid transparent;border-radius:8px;font-size:.83rem;font-weight:700;line-height:1.2}
 .nova-menu-panel button:hover,.nova-menu-panel button:active{background:rgba(126,231,255,.1);border-color:rgba(126,231,255,.14);filter:none}
 .nova-menu-panel button.is-current{background:rgba(126,231,255,.16);border-color:rgba(126,231,255,.3);color:#fff;box-shadow:inset 3px 0 #7ee7ff}
-.nova-menu-group{margin:.3rem 0;border-top:1px solid rgba(255,255,255,.1)}
-.nova-menu-group summary,.nova-menu-section h3{min-height:36px;margin:0;padding:.55rem .4rem .35rem;color:#9fc2d2;font-size:.72rem;font-weight:900;line-height:1.2;letter-spacing:.08em;cursor:pointer}
-.nova-menu-group summary{display:flex;align-items:center;justify-content:space-between;list-style:none}
+.nova-menu-panel .nova-menu-group{margin:.3rem 0;padding:0;background:rgba(255,255,255,.025);border:0;border-top:1px solid rgba(255,255,255,.1);border-radius:8px;box-shadow:none;color:#f5fbff}
+.nova-menu-group summary{min-height:44px;margin:0;padding:.45rem .4rem;color:#b7d8e6;font-size:.75rem;font-weight:900;line-height:1.2;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:space-between;list-style:none}
 .nova-menu-group summary::-webkit-details-marker{display:none}
-.nova-menu-group summary:after{content:'＋';font-size:.9rem;letter-spacing:0}
-.nova-menu-group[open] summary:after{content:'−'}
-.nova-menu-group-items{padding:0 .15rem .2rem}
-.nova-menu-group-items button{padding-left:.8rem}
-.nova-menu-section{margin:.3rem 0 0;border-top:1px solid rgba(255,255,255,.1)}
-.nova-menu-section h3{cursor:default}
-@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:39px}}
+.nova-menu-group summary:after{content:'›';font-size:1.15rem;line-height:1;letter-spacing:0;transform:rotate(0);transition:transform .16s ease}
+.nova-menu-group[open] summary:after{transform:rotate(90deg)}
+.nova-menu-group-items{padding:0 .15rem .2rem;overflow:hidden}
+.nova-menu-group-items button{padding-left:1rem}
+@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:44px}}
 :is(body.is-home-route,body.is-universe-route) .atelier-hero>.nova-menu-toggle{position:absolute;top:2px;left:12px;width:auto;min-width:72px;height:44px;min-height:44px;padding:0 4px!important;gap:5px;background:transparent!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;color:#17212a;text-shadow:0 1px 1px rgba(255,255,255,.82)}
 :is(body.is-home-route,body.is-universe-route) .atelier-hero>.nova-menu-toggle .nova-menu-glyph{font-size:23px}
 :is(body.is-home-route,body.is-universe-route) .atelier-hero>.nova-menu-toggle .nova-menu-label{display:block}

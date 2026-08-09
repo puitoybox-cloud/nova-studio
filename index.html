@@ -36,7 +36,7 @@
         <button class="nova-menu-close" type="button" data-menu-close aria-label="メニューを閉じる"><span aria-hidden="true">×</span></button>
       </div>
       <button type="button" data-route="home">ホーム</button>
-      <details class="nova-menu-group" open>
+      <details class="nova-menu-group">
         <summary>制作Studio</summary>
         <div class="nova-menu-group-items">
           <button type="button" data-command="story-studio">Story Studio</button>
@@ -51,7 +51,7 @@
           <button type="button" data-command="web-studio">Web Studio</button>
         </div>
       </details>
-      <details class="nova-menu-group" open>
+      <details class="nova-menu-group">
         <summary>管理・保管</summary>
         <div class="nova-menu-group-items">
           <button type="button" data-command="story-archive" data-active-route="storyArchive">Story Archive</button>
@@ -59,12 +59,14 @@
           <button type="button" data-route="universe">Universe</button>
         </div>
       </details>
-      <div class="nova-menu-section" aria-labelledby="nova-menu-other-title">
-        <h3 id="nova-menu-other-title">その他</h3>
-        <button type="button" data-route="projects">プロジェクト</button>
-        <button type="button" data-route="settings">設定</button>
-        <button type="button" data-route="backup">バックアップ</button>
-      </div>
+      <details class="nova-menu-group">
+        <summary>その他</summary>
+        <div class="nova-menu-group-items">
+          <button type="button" data-route="projects">プロジェクト</button>
+          <button type="button" data-route="settings">設定</button>
+          <button type="button" data-route="backup">バックアップ</button>
+        </div>
+      </details>
     </div>
   </div>
   <div id="app"></div>

@@ -24,6 +24,21 @@
       if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     });
   }
+  function toggleGroup(event){
+    event.preventDefault();
+    const details=event.currentTarget.parentElement;
+    const items=details.querySelector('.nova-menu-group-items');
+    const opening=!details.open;
+    if(opening)details.open=true;
+    if(!items||matchMedia('(prefers-reduced-motion: reduce)').matches){details.open=opening;return}
+    const animation=items.animate(
+      opening
+        ?[{opacity:0,transform:'translateY(-4px)'},{opacity:1,transform:'translateY(0)'}]
+        :[{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-4px)'}],
+      {duration:160,easing:'ease-out'}
+    );
+    if(!opening)animation.addEventListener('finish',()=>{details.open=false},{once:true});
+  }
   function placeToggle(){
     const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero');
     const target=hero||menuBar;
@@ -77,6 +92,7 @@
   scrim.addEventListener('pointerdown',event=>event.preventDefault());
   scrim.addEventListener('click',event=>{event.preventDefault();closeMenu()});
   root.querySelectorAll('[data-menu-close]').forEach(button=>button.addEventListener('click',()=>closeMenu()));
+  root.querySelectorAll('.nova-menu-group>summary').forEach(summary=>summary.addEventListener('click',toggleGroup));
   root.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>go(button.dataset.route)));
   root.querySelectorAll('[data-command]').forEach(button=>button.addEventListener('click',()=>runCommand(button.dataset.command)));
   document.addEventListener('keydown',event=>{
