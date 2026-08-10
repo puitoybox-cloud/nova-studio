@@ -85,6 +85,7 @@ test('Music Studio keeps common surfaces while production menu cards retain thei
   assert.match(style,/\.atelier-continue\{[^}]*background:var\(--nova-continue-surface\)/);
   assert.match(musicCss,/\.is-studio-route \.music-studio-shell :is\(\.music-quick-nav \.music-secondary,\.music-recent,\.music-recent-item,\.music-status-summary div\),\.music-project-page :is\(\.music-project-panel,\.music-project-row\)\{background:var\(--nova-continue-surface\)\}/);
   assert.match(musicCss,/\.music-feature-card\{[^}]*background:linear-gradient\(150deg,#132033,#0d1725\)/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\]\{[^}]*width:min\(1132px,calc\(100vw - 48px\)\);max-width:none/);
   assert.doesNotMatch(musicCss,/\.is-studio-route[^{}]*\.music-feature-card/);
 });
 
