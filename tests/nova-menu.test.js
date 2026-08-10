@@ -70,6 +70,10 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/\.nova-menu-panel button\.is-current\{[^}]*box-shadow:inset 3px 0 #7ee7ff/);
   assert.match(css,/\.nova-menu-toggle\{[^}]*white-space:nowrap/);
   assert.match(css,/\.nova-menu-panel \.nova-menu-group\{[^}]*background:rgba\(255,255,255,\.025\)[^}]*box-shadow:none/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group-items button,[\s\S]*?color:#f5fbff!important;[\s\S]*?opacity:1!important;[\s\S]*?filter:none!important;[\s\S]*?-webkit-text-fill-color:currentColor/);
+  assert.match(css,/\.nova-menu-panel small,[\s\S]*?color:#d8eef8!important/);
+  assert.match(css,/button\[aria-current="page"\]\{color:#f5fbff!important;background:rgba\(126,231,255,\.18\)/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group\{background:rgba\(255,255,255,\.04\)\}/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{

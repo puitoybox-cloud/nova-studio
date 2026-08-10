@@ -25,6 +25,56 @@ body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-
 .nova-menu-group[open] summary:after{transform:rotate(90deg)}
 .nova-menu-group-items{padding:0 .15rem .2rem;overflow:hidden}
 .nova-menu-group-items button{padding-left:1rem}
+.nova-menu-panel,
+.nova-menu-panel .nova-menu-group,
+.nova-menu-panel .nova-menu-group-items,
+.nova-menu-panel .nova-menu-group-items button,
+.nova-menu-panel button,
+.nova-menu-panel button span,
+.nova-menu-panel button strong,
+.nova-menu-panel summary,
+.nova-menu-panel summary span,
+.nova-menu-panel summary strong{
+  color:#f5fbff!important;
+  opacity:1!important;
+  filter:none!important;
+  text-shadow:none!important;
+  -webkit-text-fill-color:currentColor;
+}
+.nova-menu-panel small,
+.nova-menu-panel button small,
+.nova-menu-panel summary small{
+  color:#d8eef8!important;
+  opacity:1!important;
+  filter:none!important;
+  text-shadow:none!important;
+  -webkit-text-fill-color:currentColor;
+}
+.nova-menu-panel .nova-menu-heading,
+.nova-menu-panel .nova-menu-heading h2,
+.nova-menu-panel .nova-menu-heading span,
+.nova-menu-panel .nova-menu-close{
+  color:#eaf8ff!important;
+  opacity:1!important;
+  filter:none!important;
+  text-shadow:none!important;
+  -webkit-text-fill-color:currentColor;
+}
+.nova-menu-panel .nova-menu-group{background:rgba(255,255,255,.04)}
+.nova-menu-panel .nova-menu-group-items button,
+.nova-menu-panel>button{background:rgba(255,255,255,.04)}
+.nova-menu-panel .nova-menu-group-items button:hover,
+.nova-menu-panel .nova-menu-group-items button:active,
+.nova-menu-panel .nova-menu-group-items button:focus-visible,
+.nova-menu-panel>button:hover,
+.nova-menu-panel>button:active,
+.nova-menu-panel>button:focus-visible{color:#f5fbff!important;background:rgba(126,231,255,.12);opacity:1!important;filter:none!important;-webkit-text-fill-color:currentColor}
+.nova-menu-panel button.is-current,
+.nova-menu-panel button[aria-current="page"]{color:#f5fbff!important;background:rgba(126,231,255,.18);opacity:1!important;filter:none!important;-webkit-text-fill-color:currentColor}
+.nova-menu-panel details[open]>.nova-menu-group-items,
+.nova-menu-panel details[open]>summary{color:#f5fbff!important;opacity:1!important;filter:none!important;-webkit-text-fill-color:currentColor}
+.nova-menu-panel button:not(:disabled):not([aria-disabled="true"]),
+.nova-menu-panel summary:not([aria-disabled="true"]){opacity:1!important;filter:none!important}
 @media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:44px}}
 :is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle{position:absolute;top:2px;left:12px;width:auto;min-width:72px;height:44px;min-height:44px;padding:0 4px!important;gap:5px;background:transparent!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;color:#17212a;text-shadow:0 1px 1px rgba(255,255,255,.82)}
 :is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle .nova-menu-glyph{font-size:23px}
