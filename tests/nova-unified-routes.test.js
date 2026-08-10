@@ -47,6 +47,14 @@ test('Home background is shared by Universe unified pages and every Studio route
   assert.match(css,/body:is\(\.is-home-route,\.is-management-route\.is-universe-route,\.is-unified-route,\.is-studio-route\)\{[^}]*radial-gradient\(circle at 16% 8%[^}]*fantasy_atelier_background\.png[^}]*center\/cover fixed no-repeat/);
 });
 
+test('shared routes use the Home text hierarchy with dark-surface contrast',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','nova-unified-ui.css'),'utf8');
+  for(const token of ['--nova-text-heading:#12395d','--nova-text-body:#153044','--nova-text-muted:#5b7083','--nova-text-action:#12395d','--nova-text-heading-on-dark:#fff','--nova-text-muted-on-dark:#dce8f5'])assert.match(css,new RegExp(token));
+  assert.match(css,/\.nova-studio-route-content\) :is\(h1,h2,h3,h4,h5,h6\)\{color:var\(--nova-text-heading\)\}/);
+  assert.match(css,/\.music-studio-shell :is\(h1,h2,h3,h4,h5,h6\)\{color:var\(--nova-text-heading-on-dark\)\}/);
+  assert.match(css,/input,textarea\)::placeholder\{color:var\(--nova-text-muted\);opacity:1\}/);
+});
+
 test('one shared menu toggle is moved directly into every supported Hero',()=>{
   assert.match(menu,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero, \.nova-studio-route-main \.atelier-hero'\)/);
   assert.match(menu,/if\(toggle\.parentElement!==target\)\(hero\?target\.prepend\(toggle\):target\.appendChild\(toggle\)\)/);

@@ -1,9 +1,40 @@
 body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,.is-studio-route){
+  --nova-text-heading:#12395d;
+  --nova-text-body:#153044;
+  --nova-text-muted:#5b7083;
+  --nova-text-action:#12395d;
+  --nova-text-accent:#c99a2e;
+  --nova-text-on-accent:#fff;
+  --nova-text-heading-on-dark:#fff;
+  --nova-text-body-on-dark:#ecf4ff;
+  --nova-text-muted-on-dark:#dce8f5;
+  --nova-text-accent-on-dark:#7dd3fc;
   background:
     radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
     linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
     url('./fantasy_atelier_background.png') center/cover fixed no-repeat;
+  color:var(--nova-text-body);
 }
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(h1,h2,h3,h4,h5,h6){color:var(--nova-text-heading)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(p,li,dd,td,th){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.meta,small,.empty-note,.music-help,.music-empty){color:var(--nova-text-muted)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) .eyebrow{color:var(--nova-text-accent)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(label,legend,dt){color:var(--nova-text-heading)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(input,select,textarea){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(input,textarea)::placeholder{color:var(--nova-text-muted);opacity:1}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) a{color:var(--nova-text-action)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.secondary,.link-action,.music-secondary){color:var(--nova-text-action)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.primary-action,.danger){color:var(--nova-text-on-accent)}
+.is-studio-route .nova-studio-route-content .music-studio-shell{color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(h1,h2,h3,h4,h5,h6){color:var(--nova-text-heading-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(p,li,dd,td,th,label,legend,dt){color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(.meta,small,.empty-note,.music-help,.music-empty){color:var(--nova-text-muted-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell .music-kicker{color:var(--nova-text-accent-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(input,select,textarea){color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(input,textarea)::placeholder{color:var(--nova-text-muted-on-dark);opacity:1}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(a,.music-secondary){color:var(--nova-text-heading-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell .music-primary{color:#082032}
 :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){
   width:min(100%,1120px);
   max-width:none;
