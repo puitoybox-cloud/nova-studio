@@ -16,6 +16,30 @@ test('unsupported Web MIDI environment is reported without throwing',async()=>{
   const result=await midi.requestAccess();
   assert.equal(result.supported,false);assert.equal(result.access,null);assert.equal(result.inputs.length,0);
 });
+test('Web MIDI capability takes priority over Safari tokens in Mac Chrome',()=>{
+  const midi=load({
+    userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+    vendor:'Google Inc.',
+    requestMIDIAccess:async()=>({inputs:new Map()})
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(midi.supportInfo())),{
+    webMidi:true,safariLike:false,
+    userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+    vendor:'Google Inc.'
+  });
+});
+test('Safari guidance classification requires no Web MIDI API and excludes iOS Chrome',()=>{
+  const macSafari=load({userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/17.6 Safari/605.1.15',vendor:'Apple Computer, Inc.'});
+  const ipadSafari=load({userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) Version/17.6 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'});
+  const ipadChrome=load({userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'});
+  assert.equal(macSafari.supportInfo().safariLike,true);
+  assert.equal(ipadSafari.supportInfo().safariLike,true);
+  assert.deepEqual(JSON.parse(JSON.stringify(ipadChrome.supportInfo())),{
+    webMidi:false,safariLike:false,
+    userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',
+    vendor:'Apple Computer, Inc.'
+  });
+});
 test('note-on and note-off preserve pitch velocity channel and calculate ticks',()=>{
   const midi=load({}),recorder=midi.createRecorder({ppq:480,tempo:120});
   recorder.start(1000);

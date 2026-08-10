@@ -5,9 +5,9 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
-function load(){
+function load(navigator={}){
   const values=new Map([['novaStudio_v01','nova-safe'],['aiMusicHelperProject','ai-safe']]);
-  const window={crypto:{randomUUID:()=>`id-1`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
+  const window={navigator,crypto:{randomUUID:()=>`id-1`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
   const midiSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi.js'),'utf8');vm.runInNewContext(midiSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi.js'});const parserSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-parser.js'),'utf8');vm.runInNewContext(parserSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi-parser.js'});const editorSource=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');vm.runInNewContext(editorSource,{window,globalThis:window},{filename:'music-studio-editor.js'});const inputSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-input.js'),'utf8');vm.runInNewContext(inputSource,{window,globalThis:window},{filename:'music-studio-midi-input.js'});
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});return{app:window.MusicStudio,values,window};
 }
@@ -66,14 +66,14 @@ test('Correction repaint preserves page Piano Roll and popover scroll while noti
   assert.equal(app.state.midiEditor.view.correctionMenuOpen,true);assert.equal(app.state.midiEditor.view.correctionPopoverScrollTop,321);
   assert.equal(viewport.scrollTop,1234);assert.equal(viewport.scrollLeft,567);assert.equal(popover.scrollTop,321);
   assert.ok(scrollCalls.length>=2);assert.equal(JSON.stringify(scrollCalls[0]),'{"left":40,"top":260,"behavior":"instant"}');
-  assert.equal(popover.style.top,'46px');assert.equal(popover.style.maxHeight,'842px');assert.equal(popover.style.overflowY,'auto');
+  assert.equal(popover.style.top,'calc(100% + 8px)');assert.equal(popover.style.right,'0');assert.equal(popover.style.width,'min(720px,calc(100vw - 24px))');assert.equal(popover.style.maxHeight,'688px');assert.equal(popover.style.overflowY,'auto');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-notice\{position:fixed;z-index:1000;[^}]*right:12px/);
   assert.match(css,/\.music-correction-batch-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/\.music-correction-popover\{right:0;left:auto;width:min\(720px,[^}]*overscroll-behavior:contain/);
   assert.ok(source.includes('},2600)||null'));
 });
-test('editor chrome is compact, Melody helpers stay intact, and Correction uses responsive side surfaces',()=>{
+test('editor chrome is compact, Melody helpers stay intact, and Correction uses a responsive overlay',()=>{
   const{app}=load(),project=app.makeProject({projectId:'compact-editor-surfaces',projectName:'Compact editor surfaces'});
   app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/class="music-editor-chrome"><header class="music-editor-heading"/);
@@ -83,14 +83,17 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
   assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
-  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\)/);
+  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:100%;min-width:0;max-width:none;transition:none\}/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:auto minmax\(0,1fr\) auto/);
-  assert.match(css,/\.music-correction-popover\{position:fixed;z-index:80;width:min\(400px/);
+  assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
 });
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
-  const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
+  const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/17.6 Safari/605.1.15',vendor:'Apple Computer, Inc.'};
+  const{app}=load(navigator),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力）<select disabled[^>]*><option selected>SafariではMIDI入力を利用できません<\/option><\/select><small>Mac Chromeで開いてください<\/small>/);
+  assert.match(html,/class="music-editor-menu music-midi-input-menu"><summary aria-label="MIDI入力">MIDI入力<\/summary>/);
+  assert.match(html,/class="music-midi-browser-guidance" role="status"><b>SafariではMIDI入力を利用できません<\/b><small>Mac Chromeで開いてください<\/small>/);
+  assert.doesNotMatch(html,/select disabled[^>]*aria-label="MIDI Input/);
   assert.match(html,/editorToggleMidiRecording\(\)" disabled aria-disabled="true"/);
   assert.doesNotMatch(html,/MIDI未接続|music-midi-status|MIDI Devices（デバイス一覧）/);
   assert.doesNotMatch(html,/music-midi-rescan|Check Connection（接続確認）/);
@@ -103,13 +106,32 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.doesNotMatch(html,/Back（戻る）|Next（進む）/);
   for(const label of ['Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
   const keys={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},pads={id:'pads',name:'MPD218',onmidimessage:null};
+  navigator.requestMIDIAccess=async()=>app.state.midiInput.access;
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};app.state.midiInput.recording=true;app.state.midiInput.recorder={recording:false};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力）/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__" >↻ 再検出/);
+  assert.match(html,/<summary aria-label="MIDI入力">MIDI入力<\/summary>/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__">↻ 再検出/);assert.match(html,/接続状態/);
   assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-correction-popover input\[type=radio\]\{appearance:auto;width:18px!important/);
+  assert.match(css,/iPad: let the toolbar own its rendered height/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
+  assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
+});
+test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
+  const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
+  const{app}=load(navigator),project=app.makeProject({projectId:'chrome-midi',projectName:'Chrome MIDI'});
+  app.state.projects=[project];app.state.midiInput.inputs=[{id:'keyboard',name:'MIDI Keyboard'}];app.state.midiInput.selectedId='keyboard';app.state.midiInput.status='1台のMIDI入力を検出しました。';
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/aria-label="MIDI機器選択"/);assert.match(html,/>↻ 再検出</);assert.match(html,/接続状態/);
+  assert.doesNotMatch(html,/SafariではMIDI入力を利用できません|Mac Chromeで開いてください/);
+});
+test('iPad Chrome without Web MIDI receives generic capability guidance',()=>{
+  const navigator={userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'};
+  const{app}=load(navigator),project=app.makeProject({projectId:'ipad-chrome-midi',projectName:'iPad Chrome MIDI'});
+  app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/この環境ではWeb MIDI APIを利用できません/);assert.doesNotMatch(html,/SafariではMIDI入力を利用できません/);
 });
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
@@ -518,12 +540,13 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-midi-note\.is-selected\{[^}]*background:linear-gradient\(180deg,#c4b5fd,#a78bfa\)/);
   assert.match(css,/@media\(max-width:900px\)\{[^}]*\.music-midi-editor-page \.music-editor-topbar\{gap:7px;padding:7px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-menu\{display:flex;align-items:center;margin:0;padding:0;border:0;background:transparent;box-shadow:none\}/);
-  assert.match(css,/@media\(min-width:901px\)\{\.music-midi-editor-page \.music-editor-topbar\{display:grid;grid-template-columns:1fr 1fr 1\.35fr 1\.45fr \.9fr 1\.9fr/);
+  assert.match(css,/@media\(min-width:901px\)\{\.music-midi-editor-page \.music-editor-topbar\{display:flex;align-items:center/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>\.music-editor-menu,\.music-midi-editor-page \.music-editor-topbar>\.music-editor-save\{width:max-content;max-width:100%;flex:0 0 auto\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{min-height:124px;margin:0;padding:14px;border-color:var\(--music-editor-border\);border-radius:12px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section>div>button\{flex:0 0 auto;max-width:100%\}/);
   assert.match(html,/<span class="music-record-dot" aria-hidden="true">●<\/span> Record（録音）/);
   for(const label of ['Clear Loop（ループ解除）','Play（再生）','Stop（停止）','Snap ON（スナップON）','Fit Range（音域を表示）','Add Measure（小節を追加）','Select（選択）','Add Note（ノート追加）','Eraser（消しゴム）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Match Length（長さを揃える）','Match Velocity（Velocityを揃える）'])assert.ok(html.includes(label));
-  for(const label of ['Project（プロジェクト情報）','Shortcuts（ショートカット）','Import / Export（読み込み／書き出し）','Melody Correction（メロディ補正）','Saved（保存済み）','MIDI Input（MIDI入力）'])assert.ok(html.includes(label));
+  for(const label of ['Project（プロジェクト情報）','Shortcuts（ショートカット）','Import / Export（読み込み／書き出し）','Melody Correction（メロディ補正）','Saved（保存済み）','MIDI入力'])assert.ok(html.includes(label));
   assert.match(html,/onclick="MusicStudio\.editorStopTransport\(\)"/);
   const transport=html.match(/<div class="music-transport-controls">([\s\S]*?)<\/div>/)?.[1]||'',transportLabels=['Record（録音）','Play（再生）','Stop（停止）','Loop ','Clear Loop（ループ解除）'];
   transportLabels.reduce((previous,label)=>{const index=transport.indexOf(label);assert.ok(index>previous,`${label} should follow the previous transport control`);return index},-1);
@@ -554,6 +577,22 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
   assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
+});
+test('project save restores Zoom, Fit Range, and Piano Roll scroll with legacy defaults',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),legacy=app.makeProject({projectId:'saved-editor-view',projectName:'Saved editor view',musicalSettings:{bars:12},midiData:{editor:{measureCount:12,loopEnabled:true,loopStart:0,loopEnd:1920},tracks:[{part:'melody',notes:[{id:'low',pitch:40,startTick:0,durationTicks:480,velocity:90},{id:'high',pitch:82,startTick:960,durationTicks:240,velocity:105}]}]}});
+  app.setRepository(repo);await repo.put(legacy);app.state.projects=[legacy];app.renderRoute(`music-studio/midi-editor/${legacy.projectId}`);
+  assert.deepEqual(JSON.parse(JSON.stringify(app.state.midiEditor.view)),{zoom:1,pitchMin:37,pitchMax:85,pitchScrollTop:null,pitchScrollLeft:0});
+  app.editorZoom(1);await app.state.midiEditorSavePromise;
+  app.state.midiEditor.view.pitchMin=48;app.state.midiEditor.view.pitchMax=72;
+  app.editorFitPitchRange();await app.state.midiEditorSavePromise;
+  app.editorRememberPitchScroll({scrollTop:864,scrollLeft:432});await new Promise(resolve=>setTimeout(resolve,350));if(app.state.midiEditorSavePromise)await app.state.midiEditorSavePromise;
+  const stored=await repo.get(legacy.projectId);
+  assert.deepEqual(JSON.parse(JSON.stringify(stored.midiData.editor.view)),{zoom:2,pitchMin:37,pitchMax:85,pitchScrollTop:864,pitchScrollLeft:432});
+  assert.equal(stored.midiData.editor.measureCount,12);assert.equal(stored.midiData.editor.loopEnabled,true);assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,2);assert.equal(stored.musicalSettings.bars,12);
+  app.state.midiEditor=null;app.state.projects=[stored];let html=app.renderRoute(`music-studio/midi-editor/${legacy.projectId}`);
+  assert.equal(app.state.midiEditor.view.zoom,2);assert.equal(app.state.midiEditor.view.pitchMin,37);assert.equal(app.state.midiEditor.view.pitchMax,85);assert.equal(app.state.midiEditor.view.pitchScrollTop,864);assert.equal(app.state.midiEditor.view.pitchScrollLeft,432);
+  assert.match(html,/時間軸 Zoom：2x/);assert.match(html,/data-initial-scroll-top="864" data-initial-scroll-left="432"/);
+  assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(app.state.midiEditor.selectedNoteId,null);assert.equal(app.state.midiEditor.clipboard.length,0);assert.equal(app.state.midiEditor.correctionPreview,null);
 });
 test('Piano Roll shows beat and zoom-sensitive subdivision grid',()=>{
   const{app}=load(),project=app.makeProject({projectId:'time-grid',projectName:'Time grid',timeSignature:'4/4'});

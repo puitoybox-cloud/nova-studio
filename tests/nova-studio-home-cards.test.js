@@ -96,6 +96,6 @@ test('legacy feature catalogs and Dream Architect entry stay available but are n
   assert.match(dreamLink,/if\(html\.includes\('class="atelier-home home-only"'\)\)return html/);
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/homeBackupSummary\(\)/);
-  assert.match(geminiBridge,/document\.querySelector\('nav:not\(\.atelier-management-links\)'\)/);
-  assert.match(geminiBridge,/document\.querySelector\('header:not\(\.universe-header\)'\)/);
+  assert.match(geminiBridge,/querySelectorAll\('nav:not\(\.atelier-management-links\)'\)\]\.find\(element => !element\.closest\('\.music-midi-editor-page'\)\)/);
+  assert.match(geminiBridge,/querySelectorAll\('header:not\(\.universe-header\)'\)\]\.find\(element => !element\.closest\('\.music-midi-editor-page'\)\)/);
 });

@@ -43,6 +43,7 @@ test('one Hero renderer owns the shared 1920 by 480 DOM format',()=>{
 test('Studio shell shares route geometry and receives the existing menu toggle',()=>{
   assert.match(css,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1[\s\S]*?border-radius:34px/);
   assert.match(css,/\.nova-studio-route-main>\.atelier-hero>\.atelier-hero-media>img\{[\s\S]*?width:100%;[\s\S]*?height:100%;[\s\S]*?object-fit:contain/);
+  assert.match(css,/\.studio-route-hero\[data-studio-key="music"\] \.studio-hero-copy\{right:5px;left:auto;width:max-content;max-width:44%\}/);
   assert.match(menu,/\.nova-studio-route-main \.atelier-hero/);
   assert.equal((html.match(/class="nova-menu-toggle"/g)||[]).length,1);
 });
@@ -57,11 +58,12 @@ test('Home cards and common menu enter the configured Studio routes',()=>{
   assert.match(app,/if\(appId==='voiceStudio'&&!urlOverride\)return setView\('voice-studio'\)/);
 });
 
-test('actual Studio route branch renders before legacy shell and keeps route-specific content',()=>{
+test('Music Studio keeps the common post-unification Hero shell',()=>{
   const finalLayout=app.slice(app.indexOf('/* Final layout separation'),app.indexOf('/* Story Archive 1.3'));
   const studioBranch=finalLayout.indexOf('if(studioHeroConfigForRoute(v))');
   const legacyShell=finalLayout.indexOf('shell(managementViewForRoute(v))');
   assert.ok(studioBranch>0&&legacyShell>studioBranch);
+  assert.match(finalLayout,/function studioHeroConfigForRoute\(route\)[\s\S]*startsWith\('music-studio\/'\)/);
   assert.match(finalLayout,/novaRenderStudioRoute\(v,managementViewForRoute\(v\)\)/);
   assert.match(finalLayout,/if\(v==='story-studio'\)return storyCollectionView\('scenes'\)/);
   assert.match(finalLayout,/if\(v==='character-studio'\)return storyCollectionView\('characters'\)/);

@@ -35,6 +35,12 @@ test('home and Universe keep their dedicated render paths',()=>{
   assert.match(finalLayout,/if\(route==='universe'\)\{[\s\S]*?class="universe-main">\$\{homeHeroSection\(\)\}/);
 });
 
+test('Music Studio MIDI editor bypasses the shared Hero and content wrapper',()=>{
+  assert.match(finalLayout,/function isMusicEditorStudioRoute\(route\)\{\s*return route==='music-studio\/midi-composer'\|\|String\(route\|\|''\)\.startsWith\('music-studio\/midi-editor\/'\);\s*\}/);
+  assert.match(finalLayout,/if\(isMusicEditorStudioRoute\(route\)\)\{[\s\S]*?delete document\.body\.dataset\.homeBackground;[\s\S]*?style\.removeProperty\('--home-background-image'\);[\s\S]*?innerHTML=`\$\{mainContent\}<div id="toast"><\/div>`;[\s\S]*?return true;/);
+  assert.match(musicCss,/body\.is-studio-route\.is-music-studio-route:has\(\.music-midi-editor-page\)\{background:#08111d!important\}/);
+});
+
 test('obsolete shell-wrapping script is no longer loaded',()=>{
   assert.doesNotMatch(html,/nova-unified-ui\.js/);
 });
@@ -80,10 +86,21 @@ test('white route panels cards and input surfaces reuse the Home Studios glass',
   assert.match(css,/:is\(\.nova-unified-content,\.nova-studio-route-content>:not\(\.music-studio-shell\)\) :is\(input,select,textarea\)\{[\s\S]*?background:var\(--nova-route-panel-background\)/);
 });
 
-test('Music Studio dark common surfaces reuse the exact Home continue gradient token',()=>{
+test('Music Studio keeps common surfaces while production menu cards retain their DAW gradient',()=>{
   assert.match(css,/--nova-continue-surface:radial-gradient\(circle at 90% 16%,rgba\(255,247,223,\.42\),transparent 30%\),linear-gradient\(135deg,#12395d,#1c7f94\)/);
   assert.match(style,/\.atelier-continue\{[^}]*background:var\(--nova-continue-surface\)/);
-  assert.match(musicCss,/\.is-studio-route \.music-studio-shell :is\(\.music-quick-nav \.music-secondary,\.music-recent,\.music-recent-item,\.music-status-summary div,\.music-feature-card\),\.music-project-page :is\(\.music-project-panel,\.music-project-row\)\{background:var\(--nova-continue-surface\)\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell :is\(\.music-quick-nav \.music-secondary,\.music-recent,\.music-recent-item,\.music-status-summary div\),\.music-project-page :is\(\.music-project-panel,\.music-project-row\)\{background:var\(--nova-continue-surface\)\}/);
+  assert.match(musicCss,/\.music-feature-card\{[^}]*background:linear-gradient\(150deg,#132033,#0d1725\)/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\]\{[^}]*width:min\(1144px,calc\(100vw - 36px\)\);max-width:none;padding:22px 20px 20px/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell:has\(>section\[aria-labelledby="musicFeaturesTitle"\]\)\{padding-top:9px\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\]>.music-section-heading\{[^}]*margin-bottom:24px;padding-left:50px/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\]>.music-feature-grid\{width:min\(1041px,100%\);margin-inline:auto;column-gap:18px;row-gap:22px\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\] \.music-feature-card\{min-height:240px;padding:16px\}/);
+  assert.match(musicCss,/\.music-footer\{display:flex;align-items:center;justify-content:center;[^}]*text-align:center\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-recent \.music-recent-item>span\{color:var\(--music-amber\)\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-footer :is\(p,b\)\{color:var\(--nova-text-heading\)\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-recent #musicRecentTitle\{[^}]*font-size:1\.9rem/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\] #musicFeaturesTitle\{[^}]*color:var\(--nova-text-heading\);font-size:1\.9rem/);
 });
 
 test('one shared menu toggle is moved directly into every supported Hero',()=>{

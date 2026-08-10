@@ -9,7 +9,7 @@ const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8')
 function loadMusicStudio(){
   const classes=new Set();
   const location={hash:'#home'};
-  const document={body:{classList:{toggle(name,active){active?classes.add(name):classes.delete(name)},contains:name=>classes.has(name)}}};
+  const document={body:{dataset:{},classList:{toggle(name,active){active?classes.add(name):classes.delete(name)},contains:name=>classes.has(name)}}};
   const window={addEventListener(){},location,history:{length:1},managementViewForRoute:route=>`base:${route}`,openApp:()=>{},setView(route){location.hash=`#${route}`},novaReturnHome(){},render(){}};
   window.window=window;
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});
@@ -49,7 +49,22 @@ test('unfinished routes always render safe placeholders with return actions',()=
   assert.match(app.renderRoute('music-studio/settings'),/Music Studio設定/);
   assert.match(app.renderRoute('music-studio/backup'),/Music Studioバックアップ/);
   assert.match(app.renderRoute('music-studio/logic-pro'),/Logic ProからMIDIを取り込む/);
-  assert.match(app.renderRoute('music-studio/midi-composer'),/MIDIエディター/);
+  app.state.loaded=true;
+  const composer=app.renderRoute('music-studio/midi-composer');
+  assert.match(composer,/新しい音楽プロジェクト/);
+  assert.doesNotMatch(composer,/MIDIエディターを開けません/);
+});
+
+test('MIDI Composer uses the guarded project entry and distinguishes a missing editor module',()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio;
+  assert.match(app.renderRoute('music-studio'),/onclick="MusicStudio\.openMidiEditor\(\)"/);
+  assert.equal(app.openMidiEditor(),true);
+  assert.equal(window.location.hash,'#music-studio/new-project');
+  const project=app.makeProject({projectId:'ipad-project',projectName:'iPad project'});
+  app.state.projects=[project];app.state.loaded=true;
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/編集モジュールを読み込めませんでした/);
+  assert.doesNotMatch(html,/対象のMusic Studioプロジェクトが見つかりません/);
 });
 
 test('project routes render real accessible management screens',()=>{
@@ -120,17 +135,17 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.3/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.26/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.60/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.60/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.79/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.79/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
-  assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
+  assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.52/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.52/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.60/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.60/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
