@@ -365,3 +365,10 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 @media(max-width:600px){.music-midi-editor-page .music-editor-topbar>button,.music-midi-editor-page .music-editor-topbar>.music-editor-menu{flex:0 0 auto}}
 @media(max-width:900px){.music-midi-editor-page .music-pitch-name{width:60px;font-size:9px}.music-midi-editor-page .music-pitch-name.is-black{right:calc(40% + 3px);width:48px;font-size:8.5px}}
 @media(max-width:600px){.music-midi-editor-page .music-pitch-octave{display:none}}
+/* Correction uses the same anchored overlay model as the other toolbar menus. */
+.music-midi-editor-page:has(.music-correction-menu[open]) .music-editor-layout{width:100%;min-width:0;max-width:none;transition:none}.music-correction-menu[open]::before{display:none}.music-midi-editor-page .music-correction-popover{position:absolute;top:calc(100% + 8px);right:0;bottom:auto;left:auto;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 140px);overflow-y:auto}
+/* Keep unsupported-browser guidance grouped at the far edge of the toolbar. */
+.music-midi-editor-page .music-editor-topbar>.music-midi-input-control.is-unsupported{margin-left:auto}
+/* The host form reset gives every input full width and 48px height; radios stay native-sized inside Correction. */
+.music-midi-editor-page .music-correction-popover :is(.music-correction-target,.music-transpose-direction)>label{display:inline-flex;min-width:0;align-items:center;gap:7px;line-height:1.25;white-space:normal}.music-midi-editor-page .music-correction-popover input[type=radio]{appearance:auto;width:18px!important;min-width:18px!important;max-width:18px!important;height:18px!important;min-height:18px!important;max-height:18px!important;flex:0 0 18px;margin:0!important;padding:0!important;transform:none!important;accent-color:var(--music-editor-accent)}
+@media(max-width:900px){.music-midi-editor-page .music-correction-popover{position:fixed;top:min(260px,calc(100vh - 248px))!important;right:8px!important;bottom:8px;left:8px!important;width:auto!important;max-height:calc(100vh - 88px)}}

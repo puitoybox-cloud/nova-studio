@@ -262,12 +262,10 @@
     const summaryRect=menu.querySelector?.('summary')?.getBoundingClientRect?.(),viewportHeight=Number(root.innerHeight)||root.document?.documentElement?.clientHeight||900,viewportWidth=Number(root.innerWidth)||1280;
     if(viewportHeight<=0)return;
     if(viewportWidth<=900){
-      const top=Math.max(Number(summaryRect?.bottom)||0,Math.round(viewportHeight*.42));
+      const top=Math.max(8,(Number(summaryRect?.bottom)||0)+8);
       popover.style.top=`${Math.min(top,viewportHeight-248)}px`;popover.style.right='8px';popover.style.left='8px';popover.style.width='auto';
     }else{
-      const chromeRect=root.document?.querySelector?.('.music-editor-chrome')?.getBoundingClientRect?.();
-      const top=Math.max(4,(Number(chromeRect?.bottom)||44)+2);
-      popover.style.top=`${top}px`;popover.style.right='12px';popover.style.left='auto';popover.style.width='min(400px,calc(100vw - 24px))';
+      popover.style.top='calc(100% + 8px)';popover.style.right='0';popover.style.left='auto';popover.style.width='min(720px,calc(100vw - 24px))';
     }
     const top=Number(popover.getBoundingClientRect?.().top)||0;
     popover.style.maxHeight=`${Math.max(240,viewportHeight-top-12)}px`;

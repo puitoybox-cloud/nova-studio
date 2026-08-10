@@ -66,14 +66,14 @@ test('Correction repaint preserves page Piano Roll and popover scroll while noti
   assert.equal(app.state.midiEditor.view.correctionMenuOpen,true);assert.equal(app.state.midiEditor.view.correctionPopoverScrollTop,321);
   assert.equal(viewport.scrollTop,1234);assert.equal(viewport.scrollLeft,567);assert.equal(popover.scrollTop,321);
   assert.ok(scrollCalls.length>=2);assert.equal(JSON.stringify(scrollCalls[0]),'{"left":40,"top":260,"behavior":"instant"}');
-  assert.equal(popover.style.top,'46px');assert.equal(popover.style.maxHeight,'842px');assert.equal(popover.style.overflowY,'auto');
+  assert.equal(popover.style.top,'calc(100% + 8px)');assert.equal(popover.style.right,'0');assert.equal(popover.style.width,'min(720px,calc(100vw - 24px))');assert.equal(popover.style.maxHeight,'688px');assert.equal(popover.style.overflowY,'auto');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-notice\{position:fixed;z-index:1000;[^}]*right:12px/);
   assert.match(css,/\.music-correction-batch-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/\.music-correction-popover\{right:0;left:auto;width:min\(720px,[^}]*overscroll-behavior:contain/);
   assert.ok(source.includes('},2600)||null'));
 });
-test('editor chrome is compact, Melody helpers stay intact, and Correction uses responsive side surfaces',()=>{
+test('editor chrome is compact, Melody helpers stay intact, and Correction uses a responsive overlay',()=>{
   const{app}=load(),project=app.makeProject({projectId:'compact-editor-surfaces',projectName:'Compact editor surfaces'});
   app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/class="music-editor-chrome"><header class="music-editor-heading"/);
@@ -83,9 +83,9 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
   assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
-  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\)/);
+  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:100%;min-width:0;max-width:none;transition:none\}/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:auto minmax\(0,1fr\) auto/);
-  assert.match(css,/\.music-correction-popover\{position:fixed;z-index:80;width:min\(400px/);
+  assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
 });
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
   const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
@@ -109,7 +109,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:calc\(100% - 416px\);min-width:calc\(100% - 416px\);max-width:calc\(100% - 416px\);transition:none\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-correction-popover input\[type=radio\]\{appearance:auto;width:18px!important/);
 });
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
