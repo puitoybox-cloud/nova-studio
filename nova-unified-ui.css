@@ -1,4 +1,13 @@
 body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,.is-studio-route){
+  --nova-route-max-width:1120px;
+  --nova-route-inline-padding:.85rem;
+  --nova-route-section-gap:.65rem;
+  --nova-route-panel-padding:1rem;
+  --nova-route-panel-radius:22px;
+  --nova-route-panel-border:rgba(216,237,240,.95);
+  --nova-route-panel-background:rgba(255,255,255,.76);
+  --nova-route-panel-shadow:0 12px 30px rgba(18,57,93,.12);
+  --nova-route-panel-blur:14px;
   --nova-text-heading:#12395d;
   --nova-text-body:#153044;
   --nova-text-muted:#5b7083;
@@ -36,11 +45,11 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
 .is-studio-route .nova-studio-route-content .music-studio-shell :is(a,.music-secondary){color:var(--nova-text-heading-on-dark)}
 .is-studio-route .nova-studio-route-content .music-studio-shell .music-primary{color:#082032}
 :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){
-  width:min(100%,1120px);
+  width:min(100%,var(--nova-route-max-width));
   max-width:none;
   margin-inline:auto;
   padding-top:clamp(1rem,3vw,2.4rem);
-  padding-inline:.85rem;
+  padding-inline:var(--nova-route-inline-padding);
   box-sizing:border-box;
 }
 .nova-unified-main{
@@ -55,7 +64,7 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
   max-width:100%;
   aspect-ratio:4/1;
   min-height:0;
-  margin:0 0 .65rem;
+  margin:0 0 var(--nova-route-section-gap);
   padding:0;
   overflow:hidden;
   border-radius:34px;
@@ -112,31 +121,22 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
   font-weight:750;
   backdrop-filter:blur(10px);
 }
-.nova-studio-route-content{
+.universe-panel,
+.nova-studio-route-content,
+.nova-unified-content{
   margin:0;
-  padding:clamp(.85rem,2vw,1.25rem);
+  padding:var(--nova-route-panel-padding)!important;
   overflow:hidden;
-  border:1px solid rgba(216,237,240,.88);
-  border-radius:26px;
-  background:rgba(248,253,254,.8);
-  box-shadow:0 18px 46px rgba(18,57,93,.14);
-  -webkit-backdrop-filter:blur(18px) saturate(112%);
-  backdrop-filter:blur(18px) saturate(112%);
+  border:1px solid var(--nova-route-panel-border);
+  border-radius:var(--nova-route-panel-radius);
+  background:var(--nova-route-panel-background)!important;
+  box-shadow:var(--nova-route-panel-shadow)!important;
+  -webkit-backdrop-filter:blur(var(--nova-route-panel-blur));
+  backdrop-filter:blur(var(--nova-route-panel-blur));
 }
 .nova-studio-route-content>.music-studio-shell{max-width:100%;margin:0}
 .studio-stage-panel{margin:0;padding:clamp(1rem,3vw,2rem);border-radius:22px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(18,57,93,.08)}
 .studio-stage-panel h2{margin:.2rem 0 .5rem;color:var(--navy)}
-.nova-unified-content{
-  margin:0;
-  padding:clamp(.85rem,2vw,1.25rem);
-  overflow:hidden;
-  border:1px solid rgba(216,237,240,.88);
-  border-radius:26px;
-  background:rgba(248,253,254,.8);
-  box-shadow:0 18px 46px rgba(18,57,93,.14);
-  -webkit-backdrop-filter:blur(18px) saturate(112%);
-  backdrop-filter:blur(18px) saturate(112%);
-}
 .nova-unified-content>h1,.nova-unified-content>main>h1,.nova-unified-content .archive-title-block h1{margin:.1rem 0 .75rem;color:var(--navy);font-size:clamp(1.75rem,3.5vw,2.5rem)}
 .nova-unified-content>h2{margin:1.25rem 0 .55rem;padding-bottom:.45rem;border-bottom:1px solid rgba(18,57,93,.12);color:var(--navy);font-size:1.2rem}
 .nova-unified-content>section,.nova-unified-content>.card,.nova-unified-content>main>section{
@@ -153,7 +153,12 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
 .nova-unified-content .archive-workspace{max-width:100%}
 @media(max-width:760px){
   body:is(.is-unified-route,.is-studio-route){background-attachment:scroll}
-  :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){padding-top:.85rem;padding-inline:.65rem}
+  body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,.is-studio-route){
+    --nova-route-inline-padding:.65rem;
+    --nova-route-panel-padding:.85rem;
+    --nova-route-panel-radius:18px;
+  }
+  :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){padding-top:.85rem}
   :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main)>.atelier-hero{border-radius:24px}
   .nova-unified-main{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
   .nova-studio-route-main{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
@@ -162,8 +167,6 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
   .studio-hero-copy p{display:none}
   .studio-hero-copy .studio-hero-category{display:block;font-size:.52rem}
   .studio-hero-badge{top:.55rem;right:.65rem;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .nova-studio-route-content{padding:.7rem;border-radius:22px}
-  .nova-unified-content{padding:.7rem;border-radius:22px}
   .nova-unified-content>section,.nova-unified-content>.card,.nova-unified-content>main>section{border-radius:18px}
 }
 @media(prefers-reduced-motion:reduce){.nova-menu-group summary:after{transition:none}}

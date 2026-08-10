@@ -58,9 +58,9 @@ test('home and Universe share the same responsive outer width rule',()=>{
 
 test('all shared Hero routes use one final geometry rule',()=>{
   const unified=fs.readFileSync(path.join(root,'nova-unified-ui.css'),'utf8');
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)\{[\s\S]*?width:min\(100%,1120px\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:\.85rem/);
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 \.65rem;[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
-  assert.match(unified,/@media\(max-width:760px\)\{[\s\S]*?padding-top:\.85rem;padding-inline:\.65rem[\s\S]*?border-radius:24px/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)\{[\s\S]*?width:min\(100%,var\(--nova-route-max-width\)\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:var\(--nova-route-inline-padding\)/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 var\(--nova-route-section-gap\);[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
+  assert.match(unified,/@media\(max-width:760px\)\{[\s\S]*?--nova-route-inline-padding:\.65rem;[\s\S]*?padding-top:\.85rem[\s\S]*?border-radius:24px/);
 });
 
 test('card art mixes Tia and Nova and preserves contained centered images',()=>{

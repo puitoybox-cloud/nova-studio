@@ -55,6 +55,22 @@ test('shared routes use the Home text hierarchy with dark-surface contrast',()=>
   assert.match(css,/input,textarea\)::placeholder\{color:var\(--nova-text-muted\);opacity:1\}/);
 });
 
+test('shared route shells reuse the Home width spacing and glass panel tokens',()=>{
+  for(const token of [
+    '--nova-route-max-width:1120px',
+    '--nova-route-inline-padding:.85rem',
+    '--nova-route-section-gap:.65rem',
+    '--nova-route-panel-padding:1rem',
+    '--nova-route-panel-radius:22px',
+    '--nova-route-panel-background:rgba(255,255,255,.76)',
+    '--nova-route-panel-shadow:0 12px 30px rgba(18,57,93,.12)',
+  ])assert.match(css,new RegExp(token.replace(/[().]/g,'\\$&')));
+  assert.match(css,/width:min\(100%,var\(--nova-route-max-width\)\)/);
+  assert.match(css,/margin:0 0 var\(--nova-route-section-gap\)/);
+  assert.match(css,/\.universe-panel,\s*\.nova-studio-route-content,\s*\.nova-unified-content\{[\s\S]*?padding:var\(--nova-route-panel-padding\)!important;[\s\S]*?border-radius:var\(--nova-route-panel-radius\)/);
+  assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?--nova-route-inline-padding:\.65rem;[\s\S]*?--nova-route-panel-padding:\.85rem;[\s\S]*?--nova-route-panel-radius:18px/);
+});
+
 test('one shared menu toggle is moved directly into every supported Hero',()=>{
   assert.match(menu,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero, \.nova-studio-route-main \.atelier-hero'\)/);
   assert.match(menu,/if\(toggle\.parentElement!==target\)\(hero\?target\.prepend\(toggle\):target\.appendChild\(toggle\)\)/);
