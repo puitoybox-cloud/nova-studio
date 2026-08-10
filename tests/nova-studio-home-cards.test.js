@@ -58,8 +58,8 @@ test('home and Universe share the same responsive outer width rule',()=>{
 
 test('all shared Hero routes use one final geometry rule',()=>{
   const unified=fs.readFileSync(path.join(root,'nova-unified-ui.css'),'utf8');
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-page\)\{[\s\S]*?width:min\(100%,1120px\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:\.85rem/);
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-page\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 \.65rem;[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main\)\{[\s\S]*?width:min\(100%,1120px\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:\.85rem/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 \.65rem;[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
   assert.match(unified,/@media\(max-width:760px\)\{[\s\S]*?padding-top:\.85rem;padding-inline:\.65rem[\s\S]*?border-radius:24px/);
 });
 

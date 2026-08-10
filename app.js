@@ -1265,8 +1265,16 @@ render();
 /* Final layout separation: home and management are exclusive views. */
 function novaRenderHomeOnly(){
   document.body.classList.add('is-home-route');
-  document.body.classList.remove('is-management-route','is-universe-route','nav-open');
+  document.body.classList.remove('is-management-route','is-universe-route','is-unified-route','nav-open');
   document.querySelector('#app').innerHTML=homeView();
+}
+const NOVA_UNIFIED_ROUTES=new Set(['storyArchive','productionDashboard','backup','settings']);
+function novaRenderUnifiedRoute(route,mainContent){
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','nav-open');
+  document.body.classList.add('is-unified-route');
+  document.body.dataset.homeBackground='fantasyAtelier';
+  document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
+  document.querySelector('#app').innerHTML=`<main class="nova-unified-main nova-unified-page" data-nova-unified-route="${route}" aria-label="Nova Studio">${homeHeroSection()}<section class="nova-unified-content">${mainContent}</section></main><div id="toast"></div>`;
 }
 function novaReturnHome(){setView(HOME_ROUTE)}
 function managementNavSection(title,items,open=false){
@@ -1291,14 +1299,18 @@ function managementViewForRoute(v){
 render=function(){
   ensureV06?.();
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','nav-open');
   if(v===HOME_ROUTE){
     novaRenderHomeOnly();
     return;
   }
-  document.body.classList.remove('is-home-route','nav-open');
+  recordLastLocation?.({view:v});
+  if(NOVA_UNIFIED_ROUTES.has(v)){
+    novaRenderUnifiedRoute(v,managementViewForRoute(v));
+    return;
+  }
   document.body.classList.add('is-management-route');
   document.body.classList.toggle('is-universe-route',v==='universe');
-  recordLastLocation?.({view:v});
   shell(managementViewForRoute(v));
 };
 render();

@@ -1,10 +1,10 @@
-body.is-management-route.is-unified-route{
+body.is-unified-route{
   background:
     radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
     linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
     url('./fantasy_atelier_background.png') center/cover fixed no-repeat;
 }
-:is(.atelier-home.home-only,.universe-main,.nova-unified-page){
+:is(.atelier-home.home-only,.universe-main,.nova-unified-main){
   width:min(100%,1120px);
   max-width:none;
   margin-inline:auto;
@@ -12,12 +12,12 @@ body.is-management-route.is-unified-route{
   padding-inline:.85rem;
   box-sizing:border-box;
 }
-.nova-unified-page{
+.nova-unified-main{
   padding-bottom:calc(1.4rem + env(safe-area-inset-bottom));
   overflow-x:clip;
 }
-.nova-unified-page,.nova-unified-page *{min-width:0}
-:is(.atelier-home.home-only,.universe-main,.nova-unified-page)>.atelier-hero{
+.nova-unified-main,.nova-unified-main *{min-width:0}
+:is(.atelier-home.home-only,.universe-main,.nova-unified-main)>.atelier-hero{
   width:100%;
   max-width:100%;
   aspect-ratio:4/1;
@@ -27,12 +27,12 @@ body.is-management-route.is-unified-route{
   overflow:hidden;
   border-radius:34px;
 }
-:is(.atelier-home.home-only,.universe-main,.nova-unified-page)>.atelier-hero .atelier-hero-media img{
+:is(.atelier-home.home-only,.universe-main,.nova-unified-main)>.atelier-hero .atelier-hero-media img{
   width:100%;
   height:100%;
   object-fit:contain;
 }
-.nova-unified-panel{
+.nova-unified-content{
   margin:0;
   padding:clamp(.85rem,2vw,1.25rem);
   overflow:hidden;
@@ -43,26 +43,26 @@ body.is-management-route.is-unified-route{
   -webkit-backdrop-filter:blur(18px) saturate(112%);
   backdrop-filter:blur(18px) saturate(112%);
 }
-.nova-unified-panel>h1,.nova-unified-panel>main>h1,.nova-unified-panel .archive-title-block h1{margin:.1rem 0 .75rem;color:var(--navy);font-size:clamp(1.75rem,3.5vw,2.5rem)}
-.nova-unified-panel>h2{margin:1.25rem 0 .55rem;padding-bottom:.45rem;border-bottom:1px solid rgba(18,57,93,.12);color:var(--navy);font-size:1.2rem}
-.nova-unified-panel>section,.nova-unified-panel>.card,.nova-unified-panel>main>section{
+.nova-unified-content>h1,.nova-unified-content>main>h1,.nova-unified-content .archive-title-block h1{margin:.1rem 0 .75rem;color:var(--navy);font-size:clamp(1.75rem,3.5vw,2.5rem)}
+.nova-unified-content>h2{margin:1.25rem 0 .55rem;padding-bottom:.45rem;border-bottom:1px solid rgba(18,57,93,.12);color:var(--navy);font-size:1.2rem}
+.nova-unified-content>section,.nova-unified-content>.card,.nova-unified-content>main>section{
   border-radius:22px;
   background:rgba(255,255,255,.82);
   box-shadow:0 10px 28px rgba(18,57,93,.08);
 }
-.nova-unified-panel button,.nova-unified-panel .file{min-height:44px}
-.nova-unified-panel .archive-home-page{width:100%;padding:0}
-.nova-unified-panel .archive-home-hero{margin-top:0;border-radius:26px}
-.nova-unified-panel .archive-shell{padding:0;background:transparent}
-.nova-unified-panel .archive-topbar{position:static;border-radius:22px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(18,57,93,.08)}
-.nova-unified-panel .archive-back{display:none}
-.nova-unified-panel .archive-workspace{max-width:100%}
+.nova-unified-content button,.nova-unified-content .file{min-height:44px}
+.nova-unified-content .archive-home-page{width:100%;padding:0}
+.nova-unified-content .archive-home-hero{margin-top:0;border-radius:26px}
+.nova-unified-content .archive-shell{padding:0;background:transparent}
+.nova-unified-content .archive-topbar{position:static;border-radius:22px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(18,57,93,.08)}
+.nova-unified-content .archive-back{display:none}
+.nova-unified-content .archive-workspace{max-width:100%}
 @media(max-width:760px){
-  body.is-management-route.is-unified-route{background-attachment:scroll}
-  :is(.atelier-home.home-only,.universe-main,.nova-unified-page){padding-top:.85rem;padding-inline:.65rem}
-  :is(.atelier-home.home-only,.universe-main,.nova-unified-page)>.atelier-hero{border-radius:24px}
-  .nova-unified-page{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
-  .nova-unified-panel{padding:.7rem;border-radius:22px}
-  .nova-unified-panel>section,.nova-unified-panel>.card,.nova-unified-panel>main>section{border-radius:18px}
+  body.is-unified-route{background-attachment:scroll}
+  :is(.atelier-home.home-only,.universe-main,.nova-unified-main){padding-top:.85rem;padding-inline:.65rem}
+  :is(.atelier-home.home-only,.universe-main,.nova-unified-main)>.atelier-hero{border-radius:24px}
+  .nova-unified-main{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+  .nova-unified-content{padding:.7rem;border-radius:22px}
+  .nova-unified-content>section,.nova-unified-content>.card,.nova-unified-content>main>section{border-radius:18px}
 }
 @media(prefers-reduced-motion:reduce){.nova-menu-group summary:after{transition:none}}
