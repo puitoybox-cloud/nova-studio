@@ -26,7 +26,7 @@ body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-
 .nova-menu-group-items{padding:0 .15rem .2rem;overflow:hidden}
 .nova-menu-group-items button{padding-left:1rem}
 .nova-menu-logo{display:flex;justify-content:center;align-items:center;margin:.65rem .25rem 0;padding:.9rem .35rem .45rem;border-top:1px solid rgba(255,255,255,.1);pointer-events:none}
-.nova-menu-logo img{display:block;width:min(46%,132px);height:auto;max-height:104px;object-fit:contain;opacity:.72;filter:saturate(.82) brightness(.92)}
+.nova-menu-logo img{display:block;width:min(46%,132px);height:auto;max-height:104px;object-fit:contain;opacity:.85;filter:saturate(.82) brightness(.92)}
 .nova-menu-panel,
 .nova-menu-panel .nova-menu-group,
 .nova-menu-panel .nova-menu-group-items,
