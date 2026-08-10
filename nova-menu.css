@@ -25,6 +25,8 @@ body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-
 .nova-menu-group[open] summary:after{transform:rotate(90deg)}
 .nova-menu-group-items{padding:0 .15rem .2rem;overflow:hidden}
 .nova-menu-group-items button{padding-left:1rem}
+.nova-menu-logo{display:flex;justify-content:center;align-items:center;margin:.65rem .25rem 0;padding:.9rem .35rem .45rem;border-top:1px solid rgba(255,255,255,.1);pointer-events:none}
+.nova-menu-logo img{display:block;width:min(46%,132px);height:auto;max-height:104px;object-fit:contain;opacity:.72;filter:saturate(.82) brightness(.92)}
 .nova-menu-panel,
 .nova-menu-panel .nova-menu-group,
 .nova-menu-panel .nova-menu-group-items,
@@ -75,7 +77,7 @@ body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-
 .nova-menu-panel details[open]>summary{color:#f5fbff!important;opacity:1!important;filter:none!important;-webkit-text-fill-color:currentColor}
 .nova-menu-panel button:not(:disabled):not([aria-disabled="true"]),
 .nova-menu-panel summary:not([aria-disabled="true"]){opacity:1!important;filter:none!important}
-@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:44px}}
+@media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:44px}.nova-menu-logo img{width:min(44%,116px);max-height:92px}}
 :is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle{position:absolute;top:2px;left:12px;width:auto;min-width:72px;height:44px;min-height:44px;padding:0 4px!important;gap:5px;background:transparent!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;color:#17212a;text-shadow:0 1px 1px rgba(255,255,255,.82)}
 :is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle .nova-menu-glyph{font-size:23px}
 :is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle .nova-menu-label{display:block}

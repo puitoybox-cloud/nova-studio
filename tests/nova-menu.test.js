@@ -45,6 +45,13 @@ test('menu provides the current Studio and management destinations without legac
   assert.match(source,/function toggleGroup\(event\)/);
 });
 
+test('menu ends with one decorative existing Nova Studio logo',()=>{
+  assert.equal((html.match(/class="nova-menu-logo"/g)||[]).length,1);
+  assert.match(html,/<\/details>\s*<div class="nova-menu-logo" aria-hidden="true">\s*<img src="\.\/assets\/images\/home\/nova-studio-home-logo-20260804\.png" alt="">\s*<\/div>\s*<\/div>/);
+  assert.match(css,/\.nova-menu-logo\{[^}]*justify-content:center[^}]*border-top:1px solid rgba\(255,255,255,\.1\)[^}]*pointer-events:none/);
+  assert.match(css,/\.nova-menu-logo img\{[^}]*width:min\(46%,132px\)[^}]*height:auto[^}]*object-fit:contain[^}]*opacity:\.72/);
+});
+
 test('the upper-left control is a minimal hamburger and MENU label with a responsive restrained panel',()=>{
   assert.doesNotMatch(html,/class="nova-wordmark"/);
   assert.doesNotMatch(html,/>Nova Studio<\/text>/);
