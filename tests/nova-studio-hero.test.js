@@ -43,7 +43,7 @@ test('one Hero renderer owns the shared 1920 by 480 DOM format',()=>{
 test('Studio shell shares route geometry and receives the existing menu toggle',()=>{
   assert.match(css,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1[\s\S]*?border-radius:34px/);
   assert.match(css,/\.nova-studio-route-main>\.atelier-hero>\.atelier-hero-media>img\{[\s\S]*?width:100%;[\s\S]*?height:100%;[\s\S]*?object-fit:contain/);
-  assert.match(css,/\.studio-route-hero\[data-studio-key="music"\] \.studio-hero-copy\{right:2px;left:auto;width:max-content;max-width:44%\}/);
+  assert.match(css,/\.studio-route-hero\[data-studio-key="music"\] \.studio-hero-copy\{right:5px;left:auto;width:max-content;max-width:44%\}/);
   assert.match(menu,/\.nova-studio-route-main \.atelier-hero/);
   assert.equal((html.match(/class="nova-menu-toggle"/g)||[]).length,1);
 });
