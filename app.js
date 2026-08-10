@@ -1463,5 +1463,5 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.0',()=>B
  .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.7',()=>Boolean(window.MusicStudioEditor)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.1',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.8',()=>Boolean(window.MusicStudioAudio)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.53',()=>Boolean(window.MusicStudio)))
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.55',()=>Boolean(window.MusicStudio)))
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));
