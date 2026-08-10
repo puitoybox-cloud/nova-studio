@@ -555,6 +555,22 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
   assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
 });
+test('project save restores Zoom, Fit Range, and Piano Roll scroll with legacy defaults',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),legacy=app.makeProject({projectId:'saved-editor-view',projectName:'Saved editor view',musicalSettings:{bars:12},midiData:{editor:{measureCount:12,loopEnabled:true,loopStart:0,loopEnd:1920},tracks:[{part:'melody',notes:[{id:'low',pitch:40,startTick:0,durationTicks:480,velocity:90},{id:'high',pitch:82,startTick:960,durationTicks:240,velocity:105}]}]}});
+  app.setRepository(repo);await repo.put(legacy);app.state.projects=[legacy];app.renderRoute(`music-studio/midi-editor/${legacy.projectId}`);
+  assert.deepEqual(JSON.parse(JSON.stringify(app.state.midiEditor.view)),{zoom:1,pitchMin:37,pitchMax:85,pitchScrollTop:null,pitchScrollLeft:0});
+  app.editorZoom(1);await app.state.midiEditorSavePromise;
+  app.state.midiEditor.view.pitchMin=48;app.state.midiEditor.view.pitchMax=72;
+  app.editorFitPitchRange();await app.state.midiEditorSavePromise;
+  app.editorRememberPitchScroll({scrollTop:864,scrollLeft:432});await new Promise(resolve=>setTimeout(resolve,350));if(app.state.midiEditorSavePromise)await app.state.midiEditorSavePromise;
+  const stored=await repo.get(legacy.projectId);
+  assert.deepEqual(JSON.parse(JSON.stringify(stored.midiData.editor.view)),{zoom:2,pitchMin:37,pitchMax:85,pitchScrollTop:864,pitchScrollLeft:432});
+  assert.equal(stored.midiData.editor.measureCount,12);assert.equal(stored.midiData.editor.loopEnabled,true);assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.length,2);assert.equal(stored.musicalSettings.bars,12);
+  app.state.midiEditor=null;app.state.projects=[stored];let html=app.renderRoute(`music-studio/midi-editor/${legacy.projectId}`);
+  assert.equal(app.state.midiEditor.view.zoom,2);assert.equal(app.state.midiEditor.view.pitchMin,37);assert.equal(app.state.midiEditor.view.pitchMax,85);assert.equal(app.state.midiEditor.view.pitchScrollTop,864);assert.equal(app.state.midiEditor.view.pitchScrollLeft,432);
+  assert.match(html,/時間軸 Zoom：2x/);assert.match(html,/data-initial-scroll-top="864" data-initial-scroll-left="432"/);
+  assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(app.state.midiEditor.selectedNoteId,null);assert.equal(app.state.midiEditor.clipboard.length,0);assert.equal(app.state.midiEditor.correctionPreview,null);
+});
 test('Piano Roll shows beat and zoom-sensitive subdivision grid',()=>{
   const{app}=load(),project=app.makeProject({projectId:'time-grid',projectName:'Time grid',timeSignature:'4/4'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);

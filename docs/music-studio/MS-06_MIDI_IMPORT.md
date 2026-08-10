@@ -30,7 +30,7 @@ Sequence Number、Text、Copyright、Track／Instrument Name、Lyric、Marker、
 
 Note On／Off、velocity 0 Note On、Poly Pressure、Control Change、Program Change、Channel Pressure、Pitch Bendを解析する。同音重複はqueueで対応し、channel・pitch単位にnoteを組み立てる。孤立Note Off、長さ0、未完了Note Onは警告し、未完了noteを勝手に生成しない。
 
-Program Changeは0始まり値、1始まり表示候補、General MIDI候補名を保持するがLogicの実音源を断定しない。channel 10はドラム候補。Bank Select、Modulation、Volume、Pan、Expression、Sustain、All Notes Offとその他CCはtick・channel・controller・valueを保持する。SysEx等は高度編集未対応として概要を保持する。
+Program Changeは0始まり値、1始まり表示候補、General MIDI候補名を保持するがLogicの実音源を断定しない。channel 10はドラム候補。Bank Select、Modulation、Volume、Pan、Expression、Sustain、All Notes Offとその他CCはtick・channel・controller・valueを保持する。SysEx等は専用編集未対応として概要を保持する。
 
 Tempoはtick、microseconds per quarter、BPMのmapへ、拍子はtick、分子、分母、metronome clocks、32分音符数のmapへする。eventなしは警告つき120 BPM／4/4候補。複数変更はmapへ保持し、Version 1の単一値には初期値を設定する。
 
