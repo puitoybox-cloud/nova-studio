@@ -90,7 +90,8 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
   const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/MIDI Input（MIDI入力）<select disabled[^>]*><option selected>SafariではMIDI入力を利用できません<\/option><\/select><small>Mac Chromeで開いてください<\/small>/);
+  assert.match(html,/class="music-midi-input-control is-unsupported"><select disabled[^>]*><option selected>SafariではMIDI入力を利用できません<\/option><\/select><small>Mac Chromeで開いてください<\/small>/);
+  assert.doesNotMatch(html,/is-unsupported">MIDI Input（MIDI入力）/);
   assert.match(html,/editorToggleMidiRecording\(\)" disabled aria-disabled="true"/);
   assert.doesNotMatch(html,/MIDI未接続|music-midi-status|MIDI Devices（デバイス一覧）/);
   assert.doesNotMatch(html,/music-midi-rescan|Check Connection（接続確認）/);
