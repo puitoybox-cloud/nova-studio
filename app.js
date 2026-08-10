@@ -1463,5 +1463,13 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.0',()=>B
  .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.7',()=>Boolean(window.MusicStudioEditor)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.1',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.8',()=>Boolean(window.MusicStudioAudio)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.55',()=>Boolean(window.MusicStudio)))
- .catch(error=>console.error('Music Studio scripts could not be initialized',error));
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.56',()=>Boolean(window.MusicStudio)))
+ .catch(error=>{
+  console.error('Music Studio scripts could not be initialized',error);
+  if(!String(location.hash||'').startsWith('#music-studio'))return;
+  const panel=document.createElement('aside');panel.dataset.musicStudioDiagnostic='script-load-failed';
+  panel.style.cssText='position:fixed;inset:auto 8px 8px;z-index:10000;padding:12px;border:2px solid #f59e0b;border-radius:8px;background:#111827;color:#fff;font:12px/1.45 ui-monospace,monospace;overflow-wrap:anywhere';
+  const appSource=[...document.querySelectorAll('script[src]')].find(item=>String(item.src).includes('app.js'))?.src||'';
+  panel.textContent=`PR #160 iPad diagnostic | DIAG: script-load-failed | Source base SHA: 19d1f0a | app.js: ${appSource.match(/[?&]v=([^&#]+)/)?.[1]||'unknown'} | music-studio.js: ${window.MusicStudio?'loaded':'missing'} | editor module: ${window.MusicStudioEditor?'loaded':'missing'} | route: ${location.hash||'(empty)'} | error: ${error?.message||error}`;
+  document.body.appendChild(panel);
+ });
