@@ -22,15 +22,15 @@ test('loads the independent menu without removing existing navigation',()=>{
 });
 
 test('menu provides the current Studio and management destinations without legacy controls',()=>{
-  const labels=['ホーム','Story Studio','Prompt Studio','Music Studio','Character Studio','Background Studio','Voice Studio','Video Studio','Comic Studio','LINE・SNS Studio','Web Studio','Story Archive','Production Dashboard','Universe','プロジェクト','設定','バックアップ'];
+  const labels=['Home（ホーム）','Story Studio（物語制作室）','Prompt Studio（プロンプト制作室）','Music Studio（音楽制作室）','Character Studio（キャラクター制作室）','Background Studio（背景制作室）','Voice Studio（音声制作室）','Video Studio（動画制作室）','Comic Studio（漫画制作室）','LINE / SNS Studio（LINE・SNS制作室）','Web Studio（Web制作室）','Story Archive（物語保管庫）','Production Dashboard（制作管理盤）','Universe（作品関係図）','Project（プロジェクト）','Settings（設定）','Backup（バックアップ）'];
   let previous=-1;
   for(const label of labels){const index=html.indexOf(`>${label}<`);assert.ok(index>previous,`${label} must follow the requested order`);previous=index}
   assert.doesNotMatch(html,/Dream Architect Studio|data-menu-back|>戻る</);
   assert.equal((html.match(/data-menu-close/g)||[]).length,1);
   assert.match(html,/class="nova-menu-close"[^>]*aria-label="メニューを閉じる"><span aria-hidden="true">×<\/span>/);
-  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>制作Studio<\/summary>/);
-  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>管理・保管<\/summary>/);
-  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>その他<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Creative Studios（制作Studio）<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Management \/ Archive（管理・保管）<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Other（その他）<\/summary>/);
   assert.equal((html.match(/<details class="nova-menu-group">/g)||[]).length,3);
   assert.match(html,/aria-controls="novaMenuPanel"/);
   assert.match(html,/aria-expanded="false"/);
@@ -74,6 +74,8 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/\.nova-menu-panel small,[\s\S]*?color:#d8eef8!important/);
   assert.match(css,/button\[aria-current="page"\]\{color:#f5fbff!important;background:rgba\(126,231,255,\.18\)/);
   assert.match(css,/\.nova-menu-panel \.nova-menu-group\{background:rgba\(255,255,255,\.04\)\}/);
+  assert.match(css,/\.nova-menu-panel button\{[^}]*white-space:normal;[^}]*overflow-wrap:anywhere/);
+  assert.match(css,/\.nova-menu-group summary\{[^}]*white-space:normal;[^}]*overflow-wrap:anywhere/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{
