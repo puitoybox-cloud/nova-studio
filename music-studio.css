@@ -17,6 +17,7 @@
 .is-studio-route .music-studio-shell>.music-recent #musicRecentTitle{margin:.08rem 0 0;font-size:1.9rem;line-height:1.12}
 .is-studio-route .music-studio-shell>.music-recent .music-recent-item{height:54px;margin:6px 0 0;padding:10px 14px}
 .is-studio-route .music-studio-shell>.music-recent .music-recent-item>span{color:var(--music-amber)}
+.is-studio-route .music-studio-shell>.music-footer :is(p,b){color:var(--nova-text-heading)}
 .is-studio-route .music-studio-shell>.music-status-summary{gap:8px;margin:0 0 18px;padding:8px}
 .is-studio-route .music-studio-shell>.music-status-summary>div{min-height:64px;padding:8px 14px}
 .is-studio-route .music-studio-shell>.music-status-summary b{font-size:1.5rem}

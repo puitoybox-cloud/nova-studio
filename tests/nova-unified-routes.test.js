@@ -92,6 +92,7 @@ test('Music Studio keeps common surfaces while production menu cards retain thei
   assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\] \.music-feature-card\{min-height:240px;padding:16px\}/);
   assert.match(musicCss,/\.music-footer\{display:flex;align-items:center;justify-content:center;[^}]*text-align:center\}/);
   assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-recent \.music-recent-item>span\{color:var\(--music-amber\)\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-footer :is\(p,b\)\{color:var\(--nova-text-heading\)\}/);
   assert.match(musicCss,/\.is-studio-route \.music-studio-shell>\.music-recent #musicRecentTitle\{[^}]*font-size:1\.9rem/);
   assert.match(musicCss,/\.is-studio-route \.music-studio-shell>section\[aria-labelledby="musicFeaturesTitle"\] #musicFeaturesTitle\{[^}]*color:var\(--nova-text-heading\);font-size:1\.9rem/);
 });
