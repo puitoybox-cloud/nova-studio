@@ -106,6 +106,7 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
   text-shadow:0 2px 12px rgba(0,0,0,.58);
 }
 .studio-hero-copy h1{margin:.08rem 0 .2rem;color:inherit;font-size:clamp(1.35rem,3vw,2.45rem);line-height:1.02;letter-spacing:.01em}
+.studio-route-hero[data-studio-key="music"] .studio-hero-copy h1{text-align:right}
 .studio-hero-copy p{margin:0;font-size:clamp(.68rem,1.15vw,.92rem);line-height:1.42}
 .studio-hero-copy .studio-hero-category{font-size:clamp(.58rem,.82vw,.72rem);font-weight:800;letter-spacing:.16em}
 .studio-hero-badge{
