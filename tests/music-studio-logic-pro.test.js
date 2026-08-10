@@ -112,6 +112,10 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover input\[type=radio\]\{appearance:auto;width:18px!important/);
+  assert.match(css,/iPad: let the toolbar own its rendered height/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
+  assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
 });
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});
