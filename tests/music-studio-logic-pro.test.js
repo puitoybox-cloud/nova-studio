@@ -5,9 +5,9 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
-function load(){
+function load(navigator={}){
   const values=new Map([['novaStudio_v01','nova-safe'],['aiMusicHelperProject','ai-safe']]);
-  const window={crypto:{randomUUID:()=>`id-1`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
+  const window={navigator,crypto:{randomUUID:()=>`id-1`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
   const midiSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi.js'),'utf8');vm.runInNewContext(midiSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi.js'});const parserSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-parser.js'),'utf8');vm.runInNewContext(parserSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi-parser.js'});const editorSource=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');vm.runInNewContext(editorSource,{window,globalThis:window},{filename:'music-studio-editor.js'});const inputSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-input.js'),'utf8');vm.runInNewContext(inputSource,{window,globalThis:window},{filename:'music-studio-midi-input.js'});
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});return{app:window.MusicStudio,values,window};
 }
@@ -88,7 +88,8 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
 });
 test('MIDI input uses one compact selector and the part tabs omit duplicate note counts',async()=>{
-  const{app}=load(),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
+  const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/17.6 Safari/605.1.15',vendor:'Apple Computer, Inc.'};
+  const{app}=load(navigator),project=app.makeProject({projectId:'midi-status-labels',projectName:'MIDI status labels'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-editor-menu music-midi-input-menu"><summary aria-label="MIDI入力">MIDI入力<\/summary>/);
   assert.match(html,/class="music-midi-browser-guidance" role="status"><b>SafariではMIDI入力を利用できません<\/b><small>Mac Chromeで開いてください<\/small>/);
@@ -105,6 +106,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.doesNotMatch(html,/Back（戻る）|Next（進む）/);
   for(const label of ['Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
   const keys={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},pads={id:'pads',name:'MPD218',onmidimessage:null};
+  navigator.requestMIDIAccess=async()=>app.state.midiInput.access;
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};app.state.midiInput.recording=true;app.state.midiInput.recorder={recording:false};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/<summary aria-label="MIDI入力">MIDI入力<\/summary>/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__">↻ 再検出/);assert.match(html,/接続状態/);
@@ -116,6 +118,20 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
   assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
   assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
+});
+test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
+  const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
+  const{app}=load(navigator),project=app.makeProject({projectId:'chrome-midi',projectName:'Chrome MIDI'});
+  app.state.projects=[project];app.state.midiInput.inputs=[{id:'keyboard',name:'MIDI Keyboard'}];app.state.midiInput.selectedId='keyboard';app.state.midiInput.status='1台のMIDI入力を検出しました。';
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/aria-label="MIDI機器選択"/);assert.match(html,/>↻ 再検出</);assert.match(html,/接続状態/);
+  assert.doesNotMatch(html,/SafariではMIDI入力を利用できません|Mac Chromeで開いてください/);
+});
+test('iPad Chrome without Web MIDI receives generic capability guidance',()=>{
+  const navigator={userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'};
+  const{app}=load(navigator),project=app.makeProject({projectId:'ipad-chrome-midi',projectName:'iPad Chrome MIDI'});
+  app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/この環境ではWeb MIDI APIを利用できません/);assert.doesNotMatch(html,/SafariではMIDI入力を利用できません/);
 });
 test('Melody scale guide follows transient Correction settings and stays Melody-only',()=>{
   const{app}=load(),project=app.makeProject({projectId:'scale-guide',projectName:'Scale guide'});

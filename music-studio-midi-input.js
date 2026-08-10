@@ -4,6 +4,10 @@
   const clamp=(value,min,max)=>Math.min(max,Math.max(min,Math.round(Number(value)||0)));
   const key=(channel,pitch)=>`${channel}:${pitch}`;
   function isSupported(navigatorLike=root.navigator){return typeof navigatorLike?.requestMIDIAccess==='function'}
+  function supportInfo(navigatorLike=root.navigator){
+    const webMidi=isSupported(navigatorLike),userAgent=String(navigatorLike?.userAgent||''),vendor=String(navigatorLike?.vendor||''),safariToken=/Safari/i.test(userAgent),otherBrowser=/(?:Chrome|Chromium|CriOS|Edg|EdgiOS|OPR|FxiOS)/i.test(userAgent),safariLike=!webMidi&&/Apple Computer/i.test(vendor)&&safariToken&&!otherBrowser;
+    return{webMidi,safariLike,userAgent,vendor}
+  }
   function createMessageGate(windowMs=3){let lastFingerprint='',lastTime=-Infinity;return{accept(data,time){const fingerprint=Array.from(data||[]).slice(0,3).join(':'),stamp=Number(time);if(fingerprint===lastFingerprint&&Number.isFinite(stamp)&&Math.abs(stamp-lastTime)<=windowMs)return false;lastFingerprint=fingerprint;lastTime=stamp;return true},reset(){lastFingerprint='';lastTime=-Infinity}}}
   function createRecorder(options={}){
     const ppq=clamp(options.ppq||480,24,9600),tempo=Math.min(400,Math.max(20,Number(options.tempo)||120)),clock=options.clock||(()=>root.performance?.now?.()??Date.now());
@@ -17,5 +21,5 @@
     return api
   }
   async function requestAccess(navigatorLike=root.navigator){if(!isSupported(navigatorLike))return{supported:false,access:null,inputs:[]};const access=await navigatorLike.requestMIDIAccess({sysex:false}),inputs=[...(access.inputs?.values?.()||[])];return{supported:true,access,inputs}}
-  root.MusicStudioMidiInput={isSupported,createMessageGate,createRecorder,requestAccess};
+  root.MusicStudioMidiInput={isSupported,supportInfo,createMessageGate,createRecorder,requestAccess};
 })(typeof window!=='undefined'?window:globalThis);
