@@ -35,6 +35,12 @@ test('home and Universe keep their dedicated render paths',()=>{
   assert.match(finalLayout,/if\(route==='universe'\)\{[\s\S]*?class="universe-main">\$\{homeHeroSection\(\)\}/);
 });
 
+test('Music Studio MIDI editor bypasses the shared Hero and content wrapper',()=>{
+  assert.match(finalLayout,/function isMusicEditorStudioRoute\(route\)\{\s*return route==='music-studio\/midi-composer'\|\|String\(route\|\|''\)\.startsWith\('music-studio\/midi-editor\/'\);\s*\}/);
+  assert.match(finalLayout,/if\(isMusicEditorStudioRoute\(route\)\)\{[\s\S]*?delete document\.body\.dataset\.homeBackground;[\s\S]*?style\.removeProperty\('--home-background-image'\);[\s\S]*?innerHTML=`\$\{mainContent\}<div id="toast"><\/div>`;[\s\S]*?return true;/);
+  assert.match(musicCss,/body\.is-studio-route\.is-music-studio-route:has\(\.music-midi-editor-page\)\{background:#08111d!important\}/);
+});
+
 test('obsolete shell-wrapping script is no longer loaded',()=>{
   assert.doesNotMatch(html,/nova-unified-ui\.js/);
 });

@@ -42,6 +42,7 @@
 .music-filename-preview{display:block;margin-top:14px;padding:12px;border:1px dashed var(--music-blue);border-radius:10px;overflow-wrap:anywhere;color:var(--music-green)}.music-auto-backup-list{display:grid;gap:10px}.music-auto-backup-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px;border:1px solid var(--music-line);border-radius:12px;background:#0b1725}.music-auto-backup-row div{display:grid;gap:4px}.music-auto-backup-row small{color:var(--music-muted)}
 body.is-management-route .music-studio-shell{max-width:1200px}.management-main>.music-studio-shell{padding:24px}
 body.is-music-studio-route{background:#08111d}
+body.is-studio-route.is-music-studio-route:has(.music-midi-editor-page){background:#08111d!important}
 body.is-music-studio-route .management-header,body.is-music-studio-route .management-nav,body.is-music-studio-route .management-side,body.is-music-studio-route .management-bottom,body.is-music-studio-route .mobile-nav-backdrop,body.is-music-studio-route .flow-guide{display:none!important}
 body.is-music-studio-route .management-layout{display:block;width:100%;max-width:none;margin:0;padding:0}
 body.is-music-studio-route .management-main{width:100%;max-width:none;margin:0;padding:0}

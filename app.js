@@ -1288,11 +1288,20 @@ function renderStudioHero(config){
 function novaStudioPlaceholderView(config){
   return `<section class="studio-stage-panel" aria-labelledby="studio-stage-title-${esc(config.studioKey)}"><p class="eyebrow">Studio foundation</p><h2 id="studio-stage-title-${esc(config.studioKey)}">${esc(config.title)} 制作入口</h2><p>${esc(config.subtitle)}</p><p class="meta">既存機能と保存データを維持したまま、正式イラストと制作機能を接続できる共通Hero土台を準備しています。</p></section>`;
 }
+function isMusicEditorStudioRoute(route){
+  return route==='music-studio/midi-composer'||String(route||'').startsWith('music-studio/midi-editor/');
+}
 function novaRenderStudioRoute(route,mainContent){
   const config=studioHeroConfigForRoute(route);
   if(!config)return false;
   document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','nav-open');
   document.body.classList.add('is-studio-route');
+  if(isMusicEditorStudioRoute(route)){
+    delete document.body.dataset.homeBackground;
+    document.body.style.removeProperty('--home-background-image');
+    document.querySelector('#app').innerHTML=`${mainContent}<div id="toast"></div>`;
+    return true;
+  }
   document.body.dataset.homeBackground='fantasyAtelier';
   document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
   document.querySelector('#app').innerHTML=`<main class="nova-studio-route-main" data-nova-studio-route="${esc(route)}" data-studio-key="${esc(config.studioKey)}" aria-label="${esc(config.title)}">${renderStudioHero(config)}<section class="nova-studio-route-content">${mainContent}</section></main><div id="toast"></div>`;
@@ -1435,7 +1444,7 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.4.69';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.70';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
