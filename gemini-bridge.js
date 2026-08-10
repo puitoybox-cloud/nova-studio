@@ -260,7 +260,7 @@
       homeActions.appendChild(button);
     }
 
-    const header = document.querySelector('header');
+    const header = document.querySelector('header:not(.universe-header)');
     if (header && !header.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'header';
@@ -270,7 +270,7 @@
       header.insertBefore(button, settingsButton || null);
     }
 
-    const nav = document.querySelector('nav');
+    const nav = document.querySelector('nav:not(.atelier-management-links)');
     if (nav && !nav.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'nav';

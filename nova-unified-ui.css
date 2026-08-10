@@ -1,0 +1,190 @@
+body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,.is-studio-route){
+  --nova-route-max-width:1120px;
+  --nova-route-inline-padding:.85rem;
+  --nova-route-section-gap:.65rem;
+  --nova-route-panel-padding:1rem;
+  --nova-route-panel-radius:22px;
+  --nova-route-panel-border:rgba(216,237,240,.95);
+  --nova-route-panel-background:rgba(255,255,255,.48);
+  --nova-route-panel-shadow:0 14px 34px rgba(18,57,93,.10);
+  --nova-route-panel-blur:12px;
+  --nova-continue-surface:radial-gradient(circle at 90% 16%,rgba(255,247,223,.42),transparent 30%),linear-gradient(135deg,#12395d,#1c7f94);
+  --nova-text-heading:#12395d;
+  --nova-text-body:#153044;
+  --nova-text-muted:#5b7083;
+  --nova-text-action:#12395d;
+  --nova-text-accent:#c99a2e;
+  --nova-text-on-accent:#fff;
+  --nova-text-heading-on-dark:#fff;
+  --nova-text-body-on-dark:#ecf4ff;
+  --nova-text-muted-on-dark:#dce8f5;
+  --nova-text-accent-on-dark:#7dd3fc;
+  background:
+    radial-gradient(circle at 16% 8%,rgba(255,247,223,.24),transparent 28%),
+    linear-gradient(180deg,rgba(248,254,255,.36),rgba(226,243,248,.46)),
+    url('./fantasy_atelier_background.png') center/cover fixed no-repeat;
+  color:var(--nova-text-body);
+}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(h1,h2,h3,h4,h5,h6){color:var(--nova-text-heading)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(p,li,dd,td,th){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.meta,small,.empty-note,.music-help,.music-empty){color:var(--nova-text-muted)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) .eyebrow{color:var(--nova-text-accent)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(label,legend,dt){color:var(--nova-text-heading)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(input,select,textarea){color:var(--nova-text-body)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(input,textarea)::placeholder{color:var(--nova-text-muted);opacity:1}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) a{color:var(--nova-text-action)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.secondary,.link-action,.music-secondary){color:var(--nova-text-action)}
+:is(.universe-main>:not(.atelier-hero),.nova-unified-content,.nova-studio-route-content) :is(.primary-action,.danger){color:var(--nova-text-on-accent)}
+.is-studio-route .nova-studio-route-content .music-studio-shell{color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(h1,h2,h3,h4,h5,h6){color:var(--nova-text-heading-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(p,li,dd,td,th,label,legend,dt){color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(.meta,small,.empty-note,.music-help,.music-empty){color:var(--nova-text-muted-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell .music-kicker{color:var(--nova-text-accent-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(input,select,textarea){color:var(--nova-text-body-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(input,textarea)::placeholder{color:var(--nova-text-muted-on-dark);opacity:1}
+.is-studio-route .nova-studio-route-content .music-studio-shell :is(a,.music-secondary){color:var(--nova-text-heading-on-dark)}
+.is-studio-route .nova-studio-route-content .music-studio-shell .music-primary{color:#082032}
+:is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){
+  width:min(100%,var(--nova-route-max-width));
+  max-width:none;
+  margin-inline:auto;
+  padding-top:clamp(1rem,3vw,2.4rem);
+  padding-inline:var(--nova-route-inline-padding);
+  box-sizing:border-box;
+}
+.nova-unified-main{
+  padding-bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  overflow-x:clip;
+}
+.nova-unified-main,.nova-unified-main *{min-width:0}
+:is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main)>.atelier-hero{
+  position:relative;
+  display:block;
+  width:100%;
+  max-width:100%;
+  aspect-ratio:4/1;
+  min-height:0;
+  margin:0 0 var(--nova-route-section-gap);
+  padding:0;
+  overflow:hidden;
+  border-radius:34px;
+}
+.nova-unified-main>.atelier-hero>.atelier-hero-media,
+.nova-studio-route-main>.atelier-hero>.atelier-hero-media{
+  display:block;
+  width:100%;
+  height:100%;
+}
+.nova-unified-main>.atelier-hero>.atelier-hero-media>img,
+.nova-studio-route-main>.atelier-hero>.atelier-hero-media>img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.nova-studio-route-main{
+  padding-bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  overflow-x:clip;
+}
+.nova-studio-route-main,.nova-studio-route-main *{min-width:0}
+.studio-route-hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(5,22,45,.08) 22%,rgba(5,22,45,.2) 48%,rgba(5,22,45,.82) 100%);
+  pointer-events:none;
+}
+.studio-hero-copy{
+  position:absolute;
+  z-index:2;
+  right:clamp(1rem,4vw,3rem);
+  bottom:clamp(.8rem,2.2vw,1.8rem);
+  width:min(46%,30rem);
+  color:#f5fbff;
+  text-align:left;
+  text-shadow:0 2px 12px rgba(0,0,0,.58);
+}
+.studio-hero-copy h1{margin:.08rem 0 .2rem;color:inherit;font-size:clamp(1.35rem,3vw,2.45rem);line-height:1.02;letter-spacing:.01em}
+.studio-hero-copy p{margin:0;font-size:clamp(.68rem,1.15vw,.92rem);line-height:1.42}
+.studio-hero-copy .studio-hero-category{font-size:clamp(.58rem,.82vw,.72rem);font-weight:800;letter-spacing:.16em}
+.studio-hero-badge{
+  position:absolute;
+  z-index:2;
+  top:clamp(.8rem,1.6vw,1.2rem);
+  right:clamp(1rem,2.4vw,1.8rem);
+  padding:.3rem .62rem;
+  border:1px solid rgba(245,251,255,.48);
+  border-radius:999px;
+  background:rgba(5,22,45,.42);
+  color:#f5fbff;
+  font-size:clamp(.58rem,.82vw,.72rem);
+  font-weight:750;
+  backdrop-filter:blur(10px);
+}
+.universe-panel,
+.nova-studio-route-content,
+.nova-unified-content{
+  margin:0;
+  padding:var(--nova-route-panel-padding)!important;
+  overflow:hidden;
+  border:1px solid var(--nova-route-panel-border);
+  border-radius:var(--nova-route-panel-radius);
+  background:var(--nova-route-panel-background)!important;
+  box-shadow:var(--nova-route-panel-shadow)!important;
+  -webkit-backdrop-filter:blur(var(--nova-route-panel-blur));
+  backdrop-filter:blur(var(--nova-route-panel-blur));
+}
+.nova-studio-route-content>.music-studio-shell{max-width:100%;margin:0}
+.studio-stage-panel{margin:0;padding:clamp(1rem,3vw,2rem);border:1px solid var(--nova-route-panel-border);border-radius:22px;background:var(--nova-route-panel-background);box-shadow:var(--nova-route-panel-shadow);-webkit-backdrop-filter:blur(var(--nova-route-panel-blur));backdrop-filter:blur(var(--nova-route-panel-blur))}
+.studio-stage-panel h2{margin:.2rem 0 .5rem;color:var(--navy)}
+.nova-unified-content>h1,.nova-unified-content>main>h1,.nova-unified-content .archive-title-block h1{margin:.1rem 0 .75rem;color:var(--navy);font-size:clamp(1.75rem,3.5vw,2.5rem)}
+.nova-unified-content>h2{margin:1.25rem 0 .55rem;padding-bottom:.45rem;border-bottom:1px solid rgba(18,57,93,.12);color:var(--navy);font-size:1.2rem}
+.nova-unified-content>section:not(.home-hero),.nova-unified-content>.card,.nova-unified-content>main>section:not(.home-hero){
+  border-color:var(--nova-route-panel-border)!important;
+  border-radius:22px;
+  background:var(--nova-route-panel-background)!important;
+  box-shadow:var(--nova-route-panel-shadow)!important;
+  -webkit-backdrop-filter:blur(var(--nova-route-panel-blur))!important;
+  backdrop-filter:blur(var(--nova-route-panel-blur))!important;
+}
+.nova-unified-content :is(.app-card,.archive-home-card,.archive-board-card,.archive-image-card,.archive-card,.card,.row,.stats>div),
+.universe-main :is(.universe-tools,.universe-context div){
+  border-color:var(--nova-route-panel-border);
+  background:var(--nova-route-panel-background)!important;
+  box-shadow:var(--nova-route-panel-shadow)!important;
+  -webkit-backdrop-filter:blur(var(--nova-route-panel-blur));
+  backdrop-filter:blur(var(--nova-route-panel-blur));
+}
+:is(.nova-unified-content,.nova-studio-route-content>:not(.music-studio-shell)) :is(input,select,textarea){
+  border-color:var(--nova-route-panel-border);
+  background:var(--nova-route-panel-background);
+  -webkit-backdrop-filter:blur(var(--nova-route-panel-blur));
+  backdrop-filter:blur(var(--nova-route-panel-blur));
+}
+.nova-unified-content button,.nova-unified-content .file{min-height:44px}
+.nova-unified-content .archive-home-page{width:100%;padding:0}
+.nova-unified-content .archive-home-hero{margin-top:0;border-radius:26px}
+.nova-unified-content .archive-shell{padding:0;background:transparent}
+.nova-unified-content .archive-topbar{position:static;border:1px solid var(--nova-route-panel-border);border-radius:22px;background:var(--nova-route-panel-background);box-shadow:var(--nova-route-panel-shadow);-webkit-backdrop-filter:blur(var(--nova-route-panel-blur));backdrop-filter:blur(var(--nova-route-panel-blur))}
+.nova-unified-content .archive-back{display:none}
+.nova-unified-content .archive-workspace{max-width:100%}
+@media(max-width:760px){
+  body:is(.is-unified-route,.is-studio-route){background-attachment:scroll}
+  body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,.is-studio-route){
+    --nova-route-inline-padding:.65rem;
+    --nova-route-panel-padding:.85rem;
+    --nova-route-panel-radius:18px;
+  }
+  :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){padding-top:.85rem}
+  :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main)>.atelier-hero{border-radius:24px}
+  .nova-unified-main{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+  .nova-studio-route-main{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+  .studio-hero-copy{right:.75rem;bottom:.55rem;width:58%}
+  .studio-hero-copy h1{font-size:clamp(.92rem,5vw,1.3rem)}
+  .studio-hero-copy p{display:none}
+  .studio-hero-copy .studio-hero-category{display:block;font-size:.52rem}
+  .studio-hero-badge{top:.55rem;right:.65rem;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nova-unified-content>section:not(.home-hero),.nova-unified-content>.card,.nova-unified-content>main>section:not(.home-hero){border-radius:18px}
+}
+@media(prefers-reduced-motion:reduce){.nova-menu-group summary:after{transition:none}}

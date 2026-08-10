@@ -156,7 +156,9 @@ function toggleTask(id){const t=state.tasks.find(x=>x.id===id);if(t){t.completed
 function deleteTask(id){if(confirm('削除しますか？')){state.tasks=state.tasks.filter(x=>x.id!==id);saveState();render()}}
 function universeNodes(){const p=currentProject(),q=(state.universeSettings.search||'').toLowerCase();let nodes=UNIVERSE_COLLECTIONS.flatMap(c=>(state[c]||[]).filter(x=>!x.isArchived&&(!p||x.projectId===p.id||x.id===p.id)).map((item,i)=>({id:item.id,collection:c,type:UNIVERSE_TYPES[c],title:continueTitle(c,item)||storyTitle(c,item),item}))).filter(n=>state.universeSettings.visibleTypes[n.type]&&(n.title.toLowerCase().includes(q)||!q));return nodes.slice(0,state.universeSettings.limit||80)}
 function universeLinks(nodes){const ids=new Set(nodes.map(n=>n.id)),links=[];nodes.forEach(n=>{(n.item.relatedIds||[]).forEach(id=>ids.has(id)&&links.push([n.id,id]));if(n.collection==='episodes'&&ids.has(n.item.projectId))links.push([n.item.projectId,n.id]);if(n.item.episodeId&&ids.has(n.item.episodeId))links.push([n.item.episodeId,n.id])});return links}
-function universeView(){const nodes=universeNodes(),links=universeLinks(nodes),unlinked=nodes.filter(n=>!links.some(l=>l.includes(n.id)));const pos=Object.fromEntries(nodes.map((n,i)=>[n.id,{x:80+(i%5)*180,y:80+Math.floor(i/5)*130}]));return `<h1>Universe</h1><div class="universe-tools"><input id="universeSearch" placeholder="検索" value="${esc(state.universeSettings.search||'')}" oninput="state.universeSettings.search=this.value;saveState();render()">${Object.entries(state.universeSettings.visibleTypes).map(([t,on])=>`<label><input type="checkbox" ${on?'checked':''} onchange="state.universeSettings.visibleTypes['${t}']=this.checked;saveState();render()">${esc(typeLabel(t))}</label>`).join('')}<button onclick="state.universeSettings.zoom=Math.max(.5,state.universeSettings.zoom-.1);saveState();render()">縮小</button><button onclick="state.universeSettings.zoom=Math.min(2,state.universeSettings.zoom+.1);saveState();render()">拡大</button></div><div class="universe" style="touch-action:none"><div class="universe-canvas" style="transform:scale(${state.universeSettings.zoom});transform-origin:0 0">${links.map(([a,b])=>{const A=pos[a],B=pos[b];if(!A||!B)return '';const dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;return `<span class="u-line" style="left:${A.x+60}px;top:${A.y+35}px;width:${len}px;transform:rotate(${ang}deg)"></span>`}).join('')}${nodes.map(n=>`<button class="u-card" style="left:${pos[n.id].x}px;top:${pos[n.id].y}px" onclick="openUniverseCard('${n.collection}','${n.id}')"><small>${esc(typeLabel(n.type))}</small>${esc(n.title)}</button>`).join('')}</div></div><section><h2>関連がない項目</h2>${unlinked.map(n=>`<button onclick="openUniverseCard('${n.collection}','${n.id}')">${esc(typeLabel(n.type))}: ${esc(n.title)}</button>`).join('')||'<p class="meta">すべて何らかの関連があります。</p>'}</section>`}
+function toggleUniverseType(type){state.universeSettings.visibleTypes[type]=!state.universeSettings.visibleTypes[type];saveState();render()}
+function universeView(){const p=currentProject(),e=currentEpisode(),nodes=universeNodes(),links=universeLinks(nodes),unlinked=nodes.filter(n=>!links.some(l=>l.includes(n.id)));const pos=Object.fromEntries(nodes.map((n,i)=>[n.id,{x:80+(i%5)*180,y:80+Math.floor(i/5)*130}]));return `<section class="universe-intro" aria-labelledby="universe-title"><div><p class="eyebrow">Story Connections</p><h1 id="universe-title">Universe</h1><p>作品・話数・設定のつながりを見渡します。</p></div><dl class="universe-context" aria-label="現在の作品情報"><div><dt>作品</dt><dd>${esc(p?.title||'未選択')}</dd></div><div><dt>話数</dt><dd>${esc(e?.numberLabel||'未選択')}</dd></div><div><dt>状態</dt><dd>${esc(e?.productionStatus||e?.production?.status||p?.productionStatus||e?.status||p?.status||'制作中')}</dd></div></dl></section><div class="universe-tools" aria-label="Universe表示操作"><input id="universeSearch" aria-label="Universeを検索" placeholder="検索" value="${esc(state.universeSettings.search||'')}" onchange="state.universeSettings.search=this.value;saveState();render()"><div class="universe-filters" role="group" aria-label="表示する項目">${Object.entries(state.universeSettings.visibleTypes).map(([t,on])=>`<button type="button" class="universe-toggle ${on?'is-active':''}" aria-pressed="${on}" onclick="toggleUniverseType('${t}')">${esc(typeLabel(t))}</button>`).join('')}</div><div class="universe-zoom" role="group" aria-label="拡大縮小"><button type="button" aria-label="Universeを縮小" onclick="state.universeSettings.zoom=Math.max(.5,state.universeSettings.zoom-.1);saveState();render()">− 縮小</button><output aria-label="拡大率">${Math.round(state.universeSettings.zoom*100)}%</output><button type="button" aria-label="Universeを拡大" onclick="state.universeSettings.zoom=Math.min(2,state.universeSettings.zoom+.1);saveState();render()">＋ 拡大</button></div></div><div class="universe" style="touch-action:none"><div class="universe-canvas" style="transform:scale(${state.universeSettings.zoom});transform-origin:0 0">${links.map(([a,b])=>{const A=pos[a],B=pos[b];if(!A||!B)return '';const dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;return `<span class="u-line" style="left:${A.x+60}px;top:${A.y+35}px;width:${len}px;transform:rotate(${ang}deg)"></span>`}).join('')}${nodes.map(n=>`<button class="u-card" style="left:${pos[n.id].x}px;top:${pos[n.id].y}px" onclick="openUniverseCard('${n.collection}','${n.id}')"><small>${esc(typeLabel(n.type))}</small>${esc(n.title)}</button>`).join('')}</div></div><section class="universe-unlinked"><h2>関連がない項目</h2>${unlinked.map(n=>`<button onclick="openUniverseCard('${n.collection}','${n.id}')">${esc(typeLabel(n.type))}: ${esc(n.title)}</button>`).join('')||'<p class="meta">すべて何らかの関連があります。</p>'}</section>`}
+universeView=function(){const p=currentProject(),e=currentEpisode(),nodes=universeNodes(),links=universeLinks(nodes),unlinked=nodes.filter(n=>!links.some(l=>l.includes(n.id))),zoom=state.universeSettings.zoom;const pos=Object.fromEntries(nodes.map((n,i)=>[n.id,{x:80+(i%5)*180,y:80+Math.floor(i/5)*130}])),desktopRows=Math.max(1,Math.ceil(nodes.length/5)),desktopHeight=Math.max(300,Math.ceil((80+(desktopRows-1)*130+120)*zoom)),compactRows=Math.max(1,Math.ceil(nodes.length/2)),compactHeight=Math.max(280,Math.ceil((compactRows*86+24)*zoom)),mobileHeight=Math.max(260,Math.ceil((Math.max(1,nodes.length)*86+24)*zoom));return `<section class="universe-intro" aria-labelledby="universe-title"><div><p class="eyebrow">Story Connections</p><h1 id="universe-title">Universe</h1><p>作品・話数・設定のつながりを見渡します。</p></div><dl class="universe-context" aria-label="現在の作品情報"><div><dt>作品</dt><dd>${esc(p?.title||'未選択')}</dd></div><div><dt>話数</dt><dd>${esc(e?.numberLabel||'未選択')}</dd></div><div><dt>状態</dt><dd>${esc(e?.productionStatus||e?.production?.status||p?.productionStatus||e?.status||p?.status||'制作中')}</dd></div></dl></section><div class="universe-tools" aria-label="Universe表示操作"><input id="universeSearch" aria-label="Universeを検索" placeholder="検索" value="${esc(state.universeSettings.search||'')}" onchange="state.universeSettings.search=this.value;saveState();render()"><div class="universe-filters" role="group" aria-label="表示する項目">${Object.entries(state.universeSettings.visibleTypes).map(([t,on])=>`<button type="button" class="universe-toggle ${on?'is-active':''}" aria-pressed="${on}" onclick="toggleUniverseType('${t}')">${esc(typeLabel(t))}</button>`).join('')}</div><div class="universe-zoom" role="group" aria-label="拡大縮小"><button type="button" aria-label="Universeを縮小" onclick="state.universeSettings.zoom=Math.max(.5,state.universeSettings.zoom-.1);saveState();render()">− 縮小</button><output aria-label="拡大率">${Math.round(zoom*100)}%</output><button type="button" aria-label="Universeを拡大" onclick="state.universeSettings.zoom=Math.min(2,state.universeSettings.zoom+.1);saveState();render()">＋ 拡大</button></div></div><div class="universe" style="--universe-desktop-height:${desktopHeight}px;--universe-compact-height:${compactHeight}px;--universe-mobile-height:${mobileHeight}px;touch-action:none"><div class="universe-canvas" style="--universe-zoom:${zoom};transform:scale(${zoom});transform-origin:0 0">${links.map(([a,b])=>{const A=pos[a],B=pos[b];if(!A||!B)return '';const dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;return `<span class="u-line" style="left:${A.x+60}px;top:${A.y+35}px;width:${len}px;transform:rotate(${ang}deg)"></span>`}).join('')}${nodes.map(n=>`<button class="u-card" style="left:${pos[n.id].x}px;top:${pos[n.id].y}px" onclick="openUniverseCard('${n.collection}','${n.id}')"><small>${esc(typeLabel(n.type))}</small>${esc(n.title)}</button>`).join('')}</div></div>${unlinked.length?`<section class="universe-unlinked"><h2>関連がない項目</h2>${unlinked.map(n=>`<button onclick="openUniverseCard('${n.collection}','${n.id}')">${esc(typeLabel(n.type))}: ${esc(n.title)}</button>`).join('')}</section>`:''}`}
 function openUniverseCard(collection,id){recordLastLocation(collection==='scenes'?{sceneId:id}:collection==='characters'?{characterId:id}:{});if(collection==='projects'){selectContext(id,'');setView('projects')}else if(collection==='episodes'){const e=state.episodes.find(x=>x.id===id);selectContext(e.projectId,id);openEpisodeDetail(id)}else openStoryDetail(collection,id)}
 const previousRender=render;render=function(){ensureV06();const v=(location.hash||'#home').slice(1);if(v!=='home')recordLastLocation({view:v});if(v==='universe')return shell(universeView());if(v==='tasks')return shell(tasksView());if(v==='progress')return shell(progressView());if(v==='projectDashboard')return shell(projectDashboardView());previousRender()}
 const previousShell=shell;shell=function(main){previousShell(main);const nav=document.querySelector('nav');if(nav&&!nav.dataset.v06){nav.dataset.v06='1';nav.querySelector('button[onclick="setView(\'apps\')"]')?.insertAdjacentHTML('afterend',`<button onclick="setView('universe')">🌌 Universe</button>`);const mg=[...nav.querySelectorAll('summary')].find(x=>x.textContent.includes('管理'))?.parentElement;mg?.insertAdjacentHTML('afterbegin',`<button onclick="setView('tasks')">✅ 今日やること</button><button onclick="setView('progress')">📈 進捗</button>`);}}
@@ -1153,7 +1155,34 @@ function homeCharacterImage(fileName,cls,label=''){
   return homeImage(fileName,cls,label);
 }
 function homeStudioAction(id,title,desc,action,variant=''){
-  return `<article class="atelier-action ${variant}" role="button" tabindex="0" onclick="${action}" onkeydown="if(event.key==='Enter'||event.key===' ')${action}">${homeCharacterImage(id,'action-character',title)}<div class="atelier-action-copy"><h3>${esc(title)}</h3><p>${esc(desc)}</p></div><button class="secondary" onclick="event.stopPropagation();${action}">開く</button></article>`;
+  const characterClass=`action-character${id.startsWith('Nova_')?' nova-action-character':''}`;
+  return `<article class="atelier-action ${variant}" role="button" tabindex="0" onclick="${action}" onkeydown="if(event.key==='Enter'||event.key===' ')${action}">${homeCharacterImage(id,characterClass,title)}<div class="atelier-action-copy"><h3>${esc(title)}</h3><p>${esc(desc)}</p></div><button class="secondary" onclick="event.stopPropagation();${action}">開く</button></article>`;
+}
+function openHomeStudioPreview(title,description){
+  modal(`<h2>${esc(title)}</h2><p>${esc(description)}</p><p class="meta">このStudioの入口をホームに用意しました。制作機能は今後ここから接続します。</p><button class="primary-action" onclick="closeModal()">ホームへ戻る</button>`);
+}
+const HOME_STUDIOS=[
+  ['Tia_Chibi_Reading.png','Story Studio','物語・構成・脚本をつくる',"setView('story-studio')"],
+  ['Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"setView('prompt-studio')"],
+  ['Nova_Joy.png','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')"],
+  ['Tia_Chibi_Smile.png','Character Studio','キャラクター設定と差分を管理する',"setView('character-studio')"],
+  ['Tia_Chibi_Welcome.png','Background Studio','背景・場所・時間帯を整える',"setView('background-studio')"],
+  ['Nova_Thinking.png','Voice Studio','セリフと音声を管理する',"setView('voice-studio')"],
+  ['Tia_Chibi_HappyJump.png','Video Studio','動画素材と編集をまとめる',"setView('video-studio')"],
+  ['Tia_Chibi_Peace.png','Comic Studio','漫画・制作日誌画像をつくる',"setView('comic-studio')"],
+  ['Nova_Cool.png','LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる',"setView('line-sns-studio')"],
+  ['Tia_Chibi_Wink_Heart.png','Web Studio','サイト・作品ページをつくる',"setView('web-studio')"]
+];
+const HOME_MANAGEMENT=[
+  ['📚','Story Archive','物語の記憶と設定カードを開く','openStoryArchive()'],
+  ['📊','Production Dashboard','作品と話数の進行を確認する','openProductionDashboard()'],
+  ['🌌','Universe','作品世界のつながりを見る',"setView('universe')"]
+];
+function homeCardSection(label,title,items,className){
+  return `<section class="atelier-card-section ${className}" aria-labelledby="${className}-title"><div class="atelier-section-heading"><p class="eyebrow">${esc(label)}</p><h2 id="${className}-title">${esc(title)}</h2></div><div class="atelier-actions">${items.map(item=>homeStudioAction(...item)).join('')}</div></section>`;
+}
+function homeManagementSection(){
+  return `<section class="atelier-management-section" aria-labelledby="management-section-title"><div class="atelier-section-heading"><p class="eyebrow">Management & Archive</p><h2 id="management-section-title">管理・保管</h2></div><nav class="atelier-management-links" aria-label="管理・保管メニュー">${HOME_MANAGEMENT.map(([icon,title,description,action])=>`<button type="button" onclick="${action}"><span class="management-link-icon" aria-hidden="true">${icon}</span><span class="management-link-copy"><b>${esc(title)}</b><small>${esc(description)}</small></span><span class="management-link-arrow" aria-hidden="true">→</span></button>`).join('')}</nav></section>`;
 }
 function homeFeaturedEpisode(p,e){
   return state.episodes.find(x=>x.projectId===p?.id&&x.numberLabel==='第0話')||e;
@@ -1188,9 +1217,12 @@ function homeBackupSummary(){
 function homeFooterPanel(title,body,action=''){
   return `<section class="atelier-footer-panel"><div class="section-head"><h2>${esc(title)}</h2>${action}</div>${body}</section>`;
 }
+function homeHeroSection(){
+  return `<section class="atelier-hero" aria-label="Nova Studio Hero"><div class="atelier-hero-media"><img src="./assets/images/home/nova-studio-home-hero-20260804.png" alt="Nova Studioの幻想世界を描いたHeroバナー" width="1920" height="480" loading="eager" decoding="async"></div></section>`;
+}
 homeView=function(){
   const p=currentProject(),e=currentEpisode(),info=homeProductionStatus(p,e);
-  return `<main class="atelier-home home-only" aria-label="Nova Studio"><section class="atelier-hero" aria-label="Nova Studio Hero"><div class="atelier-hero-media"><img src="./assets/images/home/nova-studio-home-hero-20260804.png" alt="Nova Studioの幻想世界を描いたHeroバナー" width="1920" height="480" loading="eager" decoding="async"></div></section><section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div class="atelier-continue-heading"><p class="eyebrow">Continue</p><h2>制作を続ける</h2></div><div class="atelier-continue-side"><div class="home-gemini-actions" aria-label="AI連携"></div>${homeImage('Tia_Chibi_Wink_Heart.png','tia-thinking','ハートを作るティア')}</div><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section><section class="atelier-actions" aria-label="制作メニュー">${homeStudioAction('Nova_Thinking.png','Story Archive','物語の記憶と設定カードを開く','openStoryArchive()','priority')}${homeStudioAction('Nova_Stand.png','Production Dashboard','作品と話数の進行を確認する','openProductionDashboard()')}${homeStudioAction('Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"openApp('promptStudio')")}${homeStudioAction('Nova_Joy.png','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')")}${homeStudioAction('Nova_Flying.png','Universe','作品世界のつながりを見る',"setView('universe')")}</section><section class="atelier-footer-grid" aria-label="ホーム概要">${homeFooterPanel('最近開いた作品',homeRecentSummary())}${homeFooterPanel('今日やること',homeTaskSummary(),'<button class="secondary" onclick="editTask()">追加</button>')}${homeFooterPanel('保存状況',homeSaveSummary())}${homeFooterPanel('バックアップ',homeBackupSummary())}</section></main>`;
+  return `<main class="atelier-home home-only" aria-label="Nova Studio">${homeHeroSection()}<section class="atelier-continue" role="button" tabindex="0" onclick="openFeaturedEpisode()" onkeydown="if(event.key==='Enter'||event.key===' ')openFeaturedEpisode()"><div class="atelier-continue-heading"><p class="eyebrow">Continue</p><h2>制作を続ける</h2></div><div class="atelier-continue-side"><div class="home-gemini-actions" aria-label="AI連携"></div>${homeImage('Tia_Chibi_Wink_Heart.png','tia-thinking','ハートを作るティア')}</div><dl><div><dt>作品名</dt><dd>${esc(info.project)}</dd></div><div><dt>話数</dt><dd>${esc(info.episode)}</dd></div><div><dt>制作状況</dt><dd>${esc(info.status)}</dd></div></dl></section>${homeCardSection('Creative Studios','Studios',HOME_STUDIOS,'studio-section')}${homeManagementSection()}</main>`;
 };
 render=function(){
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
@@ -1231,10 +1263,53 @@ storyArchiveView=function(){memorySyncInitConstants?.();const cards=storyArchive
 render();
 
 /* Final layout separation: home and management are exclusive views. */
+const NOVA_STUDIO_HERO_PLACEHOLDER='./assets/images/home/nova-studio-home-hero-20260804.png';
+const NOVA_STUDIO_HERO_CONFIGS=[
+  {studioKey:'story',route:'story-studio',title:'Story Studio',category:'STORY & SCRIPT',subtitle:'物語・構成・脚本をひとつの制作導線で組み立てます。',badge:'Worldbuilding',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'prompt',route:'prompt-studio',title:'Prompt Studio',category:'PROMPT DESIGN',subtitle:'映像生成の発想と言葉を、再利用しやすい形へ整えます。',badge:'Prompt Craft',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'music',route:'music-studio',title:'Music Studio',category:'MUSIC PRODUCTION',subtitle:'音楽プロジェクトを安全に作成・保存・管理します。',badge:'MIDI / Logic Pro',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'character',route:'character-studio',title:'Character Studio',category:'CHARACTER DESIGN',subtitle:'キャラクター設定・表情差分・参照資料を育てます。',badge:'Design Sheet',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'background',route:'background-studio',title:'Background Studio',category:'BACKGROUND ART',subtitle:'背景・場所・時間帯と、作品世界の色設計を整えます。',badge:'Environment',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'voice',route:'voice-studio',title:'Voice Studio',category:'VOICE PRODUCTION',subtitle:'セリフと音声収録の素材・状態をまとめて管理します。',badge:'Voice & Wave',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'video',route:'video-studio',title:'Video Studio',category:'VIDEO EDITING',subtitle:'動画素材・フレーム・編集工程をひとつにまとめます。',badge:'Timeline',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'comic',route:'comic-studio',title:'Comic Studio',category:'COMIC PRODUCTION',subtitle:'コマ・吹き出し・漫画原稿の制作を組み立てます。',badge:'Panels & Ink',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'line-sns',route:'line-sns-studio',title:'LINE / SNS Studio',category:'SOCIAL CONTENT',subtitle:'スタンプ・告知画像・投稿素材を媒体ごとに整えます。',badge:'Share & Post',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'web',route:'web-studio',title:'Web Studio',category:'WEB DESIGN',subtitle:'サイト設計と作品ページの見せ方を組み立てます。',badge:'Layout & Publish',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'}
+];
+const NOVA_STUDIO_HERO_BY_ROUTE=new Map(NOVA_STUDIO_HERO_CONFIGS.map(config=>[config.route,config]));
+function studioHeroConfigForRoute(route){
+  const exact=NOVA_STUDIO_HERO_BY_ROUTE.get(route);
+  if(exact)return exact;
+  return String(route||'').startsWith('music-studio/')?NOVA_STUDIO_HERO_BY_ROUTE.get('music-studio'):null;
+}
+function renderStudioHero(config){
+  return `<section class="atelier-hero studio-route-hero" data-studio-key="${esc(config.studioKey)}" data-hero-image-status="${esc(config.status)}" aria-labelledby="studio-hero-title-${esc(config.studioKey)}"><div class="atelier-hero-media"><img src="${esc(config.image)}" alt="${esc(config.title)}のHeroイラスト（共通フォーマット準備画像）" width="1920" height="480" loading="eager" decoding="async"></div><div class="studio-hero-copy"><p class="studio-hero-category">${esc(config.category)}</p><h1 id="studio-hero-title-${esc(config.studioKey)}">${esc(config.title)}</h1><p>${esc(config.subtitle)}</p></div><span class="studio-hero-badge">${esc(config.badge)}</span></section>`;
+}
+function novaStudioPlaceholderView(config){
+  return `<section class="studio-stage-panel" aria-labelledby="studio-stage-title-${esc(config.studioKey)}"><p class="eyebrow">Studio foundation</p><h2 id="studio-stage-title-${esc(config.studioKey)}">${esc(config.title)} 制作入口</h2><p>${esc(config.subtitle)}</p><p class="meta">既存機能と保存データを維持したまま、正式イラストと制作機能を接続できる共通Hero土台を準備しています。</p></section>`;
+}
+function novaRenderStudioRoute(route,mainContent){
+  const config=studioHeroConfigForRoute(route);
+  if(!config)return false;
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','nav-open');
+  document.body.classList.add('is-studio-route');
+  document.body.dataset.homeBackground='fantasyAtelier';
+  document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
+  document.querySelector('#app').innerHTML=`<main class="nova-studio-route-main" data-nova-studio-route="${esc(route)}" data-studio-key="${esc(config.studioKey)}" aria-label="${esc(config.title)}">${renderStudioHero(config)}<section class="nova-studio-route-content">${mainContent}</section></main><div id="toast"></div>`;
+  return true;
+}
 function novaRenderHomeOnly(){
   document.body.classList.add('is-home-route');
-  document.body.classList.remove('is-management-route','nav-open');
+  document.body.classList.remove('is-management-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
   document.querySelector('#app').innerHTML=homeView();
+}
+const NOVA_UNIFIED_ROUTES=new Set(['storyArchive','productionDashboard','backup','settings']);
+function novaRenderUnifiedRoute(route,mainContent){
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-studio-route','nav-open');
+  document.body.classList.add('is-unified-route');
+  document.body.dataset.homeBackground='fantasyAtelier';
+  document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
+  document.querySelector('#app').innerHTML=`<main class="nova-unified-main nova-unified-page" data-nova-unified-route="${route}" aria-label="Nova Studio">${homeHeroSection()}<section class="nova-unified-content">${mainContent}</section></main><div id="toast"></div>`;
 }
 function novaReturnHome(){setView(HOME_ROUTE)}
 function managementNavSection(title,items,open=false){
@@ -1245,6 +1320,11 @@ function managementNav(){
 }
 shell=function(main){
   const p=currentProject(),e=currentEpisode();
+  const route=(location.hash||'#home').slice(1);
+  if(route==='universe'){
+    document.querySelector('#app').innerHTML=`<main class="universe-main">${homeHeroSection()}<section class="atelier-card-section universe-panel">${main}</section></main><div id="toast"></div>`;
+    return;
+  }
   document.querySelector('#app').innerHTML=`<header class="management-header"><button class="brand return-home" onclick="novaReturnHome()"><b>Nova Studioへ戻る</b><small>アトリエホーム</small></button><button class="hamburger" onclick="document.body.classList.toggle('nav-open')" aria-label="メニューを開閉">☰</button><button onclick="showContext()">作品：${esc(p?.title||'未選択')}</button><button onclick="showContext()">話数：${esc(e?.numberLabel||'未選択')}</button><input id="globalSearch" aria-label="全体検索" placeholder="全体検索" oninput="searchAll(this.value)"><button onclick="setView('consult')">ノヴァに相談</button><button onclick="setView('backup')">バックアップ</button><button onclick="setView('settings')">設定</button><span id="saveStatus">保存しました</span></header><div class="management-layout">${managementNav()}<main class="management-main">${productionFlowNav?productionFlowNav():''}${main}</main><aside class="management-side">${side()}</aside></div><div class="mobile-nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div><div class="bottom management-bottom"><button onclick="novaReturnHome()">ホーム</button><button onclick="openStoryArchive()">Archive</button><button onclick="openProductionDashboard()">Dashboard</button><button onclick="setView('search')">検索</button><button onclick="setView('settings')">設定</button></div><div id="toast"></div>`;
 };
 function managementViewForRoute(v){
@@ -1254,13 +1334,22 @@ function managementViewForRoute(v){
 render=function(){
   ensureV06?.();
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
   if(v===HOME_ROUTE){
     novaRenderHomeOnly();
     return;
   }
-  document.body.classList.remove('is-home-route','nav-open');
-  document.body.classList.add('is-management-route');
   recordLastLocation?.({view:v});
+  if(NOVA_UNIFIED_ROUTES.has(v)){
+    novaRenderUnifiedRoute(v,managementViewForRoute(v));
+    return;
+  }
+  if(studioHeroConfigForRoute(v)){
+    novaRenderStudioRoute(v,managementViewForRoute(v));
+    return;
+  }
+  document.body.classList.add('is-management-route');
+  document.body.classList.toggle('is-universe-route',v==='universe');
   shell(managementViewForRoute(v));
 };
 render();
@@ -1273,7 +1362,8 @@ function appWorkspaceView(appId){
 const novaFinalOpenAppBase=openApp;
 openApp=function(appId,urlOverride){
   if(appId==='musicStudio'&&!urlOverride)return setView('music-studio');
-  if(appId==='promptStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
+  if(appId==='promptStudio'&&!urlOverride)return setView('prompt-studio');
+  if(appId==='voiceStudio'&&!urlOverride)return setView('voice-studio');
   return novaFinalOpenAppBase(appId,urlOverride);
 };
 const novaFinalOpenProductionDashboardBase=typeof openProductionDashboard==='function'?openProductionDashboard:null;
@@ -1292,8 +1382,13 @@ managementViewForRoute=function(v){
   const musicStudioView=musicStudioHostRouteView(v);
   if(musicStudioView!==null)return musicStudioView;
   if(v==='productionDashboard')return projectDashboardView();
-  if(v==='promptStudio')return appWorkspaceView('promptStudio');
+  if(v==='prompt-studio'||v==='promptStudio')return appWorkspaceView('promptStudio');
   if(v==='musicStudio')return appWorkspaceView('musicStudio');
+  if(v==='story-studio')return storyCollectionView('scenes');
+  if(v==='character-studio')return storyCollectionView('characters');
+  if(v==='background-studio')return storyCollectionView('worlds');
+  if(v==='voice-studio')return appWorkspaceView('voiceStudio');
+  if(['video-studio','comic-studio','line-sns-studio','web-studio'].includes(v))return novaStudioPlaceholderView(studioHeroConfigForRoute(v));
   return novaFinalManagementViewForRouteBase(v);
 };
 render();
@@ -1340,7 +1435,7 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.4.59';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.60';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
@@ -1359,5 +1454,5 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.0',()=>B
  .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.7',()=>Boolean(window.MusicStudioEditor)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.1',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.8',()=>Boolean(window.MusicStudioAudio)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.51',()=>Boolean(window.MusicStudio)))
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.52',()=>Boolean(window.MusicStudio)))
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));

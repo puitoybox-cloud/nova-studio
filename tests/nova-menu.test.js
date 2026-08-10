@@ -21,13 +21,35 @@ test('loads the independent menu without removing existing navigation',()=>{
   assert.match(source,/querySelector\('\.nova-menu-root'\)/);
 });
 
-test('menu provides all requested destinations and accessible state',()=>{
-  for(const label of ['ホーム','プロジェクト','Music Studio','Dream Architect Studio','設定','戻る','閉じる'])assert.match(html,new RegExp(label));
+test('menu provides the current Studio and management destinations without legacy controls',()=>{
+  const labels=['Home（ホーム）','Story Studio（物語制作室）','Prompt Studio（プロンプト制作室）','Music Studio（音楽制作室）','Character Studio（キャラクター制作室）','Background Studio（背景制作室）','Voice Studio（音声制作室）','Video Studio（動画制作室）','Comic Studio（漫画制作室）','LINE / SNS Studio（LINE・SNS制作室）','Web Studio（Web制作室）','Story Archive（物語保管庫）','Production Dashboard（制作管理盤）','Universe（作品関係図）','Project（プロジェクト）','Settings（設定）','Backup（バックアップ）'];
+  let previous=-1;
+  for(const label of labels){const index=html.indexOf(`>${label}<`);assert.ok(index>previous,`${label} must follow the requested order`);previous=index}
+  assert.doesNotMatch(html,/Dream Architect Studio|data-menu-back|>戻る</);
+  assert.equal((html.match(/data-menu-close/g)||[]).length,1);
+  assert.match(html,/class="nova-menu-close"[^>]*aria-label="メニューを閉じる"><span aria-hidden="true">×<\/span>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Creative Studios（制作Studio）<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Management \/ Archive（管理・保管）<\/summary>/);
+  assert.match(html,/<details class="nova-menu-group">[\s\S]*?<summary>Other（その他）<\/summary>/);
+  assert.equal((html.match(/<details class="nova-menu-group">/g)||[]).length,3);
   assert.match(html,/aria-controls="novaMenuPanel"/);
   assert.match(html,/aria-expanded="false"/);
   assert.match(html,/aria-hidden="true"/);
   assert.match(source,/event\.key==='Escape'/);
   assert.match(source,/event\.key!=='Tab'/);
+  assert.match(source,/scrim\.addEventListener\('click',event=>\{event\.preventDefault\(\);closeMenu\(\)\}\)/);
+  assert.match(source,/toggle\.setAttribute\('aria-hidden','true'\);[\s\S]*?toggle\.removeAttribute\('aria-hidden'\)/);
+  assert.match(source,/if\(restoreFocus\)\{toggle\.focus\(\);setTimeout\(\(\)=>toggle\.focus\(\),0\)\}/);
+  assert.match(source,/scrim\.addEventListener\('pointerdown',event=>event\.preventDefault\(\)\)/);
+  assert.match(source,/button\.setAttribute\('aria-current','page'\)/);
+  assert.match(source,/function toggleGroup\(event\)/);
+});
+
+test('menu ends with one decorative existing Nova Studio logo',()=>{
+  assert.equal((html.match(/class="nova-menu-logo"/g)||[]).length,1);
+  assert.match(html,/<\/details>\s*<div class="nova-menu-logo" aria-hidden="true">\s*<img src="\.\/assets\/images\/home\/nova-studio-home-logo-20260804\.png" alt="">\s*<\/div>\s*<\/div>/);
+  assert.match(css,/\.nova-menu-logo\{[^}]*justify-content:center[^}]*border-top:1px solid rgba\(255,255,255,\.1\)[^}]*pointer-events:none/);
+  assert.match(css,/\.nova-menu-logo img\{[^}]*width:min\(46%,132px\)[^}]*height:auto[^}]*object-fit:contain[^}]*opacity:\.85/);
 });
 
 test('the upper-left control is a minimal hamburger and MENU label with a responsive restrained panel',()=>{
@@ -40,17 +62,27 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/--nova-menu-control:48px/);
   assert.match(css,/\.nova-menu-toggle\{[^}]*border-radius:0!important/);
   assert.match(css,/\.nova-menu-toggle:hover[^}]*background:transparent!important[^}]*brightness\(1\.18\)/);
-  assert.match(css,/width:min\(330px,86vw\)/);
+  assert.match(css,/width:min\(312px,86vw\)/);
   assert.match(css,/pointer-events:none/);
   assert.match(css,/backdrop-filter:blur\(18px\)/);
   assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/width:min\(318px,88vw\)/);
+  assert.match(css,/width:min\(300px,88vw\)/);
   assert.match(source,/function placeToggle\(\)/);
-  assert.match(source,/querySelector\('\.home-only \.atelier-hero'\)/);
+  assert.match(source,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero, \.nova-studio-route-main \.atelier-hero'\)/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:2px[^}]*left:12px/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);
-  assert.match(css,/@media\(max-width:760px\)\{body\.is-home-route \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
+  assert.match(css,/@media\(max-width:760px\)\{:is\(body\.is-home-route,body\.is-universe-route,body\.is-unified-route,body\.is-studio-route\) \.atelier-hero>\.nova-menu-toggle\{top:1px;left:8px/);
+  assert.match(css,/body:has\(\.nova-menu-root\.is-open\) \.nova-menu-toggle\{opacity:0!important;pointer-events:none\}/);
+  assert.match(css,/\.nova-menu-panel button\.is-current\{[^}]*box-shadow:inset 3px 0 #7ee7ff/);
+  assert.match(css,/\.nova-menu-toggle\{[^}]*white-space:nowrap/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group\{[^}]*background:rgba\(255,255,255,\.025\)[^}]*box-shadow:none/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group-items button,[\s\S]*?color:#f5fbff!important;[\s\S]*?opacity:1!important;[\s\S]*?filter:none!important;[\s\S]*?-webkit-text-fill-color:currentColor/);
+  assert.match(css,/\.nova-menu-panel small,[\s\S]*?color:#d8eef8!important/);
+  assert.match(css,/button\[aria-current="page"\]\{color:#f5fbff!important;background:rgba\(126,231,255,\.18\)/);
+  assert.match(css,/\.nova-menu-panel \.nova-menu-group\{background:rgba\(255,255,255,\.04\)\}/);
+  assert.match(css,/\.nova-menu-panel button\{[^}]*white-space:normal;[^}]*overflow-wrap:anywhere/);
+  assert.match(css,/\.nova-menu-group summary\{[^}]*white-space:normal;[^}]*overflow-wrap:anywhere/);
 });
 
 test('home Studio cards use compact, readable dimensions',()=>{
@@ -83,7 +115,7 @@ test('home Hero displays the replaceable 4:1 banner without cropping',()=>{
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/おかえり、ティア/);
   assert.doesNotMatch(finalHome,/Nova_Happy\.png/);
-  assert.match(style,/\.home-only \.atelier-hero\{[^}]*aspect-ratio:4\/1/);
+  assert.match(style,/:is\(\.home-only,\.universe-main\)>\.atelier-hero\{[^}]*aspect-ratio:4\/1/);
   assert.match(style,/\.atelier-hero-media img\{[^}]*object-fit:contain/);
 });
 
@@ -91,7 +123,7 @@ test('home keeps Gemini and a cute Tia inside the compact Continue card',()=>{
   const style=fs.readFileSync(path.join(root,'style.css'),'utf8');
   const finalHome=app.slice(app.lastIndexOf('homeView=function'));
   assert.doesNotMatch(finalHome,/home-logo-bar|home-logo-subtitle|nova-studio-home-logo-20260804/);
-  assert.match(finalHome,/atelier-hero[\s\S]*atelier-continue[\s\S]*home-gemini-actions/);
+  assert.match(finalHome,/homeHeroSection\(\)[\s\S]*atelier-continue[\s\S]*home-gemini-actions/);
   assert.match(finalHome,/Tia_Chibi_Wink_Heart\.png/);
   assert.match(gemini,/querySelector\('\.home-gemini-actions'\)/);
   assert.match(gemini,/button\.dataset\.geminiBridge = 'home'/);
