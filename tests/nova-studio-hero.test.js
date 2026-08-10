@@ -11,11 +11,11 @@ const menu=fs.readFileSync(path.join(root,'nova-menu.js'),'utf8');
 
 const studios=[
   ['story','story-studio','Story Studio'],
-  ['prompt','promptStudio','Prompt Studio'],
+  ['prompt','prompt-studio','Prompt Studio'],
   ['music','music-studio','Music Studio'],
-  ['character','characters','Character Studio'],
-  ['background','worlds','Background Studio'],
-  ['voice','voiceStudio','Voice Studio'],
+  ['character','character-studio','Character Studio'],
+  ['background','background-studio','Background Studio'],
+  ['voice','voice-studio','Voice Studio'],
   ['video','video-studio','Video Studio'],
   ['comic','comic-studio','Comic Studio'],
   ['line-sns','line-sns-studio','LINE / SNS Studio'],
@@ -48,9 +48,26 @@ test('Studio shell shares route geometry and receives the existing menu toggle',
 });
 
 test('Home cards and common menu enter the configured Studio routes',()=>{
-  for(const route of ['story-studio','video-studio','comic-studio','line-sns-studio','web-studio']){
+  for(const [,route] of studios){
     assert.match(app,new RegExp(`setView\\('${route}'\\)`));
-    assert.match(menu,new RegExp(`'${route}'`));
+    if(route==='music-studio')assert.match(menu,/command==='music-studio'/);
+    else assert.match(html,new RegExp(`data-(?:route|command)="${route}"`));
   }
-  assert.match(app,/if\(appId==='voiceStudio'[\s\S]*?return setView\(appId\)/);
+  assert.match(app,/if\(appId==='promptStudio'&&!urlOverride\)return setView\('prompt-studio'\)/);
+  assert.match(app,/if\(appId==='voiceStudio'&&!urlOverride\)return setView\('voice-studio'\)/);
+});
+
+test('actual Studio route branch renders before legacy shell and keeps route-specific content',()=>{
+  const finalLayout=app.slice(app.indexOf('/* Final layout separation'),app.indexOf('/* Story Archive 1.3'));
+  const studioBranch=finalLayout.indexOf('if(studioHeroConfigForRoute(v))');
+  const legacyShell=finalLayout.indexOf('shell(managementViewForRoute(v))');
+  assert.ok(studioBranch>0&&legacyShell>studioBranch);
+  assert.match(finalLayout,/novaRenderStudioRoute\(v,managementViewForRoute\(v\)\)/);
+  assert.match(finalLayout,/if\(v==='story-studio'\)return storyCollectionView\('scenes'\)/);
+  assert.match(finalLayout,/if\(v==='character-studio'\)return storyCollectionView\('characters'\)/);
+  assert.match(finalLayout,/if\(v==='background-studio'\)return storyCollectionView\('worlds'\)/);
+  assert.match(finalLayout,/if\(v==='voice-studio'\)return appWorkspaceView\('voiceStudio'\)/);
+  assert.match(finalLayout,/startsWith\('music-studio\/'\)/);
+  const studioRenderer=finalLayout.slice(finalLayout.indexOf('function novaRenderStudioRoute'),finalLayout.indexOf('function novaRenderHomeOnly'));
+  assert.doesNotMatch(studioRenderer,/management-header|management-layout|management-side|productionFlowNav|flow-guide/);
 });

@@ -1163,11 +1163,11 @@ function openHomeStudioPreview(title,description){
 }
 const HOME_STUDIOS=[
   ['Tia_Chibi_Reading.png','Story Studio','物語・構成・脚本をつくる',"setView('story-studio')"],
-  ['Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"openApp('promptStudio')"],
+  ['Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"setView('prompt-studio')"],
   ['Nova_Joy.png','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')"],
-  ['Tia_Chibi_Smile.png','Character Studio','キャラクター設定と差分を管理する',"setView('characters')"],
-  ['Tia_Chibi_Welcome.png','Background Studio','背景・場所・時間帯を整える',"setView('worlds')"],
-  ['Nova_Thinking.png','Voice Studio','セリフと音声を管理する',"openApp('voiceStudio')"],
+  ['Tia_Chibi_Smile.png','Character Studio','キャラクター設定と差分を管理する',"setView('character-studio')"],
+  ['Tia_Chibi_Welcome.png','Background Studio','背景・場所・時間帯を整える',"setView('background-studio')"],
+  ['Nova_Thinking.png','Voice Studio','セリフと音声を管理する',"setView('voice-studio')"],
   ['Tia_Chibi_HappyJump.png','Video Studio','動画素材と編集をまとめる',"setView('video-studio')"],
   ['Tia_Chibi_Peace.png','Comic Studio','漫画・制作日誌画像をつくる',"setView('comic-studio')"],
   ['Nova_Cool.png','LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる',"setView('line-sns-studio')"],
@@ -1266,18 +1266,22 @@ render();
 const NOVA_STUDIO_HERO_PLACEHOLDER='./assets/images/home/nova-studio-home-hero-20260804.png';
 const NOVA_STUDIO_HERO_CONFIGS=[
   {studioKey:'story',route:'story-studio',title:'Story Studio',category:'STORY & SCRIPT',subtitle:'物語・構成・脚本をひとつの制作導線で組み立てます。',badge:'Worldbuilding',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
-  {studioKey:'prompt',route:'promptStudio',title:'Prompt Studio',category:'PROMPT DESIGN',subtitle:'映像生成の発想と言葉を、再利用しやすい形へ整えます。',badge:'Prompt Craft',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'prompt',route:'prompt-studio',title:'Prompt Studio',category:'PROMPT DESIGN',subtitle:'映像生成の発想と言葉を、再利用しやすい形へ整えます。',badge:'Prompt Craft',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
   {studioKey:'music',route:'music-studio',title:'Music Studio',category:'MUSIC PRODUCTION',subtitle:'音楽プロジェクトを安全に作成・保存・管理します。',badge:'MIDI / Logic Pro',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
-  {studioKey:'character',route:'characters',title:'Character Studio',category:'CHARACTER DESIGN',subtitle:'キャラクター設定・表情差分・参照資料を育てます。',badge:'Design Sheet',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
-  {studioKey:'background',route:'worlds',title:'Background Studio',category:'BACKGROUND ART',subtitle:'背景・場所・時間帯と、作品世界の色設計を整えます。',badge:'Environment',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
-  {studioKey:'voice',route:'voiceStudio',title:'Voice Studio',category:'VOICE PRODUCTION',subtitle:'セリフと音声収録の素材・状態をまとめて管理します。',badge:'Voice & Wave',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'character',route:'character-studio',title:'Character Studio',category:'CHARACTER DESIGN',subtitle:'キャラクター設定・表情差分・参照資料を育てます。',badge:'Design Sheet',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'background',route:'background-studio',title:'Background Studio',category:'BACKGROUND ART',subtitle:'背景・場所・時間帯と、作品世界の色設計を整えます。',badge:'Environment',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'voice',route:'voice-studio',title:'Voice Studio',category:'VOICE PRODUCTION',subtitle:'セリフと音声収録の素材・状態をまとめて管理します。',badge:'Voice & Wave',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
   {studioKey:'video',route:'video-studio',title:'Video Studio',category:'VIDEO EDITING',subtitle:'動画素材・フレーム・編集工程をひとつにまとめます。',badge:'Timeline',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
   {studioKey:'comic',route:'comic-studio',title:'Comic Studio',category:'COMIC PRODUCTION',subtitle:'コマ・吹き出し・漫画原稿の制作を組み立てます。',badge:'Panels & Ink',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
   {studioKey:'line-sns',route:'line-sns-studio',title:'LINE / SNS Studio',category:'SOCIAL CONTENT',subtitle:'スタンプ・告知画像・投稿素材を媒体ごとに整えます。',badge:'Share & Post',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
   {studioKey:'web',route:'web-studio',title:'Web Studio',category:'WEB DESIGN',subtitle:'サイト設計と作品ページの見せ方を組み立てます。',badge:'Layout & Publish',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'}
 ];
 const NOVA_STUDIO_HERO_BY_ROUTE=new Map(NOVA_STUDIO_HERO_CONFIGS.map(config=>[config.route,config]));
-function studioHeroConfigForRoute(route){return NOVA_STUDIO_HERO_BY_ROUTE.get(route)||null}
+function studioHeroConfigForRoute(route){
+  const exact=NOVA_STUDIO_HERO_BY_ROUTE.get(route);
+  if(exact)return exact;
+  return String(route||'').startsWith('music-studio/')?NOVA_STUDIO_HERO_BY_ROUTE.get('music-studio'):null;
+}
 function renderStudioHero(config){
   return `<section class="atelier-hero studio-route-hero" data-studio-key="${esc(config.studioKey)}" data-hero-image-status="${esc(config.status)}" aria-labelledby="studio-hero-title-${esc(config.studioKey)}"><div class="atelier-hero-media"><img src="${esc(config.image)}" alt="${esc(config.title)}のHeroイラスト（共通フォーマット準備画像）" width="1920" height="480" loading="eager" decoding="async"></div><div class="studio-hero-copy"><p class="studio-hero-category">${esc(config.category)}</p><h1 id="studio-hero-title-${esc(config.studioKey)}">${esc(config.title)}</h1><p>${esc(config.subtitle)}</p></div><span class="studio-hero-badge">${esc(config.badge)}</span></section>`;
 }
@@ -1358,8 +1362,8 @@ function appWorkspaceView(appId){
 const novaFinalOpenAppBase=openApp;
 openApp=function(appId,urlOverride){
   if(appId==='musicStudio'&&!urlOverride)return setView('music-studio');
-  if(appId==='promptStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
-  if(appId==='voiceStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
+  if(appId==='promptStudio'&&!urlOverride)return setView('prompt-studio');
+  if(appId==='voiceStudio'&&!urlOverride)return setView('voice-studio');
   return novaFinalOpenAppBase(appId,urlOverride);
 };
 const novaFinalOpenProductionDashboardBase=typeof openProductionDashboard==='function'?openProductionDashboard:null;
@@ -1378,9 +1382,12 @@ managementViewForRoute=function(v){
   const musicStudioView=musicStudioHostRouteView(v);
   if(musicStudioView!==null)return musicStudioView;
   if(v==='productionDashboard')return projectDashboardView();
-  if(v==='promptStudio')return appWorkspaceView('promptStudio');
+  if(v==='prompt-studio'||v==='promptStudio')return appWorkspaceView('promptStudio');
   if(v==='musicStudio')return appWorkspaceView('musicStudio');
   if(v==='story-studio')return storyCollectionView('scenes');
+  if(v==='character-studio')return storyCollectionView('characters');
+  if(v==='background-studio')return storyCollectionView('worlds');
+  if(v==='voice-studio')return appWorkspaceView('voiceStudio');
   if(['video-studio','comic-studio','line-sns-studio','web-studio'].includes(v))return novaStudioPlaceholderView(studioHeroConfigForRoute(v));
   return novaFinalManagementViewForRouteBase(v);
 };

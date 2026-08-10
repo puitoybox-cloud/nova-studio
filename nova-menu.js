@@ -70,9 +70,7 @@
   function runCommand(command){
     closeMenu(false);
     if(['story-studio','video-studio','comic-studio','line-sns-studio','web-studio'].includes(command))return go(command);
-    if(command==='prompt-studio')return window.openApp?.('promptStudio');
     if(command==='music-studio')return window.openApp?.('musicStudio');
-    if(command==='voice-studio')return window.openApp?.('voiceStudio');
     if(command==='story-archive')return window.openStoryArchive?.();
     if(command==='production-dashboard')return window.openProductionDashboard?.();
   }
