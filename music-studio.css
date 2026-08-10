@@ -374,6 +374,20 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 .music-midi-editor-page .music-editor-topbar>.music-midi-input-control.is-unsupported{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:2px;margin-left:auto;white-space:normal}
 .music-midi-editor-page .music-editor-topbar>.music-midi-input-control.is-unsupported small{display:block;width:auto;max-width:100%;padding-inline:7px;color:#fbbf24;font-size:.62rem;line-height:1.1;text-align:left}
 .music-midi-editor-page .music-editor-topbar>.music-midi-input-control select{width:auto;max-width:100%;min-width:0;flex:0 1 auto}
+/* MIDI input is a real toolbar popover; only device selection is unavailable in Safari. */
+.music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{width:max-content;max-width:100%;flex:0 0 auto;margin-right:-4px;margin-left:auto}
+.music-midi-editor-page .music-midi-input-menu>summary{width:max-content;max-width:100%;white-space:nowrap}
+.music-midi-editor-page .music-midi-input-menu>summary::before{display:inline-grid;width:1.15em;flex:none;place-items:center;margin-right:5px;color:var(--music-violet);content:'♪';font-size:1.05em}
+.music-midi-editor-page .music-midi-input-menu>summary::after{margin-left:7px;color:var(--music-muted);content:'▼';font-size:.68em}
+.music-midi-editor-page .music-midi-input-menu[open]>summary::after{content:'▲'}
+.music-midi-editor-page .music-midi-input-popover{right:0;left:auto;width:min(320px,calc(100vw - 24px));padding:12px;text-align:left}
+.music-midi-editor-page .music-midi-browser-guidance{display:grid;gap:6px;color:var(--music-ink);line-height:1.35}
+.music-midi-editor-page .music-midi-browser-guidance small{color:#fbbf24;font-size:.75rem;font-weight:800}
+.music-midi-editor-page .music-midi-device-select{display:grid;gap:6px;margin:0;color:var(--music-blue);font-size:.75rem;font-weight:800}
+.music-midi-editor-page .music-midi-device-select select{box-sizing:border-box;width:100%;min-height:36px;padding:5px 8px;border:1px solid #526985;border-radius:9px;background:#081421;color:var(--music-ink);font:inherit}
+.music-midi-editor-page .music-midi-connection-state{margin:8px 0 0;color:var(--music-muted);font-size:.72rem;line-height:1.35}
+@media(min-width:1100px){.music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{margin-right:-12px}}
+@media(max-width:900px){.music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{margin-right:-6px}}
 /* The host form reset gives every input full width and 48px height; radios stay native-sized inside Correction. */
 .music-midi-editor-page .music-correction-popover :is(.music-correction-target,.music-transpose-direction)>label{display:inline-flex;min-width:0;align-items:center;gap:7px;line-height:1.25;white-space:normal}.music-midi-editor-page .music-correction-popover input[type=radio]{appearance:auto;width:18px!important;min-width:18px!important;max-width:18px!important;height:18px!important;min-height:18px!important;max-height:18px!important;flex:0 0 18px;margin:0!important;padding:0!important;transform:none!important;accent-color:var(--music-editor-accent)}
 @media(max-width:900px){.music-midi-editor-page .music-correction-popover{position:fixed;top:min(260px,calc(100vh - 248px))!important;right:8px!important;bottom:8px;left:8px!important;width:auto!important;max-height:calc(100vh - 88px)}}
