@@ -64,13 +64,20 @@ test('shared route shells reuse the Home width spacing and glass panel tokens',(
     '--nova-route-section-gap:.65rem',
     '--nova-route-panel-padding:1rem',
     '--nova-route-panel-radius:22px',
-    '--nova-route-panel-background:rgba(255,255,255,.76)',
-    '--nova-route-panel-shadow:0 12px 30px rgba(18,57,93,.12)',
+    '--nova-route-panel-background:rgba(255,255,255,.48)',
+    '--nova-route-panel-shadow:0 14px 34px rgba(18,57,93,.10)',
   ])assert.match(css,new RegExp(token.replace(/[().]/g,'\\$&')));
   assert.match(css,/width:min\(100%,var\(--nova-route-max-width\)\)/);
   assert.match(css,/margin:0 0 var\(--nova-route-section-gap\)/);
   assert.match(css,/\.universe-panel,\s*\.nova-studio-route-content,\s*\.nova-unified-content\{[\s\S]*?padding:var\(--nova-route-panel-padding\)!important;[\s\S]*?border-radius:var\(--nova-route-panel-radius\)/);
   assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?--nova-route-inline-padding:\.65rem;[\s\S]*?--nova-route-panel-padding:\.85rem;[\s\S]*?--nova-route-panel-radius:18px/);
+});
+
+test('white route panels cards and input surfaces reuse the Home Studios glass',()=>{
+  assert.match(css,/--nova-route-panel-blur:12px/);
+  assert.match(css,/\.studio-stage-panel\{[^}]*background:var\(--nova-route-panel-background\)[^}]*box-shadow:var\(--nova-route-panel-shadow\)[^}]*backdrop-filter:blur\(var\(--nova-route-panel-blur\)\)/);
+  assert.match(css,/\.nova-unified-content :is\(\.app-card,\.archive-home-card,\.archive-board-card,\.archive-image-card,\.archive-card,\.card,\.row,\.stats>div\),[\s\S]*?background:var\(--nova-route-panel-background\)!important;[\s\S]*?backdrop-filter:blur\(var\(--nova-route-panel-blur\)\)/);
+  assert.match(css,/:is\(\.nova-unified-content,\.nova-studio-route-content>:not\(\.music-studio-shell\)\) :is\(input,select,textarea\)\{[\s\S]*?background:var\(--nova-route-panel-background\)/);
 });
 
 test('Music Studio dark common surfaces reuse the exact Home continue gradient token',()=>{
