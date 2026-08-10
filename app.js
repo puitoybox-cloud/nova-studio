@@ -1162,16 +1162,16 @@ function openHomeStudioPreview(title,description){
   modal(`<h2>${esc(title)}</h2><p>${esc(description)}</p><p class="meta">このStudioの入口をホームに用意しました。制作機能は今後ここから接続します。</p><button class="primary-action" onclick="closeModal()">ホームへ戻る</button>`);
 }
 const HOME_STUDIOS=[
-  ['Tia_Chibi_Reading.png','Story Studio','物語・構成・脚本をつくる',"openHomeStudioPreview('Story Studio','物語・構成・脚本をつくる')"],
+  ['Tia_Chibi_Reading.png','Story Studio','物語・構成・脚本をつくる',"setView('story-studio')"],
   ['Nova_Sparkle.png','Prompt Studio','映像生成プロンプトを整える',"openApp('promptStudio')"],
   ['Nova_Joy.png','Music Studio','音楽と音の制作へ進む',"openApp('musicStudio')"],
   ['Tia_Chibi_Smile.png','Character Studio','キャラクター設定と差分を管理する',"setView('characters')"],
   ['Tia_Chibi_Welcome.png','Background Studio','背景・場所・時間帯を整える',"setView('worlds')"],
   ['Nova_Thinking.png','Voice Studio','セリフと音声を管理する',"openApp('voiceStudio')"],
-  ['Tia_Chibi_HappyJump.png','Video Studio','動画素材と編集をまとめる',"openHomeStudioPreview('Video Studio','動画素材と編集をまとめる')"],
-  ['Tia_Chibi_Peace.png','Comic Studio','漫画・制作日誌画像をつくる',"openHomeStudioPreview('Comic Studio','漫画・制作日誌画像をつくる')"],
-  ['Nova_Cool.png','LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる',"openHomeStudioPreview('LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる')"],
-  ['Tia_Chibi_Wink_Heart.png','Web Studio','サイト・作品ページをつくる',"openHomeStudioPreview('Web Studio','サイト・作品ページをつくる')"]
+  ['Tia_Chibi_HappyJump.png','Video Studio','動画素材と編集をまとめる',"setView('video-studio')"],
+  ['Tia_Chibi_Peace.png','Comic Studio','漫画・制作日誌画像をつくる',"setView('comic-studio')"],
+  ['Nova_Cool.png','LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる',"setView('line-sns-studio')"],
+  ['Tia_Chibi_Wink_Heart.png','Web Studio','サイト・作品ページをつくる',"setView('web-studio')"]
 ];
 const HOME_MANAGEMENT=[
   ['📚','Story Archive','物語の記憶と設定カードを開く','openStoryArchive()'],
@@ -1263,14 +1263,45 @@ storyArchiveView=function(){memorySyncInitConstants?.();const cards=storyArchive
 render();
 
 /* Final layout separation: home and management are exclusive views. */
+const NOVA_STUDIO_HERO_PLACEHOLDER='./assets/images/home/nova-studio-home-hero-20260804.png';
+const NOVA_STUDIO_HERO_CONFIGS=[
+  {studioKey:'story',route:'story-studio',title:'Story Studio',category:'STORY & SCRIPT',subtitle:'物語・構成・脚本をひとつの制作導線で組み立てます。',badge:'Worldbuilding',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'prompt',route:'promptStudio',title:'Prompt Studio',category:'PROMPT DESIGN',subtitle:'映像生成の発想と言葉を、再利用しやすい形へ整えます。',badge:'Prompt Craft',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'music',route:'music-studio',title:'Music Studio',category:'MUSIC PRODUCTION',subtitle:'音楽プロジェクトを安全に作成・保存・管理します。',badge:'MIDI / Logic Pro',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'character',route:'characters',title:'Character Studio',category:'CHARACTER DESIGN',subtitle:'キャラクター設定・表情差分・参照資料を育てます。',badge:'Design Sheet',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'background',route:'worlds',title:'Background Studio',category:'BACKGROUND ART',subtitle:'背景・場所・時間帯と、作品世界の色設計を整えます。',badge:'Environment',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'voice',route:'voiceStudio',title:'Voice Studio',category:'VOICE PRODUCTION',subtitle:'セリフと音声収録の素材・状態をまとめて管理します。',badge:'Voice & Wave',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'video',route:'video-studio',title:'Video Studio',category:'VIDEO EDITING',subtitle:'動画素材・フレーム・編集工程をひとつにまとめます。',badge:'Timeline',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'comic',route:'comic-studio',title:'Comic Studio',category:'COMIC PRODUCTION',subtitle:'コマ・吹き出し・漫画原稿の制作を組み立てます。',badge:'Panels & Ink',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'line-sns',route:'line-sns-studio',title:'LINE / SNS Studio',category:'SOCIAL CONTENT',subtitle:'スタンプ・告知画像・投稿素材を媒体ごとに整えます。',badge:'Share & Post',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'},
+  {studioKey:'web',route:'web-studio',title:'Web Studio',category:'WEB DESIGN',subtitle:'サイト設計と作品ページの見せ方を組み立てます。',badge:'Layout & Publish',image:NOVA_STUDIO_HERO_PLACEHOLDER,status:'placeholder'}
+];
+const NOVA_STUDIO_HERO_BY_ROUTE=new Map(NOVA_STUDIO_HERO_CONFIGS.map(config=>[config.route,config]));
+function studioHeroConfigForRoute(route){return NOVA_STUDIO_HERO_BY_ROUTE.get(route)||null}
+function renderStudioHero(config){
+  return `<section class="atelier-hero studio-route-hero" data-studio-key="${esc(config.studioKey)}" data-hero-image-status="${esc(config.status)}" aria-labelledby="studio-hero-title-${esc(config.studioKey)}"><div class="atelier-hero-media"><img src="${esc(config.image)}" alt="${esc(config.title)}のHeroイラスト（共通フォーマット準備画像）" width="1920" height="480" loading="eager" decoding="async"></div><div class="studio-hero-copy"><p class="studio-hero-category">${esc(config.category)}</p><h1 id="studio-hero-title-${esc(config.studioKey)}">${esc(config.title)}</h1><p>${esc(config.subtitle)}</p></div><span class="studio-hero-badge">${esc(config.badge)}</span></section>`;
+}
+function novaStudioPlaceholderView(config){
+  return `<section class="studio-stage-panel" aria-labelledby="studio-stage-title-${esc(config.studioKey)}"><p class="eyebrow">Studio foundation</p><h2 id="studio-stage-title-${esc(config.studioKey)}">${esc(config.title)} 制作入口</h2><p>${esc(config.subtitle)}</p><p class="meta">既存機能と保存データを維持したまま、正式イラストと制作機能を接続できる共通Hero土台を準備しています。</p></section>`;
+}
+function novaRenderStudioRoute(route,mainContent){
+  const config=studioHeroConfigForRoute(route);
+  if(!config)return false;
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','nav-open');
+  document.body.classList.add('is-studio-route');
+  document.body.dataset.homeBackground='fantasyAtelier';
+  document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
+  document.querySelector('#app').innerHTML=`<main class="nova-studio-route-main" data-nova-studio-route="${esc(route)}" data-studio-key="${esc(config.studioKey)}" aria-label="${esc(config.title)}">${renderStudioHero(config)}<section class="nova-studio-route-content">${mainContent}</section></main><div id="toast"></div>`;
+  return true;
+}
 function novaRenderHomeOnly(){
   document.body.classList.add('is-home-route');
-  document.body.classList.remove('is-management-route','is-universe-route','is-unified-route','nav-open');
+  document.body.classList.remove('is-management-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
   document.querySelector('#app').innerHTML=homeView();
 }
 const NOVA_UNIFIED_ROUTES=new Set(['storyArchive','productionDashboard','backup','settings']);
 function novaRenderUnifiedRoute(route,mainContent){
-  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','nav-open');
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-studio-route','nav-open');
   document.body.classList.add('is-unified-route');
   document.body.dataset.homeBackground='fantasyAtelier';
   document.body.style.setProperty('--home-background-image',"url('./fantasy_atelier_background.png')");
@@ -1299,7 +1330,7 @@ function managementViewForRoute(v){
 render=function(){
   ensureV06?.();
   const v=(location.hash||'#home').slice(1)||HOME_ROUTE;
-  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','nav-open');
+  document.body.classList.remove('is-home-route','is-management-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
   if(v===HOME_ROUTE){
     novaRenderHomeOnly();
     return;
@@ -1307,6 +1338,10 @@ render=function(){
   recordLastLocation?.({view:v});
   if(NOVA_UNIFIED_ROUTES.has(v)){
     novaRenderUnifiedRoute(v,managementViewForRoute(v));
+    return;
+  }
+  if(studioHeroConfigForRoute(v)){
+    novaRenderStudioRoute(v,managementViewForRoute(v));
     return;
   }
   document.body.classList.add('is-management-route');
@@ -1324,6 +1359,7 @@ const novaFinalOpenAppBase=openApp;
 openApp=function(appId,urlOverride){
   if(appId==='musicStudio'&&!urlOverride)return setView('music-studio');
   if(appId==='promptStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
+  if(appId==='voiceStudio'&&!urlOverride&&!state.apps.find(a=>a.id===appId)?.url)return setView(appId);
   return novaFinalOpenAppBase(appId,urlOverride);
 };
 const novaFinalOpenProductionDashboardBase=typeof openProductionDashboard==='function'?openProductionDashboard:null;
@@ -1344,6 +1380,8 @@ managementViewForRoute=function(v){
   if(v==='productionDashboard')return projectDashboardView();
   if(v==='promptStudio')return appWorkspaceView('promptStudio');
   if(v==='musicStudio')return appWorkspaceView('musicStudio');
+  if(v==='story-studio')return storyCollectionView('scenes');
+  if(['video-studio','comic-studio','line-sns-studio','web-studio'].includes(v))return novaStudioPlaceholderView(studioHeroConfigForRoute(v));
   return novaFinalManagementViewForRouteBase(v);
 };
 render();

@@ -7,13 +7,6 @@
   const panel=root.querySelector('.nova-menu-panel');
   const scrim=root.querySelector('.nova-menu-scrim');
 
-  const studioPreviews={
-    'story-studio':['Story Studio','物語・構成・脚本をつくる'],
-    'video-studio':['Video Studio','動画素材と編集をまとめる'],
-    'comic-studio':['Comic Studio','漫画・制作日誌画像をつくる'],
-    'line-sns-studio':['LINE・SNS Studio','スタンプ・告知画像・投稿素材をつくる'],
-    'web-studio':['Web Studio','サイト・作品ページをつくる']
-  };
   function menuItems(){return [...panel.querySelectorAll('button:not([disabled]),summary')]}
   function currentRoute(){return (location.hash||'#home').slice(1)||'home'}
   function updateActive(){
@@ -40,7 +33,7 @@
     if(!opening)animation.addEventListener('finish',()=>{details.open=false},{once:true});
   }
   function placeToggle(){
-    const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero, .nova-unified-main .atelier-hero');
+    const hero=document.querySelector('.home-only .atelier-hero, .universe-main .atelier-hero, .nova-unified-main .atelier-hero, .nova-studio-route-main .atelier-hero');
     const target=hero||menuBar;
     if(toggle.parentElement!==target)(hero?target.prepend(toggle):target.appendChild(toggle));
   }
@@ -76,11 +69,7 @@
   }
   function runCommand(command){
     closeMenu(false);
-    if(studioPreviews[command]){
-      const [title,description]=studioPreviews[command];
-      window.openHomeStudioPreview?.(title,description);
-      return;
-    }
+    if(['story-studio','video-studio','comic-studio','line-sns-studio','web-studio'].includes(command))return go(command);
     if(command==='prompt-studio')return window.openApp?.('promptStudio');
     if(command==='music-studio')return window.openApp?.('musicStudio');
     if(command==='voice-studio')return window.openApp?.('voiceStudio');

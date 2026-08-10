@@ -58,8 +58,8 @@ test('home and Universe share the same responsive outer width rule',()=>{
 
 test('all shared Hero routes use one final geometry rule',()=>{
   const unified=fs.readFileSync(path.join(root,'nova-unified-ui.css'),'utf8');
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main\)\{[\s\S]*?width:min\(100%,1120px\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:\.85rem/);
-  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 \.65rem;[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)\{[\s\S]*?width:min\(100%,1120px\);[\s\S]*?padding-top:clamp\(1rem,3vw,2\.4rem\);[\s\S]*?padding-inline:\.85rem/);
+  assert.match(unified,/:is\(\.atelier-home\.home-only,\.universe-main,\.nova-unified-main,\.nova-studio-route-main\)>\.atelier-hero\{[\s\S]*?aspect-ratio:4\/1;[\s\S]*?margin:0 0 \.65rem;[\s\S]*?padding:0;[\s\S]*?border-radius:34px/);
   assert.match(unified,/@media\(max-width:760px\)\{[\s\S]*?padding-top:\.85rem;padding-inline:\.65rem[\s\S]*?border-radius:24px/);
 });
 
@@ -84,7 +84,7 @@ test('Universe uses one home-style panel with compact context filters and zoom c
   assert.match(app,/class="universe-zoom"/);
   assert.match(app,/if\(route==='universe'\)\{[\s\S]*?return;/);
   assert.match(css,/body\.is-management-route\.is-universe-route\{[^}]*fantasy_atelier_background\.png/);
-  assert.match(menuCss,/:is\(body\.is-home-route,body\.is-universe-route,body\.is-unified-route\) \.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px/);
+  assert.match(menuCss,/:is\(body\.is-home-route,body\.is-universe-route,body\.is-unified-route,body\.is-studio-route\) \.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px/);
   assert.match(css,/\.universe-main \.universe\{height:var\(--universe-desktop-height\)/);
   assert.match(app,/unlinked\.length\?`<section class="universe-unlinked"/);
 });

@@ -78,9 +78,9 @@ body:has(.nova-menu-root.is-open) .nova-menu-toggle{opacity:0!important;pointer-
 .nova-menu-panel button:not(:disabled):not([aria-disabled="true"]),
 .nova-menu-panel summary:not([aria-disabled="true"]){opacity:1!important;filter:none!important}
 @media(max-width:760px){:root{--nova-menu-control:46px;--nova-menu-edge:8px}.nova-menu-panel{width:min(300px,88vw);padding-inline:.6rem}.nova-menu-panel button{min-height:44px}.nova-menu-logo img{width:min(44%,116px);max-height:92px}}
-:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle{position:absolute;top:2px;left:12px;width:auto;min-width:72px;height:44px;min-height:44px;padding:0 4px!important;gap:5px;background:transparent!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;color:#17212a;text-shadow:0 1px 1px rgba(255,255,255,.82)}
-:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle .nova-menu-glyph{font-size:23px}
-:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle .nova-menu-label{display:block}
-:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle:hover,:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle:active{background:transparent!important;color:#05090d}
-@media(max-width:760px){:is(body.is-home-route,body.is-universe-route,body.is-unified-route) .atelier-hero>.nova-menu-toggle{top:1px;left:8px;min-width:68px}}
+:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle{position:absolute;top:2px;left:12px;width:auto;min-width:72px;height:44px;min-height:44px;padding:0 4px!important;gap:5px;background:transparent!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;color:#17212a;text-shadow:0 1px 1px rgba(255,255,255,.82)}
+:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle .nova-menu-glyph{font-size:23px}
+:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle .nova-menu-label{display:block}
+:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle:hover,:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle:active{background:transparent!important;color:#05090d}
+@media(max-width:760px){:is(body.is-home-route,body.is-universe-route,body.is-unified-route,body.is-studio-route) .atelier-hero>.nova-menu-toggle{top:1px;left:8px;min-width:68px}}
 @media(prefers-reduced-motion:reduce){.nova-menu-panel,.nova-menu-glyph{transition:none}}
