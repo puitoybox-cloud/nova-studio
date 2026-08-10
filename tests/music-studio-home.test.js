@@ -24,18 +24,17 @@ test('defines all 15 requested home entries and three statuses',()=>{
   for(const title of ['新しい音楽プロジェクト','最近使ったプロジェクト','Logic Pro X連携','MIDI Composer','歌詞・音符割付','AI作曲データ取り込み','楽器別MIDI','音色・プラグイン管理','ミックス支援','マスタリング支援','ファイル管理','バックアップ','Music Studio設定','Dream Architect Studioへ戻る','Nova Studioへ送る'])assert.ok(app.FEATURES.some(item=>item.title===title));
 });
 
-test('home explains product role, states, and host context',()=>{
-  const html=loadMusicStudio().MusicStudio.homeView();
-  assert.match(html,/Logic Pro X centered creative support/);
+test('real Music Studio home route starts with project UI and has no legacy hero or Dream Architect display',()=>{
+  const html=loadMusicStudio().MusicStudio.renderRoute('music-studio');
+  assert.match(html,/Music Studio主要ナビゲーション/);
+  assert.match(html,/新しい音楽プロジェクト/);
+  assert.match(html,/プロジェクト一覧/);
+  assert.match(html,/最近使ったプロジェクト/);
   for(const status of ['使用可能','作業中','未実装'])assert.match(html,new RegExp(status));
-  assert.match(html,/Dream Architect Studioから開いています/);
-  assert.match(html,/ai-music-helperの保存データを変更しません/);
-});
-
-test('standalone home is natural without the host',()=>{
-  const html=loadMusicStudio().MusicStudio.homeView({standalone:true});
-  assert.match(html,/Music Studioを単体で開いています/);
-  assert.match(html,/Nova StudioやDream Architect Studioに接続しなくても/);
+  assert.doesNotMatch(html,/class="music-hero"/);
+  assert.doesNotMatch(html,/Logic Pro X centered creative support/i);
+  assert.doesNotMatch(html,/MS-04 \/ Logic Pro handoff/);
+  assert.doesNotMatch(html,/Dream Architect Studio/);
 });
 
 test('unfinished routes always render safe placeholders with return actions',()=>{
@@ -64,6 +63,9 @@ test('project routes render real accessible management screens',()=>{
   const list=app.renderRoute('music-studio/recent-projects');
   assert.match(list,/JSONを読み込む/);
   assert.match(list,/プロジェクトを検索/);
+  const projectsAlias=app.renderRoute('music-studio/projects');
+  assert.match(projectsAlias,/JSONを読み込む/);
+  assert.match(projectsAlias,/プロジェクトを検索/);
 });
 
 test('host route wrapper preserves unrelated routes',()=>{
@@ -128,7 +130,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.1/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.51/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.51/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.52/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.52/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
