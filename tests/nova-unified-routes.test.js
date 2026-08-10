@@ -42,6 +42,11 @@ test('unified Hero media and image fill the shared Hero slot',()=>{
   assert.match(css,/\.nova-unified-main>\.atelier-hero>\.atelier-hero-media>img,[\s\S]*?\{[\s\S]*?display:block;[\s\S]*?width:100%;[\s\S]*?height:100%;[\s\S]*?object-fit:contain/);
 });
 
+test('Home background is shared by Universe unified pages and every Studio route',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','nova-unified-ui.css'),'utf8');
+  assert.match(css,/body:is\(\.is-home-route,\.is-management-route\.is-universe-route,\.is-unified-route,\.is-studio-route\)\{[^}]*radial-gradient\(circle at 16% 8%[^}]*fantasy_atelier_background\.png[^}]*center\/cover fixed no-repeat/);
+});
+
 test('one shared menu toggle is moved directly into every supported Hero',()=>{
   assert.match(menu,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero, \.nova-studio-route-main \.atelier-hero'\)/);
   assert.match(menu,/if\(toggle\.parentElement!==target\)\(hero\?target\.prepend\(toggle\):target\.appendChild\(toggle\)\)/);
