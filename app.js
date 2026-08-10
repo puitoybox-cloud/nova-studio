@@ -1298,14 +1298,6 @@ function novaRenderStudioRoute(route,mainContent){
   document.querySelector('#app').innerHTML=`<main class="nova-studio-route-main" data-nova-studio-route="${esc(route)}" data-studio-key="${esc(config.studioKey)}" aria-label="${esc(config.title)}">${renderStudioHero(config)}<section class="nova-studio-route-content">${mainContent}</section></main><div id="toast"></div>`;
   return true;
 }
-function isMusicStudioProjectListRoute(route){return route==='music-studio/projects'||route==='music-studio/recent-projects'}
-function novaRenderDedicatedMusicStudioRoute(route,mainContent){
-  document.body.classList.remove('is-home-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
-  document.body.classList.add('is-management-route');
-  delete document.body.dataset.homeBackground;
-  document.body.style.removeProperty('--home-background-image');
-  document.querySelector('#app').innerHTML=`<main class="music-studio-dedicated-route" data-music-studio-route="${esc(route)}">${mainContent}</main><div id="toast"></div>`;
-}
 function novaRenderHomeOnly(){
   document.body.classList.add('is-home-route');
   document.body.classList.remove('is-management-route','is-universe-route','is-unified-route','is-studio-route','nav-open');
@@ -1350,10 +1342,6 @@ render=function(){
   recordLastLocation?.({view:v});
   if(NOVA_UNIFIED_ROUTES.has(v)){
     novaRenderUnifiedRoute(v,managementViewForRoute(v));
-    return;
-  }
-  if((v==='music-studio'||String(v).startsWith('music-studio/'))&&!isMusicStudioProjectListRoute(v)){
-    novaRenderDedicatedMusicStudioRoute(v,managementViewForRoute(v));
     return;
   }
   if(studioHeroConfigForRoute(v)){

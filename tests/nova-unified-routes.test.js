@@ -44,11 +44,9 @@ test('unified Hero media and image fill the shared Hero slot',()=>{
   assert.match(css,/\.nova-unified-main>\.atelier-hero>\.atelier-hero-media>img,[\s\S]*?\{[\s\S]*?display:block;[\s\S]*?width:100%;[\s\S]*?height:100%;[\s\S]*?object-fit:contain/);
 });
 
-test('Home background remains shared by common routes while Music Studio has a dedicated dark shell',()=>{
+test('Home background is shared by Universe unified pages and every Studio route',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','nova-unified-ui.css'),'utf8');
   assert.match(css,/body:is\(\.is-home-route,\.is-management-route\.is-universe-route,\.is-unified-route,\.is-studio-route\)\{[^}]*radial-gradient\(circle at 16% 8%[^}]*fantasy_atelier_background\.png[^}]*center\/cover fixed no-repeat/);
-  assert.match(musicCss,/body\.is-music-studio-route\{background:#08111d\}/);
-  assert.match(musicCss,/\.music-studio-dedicated-route\{width:100%;min-height:100vh;background:#08111d\}/);
 });
 
 test('shared routes use the Home text hierarchy with dark-surface contrast',()=>{
@@ -82,11 +80,12 @@ test('white route panels cards and input surfaces reuse the Home Studios glass',
   assert.match(css,/:is\(\.nova-unified-content,\.nova-studio-route-content>:not\(\.music-studio-shell\)\) :is\(input,select,textarea\)\{[\s\S]*?background:var\(--nova-route-panel-background\)/);
 });
 
-test('Music Studio dark common surfaces reuse the exact Home continue gradient token',()=>{
+test('Music Studio keeps common surfaces while production menu cards retain their DAW gradient',()=>{
   assert.match(css,/--nova-continue-surface:radial-gradient\(circle at 90% 16%,rgba\(255,247,223,\.42\),transparent 30%\),linear-gradient\(135deg,#12395d,#1c7f94\)/);
   assert.match(style,/\.atelier-continue\{[^}]*background:var\(--nova-continue-surface\)/);
-  assert.match(musicCss,/\.is-studio-route \.music-studio-shell :is\(\.music-quick-nav \.music-secondary,\.music-recent,\.music-recent-item,\.music-status-summary div,\.music-feature-card\),\.music-project-page :is\(\.music-project-panel,\.music-project-row\)\{background:var\(--nova-continue-surface\)\}/);
-  assert.match(musicCss,/\.music-studio-dedicated-route>\.music-studio-shell\{padding:24px\}/);
+  assert.match(musicCss,/\.is-studio-route \.music-studio-shell :is\(\.music-quick-nav \.music-secondary,\.music-recent,\.music-recent-item,\.music-status-summary div\),\.music-project-page :is\(\.music-project-panel,\.music-project-row\)\{background:var\(--nova-continue-surface\)\}/);
+  assert.match(musicCss,/\.music-feature-card\{[^}]*background:linear-gradient\(150deg,#132033,#0d1725\)/);
+  assert.doesNotMatch(musicCss,/\.is-studio-route[^{}]*\.music-feature-card/);
 });
 
 test('one shared menu toggle is moved directly into every supported Hero',()=>{

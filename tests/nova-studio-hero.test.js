@@ -57,16 +57,12 @@ test('Home cards and common menu enter the configured Studio routes',()=>{
   assert.match(app,/if\(appId==='voiceStudio'&&!urlOverride\)return setView\('voice-studio'\)/);
 });
 
-test('Music Studio uses its dedicated pre-unification shell except for the project list',()=>{
+test('Music Studio keeps the common post-unification Hero shell',()=>{
   const finalLayout=app.slice(app.indexOf('/* Final layout separation'),app.indexOf('/* Story Archive 1.3'));
-  const musicBranch=finalLayout.indexOf("if((v==='music-studio'||String(v).startsWith('music-studio/'))&&!isMusicStudioProjectListRoute(v))");
   const studioBranch=finalLayout.indexOf('if(studioHeroConfigForRoute(v))');
   const legacyShell=finalLayout.indexOf('shell(managementViewForRoute(v))');
-  assert.ok(musicBranch>0&&studioBranch>musicBranch&&legacyShell>studioBranch);
-  assert.match(finalLayout,/function isMusicStudioProjectListRoute\(route\)\{return route==='music-studio\/projects'\|\|route==='music-studio\/recent-projects'\}/);
-  const musicRenderer=finalLayout.slice(finalLayout.indexOf('function novaRenderDedicatedMusicStudioRoute'),finalLayout.indexOf('function novaRenderHomeOnly'));
-  assert.match(musicRenderer,/class="music-studio-dedicated-route"/);
-  assert.doesNotMatch(musicRenderer,/renderStudioHero|atelier-hero|nova-studio-route-content|fantasy_atelier_background/);
+  assert.ok(studioBranch>0&&legacyShell>studioBranch);
+  assert.match(finalLayout,/function studioHeroConfigForRoute\(route\)[\s\S]*startsWith\('music-studio\/'\)/);
   assert.match(finalLayout,/novaRenderStudioRoute\(v,managementViewForRoute\(v\)\)/);
   assert.match(finalLayout,/if\(v==='story-studio'\)return storyCollectionView\('scenes'\)/);
   assert.match(finalLayout,/if\(v==='character-studio'\)return storyCollectionView\('characters'\)/);
