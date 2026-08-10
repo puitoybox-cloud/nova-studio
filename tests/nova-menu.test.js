@@ -61,7 +61,7 @@ test('the upper-left control is a minimal hamburger and MENU label with a respon
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/width:min\(300px,88vw\)/);
   assert.match(source,/function placeToggle\(\)/);
-  assert.match(source,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-page \.atelier-hero'\)/);
+  assert.match(source,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero'\)/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*position:absolute[^}]*top:2px[^}]*left:12px/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle\{[^}]*min-width:72px[^}]*min-height:44px[^}]*background:transparent!important[^}]*border-radius:0!important[^}]*box-shadow:none!important/);
   assert.match(css,/\.atelier-hero>\.nova-menu-toggle \.nova-menu-label\{display:block/);

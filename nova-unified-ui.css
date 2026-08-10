@@ -18,6 +18,8 @@ body.is-unified-route{
 }
 .nova-unified-main,.nova-unified-main *{min-width:0}
 :is(.atelier-home.home-only,.universe-main,.nova-unified-main)>.atelier-hero{
+  position:relative;
+  display:block;
   width:100%;
   max-width:100%;
   aspect-ratio:4/1;
@@ -27,7 +29,13 @@ body.is-unified-route{
   overflow:hidden;
   border-radius:34px;
 }
-:is(.atelier-home.home-only,.universe-main,.nova-unified-main)>.atelier-hero .atelier-hero-media img{
+.nova-unified-main>.atelier-hero>.atelier-hero-media{
+  display:block;
+  width:100%;
+  height:100%;
+}
+.nova-unified-main>.atelier-hero>.atelier-hero-media>img{
+  display:block;
   width:100%;
   height:100%;
   object-fit:contain;
