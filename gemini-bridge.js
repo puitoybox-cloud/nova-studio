@@ -260,7 +260,7 @@
       homeActions.appendChild(button);
     }
 
-    const header = document.querySelector('header:not(.universe-header)');
+    const header = [...document.querySelectorAll('header:not(.universe-header)')].find(element => !element.closest('.music-midi-editor-page'));
     if (header && !header.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'header';
@@ -270,7 +270,7 @@
       header.insertBefore(button, settingsButton || null);
     }
 
-    const nav = document.querySelector('nav:not(.atelier-management-links)');
+    const nav = [...document.querySelectorAll('nav:not(.atelier-management-links)')].find(element => !element.closest('.music-midi-editor-page'));
     if (nav && !nav.querySelector('[data-gemini-bridge]')) {
       const button = document.createElement('button');
       button.dataset.geminiBridge = 'nav';
