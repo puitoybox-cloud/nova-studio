@@ -8,6 +8,7 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
   --nova-route-panel-background:rgba(255,255,255,.76);
   --nova-route-panel-shadow:0 12px 30px rgba(18,57,93,.12);
   --nova-route-panel-blur:14px;
+  --nova-continue-surface:radial-gradient(circle at 90% 16%,rgba(255,247,223,.42),transparent 30%),linear-gradient(135deg,#12395d,#1c7f94);
   --nova-text-heading:#12395d;
   --nova-text-body:#153044;
   --nova-text-muted:#5b7083;
