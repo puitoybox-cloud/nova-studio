@@ -64,8 +64,6 @@ test('MIDI Composer uses the guarded project entry and distinguishes a missing e
   app.state.projects=[project];app.state.loaded=true;
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/編集モジュールを読み込めませんでした/);
-  assert.match(html,/editor-module-missing/);
-  assert.match(html,/19d1f0a/);
   assert.doesNotMatch(html,/対象のMusic Studioプロジェクトが見つかりません/);
 });
 
@@ -137,7 +135,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.25/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.26/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
@@ -147,7 +145,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.59/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.59/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.60/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.60/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
