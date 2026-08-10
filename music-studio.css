@@ -19,8 +19,8 @@
 .is-studio-route .music-studio-shell>.music-status-summary>div{min-height:64px;padding:8px 14px}
 .is-studio-route .music-studio-shell>.music-status-summary b{font-size:1.5rem}
 .is-studio-route .music-studio-shell>.music-status-summary span{font-size:.875rem}
-.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-section-heading{margin-bottom:18px}
-.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-feature-grid{gap:18px}
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-section-heading{margin-bottom:24px}
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-feature-grid{column-gap:18px;row-gap:22px}
 .is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] #musicFeaturesTitle{margin:.08rem 0 0;color:var(--nova-text-heading);font-size:1.9rem;line-height:1.12}
 .music-placeholder{min-height:100vh}.music-back{margin-bottom:18px}.music-placeholder-panel{padding:clamp(24px,7vw,70px);border:1px solid var(--music-line);border-radius:28px;background:linear-gradient(145deg,#14243a,#0b1523)}.music-placeholder-panel h1{font-size:clamp(2rem,7vw,4.6rem)}.music-empty{max-width:720px;margin:30px 0;padding:20px;border:1px dashed #526985;border-radius:16px;color:var(--music-muted)}.music-placeholder-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
 .music-recent{margin:28px 0 22px;padding:22px;border:1px solid var(--music-line);border-radius:20px;background:var(--music-panel)}
