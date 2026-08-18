@@ -408,3 +408,24 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 /* The host form reset gives every input full width and 48px height; radios stay native-sized inside Correction. */
 .music-midi-editor-page .music-correction-popover :is(.music-correction-target,.music-transpose-direction)>label{display:inline-flex;min-width:0;align-items:center;gap:7px;line-height:1.25;white-space:normal}.music-midi-editor-page .music-correction-popover input[type=radio]{appearance:auto;width:18px!important;min-width:18px!important;max-width:18px!important;height:18px!important;min-height:18px!important;max-height:18px!important;flex:0 0 18px;margin:0!important;padding:0!important;transform:none!important;accent-color:var(--music-editor-accent)}
 @media(max-width:900px){.music-midi-editor-page .music-correction-popover{position:fixed;top:min(260px,calc(100vh - 248px))!important;right:8px!important;bottom:8px;left:8px!important;width:auto!important;max-height:calc(100vh - 88px)}}
+/* Group the display helpers by task while preserving every existing editor action. */
+.music-midi-editor-page .music-display-assist>.music-assist-layout{display:grid;min-width:0;gap:10px;align-content:start}
+.music-midi-editor-page .music-assist-block,.music-midi-editor-page .music-assist-card{box-sizing:border-box;min-width:0}
+.music-midi-editor-page .music-assist-snap-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+.music-midi-editor-page .music-assist-snap-controls>button{width:100%;min-height:36px}
+.music-midi-editor-page .music-assist-snap-controls>label{display:flex;min-width:0;align-items:center;gap:8px;color:var(--music-ink);font-size:.78rem;font-weight:800;white-space:nowrap}
+.music-midi-editor-page .music-assist-snap-controls select{width:auto;min-width:76px;max-width:100%;min-height:36px}
+.music-midi-editor-page .music-assist-description{min-width:0;margin:8px 0 0;color:#b8c7d9;font-size:.72rem;font-weight:500;line-height:1.45;overflow-wrap:break-word}
+.music-midi-editor-page .music-assist-description span{color:#9fb0c5}
+.music-midi-editor-page .music-assist-zoom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
+.music-midi-editor-page .music-assist-zoom>button{width:100%;min-height:36px}
+.music-midi-editor-page .music-assist-zoom-value{justify-self:center;color:var(--music-ink);font-size:.78rem;white-space:nowrap}
+.music-midi-editor-page .music-assist-range-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.music-midi-editor-page .music-assist-card{display:grid;grid-template-rows:auto 1fr;align-content:start}
+.music-midi-editor-page .music-assist-card>button{width:100%;min-height:36px}
+@media(max-width:900px){
+  .music-midi-editor-page .music-assist-snap-controls,.music-midi-editor-page .music-assist-zoom,.music-midi-editor-page .music-assist-range-grid{grid-template-columns:minmax(0,1fr)}
+  .music-midi-editor-page .music-assist-snap-controls>label{display:grid;grid-template-columns:auto minmax(0,1fr)}
+  .music-midi-editor-page .music-assist-snap-controls select{width:100%}
+  .music-midi-editor-page .music-assist-zoom-value{grid-row:2;justify-self:center;padding-block:2px}
+}
