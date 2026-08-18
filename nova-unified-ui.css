@@ -45,6 +45,9 @@ body:is(.is-home-route,.is-management-route.is-universe-route,.is-unified-route,
 .is-studio-route .nova-studio-route-content .music-studio-shell :is(input,textarea)::placeholder{color:var(--nova-text-muted-on-dark);opacity:1}
 .is-studio-route .nova-studio-route-content .music-studio-shell :is(a,.music-secondary){color:var(--nova-text-heading-on-dark)}
 .is-studio-route .nova-studio-route-content .music-studio-shell .music-primary{color:#082032}
+.is-studio-route .music-logic-page .music-import-preview details{color:var(--nova-text-body)}
+.is-studio-route .music-logic-page .music-import-preview details :is(summary,th,dt){color:var(--nova-text-heading)}
+.is-studio-route .music-logic-page .music-import-preview details :is(p,td,dd,.music-help){color:var(--nova-text-body)}
 :is(.atelier-home.home-only,.universe-main,.nova-unified-main,.nova-studio-route-main){
   width:min(100%,var(--nova-route-max-width));
   max-width:none;

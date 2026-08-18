@@ -578,6 +578,22 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
   assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
 });
+test('long timelines thin measure text by Zoom without removing measure controls or grid geometry',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'long-ruler',projectName:'Long ruler',midiData:{editor:{measureCount:93},tracks:[{part:'melody',notes:[]}]}});app.state.projects=[project];
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  assert.equal((html.match(/class="music-measure /g)||[]).length,93);assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 5','Bar 9','Bar 13','Bar 17']);assert.equal(labels.length,24);
+  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 3','Bar 5','Bar 7','Bar 9']);assert.equal((html.match(/class="music-measure /g)||[]).length,93);
+  for(let step=0;step<3;step++)app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 2','Bar 3','Bar 4','Bar 5']);assert.equal(labels.length,93);assert.match(html,/--measure-size:[^;]+%;--beat-size:[^;]+%;--subdivision-size:/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-measure\{height:30px;overflow:visible;[^}]*white-space:nowrap/);assert.match(css,/\.music-measure\.has-label\{z-index:1\}/);
+});
+test('Logic import track assignment uses unified light-surface contrast colors',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','nova-unified-ui.css'),'utf8');
+  assert.match(css,/\.is-studio-route \.music-logic-page \.music-import-preview details\{color:var\(--nova-text-body\)\}/);
+  assert.match(css,/details :is\(summary,th,dt\)\{color:var\(--nova-text-heading\)\}/);
+  assert.match(css,/details :is\(p,td,dd,\.music-help\)\{color:var\(--nova-text-body\)\}/);
+});
 test('project save restores Zoom, Fit Range, and Piano Roll scroll with legacy defaults',async()=>{
   const{app}=load(),repo=app.memoryRepository(),legacy=app.makeProject({projectId:'saved-editor-view',projectName:'Saved editor view',musicalSettings:{bars:12},midiData:{editor:{measureCount:12,loopEnabled:true,loopStart:0,loopEnd:1920},tracks:[{part:'melody',notes:[{id:'low',pitch:40,startTick:0,durationTicks:480,velocity:90},{id:'high',pitch:82,startTick:960,durationTicks:240,velocity:105}]}]}});
   app.setRepository(repo);await repo.put(legacy);app.state.projects=[legacy];app.renderRoute(`music-studio/midi-editor/${legacy.projectId}`);
