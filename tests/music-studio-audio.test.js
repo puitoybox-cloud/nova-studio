@@ -62,6 +62,13 @@ test('the same key can sound once per press before during and after recording li
   assert.equal(synth.liveVoices,0);
   assert.equal(synth.context.oscillators.every(oscillator=>oscillator.stopped.length===1),true);
 });
+test('metronome reuses the synth AudioContext with a stronger higher downbeat',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const context=synth.context;
+  assert.equal(synth.metronomeClick(true),true);assert.equal(synth.metronomeClick(false),true);
+  assert.equal(synth.context,context);assert.equal(context.oscillators.length,2);
+  assert.equal(context.oscillators[0].frequency.events[0][1],1560);assert.equal(context.oscillators[1].frequency.events[0][1],1040);
+  assert.equal(synth.diagnostics.metronomeClicks,2);synth.stopMetronome();
+});
 test('Melody playback schedules notes from PPQ and tempo without changing note data',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[{pitch:60,startTick:480,durationTicks:240,velocity:80}],before=JSON.stringify(notes);await synth.unlock();
   const result=synth.playNotes(notes,{ppq:480,tempo:120}),oscillator=synth.context.oscillators[0];

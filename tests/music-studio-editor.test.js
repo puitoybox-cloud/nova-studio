@@ -23,7 +23,15 @@ test('old project without MIDI opens as optional blank three-part session',()=>{
   const core=load(),session=core.createSession({projectId:'old',musicalSettings:{bpm:100,timeSignature:{numerator:3,denominator:4}}});
   assert.equal(session.midiData.tracks.length,3);
   assert.equal(session.midiData.tempo,100);
+  assert.equal(session.midiData.editor.transport.countInEnabled,true);
+  assert.equal(session.midiData.editor.transport.metronomeEnabled,true);
   assert.equal(session.dirty,false);
+});
+
+test('transport preferences preserve explicit OFF values while legacy data defaults both ON',()=>{
+  const core=load(),legacy=core.normalizeMidiData({},{}),saved=core.normalizeMidiData({editor:{transport:{countInEnabled:false,metronomeEnabled:false}}},{});
+  assert.deepEqual(JSON.parse(JSON.stringify(legacy.editor.transport)),{countInEnabled:true,metronomeEnabled:true});
+  assert.equal(saved.editor.transport.countInEnabled,false);assert.equal(saved.editor.transport.metronomeEnabled,false);
 });
 test('loop range is backward-compatible persisted editor state independent from bar selection',()=>{
   const editor=load(),legacy=editor.createSession({projectId:'legacy'});
