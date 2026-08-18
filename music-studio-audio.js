@@ -5,7 +5,7 @@
   const frequency=pitch=>440*Math.pow(2,(clamp(pitch,0,127)-69)/12);
   function createSynth(options={}){
     const Context=options.AudioContext||root.AudioContext||root.webkitAudioContext,volume=clamp(options.volume??0.12,0.01,0.2);
-    let context=null,master=null;const live=new Map(),playback=new Set(),diagnostics={voiceCalls:0,oscillatorsCreated:0,liveVoicesCreated:0,playbackVoicesCreated:0,previewVoicesCreated:0};
+    let context=null,master=null;const live=new Map(),playback=new Set(),metronome=new Set(),diagnostics={voiceCalls:0,oscillatorsCreated:0,liveVoicesCreated:0,playbackVoicesCreated:0,previewVoicesCreated:0,metronomeClicks:0};
     function supported(){return typeof Context==='function'}
     function ensure(){if(context)return context;if(!supported())return null;context=new Context();master=context.createGain();master.gain.setValueAtTime(volume,context.currentTime);master.connect(context.destination);return context}
     async function unlock(){const ctx=ensure();if(!ctx)return false;if(ctx.state==='suspended')await ctx.resume();return true}
@@ -22,6 +22,8 @@
     function noteOff(pitch,channel=1){const id=`${channel}:${pitch}`,item=live.get(id);if(!item)return false;live.delete(id);item.stop();return true}
     function allNotesOff(){for(const item of live.values())item.stop();live.clear()}
     function stopPlayback(){const ctx=ensure();if(!ctx)return;for(const item of playback)item.cancel(ctx.currentTime);playback.clear()}
+    function metronomeClick(accent=false,when=null){const ctx=ensure();if(!ctx)return false;const start=Number.isFinite(Number(when))?Math.max(ctx.currentTime,Number(when)):ctx.currentTime,oscillator=ctx.createOscillator(),gain=ctx.createGain(),item={oscillator,gain};diagnostics.metronomeClicks++;oscillator.type='square';oscillator.frequency.setValueAtTime(accent?1560:1040,start);gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(accent?.18:.11,start+.002);gain.gain.exponentialRampToValueAtTime?.(.0001,start+.045);oscillator.connect(gain);gain.connect(master);metronome.add(item);oscillator.onended=()=>metronome.delete(item);oscillator.start(start);oscillator.stop(start+.05);return true}
+    function stopMetronome(){const ctx=ensure();if(!ctx)return;for(const item of metronome){item.gain.gain.cancelScheduledValues(ctx.currentTime);item.gain.gain.setValueAtTime(.0001,ctx.currentTime);try{item.oscillator.stop(ctx.currentTime+.001)}catch(_){}}metronome.clear()}
     function playNotes(notes=[],timing={}){
       const ctx=ensure();if(!ctx)return{ok:false,noteCount:0,durationMs:0};stopPlayback();
       const ppq=clamp(timing.ppq||480,24,9600),tempo=clamp(timing.tempo||120,20,400),secondsPerTick=60/(tempo*ppq),lead=Number.isFinite(Number(timing.leadSeconds))?clamp(Number(timing.leadSeconds),0,.25):.04,playbackStart=ctx.currentTime+lead,fromTick=Math.max(0,Number(timing.startTick)||0),requestedEnd=Number(timing.endTick),toTick=Number.isFinite(requestedEnd)&&requestedEnd>fromTick?requestedEnd:Infinity;
@@ -30,8 +32,8 @@
       return{ok:true,noteCount,oscillatorCount:diagnostics.oscillatorsCreated-oscillatorStart,durationMs:(lead+(endTick-fromTick)*secondsPerTick+.15)*1000,playbackStart,secondsPerTick,startTick:fromTick,endTick}
     }
     function previewNote(pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;voice(pitch,velocity,ctx.currentTime,ctx.currentTime+clamp(duration,.05,2),playback,'preview');return true}
-    function dispose(){allNotesOff();stopPlayback();context?.close?.();context=null;master=null}
-    return{supported,unlock,noteOn,noteOff,allNotesOff,playNotes,stopPlayback,previewNote,dispose,frequency,volume,get diagnostics(){return{...diagnostics}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size}};
+    function dispose(){allNotesOff();stopPlayback();stopMetronome();context?.close?.();context=null;master=null}
+    return{supported,unlock,noteOn,noteOff,allNotesOff,playNotes,stopPlayback,metronomeClick,stopMetronome,previewNote,dispose,frequency,volume,get diagnostics(){return{...diagnostics}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size}};
   }
   root.MusicStudioAudio={createSynth,frequency};
 })(typeof window!=='undefined'?window:globalThis);

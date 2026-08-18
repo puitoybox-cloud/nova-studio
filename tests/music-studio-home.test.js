@@ -158,13 +158,13 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.83/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.83/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.85/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.85/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
-  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
-  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.64/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.64/);
+  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.9/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.9/);
+  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.9/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.9/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.67/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.67/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -201,7 +201,7 @@ test('Record starts for a connected MIDI input and Stop ends the active recordin
   let clock=1000,frame=null,started=0,stopped=0,startTime=0,stopTime=0;window.performance={now:()=>clock};window.requestAnimationFrame=callback=>{frame=callback;return 7};window.cancelAnimationFrame=()=>{frame=null};window.MusicStudioMidiInput={createMessageGate:()=>({reset(){},accept:()=>true}),createRecorder:()=>({start(time){started++;startTime=time},stop(time){stopped++;stopTime=time;return[]}})};
   app.state.midiEditor={part:'melody',playheadTick:960,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4},tracks:[{part:'melody',name:'Melody',notes:[]}]},view:{}};
   Object.assign(app.state.midiInput,{initialized:true,supported:true,access:{},inputs:[input],selectedId:'keystation',recording:false});
-  await app.editorStartMidiRecording();assert.equal(started,1);assert.equal(startTime,1000);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof input.onmidimessage,'function');
+  await app.editorStartMidiRecording({skipCountIn:true});assert.equal(started,1);assert.equal(startTime,1000);assert.equal(app.state.midiInput.recording,true);assert.equal(typeof input.onmidimessage,'function');
   clock=1500;frame();assert.equal(Math.round(app.state.midiEditor.playheadTick),1440);
   assert.equal(typeof app.editorStopTransport,'function');
   clock=1750;await app.editorStopTransport();assert.equal(stopped,1);assert.equal(stopTime,1750);assert.equal(Math.round(app.state.midiEditor.playheadTick),1680);assert.equal(app.state.midiInput.recording,false);assert.equal(frame,null);assert.match(app.state.midiInput.status,/録音を停止/);
@@ -234,7 +234,7 @@ test('Melody playhead follows AudioContext time and resets on natural end and ma
   window.setTimeout=callback=>{finish=callback;return 9};window.clearTimeout=()=>{};
   const synth={context,supported:()=>true,unlock:async()=>true,stopPlayback(){},playNotes(){return{ok:true,noteCount:1,durationMs:690,playbackStart:context.currentTime+.04,secondsPerTick:60/(120*480),endTick:480}}};
   window.MusicStudioAudio={createSynth:()=>synth};
-  app.state.midiEditor={part:'melody',playheadTick:0,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{part:'melody',notes:[{pitch:60,startTick:0,durationTicks:480,velocity:90}]}]}};
+  app.state.midiEditor={part:'melody',playheadTick:0,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},editor:{transport:{metronomeEnabled:false}},tracks:[{part:'melody',notes:[{pitch:60,startTick:0,durationTicks:480,velocity:90}]}]}};
   await app.editorPlayMelody();context.currentTime=20.29;frame();
   assert.equal(Math.round(app.state.midiEditor.playheadTick),240);assert.equal(line.style.left,'3.125%');
   finish();assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(line.style.left,'0%');assert.ok(cancelled.length>0);
