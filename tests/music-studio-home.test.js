@@ -51,6 +51,7 @@ test('first-song guide reuses one definition for dialog and named-window route',
   const window=loadMusicStudio(),app=window.MusicStudio,home=app.renderRoute('music-studio'),guide=app.renderRoute('music-studio/first-song-guide');
   assert.match(home,/ガイドを開く/);assert.match(home,/↗ 別ウィンドウで開く/);assert.match(home,/aria-label="最初の1曲ガイドを別ウィンドウで開く"/);
   for(const text of ['最初の1曲を作る','新しいProjectを作る','クラウド同期ではありません','Export Melody MIDI','Logic ProからStandard MIDI File','用語を確認']){assert.match(home,new RegExp(text));assert.match(guide,new RegExp(text))}
+  for(const text of ['プロジェクト名・曲名・BPM・拍子・Keyを設定する','上部の「MIDI入力」を押して使用するMIDIキーボードを選択する','「Record（録音）」を押してMIDIキーボードを弾き、「Stop（停止）」を押して録音を確定する','Piano Rollに録音したノートが表示されたことを確認する','上部の Saved（保存済み）を確認する']){assert.match(home,new RegExp(text));assert.match(guide,new RegExp(text))}
   assert.match(guide,/Music Studio本体へ戻る/);assert.match(source,/'musicStudioFirstSongGuide'/);assert.match(source,/function firstSongGuideContent\(\)/);
   assert.doesNotMatch(source,/openFirstSongWindow[\s\S]{0,500}(repository|indexedDB|makeProject)/);
 });
@@ -163,7 +164,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.63/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.63/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.64/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.64/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
