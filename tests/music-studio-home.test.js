@@ -37,6 +37,25 @@ test('real Music Studio home route starts with project UI and has no legacy hero
   assert.doesNotMatch(html,/Dream Architect Studio/);
 });
 
+test('Music Studio 0.2 exposes beginner guides without changing project storage',()=>{
+  const app=loadMusicStudio().MusicStudio,html=app.renderRoute('music-studio');
+  assert.match(html,/最初の1曲を作る/);
+  assert.match(html,/Music Studio Home ヘルプ/);
+  for(const text of ['クラウド同期ではありません','Project全体の外部バックアップ','Logic ProからStandard MIDI File','用語を確認'])assert.match(html,new RegExp(text));
+  for(const text of ['ノートの位置や長さをグリッドに合わせます','1\/4＝1拍','Export All MIDI','Fit Range','Add Measure','MIDIキーボードを選択して演奏・録音'])assert.match(source,new RegExp(text));
+  assert.match(source,/function openHelp\(id\)/);assert.match(source,/function closeHelp\(id\)/);
+  assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,5\)/);
+});
+
+test('first-song guide reuses one definition for dialog and named-window route',()=>{
+  const window=loadMusicStudio(),app=window.MusicStudio,home=app.renderRoute('music-studio'),guide=app.renderRoute('music-studio/first-song-guide');
+  assert.match(home,/ガイドを開く/);assert.match(home,/↗ 別ウィンドウで開く/);assert.match(home,/aria-label="最初の1曲ガイドを別ウィンドウで開く"/);
+  for(const text of ['最初の1曲を作る','新しいProjectを作る','クラウド同期ではありません','Export Melody MIDI','Logic ProからStandard MIDI File','用語を確認']){assert.match(home,new RegExp(text));assert.match(guide,new RegExp(text))}
+  for(const text of ['プロジェクト名・曲名・BPM・拍子・Keyを設定する','上部の「MIDI入力」を押して使用するMIDIキーボードを選択する','「Record（録音）」を押してMIDIキーボードを弾き、「Stop（停止）」を押して録音を確定する','Piano Rollに録音したノートが表示されたことを確認する','上部の Saved（保存済み）を確認する']){assert.match(home,new RegExp(text));assert.match(guide,new RegExp(text))}
+  assert.match(guide,/Music Studio本体へ戻る/);assert.match(source,/'musicStudioFirstSongGuide'/);assert.match(source,/function firstSongGuideContent\(\)/);
+  assert.doesNotMatch(source,/openFirstSongWindow[\s\S]{0,500}(repository|indexedDB|makeProject)/);
+});
+
 test('unfinished routes always render safe placeholders with return actions',()=>{
   const app=loadMusicStudio().MusicStudio;
   for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects','settings','backup','logic-pro','midi-composer'].includes(item.id))){
@@ -139,13 +158,13 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.79/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.79/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.83/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.83/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.7/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.7/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.8/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.60/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.60/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.64/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.64/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -221,4 +240,11 @@ test('Melody playhead follows AudioContext time and resets on natural end and ma
   finish();assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(line.style.left,'0%');assert.ok(cancelled.length>0);
   context.currentTime=30;await app.editorPlayMelody();context.currentTime=30.54;frame();assert.equal(Math.round(app.state.midiEditor.playheadTick),480);
   app.editorStopMelody(false);assert.equal(app.state.midiEditor.playheadTick,0);assert.equal(line.style.left,'0%');
+});
+
+test('display assist controls are grouped without changing their actions',()=>{
+  for(const className of ['music-assist-snap-controls','music-assist-zoom','music-assist-range-grid'])assert.match(source,new RegExp(className));
+  for(const handler of ['editorToggleSnap()','editorSetSnap(this.value)','editorZoom(1)','editorZoom(-1)','editorFitPitchRange()','editorAddMeasures()'])assert.ok(source.includes(`MusicStudio.${handler}`));
+  assert.ok(source.indexOf('editorZoom(1)')<source.indexOf('music-assist-zoom-value'));
+  assert.ok(source.indexOf('music-assist-zoom-value')<source.indexOf('editorZoom(-1)'));
 });
