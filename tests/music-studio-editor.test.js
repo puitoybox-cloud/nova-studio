@@ -521,3 +521,14 @@ test('all supported quantize resolutions derive from project PPQ',()=>{
   const core=load();
   assert.deepEqual(['1/4','1/8','1/16','1/32'].map(value=>core.quantizeTicks(480,value)),[480,240,120,60]);
 });
+test('selected-note Quantize uses nearest grid and preserves note performance data with Undo Redo',()=>{
+  const core=load(),session=core.createSession(project()),track=core.currentTrack(session);track.notes=[
+    {id:'before',pitch:60,startTick:10,durationTicks:211,velocity:81},
+    {id:'early',pitch:62,startTick:115,durationTicks:222,velocity:82},
+    {id:'late',pitch:64,startTick:125,durationTicks:233,velocity:83},
+    {id:'exact',pitch:65,startTick:240,durationTicks:244,velocity:84},
+    {id:'unselected',pitch:67,startTick:181,durationTicks:255,velocity:85}
+  ];session.savedMidiData=core.clone(session.midiData);const untouched=core.quantizeSelectedStarts(session,'1/16');assert.equal(untouched.ok,false);assert.equal(untouched.reason,'ノートを選択してください');assert.deepEqual(Array.from(track.notes,note=>note.startTick),[10,115,125,240,181]);
+  for(const id of['before','early','late','exact'])core.selectNote(session,id,{additive:true});const original=core.clone(track.notes),result=core.quantizeSelectedStarts(session,'1/16');assert.equal(result.ok,true);assert.equal(result.changed,true);assert.equal(result.count,4);assert.deepEqual(Array.from(track.notes,note=>[note.id,note.startTick]),[['before',0],['early',120],['late',120],['unselected',181],['exact',240]]);for(const note of track.notes.filter(note=>note.id!=='unselected')){const before=original.find(item=>item.id===note.id);assert.equal(note.pitch,before.pitch);assert.equal(note.velocity,before.velocity);assert.equal(note.durationTicks,before.durationTicks)}assert.equal(track.notes.find(note=>note.id==='unselected').startTick,181);
+  core.undo(session);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>[note.id,note.startTick]),Array.from(original,note=>[note.id,note.startTick]));core.redo(session);assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>[note.id,note.startTick]),[['before',0],['early',120],['late',120],['unselected',181],['exact',240]]);
+});
