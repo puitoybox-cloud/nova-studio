@@ -164,7 +164,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.8/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.8/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.9/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.9/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.65/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.65/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.66/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.66/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
