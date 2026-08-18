@@ -568,7 +568,7 @@
     let output=html.replace(/<button class="music-secondary music-back"[^>]*>[^<]*<\/button>/,'');
     if(isEditor)output=output.replace(/(<main\b[^>]*>)/,'$1<div class="music-editor-chrome">');
     if(isEditor)output=output.replace('</header>','</header></div>');
-    const guided=screenGuide(route,output);
+    const guided=screenGuide(route,output).replace('曲の末尾に1小節追加します。','現在の動作では、曲の末尾に4小節追加します。');
     return isEditor?guided.replace(/<div class="music-editor-chrome">(<dialog[\s\S]*?<\/dialog>)/,'$1<div class="music-editor-chrome">'):guided;
   }
   function renderRoute(route,options={}){syncShortcutListener(route);let html;if(route===HOME_ROUTE)html=homeView(options);else if(route===NEW_ROUTE)html=createView();else if(route===PROJECTS_ROUTE||route===PROJECTS_ALIAS_ROUTE)html=listView();else if(route===SETTINGS_ROUTE)html=settingsView();else if(route===BACKUP_ROUTE)html=backupView();else if(route===LOGIC_PRO_ROUTE)html=logicProView();else if(route===`${HOME_ROUTE}/midi-composer`){const project=selectedMidiProject();html=project?midiEditorView(project.projectId):state.loaded?createView():`<main class="music-studio-shell music-project-page"><div class="music-empty"><h1>MIDI Composerを準備しています</h1><p>Music Studio専用保存領域を読み込んでいます。</p></div></main>`}else{const editorId=midiEditorId(route),editId=parseEditId(route);html=editorId?midiEditorView(editorId):editId?editView(editId):placeholderView(route,options)}return ensureRouteNavigation(route,html)}
