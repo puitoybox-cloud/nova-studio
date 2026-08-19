@@ -241,6 +241,64 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   app.editorUndo();app.editorUndo();
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[120,30],[360,120]]');
 });
+test('Piano Roll selection highlights unique pitch rows and matching keys across click touch and edits',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'pitch-selection',projectName:'Pitch selection'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;
+  core.addNotes(session,[
+    {id:'a',pitch:60,startTick:0,durationTicks:120,velocity:80},
+    {id:'same-pitch',pitch:60,startTick:240,durationTicks:120,velocity:90},
+    {id:'b',pitch:64,startTick:480,durationTicks:120,velocity:100}
+  ]);
+  const roll={dataset:{totalTicks:'7680',pitchMin:'0',pitchMax:'127'},getBoundingClientRect:()=>({left:0,width:800,height:3072}),querySelectorAll:()=>[]};
+  const target={style:{},closest:selector=>selector==='.music-piano-roll'?roll:null,setPointerCapture(){}};
+  const tap=(id,pointerType='mouse',extra={})=>{app.editorStartNoteDrag({button:0,pointerType,currentTarget:target,clientX:100,clientY:100,pointerId:1,preventDefault(){},...extra},id);target.onpointerup()};
+  const pitchRows=()=>{const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),layer=html.match(/class="music-selected-pitch-layer"[^>]*>([\s\S]*?)<\/div>/)?.[1]||'';return{html,pitches:[...layer.matchAll(/data-pitch="(\d+)"/g)].map(match=>Number(match[1]))}};
+
+  tap('a');let view=pitchRows();assert.deepEqual(view.pitches,[60]);assert.match(view.html,/music-piano-key is-white is-selected-pitch" data-pitch="60"/);
+  tap('b');view=pitchRows();assert.deepEqual(Array.from(core.selectedIds(session)),['b']);assert.deepEqual(view.pitches,[64]);assert.doesNotMatch(view.html,/is-selected-pitch" data-pitch="60"/);
+  tap('same-pitch','touch');assert.deepEqual(Array.from(core.selectedIds(session)),['same-pitch']);assert.deepEqual(pitchRows().pitches,[60]);
+
+  core.selectNote(session,'a',{additive:true});core.selectNote(session,'b',{additive:true});view=pitchRows();assert.deepEqual(view.pitches,[64,60]);
+  core.selectAllNotes(session);assert.deepEqual(pitchRows().pitches,[64,60]);
+  core.moveSelected(session,0,1);assert.deepEqual(pitchRows().pitches,[65,61]);
+  core.undo(session);assert.deepEqual(pitchRows().pitches,[64,60]);core.redo(session);assert.deepEqual(pitchRows().pitches,[65,61]);
+  core.quantizeSelectedStarts(session,'1/16');assert.deepEqual(pitchRows().pitches,[65,61]);
+  core.copy(session);core.paste(session,960);assert.deepEqual(pitchRows().pitches,[65,61]);core.duplicateSelected(session);assert.deepEqual(pitchRows().pitches,[65,61]);
+  core.deleteSelected(session);assert.deepEqual(pitchRows().pitches,[]);core.undo(session);assert.deepEqual(pitchRows().pitches,[65,61]);
+  core.clearNoteSelection(session);view=pitchRows();assert.deepEqual(view.pitches,[]);assert.doesNotMatch(view.html,/is-selected-pitch" data-pitch=/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-selected-pitch-layer\{position:absolute;z-index:0;inset:0;pointer-events:none\}/);assert.match(css,/\.music-piano-key\.is-selected-pitch\.is-white/);assert.match(css,/\.music-piano-key\.is-selected-pitch\.is-black/);
+});
+test('note drag immediately selects its target and previews destination pitch rows and keys with cancel restore',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'drag-pitch-selection',projectName:'Drag pitch selection'});
+  app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;core.addNotes(session,[
+    {id:'a',pitch:60,startTick:0,durationTicks:120,velocity:80},
+    {id:'b',pitch:64,startTick:480,durationTicks:120,velocity:100}
+  ]);core.selectNote(session,'a');
+  const classList=(...initial)=>{const values=new Set(initial);return{toggle(name,on){on?values.add(name):values.delete(name)},contains:name=>values.has(name)}};
+  const noteA={dataset:{noteId:'a'},style:{},classList:classList('music-midi-note','is-selected'),setAttribute(){}};
+  const noteB={dataset:{noteId:'b'},style:{},classList:classList('music-midi-note'),setAttribute(){},setPointerCapture(){}};
+  const keys=[60,63,64,66].map(pitch=>({dataset:{pitch:String(pitch)},classList:classList('music-piano-key')})),layer={innerHTML:''};
+  const roll={dataset:{totalTicks:'7680',pitchMin:'0',pitchMax:'127'},getBoundingClientRect:()=>({left:0,width:800,height:3072}),querySelectorAll:selector=>selector==='.music-midi-note.is-selected'?[noteA,noteB].filter(note=>note.classList.contains('is-selected')):[]};
+  noteB.closest=selector=>selector==='.music-piano-roll'?roll:null;
+  window.document={querySelector:selector=>selector==='.music-selected-pitch-layer'?layer:null,querySelectorAll:selector=>selector==='.music-midi-note'?[noteA,noteB]:selector==='.music-piano-key[data-pitch]'?keys:[]};
+  const pointer=(extra={})=>({button:0,pointerType:'mouse',pointerId:1,currentTarget:noteB,clientX:100,clientY:100,preventDefault(){},...extra});
+  const highlighted=()=>[...layer.innerHTML.matchAll(/data-pitch="(\d+)"/g)].map(match=>Number(match[1])),notePitches=()=>Array.from(core.currentTrack(session).notes,note=>[note.id,note.pitch]);
+
+  app.editorStartNoteDrag(pointer(),'b');assert.deepEqual(Array.from(core.selectedIds(session)),['b']);assert.equal(noteA.classList.contains('is-selected'),false);assert.equal(noteB.classList.contains('is-selected'),true);assert.deepEqual(highlighted(),[64]);
+  noteB.onpointermove(pointer({clientY:52}));assert.deepEqual(highlighted(),[66]);assert.equal(keys.find(key=>key.dataset.pitch==='66').classList.contains('is-selected-pitch'),true);assert.equal(keys.find(key=>key.dataset.pitch==='64').classList.contains('is-selected-pitch'),false);assert.equal(noteA.style.translate,undefined);
+  noteB.onpointerup();assert.deepEqual(notePitches(),[['a',60],['b',66]]);assert.deepEqual(Array.from(core.selectedIds(session)),['b']);
+  core.undo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='b').pitch,64);core.redo(session);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='b').pitch,66);
+
+  core.selectNote(session,'a');noteA.classList.toggle('is-selected',true);noteB.classList.toggle('is-selected',false);app.editorStartNoteDrag(pointer(),'b');noteB.onpointermove(pointer({clientY:76}));assert.deepEqual(highlighted(),[67]);noteB.onpointercancel();assert.deepEqual(Array.from(core.selectedIds(session)),['a']);assert.deepEqual(highlighted(),[60]);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='b').pitch,66);
+
+  for(const modifier of [{shiftKey:true},{metaKey:true},{ctrlKey:true}]){core.selectNote(session,'a');noteA.classList.toggle('is-selected',true);noteB.classList.toggle('is-selected',false);app.editorStartNoteDrag(pointer(modifier),'b');assert.deepEqual(Array.from(core.selectedIds(session)),['a','b']);noteB.onpointercancel();assert.deepEqual(Array.from(core.selectedIds(session)),['a'])}
+  core.selectAllNotes(session);noteA.classList.toggle('is-selected',true);noteB.classList.toggle('is-selected',true);app.editorStartNoteDrag(pointer(),'b');noteB.onpointermove(pointer({clientY:124}));noteB.onpointerup();assert.deepEqual(notePitches(),[['a',59],['b',65]]);
+  core.undo(session);assert.deepEqual(notePitches(),[['a',60],['b',66]]);core.redo(session);assert.deepEqual(notePitches(),[['a',59],['b',65]]);
+
+  core.selectNote(session,'b');noteA.classList.toggle('is-selected',false);noteB.classList.toggle('is-selected',true);app.editorStartNoteDrag(pointer({pointerType:'touch'}),'b');noteB.onpointermove(pointer({pointerType:'touch',clientY:148}));noteB.onpointerup();assert.equal(core.currentTrack(session).notes.find(note=>note.id==='b').pitch,63);assert.deepEqual(Array.from(core.selectedIds(session)),['b']);
+});
 test('Piano Roll note body previews only a simple click while drag resize and cancel stay silent',async()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'note-preview',projectName:'Note preview'});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
@@ -278,6 +336,10 @@ test('Piano Roll note body previews only a simple click while drag resize and ca
   app.editorStartNoteDrag(pointer({shiftKey:true}),'first');noteTarget.onpointerup();await flushPreview();
   assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second"]');
   assert.equal(JSON.stringify(audioEvents.slice(-3)),'[["unlock"],["off",60,"piano-roll-preview"],["on",60,37,"piano-roll-preview"]]');
+  app.editorStartNoteDrag(pointer({ctrlKey:true}),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second","first"]');
+  app.editorStartNoteDrag(pointer({ctrlKey:true}),'first');noteTarget.onpointerup();await flushPreview();
+  assert.equal(JSON.stringify(core.selectedIds(app.state.midiEditor)),'["second"]');
 });
 test('mouse marquee replaces adds and toggles intersecting notes without competing with note drag',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'marquee',projectName:'Marquee'});
@@ -296,6 +358,7 @@ test('mouse marquee replaces adds and toggles intersecting notes without competi
   drag();assert.deepEqual(Array.from(core.selectedIds(session)),['first','second']);
   core.selectNote(session,'third');drag({shiftKey:true});assert.deepEqual(Array.from(core.selectedIds(session)),['third','first','second']);
   drag({metaKey:true});assert.deepEqual(Array.from(core.selectedIds(session)),['third']);
+  drag({ctrlKey:true});assert.deepEqual(Array.from(core.selectedIds(session)),['third','first','second']);
   const before=core.selectedIds(session);roll.onpointermove=null;app.editorStartMarqueeSelection(pointer({target:{closest:selector=>selector==='.music-midi-note'?notes[0]:null}}));assert.equal(roll.onpointermove,null);assert.deepEqual(core.selectedIds(session),before);
 });
 test('marquee threshold preserves empty click clearing and coarse-pointer scrolling path',()=>{
