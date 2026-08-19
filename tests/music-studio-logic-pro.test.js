@@ -264,9 +264,12 @@ test('Piano Roll note labels show English pitch fixed-do solfege and velocity by
   assert.equal(app.noteLabelMode(10,{short:16,medium:55,full:90}),'short');assert.equal(app.noteLabelMode(10,{short:25,medium:64,full:104}),'short');assert.equal(app.noteLabelMode(30,{short:25,medium:64,full:104}),'short');
   assert.deepEqual([10,20,30,79,114].map(width=>app.noteLabelMode(width,{short:16,medium:55,full:90})),['short','short','short','medium','full']);
   let zoomWidth=10;const zoomNote=makeNote(zoomWidth);zoomNote.getBoundingClientRect=()=>({width:zoomWidth});const zoomModes=[];for(zoomWidth of[10,20,30,79,114,79,30,10])zoomModes.push(app.updateNoteLabelElement(zoomNote));assert.deepEqual(zoomModes,['short','short','short','medium','full','medium','short','short']);
+  app.editorClearSelection();core.selectNote(session,'sharp');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/class="music-midi-note[^\"]*is-selected[^\"]*" data-note-id="sharp"[\s\S]*?music-note-label-short">C♯4</);assert.equal((html.match(/data-note-id="sharp"[\s\S]*?<span class="music-note-label"/g)||[]).length,1);
+  app.editorClearSelection();core.selectNote(session,'d4');core.selectNote(session,'e4',{additive:true});html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.equal((html.match(/class="music-midi-note[^\"]*is-selected/g)||[]).length,2);app.editorClearSelection();assert.equal(Array.from(core.selectedIds(session)).length,0);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-note-label\{[^}]*right:18px;[^}]*overflow:hidden;[^}]*pointer-events:none;white-space:nowrap/);
+  assert.match(css,/\.music-note-label,\.music-midi-editor-page \.music-midi-note\.is-selected \.music-note-label\{font-weight:650;opacity:1;filter:none;transform:none\}/);
   assert.match(css,/\.music-note-label>span\{position:absolute;visibility:hidden;display:block;[^}]*max-width:100%;overflow:hidden/);
-  assert.match(css,/\.note-label-is-short \.music-note-label-short\{visibility:visible;[^}]*max-width:none;overflow:visible/);
+  assert.match(css,/\.note-label-is-short \.music-note-label-short\{visibility:visible;[^}]*max-width:none;overflow:visible;text-shadow:none\}/);
   assert.match(css,/\.note-label-is-short \.music-note-label\{right:0;left:1px;z-index:3;overflow:visible;font-size:\.68rem/);
   assert.match(css,/\.note-label-is-short \.music-note-resize\{width:6px;[^}]*background:rgba\(255,255,255,\.12\)/);
   assert.match(css,/\.note-label-is-medium \.music-note-label-medium\{visibility:visible\}/);
