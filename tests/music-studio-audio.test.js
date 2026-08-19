@@ -69,6 +69,12 @@ test('metronome reuses the synth AudioContext with a stronger higher downbeat',a
   assert.equal(context.oscillators[0].frequency.events[0][1],1560);assert.equal(context.oscillators[1].frequency.events[0][1],1040);
   assert.equal(synth.diagnostics.metronomeClicks,2);synth.stopMetronome();
 });
+test('hardware diagnostics observe real oscillator starts and reset without replacing audio state',async()=>{
+  const audio=load(),synth=audio.createSynth({AudioContext:Context});await synth.unlock();const context=synth.context,master=synth.masterGain;
+  synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:80}],{ppq:480,tempo:120,startTime:12});synth.metronomeClick(true,12);
+  const before=synth.diagnostics;assert.equal(audio.SCRIPT_VERSION,'unknown');assert.equal(before.audioContextExists,true);assert.equal(before.audioContextState,'running');assert.equal(before.masterGainExists,true);assert.equal(before.masterConnected,true);assert.equal(before.playNotesCalls,1);assert.equal(before.playbackSchedulerStarted,true);assert.equal(before.playbackOscillatorsCreated,1);assert.equal(before.playbackOscillatorStarts,1);assert.equal(before.playbackContextTimeWhenScheduled,10);assert.equal(before.firstPlaybackStartTime,12);assert.equal(before.playbackStartWasPast,false);assert.equal(before.playbackMasterConnected,true);assert.equal(before.metronomeOscillatorsCreated,1);assert.equal(before.metronomeOscillatorStarts,1);assert.equal(before.metronomeContextTimeWhenScheduled,10);assert.equal(before.firstMetronomeStartTime,12);assert.equal(before.metronomeStartWasPast,false);
+  synth.resetDiagnostics();assert.equal(synth.context,context);assert.equal(synth.masterGain,master);assert.equal(synth.playingVoices,1);assert.equal(synth.diagnostics.playNotesCalls,0);assert.equal(synth.diagnostics.playbackOscillatorStarts,0);assert.equal(synth.diagnostics.metronomeOscillatorStarts,0);
+});
 test('Melody playback schedules notes from PPQ and tempo without changing note data',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[{pitch:60,startTick:480,durationTicks:240,velocity:80}],before=JSON.stringify(notes);await synth.unlock();
   const result=synth.playNotes(notes,{ppq:480,tempo:120}),oscillator=synth.context.oscillators[0];
