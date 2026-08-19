@@ -224,7 +224,7 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.match(html,/aria-pressed="true">Snap ON/);
   for(const value of ['measure','1/2','1/4','1/8','1/16','1/32'])assert.match(html,new RegExp(`value="${value}"`));
   assert.match(html,/velocity-low/);assert.match(html,/velocity-medium/);assert.match(html,/velocity-high/);
-  assert.match(html,/C4 · V30/);assert.match(html,/data-pitch="60"[^>]*onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitchFromKey\(event\)"/);
+  assert.match(html,/C4 \/ ド　V30/);assert.match(html,/data-pitch="60"[^>]*onpointerdown="event\.preventDefault\(\);MusicStudio\.editorPreviewPitchFromKey\(event\)"/);
   assert.match(html,/onclick="if\(event\.detail===0\)MusicStudio\.editorPreviewPitchFromKey\(event\)"/);
   assert.doesNotMatch(html,/musicPitchDiagnostic|musicNotePreviewDiagnostic|一時診断/);
   assert.match(html,/長さを揃える/);assert.match(html,/Velocityを揃える/);
@@ -241,6 +241,40 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[360,111],[360,111]]');
   app.editorUndo();app.editorUndo();
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[120,30],[360,120]]');
+});
+test('Piano Roll note labels show English pitch fixed-do solfege and velocity by rendered width',()=>{
+  const{app,window}=load(),notes=[
+    {id:'c3',pitch:48,startTick:0,durationTicks:120,velocity:48},{id:'c4',pitch:60,startTick:120,durationTicks:240,velocity:82},{id:'sharp',pitch:61,startTick:360,durationTicks:480,velocity:95},
+    ...[[62,'d4'],[64,'e4'],[65,'f4'],[67,'g4'],[69,'a4'],[71,'b4'],[72,'c5']].map(([pitch,id],index)=>({id,pitch,startTick:960+index*240,durationTicks:240,velocity:70+index}))
+  ],project=app.makeProject({projectId:'note-labels',projectName:'Note labels',midiData:{tracks:[{part:'melody',notes}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor,core=window.MusicStudioEditor;
+  for(const [id,label] of [['c3','C3 / ド　V48'],['c4','C4 / ド　V82'],['sharp','C♯4 / ド♯　V95'],['d4','D4 / レ　V70'],['e4','E4 / ミ　V71'],['f4','F4 / ファ　V72'],['g4','G4 / ソ　V73'],['a4','A4 / ラ　V74'],['b4','B4 / シ　V75'],['c5','C5 / ド　V76']])assert.match(html,new RegExp(`data-note-id="${id}"[\\s\\S]*?music-note-label-full">${label}<`));
+  assert.match(html,/music-note-label-short">C♯4<\/span><span class="music-note-label-medium">C♯4 \/ ド♯<\/span>/);
+  const original=JSON.stringify(core.currentTrack(session).notes.map(note=>[note.id,note.pitch,note.velocity,note.durationTicks,note.startTick]));
+  for(const zoom of [1,3,10,30]){session.view.zoom=zoom;html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,new RegExp(`music-piano-content" style="width:${zoom*100}%"`));assert.equal(JSON.stringify(core.currentTrack(session).notes.map(note=>[note.id,note.pitch,note.velocity,note.durationTicks,note.startTick])),original)}
+  core.selectNote(session,'c4');app.editorMoveSelected(0,2);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/data-note-id="c4"[\s\S]*?music-note-label-full">D4 \/ レ　V82</);
+  app.editorUndo();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/data-note-id="c4"[\s\S]*?music-note-label-full">C4 \/ ド　V82</);
+  app.editorRedo();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/data-note-id="c4"[\s\S]*?music-note-label-full">D4 \/ レ　V82</);
+  core.selectNote(session,'d4');core.selectNote(session,'e4',{additive:true});app.editorMatchVelocity(99);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.equal((html.match(/music-note-label-full">(?:D4 \/ レ|E4 \/ ミ)　V99</g)||[]).length,2);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(html,/data-note-id="d4"[\s\S]*?<span class="music-note-label" aria-hidden="true">[\s\S]*?D4 \/ レ　V99[\s\S]*?<span class="music-note-resize"/);
+  const makeNote=(width,textWidths={short:16,medium:55,full:90})=>{const classes=new Set,label={querySelector:selector=>{const name=selector.match(/music-note-label-(short|medium|full)/)?.[1];return name?{scrollWidth:textWidths[name]}:null}};return{dataset:{},getBoundingClientRect:()=>({width}),querySelector:selector=>selector==='.music-note-label'?label:null,classList:{toggle(name,enabled){if(enabled)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)},classes}};
+  const renderedNotes=[makeNote(10),makeNote(20),makeNote(30),makeNote(10,{short:25,medium:64,full:104}),makeNote(79),makeNote(114)];assert.equal(app.updateNoteLabelLayout({querySelectorAll:()=>renderedNotes}),6);
+  for(const [index,mode] of ['short','short','short','short','medium','full'].entries()){assert.equal(renderedNotes[index].dataset.noteLabelMode,mode);assert.equal(renderedNotes[index].classes.has(`note-label-is-${mode}`),true);assert.equal([...renderedNotes[index].classes].filter(name=>name.startsWith('note-label-is-')).length,1)}
+  assert.equal(app.noteLabelMode(10,{short:16,medium:55,full:90}),'short');assert.equal(app.noteLabelMode(10,{short:25,medium:64,full:104}),'short');assert.equal(app.noteLabelMode(30,{short:25,medium:64,full:104}),'short');
+  assert.deepEqual([10,20,30,79,114].map(width=>app.noteLabelMode(width,{short:16,medium:55,full:90})),['short','short','short','medium','full']);
+  let zoomWidth=10;const zoomNote=makeNote(zoomWidth);zoomNote.getBoundingClientRect=()=>({width:zoomWidth});const zoomModes=[];for(zoomWidth of[10,20,30,79,114,79,30,10])zoomModes.push(app.updateNoteLabelElement(zoomNote));assert.deepEqual(zoomModes,['short','short','short','medium','full','medium','short','short']);
+  app.editorClearSelection();core.selectNote(session,'sharp');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/class="music-midi-note[^\"]*is-selected[^\"]*" data-note-id="sharp"[\s\S]*?music-note-label-short">C♯4</);assert.equal((html.match(/data-note-id="sharp"[\s\S]*?<span class="music-note-label"/g)||[]).length,1);
+  app.editorClearSelection();core.selectNote(session,'d4');core.selectNote(session,'e4',{additive:true});html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.equal((html.match(/class="music-midi-note[^\"]*is-selected/g)||[]).length,2);app.editorClearSelection();assert.equal(Array.from(core.selectedIds(session)).length,0);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-note-label\{[^}]*right:18px;[^}]*overflow:hidden;[^}]*pointer-events:none;white-space:nowrap/);
+  assert.match(css,/\.music-note-label,\.music-midi-editor-page \.music-midi-note\.is-selected \.music-note-label\{font-weight:650;opacity:1;filter:none;transform:none\}/);
+  assert.match(css,/\.music-note-label>span\{position:absolute;visibility:hidden;display:block;[^}]*max-width:100%;overflow:hidden/);
+  assert.match(css,/\.note-label-is-short \.music-note-label-short\{visibility:visible;[^}]*max-width:none;overflow:visible;text-shadow:none\}/);
+  assert.match(css,/\.note-label-is-short \.music-note-label\{right:0;left:1px;z-index:3;overflow:visible;font-size:\.68rem/);
+  assert.match(css,/\.note-label-is-short \.music-note-resize\{width:6px;[^}]*background:rgba\(255,255,255,\.12\)/);
+  assert.match(css,/\.note-label-is-medium \.music-note-label-medium\{visibility:visible\}/);
+  assert.match(css,/\.note-label-is-full \.music-note-label-full\{visibility:visible\}/);
+  assert.doesNotMatch(css,/@container music-note|\.music-midi-editor-page \.music-midi-note\{[^}]*container-type/);
 });
 test('Piano Roll selection highlights unique pitch rows and matching keys across click touch and edits',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'pitch-selection',projectName:'Pitch selection'});

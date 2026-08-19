@@ -456,3 +456,12 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-transport-options>button{flex:1 1 120px}
   .music-midi-editor-page .music-transport-options>span{flex:1 1 100%;text-align:center}
 }
+.music-midi-editor-page .music-piano-roll .music-note-label{position:absolute;top:0;right:18px;bottom:0;left:4px;display:flex;width:auto;height:auto;align-items:center;overflow:hidden;line-height:inherit;pointer-events:none;white-space:nowrap}
+.music-midi-editor-page .music-note-label,.music-midi-editor-page .music-midi-note.is-selected .music-note-label{font-weight:650;opacity:1;filter:none;transform:none}
+.music-midi-editor-page .music-note-label>span{position:absolute;visibility:hidden;display:block;max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap}
+.music-midi-editor-page .note-label-is-short .music-note-label{right:0;left:1px;z-index:3;overflow:visible;font-size:.68rem;letter-spacing:-.03em}
+.music-midi-editor-page .note-label-is-short .music-note-label-short{visibility:visible;max-width:none;overflow:visible;text-shadow:none}
+.music-midi-editor-page .note-label-is-short .music-note-resize{width:6px;border-left-width:1px;background:rgba(255,255,255,.12)}
+.music-midi-editor-page .note-label-is-short .music-note-resize::after{font-size:7px;opacity:.4}
+.music-midi-editor-page .note-label-is-medium .music-note-label-medium{visibility:visible}
+.music-midi-editor-page .note-label-is-full .music-note-label-full{visibility:visible}
