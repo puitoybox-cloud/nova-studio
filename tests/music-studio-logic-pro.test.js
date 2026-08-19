@@ -257,11 +257,16 @@ test('Piano Roll note labels show English pitch fixed-do solfege and velocity by
   app.editorRedo();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/data-note-id="c4"[\s\S]*?music-note-label-full">D4 \/ レ　V82</);
   core.selectNote(session,'d4');core.selectNote(session,'e4',{additive:true});app.editorMatchVelocity(99);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.equal((html.match(/music-note-label-full">(?:D4 \/ レ|E4 \/ ミ)　V99</g)||[]).length,2);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-midi-editor-page \.music-midi-note\{container-name:music-note;container-type:inline-size\}/);
+  assert.match(html,/data-note-id="d4"[\s\S]*?<span class="music-note-label" aria-hidden="true">[\s\S]*?D4 \/ レ　V99[\s\S]*?<span class="music-note-resize"/);
+  const makeNote=width=>{const classes=new Set;return{dataset:{},getBoundingClientRect:()=>({width}),classList:{toggle(name,enabled){if(enabled)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)},classes}};
+  const renderedNotes=[30,50,90,140].map(makeNote);assert.equal(app.updateNoteLabelLayout({querySelectorAll:()=>renderedNotes}),4);
+  for(const [index,mode] of ['hidden','short','medium','full'].entries()){assert.equal(renderedNotes[index].dataset.noteLabelMode,mode);assert.equal(renderedNotes[index].classes.has(`note-label-is-${mode}`),true);assert.equal([...renderedNotes[index].classes].filter(name=>name.startsWith('note-label-is-')).length,1)}
+  assert.deepEqual([30,50,90,140].map(app.noteLabelMode),['hidden','short','medium','full']);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-note-label\{[^}]*right:18px;[^}]*overflow:hidden;[^}]*pointer-events:none;white-space:nowrap/);
-  assert.match(css,/@container music-note \(min-width:44px\)\{[^}]*music-note-label-short\{display:inline\}/);
-  assert.match(css,/@container music-note \(min-width:74px\)\{[^}]*music-note-label-short\{display:none\}[^}]*music-note-label-medium\{display:inline\}/);
-  assert.match(css,/@container music-note \(min-width:116px\)\{[^}]*music-note-label-medium\{display:none\}[^}]*music-note-label-full\{display:inline\}/);
+  assert.match(css,/\.note-label-is-short \.music-note-label-short\{display:inline\}/);
+  assert.match(css,/\.note-label-is-medium \.music-note-label-medium\{display:inline\}/);
+  assert.match(css,/\.note-label-is-full \.music-note-label-full\{display:inline\}/);
+  assert.doesNotMatch(css,/@container music-note|\.music-midi-editor-page \.music-midi-note\{[^}]*container-type/);
 });
 test('Piano Roll selection highlights unique pitch rows and matching keys across click touch and edits',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'pitch-selection',projectName:'Pitch selection'});
