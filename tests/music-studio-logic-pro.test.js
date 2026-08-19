@@ -55,16 +55,17 @@ test('Correction repaint preserves page Piano Roll and popover scroll while noti
   const{app,window}=load(),project=app.makeProject({projectId:'stable-correction-ui',projectName:'Stable correction UI',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:251,velocity:90}]}]}});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   const viewport={scrollTop:1234,scrollLeft:567,dataset:{initialScrollTop:'0',initialScrollLeft:'0',scrollReady:'true'}};
+  const pianoScroll={scrollTop:0,scrollLeft:567,dataset:{scrollReady:'true'}};
   const popover={scrollTop:321,scrollHeight:700,clientHeight:688,style:{},getBoundingClientRect(){return{top:Number.parseFloat(this.style.top)||200}}};
   const summary={getBoundingClientRect:()=>({bottom:160})};
   const menu={open:true,querySelector:selector=>selector==='summary'?summary:selector==='.music-correction-popover'?popover:null};
   const form={elements:{key:{value:'C'},scale:{value:'Major'},quantize:{value:'1/16'},strength:{value:'100'},swing:{value:'0'},target:{value:'all'},measureFrom:{value:'1'},measureTo:{value:'1'}}};
   const scrollCalls=[];window.scrollX=40;window.scrollY=260;window.innerWidth=1280;window.innerHeight=900;window.scrollTo=value=>scrollCalls.push(value);window.requestAnimationFrame=callback=>callback();
-  window.document={documentElement:{clientHeight:900},querySelector(selector){if(selector==='.music-piano-viewport')return viewport;if(selector==='.music-correction-menu')return menu;if(selector==='.music-editor-chrome')return{getBoundingClientRect:()=>({bottom:44})};if(selector==='#melodyCorrectionForm')return form;return null}};
+  window.document={documentElement:{clientHeight:900},querySelector(selector){if(selector==='.music-piano-viewport')return viewport;if(selector==='.music-piano-scroll')return pianoScroll;if(selector==='.music-correction-menu')return menu;if(selector==='.music-editor-chrome')return{getBoundingClientRect:()=>({bottom:44})};if(selector==='#melodyCorrectionForm')return form;return null}};
   const result=app.editorPreviewCorrection();
   assert.equal(result.ok,true);assert.equal(app.state.midiEditor.view.pitchScrollTop,1234);assert.equal(app.state.midiEditor.view.pitchScrollLeft,567);
   assert.equal(app.state.midiEditor.view.correctionMenuOpen,true);assert.equal(app.state.midiEditor.view.correctionPopoverScrollTop,321);
-  assert.equal(viewport.scrollTop,1234);assert.equal(viewport.scrollLeft,567);assert.equal(popover.scrollTop,321);
+  assert.equal(viewport.scrollTop,1234);assert.equal(viewport.scrollLeft,567);assert.equal(pianoScroll.scrollLeft,567);assert.equal(popover.scrollTop,321);
   assert.ok(scrollCalls.length>=2);assert.equal(JSON.stringify(scrollCalls[0]),'{"left":40,"top":260,"behavior":"instant"}');
   assert.equal(popover.style.top,'calc(100% + 8px)');assert.equal(popover.style.right,'0');assert.equal(popover.style.width,'min(720px,calc(100vw - 24px))');assert.equal(popover.style.maxHeight,'688px');assert.equal(popover.style.overflowY,'auto');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -615,7 +616,7 @@ test('Piano Roll renders MIDI Note 0 through 127 in a vertically scrollable rang
   assert.match(html,/Note 127 \/ 480 tick/);
   assert.match(html,/data-pitch-min="0" data-pitch-max="127"/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-piano-viewport\{height:508px;overflow:auto/);
+  assert.match(css,/\.music-piano-viewport\{height:508px;overflow-x:hidden;overflow-y:auto/);
   assert.match(html,/music-piano-frame" style="--music-piano-row-height:18px;--music-piano-roll-height:2304px/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll\{height:var\(--music-piano-roll-height\)/);
   for(const [pitch,y] of [[127,9],[64,1143],[60,1215],[0,2295]]){
@@ -647,7 +648,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(html,/>Bar 1<\/button>/);assert.doesNotMatch(html,/>小節 1<\/button>/);
   assert.match(css,/\.music-midi-editor-page\{--music-editor-surface:#0b141f/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:112px minmax\(0,1fr\)\}/);
-  assert.match(css,/\.music-midi-editor-page \.music-piano-key-layer,[^}]*\.music-pitch-hit-layer\{position:absolute;top:var\(--music-piano-header-height\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-key-layer,[^}]*\.music-pitch-hit-layer\{position:absolute;top:0/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-key\{position:absolute;top:var\(--pitch-y\);right:auto;left:0/);assert.match(css,/\.music-midi-editor-page \.music-piano-key\.is-white\{z-index:1;width:calc\(100% - 8px\);height:var\(--music-piano-row-height\)/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-key\.is-black\{z-index:2;left:6px;width:60%;height:calc\(var\(--music-piano-row-height\) - 4px\)/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-hit\{position:absolute;top:var\(--pitch-y\);right:0;left:0;width:100%;height:var\(--music-piano-row-height\)/);
@@ -694,7 +695,68 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
-  assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
+  assert.match(css,/\.music-piano-corner,\.music-piano-header-scroll\{position:sticky;[^}]*top:0/);
+  assert.doesNotMatch(css,/--music-piano-scroll-top/);
+});
+test('Piano Roll keeps the keyboard fixed horizontally while only the timeline scrolls',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'fixed-piano-keyboard',projectName:'Fixed piano keyboard'});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(html,/class="music-piano-frame"[^>]*><div class="music-piano-corner"[^>]*><\/div><div class="music-piano-header-scroll"[\s\S]*?<div class="music-pitch-labels">[\s\S]*?<\/div><div class="music-piano-scroll"><div class="music-piano-content"/);
+  assert.match(css,/\.music-piano-viewport\{height:508px;overflow-x:hidden;overflow-y:auto/);
+  assert.match(css,/\.music-piano-scroll\{grid-column:2;grid-row:2;min-width:0;overflow-x:auto;overflow-y:clip/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:112px minmax\(0,1fr\)\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:94px minmax\(0,1fr\)\}/);
+  for(const zoom of [1,2,3,6,10,30]){
+    app.state.midiEditor.view.zoom=zoom;
+    html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+    assert.match(html,new RegExp(`class="music-piano-content" style="width:${zoom*100}%"`));
+    assert.equal((html.match(/class="music-pitch-hit"/g)||[]).length,128);
+  }
+  const vertical={scrollTop:1215,scrollLeft:0,classList:{contains:name=>name==='music-piano-viewport'}};
+  const horizontal={scrollTop:0,scrollLeft:720,classList:{contains:name=>name==='music-piano-scroll'}};
+  app.editorRememberPitchScroll(vertical);
+  assert.equal(app.state.midiEditor.view.pitchScrollTop,1215);
+  assert.equal(app.state.midiEditor.view.pitchScrollLeft,0);
+  app.editorRememberPitchScroll(horizontal);
+  assert.equal(app.state.midiEditor.view.pitchScrollTop,1215);
+  assert.equal(app.state.midiEditor.view.pitchScrollLeft,720);
+  horizontal.scrollLeft=5040;
+  app.editorRememberPitchScroll(horizontal);
+  assert.equal(app.state.midiEditor.view.pitchScrollTop,1215);
+  assert.equal(app.state.midiEditor.view.pitchScrollLeft,5040);
+  assert.match(html,/class="music-loop-ruler [^"]*"[^>]*data-total-ticks="/);
+  assert.match(html,/class="music-playhead" style="left:[^"]+%"/);
+});
+test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow horizontal time scrolling',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'fixed-time-ruler',projectName:'Fixed time ruler',midiData:{editor:{measureCount:4,loopEnabled:true,loopStart:480,loopEnd:1440},tracks:[{part:'melody',notes:[{id:'selected',pitch:60,startTick:480,durationTicks:240,velocity:90}]}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor;
+  window.MusicStudioEditor.selectNote(session,'selected');
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-piano-corner,\.music-piano-header-scroll\{position:sticky;[^}]*top:0/);
+  assert.match(css,/\.music-piano-header-scroll\{grid-column:2;grid-row:1;min-width:0;overflow:hidden/);
+  assert.match(css,/\.music-piano-scroll\{grid-column:2;grid-row:2;min-width:0;overflow-x:auto/);
+  assert.match(css,/\.music-loop-ruler\+\.music-measure-row\{top:0\}/);
+  assert.doesNotMatch(css,/--music-piano-scroll-top|translateY\(var\(--music-piano-scroll-top/);
+  assert.doesNotMatch(source,/style\?\.setProperty\?\.\('--music-piano-scroll-top'/);
+  const vertical={scrollTop:0,scrollLeft:0,dataset:{initialScrollTop:'0',scrollReady:'true'},classList:{contains:name=>name==='music-piano-viewport'}};
+  const horizontal={scrollTop:0,scrollLeft:0,dataset:{scrollReady:'true'},classList:{contains:name=>name==='music-piano-scroll'}};
+  const header={scrollLeft:0};
+  window.document={querySelector(selector){if(selector==='.music-piano-viewport')return vertical;if(selector==='.music-piano-scroll')return horizontal;if(selector==='.music-piano-header-scroll')return header;return null}};
+  window.requestAnimationFrame=callback=>callback();app.editorZoom(0);
+  for(const scrollTop of [0,24,96,384,1536,512,0]){vertical.scrollTop=scrollTop;app.editorRememberPitchScroll(vertical);assert.equal(header.scrollLeft,0)}
+  horizontal.scrollLeft=2400;horizontal.onscroll();assert.equal(session.view.pitchScrollLeft,2400);assert.equal(header.scrollLeft,2400);
+  for(const zoom of [1,10,30]){
+    session.view.zoom=zoom;html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+    assert.match(html,new RegExp(`class="music-piano-content" style="width:${zoom*100}%"`));
+    assert.match(html,new RegExp(`class="music-piano-header-content" style="width:${zoom*100}%"`));
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*>Bar 1<\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*>Bar 2<\/button>/);
+    assert.match(html,/class="music-loop-selection is-enabled" style="left:6\.25%;width:12\.5%"/);
+    assert.match(html,/class="music-playhead" style="left:0%"/);
+    assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);
+    assert.match(html,/class="music-piano-key is-white is-selected-pitch" data-pitch="60"/);
+  }
 });
 test('long timelines thin measure text by Zoom without removing measure controls or grid geometry',()=>{
   const{app}=load(),project=app.makeProject({projectId:'long-ruler',projectName:'Long ruler',midiData:{editor:{measureCount:93},tracks:[{part:'melody',notes:[]}]}});app.state.projects=[project];
