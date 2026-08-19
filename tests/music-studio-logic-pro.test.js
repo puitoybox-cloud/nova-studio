@@ -259,14 +259,16 @@ test('Piano Roll note labels show English pitch fixed-do solfege and velocity by
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/data-note-id="d4"[\s\S]*?<span class="music-note-label" aria-hidden="true">[\s\S]*?D4 \/ レ　V99[\s\S]*?<span class="music-note-resize"/);
   const makeNote=(width,textWidths={short:16,medium:55,full:90})=>{const classes=new Set,label={querySelector:selector=>{const name=selector.match(/music-note-label-(short|medium|full)/)?.[1];return name?{scrollWidth:textWidths[name]}:null}};return{dataset:{},getBoundingClientRect:()=>({width}),querySelector:selector=>selector==='.music-note-label'?label:null,classList:{toggle(name,enabled){if(enabled)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)},classes}};
-  const renderedNotes=[makeNote(39),makeNote(40),makeNote(49,{short:25,medium:64,full:104}),makeNote(79),makeNote(114)];assert.equal(app.updateNoteLabelLayout({querySelectorAll:()=>renderedNotes}),5);
-  for(const [index,mode] of ['hidden','short','short','medium','full'].entries()){assert.equal(renderedNotes[index].dataset.noteLabelMode,mode);assert.equal(renderedNotes[index].classes.has(`note-label-is-${mode}`),true);assert.equal([...renderedNotes[index].classes].filter(name=>name.startsWith('note-label-is-')).length,1)}
-  assert.equal(app.noteLabelMode(40,{short:16,medium:55,full:90}),'short');assert.equal(app.noteLabelMode(49,{short:25,medium:64,full:104}),'short');assert.equal(app.noteLabelMode(48,{short:25,medium:64,full:104}),'hidden');
-  assert.deepEqual([39,40,79,114].map(width=>app.noteLabelMode(width,{short:16,medium:55,full:90})),['hidden','short','medium','full']);
-  let zoomWidth=39;const zoomNote=makeNote(zoomWidth);zoomNote.getBoundingClientRect=()=>({width:zoomWidth});const zoomModes=[];for(zoomWidth of[39,40,79,114,79,40,39])zoomModes.push(app.updateNoteLabelElement(zoomNote));assert.deepEqual(zoomModes,['hidden','short','medium','full','medium','short','hidden']);
+  const renderedNotes=[makeNote(10),makeNote(20),makeNote(30),makeNote(10,{short:25,medium:64,full:104}),makeNote(79),makeNote(114)];assert.equal(app.updateNoteLabelLayout({querySelectorAll:()=>renderedNotes}),6);
+  for(const [index,mode] of ['short','short','short','short','medium','full'].entries()){assert.equal(renderedNotes[index].dataset.noteLabelMode,mode);assert.equal(renderedNotes[index].classes.has(`note-label-is-${mode}`),true);assert.equal([...renderedNotes[index].classes].filter(name=>name.startsWith('note-label-is-')).length,1)}
+  assert.equal(app.noteLabelMode(10,{short:16,medium:55,full:90}),'short');assert.equal(app.noteLabelMode(10,{short:25,medium:64,full:104}),'short');assert.equal(app.noteLabelMode(30,{short:25,medium:64,full:104}),'short');
+  assert.deepEqual([10,20,30,79,114].map(width=>app.noteLabelMode(width,{short:16,medium:55,full:90})),['short','short','short','medium','full']);
+  let zoomWidth=10;const zoomNote=makeNote(zoomWidth);zoomNote.getBoundingClientRect=()=>({width:zoomWidth});const zoomModes=[];for(zoomWidth of[10,20,30,79,114,79,30,10])zoomModes.push(app.updateNoteLabelElement(zoomNote));assert.deepEqual(zoomModes,['short','short','short','medium','full','medium','short','short']);
   assert.match(css,/\.music-midi-editor-page \.music-piano-roll \.music-note-label\{[^}]*right:18px;[^}]*overflow:hidden;[^}]*pointer-events:none;white-space:nowrap/);
   assert.match(css,/\.music-note-label>span\{position:absolute;visibility:hidden;display:block;[^}]*max-width:100%;overflow:hidden/);
-  assert.match(css,/\.note-label-is-short \.music-note-label-short\{visibility:visible\}/);
+  assert.match(css,/\.note-label-is-short \.music-note-label-short\{visibility:visible;[^}]*max-width:none;overflow:visible/);
+  assert.match(css,/\.note-label-is-short \.music-note-label\{right:0;left:1px;z-index:3;overflow:visible;font-size:\.68rem/);
+  assert.match(css,/\.note-label-is-short \.music-note-resize\{width:6px;[^}]*background:rgba\(255,255,255,\.12\)/);
   assert.match(css,/\.note-label-is-medium \.music-note-label-medium\{visibility:visible\}/);
   assert.match(css,/\.note-label-is-full \.music-note-label-full\{visibility:visible\}/);
   assert.doesNotMatch(css,/@container music-note|\.music-midi-editor-page \.music-midi-note\{[^}]*container-type/);
