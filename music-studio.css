@@ -456,3 +456,9 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-transport-options>button{flex:1 1 120px}
   .music-midi-editor-page .music-transport-options>span{flex:1 1 100%;text-align:center}
 }
+.music-midi-editor-page .music-midi-note{container-name:music-note;container-type:inline-size}
+.music-midi-editor-page .music-piano-roll .music-note-label{position:absolute;top:0;right:18px;bottom:0;left:4px;display:flex;width:auto;height:auto;align-items:center;overflow:hidden;line-height:inherit;pointer-events:none;white-space:nowrap}
+.music-midi-editor-page .music-note-label>span{display:none;max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap}
+@container music-note (min-width:44px){.music-midi-editor-page .music-note-label-short{display:inline}}
+@container music-note (min-width:74px){.music-midi-editor-page .music-note-label-short{display:none}.music-midi-editor-page .music-note-label-medium{display:inline}}
+@container music-note (min-width:116px){.music-midi-editor-page .music-note-label-medium{display:none}.music-midi-editor-page .music-note-label-full{display:inline}}
