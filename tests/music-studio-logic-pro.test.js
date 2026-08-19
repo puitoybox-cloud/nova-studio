@@ -695,7 +695,7 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-piano-viewport\{[^}]*touch-action:pan-x pan-y/);
   assert.match(css,/\.music-pitch-labels\{position:sticky;[^}]*left:0/);
-  assert.match(css,/\.music-measure-row\{position:sticky;[^}]*top:0/);
+  assert.match(css,/\.music-measure-row\{position:relative;[^}]*top:0;[^}]*transform:translateY\(var\(--music-piano-scroll-top,0px\)\)/);
 });
 test('Piano Roll keeps the keyboard fixed horizontally while only the timeline scrolls',()=>{
   const{app}=load(),project=app.makeProject({projectId:'fixed-piano-keyboard',projectName:'Fixed piano keyboard'});
@@ -726,6 +726,31 @@ test('Piano Roll keeps the keyboard fixed horizontally while only the timeline s
   assert.equal(app.state.midiEditor.view.pitchScrollLeft,5040);
   assert.match(html,/class="music-loop-ruler [^"]*"[^>]*data-total-ticks="/);
   assert.match(html,/class="music-playhead" style="left:[^"]+%"/);
+});
+test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow horizontal time scrolling',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'fixed-time-ruler',projectName:'Fixed time ruler',midiData:{editor:{measureCount:4,loopEnabled:true,loopStart:480,loopEnd:1440},tracks:[{part:'melody',notes:[{id:'selected',pitch:60,startTick:480,durationTicks:240,velocity:90}]}]}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor;
+  window.MusicStudioEditor.selectNote(session,'selected');
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),offsets={};
+  assert.match(css,/\.music-loop-ruler\{position:relative;[^}]*transform:translateY\(var\(--music-piano-scroll-top,0px\)\)/);
+  assert.match(css,/\.music-measure-row\{position:relative;[^}]*transform:translateY\(var\(--music-piano-scroll-top,0px\)\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-pitch-labels::after\{[^}]*height:var\(--music-piano-header-height\);[^}]*transform:translateY\(var\(--music-piano-scroll-top,0px\)\)/);
+  assert.match(css,/\.music-loop-ruler\+\.music-measure-row\{top:0\}/);
+  const vertical={scrollTop:0,scrollLeft:0,classList:{contains:name=>name==='music-piano-viewport'},style:{setProperty:(name,value)=>{offsets[name]=value}}};
+  const horizontal={scrollTop:0,scrollLeft:0,classList:{contains:name=>name==='music-piano-scroll'},style:{setProperty(){throw new Error('horizontal scrolling must not move the fixed ruler vertically')}}};
+  app.editorRememberPitchScroll(vertical);assert.equal(offsets['--music-piano-scroll-top'],'0px');
+  vertical.scrollTop=1536;app.editorRememberPitchScroll(vertical);assert.equal(offsets['--music-piano-scroll-top'],'1536px');
+  horizontal.scrollLeft=2400;app.editorRememberPitchScroll(horizontal);assert.equal(session.view.pitchScrollLeft,2400);assert.equal(offsets['--music-piano-scroll-top'],'1536px');
+  for(const zoom of [10,30]){
+    session.view.zoom=zoom;html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+    assert.match(html,new RegExp(`class="music-piano-content" style="width:${zoom*100}%"`));
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*>Bar 1<\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*>Bar 2<\/button>/);
+    assert.match(html,/class="music-loop-selection is-enabled" style="left:6\.25%;width:12\.5%"/);
+    assert.match(html,/class="music-playhead" style="left:0%"/);
+    assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);
+    assert.match(html,/class="music-piano-key is-white is-selected-pitch" data-pitch="60"/);
+  }
 });
 test('long timelines thin measure text by Zoom without removing measure controls or grid geometry',()=>{
   const{app}=load(),project=app.makeProject({projectId:'long-ruler',projectName:'Long ruler',midiData:{editor:{measureCount:93},tracks:[{part:'melody',notes:[]}]}});app.state.projects=[project];
