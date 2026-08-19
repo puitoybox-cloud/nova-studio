@@ -78,6 +78,17 @@ test('Melody playback schedules notes from PPQ and tempo without changing note d
   assert.equal(Math.round(oscillator.started[0]*100)/100,10.54);assert.ok(result.durationMs>800&&result.durationMs<1000);
   synth.stopPlayback();assert.equal(synth.playingVoices,0);
 });
+test('absolute playback start keeps a full count-in on the shared running context and master output',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const context=synth.context;
+  const result=synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:80}],{ppq:480,tempo:120,startTime:12});
+  assert.equal(context.state,'running');assert.equal(result.playbackStart,12);assert.equal(result.durationMs,2650);assert.equal(context.oscillators[0].started[0],12);assert.equal(context.oscillators[0].connections[0],context.gains[1]);assert.equal(context.gains[1].connections[0],context.gains[0]);assert.equal(context.gains[0].connections[0],context.destination);
+  synth.stopPlayback();assert.equal(synth.playingVoices,0);
+});
+test('absolute playback start is never scheduled before AudioContext currentTime',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();
+  const result=synth.playNotes([{pitch:60,startTick:0,durationTicks:120,velocity:80}],{ppq:480,tempo:120,startTime:9});
+  assert.equal(result.playbackStart,10);assert.equal(synth.context.oscillators[0].started[0],10);
+});
 test('Melody playback can start from a moved playhead without inventing notes',async()=>{
   const synth=load().createSynth({AudioContext:Context}),notes=[
     {pitch:60,startTick:0,durationTicks:240,velocity:80},
