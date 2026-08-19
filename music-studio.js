@@ -289,8 +289,9 @@
     popover.style.overflowY=popover.scrollHeight>popover.clientHeight?'auto':'hidden';
   }
   function restoreEditorPitchScroll(){
-    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport');
-    if(viewport&&viewport.dataset.scrollReady!=='true'){viewport.scrollTop=Number(viewport.dataset.initialScrollTop)||0;viewport.scrollLeft=Number(viewport.dataset.initialScrollLeft)||0;viewport.dataset.scrollReady='true'}
+    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll');
+    if(viewport&&viewport.dataset.scrollReady!=='true'){viewport.scrollTop=Number(viewport.dataset.initialScrollTop)||0;viewport.scrollLeft=0;viewport.dataset.scrollReady='true'}
+    if(pianoScroll){if(pianoScroll.dataset.scrollReady!=='true'){pianoScroll.scrollLeft=Math.max(0,Number(view?.pitchScrollLeft)||0);pianoScroll.dataset.scrollReady='true'}pianoScroll.onscroll=()=>editorRememberPitchScroll(pianoScroll,'horizontal')}
     const menu=root.document?.querySelector?.('.music-correction-menu');
     if(menu&&view){
       if(view.correctionMenuOpen)menu.open=true;
@@ -371,10 +372,10 @@
   }
   function signatureLabel(signature){return`${signature.numerator}/${signature.denominator}`}
   function repaintEditor(){
-    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover');
+    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover');
     const pageX=Number(root.scrollX??root.pageXOffset)||0,pageY=Number(root.scrollY??root.pageYOffset)||0;
     if(view){
-      if(viewport){view.pitchScrollTop=viewport.scrollTop;view.pitchScrollLeft=viewport.scrollLeft}
+      if(viewport)view.pitchScrollTop=viewport.scrollTop;if(pianoScroll)view.pitchScrollLeft=pianoScroll.scrollLeft;
       if(menu)view.correctionMenuOpen=menu.open;
       if(popover)view.correctionPopoverScrollTop=popover.scrollTop;
     }
@@ -443,7 +444,7 @@
   function editorZoom(direction){const view=state.midiEditor.view||(state.midiEditor.view={zoom:1,pitchMin:48,pitchMax:72});view.zoom=Math.max(1,Math.min(30,(Number(view.zoom)||1)+Number(direction)));persistEditorView();repaintEditor()}
   function editorAddMeasures(){root.MusicStudioEditor.extendTimelineMeasures(state.midiEditor,4);scheduleMidiEditorSave();repaintEditor()}
   function editorFitPitchRange(){const notes=root.MusicStudioEditor.currentTrack(state.midiEditor)?.notes||[],view=state.midiEditor.view||(state.midiEditor.view={zoom:1});view.pitchMin=notes.length?Math.max(0,Math.min(...notes.map(note=>note.pitch))-3):48;view.pitchMax=notes.length?Math.min(127,Math.max(...notes.map(note=>note.pitch))+3):72;view.pitchScrollTop=null;persistEditorView();requestPaint()}
-  function editorRememberPitchScroll(element){if(state.midiEditor?.view&&element){state.midiEditor.view.pitchScrollTop=element.scrollTop;state.midiEditor.view.pitchScrollLeft=element.scrollLeft;persistEditorView(300)}}
+  function editorRememberPitchScroll(element,axis='both'){if(state.midiEditor?.view&&element){const horizontal=axis==='horizontal'||element.classList?.contains?.('music-piano-scroll'),vertical=axis==='vertical'||element.classList?.contains?.('music-piano-viewport');if(horizontal||!vertical&&axis==='both')state.midiEditor.view.pitchScrollLeft=element.scrollLeft;if(vertical||!horizontal&&axis==='both')state.midiEditor.view.pitchScrollTop=element.scrollTop;persistEditorView(300)}}
   function editorHandleShortcut(event){
     const session=state.midiEditor,rawTarget=event?.target,target=rawTarget?.nodeType===3?rawTarget.parentElement:rawTarget,inputFocused=target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');if(!session||!isMidiEditorRoute(currentRoute())||event?.isComposing||event?.repeat||inputFocused)return false;
     const key=String(event.key||''),code=String(event.code||''),lower=key.toLowerCase(),meta=Boolean(event.metaKey),control=Boolean(event.ctrlKey),shift=Boolean(event.shiftKey),option=Boolean(event.altKey),selected=root.MusicStudioEditor.selectedIds(session).length,step=editorSnapTicks(session),space=code==='Space'||key===' '||key==='Spacebar',recordKey=code==='KeyR'||lower==='r',enterKey=code==='Enter'||code==='NumpadEnter'||key==='Enter'||key==='Return';let action=null;
