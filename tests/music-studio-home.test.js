@@ -154,11 +154,11 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.31/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.32/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.90/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.90/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.91/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.91/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
@@ -248,5 +248,5 @@ test('display assist controls are grouped without changing their actions',()=>{
   assert.ok(source.indexOf('editorZoom(1)')<source.indexOf('music-assist-zoom-value'));
   assert.ok(source.indexOf('music-assist-zoom-value')<source.indexOf('editorZoom(-1)'));
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-display-assist>\.music-assist-layout\{flex:none;gap:6px\}/);assert.match(css,/@media\(min-width:901px\)\{\s*\.music-midi-editor-page \.music-piano-viewport/);
+  assert.match(css,/\.music-display-assist>\.music-assist-layout\{grid-auto-rows:max-content;flex:none;gap:10px\}/);assert.match(css,/\.music-display-assist \.music-assist-description\{margin-top:8px;line-height:1\.45\}/);assert.match(css,/@media\(min-width:901px\)\{\s*\.music-midi-editor-page \.music-piano-viewport/);
 });
