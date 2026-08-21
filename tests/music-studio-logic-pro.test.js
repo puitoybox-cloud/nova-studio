@@ -825,6 +825,16 @@ test('Piano Roll keeps the keyboard fixed horizontally while only the timeline s
   assert.match(html,/class="music-loop-ruler [^"]*"[^>]*data-total-ticks="/);
   assert.match(html,/class="music-playhead" style="left:[^"]+%"/);
 });
+test('iPad keeps primary editing transport and part controls at safe touch height',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  const marker='/* iPad: restore safe touch targets only for primary editing, transport, and part navigation. */';
+  const rule=css.slice(css.indexOf(marker),css.indexOf('/* Keep the timeline',css.indexOf(marker)));
+  assert.match(rule,/@media\(min-width:601px\) and \(max-width:1180px\)/);
+  assert.match(rule,/\.music-editor-bottom>section:not\(\.music-display-assist\) button/);
+  assert.match(rule,/\.music-part-tabs>button\{height:36px;min-height:36px;padding-block:5px\}/);
+  assert.match(rule,/\.music-part-tabs\{min-height:40px;flex-basis:40px\}/);
+  assert.doesNotMatch(rule,/\.music-display-assist\s+button/);
+});
 test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow horizontal time scrolling',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'fixed-time-ruler',projectName:'Fixed time ruler',midiData:{editor:{measureCount:4,loopEnabled:true,loopStart:480,loopEnd:1440},tracks:[{part:'melody',notes:[{id:'selected',pitch:60,startTick:480,durationTicks:240,velocity:90}]}]}});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor;

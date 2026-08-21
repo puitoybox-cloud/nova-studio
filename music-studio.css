@@ -468,6 +468,12 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-assist-range-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .music-midi-editor-page .music-editor-bottom{height:180px;min-height:180px;flex-basis:180px}
 }
+/* iPad: restore safe touch targets only for primary editing, transport, and part navigation. */
+@media(min-width:601px) and (max-width:1180px){
+  .music-midi-editor-page .music-editor-bottom>section:not(.music-display-assist) button,
+  .music-midi-editor-page .music-part-tabs>button{height:36px;min-height:36px;padding-block:5px}
+  .music-midi-editor-page .music-part-tabs{min-height:40px;flex-basis:40px}
+}
 /* Keep the timeline's canonical scrollLeft while exposing one always-visible native scrollbar. */
 .music-midi-editor-page .music-piano-scroll{scrollbar-width:none}
 .music-midi-editor-page .music-piano-scroll::-webkit-scrollbar{height:0}
