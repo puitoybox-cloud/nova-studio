@@ -773,6 +773,28 @@ test('time-axis Zoom expands the roll horizontally and preserves two-axis scroll
   assert.match(css,/\.music-piano-corner,\.music-piano-header-scroll\{position:sticky;[^}]*top:0/);
   assert.doesNotMatch(css,/--music-piano-scroll-top/);
 });
+test('Piano Roll position bar uses the canonical scrollLeft and reports every partially visible measure',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'piano-position',projectName:'Piano position',midiData:{editor:{measureCount:32}}});
+  app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor;
+  const fourMeasures=window.MusicStudioEditor.createSession(app.makeProject({projectId:'four-bars',projectName:'Four bars'}));assert.equal(app.editorVisibleBarRange(fourMeasures,{scrollLeft:0,clientWidth:800,scrollWidth:800}).label,'Bar 1–4 / 4');
+  assert.match(html,/class="music-piano-bar-range" aria-live="polite">Bar 1–32 \/ 32<\/output>/);
+  assert.match(html,/class="music-piano-scrollbar" tabindex="0" role="scrollbar" aria-label="Piano Roll横スクロール"/);
+  assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:800}).label,'Bar 1–32 / 32');
+  assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:3200}).label,'Bar 1–8 / 32');
+  assert.equal(app.editorVisibleBarRange(session,{scrollLeft:800,clientWidth:800,scrollWidth:3200}).label,'Bar 9–16 / 32');
+  assert.equal(app.editorVisibleBarRange(session,{scrollLeft:2400,clientWidth:800,scrollWidth:3200}).label,'Bar 25–32 / 32');
+  assert.equal(app.editorVisibleBarRange(session,{scrollLeft:750,clientWidth:700,scrollWidth:3200}).label,'Bar 8–15 / 32');
+  app.editorZoom(1);assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:1600}).label,'Bar 1–16 / 32');
+  app.editorZoom(-1);assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:800}).label,'Bar 1–32 / 32');
+  app.editorAddMeasures();assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:800}).label,'Bar 1–36 / 36');
+  app.editorRemoveMeasures();assert.equal(app.editorVisibleBarRange(session,{scrollLeft:0,clientWidth:800,scrollWidth:800}).label,'Bar 1–35 / 35');
+  const viewport={scrollTop:420,scrollLeft:0,dataset:{initialScrollTop:'0',scrollReady:'true'}},pianoScroll={scrollTop:0,scrollLeft:800,clientWidth:800,scrollWidth:3200,dataset:{scrollReady:'true'},classList:{contains:name=>name==='music-piano-scroll'}},header={scrollLeft:0},attributes={},scrollbar={scrollLeft:0,clientWidth:800,scrollWidth:3200,setAttribute(name,value){attributes[name]=value}},rangeOutput={textContent:''};
+  window.requestAnimationFrame=callback=>callback();window.document={querySelector(selector){if(selector==='.music-piano-viewport')return viewport;if(selector==='.music-piano-scroll')return pianoScroll;if(selector==='.music-piano-header-scroll')return header;if(selector==='.music-piano-scrollbar')return scrollbar;if(selector==='.music-piano-bar-range')return rangeOutput;return null}};
+  app.editorZoom(0);assert.equal(header.scrollLeft,800);assert.equal(scrollbar.scrollLeft,800);assert.equal(rangeOutput.textContent,'Bar 9–18 / 35');
+  pianoScroll.scrollLeft=1600;pianoScroll.onscroll();assert.equal(header.scrollLeft,1600);assert.equal(scrollbar.scrollLeft,1600);assert.equal(session.view.pitchScrollLeft,1600);assert.equal(rangeOutput.textContent,'Bar 18–27 / 35');
+  scrollbar.scrollLeft=2400;scrollbar.onscroll();assert.equal(pianoScroll.scrollLeft,2400);assert.equal(header.scrollLeft,2400);assert.equal(session.view.pitchScrollLeft,2400);assert.equal(rangeOutput.textContent,'Bar 27–35 / 35');assert.equal(attributes['aria-valuenow'],'2400');
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-midi-editor-page \.music-piano-position\{display:grid;grid-template-columns:112px minmax\(0,1fr\)/);assert.match(css,/\.music-midi-editor-page \.music-piano-scrollbar\{height:15px;[^}]*overflow-x:auto;overflow-y:hidden/);assert.match(css,/@media\(pointer:coarse\)\{[^}]*\.music-midi-editor-page \.music-piano-position\{padding-block:4px\}/);assert.match(css,/\.music-midi-editor-page \.music-piano-position\{grid-template-columns:94px minmax\(0,1fr\)\}/);assert.match(source,/addEventListener\?\.\('resize',\(\)=>\{scheduleNoteLabelLayout\(\);scheduleEditorPianoPosition\(\)\}/);assert.doesNotMatch(source,/--music-piano-scroll-top/);
+});
 test('Piano Roll keeps the keyboard fixed horizontally while only the timeline scrolls',()=>{
   const{app}=load(),project=app.makeProject({projectId:'fixed-piano-keyboard',projectName:'Fixed piano keyboard'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
