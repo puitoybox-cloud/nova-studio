@@ -468,6 +468,24 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-assist-range-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .music-midi-editor-page .music-editor-bottom{height:180px;min-height:180px;flex-basis:180px}
 }
+/* Keep the timeline's canonical scrollLeft while exposing one always-visible native scrollbar. */
+.music-midi-editor-page .music-piano-scroll{scrollbar-width:none}
+.music-midi-editor-page .music-piano-scroll::-webkit-scrollbar{height:0}
+.music-midi-editor-page .music-piano-position{display:grid;grid-template-columns:112px minmax(0,1fr);min-width:0;align-items:center;padding:3px 0 2px;border-top:1px solid #314155;background:#08111b}
+.music-midi-editor-page .music-piano-bar-range{box-sizing:border-box;min-width:0;padding-left:8px;color:#c8d7e8;font-size:.68rem;font-weight:800;line-height:1.2;white-space:nowrap}
+.music-midi-editor-page .music-piano-scrollbar{height:15px;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-color:#687a90 #111d2b;scrollbar-width:auto;touch-action:pan-x;-webkit-overflow-scrolling:touch}
+.music-midi-editor-page .music-piano-scrollbar-content{height:1px;min-width:100%;pointer-events:none}
+.music-midi-editor-page .music-piano-scrollbar::-webkit-scrollbar{height:10px}
+.music-midi-editor-page .music-piano-scrollbar::-webkit-scrollbar-track{border-radius:999px;background:#111d2b}
+.music-midi-editor-page .music-piano-scrollbar::-webkit-scrollbar-thumb{border:2px solid #111d2b;border-radius:999px;background:#687a90}
+.music-midi-editor-page .music-piano-scrollbar::-webkit-scrollbar-thumb:hover{background:#8294aa}
+@media(pointer:coarse){
+  .music-midi-editor-page .music-piano-position{padding-block:4px}
+  .music-midi-editor-page .music-piano-bar-range{font-size:.66rem}
+  .music-midi-editor-page .music-piano-scrollbar{height:18px}
+  .music-midi-editor-page .music-piano-scrollbar::-webkit-scrollbar{height:14px}
+}
+@media(max-width:900px){.music-midi-editor-page .music-piano-position{grid-template-columns:94px minmax(0,1fr)}.music-midi-editor-page .music-piano-bar-range{padding-left:5px;font-size:.62rem}}
 /* Keep the local-save explanation visually paired with Saved on desktop. */
 .music-midi-editor-page .music-saved-explain{display:flex;box-sizing:border-box;min-height:32px;align-items:center;justify-content:center;text-align:center}
 @media(min-width:901px){
