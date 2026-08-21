@@ -7,7 +7,7 @@ const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
 function load(navigator={}){
   const values=new Map([['novaStudio_v01','nova-safe'],['aiMusicHelperProject','ai-safe']]);
-  const window={navigator,crypto:{randomUUID:()=>`id-1`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
+  let uuidSequence=0;const window={navigator,crypto:{randomUUID:()=>`id-${++uuidSequence}`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
   const midiSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi.js'),'utf8');vm.runInNewContext(midiSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi.js'});const parserSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-parser.js'),'utf8');vm.runInNewContext(parserSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi-parser.js'});const editorSource=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');vm.runInNewContext(editorSource,{window,globalThis:window},{filename:'music-studio-editor.js'});const inputSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-input.js'),'utf8');vm.runInNewContext(inputSource,{window,globalThis:window},{filename:'music-studio-midi-input.js'});
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});return{app:window.MusicStudio,values,window};
 }
@@ -552,6 +552,31 @@ test('Snap toggles grid alignment for add move and resize without changing the v
   assert.match(html,/class="music-time-grid"/);
   assert.match(html,/onchange="MusicStudio\.editorSetSnap\(this\.value\)" disabled/);
   app.editorToggleSnap();assert.equal(session.view.snapEnabled,true);
+});
+test('Add Note handler creates four distinct notes at the current Grid across repaints',()=>{
+  const steps={'1/4':480,'1/8':240,'1/16':120,'1/32':60};
+  for(const [grid,step] of Object.entries(steps)){
+    const{app,window}=load(),project=app.makeProject({projectId:`add-${grid}`,projectName:`Add ${grid}`});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+    const core=window.MusicStudioEditor,session=app.state.midiEditor;app.editorSetSnap(grid);session.playheadTick=37;
+    for(let press=0;press<4;press++){assert.equal(app.editorAddNote(),true);app.renderRoute(`music-studio/midi-editor/${project.projectId}`)}
+    const notes=core.currentTrack(session).notes;assert.deepEqual(Array.from(notes,note=>note.startTick),[37,37+step,37+step*2,37+step*3]);assert.equal(new Set(notes.map(note=>note.startTick)).size,4);
+    assert.deepEqual(Array.from(notes,note=>[note.pitch,note.durationTicks,note.velocity]),Array(4).fill([60,step,100]));assert.deepEqual(Array.from(core.selectedIds(session)),[notes[3].id]);
+    const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);assert.match(html,/class="music-piano-key is-white is-selected-pitch" data-pitch="60"/);assert.match(html,/music-note-label-short">C4<\/span><span class="music-note-label-medium">C4 \/ ド<\/span>/);assert.doesNotMatch(JSON.stringify(session.midiData),/addNoteSequence/);
+  }
+  const{app,window}=load(),project=app.makeProject({projectId:'add-snap-off',projectName:'Add Snap OFF'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;app.editorSetSnap('1/8');app.editorToggleSnap();session.playheadTick=137;assert.equal(app.editorAddNote(),true);app.editorMoveSelected(0,2);assert.equal(app.editorAddNote(),true);assert.equal(app.editorAddNote(),true);
+  assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>[note.startTick,note.pitch,note.durationTicks,note.velocity]),[[137,62,480,100],[377,62,480,100],[617,62,480,100]]);
+});
+test('Add Note stops at the configured song end, resumes after Add Measure, and follows Undo safely',async()=>{
+  const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'add-boundary',projectName:'Add boundary'});app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const core=window.MusicStudioEditor,session=app.state.midiEditor;app.editorSetSnap('1/16');session.playheadTick=7560;
+  assert.equal(app.editorAddNote(),true);const first=core.selectedNotes(session)[0];assert.equal(first.startTick,7560);assert.equal(app.editorAddNote(),false);assert.match(app.state.notice,/小節を追加してください/);assert.equal(core.currentTrack(session).notes.length,1);
+  app.editorAddMeasures();assert.equal(session.midiData.editor.measureCount,8);assert.equal(app.editorAddNote(),true);let notes=core.currentTrack(session).notes;assert.deepEqual(Array.from(notes,note=>note.startTick),[7560,7680]);
+  app.editorUndo();assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.startTick),[7560]);app.editorRedo();assert.deepEqual(Array.from(core.currentTrack(session).notes,note=>note.startTick),[7560,7680]);
+  app.editorUndo();assert.equal(app.editorAddNote(),true);notes=core.currentTrack(session).notes;assert.deepEqual(Array.from(notes,note=>note.startTick),[7560,7680]);
+  app.editorCopy();session.playheadTick=9000;app.editorPaste();app.editorDuplicate();assert.equal(app.editorAddNote(),true);assert.equal(core.currentTrack(session).notes.some(note=>note.startTick===7800),true);
+  await app.saveMidiEditor({silent:true});const stored=await repo.get(project.projectId);assert.deepEqual(Array.from(stored.midiData.tracks.find(track=>track.part==='melody').notes.filter(note=>note.startTick<8000),note=>note.startTick),[7560,7680,7800]);
+  app.state.projects=[stored];app.state.midiEditor=null;app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.equal(window.MusicStudioEditor.currentTrack(app.state.midiEditor).notes.some(note=>note.startTick===7800),true);assert.equal(app.state.midiAddNoteSequence.session,app.state.midiEditor);assert.deepEqual(Array.from(app.state.midiAddNoteSequence.noteIds),[]);
 });
 test('selected-note Quantize is independent from Snap and persists through the existing save path',async()=>{
   const{app,window}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'selected-quantize',projectName:'Selected Quantize',midiData:{tracks:[{part:'melody',notes:[{id:'early',pitch:60,startTick:115,durationTicks:251,velocity:91},{id:'late',pitch:64,startTick:125,durationTicks:377,velocity:73},{id:'untouched',pitch:67,startTick:181,durationTicks:480,velocity:88}]}]}});app.setRepository(repo);await repo.put(project);app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),session=app.state.midiEditor,core=window.MusicStudioEditor;assert.match(html,/aria-pressed="false">Quantize OFF/);assert.match(html,/<option value="1\/16" selected>1\/16<\/option>/);assert.match(html,/Snapは手動編集時、Quantizeは録音済み／既存ノートを後から補正/);assert.equal(session.view.quantizeEnabled,false);assert.equal(session.view.quantize,'1/16');
