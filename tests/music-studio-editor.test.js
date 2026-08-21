@@ -56,32 +56,32 @@ test('empty timeline measures persist as undoable editor metadata',()=>{
   const imported=core.normalizeMidiData({...project().midiData,totalTick:15360},project());
   assert.equal(imported.editor.measureCount,8);
 });
-test('timeline removal subtracts four empty measures and supports Undo Redo',()=>{
+test('timeline removal subtracts one empty measure and supports Undo Redo',()=>{
   const core=load(),session=core.createSession({projectId:'remove-empty',midiData:{editor:{measureCount:16},tracks:[{part:'melody',notes:[]}]}});
-  let result=core.removeTimelineMeasures(session,4);assert.equal(result.ok,true);assert.equal(result.measureCount,12);assert.equal(session.midiData.totalTick,23040);
-  result=core.removeTimelineMeasures(session,4);assert.equal(result.ok,true);assert.equal(session.midiData.editor.measureCount,8);assert.equal(session.midiData.totalTick,15360);
-  core.undo(session);assert.equal(session.midiData.editor.measureCount,12);assert.equal(session.midiData.totalTick,23040);
-  core.redo(session);assert.equal(session.midiData.editor.measureCount,8);assert.equal(session.midiData.totalTick,15360);
-  core.extendTimelineMeasures(session,4);assert.equal(session.midiData.editor.measureCount,12);assert.equal(session.midiData.totalTick,23040);
-  assert.equal(core.removeTimelineMeasures(session,4).ok,true);assert.equal(session.midiData.editor.measureCount,8);
+  for(const [measureCount,totalTick] of [[15,28800],[14,26880],[13,24960],[12,23040]]){const result=core.removeTimelineMeasures(session);assert.equal(result.ok,true);assert.equal(result.removed,1);assert.equal(result.measureCount,measureCount);assert.equal(session.midiData.totalTick,totalTick)}
+  core.undo(session);assert.equal(session.midiData.editor.measureCount,13);assert.equal(session.midiData.totalTick,24960);
+  core.undo(session);assert.equal(session.midiData.editor.measureCount,14);core.redo(session);assert.equal(session.midiData.editor.measureCount,13);
+  core.extendTimelineMeasures(session,4);assert.equal(session.midiData.editor.measureCount,17);assert.equal(session.midiData.totalTick,32640);
+  for(let count=16;count>=13;count--){assert.equal(core.removeTimelineMeasures(session).ok,true);assert.equal(session.midiData.editor.measureCount,count)}
 });
 test('timeline removal preserves boundary notes and rejects crossing notes in every track',()=>{
-  const core=load(),boundary=23040,session=core.createSession({projectId:'remove-notes',midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:16},tracks:[
+  const core=load(),boundary=28800,session=core.createSession({projectId:'remove-notes',midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:16},tracks:[
     {part:'melody',notes:[{id:'before',pitch:60,startTick:boundary-120,durationTicks:120,velocity:90}]},
     {part:'drums',channel:10,notes:[{id:'crossing',pitch:36,startTick:boundary-60,durationTicks:120,velocity:100}]},
     {part:'bass',notes:[{id:'after',pitch:36,startTick:boundary,durationTicks:240,velocity:80}]}
   ]}}),before=JSON.stringify(session.midiData.tracks);
-  const blocked=core.removeTimelineMeasures(session,4);assert.equal(blocked.ok,false);assert.equal(blocked.reason,'notes');assert.deepEqual(Array.from(blocked.blocking,note=>note.noteId),['crossing','after']);assert.equal(session.midiData.editor.measureCount,16);assert.equal(JSON.stringify(session.midiData.tracks),before);assert.equal(session.undo.length,0);
+  const blocked=core.removeTimelineMeasures(session);assert.equal(blocked.ok,false);assert.equal(blocked.reason,'notes');assert.deepEqual(Array.from(blocked.blocking,note=>note.noteId),['crossing','after']);assert.equal(session.midiData.editor.measureCount,16);assert.equal(JSON.stringify(session.midiData.tracks),before);assert.equal(session.undo.length,0);
   session.midiData.tracks.find(track=>track.part==='drums').notes=[];session.midiData.tracks.find(track=>track.part==='bass').notes=[];
-  const removed=core.removeTimelineMeasures(session,4);assert.equal(removed.ok,true);assert.equal(session.midiData.editor.measureCount,12);assert.equal(session.midiData.tracks.find(track=>track.part==='melody').notes[0].id,'before');
+  const removed=core.removeTimelineMeasures(session);assert.equal(removed.ok,true);assert.equal(session.midiData.editor.measureCount,15);assert.equal(session.midiData.tracks.find(track=>track.part==='melody').notes[0].id,'before');
 });
 test('timeline removal enforces four-measure minimum and clamps Playhead Loop and measure state',()=>{
-  const core=load(),session=core.createSession({projectId:'remove-bounds',midiData:{editor:{measureCount:8,loopEnabled:true,loopStart:7000,loopEnd:14000,parts:{melody:{selectedMeasures:[2,8],lockedMeasures:[3,7]}}},tracks:[{part:'melody',notes:[]}]}});
-  session.playheadTick=15000;session.selectedMeasures=[2,8];session.lockedMeasures=[3,7];
-  const result=core.removeTimelineMeasures(session,4);assert.equal(result.ok,true);assert.equal(result.totalTicks,7680);assert.equal(session.playheadTick,7680);assert.equal(session.midiData.editor.loopStart,7000);assert.equal(session.midiData.editor.loopEnd,7680);assert.equal(session.midiData.editor.loopEnabled,true);assert.deepEqual(Array.from(session.selectedMeasures),[2]);assert.deepEqual(Array.from(session.lockedMeasures),[3]);
-  const minimum=core.removeTimelineMeasures(session,4);assert.equal(minimum.ok,false);assert.equal(minimum.reason,'minimum');assert.equal(session.midiData.editor.measureCount,4);
-  core.undo(session);assert.equal(session.midiData.editor.measureCount,8);assert.equal(session.playheadTick,15000);assert.equal(session.midiData.editor.loopEnd,14000);
+  const core=load(),session=core.createSession({projectId:'remove-bounds',midiData:{editor:{measureCount:5,loopEnabled:true,loopStart:7000,loopEnd:9000,parts:{melody:{selectedMeasures:[2,5],lockedMeasures:[3,5]}}},tracks:[{part:'melody',notes:[]}]}});
+  session.playheadTick=10000;session.selectedMeasures=[2,5];session.lockedMeasures=[3,5];
+  const result=core.removeTimelineMeasures(session);assert.equal(result.ok,true);assert.equal(result.totalTicks,7680);assert.equal(session.playheadTick,7680);assert.equal(session.midiData.editor.loopStart,7000);assert.equal(session.midiData.editor.loopEnd,7680);assert.equal(session.midiData.editor.loopEnabled,true);assert.deepEqual(Array.from(session.selectedMeasures),[2]);assert.deepEqual(Array.from(session.lockedMeasures),[3]);
+  const minimum=core.removeTimelineMeasures(session);assert.equal(minimum.ok,false);assert.equal(minimum.reason,'minimum');assert.equal(session.midiData.editor.measureCount,4);
+  core.undo(session);assert.equal(session.midiData.editor.measureCount,5);assert.equal(session.playheadTick,10000);assert.equal(session.midiData.editor.loopEnd,9000);
 });
+test('one-measure removal derives ticks from PPQ and time signature',()=>{const core=load();for(const [signature,expected] of [[{numerator:3,denominator:4},7200],[{numerator:6,denominator:8},7200]]){const session=core.createSession({midiData:{ppq:480,timeSignature:signature,editor:{measureCount:6},tracks:[{part:'melody',notes:[]}]}}),result=core.removeTimelineMeasures(session);assert.equal(result.ok,true);assert.equal(result.measureCount,5);assert.equal(result.totalTicks,expected)}});
 test('add, update and delete notes are undoable and redoable',()=>{
   const core=load(),session=core.createSession(project());
   core.addNote(session,{pitch:64,startTick:480,durationTicks:240,velocity:100});
