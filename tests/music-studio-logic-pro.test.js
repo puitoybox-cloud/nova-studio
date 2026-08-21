@@ -553,14 +553,14 @@ test('Snap toggles grid alignment for add move and resize without changing the v
   assert.match(html,/onchange="MusicStudio\.editorSetSnap\(this\.value\)" disabled/);
   app.editorToggleSnap();assert.equal(session.view.snapEnabled,true);
 });
-test('Add Note advances by the current Grid with Snap on or off and selects only the newest note',()=>{
+test('Add Note handler creates four distinct notes at the current Grid across repaints',()=>{
   const steps={'1/4':480,'1/8':240,'1/16':120,'1/32':60};
   for(const [grid,step] of Object.entries(steps)){
     const{app,window}=load(),project=app.makeProject({projectId:`add-${grid}`,projectName:`Add ${grid}`});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
     const core=window.MusicStudioEditor,session=app.state.midiEditor;app.editorSetSnap(grid);session.playheadTick=37;
-    assert.equal(app.editorAddNote(),true);assert.equal(app.editorAddNote(),true);assert.equal(app.editorAddNote(),true);
-    const notes=core.currentTrack(session).notes;assert.deepEqual(Array.from(notes,note=>note.startTick),[37,37+step,37+step*2]);assert.equal(new Set(notes.map(note=>note.startTick)).size,3);
-    assert.deepEqual(Array.from(notes,note=>[note.pitch,note.durationTicks,note.velocity]),Array(3).fill([60,step,100]));assert.deepEqual(Array.from(core.selectedIds(session)),[notes[2].id]);
+    for(let press=0;press<4;press++){assert.equal(app.editorAddNote(),true);app.renderRoute(`music-studio/midi-editor/${project.projectId}`)}
+    const notes=core.currentTrack(session).notes;assert.deepEqual(Array.from(notes,note=>note.startTick),[37,37+step,37+step*2,37+step*3]);assert.equal(new Set(notes.map(note=>note.startTick)).size,4);
+    assert.deepEqual(Array.from(notes,note=>[note.pitch,note.durationTicks,note.velocity]),Array(4).fill([60,step,100]));assert.deepEqual(Array.from(core.selectedIds(session)),[notes[3].id]);
     const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);assert.match(html,/class="music-piano-key is-white is-selected-pitch" data-pitch="60"/);assert.match(html,/music-note-label-short">C4<\/span><span class="music-note-label-medium">C4 \/ ド<\/span>/);assert.doesNotMatch(JSON.stringify(session.midiData),/addNoteSequence/);
   }
   const{app,window}=load(),project=app.makeProject({projectId:'add-snap-off',projectName:'Add Snap OFF'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
