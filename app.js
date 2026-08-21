@@ -1444,7 +1444,7 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.4.89';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.91';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
 }
@@ -1463,5 +1463,5 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.1',()=>B
  .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.11',()=>Boolean(window.MusicStudioEditor)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.2',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.12',()=>Boolean(window.MusicStudioAudio)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.75',()=>Boolean(window.MusicStudio)))
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.76',()=>Boolean(window.MusicStudio)))
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));

@@ -431,12 +431,42 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 .music-midi-editor-page .music-assist-card{display:grid;grid-template-rows:auto 1fr;align-content:start}
 .music-midi-editor-page .music-assist-card>button{width:100%;min-height:36px}
 .music-midi-editor-page .music-measure-length-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.music-midi-editor-page .music-measure-length-controls>button{width:100%;min-width:0;min-height:36px;white-space:normal}
+/* Compact only the display-assist presentation so the Piano Roll keeps more vertical room. */
+.music-midi-editor-page .music-display-assist{height:max-content;min-height:0;align-self:start;padding:12px}
+.music-midi-editor-page .music-display-assist>h2{margin-bottom:8px}
+.music-midi-editor-page .music-display-assist>.music-assist-layout{grid-auto-rows:max-content;flex:none;gap:10px}
+.music-midi-editor-page .music-display-assist .music-assist-quantize{padding-top:10px}
+.music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls,.music-assist-quantize-controls,.music-assist-zoom,.music-assist-range-grid){height:auto;align-self:start;gap:8px}
+.music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls>button,.music-assist-quantize-controls>button,.music-assist-zoom>button,.music-assist-card>button,.music-measure-length-controls>button){min-height:36px;padding-block:5px}
+.music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls select,.music-assist-quantize-controls select){height:36px!important;min-height:36px!important}
+.music-midi-editor-page .music-display-assist .music-assist-description{margin-top:8px;line-height:1.45}
+.music-midi-editor-page .music-display-assist .music-assist-card{grid-template-rows:auto auto;row-gap:8px}
+.music-midi-editor-page .music-display-assist .music-assist-range-grid{align-items:start}
+.music-midi-editor-page .music-display-assist .music-assist-card{height:max-content;align-self:start}
+.music-midi-editor-page .music-display-assist .music-measure-length-controls{gap:8px}
+.music-midi-editor-page .music-display-assist .music-measure-length-controls>button{height:36px}
+@media(min-width:901px){
+  .music-midi-editor-page .music-piano-viewport{height:clamp(660px,calc(100vh - 140px),790px)}
+  .music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls,.music-assist-quantize-controls){height:48px}
+  .music-midi-editor-page .music-display-assist .music-assist-range-grid{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)}
+  .music-midi-editor-page .music-display-assist .music-measure-length-controls>button{height:auto}
+}
 @media(max-width:900px){
+  .music-midi-editor-page .music-display-assist{height:auto;align-self:stretch;padding:7px}
   .music-midi-editor-page .music-assist-snap-controls,.music-midi-editor-page .music-assist-quantize-controls,.music-midi-editor-page .music-assist-zoom,.music-midi-editor-page .music-assist-range-grid{grid-template-columns:minmax(0,1fr)}
   .music-midi-editor-page .music-measure-length-controls{grid-template-columns:minmax(0,1fr)}
   .music-midi-editor-page .music-assist-snap-controls>label{display:grid;grid-template-columns:auto minmax(0,1fr)}
   .music-midi-editor-page .music-assist-snap-controls select,.music-midi-editor-page .music-assist-quantize-controls select{width:100%}
   .music-midi-editor-page .music-assist-zoom-value{grid-row:2;justify-self:center;padding-block:2px}
+  .music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls>button,.music-assist-quantize-controls>button,.music-assist-zoom>button,.music-assist-card>button,.music-measure-length-controls>button){min-height:36px}
+  .music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls select,.music-assist-quantize-controls select){height:36px!important;min-height:36px!important}
+  .music-midi-editor-page .music-display-assist .music-measure-length-controls>button{height:auto}
+}
+@media(min-width:601px) and (max-width:900px){
+  .music-midi-editor-page .music-assist-zoom{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+  .music-midi-editor-page .music-assist-zoom-value{grid-row:auto;padding-block:0}
+  .music-midi-editor-page .music-assist-range-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .music-midi-editor-page .music-editor-bottom{height:180px;min-height:180px;flex-basis:180px}
 }
 /* Keep the local-save explanation visually paired with Saved on desktop. */
 .music-midi-editor-page .music-saved-explain{display:flex;box-sizing:border-box;min-height:32px;align-items:center;justify-content:center;text-align:center}
