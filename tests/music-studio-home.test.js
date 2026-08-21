@@ -42,7 +42,7 @@ test('Music Studio 0.2 exposes beginner guides without changing project storage'
   assert.match(html,/最初の1曲を作る/);
   assert.match(html,/Music Studio Home ヘルプ/);
   for(const text of ['クラウド同期ではありません','Project全体の外部バックアップ','Logic ProからStandard MIDI File','用語を確認'])assert.match(html,new RegExp(text));
-  for(const text of ['ノートの位置や長さをグリッドに合わせます','1\/4＝1拍','Export All MIDI','Fit Range','Add Measure','MIDIキーボードを選択して演奏・録音'])assert.match(source,new RegExp(text));
+  for(const text of ['ノート位置・長さをGridへ合わせます','1\/4＝1拍','Export All MIDI','Fit Range','Add Measure','MIDIキーボードを選択して演奏・録音'])assert.match(source,new RegExp(text));
   assert.match(source,/function openHelp\(id\)/);assert.match(source,/function closeHelp\(id\)/);
   assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,5\)/);
 });
@@ -154,17 +154,17 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.30/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.31/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.89/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.89/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.90/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.90/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.11/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.11/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.12/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.75/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.75/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.76/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.76/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -243,8 +243,10 @@ test('Melody playhead follows AudioContext time and resets on natural end and ma
 });
 
 test('display assist controls are grouped without changing their actions',()=>{
-  for(const className of ['music-assist-snap-controls','music-assist-zoom','music-assist-range-grid'])assert.match(source,new RegExp(className));
-  for(const handler of ['editorToggleSnap()','editorSetSnap(this.value)','editorZoom(1)','editorZoom(-1)','editorFitPitchRange()','editorAddMeasures()'])assert.ok(source.includes(`MusicStudio.${handler}`));
+  for(const className of ['music-assist-snap-controls','music-assist-quantize-controls','music-assist-zoom','music-assist-zoom-value','music-assist-range-grid'])assert.match(source,new RegExp(className));
+  for(const handler of ['editorToggleSnap()','editorSetSnap(this.value)','editorToggleQuantize()','editorSetQuantize(this.value)','editorApplyQuantize()','editorZoom(1)','editorZoom(-1)','editorFitPitchRange()','editorAddMeasures()','editorRemoveMeasures()'])assert.ok(source.includes(`MusicStudio.${handler}`));
   assert.ok(source.indexOf('editorZoom(1)')<source.indexOf('music-assist-zoom-value'));
   assert.ok(source.indexOf('music-assist-zoom-value')<source.indexOf('editorZoom(-1)'));
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-display-assist>\.music-assist-layout\{flex:none;gap:6px\}/);assert.match(css,/@media\(min-width:901px\)\{\s*\.music-midi-editor-page \.music-piano-viewport/);
 });
