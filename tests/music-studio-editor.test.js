@@ -33,6 +33,12 @@ test('transport preferences preserve explicit OFF values while legacy data defau
   assert.deepEqual(JSON.parse(JSON.stringify(legacy.editor.transport)),{countInEnabled:true,metronomeEnabled:true});
   assert.equal(saved.editor.transport.countInEnabled,false);assert.equal(saved.editor.transport.metronomeEnabled,false);
 });
+test('editor view preserves Snap ON OFF and Grid while legacy projects safely default to ON and 1/16',()=>{
+  const core=load(),legacy=core.createSession({projectId:'legacy-snap'}),off=core.createSession({projectId:'snap-off',midiData:{editor:{view:{snapEnabled:false,snap:'1/4'}}}}),on=core.createSession({projectId:'snap-on',midiData:{editor:{view:{snapEnabled:true,snap:'1/16'}}}});
+  assert.equal(legacy.view.snapEnabled,true);assert.equal(legacy.view.snap,'1/16');
+  assert.equal(off.view.snapEnabled,false);assert.equal(off.view.snap,'1/4');
+  assert.equal(on.view.snapEnabled,true);assert.equal(on.view.snap,'1/16');
+});
 test('loop range is backward-compatible persisted editor state independent from bar selection',()=>{
   const editor=load(),legacy=editor.createSession({projectId:'legacy'});
   assert.equal(legacy.midiData.editor.loopEnabled,false);assert.equal(legacy.midiData.editor.loopStart,null);assert.equal(legacy.midiData.editor.loopEnd,null);

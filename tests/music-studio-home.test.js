@@ -194,7 +194,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
-  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.11/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.11/);
+  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.12/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.12/);
   assert.match(hostSource,/music-studio\.js\?v=1\.4\.80/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.80/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
