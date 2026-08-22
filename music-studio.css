@@ -335,6 +335,18 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-correction-grid,
   .music-midi-editor-page .music-correction-batch-grid{row-gap:1px}
 }
+
+/* Keep the Melody title row compact and center its fixed menu from the same row metrics. */
+body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:10px}
+.music-midi-editor-page .music-editor-chrome{min-height:var(--music-editor-heading-height);margin-bottom:1px}
+.music-midi-editor-page .music-editor-chrome .music-editor-heading{min-height:var(--music-editor-heading-height)}
+body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-music-studio-route:has(.music-midi-editor-page) .nova-menu-toggle{top:calc(var(--music-editor-page-top) + (var(--music-editor-heading-height) - var(--music-editor-menu-size))/2);width:var(--music-editor-menu-size);height:var(--music-editor-menu-size);min-height:var(--music-editor-menu-size)}
+@media(min-width:601px) and (max-width:1180px){
+  body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:24px;--music-editor-menu-size:24px;--music-editor-page-top:8px}
+}
+@media(max-width:600px){
+  body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:6px}
+}
 /* Keep measure text entirely above the 10px time ruler with the smallest safe text area. */
 .music-midi-editor-page .music-measure-row{height:26px}
 .music-midi-editor-page .music-measure{box-sizing:border-box;height:26px!important;min-height:26px!important;max-height:26px!important;align-items:start;justify-items:center;padding:0 4px 10px;overflow:visible;line-height:1.1}

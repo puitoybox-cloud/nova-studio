@@ -83,7 +83,9 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   for(const preserved of ['melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
-  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center/);
+  assert.match(css,/--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:10px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-chrome\{min-height:var\(--music-editor-heading-height\);margin-bottom:1px\}/);
+  assert.match(css,/top:calc\(var\(--music-editor-page-top\) \+ \(var\(--music-editor-heading-height\) - var\(--music-editor-menu-size\)\)\/2\)/);
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:100%;min-width:0;max-width:none;transition:none\}/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:auto minmax\(0,1fr\) auto/);
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
