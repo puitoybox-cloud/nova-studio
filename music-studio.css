@@ -149,11 +149,12 @@ body.is-management-route .management-main>.music-midi-editor-page{box-sizing:bor
 @media(pointer:coarse){.music-midi-editor-page .music-measure{height:28px!important;min-height:28px!important;max-height:28px!important}}
 /* The fixed Nova menu is the only upper-left control; the editor keeps the full canvas width. */
 body.is-music-studio-route .nova-wordmark{display:none!important}
-.music-editor-chrome{display:flex;min-height:56px;align-items:center;justify-content:center;padding:0 64px;background:transparent;border:0;box-shadow:none}
-.music-editor-chrome .music-editor-heading{position:static;display:flex;width:100%;min-height:56px;align-items:center;justify-content:center;margin:0;padding:0;background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.music-editor-chrome{display:flex;min-height:48px;align-items:center;justify-content:center;padding:0 64px;background:transparent;border:0;box-shadow:none}
+.music-editor-chrome .music-editor-heading{position:static;display:flex;width:100%;min-height:48px;align-items:center;justify-content:center;margin:0;padding:0;background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.music-midi-editor-page .music-editor-chrome .music-editor-heading{flex-direction:row}.music-midi-editor-page .music-editor-chrome .music-editor-guide-button{flex:0 0 auto}
 .music-editor-chrome h1{grid-column:auto;justify-self:auto;margin:0;text-align:center}
 .music-midi-editor-page .music-editor-topbar{align-items:center}
-@media(max-width:600px){.music-editor-chrome{min-height:54px;padding:0 56px}.music-editor-chrome .music-editor-heading{min-height:54px}}
+@media(max-width:600px){.music-editor-chrome{min-height:46px;padding:0 56px}.music-editor-chrome .music-editor-heading{min-height:46px}}
 body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-toggle{top:max(14px,env(safe-area-inset-top))}
 @media(min-width:601px) and (max-width:1180px){
   body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-toggle{top:max(2px,env(safe-area-inset-top))}
@@ -178,6 +179,7 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 /* Music Studio 0.2 contextual guides: presentation only. */
 .music-first-song-actions{display:flex;flex:none;flex-wrap:wrap;gap:9px}.music-guide-window{max-width:820px}.music-guide-window .music-page-header{display:grid;gap:10px}.music-guide-window .music-page-header :is(h1,p){margin:0}.music-guide-window .music-page-header .music-primary{justify-self:start}.music-guide-window-content{padding:20px 0;border:1px solid var(--music-line);border-radius:20px;background:var(--music-panel)}
 .music-help-button{display:inline-flex;min-height:40px;align-items:center;gap:7px;padding:7px 11px;border:1px solid #617897;border-radius:999px;background:#142235;color:#f3f7ff;font:inherit;font-weight:800;cursor:pointer}.music-help-button>span:first-child{display:grid;width:22px;height:22px;place-items:center;border:1px solid #91b4da;border-radius:50%;color:#dff8ff}.music-help-button:hover,.music-help-button:focus-visible{border-color:var(--music-blue);outline:3px solid rgba(125,211,252,.28);outline-offset:2px}.music-screen-help{display:flex;justify-content:flex-end;margin:0 0 10px}.music-first-song-card{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 18px;padding:18px 20px;border:1px solid #67569a;border-radius:18px;background:linear-gradient(135deg,rgba(77,51,130,.34),rgba(13,34,51,.92))}.music-first-song-card h2,.music-first-song-card p{margin:.25rem 0}.music-first-song-card p:not(.music-kicker){color:#d4dfed;line-height:1.55}.music-guide-dialog{box-sizing:border-box;width:min(760px,calc(100vw - 28px));max-height:min(82vh,820px);padding:0;border:1px solid #617897;border-radius:20px;background:#0d1928;color:var(--music-ink);box-shadow:0 28px 90px rgba(0,0,0,.62);overflow:auto}.music-guide-dialog::backdrop{background:rgba(2,7,15,.78);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}.music-guide-dialog-head{position:sticky;z-index:2;top:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid var(--music-line);background:#0d1928}.music-guide-dialog-head h2{margin:0;font-size:clamp(1.25rem,4vw,1.75rem)}.music-guide-close{min-height:40px;flex:none;padding:8px 12px;border:1px solid #7188a5;border-radius:10px;background:#17283c;color:#fff;font:inherit;font-weight:800;cursor:pointer}.music-guide-close:focus-visible{outline:3px solid var(--music-amber);outline-offset:2px}.music-guide-steps{display:grid;gap:10px;margin:0;padding:20px 28px 20px 48px;line-height:1.55}.music-guide-steps li::marker{color:var(--music-blue);font-weight:900}.music-save-guide{margin:0 20px 20px;padding:16px;border:1px solid #3d5875;border-radius:15px;background:#101f31}.music-save-guide h3{margin:0 0 12px}.music-save-compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.music-save-compare article{padding:13px;border:1px solid #3b4e66;border-radius:11px;background:#0a1624}.music-save-compare b{color:#e9ddff}.music-save-compare p{margin:7px 0 0;color:#c5d3e3;font-size:.88rem;line-height:1.55}.music-terms-guide{margin:0 20px 20px;padding:13px 15px;border:1px solid #3d5875;border-radius:13px;background:#101f31}.music-terms-guide summary{color:#e7f5ff;font-weight:850;cursor:pointer}.music-terms-guide dl{display:grid;gap:0;margin:12px 0 0}.music-terms-guide dl>div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid #30445a}.music-terms-guide dt{color:#e9ddff;font-weight:850}.music-terms-guide dd{margin:0;color:#c5d3e3;line-height:1.5}.music-saved-explain{max-width:220px;color:#c5d3e3;font-size:.72rem;line-height:1.35}.music-control-help{display:block;max-width:270px;color:#c5d3e3;font-size:.72rem;line-height:1.4}.music-file-action small{display:block;margin-top:4px;color:#c5d3e3;font-weight:500;line-height:1.4}.music-inline-guide{padding:11px 13px;border-left:3px solid var(--music-blue);background:#0b1725;color:#d8e5f4!important}.music-action-explain{display:grid;max-width:250px;gap:5px}.music-action-explain small{color:#c5d3e3;line-height:1.4}
+.music-midi-editor-page .music-editor-guide-button{min-height:24px;gap:4px;padding:1px 7px;font-size:.76rem;line-height:1.2}.music-midi-editor-page .music-editor-guide-button>span:first-child{width:18px;height:18px;flex:0 0 18px;font-size:.72rem;line-height:1}
 @media(max-width:700px){.music-first-song-card{align-items:stretch;flex-direction:column}.music-first-song-card .music-primary{width:100%}.music-save-compare{grid-template-columns:1fr}.music-guide-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 20px)}.music-guide-dialog-head{padding:14px}.music-guide-steps{padding:16px 22px 16px 40px}.music-save-guide,.music-terms-guide{margin:0 12px 14px}.music-terms-guide dl>div{grid-template-columns:82px minmax(0,1fr)}.music-help-button-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.music-saved-explain{max-width:150px}.music-control-help{max-width:100%}}
 @media(max-width:700px){.music-guide-window-button{display:none}.music-first-song-actions{width:100%}.music-first-song-actions .music-primary{width:100%}.music-guide-window-content{padding-top:14px}}
 @media(min-width:601px) and (max-width:820px) and (orientation:portrait){
@@ -333,6 +335,18 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-correction-grid,
   .music-midi-editor-page .music-correction-batch-grid{row-gap:1px}
 }
+
+/* Keep the Melody title row compact and center its fixed menu from the same row metrics. */
+body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:10px}
+.music-midi-editor-page .music-editor-chrome{min-height:var(--music-editor-heading-height);margin-bottom:1px}
+.music-midi-editor-page .music-editor-chrome .music-editor-heading{min-height:var(--music-editor-heading-height)}
+body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-music-studio-route:has(.music-midi-editor-page) .nova-menu-toggle{top:calc(var(--music-editor-page-top) + (var(--music-editor-heading-height) - var(--music-editor-menu-size))/2);width:var(--music-editor-menu-size);height:var(--music-editor-menu-size);min-height:var(--music-editor-menu-size)}
+@media(min-width:601px) and (max-width:1180px){
+  body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:24px;--music-editor-menu-size:24px;--music-editor-page-top:8px}
+}
+@media(max-width:600px){
+  body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page){--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:6px}
+}
 /* Keep measure text entirely above the 10px time ruler with the smallest safe text area. */
 .music-midi-editor-page .music-measure-row{height:26px}
 .music-midi-editor-page .music-measure{box-sizing:border-box;height:26px!important;min-height:26px!important;max-height:26px!important;align-items:start;justify-items:center;padding:0 4px 10px;overflow:visible;line-height:1.1}
@@ -438,7 +452,7 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 .music-midi-editor-page .music-display-assist .music-assist-quantize{padding-top:10px}
 .music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls,.music-assist-quantize-controls,.music-assist-zoom,.music-assist-range-grid){height:auto;align-self:start;gap:8px}
 .music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls>button,.music-assist-quantize-controls>button,.music-assist-zoom>button,.music-assist-card>button,.music-measure-length-controls>button){min-height:36px;padding-block:5px}
-.music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls select,.music-assist-quantize-controls select){height:36px!important;min-height:36px!important}
+.music-midi-editor-page .music-display-assist :is(.music-assist-snap-controls select,.music-assist-quantize-controls select){box-sizing:border-box;height:36px!important;min-height:36px!important;padding:5px 28px 5px 9px;line-height:1.25}
 .music-midi-editor-page .music-display-assist .music-assist-description{margin-top:8px;line-height:1.45}
 .music-midi-editor-page .music-display-assist .music-assist-card{grid-template-rows:auto auto;row-gap:8px}
 .music-midi-editor-page .music-display-assist .music-assist-range-grid{align-items:start}
@@ -471,8 +485,18 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 /* iPad: restore safe touch targets only for primary editing, transport, and part navigation. */
 @media(min-width:601px) and (max-width:1180px){
   .music-midi-editor-page .music-editor-bottom>section:not(.music-display-assist) button,
-  .music-midi-editor-page .music-part-tabs>button{height:36px;min-height:36px;padding-block:5px}
+  .music-midi-editor-page .music-part-tabs>button,
+  .music-midi-editor-page .music-history-controls>button{height:36px;min-height:36px;padding-block:5px}
   .music-midi-editor-page .music-part-tabs{min-height:40px;flex-basis:40px}
+}
+/* Mac: remove surplus vertical whitespace without reducing iPad touch targets. */
+@media(min-width:1181px) and (hover:hover) and (pointer:fine){
+  .music-midi-editor-page .music-part-tabs{min-height:28px;margin-block:2px 3px;align-items:center}
+  .music-midi-editor-page .music-part-tabs>button,
+  .music-midi-editor-page .music-history-controls>button{height:28px;min-height:28px;padding-block:2px;line-height:1.05}
+  .music-midi-editor-page .music-piano-viewport{height:clamp(660px,calc(100vh - 134px),796px)}
+  .music-midi-editor-page .music-editor-bottom section{padding-top:6px}
+  .music-midi-editor-page .music-editor-bottom h2{margin-bottom:3px;line-height:1.1}
 }
 /* Keep the timeline's canonical scrollLeft while exposing one always-visible native scrollbar. */
 .music-midi-editor-page .music-piano-scroll{scrollbar-width:none}

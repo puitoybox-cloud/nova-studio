@@ -83,7 +83,9 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   for(const preserved of ['melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
-  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
+  assert.match(css,/--music-editor-heading-height:42px;--music-editor-menu-size:40px;--music-editor-page-top:10px/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-chrome\{min-height:var\(--music-editor-heading-height\);margin-bottom:1px\}/);
+  assert.match(css,/top:calc\(var\(--music-editor-page-top\) \+ \(var\(--music-editor-heading-height\) - var\(--music-editor-menu-size\)\)\/2\)/);
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:100%;min-width:0;max-width:none;transition:none\}/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:auto minmax\(0,1fr\) auto/);
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
@@ -119,6 +121,10 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
   assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
   assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
+  assert.match(css,/@media\(min-width:1181px\) and \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.music-part-tabs>button,[\s\S]*?\.music-history-controls>button\{height:28px;min-height:28px/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(660px,calc\(100vh - 134px\),796px\)\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{padding-top:6px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom h2\{margin-bottom:3px;line-height:1\.1\}/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
@@ -685,7 +691,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
 test('editor layout prioritizes a compact header and a wide moderate-height Piano Roll without changing controls',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page\{width:100%;max-width:none;padding:10px 16px 18px\}/);
-  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
+  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-heading h1\{font-size:clamp\(1\.1rem,1\.7vw,1\.3rem\)/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:30px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-save\{margin-left:0/);
@@ -857,7 +863,7 @@ test('iPad keeps primary editing transport and part controls at safe touch heigh
   const rule=css.slice(css.indexOf(marker),css.indexOf('/* Keep the timeline',css.indexOf(marker)));
   assert.match(rule,/@media\(min-width:601px\) and \(max-width:1180px\)/);
   assert.match(rule,/\.music-editor-bottom>section:not\(\.music-display-assist\) button/);
-  assert.match(rule,/\.music-part-tabs>button\{height:36px;min-height:36px;padding-block:5px\}/);
+  assert.match(rule,/\.music-part-tabs>button,[\s\S]*?\.music-history-controls>button\{height:36px;min-height:36px;padding-block:5px\}/);
   assert.match(rule,/\.music-part-tabs\{min-height:40px;flex-basis:40px\}/);
   assert.doesNotMatch(rule,/\.music-display-assist\s+button/);
 });
