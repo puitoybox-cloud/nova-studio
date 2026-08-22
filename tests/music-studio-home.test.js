@@ -56,6 +56,38 @@ test('first-song guide reuses one definition for dialog and named-window route',
   assert.doesNotMatch(source,/openFirstSongWindow[\s\S]{0,500}(repository|indexedDB|makeProject)/);
 });
 
+test('Melody help opens the named guide window and reuses it',()=>{
+  const window=loadMusicStudio(),calls=[];
+  const guide={focusCalls:0,focus(){this.focusCalls++}};
+  window.open=(url,name,features)=>{calls.push({url,name,features});return guide};
+  assert.equal(window.MusicStudio.openFirstSongWindow(),true);
+  assert.equal(window.MusicStudio.openFirstSongWindow(),true);
+  assert.equal(calls.length,2);
+  assert.deepEqual(calls.map(call=>call.name),['musicStudioFirstSongGuide','musicStudioFirstSongGuide']);
+  assert.ok(calls.every(call=>call.url.endsWith('#music-studio/first-song-guide')));
+  assert.ok(calls.every(call=>call.features.includes('popup,width=720,height=900')));
+  assert.equal(guide.focusCalls,2);
+  assert.match(source,/music-editor-guide-button[^>]*onclick="MusicStudio\.openFirstSongWindow\(\)"/);
+});
+
+test('Melody help falls back inline when popups are blocked or on Apple mobile devices',()=>{
+  for(const navigator of [
+    {userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)'},
+    {userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',platform:'MacIntel',maxTouchPoints:5}
+  ]){
+    const window=loadMusicStudio(),dialog={showCalls:0,showModal(){this.showCalls++}},openCalls=[];
+    window.navigator=navigator;window.open=(...args)=>{openCalls.push(args);return{}};
+    window.document.getElementById=id=>id==='firstSongGuide'?dialog:null;
+    assert.equal(window.MusicStudio.openFirstSongWindow(),true);
+    assert.equal(openCalls.length,0);
+    assert.equal(dialog.showCalls,1);
+  }
+  const window=loadMusicStudio(),dialog={showCalls:0,showModal(){this.showCalls++}};
+  window.open=()=>null;window.document.getElementById=id=>id==='firstSongGuide'?dialog:null;
+  assert.equal(window.MusicStudio.openFirstSongWindow(),false);
+  assert.equal(dialog.showCalls,1);
+});
+
 test('unfinished routes always render safe placeholders with return actions',()=>{
   const app=loadMusicStudio().MusicStudio;
   for(const item of app.FEATURES.filter(item=>!item.action&&!['new-project','recent-projects','settings','backup','logic-pro','midi-composer'].includes(item.id))){
@@ -154,17 +186,17 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.35/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.36/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.93/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.93/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.94/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.94/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.11/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.11/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.12/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.78/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.78/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.79/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.79/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
