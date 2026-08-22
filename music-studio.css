@@ -149,11 +149,12 @@ body.is-management-route .management-main>.music-midi-editor-page{box-sizing:bor
 @media(pointer:coarse){.music-midi-editor-page .music-measure{height:28px!important;min-height:28px!important;max-height:28px!important}}
 /* The fixed Nova menu is the only upper-left control; the editor keeps the full canvas width. */
 body.is-music-studio-route .nova-wordmark{display:none!important}
-.music-editor-chrome{display:flex;min-height:56px;align-items:center;justify-content:center;padding:0 64px;background:transparent;border:0;box-shadow:none}
-.music-editor-chrome .music-editor-heading{position:static;display:flex;width:100%;min-height:56px;align-items:center;justify-content:center;margin:0;padding:0;background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.music-editor-chrome{display:flex;min-height:48px;align-items:center;justify-content:center;padding:0 64px;background:transparent;border:0;box-shadow:none}
+.music-editor-chrome .music-editor-heading{position:static;display:flex;width:100%;min-height:48px;align-items:center;justify-content:center;margin:0;padding:0;background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.music-midi-editor-page .music-editor-chrome .music-editor-heading{flex-direction:row}.music-midi-editor-page .music-editor-chrome .music-editor-guide-button{flex:0 0 auto}
 .music-editor-chrome h1{grid-column:auto;justify-self:auto;margin:0;text-align:center}
 .music-midi-editor-page .music-editor-topbar{align-items:center}
-@media(max-width:600px){.music-editor-chrome{min-height:54px;padding:0 56px}.music-editor-chrome .music-editor-heading{min-height:54px}}
+@media(max-width:600px){.music-editor-chrome{min-height:46px;padding:0 56px}.music-editor-chrome .music-editor-heading{min-height:46px}}
 body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-toggle{top:max(14px,env(safe-area-inset-top))}
 @media(min-width:601px) and (max-width:1180px){
   body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-toggle{top:max(2px,env(safe-area-inset-top))}

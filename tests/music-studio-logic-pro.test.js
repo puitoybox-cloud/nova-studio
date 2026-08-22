@@ -83,7 +83,7 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   for(const preserved of ['melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
   assert.match(html,/class="music-secondary music-correction-panel-close"[^>]*editorCloseCorrectionPanel/);
-  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
+  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center/);
   assert.match(css,/\.music-midi-editor-page:has\(\.music-correction-menu\[open\]\) \.music-editor-layout\{width:100%;min-width:0;max-width:none;transition:none\}/);
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-chrome\{grid-template-columns:auto minmax\(0,1fr\) auto/);
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover\{position:absolute;top:calc\(100% \+ 8px\);right:0/);
@@ -668,7 +668,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
 test('editor layout prioritizes a compact header and a wide moderate-height Piano Roll without changing controls',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page\{width:100%;max-width:none;padding:10px 16px 18px\}/);
-  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:56px;align-items:center;justify-content:center/);
+  assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-heading h1\{font-size:clamp\(1\.1rem,1\.7vw,1\.3rem\)/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[^}]*min-height:30px/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-save\{margin-left:0/);
