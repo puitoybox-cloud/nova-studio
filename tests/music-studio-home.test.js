@@ -186,44 +186,45 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.38/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.39/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.97/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.97/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.98/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.98/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.2/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.11/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.11/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.12/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.79/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.79/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.80/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.80/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
 
-test('Web MIDI state changes keep a stable three-device list and selected input',async()=>{
+test('Web MIDI rescan reacquires access while state changes keep a stable selected input',async()=>{
   const window=loadMusicStudio(),app=window.MusicStudio,inputs=[
     {id:'ur22c-1',name:'Steinberg UR22C ポート1'},
     {id:'ur22c-2',name:'Steinberg UR22C ポート2'},
     {id:'keyboard',name:'MIDI Keyboard'}
   ],access={inputs:new Map(inputs.map(input=>[input.id,input]))};
+  const replacementAccess={inputs:new Map(inputs.map(input=>[input.id,input]))};
   let requests=0,paints=0;window.render=()=>{paints++};window.navigator={};window.document.body.dataset={};
-  window.MusicStudioMidiInput={isSupported:()=>true,requestAccess:async()=>{requests++;return{supported:true,access,inputs}}};
+  window.MusicStudioMidiInput={isSupported:()=>true,requestAccess:async()=>{requests++;return{supported:true,access:requests===1?access:replacementAccess,inputs}}};
   await app.editorInitializeMidi();
   assert.equal(requests,1);assert.equal(app.state.midiInput.inputs.length,3);assert.equal(app.state.midiInput.selectedId,'ur22c-1');
   app.editorSelectMidiInput('keyboard');
   const paintsAfterSelection=paints;
   assert.equal(app.state.midiInput.selectedId,'keyboard');
   await app.editorSelectMidiInput('__rescan__');
-  assert.equal(requests,1);assert.equal(app.state.midiInput.selectedId,'keyboard');
-  access.onstatechange();
-  assert.equal(requests,1);assert.equal(paints,paintsAfterSelection+1);assert.equal(app.state.midiInput.selectedId,'keyboard');
+  assert.equal(requests,2);assert.equal(access.onstatechange,null);assert.equal(typeof replacementAccess.onstatechange,'function');assert.equal(app.state.midiInput.selectedId,'keyboard');
+  replacementAccess.onstatechange();
+  assert.equal(requests,2);assert.equal(paints,paintsAfterSelection+1);assert.equal(app.state.midiInput.selectedId,'keyboard');
   const staleKeyboard=inputs[2],replacementKeyboard={id:'keyboard',name:'MIDI Keyboard'};
-  access.inputs.set('keyboard',replacementKeyboard);access.onstatechange();
+  replacementAccess.inputs.set('keyboard',replacementKeyboard);replacementAccess.onstatechange();
   assert.equal(staleKeyboard.onmidimessage,null);
   assert.equal(typeof replacementKeyboard.onmidimessage,'function');
   assert.equal(paints,paintsAfterSelection+1);
-  access.inputs.delete('ur22c-2');access.onstatechange();
+  replacementAccess.inputs.delete('ur22c-2');replacementAccess.onstatechange();
   assert.equal(app.state.midiInput.inputs.length,2);assert.equal(app.state.midiInput.selectedId,'keyboard');assert.equal(paints,paintsAfterSelection+2);
 });
 

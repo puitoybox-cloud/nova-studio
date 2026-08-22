@@ -121,6 +121,10 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
   assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
   assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
+  assert.match(css,/@media\(min-width:1181px\) and \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.music-part-tabs>button,[\s\S]*?\.music-history-controls>button\{height:28px;min-height:28px/);
+  assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(660px,calc\(100vh - 134px\),796px\)\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{padding-top:6px\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom h2\{margin-bottom:3px;line-height:1\.1\}/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
@@ -842,7 +846,7 @@ test('iPad keeps primary editing transport and part controls at safe touch heigh
   const rule=css.slice(css.indexOf(marker),css.indexOf('/* Keep the timeline',css.indexOf(marker)));
   assert.match(rule,/@media\(min-width:601px\) and \(max-width:1180px\)/);
   assert.match(rule,/\.music-editor-bottom>section:not\(\.music-display-assist\) button/);
-  assert.match(rule,/\.music-part-tabs>button\{height:36px;min-height:36px;padding-block:5px\}/);
+  assert.match(rule,/\.music-part-tabs>button,[\s\S]*?\.music-history-controls>button\{height:36px;min-height:36px;padding-block:5px\}/);
   assert.match(rule,/\.music-part-tabs\{min-height:40px;flex-basis:40px\}/);
   assert.doesNotMatch(rule,/\.music-display-assist\s+button/);
 });
