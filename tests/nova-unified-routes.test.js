@@ -106,6 +106,7 @@ test('Music Studio keeps common surfaces while production menu cards retain thei
 test('one shared menu toggle is moved directly into every supported Hero',()=>{
   assert.match(menu,/querySelector\('\.home-only \.atelier-hero, \.universe-main \.atelier-hero, \.nova-unified-main \.atelier-hero, \.nova-studio-route-main \.atelier-hero'\)/);
   assert.match(menu,/if\(toggle\.parentElement!==target\)\(hero\?target\.prepend\(toggle\):target\.appendChild\(toggle\)\)/);
-  assert.match(menu,/new MutationObserver\(placeToggle\)\.observe\(document\.querySelector\('#app'\),\{childList:true,subtree:true\}\)/);
+  assert.match(menu,/const menuMount=document\.querySelector\('#app,#musicStudioRoot'\)/);
+  assert.match(menu,/if\(menuMount\)new MutationObserver\(placeToggle\)\.observe\(menuMount,\{childList:true,subtree:true\}\)/);
   assert.equal((html.match(/class="nova-menu-toggle"/g)||[]).length,1);
 });
