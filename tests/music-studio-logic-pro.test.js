@@ -113,6 +113,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   app.state.midiInput.inputs=[keys,pads];app.state.midiInput.selectedId='keys';app.state.midiInput.access={};app.state.midiInput.recording=true;app.state.midiInput.recorder={recording:false};
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/<summary aria-label="MIDI入力">MIDI入力<\/summary>/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__">↻ 再検出/);assert.match(html,/接続状態/);
+  for(const diagnosticLabel of ['一時Web MIDI診断','Web MIDI API対応','isSecureContext','MIDI権限','requestMIDIAccess','MIDIAccess inputs.size','現在選択中input id','statechange発火回数','再検出実行回数','最後のMIDIエラー','request直後のinputs一覧','最後のstatechange port'])assert.match(html,new RegExp(diagnosticLabel));
   assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
   await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -121,6 +122,8 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{max-height:none;min-height:0;flex:0 0 auto;overflow:visible\}/);
   assert.match(css,/\.music-midi-editor-page \.music-part-tabs\{position:static;top:auto;z-index:auto;box-sizing:border-box;width:100%;min-height:28px;flex:0 0 28px/);
   assert.match(css,/\.music-midi-editor-page \.music-history-controls\{margin-right:0;margin-left:auto\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-midi-input-popover\{right:0;left:auto;width:min\(520px,calc\(100vw - 24px\)\)/);
+  assert.match(css,/\.music-midi-diagnostics\{display:grid;gap:6px/);
   assert.match(css,/@media\(min-width:1181px\) and \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.music-part-tabs>button,[\s\S]*?\.music-history-controls>button\{height:28px;min-height:28px/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(660px,calc\(100vh - 134px\),796px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{padding-top:6px\}/);
