@@ -92,7 +92,8 @@
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
   });
   window.addEventListener('hashchange',()=>{updateActive();closeMenu(false)});
-  new MutationObserver(placeToggle).observe(document.querySelector('#app'),{childList:true,subtree:true});
+  const menuMount=document.querySelector('#app,#musicStudioRoot');
+  if(menuMount)new MutationObserver(placeToggle).observe(menuMount,{childList:true,subtree:true});
   placeToggle();
   updateActive();
 })();
