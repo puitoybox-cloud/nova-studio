@@ -268,6 +268,19 @@ test('multi-select movement copy paste and delete stay isolated in Melody Drums 
     core.undo(session);assert.equal(core.currentTrack(session).notes.length,count*2);
   }
 });
+test('Drums common editing preserves performance data and the channel 10 track contract',()=>{
+  const core=load(),session=core.createSession(project());core.selectPart(session,'drums');const track=()=>core.currentTrack(session);
+  core.addNotes(session,[{id:'kick',pitch:36,startTick:119,durationTicks:121,velocity:110},{id:'snare',pitch:38,startTick:601,durationTicks:122,velocity:99}]);
+  core.selectNote(session,'kick');core.selectNote(session,'snare',{additive:true});assert.equal(JSON.stringify(core.selectedIds(session)),'["kick","snare"]');
+  core.copy(session);session.playheadTick=960;core.paste(session);assert.equal(track().notes.length,4);core.undo(session);assert.equal(track().notes.length,2);core.redo(session);assert.equal(track().notes.length,4);
+  core.selectNote(session,'kick');core.duplicateSelected(session);assert.equal(track().notes.length,5);core.undo(session);assert.equal(track().notes.length,4);
+  core.selectNote(session,'kick');const quantized=core.quantizeSelectedStarts(session,'1/16');assert.equal(quantized.ok,true);assert.equal(track().notes.find(note=>note.id==='kick').startTick,120);
+  core.setSelectedVelocity(session,77);const edited=core.selectedNotes(session)[0];assert.deepEqual([edited.pitch,edited.startTick,edited.durationTicks,edited.velocity],[36,120,121,77]);
+  core.extendTimelineMeasures(session,4);assert.equal(session.midiData.editor.measureCount,8);core.removeTimelineMeasures(session,1);assert.equal(session.midiData.editor.measureCount,7);
+  core.deleteSelected(session);assert.equal(track().notes.some(note=>note.id==='kick'),false);core.undo(session);assert.equal(track().notes.some(note=>note.id==='kick'),true);
+  assert.equal(track().channel,10);assert.equal(track().program,null);
+  const before=JSON.stringify(track().notes);assert.equal(core.previewCorrection(session).ok,false);assert.equal(core.previewTranspose(session).ok,false);assert.equal(core.previewNoteLength(session).ok,false);assert.equal(JSON.stringify(track().notes),before);
+});
 test('selected melody measures can be locked and unlocked without changing notes',()=>{
   const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
   core.setSelectedMeasures(session,[2,3]);core.toggleLockSelected(session);
