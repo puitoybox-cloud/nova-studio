@@ -42,6 +42,18 @@ test('track assignment maps Melody, channel 10 Drums and Bass without duplicate 
   assert.equal(JSON.stringify(converted.importSource.trackAssignments.map(item=>item.part)),JSON.stringify(['melody','drums','bass']));
   assert.equal(converted.tracks[1].channel,10);
 });
+test('track assignment honors explicit part and canonical ID before MIDI heuristics',()=>{const p=load().parser,tracks=[
+  {id:'custom-lead',part:'melody',name:'Strings',channel:3,noteCount:1},
+  {id:'drums',name:'Unknown',channel:1,noteCount:1},
+  {id:'bass',name:'Unknown',channel:1,noteCount:1}
+];assert.deepEqual(JSON.parse(JSON.stringify(p.suggestTrackParts(tracks))),{'custom-lead':'melody',drums:'drums',bass:'bass'})});
+test('unknown MIDI tracks remain additional tracks regardless of position',()=>{const{writer,parser}=load(),unknown=index=>({id:`strings-${index}`,name:`Strings ${index}`,channel:3,program:48,notes:[{id:`u${index}`,pitch:72+index,startTick:index*120,durationTicks:360,velocity:77+index}]}),known=[
+  {id:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:64,startTick:0,durationTicks:480,velocity:90}]},
+  {id:'drums',name:'Drums',channel:10,program:null,notes:[{id:'d',pitch:36,startTick:0,durationTicks:120,velocity:100}]},
+  {id:'bass',name:'Bass',channel:2,program:32,notes:[{id:'b',pitch:36,startTick:0,durationTicks:480,velocity:80}]}
+],source={version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[unknown(0),...known.slice(0,2),unknown(1),known[2],unknown(2)]},converted=parser.convertParsedMidiToProjectData(parser.parseMidiFile(writer.createMidiFile(source).bytes));const strings=converted.tracks.filter(track=>track.name.startsWith('Strings'));
+  assert.ok(strings.every(track=>track.part===undefined));assert.equal(JSON.stringify(strings.map(track=>[track.channel,track.program,track.notes[0].pitch,track.notes[0].startTick,track.notes[0].durationTicks,track.notes[0].velocity])),JSON.stringify([[3,48,72,0,360,77],[3,48,73,120,360,78],[3,48,74,240,360,79]]));assert.equal(converted.tracks.filter(track=>track.part).map(track=>track.part).join(','),'melody,drums,bass');
+});
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
