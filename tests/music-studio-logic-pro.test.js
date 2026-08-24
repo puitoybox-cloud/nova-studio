@@ -708,6 +708,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
   assert.match(html,/class="music-loop-ruler is-disabled"/);assert.doesNotMatch(html,/class="music-loop-bar"/);
   assert.match(html,/class="music-editor-bottom"/);
   assert.match(html,/<h2>編集ツール<\/h2>/);
+  assert.match(html,/Lock（固定）/);assert.match(html,/Unlock（固定解除）/);
   assert.match(html,/<h2>表示・編集補助<\/h2>/);
   assert.match(html,/<h2>再生<\/h2>/);
   assert.match(css,/\.music-editor-layout\{[^}]*grid-template-columns:minmax\(0,1fr\);/);
@@ -715,6 +716,7 @@ test('editor shell removes the persistent note inspector and keeps a full-width 
   assert.match(css,/@media\(max-width:900px\)\{\.music-editor-bottom\{grid-template-columns:1fr 1fr\}/);
   assert.match(css,/@media\(max-width:600px\)\{\.music-editor-bottom\{grid-template-columns:1fr\}/);
   assert.match(css,/@media\(pointer:coarse\)\{\.music-midi-note\{height:44px;min-width:44px\}/);
+  assert.match(css,/\.music-midi-note\.is-locked/);assert.match(css,/\.music-note-lock-icon/);
   assert.match(source,/querySelectorAll\?\.\('\.music-midi-note\.is-selected'\)/);
   assert.match(source,/dragElements\.forEach\(element=>\{element\.style\.translate=/);
 });
