@@ -107,6 +107,54 @@ test('loop range is backward-compatible persisted editor state independent from 
   editor.setLoopEnabled(restored,false);assert.equal(restored.midiData.editor.loopEnabled,false);assert.equal(restored.midiData.editor.loopStart,240);assert.equal(restored.midiData.editor.loopEnd,1680);
   editor.setLoopRange(restored,null,null,false);assert.equal(restored.midiData.editor.loopStart,null);assert.equal(restored.midiData.editor.loopEnd,null);
 });
+test('edit range defaults safely and normalizes invalid values independently from Loop and Selection',()=>{
+  const core=load(),session=core.createSession({projectId:'legacy-range'});
+  assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:1,endMeasure:1});
+  core.setLoopRange(session,240,1680,true);core.selectNote(session,'missing');
+  assert.deepEqual(JSON.parse(JSON.stringify(core.setEditRange(session,{startMeasure:-4,endMeasure:99}))),{startMeasure:1,endMeasure:4});
+  assert.equal(session.midiData.editor.loopStart,240);assert.equal(session.midiData.editor.loopEnd,1680);assert.deepEqual(Array.from(session.selectedNoteIds),[]);
+  assert.deepEqual(JSON.parse(JSON.stringify(core.setEditRange(session,{startMeasure:'bad',endMeasure:''}))),{startMeasure:1,endMeasure:1});
+  assert.deepEqual(JSON.parse(JSON.stringify(core.setEditRange(session,{startMeasure:4,endMeasure:2}))),{startMeasure:2,endMeasure:4});
+});
+test('measure edit ranges convert inclusive UI measures to half-open ticks for signatures and PPQ',()=>{
+  const core=load(),cases=[
+    [480,{numerator:4,denominator:4},{startMeasure:3,endMeasure:3},3840,5760],
+    [480,{numerator:3,denominator:4},{startMeasure:2,endMeasure:4},1440,5760],
+    [960,{numerator:7,denominator:8},{startMeasure:2,endMeasure:4},3360,13440]
+  ];
+  for(const[ppq,timeSignature,range,startTick,endTick]of cases){const midiData=core.normalizeMidiData({ppq,timeSignature,editor:{measureCount:8}},{}),ticks=core.measureRangeToTicks(range,midiData);assert.equal(ticks.startTick,startTick);assert.equal(ticks.endTick,endTick)}
+});
+test('range note queries use startTick boundaries exclude locked edits and isolate tracks',()=>{
+  const core=load(),session=core.createSession({midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:8,editRange:{startMeasure:2,endMeasure:3}},tracks:[
+    {part:'melody',notes:[{id:'before',pitch:60,startTick:1919,durationTicks:10,velocity:80},{id:'a',pitch:61,startTick:1920,durationTicks:10,velocity:81},{id:'b',pitch:62,startTick:3000,durationTicks:10,velocity:82,locked:true},{id:'end',pitch:63,startTick:5760,durationTicks:10,velocity:83}]},
+    {part:'drums',notes:[{id:'drum',pitch:36,startTick:1920,durationTicks:10,velocity:100}]},{part:'bass',notes:[{id:'bass-note',pitch:36,startTick:1920,durationTicks:10,velocity:90}]}
+  ]}});
+  assert.deepEqual(Array.from(core.notesInRange(session),note=>note.id),['a','b']);assert.deepEqual(Array.from(core.editableNotesInRange(session),note=>note.id),['a']);
+  core.selectPart(session,'drums');assert.deepEqual(Array.from(core.notesInRange(session),note=>note.id),['drum']);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:3});
+  core.selectPart(session,'bass');assert.deepEqual(Array.from(core.notesInRange(session),note=>note.id),['bass-note']);
+});
+test('edit range persists through normalized project data and clamps after measure removal',()=>{
+  const core=load(),session=core.createSession({midiData:{editor:{measureCount:8,editRange:{startMeasure:7,endMeasure:8}},tracks:[{part:'melody',notes:[]}]}});
+  const restored=core.createSession({midiData:JSON.parse(JSON.stringify(session.midiData))});assert.deepEqual(JSON.parse(JSON.stringify(restored.editRange)),{startMeasure:7,endMeasure:8});
+  assert.equal(core.removeTimelineMeasures(restored).ok,true);assert.deepEqual(JSON.parse(JSON.stringify(restored.editRange)),{startMeasure:7,endMeasure:7});assert.equal(restored.midiData.editor.measureCount,7);
+});
+test('saved out-of-bounds edit range clamps during load normalization',()=>{
+  const core=load(),session=core.createSession({midiData:{editor:{measureCount:5,editRange:{startMeasure:7,endMeasure:8}},tracks:[{part:'melody',notes:[]}]}}),range=session.editRange;
+  assert.deepEqual(JSON.parse(JSON.stringify(range)),{startMeasure:5,endMeasure:5});assert.equal(range.startMeasure<=range.endMeasure,true);assert.equal(range.endMeasure<=session.midiData.editor.measureCount,true);
+});
+test('measure add preserves edit range and removal clamps every boundary case without changing the minimum',()=>{
+  const core=load();
+  const added=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:2,endMeasure:4}},tracks:[{part:'melody',notes:[]}]}});core.extendTimelineMeasures(added,1);assert.equal(added.midiData.editor.measureCount,5);assert.deepEqual(JSON.parse(JSON.stringify(added.editRange)),{startMeasure:2,endMeasure:4});
+  for(const [measures,input,expected]of[[8,{startMeasure:8,endMeasure:8},{startMeasure:7,endMeasure:7}],[8,{startMeasure:6,endMeasure:8},{startMeasure:6,endMeasure:7}],[5,{startMeasure:5,endMeasure:5},{startMeasure:4,endMeasure:4}]]){const session=core.createSession({midiData:{editor:{measureCount:measures,editRange:input},tracks:[{part:'melody',notes:[]}]}});assert.equal(core.removeTimelineMeasures(session).ok,true);assert.equal(session.midiData.editor.measureCount,measures-1);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),expected)}
+  const minimum=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:4,endMeasure:4}},tracks:[{part:'melody',notes:[]}]}}),result=core.removeTimelineMeasures(minimum);assert.equal(result.ok,false);assert.equal(result.reason,'minimum');assert.equal(minimum.midiData.editor.measureCount,4);assert.deepEqual(JSON.parse(JSON.stringify(minimum.editRange)),{startMeasure:4,endMeasure:4});assert.equal(minimum.editRange.startMeasure>=1&&minimum.editRange.endMeasure<=4&&minimum.editRange.startMeasure<=minimum.editRange.endMeasure,true);
+});
+test('edit range and note selection remain independent in both directions',()=>{
+  const core=load(),session=core.createSession(project());core.selectNote(session,'n1');const ids=Array.from(session.selectedNoteIds);core.setEditRange(session,{startMeasure:2,endMeasure:4});assert.deepEqual(Array.from(session.selectedNoteIds),ids);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:4});core.clearNoteSelection(session);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:4});
+});
+test('long project ranges remain exact without changing playback or MIDI note data',()=>{
+  const core=load(),session=core.createSession({midiData:{ppq:960,timeSignature:{numerator:4,denominator:4},editor:{measureCount:128,editRange:{startMeasure:64,endMeasure:128},loopEnabled:true,loopStart:0,loopEnd:3840},tracks:[{part:'melody',notes:[{id:'kept',pitch:60,startTick:0,durationTicks:960,velocity:90}]}]}}),before=JSON.stringify(core.currentTrack(session).notes),ticks=core.measureRangeToTicks(session.editRange,session.midiData);
+  assert.equal(ticks.startTick,241920);assert.equal(ticks.endTick,491520);assert.equal(JSON.stringify(core.currentTrack(session).notes),before);assert.equal(session.midiData.editor.loopEnd,3840);
+});
 test('empty timeline measures persist as undoable editor metadata',()=>{
   const core=load(),session=core.createSession(project());
   assert.equal(session.midiData.editor.measureCount,4);
