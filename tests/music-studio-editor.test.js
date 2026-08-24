@@ -28,6 +28,64 @@ test('old project without MIDI opens as optional blank three-part session',()=>{
   assert.equal(session.dirty,false);
 });
 
+test('default Melody Drums and Bass tracks lock the Version 1 track contract',()=>{
+  const core=load(),data=core.normalizeMidiData({},{}),tracks=Object.fromEntries(data.tracks.slice(0,3).map(track=>[track.part,track]));
+  assert.deepEqual(JSON.parse(JSON.stringify(Object.keys(tracks))),['melody','drums','bass']);
+  assert.deepEqual(JSON.parse(JSON.stringify(tracks.melody)),{id:'melody',part:'melody',name:'Melody',channel:1,program:0,muted:false,notes:[]});
+  assert.deepEqual(JSON.parse(JSON.stringify(tracks.drums)),{id:'drums',part:'drums',name:'Drums',channel:10,program:null,muted:false,notes:[]});
+  assert.deepEqual(JSON.parse(JSON.stringify(tracks.bass)),{id:'bass',part:'bass',name:'Bass',channel:2,program:32,muted:false,notes:[]});
+});
+
+test('legacy partial tracks normalize missing fields without changing existing notes',()=>{
+  const core=load(),melodyNote={id:'legacy-m',pitch:67,startTick:123,durationTicks:456,velocity:78,releaseVelocity:9},drumNote={id:'legacy-d',pitch:38,startTick:480,durationTicks:120,velocity:111},bassNote={id:'legacy-b',pitch:40,startTick:960,durationTicks:720,velocity:82};
+  const cases=[
+    {tracks:[{part:'melody',notes:[melodyNote]}]},
+    {tracks:[{id:'melody',notes:[melodyNote]},{id:'drums',notes:[drumNote]}]},
+    {tracks:[{name:'Bass',notes:[bassNote]},{name:'Melody',notes:[melodyNote]}]},
+    {tracks:[{name:'Melody',notes:[melodyNote]},{channel:10,notes:[drumNote]},{program:32,notes:[bassNote]}]},
+    {tracks:[{part:'melody',notes:[melodyNote]},{part:'drums'},{part:'bass'}]}
+  ];
+  for(const midiData of cases){
+    const data=core.normalizeMidiData(midiData,{}),melody=data.tracks.find(track=>track.part==='melody'),drums=data.tracks.find(track=>track.part==='drums'),bass=data.tracks.find(track=>track.part==='bass');
+    assert.ok(melody);assert.ok(drums);assert.ok(bass);
+    for(const track of [melody,drums,bass]){assert.equal(typeof track.muted,'boolean');assert.ok(Array.isArray(track.notes))}
+    assert.equal(drums.channel,10);assert.equal(drums.program,null);assert.equal(bass.channel,2);assert.equal(bass.program,32);
+    const sourceNotes=midiData.tracks.flatMap(track=>track.notes||[]);
+    for(const note of sourceNotes){const normalized=data.tracks.flatMap(track=>track.notes).find(item=>item.id===note.id);assert.ok(normalized);for(const key of ['pitch','startTick','durationTicks','velocity'])assert.equal(normalized[key],note[key]);if(note.releaseVelocity!=null)assert.equal(normalized.releaseVelocity,note.releaseVelocity)}
+  }
+});
+
+test('explicit part and canonical id win while ambiguous tracks remain additional tracks',()=>{
+  const core=load(),data=core.normalizeMidiData({tracks:[
+    {id:'bass',name:'Unlabeled',notes:[]},
+    {id:'custom',part:'melody',channel:10,notes:[]},
+    {id:'unknown',name:'Strings',channel:3,program:48,notes:[{id:'kept',pitch:72,startTick:0,durationTicks:480,velocity:90}]}
+  ]},{});
+  assert.equal(data.tracks.find(track=>track.part==='bass').id,'bass');
+  assert.equal(data.tracks.find(track=>track.part==='melody').id,'custom');
+  const additional=data.tracks.find(track=>track.id==='unknown');assert.ok(additional);assert.equal(additional.part,undefined);assert.equal(additional.notes[0].id,'kept');
+});
+
+test('an unknown first track stays additional with all track and note metadata',()=>{
+  const core=load(),unknown={id:'unknown',name:'Strings',channel:3,program:48,muted:true,trackMetadata:{source:'legacy'},notes:[{id:'unknown-note',pitch:72,startTick:123,durationTicks:456,velocity:78,noteMetadata:{articulation:'legato'}}]},data=core.normalizeMidiData({tracks:[unknown]},{}),additional=data.tracks.find(track=>track.id==='unknown');
+  assert.ok(additional);assert.equal(additional.part,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(additional)),unknown);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.slice(0,3).map(track=>track.part))),['melody','drums','bass']);
+});
+
+test('legacy Melody names remain recognizable without relying on track index',()=>{
+  const core=load(),note={id:'legacy-piano-note',pitch:62,startTick:239,durationTicks:481,velocity:87,releaseVelocity:11},data=core.normalizeMidiData({tracks:[{id:'unknown-first',name:'Strings',channel:3,program:48,notes:[]},{name:'Imported Piano',channel:1,notes:[note]}]},{}),melody=data.tracks.find(track=>track.part==='melody');
+  assert.equal(melody.name,'Imported Piano');assert.equal(melody.channel,1);assert.equal(melody.program,0);
+  assert.deepEqual(JSON.parse(JSON.stringify(melody.notes[0])),note);
+});
+
+test('nonstandard order identifies canonical parts and leaves Unknown untouched',()=>{
+  const core=load(),unknown={id:'unknown-order',name:'Strings',channel:3,program:48,notes:[{id:'u',pitch:74,startTick:12,durationTicks:34,velocity:56,custom:true}]},data=core.normalizeMidiData({tracks:[unknown,{name:'Drums',channel:10,notes:[]},{name:'Bass',channel:2,program:32,notes:[]},{name:'Melody',channel:1,program:0,notes:[]}]},{});
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.slice(0,3).map(track=>track.part))),['melody','drums','bass']);
+  assert.equal(data.tracks.find(track=>track.id==='unknown-order').part,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.find(track=>track.id==='unknown-order'))),unknown);
+});
+
 test('transport preferences preserve explicit OFF values while legacy data defaults both ON',()=>{
   const core=load(),legacy=core.normalizeMidiData({},{}),saved=core.normalizeMidiData({editor:{transport:{countInEnabled:false,metronomeEnabled:false}}},{});
   assert.deepEqual(JSON.parse(JSON.stringify(legacy.editor.transport)),{countInEnabled:true,metronomeEnabled:true});
