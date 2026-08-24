@@ -55,6 +55,18 @@ test('JSON import preserves existing data and renews duplicate IDs',async()=>{
   assert.equal((await repo.get(original.projectId)).projectName,'Original');
 });
 
+test('project JSON round trip preserves Melody Drums and Bass tracks exactly',async()=>{
+  const {app}=load(),repo=app.memoryRepository();app.setRepository(repo);
+  const tracks=[
+    {id:'melody',part:'melody',name:'Melody',channel:1,program:0,muted:false,notes:[{id:'m1',pitch:64,startTick:0,durationTicks:480,velocity:91}]},
+    {id:'drums',part:'drums',name:'Drums',channel:10,program:null,muted:false,notes:[{id:'d1',pitch:38,startTick:240,durationTicks:120,velocity:112}]},
+    {id:'bass',part:'bass',name:'Bass',channel:2,program:32,muted:true,notes:[{id:'b1',pitch:40,startTick:0,durationTicks:960,velocity:83}]}
+  ],project=app.makeProject({projectId:'three-track-json',projectName:'Three Track JSON',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks}});
+  await repo.put(project);const exported=await app.exportProject(project.projectId),result=await app.importText(exported.text);
+  assert.equal(result.ok,true);assert.deepEqual(JSON.parse(JSON.stringify(result.project.midiData.tracks)),tracks);
+  assert.deepEqual(JSON.parse(JSON.stringify((await repo.get(result.project.projectId)).midiData.tracks)),tracks);
+});
+
 test('broken JSON and unsupported versions leave projects untouched',async()=>{
   const {app}=load();const repo=app.memoryRepository();app.setRepository(repo);
   const original=app.makeProject({projectName:'Safe'});await repo.put(original);
