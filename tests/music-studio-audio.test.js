@@ -117,9 +117,9 @@ test('bounded playback clips crossing notes and excludes notes outside the loop'
 });
 test('track-aware playback preserves track and note identity on one shared timeline',async()=>{
   const synth=load().createSynth({AudioContext:Context}),tracks=[
-    {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m1',pitch:60,startTick:480,durationTicks:240,velocity:81}]},
-    {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'d1',pitch:38,startTick:480,durationTicks:120,velocity:111}]},
-    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b1',pitch:28,startTick:480,durationTicks:480,velocity:92}]}
+    {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m1',pitch:60,startTick:480,durationTicks:240,velocity:81,locked:true}]},
+    {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'d1',pitch:38,startTick:480,durationTicks:120,velocity:111,locked:true}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b1',pitch:28,startTick:480,durationTicks:480,velocity:92,locked:true}]}
   ],before=JSON.stringify(tracks);await synth.unlock();const result=synth.playTracks(tracks,{ppq:480,tempo:120});
   assert.equal(result.ok,true);assert.equal(result.trackCount,3);assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,3);assert.equal(JSON.stringify(tracks),before);
   assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.trackId,note.part,note.channel,note.program,note.noteId,note.pitch,note.startTick,note.durationTicks,note.velocity,note.audible,note.soundPath]))),[
