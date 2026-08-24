@@ -133,6 +133,40 @@ test('range note queries use startTick boundaries exclude locked edits and isola
   core.selectPart(session,'drums');assert.deepEqual(Array.from(core.notesInRange(session),note=>note.id),['drum']);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:3});
   core.selectPart(session,'bass');assert.deepEqual(Array.from(core.notesInRange(session),note=>note.id),['bass-note']);
 });
+test('partial edit request classifies mixed range notes and preserves the shared note contract',()=>{
+  const core=load(),session=core.createSession({midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},editor:{measureCount:8,editRange:{startMeasure:2,endMeasure:4}},tracks:[
+    {id:'lead-track',part:'melody',notes:[{id:'outside',pitch:60,startTick:0,durationTicks:10,velocity:70},{id:'z',pitch:64,startTick:1920,durationTicks:20,velocity:90,releaseVelocity:12},{id:'locked',pitch:62,startTick:2400,durationTicks:30,velocity:80,locked:true,metadata:{take:2}},{id:'a',pitch:64,startTick:1920,durationTicks:40,velocity:91},{id:'end',pitch:65,startTick:7680,durationTicks:10,velocity:72}]},
+    {part:'drums',notes:[{id:'other-track',pitch:36,startTick:1920,durationTicks:120,velocity:100}]}
+  ]}}),request=core.createPartialEditRequest(session);
+  assert.deepEqual(JSON.parse(JSON.stringify(request)),{version:1,trackId:'lead-track',part:'melody',range:{startMeasure:2,endMeasure:4,startTick:1920,endTick:7680},targetNoteIds:['a','z'],lockedNoteIds:['locked'],notes:[
+    {id:'a',pitch:64,startTick:1920,durationTicks:40,velocity:91},{id:'z',pitch:64,startTick:1920,durationTicks:20,velocity:90,releaseVelocity:12},{id:'locked',pitch:62,startTick:2400,durationTicks:30,velocity:80,locked:true,metadata:{take:2}}
+  ]});
+  assert.deepEqual(JSON.parse(JSON.stringify(core.validatePartialEditRequest(session,request))),{ok:true,errors:[]});
+});
+test('partial edit request uses one contract for Melody Drums and Bass including empty editable ranges',()=>{
+  const core=load(),session=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:1}},tracks:[
+    {id:'m',part:'melody',notes:[{id:'mn',pitch:60,startTick:0,durationTicks:120,velocity:80}]},{id:'d',part:'drums',notes:[{id:'dn',pitch:36,startTick:0,durationTicks:120,velocity:100,locked:true}]},{id:'b',part:'bass',notes:[{id:'bn',pitch:40,startTick:0,durationTicks:240,velocity:90}]}
+  ]}});
+  for(const [part,trackId,targetNoteIds,lockedNoteIds]of[['melody','m',['mn'],[]],['drums','d',[],['dn']],['bass','b',['bn'],[]]]){core.selectPart(session,part);const request=core.createPartialEditRequest(session);assert.equal(request.part,part);assert.equal(request.trackId,trackId);assert.deepEqual(Array.from(request.targetNoteIds),targetNoteIds);assert.deepEqual(Array.from(request.lockedNoteIds),lockedNoteIds)}
+});
+test('partial edit requests are deterministic independent snapshots across note lock range and track changes',()=>{
+  const core=load(),session=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:1}},tracks:[{part:'melody',notes:[{id:'open',pitch:60,startTick:0,durationTicks:120,velocity:80},{id:'guard',pitch:62,startTick:120,durationTicks:120,velocity:81,locked:true}]},{part:'bass',notes:[{id:'bass-note',pitch:36,startTick:1920,durationTicks:240,velocity:90}]}]}}),oldRequest=core.createPartialEditRequest(session),again=core.createPartialEditRequest(session);
+  assert.equal(JSON.stringify(oldRequest),JSON.stringify(again));
+  session.midiData.tracks.find(track=>track.part==='melody').notes.find(note=>note.id==='open').pitch=70;session.midiData.tracks.find(track=>track.part==='melody').notes.find(note=>note.id==='guard').locked=false;core.setEditRange(session,{startMeasure:2,endMeasure:2});core.selectPart(session,'bass');
+  assert.deepEqual(Array.from(oldRequest.targetNoteIds),['open']);assert.deepEqual(Array.from(oldRequest.lockedNoteIds),['guard']);assert.equal(oldRequest.notes[0].pitch,60);assert.equal(oldRequest.notes[1].locked,true);assert.equal(oldRequest.part,'melody');assert.equal(oldRequest.range.startMeasure,1);
+  const fresh=core.createPartialEditRequest(session);assert.equal(fresh.part,'bass');assert.equal(fresh.range.startMeasure,2);assert.deepEqual(Array.from(fresh.targetNoteIds),['bass-note']);
+});
+test('request mutation cannot change project notes and request creation has no editor side effects',()=>{
+  const core=load(),session=core.createSession(project());session.redo.push({sentinel:true});session.playheadTick=321;session.recording={active:true};const before=JSON.stringify(session.midiData),undo=session.undo.length,redo=session.redo.length,request=core.createPartialEditRequest(session);
+  request.notes[0].pitch=1;request.notes[0].releaseVelocity=99;request.targetNoteIds.length=0;request.range.startTick=99;
+  assert.equal(core.currentTrack(session).notes[0].pitch,60);assert.equal(core.currentTrack(session).notes[0].releaseVelocity,12);assert.equal(JSON.stringify(session.midiData),before);assert.equal(session.dirty,false);assert.equal(session.undo.length,undo);assert.equal(session.redo.length,redo);assert.equal(session.playheadTick,321);assert.equal(session.recording.active,true);assert.doesNotThrow(()=>JSON.stringify(request));
+});
+test('validation rejects unsafe targets locks ranges tracks overlap and duplicate identities',()=>{
+  const core=load(),session=core.createSession({midiData:{editor:{measureCount:4},tracks:[{part:'melody',notes:[{id:'open',pitch:60,startTick:0,durationTicks:120,velocity:80},{id:'guard',pitch:61,startTick:120,durationTicks:120,velocity:80,locked:true}]}]}}),valid=core.createPartialEditRequest(session),changed=value=>JSON.parse(JSON.stringify(value));
+  for(const mutate of [request=>request.targetNoteIds.push('guard'),request=>request.lockedNoteIds.push('open'),request=>request.targetNoteIds.push('guard'),request=>request.range.endTick=0,request=>request.trackId='bass',request=>request.targetNoteIds.push('open')]){const request=changed(valid);mutate(request);assert.equal(core.validatePartialEditRequest(session,request).ok,false)}
+  const overlap=changed(valid);overlap.lockedNoteIds.push('open');assert.equal(core.validatePartialEditRequest(session,overlap).ok,false);
+  session.midiData.tracks.find(track=>track.part==='melody').notes.push({...session.midiData.tracks.find(track=>track.part==='melody').notes[0]});assert.throws(()=>core.createPartialEditRequest(session),/duplicate note IDs/);
+});
 test('edit range persists through normalized project data and clamps after measure removal',()=>{
   const core=load(),session=core.createSession({midiData:{editor:{measureCount:8,editRange:{startMeasure:7,endMeasure:8}},tracks:[{part:'melody',notes:[]}]}});
   const restored=core.createSession({midiData:JSON.parse(JSON.stringify(session.midiData))});assert.deepEqual(JSON.parse(JSON.stringify(restored.editRange)),{startMeasure:7,endMeasure:8});
