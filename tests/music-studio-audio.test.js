@@ -160,6 +160,13 @@ test('Stop cancels Drum noise oscillators and Bass voice without leaving active 
     {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'bass',pitch:36,startTick:0,durationTicks:960,velocity:100}]}
   ],{ppq:480,tempo:120});const oscillators=synth.context.oscillators.slice(),noise=synth.context.bufferSources.slice();assert.equal(synth.playingVoices,3);synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.equal(oscillators.every(source=>source.stopped.at(-1)<10.01),true);assert.equal(noise.every(source=>source.stopped.at(-1)<10.01),true);
 });
+test('track preview cleanup stops Drum Bass and Melody voices without replacing the shared AudioContext',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const context=synth.context;
+  synth.previewTrackNote('drums',46,100,.35);const openHat=synth.context.bufferSources.at(-1);assert.equal(synth.playingVoices,1);synth.stopPreview();assert.equal(synth.playingVoices,0);assert.ok(openHat.stopped.at(-1)<10.01);
+  synth.previewTrackNote('bass',36,90,.35);const bass=synth.context.oscillators.at(-1);assert.equal(synth.playingVoices,1);synth.stopPreview();assert.equal(synth.playingVoices,0);assert.ok(bass.stopped.at(-1)<10.01);
+  synth.noteOn(60,80,'piano-roll-preview');const melody=synth.context.oscillators.at(-1);assert.equal(synth.liveVoices,1);synth.stopPreview();assert.equal(synth.liveVoices,0);assert.ok(melody.stopped.at(-1)<10.01);
+  for(const part of ['drums','bass','drums']){synth.previewTrackNote(part,part==='drums'?42:36,75,.35);synth.stopPreview();assert.equal(synth.playingVoices,0)}assert.equal(synth.context,context);assert.equal(synth.context.buffers.length,1);
+});
 test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();
   synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:68}],{ppq:480,tempo:120});

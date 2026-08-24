@@ -254,6 +254,11 @@ test('Piano Roll and Drum Pad previews select sounds by active track while Melod
   app.editorSelectPart('bass');assert.equal(await app.editorPreviewPitch(36,84),true);assert.deepEqual(events.at(-1),['track','bass',36,84,.35]);
   app.editorSelectPart('melody');assert.equal(await app.editorPreviewPitch(60,77),true);assert.equal(events.at(-1)[0],'on');assert.equal(events.at(-1)[1],60);assert.equal(events.at(-1)[2],77);
 });
+test('track switching clears Melody timers and stops only active preview voices on repeated switches',async()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'part-preview-cleanup',projectName:'Part preview cleanup'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);let timerId=0;const timers=new Map(),events=[];window.setTimeout=callback=>{const id=++timerId;timers.set(id,callback);return id};window.clearTimeout=id=>timers.delete(id);app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,previewTrackNote(part,pitch){events.push(['track',part,pitch]);return true},noteOn(pitch){events.push(['on',pitch]);return true},noteOff(pitch,channel){events.push(['off',pitch,channel]);return true},stopPreview(){events.push(['stop-preview'])}};
+  await app.editorPreviewPitch(60,88);assert.equal(timers.size,1);app.editorSelectPart('drums');assert.equal(timers.size,0);assert.deepEqual(events.slice(-2),[['off',60,'piano-roll-preview'],['stop-preview']]);
+  await app.editorPreviewPitch(46,100);app.editorSelectPart('bass');await app.editorPreviewPitch(36,90);app.editorSelectPart('melody');app.editorSelectPart('drums');assert.equal(events.filter(item=>item[0]==='stop-preview').length,4);assert.equal(timers.size,0);
+});
 test('Piano Roll note labels show English pitch fixed-do solfege and velocity by rendered width',()=>{
   const{app,window}=load(),notes=[
     {id:'c3',pitch:48,startTick:0,durationTicks:120,velocity:48},{id:'c4',pitch:60,startTick:120,durationTicks:240,velocity:82},{id:'sharp',pitch:61,startTick:360,durationTicks:480,velocity:95},

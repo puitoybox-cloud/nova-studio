@@ -5,7 +5,7 @@
   const frequency=pitch=>440*Math.pow(2,(clamp(pitch,0,127)-69)/12);
   function createSynth(options={}){
     const Context=options.AudioContext||root.AudioContext||root.webkitAudioContext,volume=clamp(options.volume??0.12,0.01,0.2);
-    let context=null,master=null,noiseBuffer=null;const live=new Map(),playback=new Set(),metronome=new Set(),diagnostics={voiceCalls:0,oscillatorsCreated:0,noiseSourcesCreated:0,liveVoicesCreated:0,playbackVoicesCreated:0,previewVoicesCreated:0,bassVoicesCreated:0,drumVoicesCreated:0,metronomeClicks:0,soundPaths:{melody:0,bass:0,kick:0,snare:0,'closed-hat':0,'open-hat':0,tom:0,cymbal:0}};
+    let context=null,master=null,noiseBuffer=null;const live=new Map(),playback=new Set(),preview=new Set(),metronome=new Set(),diagnostics={voiceCalls:0,oscillatorsCreated:0,noiseSourcesCreated:0,liveVoicesCreated:0,playbackVoicesCreated:0,previewVoicesCreated:0,bassVoicesCreated:0,drumVoicesCreated:0,metronomeClicks:0,soundPaths:{melody:0,bass:0,kick:0,snare:0,'closed-hat':0,'open-hat':0,tom:0,cymbal:0}};
     function supported(){return typeof Context==='function'}
     function ensure(){if(context)return context;if(!supported())return null;context=new Context();master=context.createGain();master.gain.setValueAtTime(volume,context.currentTime);master.connect(context.destination);return context}
     async function unlock(){const ctx=ensure();if(!ctx)return false;if(ctx.state==='suspended')await ctx.resume();return true}
@@ -26,6 +26,7 @@
     function noteOn(pitch,velocity=100,channel=1){const ctx=ensure();if(!ctx)return false;const id=`${channel}:${pitch}`;if(live.has(id))return false;const item=voice(pitch,velocity,ctx.currentTime,null,null,'live');if(item)live.set(id,item);return Boolean(item)}
     function noteOff(pitch,channel=1){const id=`${channel}:${pitch}`,item=live.get(id);if(!item)return false;live.delete(id);item.stop();return true}
     function allNotesOff(){for(const item of live.values())item.stop();live.clear()}
+    function stopPreview(){const ctx=ensure();if(!ctx)return;for(const item of preview)item.cancel(ctx.currentTime);preview.clear();for(const [id,item] of live)if(id.startsWith('piano-roll-preview:')){item.cancel(ctx.currentTime);live.delete(id)}}
     function stopPlayback(){const ctx=ensure();if(!ctx)return;for(const item of playback)item.cancel(ctx.currentTime);playback.clear()}
     function metronomeClick(accent=false,when=null){const ctx=ensure();if(!ctx)return false;const start=Number.isFinite(Number(when))?Math.max(ctx.currentTime,Number(when)):ctx.currentTime,oscillator=ctx.createOscillator(),gain=ctx.createGain(),item={oscillator,gain};diagnostics.metronomeClicks++;oscillator.type='square';oscillator.frequency.setValueAtTime(accent?1560:1040,start);gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(accent?.18:.11,start+.002);gain.gain.exponentialRampToValueAtTime?.(.0001,start+.045);oscillator.connect(gain);gain.connect(master);metronome.add(item);oscillator.onended=()=>metronome.delete(item);oscillator.start(start);oscillator.stop(start+.05);return true}
     function stopMetronome(){const ctx=ensure();if(!ctx)return;for(const item of metronome){item.gain.gain.cancelScheduledValues(ctx.currentTime);item.gain.gain.setValueAtTime(.0001,ctx.currentTime);try{item.oscillator.stop(ctx.currentTime+.001)}catch(_){}}metronome.clear()}
@@ -37,10 +38,10 @@
       return{ok:true,trackCount:tracks.length,noteCount,oscillatorCount:diagnostics.oscillatorsCreated-oscillatorStart,durationMs:(scheduledLead+(endTick-fromTick)*secondsPerTick+.15)*1000,playbackStart,secondsPerTick,startTick:fromTick,endTick,scheduledNotes}
     }
     function playNotes(notes=[],timing={}){return playTracks([{id:'melody',part:'melody',channel:1,program:0,notes}],timing)}
-    function previewNote(pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;voice(pitch,velocity,ctx.currentTime,ctx.currentTime+clamp(duration,.05,2),playback,'preview');return true}
-    function previewTrackNote(part,pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;const start=ctx.currentTime,stop=start+clamp(duration,.05,2);if(part==='drums')return Boolean(drumVoice(pitch,velocity,start,stop,playback));if(part==='bass')return Boolean(bassVoice(pitch,velocity,start,stop,playback));return previewNote(pitch,velocity,duration)}
-    function dispose(){allNotesOff();stopPlayback();stopMetronome();context?.close?.();context=null;master=null;noiseBuffer=null}
-    return{supported,unlock,noteOn,noteOff,allNotesOff,playTracks,playNotes,stopPlayback,metronomeClick,stopMetronome,previewTrackNote,previewNote,dispose,frequency,drumSoundPath,volume,get diagnostics(){return{...diagnostics,soundPaths:{...diagnostics.soundPaths}}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size}};
+    function previewNote(pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;voice(pitch,velocity,ctx.currentTime,ctx.currentTime+clamp(duration,.05,2),preview,'preview');return true}
+    function previewTrackNote(part,pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;const start=ctx.currentTime,stop=start+clamp(duration,.05,2);if(part==='drums')return Boolean(drumVoice(pitch,velocity,start,stop,preview));if(part==='bass')return Boolean(bassVoice(pitch,velocity,start,stop,preview));return previewNote(pitch,velocity,duration)}
+    function dispose(){allNotesOff();stopPreview();stopPlayback();stopMetronome();context?.close?.();context=null;master=null;noiseBuffer=null}
+    return{supported,unlock,noteOn,noteOff,allNotesOff,playTracks,playNotes,stopPreview,stopPlayback,metronomeClick,stopMetronome,previewTrackNote,previewNote,dispose,frequency,drumSoundPath,volume,get diagnostics(){return{...diagnostics,soundPaths:{...diagnostics.soundPaths}}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size+preview.size}};
   }
   root.MusicStudioAudio={createSynth,frequency};
 })(typeof window!=='undefined'?window:globalThis);
