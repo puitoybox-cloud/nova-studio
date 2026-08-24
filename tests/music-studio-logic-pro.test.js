@@ -1050,6 +1050,15 @@ test('Drums Piano Roll and pads identify GM notes without exposing Melody-only c
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-midi-editor-page \.music-drum-pads>button\{height:auto;min-height:44px/);
   app.editorSelectPart('melody');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/music-drum-pitch-name|music-drum-number/);assert.match(html,/Melody Correction（メロディ補正）/);
 });
+test('Bass Piano Roll identifies track range pitch and program without leaking to Melody or Drums',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'bass-clarity',projectName:'Bass clarity'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorSelectPart('bass');let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/class="music-bass-track-status" role="status">Bass Track · Channel 2 · GM Program 32 · Guide E1–G3（Note 28–55）/);assert.match(html,/class="music-bass-range-guide"[^>]*--bass-guide-top:[^;]+;--bass-guide-height:[^;]+/);assert.match(html,/Bass guide E1–G3 · Note 28–55/);
+  assert.match(html,/<details class="music-part-workflow music-bass-workflow"><summary><b>Bass候補・参照情報<\/b><span>Channel 2 · GM Program 32<\/span><\/summary>/);assert.doesNotMatch(html,/Melody Correction（メロディ補正）|melodyTransposePanel|melodyNoteLengthPanel/);
+  const session=app.state.midiEditor,core=window.MusicStudioEditor;session.playheadTick=137;app.editorAddNote();const note=core.selectedNotes(session)[0];assert.deepEqual([note.pitch,note.startTick,note.durationTicks,note.velocity],[36,137,120,100]);assert.equal(core.currentTrack(session).channel,2);assert.equal(core.currentTrack(session).program,32);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/C2 · Note 36　V100/);assert.match(html,/C2 \/ Velocity 100 \/ Note 36 \/ 137 tick/);
+  for(const part of ['melody','drums']){app.editorSelectPart(part);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/music-bass-track-status|music-bass-range-guide|music-bass-workflow|Bass guide E1–G3/)}
+  app.editorSelectPart('melody');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/Melody Correction（メロディ補正）/);
+});
 test('an edit during immediate save is serialized and the final state is persisted',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'immediate-race',projectName:'Immediate race'});await base.put(project);
   let release,puts=0;const repo={...base,async put(value){puts++;if(puts===1)await new Promise(resolve=>{release=resolve});return base.put(value)}};
