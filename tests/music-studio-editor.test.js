@@ -372,6 +372,10 @@ test('recorded notes are added to the shared Melody model as one undoable change
   core.undo(session);assert.equal(core.currentTrack(session).notes.length,before);
   core.redo(session);assert.equal(core.currentTrack(session).notes.length,before+1);
 });
+test('recorded notes can target a fixed Drums or Bass part without following the visible part',()=>{
+  const core=load(),session=core.createSession({midiData:{}});core.selectPart(session,'melody');core.addNotesToPart(session,'drums',[{pitch:38,startTick:120,durationTicks:240,velocity:111}]);core.addNotesToPart(session,'bass',[{pitch:29,startTick:360,durationTicks:480,velocity:87}]);
+  assert.equal(session.part,'melody');assert.deepEqual(JSON.parse(JSON.stringify(session.midiData.tracks.find(track=>track.part==='drums').notes.map(note=>[note.pitch,note.startTick,note.durationTicks,note.velocity]))),[[38,120,240,111]]);assert.deepEqual(JSON.parse(JSON.stringify(session.midiData.tracks.find(track=>track.part==='bass').notes.map(note=>[note.pitch,note.startTick,note.durationTicks,note.velocity]))),[[29,360,480,87]]);core.undo(session);assert.equal(session.midiData.tracks.find(track=>track.part==='bass').notes.length,0);core.redo(session);assert.equal(session.midiData.tracks.find(track=>track.part==='bass').notes.length,1);
+});
 test('correction preview is non-destructive, cancel restores Original, and Apply supports Undo Redo',()=>{
   const core=load(),session=core.createSession(project()),track=core.currentTrack(session);
   track.notes=[{id:'human',pitch:64,startTick:119,durationTicks:251,velocity:88}];
