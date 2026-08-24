@@ -66,6 +66,26 @@ test('explicit part and canonical id win while ambiguous tracks remain additiona
   const additional=data.tracks.find(track=>track.id==='unknown');assert.ok(additional);assert.equal(additional.part,undefined);assert.equal(additional.notes[0].id,'kept');
 });
 
+test('an unknown first track stays additional with all track and note metadata',()=>{
+  const core=load(),unknown={id:'unknown',name:'Strings',channel:3,program:48,muted:true,trackMetadata:{source:'legacy'},notes:[{id:'unknown-note',pitch:72,startTick:123,durationTicks:456,velocity:78,noteMetadata:{articulation:'legato'}}]},data=core.normalizeMidiData({tracks:[unknown]},{}),additional=data.tracks.find(track=>track.id==='unknown');
+  assert.ok(additional);assert.equal(additional.part,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(additional)),unknown);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.slice(0,3).map(track=>track.part))),['melody','drums','bass']);
+});
+
+test('legacy Melody names remain recognizable without relying on track index',()=>{
+  const core=load(),note={id:'legacy-piano-note',pitch:62,startTick:239,durationTicks:481,velocity:87,releaseVelocity:11},data=core.normalizeMidiData({tracks:[{id:'unknown-first',name:'Strings',channel:3,program:48,notes:[]},{name:'Imported Piano',channel:1,notes:[note]}]},{}),melody=data.tracks.find(track=>track.part==='melody');
+  assert.equal(melody.name,'Imported Piano');assert.equal(melody.channel,1);assert.equal(melody.program,0);
+  assert.deepEqual(JSON.parse(JSON.stringify(melody.notes[0])),note);
+});
+
+test('nonstandard order identifies canonical parts and leaves Unknown untouched',()=>{
+  const core=load(),unknown={id:'unknown-order',name:'Strings',channel:3,program:48,notes:[{id:'u',pitch:74,startTick:12,durationTicks:34,velocity:56,custom:true}]},data=core.normalizeMidiData({tracks:[unknown,{name:'Drums',channel:10,notes:[]},{name:'Bass',channel:2,program:32,notes:[]},{name:'Melody',channel:1,program:0,notes:[]}]},{});
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.slice(0,3).map(track=>track.part))),['melody','drums','bass']);
+  assert.equal(data.tracks.find(track=>track.id==='unknown-order').part,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.tracks.find(track=>track.id==='unknown-order'))),unknown);
+});
+
 test('transport preferences preserve explicit OFF values while legacy data defaults both ON',()=>{
   const core=load(),legacy=core.normalizeMidiData({},{}),saved=core.normalizeMidiData({editor:{transport:{countInEnabled:false,metronomeEnabled:false}}},{});
   assert.deepEqual(JSON.parse(JSON.stringify(legacy.editor.transport)),{countInEnabled:true,metronomeEnabled:true});
