@@ -29,7 +29,7 @@ test('Melody, Drums and Bass export as separate named MIDI tracks',()=>{
   const midi=load(),data={version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
     {id:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m1',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
     {id:'drums',name:'Drums',channel:10,program:null,notes:[{id:'d1',pitch:36,startTick:120,durationTicks:240,velocity:110}]},
-    {id:'bass',name:'Bass',channel:2,program:32,notes:[{id:'b1',pitch:36,startTick:0,durationTicks:960,velocity:88}]}
+    {id:'bass',name:'Bass',channel:2,program:32,notes:[{id:'b1',pitch:28,startTick:240,durationTicks:960,velocity:88}]}
   ]},result=midi.createMidiFile(data);
   assert.equal(result.inspection.trackCount,4);
   assert.equal(JSON.stringify(result.inspection.tracks.slice(1).map(track=>track.name)),JSON.stringify(['Melody','Drums','Bass']));
@@ -38,4 +38,7 @@ test('Melody, Drums and Bass export as separate named MIDI tracks',()=>{
   assert.equal(result.validation.data.tracks.find(track=>track.name==='Drums').channel,10);
   assert.equal(result.validation.data.tracks.find(track=>track.name==='Drums').program,null);
   assert.equal(JSON.stringify(result.validation.data.tracks.find(track=>track.name==='Drums').notes[0]),'{"id":"d1","pitch":36,"startTick":120,"durationTicks":240,"velocity":110}');
+  assert.equal(result.validation.data.tracks.find(track=>track.name==='Bass').channel,2);
+  assert.equal(result.validation.data.tracks.find(track=>track.name==='Bass').program,32);
+  assert.equal(JSON.stringify(result.validation.data.tracks.find(track=>track.name==='Bass').notes[0]),'{"id":"b1","pitch":28,"startTick":240,"durationTicks":960,"velocity":88}');
 });

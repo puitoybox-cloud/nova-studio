@@ -281,6 +281,17 @@ test('Drums common editing preserves performance data and the channel 10 track c
   assert.equal(track().channel,10);assert.equal(track().program,null);
   const before=JSON.stringify(track().notes);assert.equal(core.previewCorrection(session).ok,false);assert.equal(core.previewTranspose(session).ok,false);assert.equal(core.previewNoteLength(session).ok,false);assert.equal(JSON.stringify(track().notes),before);
 });
+test('Bass common editing preserves metadata performance data and the channel 2 program 32 contract',()=>{
+  const core=load(),session=core.createSession(project());core.selectPart(session,'bass');const track=()=>core.currentTrack(session);track().notes=[];
+  core.addNotes(session,[{id:'bass-low',pitch:28,startTick:119,durationTicks:481,velocity:82,noteMetadata:{articulation:'fingered'}},{id:'bass-high',pitch:40,startTick:601,durationTicks:959,velocity:96,noteMetadata:{articulation:'accent'}}]);
+  core.selectNote(session,'bass-low');core.selectNote(session,'bass-high',{additive:true});assert.equal(JSON.stringify(core.selectedIds(session)),'["bass-low","bass-high"]');
+  core.copy(session);session.playheadTick=1920;core.paste(session);assert.equal(track().notes.length,4);core.undo(session);assert.equal(track().notes.length,2);core.redo(session);assert.equal(track().notes.length,4);
+  core.selectNote(session,'bass-low');core.duplicateSelected(session);assert.equal(track().notes.length,5);core.undo(session);assert.equal(track().notes.length,4);
+  core.selectNote(session,'bass-low');assert.equal(core.quantizeSelectedStarts(session,'1/16').ok,true);core.setSelectedVelocity(session,77);const edited=core.selectedNotes(session)[0];assert.deepEqual([edited.pitch,edited.startTick,edited.durationTicks,edited.velocity],[28,120,481,77]);assert.deepEqual(JSON.parse(JSON.stringify(edited.noteMetadata)),{articulation:'fingered'});
+  core.extendTimelineMeasures(session,4);core.removeTimelineMeasures(session,1);assert.equal(session.midiData.editor.measureCount,7);core.deleteSelected(session);assert.equal(track().notes.some(note=>note.id==='bass-low'),false);core.undo(session);assert.equal(track().notes.some(note=>note.id==='bass-low'),true);
+  assert.equal(track().channel,2);assert.equal(track().program,32);const before=JSON.stringify(track().notes);assert.equal(core.previewCorrection(session).ok,false);assert.equal(core.previewTranspose(session).ok,false);assert.equal(core.previewNoteLength(session).ok,false);assert.equal(JSON.stringify(track().notes),before);
+  const candidate=core.setCandidate(session,'bass','alternate');assert.equal(candidate.context.melodyNoteCount,1);assert.ok(candidate.notes.every(note=>note.velocity===88&&note.durationTicks>0));core.applyCandidate(session,'bass');assert.equal(track().notes.length,candidate.notes.length);core.undo(session);assert.equal(JSON.stringify(track().notes),before);
+});
 test('selected melody measures can be locked and unlocked without changing notes',()=>{
   const core=load(),session=core.createSession(project()),before=JSON.stringify(core.currentTrack(session).notes);
   core.setSelectedMeasures(session,[2,3]);core.toggleLockSelected(session);
