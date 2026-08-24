@@ -1038,6 +1038,18 @@ test('Drums input and persisted editor measure state also save immediately',asyn
   assert.equal(drums.notes.length,1);assert.equal(drums.notes[0].pitch,38);
   assert.deepEqual(Array.from(stored.midiData.editor.parts.melody.selectedMeasures),[2]);
 });
+test('Drums Piano Roll and pads identify GM notes without exposing Melody-only correction',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'drum-labels',projectName:'Drum labels'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorSelectPart('drums');
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  assert.match(html,/<details class="music-part-workflow music-drums-workflow"><summary><b>Drum Pad・パターン候補<\/b><span>GM Note 36 \/ 38 \/ 42 \/ 46<\/span><\/summary>/);
+  for(const [pitch,name] of [[35,'Acoustic Bass Drum'],[36,'Kick'],[37,'Side Stick'],[38,'Snare'],[39,'Hand Clap'],[40,'Electric Snare'],[41,'Low Floor Tom'],[42,'Closed Hi-Hat'],[43,'High Floor Tom'],[44,'Pedal Hi-Hat'],[45,'Low Tom'],[46,'Open Hi-Hat'],[47,'Low-Mid Tom'],[48,'Hi-Mid Tom'],[49,'Crash Cymbal 1'],[50,'High Tom'],[51,'Ride Cymbal 1']])assert.match(html,new RegExp(`music-drum-name">${name}<\\/span><span class="music-drum-number">${pitch}`));
+  for(const [pitch,name] of [[36,'Kick'],[38,'Snare'],[42,'Closed Hi-Hat'],[46,'Open Hi-Hat']]){assert.match(html,new RegExp(`editorDrumInput\\(${pitch}\\).*${name}|${name}[\\s\\S]*editorDrumInput\\(${pitch}\\)`));app.editorDrumInput(pitch)}
+  const core=window.MusicStudioEditor,drums=core.currentTrack(app.state.midiEditor);assert.deepEqual(Array.from(drums.notes,note=>note.pitch),[36,38,42,46]);assert.ok(drums.notes.every(note=>note.velocity===100));assert.equal(drums.channel,10);assert.equal(drums.program,null);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);for(const [pitch,name] of [[36,'Kick'],[38,'Snare'],[42,'Closed Hi-Hat'],[46,'Open Hi-Hat']])assert.match(html,new RegExp(`${name} · Note ${pitch}`));
+  assert.doesNotMatch(html,/Melody Correction（メロディ補正）|melodyTransposePanel|melodyNoteLengthPanel/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-midi-editor-page \.music-drum-pads>button\{height:auto;min-height:44px/);
+  app.editorSelectPart('melody');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/music-drum-pitch-name|music-drum-number/);assert.match(html,/Melody Correction（メロディ補正）/);
+});
 test('an edit during immediate save is serialized and the final state is persisted',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'immediate-race',projectName:'Immediate race'});await base.put(project);
   let release,puts=0;const repo={...base,async put(value){puts++;if(puts===1)await new Promise(resolve=>{release=resolve});return base.put(value)}};
