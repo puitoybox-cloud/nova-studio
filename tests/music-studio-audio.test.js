@@ -109,6 +109,32 @@ test('bounded playback clips crossing notes and excludes notes outside the loop'
   assert.equal(result.noteCount,2);assert.equal(result.startTick,480);assert.equal(result.endTick,960);assert.equal(synth.context.oscillators.length,2);
   assert.ok(synth.context.oscillators.every(item=>item.stopped[0]<=10.68));
 });
+test('track-aware playback preserves track and note identity on one shared timeline',async()=>{
+  const synth=load().createSynth({AudioContext:Context}),tracks=[
+    {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m1',pitch:60,startTick:480,durationTicks:240,velocity:81}]},
+    {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'d1',pitch:38,startTick:480,durationTicks:120,velocity:111}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b1',pitch:28,startTick:480,durationTicks:480,velocity:92}]}
+  ],before=JSON.stringify(tracks);await synth.unlock();const result=synth.playTracks(tracks,{ppq:480,tempo:120});
+  assert.equal(result.ok,true);assert.equal(result.trackCount,3);assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,2);assert.equal(JSON.stringify(tracks),before);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.trackId,note.part,note.channel,note.program,note.noteId,note.pitch,note.startTick,note.durationTicks,note.velocity,note.audible]))),[
+    ['melody','melody',1,0,'m1',60,480,240,81,true],['drums','drums',10,null,'d1',38,480,120,111,false],['bass','bass',2,32,'b1',28,480,480,92,true]
+  ]);
+  assert.equal(new Set(result.scheduledNotes.map(note=>note.startTime)).size,1);
+});
+test('track-aware loop bounds share one range and retain Drums duration without synthesizing it',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const result=synth.playTracks([
+    {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'crossing-drum',pitch:46,startTick:360,durationTicks:480,velocity:105}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'inside-bass',pitch:40,startTick:600,durationTicks:480,velocity:88}]}
+  ],{ppq:480,tempo:120,startTick:480,endTick:960});
+  assert.equal(result.startTick,480);assert.equal(result.endTick,960);assert.equal(result.noteCount,2);assert.equal(result.oscillatorCount,1);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.noteId,note.scheduledStartTick,note.scheduledDurationTicks,note.durationTicks]))),[['crossing-drum',480,360,480],['inside-bass',600,360,480]]);
+});
+test('Stop cancels every audible voice from a multi-track schedule',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();synth.playTracks([
+    {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:960,velocity:80}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b',pitch:36,startTick:0,durationTicks:960,velocity:90}]}
+  ],{ppq:480,tempo:120});const voices=synth.context.oscillators.slice();assert.equal(synth.playingVoices,2);synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.equal(voices.every(oscillator=>oscillator.stopped.at(-1)<10.01),true);
+});
 test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();
   synth.playNotes([{pitch:60,startTick:0,durationTicks:480,velocity:68}],{ppq:480,tempo:120});

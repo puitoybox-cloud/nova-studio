@@ -451,6 +451,13 @@ test('Piano Roll shortcuts share button actions and never fire from an input',as
   core.selectAllNotes(app.state.midiEditor);app.editorHandleShortcut(event('Delete'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,0);
   assert.match(source,/addEventListener\?\.\('keydown',editorHandleShortcut,true\)/);assert.match(source,/removeEventListener\?\.\('keydown',editorHandleShortcut,true\)/);assert.match(source,/code==='NumpadEnter'/);
 });
+test('playback target selection accepts one or multiple canonical tracks without changing their order',()=>{
+  const{app}=load(),project=app.makeProject({projectId:'playback-targets',projectName:'Playback targets'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const session=app.state.midiEditor,before=JSON.stringify(session.midiData.tracks);
+  assert.deepEqual(Array.from(app.editorPlaybackTracks(session,'melody'),track=>track.part),['melody']);
+  assert.deepEqual(Array.from(app.editorPlaybackTracks(session,['drums','bass']),track=>[track.id,track.part,track.channel,track.program]),[['drums','drums',10,null],['bass','bass',2,32]]);
+  assert.deepEqual(Array.from(app.editorPlaybackTracks(session,[session.midiData.tracks[2],'melody','bass']),track=>track.part),['bass','melody']);
+  assert.equal(JSON.stringify(session.midiData.tracks),before);
+});
 test('R toggles the existing MIDI recording path without stealing reload typing repeat or IME',async()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'record-shortcut',projectName:'Record shortcut'}),input={id:'keys',name:'Keys',onmidimessage:null};app.state.projects=[project];window.location.hash='#music-studio/midi-editor/record-shortcut';app.renderRoute('music-studio/midi-editor/record-shortcut');
   app.state.midiEditor.midiData.editor.transport.countInEnabled=false;
