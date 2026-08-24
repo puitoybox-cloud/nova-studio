@@ -13,6 +13,7 @@ class Param{
   constructor(){this.value=0;this.events=[]}
   setValueAtTime(value,time){this.value=value;this.events.push(['set',value,time])}
   linearRampToValueAtTime(value,time){this.value=value;this.events.push(['ramp',value,time])}
+  exponentialRampToValueAtTime(value,time){this.value=value;this.events.push(['exponential',value,time])}
   cancelScheduledValues(time){this.events.push(['cancel',time])}
   cancelAndHoldAtTime(time){this.events.push(['hold',time])}
 }
@@ -23,10 +24,15 @@ class Oscillator extends Node{
   stop(time){this.stopped.push(time)}
 }
 class Gain extends Node{constructor(){super();this.gain=new Param()}}
+class Filter extends Node{constructor(){super();this.frequency=new Param();this.type=''}}
+class BufferSource extends Node{constructor(){super();this.started=[];this.stopped=[];this.buffer=null;this.onended=null}start(time){this.started.push(time)}stop(time){this.stopped.push(time)}}
 class Context{
-  constructor(){this.currentTime=10;this.state='suspended';this.destination={};this.oscillators=[];this.gains=[]}
+  constructor(){this.currentTime=10;this.state='suspended';this.sampleRate=8000;this.destination={};this.oscillators=[];this.gains=[];this.filters=[];this.bufferSources=[];this.buffers=[]}
   createOscillator(){const value=new Oscillator();this.oscillators.push(value);return value}
   createGain(){const value=new Gain();this.gains.push(value);return value}
+  createBiquadFilter(){const value=new Filter();this.filters.push(value);return value}
+  createBufferSource(){const value=new BufferSource();this.bufferSources.push(value);return value}
+  createBuffer(channels,length,sampleRate){const data=new Float32Array(length),value={channels,length,sampleRate,getChannelData:()=>data};this.buffers.push(value);return value}
   async resume(){this.state='running'}
   close(){}
 }
@@ -115,9 +121,9 @@ test('track-aware playback preserves track and note identity on one shared timel
     {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'d1',pitch:38,startTick:480,durationTicks:120,velocity:111}]},
     {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b1',pitch:28,startTick:480,durationTicks:480,velocity:92}]}
   ],before=JSON.stringify(tracks);await synth.unlock();const result=synth.playTracks(tracks,{ppq:480,tempo:120});
-  assert.equal(result.ok,true);assert.equal(result.trackCount,3);assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,2);assert.equal(JSON.stringify(tracks),before);
-  assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.trackId,note.part,note.channel,note.program,note.noteId,note.pitch,note.startTick,note.durationTicks,note.velocity,note.audible]))),[
-    ['melody','melody',1,0,'m1',60,480,240,81,true],['drums','drums',10,null,'d1',38,480,120,111,false],['bass','bass',2,32,'b1',28,480,480,92,true]
+  assert.equal(result.ok,true);assert.equal(result.trackCount,3);assert.equal(result.noteCount,3);assert.equal(result.oscillatorCount,3);assert.equal(JSON.stringify(tracks),before);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.trackId,note.part,note.channel,note.program,note.noteId,note.pitch,note.startTick,note.durationTicks,note.velocity,note.audible,note.soundPath]))),[
+    ['melody','melody',1,0,'m1',60,480,240,81,true,'melody'],['drums','drums',10,null,'d1',38,480,120,111,true,'snare'],['bass','bass',2,32,'b1',28,480,480,92,true,'bass']
   ]);
   assert.equal(new Set(result.scheduledNotes.map(note=>note.startTime)).size,1);
 });
@@ -134,6 +140,25 @@ test('Stop cancels every audible voice from a multi-track schedule',async()=>{
     {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:960,velocity:80}]},
     {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b',pitch:36,startTick:0,durationTicks:960,velocity:90}]}
   ],{ppq:480,tempo:120});const voices=synth.context.oscillators.slice();assert.equal(synth.playingVoices,2);synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.equal(voices.every(oscillator=>oscillator.stopped.at(-1)<10.01),true);
+});
+test('GM 4Pad notes use distinct audible Kick Snare Closed Hat and Open Hat paths',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const result=synth.playTracks([{id:'drums',part:'drums',channel:10,program:null,notes:[36,38,42,46].map((pitch,index)=>({id:`d${pitch}`,pitch,startTick:index*120,durationTicks:120,velocity:70+index*10}))}],{ppq:480,tempo:120});
+  assert.deepEqual(JSON.parse(JSON.stringify(result.scheduledNotes.map(note=>[note.pitch,note.soundPath,note.audible,note.channel,note.program]))),[[36,'kick',true,10,null],[38,'snare',true,10,null],[42,'closed-hat',true,10,null],[46,'open-hat',true,10,null]]);
+  assert.equal(synth.context.bufferSources.length,3);assert.equal(synth.context.oscillators.length,2);assert.equal(synth.diagnostics.drumVoicesCreated,4);assert.equal(synth.diagnostics.noiseSourcesCreated,3);
+  const closed=synth.context.bufferSources[1],open=synth.context.bufferSources[2];assert.ok(open.stopped[0]-open.started[0]>closed.stopped[0]-closed.started[0]);
+});
+test('Bass uses a velocity-sensitive triangle low-pass path while Melody remains sine',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();const result=synth.playTracks([
+    {id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m',pitch:36,startTick:0,durationTicks:480,velocity:90}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b',pitch:36,startTick:0,durationTicks:480,velocity:45}]}
+  ],{ppq:480,tempo:120});assert.deepEqual(synth.context.oscillators.map(node=>node.type),['sine','triangle']);assert.equal(synth.context.filters.length,1);assert.equal(synth.context.filters[0].type,'lowpass');assert.equal(synth.context.filters[0].frequency.events[0][1],720);
+  assert.equal(result.scheduledNotes[1].soundPath,'bass');assert.equal(result.scheduledNotes[1].channel,2);assert.equal(result.scheduledNotes[1].program,32);assert.ok(synth.context.gains[2].gain.events[1][1]<synth.context.gains[1].gain.events[1][1]);
+});
+test('Stop cancels Drum noise oscillators and Bass voice without leaving active playback items',async()=>{
+  const synth=load().createSynth({AudioContext:Context});await synth.unlock();synth.playTracks([
+    {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'kick',pitch:36,startTick:0,durationTicks:960,velocity:100},{id:'snare',pitch:38,startTick:0,durationTicks:960,velocity:100}]},
+    {id:'bass',part:'bass',channel:2,program:32,notes:[{id:'bass',pitch:36,startTick:0,durationTicks:960,velocity:100}]}
+  ],{ppq:480,tempo:120});const oscillators=synth.context.oscillators.slice(),noise=synth.context.bufferSources.slice();assert.equal(synth.playingVoices,3);synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.equal(oscillators.every(source=>source.stopped.at(-1)<10.01),true);assert.equal(noise.every(source=>source.stopped.at(-1)<10.01),true);
 });
 test('scheduled note release holds the current envelope instead of re-attacking at full gain',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();

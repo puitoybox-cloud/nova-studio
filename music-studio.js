@@ -541,8 +541,9 @@
   async function synthPreview(pitch,velocity){const synth=melodySynth();if(!synth?.supported?.())return false;const scheduled=synth.previewNote(pitch,velocity,.35),unlocked=await synth.unlock();return Boolean(scheduled&&unlocked)}
   const pitchPreviewTimers=new Map();
   async function editorPreviewPitch(pitch,velocity=100){
-    const synth=melodySynth(),note=Math.max(0,Math.min(127,Math.round(Number(pitch)||0))),level=Math.max(1,Math.min(127,Math.round(Number(velocity)||100))),channel='piano-roll-preview';if(!synth?.supported?.())return false;
+    const synth=melodySynth(),note=Math.max(0,Math.min(127,Math.round(Number(pitch)||0))),level=Math.max(1,Math.min(127,Math.round(Number(velocity)||100))),channel='piano-roll-preview',part=state.midiEditor?.part||'melody';if(!synth?.supported?.())return false;
     const unlocked=await synth.unlock();if(!unlocked)return false;
+    if(part!=='melody'&&synth.previewTrackNote)return synth.previewTrackNote(part,note,level,.35);
     const previous=pitchPreviewTimers.get(note);if(previous!=null)root.clearTimeout?.(previous);pitchPreviewTimers.delete(note);synth.noteOff(note,channel);
     const started=synth.noteOn(note,level,channel),stop=()=>{synth.noteOff(note,channel);pitchPreviewTimers.delete(note)},timer=root.setTimeout?.(stop,350);if(timer!=null)pitchPreviewTimers.set(note,timer);
     return Boolean(started)
@@ -605,7 +606,7 @@
   function editorToggleCorrectionPreview(){if(!state.midiEditor?.correctionPreview)return editorPreviewCorrection();const preview=state.midiEditor.correctionPreview;preview.viewMode=preview.viewMode==='original'?'corrected':'original';repaintEditor();return preview.viewMode}
   function editorCancelCorrection(){root.MusicStudioEditor.cancelCorrection(state.midiEditor);repaintEditor()}
   function editorApplyCorrection(){root.MusicStudioEditor.applyCorrection(state.midiEditor);scheduleMidiEditorSave();notice('補正をMelodyへ適用しました。Undoで補正前へ戻せます。','success')}
-  function editorDrumInput(pitch){root.MusicStudioEditor.addNote(state.midiEditor,{pitch,durationTicks:Math.max(1,Math.round(state.midiEditor.midiData.ppq/2)),velocity:100});scheduleMidiEditorSave();repaintEditor()}
+  function editorDrumInput(pitch){editorPreviewPitch(pitch,100);root.MusicStudioEditor.addNote(state.midiEditor,{pitch,durationTicks:Math.max(1,Math.round(state.midiEditor.midiData.ppq/2)),velocity:100});scheduleMidiEditorSave();repaintEditor()}
   function editorGenerateCandidate(variant){const candidate=root.MusicStudioEditor.setCandidate(state.midiEditor,state.midiEditor.part,variant);if(!candidate)return notice('このパートには候補生成を接続していません。','info');notice(`${candidate.label}（${candidate.notes.length}ノート）を準備しました。採用するまで現在のトラックは変更されません。`,'info')}
   function editorApplyCandidate(){const part=state.midiEditor.part,candidate=state.midiEditor.candidates?.[part];if(!candidate)return notice('先に候補を生成してください。','info');root.MusicStudioEditor.applyCandidate(state.midiEditor,part);scheduleMidiEditorSave();notice(`${candidate.label}を${root.MusicStudioEditor.PARTS[part].name}トラックへ反映しました。`,'success')}
   function editorUpdateSelected(event){event?.preventDefault?.();const form=event?.target,note=editorNote(state.midiEditor),count=editorSelectedNotes(state.midiEditor).length;if(!form||!note)return;const velocity=Number(form.elements.velocity.value);if(count>1)root.MusicStudioEditor.setSelectedVelocity(state.midiEditor,velocity);else root.MusicStudioEditor.updateNote(state.midiEditor,note.id,{pitch:Number(form.elements.pitch.value),startTick:Number(form.elements.startTick.value),durationTicks:Number(form.elements.durationTicks.value),velocity});scheduleMidiEditorSave();repaintEditor()}

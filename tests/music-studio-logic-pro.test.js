@@ -248,6 +248,12 @@ test('Piano Roll helper UI exposes Snap, velocity colors, pitch preview, matchin
   app.editorUndo();app.editorUndo();
   assert.equal(JSON.stringify(core.selectedNotes(app.state.midiEditor).map(note=>[note.durationTicks,note.velocity])),'[[120,30],[360,120]]');
 });
+test('Piano Roll and Drum Pad previews select sounds by active track while Melody keeps noteOn preview',async()=>{
+  const{app}=load(),project=app.makeProject({projectId:'part-preview-sounds',projectName:'Part preview sounds'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const events=[];app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,previewTrackNote(...args){events.push(['track',...args]);return true},noteOff(...args){events.push(['off',...args]);return true},noteOn(...args){events.push(['on',...args]);return true}};
+  app.editorSelectPart('drums');app.editorDrumInput(38);await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(events[0],['track','drums',38,100,.35]);assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.part==='drums').notes.at(-1).pitch,38);
+  app.editorSelectPart('bass');assert.equal(await app.editorPreviewPitch(36,84),true);assert.deepEqual(events.at(-1),['track','bass',36,84,.35]);
+  app.editorSelectPart('melody');assert.equal(await app.editorPreviewPitch(60,77),true);assert.equal(events.at(-1)[0],'on');assert.equal(events.at(-1)[1],60);assert.equal(events.at(-1)[2],77);
+});
 test('Piano Roll note labels show English pitch fixed-do solfege and velocity by rendered width',()=>{
   const{app,window}=load(),notes=[
     {id:'c3',pitch:48,startTick:0,durationTicks:120,velocity:48},{id:'c4',pitch:60,startTick:120,durationTicks:240,velocity:82},{id:'sharp',pitch:61,startTick:360,durationTicks:480,velocity:95},
