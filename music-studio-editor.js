@@ -213,7 +213,7 @@
   }
   function partialEditProviderRequest(provider,payload,model){
     if(provider==='openai')return{url:'https://api.openai.com/v1/responses',headers:{'Content-Type':'application/json',Authorization:`Bearer ${model.apiKey}`},body:{model:model.name,input:clone(payload.messages),text:{format:{type:'json_schema',name:payload.structuredOutput.name,schema:clone(payload.structuredOutput.schema),strict:true}},store:false}};
-    const generationConfig={responseFormat:{text:{mimeType:payload.generationConfig.responseMimeType,schema:geminiResponseSchema(payload.generationConfig.responseSchema)}}};
+    const generationConfig={responseFormat:{text:{mimeType:'APPLICATION_JSON',schema:geminiResponseSchema(payload.generationConfig.responseSchema)}}};
     return{url:`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.name)}:generateContent`,headers:{'Content-Type':'application/json','x-goog-api-key':model.apiKey},body:{systemInstruction:clone(payload.systemInstruction),contents:clone(payload.contents),generationConfig}}
   }
   function partialEditHttpError(status,providerStatus,providerField){
