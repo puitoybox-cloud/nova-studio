@@ -187,6 +187,7 @@
   function createPartialEditProviderConfig(provider,options={}){
     if(!['openai','gemini'].includes(provider))throw Error('Unsupported partial edit provider.');
     if(!plainObject(options)||typeof options.apiKey!=='string'||!options.apiKey.trim())throw Error('Partial edit provider API key is required.');
+    if(typeof options.model==='string'&&/[\u0000-\u001f\u007f]/.test(options.model))throw Error('Invalid partial edit provider config: model');
     const config={version:1,provider,model:typeof options.model==='string'?options.model.trim():options.model},validation=validatePartialEditProviderConfig(config);
     if(!validation.ok)throw Error(`Invalid partial edit provider config: ${validation.errors.join(', ')}`);return clone(config)
   }
