@@ -202,9 +202,10 @@
     const compatible={};
     for(const[key,value]of Object.entries(schema)){
       if(key==='exclusiveMinimum')continue;
-      if(key==='const'){compatible.enum=[clone(value)];continue}
+      if(key==='const'){compatible.type=Number.isInteger(value)?'integer':typeof value;continue}
       compatible[key]=geminiResponseSchema(value)
     }
+    if(compatible.type===undefined&&Array.isArray(compatible.enum)&&compatible.enum.length&&compatible.enum.every(value=>typeof value==='string'))compatible.type='string';
     return compatible
   }
   function partialEditProviderRequest(provider,payload,model){
