@@ -144,7 +144,12 @@
   const PARTIAL_EDIT_EXECUTION_MESSAGES={
     'provider-error':'The provider did not return a usable result.',timeout:'The provider operation timed out.','empty-response':'The provider response was empty.','malformed-response':'The provider response could not be read safely.','provider-mismatch':'The response provider did not match the requested provider.','invalid-output':'The provider output did not match the partial edit output contract.'
   };
-  function partialEditExecutionError(provider,code){return{version:1,provider,status:'error',output:null,error:{code,message:PARTIAL_EDIT_EXECUTION_MESSAGES[code]}}}
+  function partialEditExecutionError(provider,code,diagnostic){
+    const error={code,message:PARTIAL_EDIT_EXECUTION_MESSAGES[code]};
+    if(Number.isInteger(diagnostic?.httpStatus)&&diagnostic.httpStatus>=100&&diagnostic.httpStatus<=599)error.httpStatus=diagnostic.httpStatus;
+    if(['request-schema-failure','authentication-failure','permission-failure','model-unavailable','rate-limit','provider-server-error','provider-error'].includes(diagnostic?.category))error.category=diagnostic.category;
+    return{version:1,provider,status:'error',output:null,error}
+  }
   function validPartialEditExecutionOutput(output){
     const range=output?.range;return plainObject(output)&&output.version===1&&typeof output.trackId==='string'&&output.trackId.length>0&&PARTS[output.part]&&plainObject(range)&&Number.isInteger(range.startMeasure)&&Number.isInteger(range.endMeasure)&&range.startMeasure<=range.endMeasure&&Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick&&Array.isArray(output.updates)&&Array.isArray(output.adds)&&Array.isArray(output.deletes)&&output.updates.every(note=>validPartialEditAINote(note,range))&&output.adds.every(note=>validPartialEditAINote(note,range))&&output.deletes.every(noteId=>typeof noteId==='string'&&noteId.length>0)
   }
@@ -157,7 +162,7 @@
     if(typeof response==='string'){try{wrapper=JSON.parse(response);direct=true}catch(_){return partialEditExecutionError(provider,'malformed-response')}}
     if(!plainObject(wrapper))return partialEditExecutionError(provider,'malformed-response');
     if(wrapper.provider!==undefined&&wrapper.provider!==provider)return partialEditExecutionError(provider,'provider-mismatch');
-    if(!direct&&wrapper.error!==undefined){if(!plainObject(wrapper.error))return partialEditExecutionError(provider,'malformed-response');return partialEditExecutionError(provider,wrapper.error.code==='timeout'?'timeout':'provider-error')}
+    if(!direct&&wrapper.error!==undefined){if(!plainObject(wrapper.error))return partialEditExecutionError(provider,'malformed-response');return partialEditExecutionError(provider,wrapper.error.code==='timeout'?'timeout':'provider-error',wrapper.error)}
     let output=direct?wrapper:provider==='openai'?wrapper.output:wrapper.content;
     if(output==null||(typeof output==='string'&&!output.trim()))return partialEditExecutionError(provider,'empty-response');
     if(typeof output==='string'){try{output=JSON.parse(output)}catch(_){return partialEditExecutionError(provider,'malformed-response')}}
@@ -170,7 +175,7 @@
       const value=clone(result),errors=[],keys=['version','provider','status','output','error'];
       if(!plainObject(result)||Object.keys(value).some(key=>!keys.includes(key))||value.version!==1||!['openai','gemini'].includes(value.provider)||!['success','error'].includes(value.status))errors.push('shape');
       if(value.status==='success'){if(!validPartialEditExecutionOutput(value.output)||value.error!==null)errors.push('success')}
-      else if(value.status==='error'){if(value.output!==null||!plainObject(value.error)||Object.keys(value.error).some(key=>!['code','message'].includes(key))||!PARTIAL_EDIT_EXECUTION_ERRORS.includes(value.error?.code)||typeof value.error?.message!=='string'||value.error.message.length<1||value.error.message.length>200||/[\u0000-\u001f\u007f]/.test(value.error.message))errors.push('error')}
+      else if(value.status==='error'){if(value.output!==null||!plainObject(value.error)||Object.keys(value.error).some(key=>!['code','message','httpStatus','category'].includes(key))||!PARTIAL_EDIT_EXECUTION_ERRORS.includes(value.error?.code)||typeof value.error?.message!=='string'||value.error.message.length<1||value.error.message.length>200||/[\u0000-\u001f\u007f]/.test(value.error.message)||value.error.httpStatus!==undefined&&(!Number.isInteger(value.error.httpStatus)||value.error.httpStatus<100||value.error.httpStatus>599)||value.error.category!==undefined&&!['request-schema-failure','authentication-failure','permission-failure','model-unavailable','rate-limit','provider-server-error','provider-error'].includes(value.error.category))errors.push('error')}
       return{ok:errors.length===0,errors:[...new Set(errors)]}
     }catch(_){return{ok:false,errors:['shape']}}
   }
@@ -191,9 +196,25 @@
     const config={version:1,provider,model:typeof options.model==='string'?options.model.trim():options.model},validation=validatePartialEditProviderConfig(config);
     if(!validation.ok)throw Error(`Invalid partial edit provider config: ${validation.errors.join(', ')}`);return clone(config)
   }
+  function geminiResponseSchema(schema){
+    if(Array.isArray(schema))return schema.map(geminiResponseSchema);
+    if(!plainObject(schema))return schema;
+    const compatible={};
+    for(const[key,value]of Object.entries(schema)){
+      if(key==='exclusiveMinimum')continue;
+      if(key==='const'){compatible.enum=[clone(value)];continue}
+      compatible[key]=geminiResponseSchema(value)
+    }
+    return compatible
+  }
   function partialEditProviderRequest(provider,payload,model){
     if(provider==='openai')return{url:'https://api.openai.com/v1/responses',headers:{'Content-Type':'application/json',Authorization:`Bearer ${model.apiKey}`},body:{model:model.name,input:clone(payload.messages),text:{format:{type:'json_schema',name:payload.structuredOutput.name,schema:clone(payload.structuredOutput.schema),strict:true}},store:false}};
-    return{url:`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.name)}:generateContent`,headers:{'Content-Type':'application/json','x-goog-api-key':model.apiKey},body:{systemInstruction:clone(payload.systemInstruction),contents:clone(payload.contents),generationConfig:clone(payload.generationConfig)}}
+    const generationConfig=clone(payload.generationConfig);generationConfig.responseSchema=geminiResponseSchema(generationConfig.responseSchema);
+    return{url:`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.name)}:generateContent`,headers:{'Content-Type':'application/json','x-goog-api-key':model.apiKey},body:{systemInstruction:clone(payload.systemInstruction),contents:clone(payload.contents),generationConfig}}
+  }
+  function partialEditHttpError(status){
+    const category=status===400?'request-schema-failure':status===401?'authentication-failure':status===403?'permission-failure':status===404?'model-unavailable':status===429?'rate-limit':status>=500&&status<=599?'provider-server-error':'provider-error';
+    return{code:'provider-error',httpStatus:status,category}
   }
   function partialEditProviderResponse(provider,response){
     if(provider==='openai'){
@@ -216,20 +237,20 @@
     try{
       const response=await fetcher(request.url,{method:'POST',headers:request.headers,body:JSON.stringify(request.body),signal:controller.signal});
       if(!response||typeof response.ok!=='boolean'||typeof response.text!=='function')return createPartialEditProviderExecutionResult(provider,{provider,error:{code:'provider-error'}});
-      if(!response.ok)return createPartialEditProviderExecutionResult(provider,{provider,error:{code:'provider-error'}});
+      if(!response.ok)return createPartialEditProviderExecutionResult(provider,{provider,error:partialEditHttpError(response.status)});
       const text=await response.text();if(!text.trim())return createPartialEditProviderExecutionResult(provider,null);
       let parsed;try{parsed=JSON.parse(text)}catch(_){return createPartialEditProviderExecutionResult(provider,'{malformed')}
       return createPartialEditProviderExecutionResult(provider,partialEditProviderResponse(provider,parsed))
     }catch(error){return createPartialEditProviderExecutionResult(provider,{provider,error:{code:error?.name==='AbortError'||controller.signal?.aborted?'timeout':'provider-error'}})}
     finally{root.clearTimeout(timer)}
   }
-  function partialEditLiveSmokeResult(ok,provider,model,stage,code){const result={ok,provider,model};if(!ok){result.stage=stage;result.code=code}return result}
+  function partialEditLiveSmokeResult(ok,provider,model,stage,code,diagnostic){const result={ok,provider,model};if(!ok){result.stage=stage;result.code=code;if(Number.isInteger(diagnostic?.httpStatus))result.httpStatus=diagnostic.httpStatus;if(typeof diagnostic?.category==='string')result.category=diagnostic.category}return result}
   async function runPartialEditLiveApiSmokeTest(input={},options={}){
     const config=input?.config,provider=['openai','gemini'].includes(config?.provider)?config.provider:null,model=typeof config?.model==='string'&&!/[\u0000-\u001f\u007f]/.test(config.model)?config.model:null;
     try{
       const configValidation=validatePartialEditProviderConfig(config);if(!configValidation.ok||typeof input?.apiKey!=='string'||!input.apiKey.trim())return partialEditLiveSmokeResult(false,provider,model,'config','invalid-input');
       const configSnapshot=clone(config),session=createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:1}},tracks:[{id:'smoke-melody',part:'melody',notes:[{id:'smoke-editable',pitch:60,startTick:0,durationTicks:120,velocity:80},{id:'smoke-locked',pitch:62,startTick:120,durationTicks:120,velocity:81,locked:true}]}]}}),request=createPartialEditRequest(session),aiInput=createPartialEditAIInput(request),instruction=createPartialEditInstruction({intent:'simpler',preserve:{rhythm:true,timing:true}}),promptContext=createPartialEditPromptContext(request,aiInput,instruction),payload=createPartialEditProviderPayload(configSnapshot.provider,promptContext),execution=await executePartialEditProviderRequest(configSnapshot.provider,payload,{config:configSnapshot,apiKey:input.apiKey,fetch:options.fetch,AbortController:options.AbortController,timeoutMs:options.timeoutMs});
-      if(!validatePartialEditProviderExecutionResult(execution).ok||execution.status!=='success')return partialEditLiveSmokeResult(false,provider,model,'transport',execution?.error?.code||'provider-error');
+      if(!validatePartialEditProviderExecutionResult(execution).ok||execution.status!=='success')return partialEditLiveSmokeResult(false,provider,model,'transport',execution?.error?.code||'provider-error',execution?.error);
       const output=extractPartialEditProviderOutput(execution),validation=validatePartialEditAIOutput(request,output);if(!validation.ok)return partialEditLiveSmokeResult(false,provider,model,'validation','invalid-output');
       const proposal=(options.parseOutput??parsePartialEditAIOutput)(request,output);createPartialEditResult(request,proposal);
       return partialEditLiveSmokeResult(true,provider,model)
