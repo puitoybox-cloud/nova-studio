@@ -140,6 +140,41 @@
       return{ok:errors.length===0,errors:[...new Set(errors)]}
     }catch(_){return{ok:false,errors:['shape']}}
   }
+  const PARTIAL_EDIT_EXECUTION_ERRORS=['provider-error','timeout','empty-response','malformed-response','provider-mismatch','invalid-output'];
+  const PARTIAL_EDIT_EXECUTION_MESSAGES={
+    'provider-error':'The provider did not return a usable result.',timeout:'The provider operation timed out.','empty-response':'The provider response was empty.','malformed-response':'The provider response could not be read safely.','provider-mismatch':'The response provider did not match the requested provider.','invalid-output':'The provider output did not match the partial edit output contract.'
+  };
+  function partialEditExecutionError(provider,code){return{version:1,provider,status:'error',output:null,error:{code,message:PARTIAL_EDIT_EXECUTION_MESSAGES[code]}}}
+  function validPartialEditExecutionOutput(output){
+    const range=output?.range;return plainObject(output)&&output.version===1&&typeof output.trackId==='string'&&output.trackId.length>0&&PARTS[output.part]&&plainObject(range)&&Number.isInteger(range.startMeasure)&&Number.isInteger(range.endMeasure)&&range.startMeasure<=range.endMeasure&&Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick&&Array.isArray(output.updates)&&Array.isArray(output.adds)&&Array.isArray(output.deletes)&&output.updates.every(note=>validPartialEditAINote(note,range))&&output.adds.every(note=>validPartialEditAINote(note,range))&&output.deletes.every(noteId=>typeof noteId==='string'&&noteId.length>0)
+  }
+  function partialEditExecutionNote(note){return{id:note.id,pitch:note.pitch,startTick:note.startTick,durationTicks:note.durationTicks,velocity:note.velocity}}
+  function partialEditExecutionOutput(output){return{version:1,trackId:String(output.trackId),part:output.part,range:clone(output.range),updates:output.updates.map(partialEditExecutionNote),adds:output.adds.map(partialEditExecutionNote),deletes:clone(output.deletes)}}
+  function createPartialEditProviderExecutionResult(provider,response){
+    if(!['openai','gemini'].includes(provider))throw Error('Unsupported partial edit provider.');
+    if(response==null||(typeof response==='string'&&!response.trim()))return partialEditExecutionError(provider,'empty-response');
+    let wrapper=response,direct=false;
+    if(typeof response==='string'){try{wrapper=JSON.parse(response);direct=true}catch(_){return partialEditExecutionError(provider,'malformed-response')}}
+    if(!plainObject(wrapper))return partialEditExecutionError(provider,'malformed-response');
+    if(wrapper.provider!==undefined&&wrapper.provider!==provider)return partialEditExecutionError(provider,'provider-mismatch');
+    if(!direct&&wrapper.error!==undefined){if(!plainObject(wrapper.error))return partialEditExecutionError(provider,'malformed-response');return partialEditExecutionError(provider,wrapper.error.code==='timeout'?'timeout':'provider-error')}
+    let output=direct?wrapper:provider==='openai'?wrapper.output:wrapper.content;
+    if(output==null||(typeof output==='string'&&!output.trim()))return partialEditExecutionError(provider,'empty-response');
+    if(typeof output==='string'){try{output=JSON.parse(output)}catch(_){return partialEditExecutionError(provider,'malformed-response')}}
+    if(!plainObject(output))return partialEditExecutionError(provider,'malformed-response');
+    if(!validPartialEditExecutionOutput(output))return partialEditExecutionError(provider,'invalid-output');
+    return{version:1,provider,status:'success',output:partialEditExecutionOutput(output),error:null}
+  }
+  function validatePartialEditProviderExecutionResult(result){
+    try{
+      const value=clone(result),errors=[],keys=['version','provider','status','output','error'];
+      if(!plainObject(result)||Object.keys(value).some(key=>!keys.includes(key))||value.version!==1||!['openai','gemini'].includes(value.provider)||!['success','error'].includes(value.status))errors.push('shape');
+      if(value.status==='success'){if(!validPartialEditExecutionOutput(value.output)||value.error!==null)errors.push('success')}
+      else if(value.status==='error'){if(value.output!==null||!plainObject(value.error)||Object.keys(value.error).some(key=>!['code','message'].includes(key))||!PARTIAL_EDIT_EXECUTION_ERRORS.includes(value.error?.code)||typeof value.error?.message!=='string'||value.error.message.length<1||value.error.message.length>200||/[\u0000-\u001f\u007f]/.test(value.error.message))errors.push('error')}
+      return{ok:errors.length===0,errors:[...new Set(errors)]}
+    }catch(_){return{ok:false,errors:['shape']}}
+  }
+  function extractPartialEditProviderOutput(result){const validation=validatePartialEditProviderExecutionResult(result);if(!validation.ok||result?.status!=='success')throw Error('Partial edit provider execution result is not successful.');return clone(result.output)}
   function partialEditPreviewSnapshot(request,result){
     const requestSnapshot=clone(request),resultSnapshot=clone(result),beforeNotes=clone(requestSnapshot?.notes||[]).sort(compareRequestNotes),afterById=new Map(beforeNotes.map(note=>[note.id,clone(note)])),changes=resultSnapshot?.changes||{};
     for(const note of changes.updates||[])afterById.set(note.id,clone(note));
@@ -304,5 +339,5 @@
   function cancelCorrection(session){session.correctionPreview=null;return session}
   function applyCorrection(session){const preview=session.correctionPreview;if(session.part!=='melody'||!preview)return session;change(session,()=>{currentTrack(session).notes=clone(preview.correctedNotes);session.selectedNoteId=null;session.selectedNoteIds=[]});session.correctionPreview=null;return session}
   function position(note,midiData){const ticksPerBeat=midiData.ppq*4/midiData.timeSignature.denominator,ticksPerMeasure=ticksPerBeat*midiData.timeSignature.numerator;return{measure:Math.floor(note.startTick/ticksPerMeasure)+1,beat:(note.startTick%ticksPerMeasure)/ticksPerBeat+1,ticksPerBeat,ticksPerMeasure}}
-  root.MusicStudioEditor={PARTS,normalizeNote,isNoteLocked,editableNotes,normalizeEditRange,measureRangeToTicks,notesInRange,editableNotesInRange,createPartialEditRequest,validatePartialEditRequest,createPartialEditResult,validatePartialEditResult,createPartialEditAIInput,parsePartialEditAIOutput,validatePartialEditAIOutput,createPartialEditInstruction,validatePartialEditInstruction,createPartialEditPromptContext,createPartialEditProviderPayload,validatePartialEditProviderPayload,createPartialEditPreview,validatePartialEditPreview,applyPartialEditPreview,createPartialEditSession,attachPartialEditResult,attachPartialEditPreview,applyPartialEditSession,cancelPartialEditSession,setEditRange,normalizeTrack,normalizeMidiData,createSession,currentTrack,selectedIds,selectedNotes,selectPart,selectNote,selectAllNotes,clearNoteSelection,addNote,addNotes,addNotesToPart,updateNote,updateSelectedNotes,moveSelected,resizeSelected,setSelectedVelocity,matchSelectedDuration,matchSelectedVelocity,deleteSelected,lockSelectedNotes,unlockSelectedNotes,undo,redo,copy,paste,duplicateSelected,extendTimelineMeasures,removeTimelineMeasures,toggleMeasure,setSelectedMeasures,toggleLockSelected,prepareRegeneration,makeDrumCandidate,makeBassCandidate,setCandidate,applyCandidate,quantizeTicks,quantizeSelectedStarts,correctionKeys,correctionScalePitchClasses,transposeSemitones,previewTranspose,cancelTranspose,applyTranspose,noteLengthTicks,previewNoteLength,cancelNoteLength,applyNoteLength,trimShortSamePitchOverlaps,correctedNotes,previewCorrection,cancelCorrection,applyCorrection,setLoopRange,setLoopEnabled,updateDirty,markSaved,position,clone};
+  root.MusicStudioEditor={PARTS,normalizeNote,isNoteLocked,editableNotes,normalizeEditRange,measureRangeToTicks,notesInRange,editableNotesInRange,createPartialEditRequest,validatePartialEditRequest,createPartialEditResult,validatePartialEditResult,createPartialEditAIInput,parsePartialEditAIOutput,validatePartialEditAIOutput,createPartialEditInstruction,validatePartialEditInstruction,createPartialEditPromptContext,createPartialEditProviderPayload,validatePartialEditProviderPayload,createPartialEditProviderExecutionResult,validatePartialEditProviderExecutionResult,extractPartialEditProviderOutput,createPartialEditPreview,validatePartialEditPreview,applyPartialEditPreview,createPartialEditSession,attachPartialEditResult,attachPartialEditPreview,applyPartialEditSession,cancelPartialEditSession,setEditRange,normalizeTrack,normalizeMidiData,createSession,currentTrack,selectedIds,selectedNotes,selectPart,selectNote,selectAllNotes,clearNoteSelection,addNote,addNotes,addNotesToPart,updateNote,updateSelectedNotes,moveSelected,resizeSelected,setSelectedVelocity,matchSelectedDuration,matchSelectedVelocity,deleteSelected,lockSelectedNotes,unlockSelectedNotes,undo,redo,copy,paste,duplicateSelected,extendTimelineMeasures,removeTimelineMeasures,toggleMeasure,setSelectedMeasures,toggleLockSelected,prepareRegeneration,makeDrumCandidate,makeBassCandidate,setCandidate,applyCandidate,quantizeTicks,quantizeSelectedStarts,correctionKeys,correctionScalePitchClasses,transposeSemitones,previewTranspose,cancelTranspose,applyTranspose,noteLengthTicks,previewNoteLength,cancelNoteLength,applyNoteLength,trimShortSamePitchOverlaps,correctedNotes,previewCorrection,cancelCorrection,applyCorrection,setLoopRange,setLoopEnabled,updateDirty,markSaved,position,clone};
 })(typeof window!=='undefined'?window:globalThis);
