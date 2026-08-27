@@ -144,11 +144,13 @@
   const PARTIAL_EDIT_EXECUTION_MESSAGES={
     'provider-error':'The provider did not return a usable result.',timeout:'The provider operation timed out.','empty-response':'The provider response was empty.','malformed-response':'The provider response could not be read safely.','provider-mismatch':'The response provider did not match the requested provider.','invalid-output':'The provider output did not match the partial edit output contract.'
   };
+  function validProviderField(value){return typeof value==='string'&&value.length>=1&&value.length<=200&&/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\[[0-9]+\])*$/.test(value)}
   function partialEditExecutionError(provider,code,diagnostic){
     const error={code,message:PARTIAL_EDIT_EXECUTION_MESSAGES[code]};
     if(Number.isInteger(diagnostic?.httpStatus)&&diagnostic.httpStatus>=100&&diagnostic.httpStatus<=599)error.httpStatus=diagnostic.httpStatus;
     if(['INVALID_ARGUMENT','FAILED_PRECONDITION','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','RESOURCE_EXHAUSTED','INTERNAL','UNAVAILABLE'].includes(diagnostic?.providerStatus))error.providerStatus=diagnostic.providerStatus;
     if(['request-invalid','provider-precondition-failure','authentication-failure','permission-failure','model-unavailable','rate-limit','provider-server-error','provider-error'].includes(diagnostic?.category))error.category=diagnostic.category;
+    if(validProviderField(diagnostic?.providerField))error.providerField=diagnostic.providerField;
     return{version:1,provider,status:'error',output:null,error}
   }
   function validPartialEditExecutionOutput(output){
@@ -176,7 +178,7 @@
       const value=clone(result),errors=[],keys=['version','provider','status','output','error'];
       if(!plainObject(result)||Object.keys(value).some(key=>!keys.includes(key))||value.version!==1||!['openai','gemini'].includes(value.provider)||!['success','error'].includes(value.status))errors.push('shape');
       if(value.status==='success'){if(!validPartialEditExecutionOutput(value.output)||value.error!==null)errors.push('success')}
-      else if(value.status==='error'){if(value.output!==null||!plainObject(value.error)||Object.keys(value.error).some(key=>!['code','message','httpStatus','providerStatus','category'].includes(key))||!PARTIAL_EDIT_EXECUTION_ERRORS.includes(value.error?.code)||typeof value.error?.message!=='string'||value.error.message.length<1||value.error.message.length>200||/[\u0000-\u001f\u007f]/.test(value.error.message)||value.error.httpStatus!==undefined&&(!Number.isInteger(value.error.httpStatus)||value.error.httpStatus<100||value.error.httpStatus>599)||value.error.providerStatus!==undefined&&!['INVALID_ARGUMENT','FAILED_PRECONDITION','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','RESOURCE_EXHAUSTED','INTERNAL','UNAVAILABLE'].includes(value.error.providerStatus)||value.error.category!==undefined&&!['request-invalid','provider-precondition-failure','authentication-failure','permission-failure','model-unavailable','rate-limit','provider-server-error','provider-error'].includes(value.error.category))errors.push('error')}
+      else if(value.status==='error'){if(value.output!==null||!plainObject(value.error)||Object.keys(value.error).some(key=>!['code','message','httpStatus','providerStatus','category','providerField'].includes(key))||!PARTIAL_EDIT_EXECUTION_ERRORS.includes(value.error?.code)||typeof value.error?.message!=='string'||value.error.message.length<1||value.error.message.length>200||/[\u0000-\u001f\u007f]/.test(value.error.message)||value.error.httpStatus!==undefined&&(!Number.isInteger(value.error.httpStatus)||value.error.httpStatus<100||value.error.httpStatus>599)||value.error.providerStatus!==undefined&&!['INVALID_ARGUMENT','FAILED_PRECONDITION','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','RESOURCE_EXHAUSTED','INTERNAL','UNAVAILABLE'].includes(value.error.providerStatus)||value.error.category!==undefined&&!['request-invalid','provider-precondition-failure','authentication-failure','permission-failure','model-unavailable','rate-limit','provider-server-error','provider-error'].includes(value.error.category)||value.error.providerField!==undefined&&!validProviderField(value.error.providerField))errors.push('error')}
       return{ok:errors.length===0,errors:[...new Set(errors)]}
     }catch(_){return{ok:false,errors:['shape']}}
   }
@@ -214,14 +216,14 @@
     const generationConfig={responseFormat:{text:{mimeType:payload.generationConfig.responseMimeType,schema:geminiResponseSchema(payload.generationConfig.responseSchema)}}};
     return{url:`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model.name)}:generateContent`,headers:{'Content-Type':'application/json','x-goog-api-key':model.apiKey},body:{systemInstruction:clone(payload.systemInstruction),contents:clone(payload.contents),generationConfig}}
   }
-  function partialEditHttpError(status,providerStatus){
+  function partialEditHttpError(status,providerStatus,providerField){
     const categories={INVALID_ARGUMENT:'request-invalid',FAILED_PRECONDITION:'provider-precondition-failure',UNAUTHENTICATED:'authentication-failure',PERMISSION_DENIED:'permission-failure',NOT_FOUND:'model-unavailable',RESOURCE_EXHAUSTED:'rate-limit',INTERNAL:'provider-server-error',UNAVAILABLE:'provider-server-error'},category=categories[providerStatus]??(status===401?'authentication-failure':status===403?'permission-failure':status===404?'model-unavailable':status===429?'rate-limit':status>=500&&status<=599?'provider-server-error':'provider-error');
-    return{code:'provider-error',httpStatus:status,providerStatus,category}
+    const diagnostic={code:'provider-error',httpStatus:status,providerStatus,category};if(validProviderField(providerField))diagnostic.providerField=providerField;return diagnostic
   }
   async function partialEditGeminiHttpError(response){
-    let providerStatus;
-    try{const parsed=JSON.parse(await response.text());if(plainObject(parsed?.error)&&['INVALID_ARGUMENT','FAILED_PRECONDITION','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','RESOURCE_EXHAUSTED','INTERNAL','UNAVAILABLE'].includes(parsed.error.status))providerStatus=parsed.error.status}catch(_){}
-    return partialEditHttpError(response.status,providerStatus)
+    let providerStatus,providerField;
+    try{const parsed=JSON.parse(await response.text()),error=parsed?.error;if(plainObject(error)&&['INVALID_ARGUMENT','FAILED_PRECONDITION','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','RESOURCE_EXHAUSTED','INTERNAL','UNAVAILABLE'].includes(error.status))providerStatus=error.status;if(plainObject(error)&&Array.isArray(error.details)){for(const detail of error.details){if(!plainObject(detail)||!['type.googleapis.com/google.rpc.BadRequest','https://type.googleapis.com/google.rpc.BadRequest'].includes(detail['@type'])||!Array.isArray(detail.fieldViolations))continue;providerField=detail.fieldViolations.find(violation=>plainObject(violation)&&validProviderField(violation.field))?.field;if(providerField)break}}}catch(_){}
+    return partialEditHttpError(response.status,providerStatus,providerField)
   }
   function partialEditProviderResponse(provider,response){
     if(provider==='openai'){
@@ -251,7 +253,7 @@
     }catch(error){return createPartialEditProviderExecutionResult(provider,{provider,error:{code:error?.name==='AbortError'||controller.signal?.aborted?'timeout':'provider-error'}})}
     finally{root.clearTimeout(timer)}
   }
-  function partialEditLiveSmokeResult(ok,provider,model,stage,code,diagnostic){const result={ok,provider,model};if(!ok){result.stage=stage;result.code=code;if(Number.isInteger(diagnostic?.httpStatus))result.httpStatus=diagnostic.httpStatus;if(typeof diagnostic?.providerStatus==='string')result.providerStatus=diagnostic.providerStatus;if(typeof diagnostic?.category==='string')result.category=diagnostic.category}return result}
+  function partialEditLiveSmokeResult(ok,provider,model,stage,code,diagnostic){const result={ok,provider,model};if(!ok){result.stage=stage;result.code=code;if(Number.isInteger(diagnostic?.httpStatus))result.httpStatus=diagnostic.httpStatus;if(typeof diagnostic?.providerStatus==='string')result.providerStatus=diagnostic.providerStatus;if(typeof diagnostic?.category==='string')result.category=diagnostic.category;if(validProviderField(diagnostic?.providerField))result.providerField=diagnostic.providerField}return result}
   async function runPartialEditLiveApiSmokeTest(input={},options={}){
     const config=input?.config,provider=['openai','gemini'].includes(config?.provider)?config.provider:null,model=typeof config?.model==='string'&&!/[\u0000-\u001f\u007f]/.test(config.model)?config.model:null;
     try{
