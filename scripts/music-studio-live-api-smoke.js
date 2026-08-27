@@ -6,8 +6,8 @@ require('../music-studio-editor.js');
 const provider=process.argv[2];
 const diagnosticMode=process.argv[3];
 const environments={openai:{apiKey:'OPENAI_API_KEY',model:'OPENAI_MODEL'},gemini:{apiKey:'GEMINI_API_KEY',model:'GEMINI_MODEL'}};
-if(!environments[provider]||process.argv.length>4||diagnosticMode!==undefined&&(provider!=='gemini'||diagnosticMode!=='no-schema')){
-  process.stderr.write('Usage: node scripts/music-studio-live-api-smoke.js <openai|gemini> [no-schema]\n');
+if(!environments[provider]||process.argv.length>4||diagnosticMode!==undefined&&(provider!=='gemini'||!['no-schema','no-response-format'].includes(diagnosticMode))){
+  process.stderr.write('Usage: node scripts/music-studio-live-api-smoke.js <openai|gemini> [no-schema|no-response-format]\n');
   process.exitCode=2;
 }else{
   const names=environments[provider],apiKey=process.env[names.apiKey],model=process.env[names.model];
