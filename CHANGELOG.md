@@ -1,5 +1,27 @@
 # Nova Studio Changelog
 
+## Music Studio 0.4開発系列（PR #185〜#199）
+
+この見出しの`0.4`はGit branch／PRで使用した開発系列名であり、アプリの`APP_VERSION 1.4.0`、`music-studio-project` schema Version 1、`MS-xx`作業番号とは別の管理軸である。
+
+### 完了した基盤
+
+- Note LockとEdit Rangeを追加し、locked note／range外noteをPartial Edit対象から除外
+- Partial Editのrequest、result、preview、apply、session、UI基盤を追加し、Apply前非破壊、stale state拒否、1回のUndo／Redo単位を固定
+- AI input、structured instruction、prompt contextとOpenAI／Gemini Provider Adapterを追加
+- provider execution boundary、Transport、Config、runtime credential／model注入、credential非保持を追加
+- 30秒既定・120秒上限のtimeout、AbortController、HTTP／provider status mappingと安全な診断field抽出を追加
+- OpenAI Structured Outputs向けschema互換変換とGemini向けschema互換変換をprovider別に追加
+- OpenAI／Gemini Minimal Live API Smoke CLIとoffline検証を追加し、失敗時のCLI終了コードを非0に統一
+- OpenAI `gpt-5.6-luna`でE2E `ok:true`を確認
+- Gemini `gemini-3.7-flash`でtransport到達後のtimeoutおよびHTTP 503／`UNAVAILABLE`／`provider-server-error`分類を確認
+
+### 残作業・確認状態
+
+- Partial Edit UIはローカルの`Pitch +1 Preview`までで、実providerを呼ぶworkflowは未接続
+- Gemini E2E `ok:true`は未達。API key、model、transport到達とprovider障害の安全分類は確認済みで、`ok:true`はPR #199のMerge必須条件ではない
+- Music Studio 0.5の正式な開始条件とscopeは未定義
+
 ## MS-06（MIDI読み込み・解析・安全な再編集基盤）
 
 - DOM非依存のStandard MIDI File Type 0／1 parser、厳格なheader／track境界、VLQ decode、Running Status、Meta／SysEx／channel event、tempo／拍子map、note組立、Program／Control Change保持を追加
