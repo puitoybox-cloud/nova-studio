@@ -4,10 +4,9 @@
 require('../music-studio-editor.js');
 
 const provider=process.argv[2];
-const diagnosticMode=process.argv[3];
 const environments={openai:{apiKey:'OPENAI_API_KEY',model:'OPENAI_MODEL'},gemini:{apiKey:'GEMINI_API_KEY',model:'GEMINI_MODEL'}};
-if(!environments[provider]||process.argv.length>4||diagnosticMode!==undefined&&(provider!=='gemini'||!['no-schema','no-response-format','no-generation-config','no-system-instruction'].includes(diagnosticMode))){
-  process.stderr.write('Usage: node scripts/music-studio-live-api-smoke.js <openai|gemini> [no-schema|no-response-format|no-generation-config|no-system-instruction]\n');
+if(!environments[provider]||process.argv.length>3){
+  process.stderr.write('Usage: node scripts/music-studio-live-api-smoke.js <openai|gemini>\n');
   process.exitCode=2;
 }else{
   const names=environments[provider],apiKey=process.env[names.apiKey],model=process.env[names.model];
@@ -15,6 +14,6 @@ if(!environments[provider]||process.argv.length>4||diagnosticMode!==undefined&&(
     process.stdout.write(JSON.stringify({ok:false,provider,modelAvailable:Boolean(model),credentialAvailable:Boolean(apiKey),stage:'config',code:'unavailable'})+'\n');
   }else{
     const config=globalThis.MusicStudioEditor.createPartialEditProviderConfig(provider,{apiKey,model});
-    globalThis.MusicStudioEditor.runPartialEditLiveApiSmokeTest({config,apiKey},{geminiDiagnosticMode:diagnosticMode}).then(result=>{process.stdout.write(JSON.stringify(result)+'\n');if(!result.ok)process.exitCode=1});
+    globalThis.MusicStudioEditor.runPartialEditLiveApiSmokeTest({config,apiKey}).then(result=>{process.stdout.write(JSON.stringify(result)+'\n');if(!result.ok)process.exitCode=1});
   }
 }
