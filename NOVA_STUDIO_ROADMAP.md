@@ -63,6 +63,17 @@
 
 ## Music Studio正式ロードマップ
 
+### 現在のVersion管理軸
+
+Music Studioには用途の異なる複数の管理軸がある。これらは同じVersion体系ではなく、相互に自動換算しない。
+
+- `APP_VERSION`：アプリが設定・project metadataへ記録する実装版。現在は `1.4.0`。
+- `music-studio-project` schema：保存projectの互換境界。現在は Version 1（`schemaVersion: 1.0`）。
+- `MS-xx`：基礎設計、保存、Logic Pro連携等の作業単位。
+- Music Studio `0.1`〜`0.4`：Git branch／PRで使用した開発系列名。`0.4`はPR #185〜#199に対応する。
+
+`APP_VERSION`、project schema、`MS-xx`、開発系列名を統合する正式規則はrepository内で定義されていない。
+
 | ID | 状態 | 作業内容 | 完了条件・次作業 |
 | --- | --- | --- | --- |
 | MS-00〜MS-00C | ✅ 完成 | 分離基盤、Version 1契約、ライセンス台帳 | 単体配布可能な保存・route境界を維持。 |
@@ -72,11 +83,41 @@
 | MS-04 | 🔵 ティア確認待ち | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復を採用。専用案内、事前検証、音声一時参照を実装。実機受入後に完成判定。 |
 | MS-05 | 🟨 ティア確認待ち | Standard MIDI File生成・検証基盤 | 依存なしType 1 writer、tempo・拍子・UTF-8 track名、複数track、内部再解析、履歴、無data無出力、118テスト。Logic Pro実機確認待ち。 |
 | MS-06 | 🟨 ティア確認待ち | Logic Pro MIDI読み込み・解析・安全な再編集基盤 | 独立Type 0/1 parser、Running Status、Meta／channel event、tempo／拍子map、note組立、Program／CC保持、preview、新規／複製、履歴、MS-05往復。 |
-| MS-07 | ⬜ 次の正式作業 | MIDI Composerホーム・骨組み | MS-06解析基盤を再利用し編集入口と責務境界を整備する。 |
+| MS-07 | 🟡 実装済み・継続改善 | MIDI Composerホーム・共通Editor | MS-06解析基盤を再利用した編集入口、Melody／Drums／Bass共通Editor、保存・再生・録音・部分編集基盤がmainに存在する。独立したMS-07受入完了記録は確認できない。 |
 
 MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_INTEGRATION.md` を正本とする。Logic Proの自動起動・直接操作・project file編集、外部送信は採用しない。
 
 MS-06の解析仕様、保存境界、性能上限、既知の制限は `docs/music-studio/MS-06_MIDI_IMPORT.md` を正本とする。
+
+### Music Studio 0.4開発系列の現在地
+
+PR #185〜#199で、次をmainへ追加した。
+
+- Note LockとEdit Range
+- Partial Editのrequest、result、preview、apply、session、UI基盤
+- AI input、structured instruction、prompt context
+- OpenAI／Gemini Provider Adapter、execution boundary、Transport、Config
+- runtime credential／model注入とcredential非保持
+- timeout、HTTP／provider errorの安全な分類とallowlist診断
+- OpenAI Structured OutputsおよびGemini schema互換変換
+- OpenAI／Gemini Minimal Live API Smoke CLI
+- OpenAI実接続 `ok:true`
+- Geminiのtimeout、HTTP 503、`UNAVAILABLE`、`provider-server-error`分類確認
+
+0.4基盤の残作業として確認できるもの：
+
+- Partial Edit UIは現在もローカルの `Pitch +1 Preview`を使用しており、実provider workflowとは未統合。
+- GeminiはAPI key、model、transport到達と503分類まで確認済みだが、E2E `ok:true`は未確認。これはPR #199のMerge必須条件ではなく、provider一時障害だけを理由に即時実装修正は行わない。
+
+### 0.5の状態と次候補
+
+Music Studio 0.5の正式な開始条件、scope、優先順位は未定義である。開始を宣言する前に、次を決定する。
+
+1. roadmap、CHANGELOG、画面上の開発段階表記を最新mainへ同期し、0.4 cleanupを完了扱いにするか。
+2. Partial Edit provider UI接続を0.4の残作業とするか、0.5最初のfeature PRとするか。
+3. provider実行UI、Track playback／Mute／Solo、GM Drum Map／input assignment、Logic Pro実機受入、home上のplanned機能から次期優先項目を選ぶ。
+
+これらは検討候補であり、正式な0.5 entry conditionではない。次のMS番号も未定義のため、この文書では新設しない。
 
 ## LINK-01着手前にティアが決めること
 
