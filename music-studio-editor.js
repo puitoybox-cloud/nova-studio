@@ -217,11 +217,13 @@
     if(compatible.type===undefined&&Array.isArray(compatible.enum)&&compatible.enum.length&&compatible.enum.every(value=>typeof value==='string'))compatible.type='string';
     return compatible
   }
-  function openAIResponseSchema(schema){
-    if(Array.isArray(schema))return schema.map(openAIResponseSchema);
+  function openAIResponseSchema(schema,isRoot=true){
+    if(Array.isArray(schema))return schema.map(value=>openAIResponseSchema(value,false));
     if(!plainObject(schema))return schema;
-    const compatible={};for(const[key,value]of Object.entries(schema))compatible[key]=openAIResponseSchema(value);
+    const compatible={};for(const[key,value]of Object.entries(schema))compatible[key]=openAIResponseSchema(value,false);
     if(compatible.type==='object')compatible.additionalProperties=false;
+    if(isRoot&&compatible.type==='object'&&plainObject(compatible.properties?.version)&&compatible.properties.version.const===1)compatible.properties.version={type:'integer',enum:[1]};
+    if(isRoot&&compatible.type==='object'&&plainObject(compatible.properties?.part)&&Array.isArray(compatible.properties.part.enum)&&compatible.properties.part.enum.every(value=>typeof value==='string'))compatible.properties.part={type:'string',enum:clone(compatible.properties.part.enum)};
     return compatible
   }
   function partialEditProviderRequest(provider,payload,model){
