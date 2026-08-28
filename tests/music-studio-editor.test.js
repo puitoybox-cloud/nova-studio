@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
+const{spawnSync}=require('node:child_process');
 
 function load(){
   const window={crypto:{randomUUID:(()=>{let value=0;return()=>`id-${++value}`})()},AbortController,setTimeout,clearTimeout};
@@ -12,6 +13,17 @@ function load(){
 }
 function project(){return{projectId:'p1',musicalSettings:{bpm:128,timeSignature:{numerator:4,denominator:4}},midiData:{version:1,ppq:480,tempoMap:[{tick:0,bpm:128}],tracks:[{id:'lead',name:'Lead',channel:1,notes:[{id:'n1',pitch:60,startTick:0,durationTicks:480,velocity:90,releaseVelocity:12}]},{id:'low',name:'Bass',channel:2,notes:[{id:'b1',pitch:36,startTick:0,durationTicks:960,velocity:80}]}]}}}
 function adapterFixture(core){const session=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:1}},tracks:[{id:'m-track',part:'melody',notes:[{id:'m-open',pitch:60,startTick:0,durationTicks:120,velocity:80,metadata:{take:1}},{id:'m-delete',pitch:64,startTick:240,durationTicks:120,velocity:82},{id:'m-lock',pitch:62,startTick:120,durationTicks:120,velocity:81,locked:true},{id:'m-out',pitch:67,startTick:1920,durationTicks:120,velocity:83}]},{id:'d-track',part:'drums',notes:[{id:'d-open',pitch:36,startTick:0,durationTicks:120,velocity:100}]},{id:'b-track',part:'bass',notes:[{id:'b-open',pitch:40,startTick:0,durationTicks:240,velocity:90}]}]}});return{session,request:core.createPartialEditRequest(session)}}
+function runSmokeCli(provider,{openaiKey,openaiModel,geminiKey,geminiModel,mode}={}){
+  const script=path.join(__dirname,'..','scripts','music-studio-live-api-smoke.js'),source=`
+    const script=process.env.NOVA_SMOKE_SCRIPT,provider=process.env.NOVA_SMOKE_PROVIDER;
+    process.argv=[process.execPath,script,provider];
+    if(process.env.NOVA_SMOKE_MODE==='success')globalThis.fetch=async()=>({ok:true,text:async()=>JSON.stringify({output_text:JSON.stringify({version:1,trackId:'smoke-melody',part:'melody',range:{startMeasure:1,endMeasure:1,startTick:0,endTick:1920},updates:[],adds:[],deletes:[]})})});
+    if(process.env.NOVA_SMOKE_MODE==='provider-error')globalThis.fetch=async()=>({ok:false,status:503,headers:{get:()=>null},text:async()=>JSON.stringify({error:{type:'server_error',message:'not exposed'}})});
+    if(process.env.NOVA_SMOKE_MODE==='timeout'){globalThis.setTimeout=callback=>{queueMicrotask(callback);return 1};globalThis.clearTimeout=()=>{};globalThis.fetch=async(_url,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>{const error=Error('aborted');error.name='AbortError';reject(error)}))}
+    require(script);
+  `,env={PATH:process.env.PATH,NOVA_SMOKE_SCRIPT:script,NOVA_SMOKE_PROVIDER:provider??'',NOVA_SMOKE_MODE:mode??'',...(openaiKey===undefined?{}:{OPENAI_API_KEY:openaiKey}),...(openaiModel===undefined?{}:{OPENAI_MODEL:openaiModel}),...(geminiKey===undefined?{}:{GEMINI_API_KEY:geminiKey}),...(geminiModel===undefined?{}:{GEMINI_MODEL:geminiModel})},run=spawnSync(process.execPath,['-e',source],{cwd:path.join(__dirname,'..'),env,encoding:'utf8'});
+  return{...run,result:run.stdout.trim()?JSON.parse(run.stdout):null}
+}
 
 test('normalizes existing MIDI without dropping metadata or note extensions',()=>{
   const core=load(),data=core.normalizeMidiData(project().midiData,project());
@@ -365,6 +377,18 @@ test('live API smoke keeps PR9 validation strict and reports parse failures with
 test('live API smoke snapshots runtime input and remains external to Editor state and persistence',async()=>{
   const core=load(),secret='NOVA_PR15_SECRET_DO_NOT_LEAK_12345',{session}=adapterFixture(core),before=JSON.stringify(session),config=core.createPartialEditProviderConfig('openai',{apiKey:secret,model:'snapshot-model'}),input={config,apiKey:secret},output={version:1,trackId:'smoke-melody',part:'melody',range:{startMeasure:1,endMeasure:1,startTick:0,endTick:1920},updates:[],adds:[],deletes:[]},result=await core.runPartialEditLiveApiSmokeTest(input,{fetch:async(_url,options)=>{input.config.model='mutated';input.apiKey='mutated';assert.equal(JSON.parse(options.body).model,'snapshot-model');return{ok:true,text:async()=>JSON.stringify({output_text:JSON.stringify(output)})}}});
   assert.equal(result.ok,true);assert.equal(result.model,'snapshot-model');assert.equal(JSON.stringify(session),before);assert.equal(session.dirty,false);for(const forbidden of [secret,'snapshot-model','apiKey'])assert.equal(JSON.stringify(session).includes(forbidden),false)
+});
+test('live API smoke CLI returns zero only for success and never exposes runtime credentials',()=>{
+  const secret='CLI_RUNTIME_SECRET_MUST_NOT_LEAK_12345',cases=[
+    {provider:'openai',options:{openaiModel:'model'},status:1,expected:{ok:false,provider:'openai',modelAvailable:true,credentialAvailable:false,stage:'config',code:'unavailable'}},
+    {provider:'openai',options:{openaiKey:secret},status:1,expected:{ok:false,provider:'openai',modelAvailable:false,credentialAvailable:true,stage:'config',code:'unavailable'}},
+    {provider:'gemini',options:{geminiModel:'model'},status:1,expected:{ok:false,provider:'gemini',modelAvailable:true,credentialAvailable:false,stage:'config',code:'unavailable'}},
+    {provider:'invalid',options:{},status:1,expected:{ok:false,provider:null,stage:'config',code:'invalid-provider'}},
+    {provider:'openai',options:{openaiKey:secret,openaiModel:'model',mode:'provider-error'},status:1,expected:{ok:false,provider:'openai',model:'model',stage:'transport',code:'provider-error',httpStatus:503,category:'provider-server-error'}},
+    {provider:'openai',options:{openaiKey:secret,openaiModel:'model',mode:'timeout'},status:1,expected:{ok:false,provider:'openai',model:'model',stage:'transport',code:'timeout'}},
+    {provider:'openai',options:{openaiKey:secret,openaiModel:'model',mode:'success'},status:0,expected:{ok:true,provider:'openai',model:'model'}}
+  ];
+  for(const item of cases){const run=runSmokeCli(item.provider,item.options);assert.equal(run.status,item.status);assert.deepEqual(run.result,item.expected);assert.equal(run.stderr,'');assert.equal((run.stdout+run.stderr).includes(secret),false)}
 });
 test('partial edit preview applies mixed changes only to deterministic independent note snapshots',()=>{
   const core=load(),session=core.createSession({midiData:{editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:1}},tracks:[{id:'lead',part:'melody',notes:[{id:'outside',pitch:70,startTick:1920,durationTicks:120,velocity:70},{id:'delete',pitch:65,startTick:360,durationTicks:120,velocity:81},{id:'update',pitch:64,startTick:240,durationTicks:120,velocity:82,metadata:{take:1}},{id:'guard',pitch:62,startTick:120,durationTicks:120,velocity:83,locked:true},{id:'start',pitch:60,startTick:0,durationTicks:120,velocity:84}]},{part:'drums',notes:[{id:'other',pitch:36,startTick:0,durationTicks:120,velocity:100}]}]}}),projectBefore=JSON.stringify(session.midiData),request=core.createPartialEditRequest(session),result=core.createPartialEditResult(request,{updates:[{id:'update',pitch:66,startTick:240,durationTicks:120,velocity:92,metadata:{take:2}}],adds:[{id:'added',pitch:61,startTick:180,durationTicks:60,velocity:90}],deleteNoteIds:['delete']}),preview=core.createPartialEditPreview(request,result),again=core.createPartialEditPreview(request,result);
