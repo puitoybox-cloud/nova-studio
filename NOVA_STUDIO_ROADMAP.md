@@ -70,7 +70,7 @@ Music Studioには用途の異なる複数の管理軸がある。これらは�
 - `APP_VERSION`：アプリが設定・project metadataへ記録する実装版。現在は `1.4.0`。
 - `music-studio-project` schema：保存projectの互換境界。現在は Version 1（`schemaVersion: 1.0`）。
 - `MS-xx`：基礎設計、保存、Logic Pro連携等の作業単位。
-- Music Studio `0.1`〜`0.4`：Git branch／PRで使用した開発系列名。`0.4`はPR #185〜#199に対応する。
+- Music Studio `0.1`〜`0.4`：Git branch／PRで使用した開発系列名。`0.4`はPR #185〜#202の完了記録に対応する。
 
 `APP_VERSION`、project schema、`MS-xx`、開発系列名を統合する正式規則はrepository内で定義されていない。
 
@@ -89,9 +89,9 @@ MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_
 
 MS-06の解析仕様、保存境界、性能上限、既知の制限は `docs/music-studio/MS-06_MIDI_IMPORT.md` を正本とする。
 
-### Music Studio 0.4開発系列の現在地
+### Music Studio 0.4開発系列：実装完了
 
-PR #185〜#199で、次をmainへ追加した。
+PR #185〜#201で予定していた実装範囲をmainへ追加し、Music Studio 0.4は実装完了とする。
 
 - Note LockとEdit Range
 - Partial Editのrequest、result、preview、apply、session、UI基盤
@@ -101,21 +101,23 @@ PR #185〜#199で、次をmainへ追加した。
 - timeout、HTTP／provider errorの安全な分類とallowlist診断
 - OpenAI Structured OutputsおよびGemini schema互換変換
 - OpenAI／Gemini Minimal Live API Smoke CLI
-- OpenAI実接続 `ok:true`
-- Geminiのtimeout、HTTP 503、`UNAVAILABLE`、`provider-server-error`分類確認
+- Partial Edit UIのinstruction、provider、model、runtime credential入力と既存provider workflowへの接続
+- provider responseから既存validation境界を経由した非破壊Preview、stale response拒否、多重実行防止
+- Local `Pitch +1 Preview`の維持
+- OpenAI Live Preview成功
+- Geminiのprovider errorおよびtimeoutの安全処理確認
 
-0.4基盤の残作業として確認できるもの：
+0.4の実装完了判定は、予定した基盤とUI統合、offline回帰、OpenAI実接続、Gemini失敗時の安全性、credential非保持に基づく。外部providerやmodelのavailabilityは実装完了条件から分離する。
 
-- Partial Edit UIは現在もローカルの `Pitch +1 Preview`を使用しており、実provider workflowとは未統合。
-- GeminiはAPI key、model、transport到達と503分類まで確認済みだが、E2E `ok:true`は未確認。これはPR #199のMerge必須条件ではなく、provider一時障害だけを理由に即時実装修正は行わない。
+既知事項：Gemini Live success remains unconfirmed; safe provider-error and timeout handling are confirmed. Geminiの両Live確認でProject非変更とcredential非保持を確認した。結果からprovider側障害、実装不具合、利用不能のいずれも断定しない。
 
 ### 0.5の状態と次候補
 
-Music Studio 0.5の正式な開始条件、scope、優先順位は未定義である。開始を宣言する前に、次を決定する。
+Music Studio 0.4完了後、次に0.5のscopeを決定する段階である。0.5の正式な開始条件、scope、優先順位は未定義であり、今回の完了記録では開始を宣言しない。開始前に、次を決定する。
 
-1. roadmap、CHANGELOG、画面上の開発段階表記を最新mainへ同期し、0.4 cleanupを完了扱いにするか。
-2. Partial Edit provider UI接続を0.4の残作業とするか、0.5最初のfeature PRとするか。
-3. provider実行UI、Track playback／Mute／Solo、GM Drum Map／input assignment、Logic Pro実機受入、home上のplanned機能から次期優先項目を選ぶ。
+1. Track playback／Mute／Solo、GM Drum Map／input assignment、Logic Pro実機受入、home上のplanned機能等から正式scopeを選ぶ。
+2. 優先順位とentry conditionを定義する。
+3. 次のMS番号を定義するか判断する。
 
 これらは検討候補であり、正式な0.5 entry conditionではない。次のMS番号も未定義のため、この文書では新設しない。
 
