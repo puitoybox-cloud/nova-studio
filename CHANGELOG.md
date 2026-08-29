@@ -1,6 +1,6 @@
 # Nova Studio Changelog
 
-## Music Studio 0.4開発系列（PR #185〜#199）
+## Music Studio 0.4開発系列（PR #185〜#202）— Implementation complete
 
 この見出しの`0.4`はGit branch／PRで使用した開発系列名であり、アプリの`APP_VERSION 1.4.0`、`music-studio-project` schema Version 1、`MS-xx`作業番号とは別の管理軸である。
 
@@ -15,12 +15,20 @@
 - OpenAI／Gemini Minimal Live API Smoke CLIとoffline検証を追加し、失敗時のCLI終了コードを非0に統一
 - OpenAI `gpt-5.6-luna`でE2E `ok:true`を確認
 - Gemini `gemini-3.7-flash`でtransport到達後のtimeoutおよびHTTP 503／`UNAVAILABLE`／`provider-server-error`分類を確認
+- Partial Edit UIへinstruction、provider、model、runtime credential入力と実provider実行を追加
+- OpenAI／Geminiを既存Config → Provider Adapter → execution boundary → Transport → response validation → Previewへ接続
+- Apply前のProject非変更、Apply全体の1 Undo単位、stale response拒否、多重実行防止を維持
+- runtime credentialを実行開始時に入力欄から消去し、state、Project、settings、IndexedDB、backup、history、autosave、JSON exportへ保持しないことを確認
+- Local `Pitch +1 Preview`を実provider pathと分離して維持
+- OpenAI Live Preview成功を確認
+- Gemini Live successは未確認。provider errorおよびtimeoutの安全表示、Project非変更、credential非保持を確認
 
-### 残作業・確認状態
+### 0.4 Completion
 
-- Partial Edit UIはローカルの`Pitch +1 Preview`までで、実providerを呼ぶworkflowは未接続
-- Gemini E2E `ok:true`は未達。API key、model、transport到達とprovider障害の安全分類は確認済みで、`ok:true`はPR #199のMerge必須条件ではない
-- Music Studio 0.5の正式な開始条件とscopeは未定義
+- 予定した実装範囲、offline回帰、OpenAI実接続、Gemini失敗時の安全性、credential非保持が揃い、実装側blocking issueがないため、Music Studio 0.4を実装完了として記録
+- Gemini Live success remains unconfirmed; safe provider-error and timeout handling are confirmed. provider側障害、実装不具合、利用不能のいずれも断定しない
+- provider availability、model availability、Gemini Live success未確認は既知事項として実装完了条件から分離
+- Music Studio 0.5は未開始。正式なscope、priority、entry condition、次のMS番号は未定義
 
 ## MS-06（MIDI読み込み・解析・安全な再編集基盤）
 
