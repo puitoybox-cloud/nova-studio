@@ -5,6 +5,7 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-playback.js'),'utf8');
 
 function loadMusicStudio(){
   const classes=new Set();
@@ -12,6 +13,7 @@ function loadMusicStudio(){
   const document={body:{dataset:{},classList:{toggle(name,active){active?classes.add(name):classes.delete(name)},contains:name=>classes.has(name)}}};
   const window={addEventListener(){},location,history:{length:1},managementViewForRoute:route=>`base:${route}`,openApp:()=>{},setView(route){location.hash=`#${route}`},novaReturnHome(){},render(){}};
   window.window=window;
+  vm.runInNewContext(playbackSource,{window,globalThis:window},{filename:'music-studio-playback.js'});
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});
   window.document=document;
   return window;

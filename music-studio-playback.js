@@ -30,7 +30,8 @@
   function schedulePlaybackTracks(synth,tracks=[],transportState={}){
     const active=activePlaybackTracks(tracks,transportState.playbackState||{}),timing={ppq:transportState.ppq,tempo:transportState.bpm??transportState.tempo,startTick:transportState.startTick??transportState.currentTick,endTick:transportState.endTick,startTime:transportState.startTime,leadSeconds:transportState.leadSeconds};
     if(synth?.playTracks)return synth.playTracks(active,timing);
-    if(active.length===1&&synth?.playNotes)return synth.playNotes(active[0].notes,timing);
+    const playable=active.filter(track=>track.notes.length);
+    if(playable.length===1&&synth?.playNotes)return synth.playNotes(playable[0].notes,timing);
     return{ok:false,trackCount:active.length,noteCount:0,durationMs:0,reason:'track-playback-unavailable'}
   }
   root.MusicStudioPlayback={playbackRole,createPlaybackDescriptor,createPlaybackDescriptors,activePlaybackTracks,createTransportState,schedulePlaybackTracks};
