@@ -111,15 +111,13 @@ PR #185〜#201で予定していた実装範囲をmainへ追加し、Music Studi
 
 既知事項：Gemini Live success remains unconfirmed; safe provider-error and timeout handling are confirmed. Geminiの両Live確認でProject非変更とcredential非保持を確認した。結果からprovider側障害、実装不具合、利用不能のいずれも断定しない。
 
-### 0.5の状態と次候補
+### Music Studio 0.5開発系列：開始
 
-Music Studio 0.4完了後、次に0.5のscopeを決定する段階である。0.5の正式な開始条件、scope、優先順位は未定義であり、今回の完了記録では開始を宣言しない。開始前に、次を決定する。
+Music Studio 0.5は、Melody／Drums／Bassを編集可能な3パートから1曲として実制作可能な3Trackへ引き上げる開発系列として開始した。
 
-1. Track playback／Mute／Solo、GM Drum Map／input assignment、Logic Pro実機受入、home上のplanned機能等から正式scopeを選ぶ。
-2. 優先順位とentry conditionを定義する。
-3. 次のMS番号を定義するか判断する。
+主なscopeは、3Track同時Playback、共通Transport／Scheduler、Mute／Solo、Drums／Bass Playback、GM Drum Map、MIDI Input Assignment、Drums／Bass Web MIDI Record、保存・Import／Export回帰、およびLogic Pro実制作確認とする。PR1では、既存EditorとAudio schedulerを再利用し、Track Playback契約、識別、descriptor、Transport／Scheduler境界、およびMute／Solo保存方針を固定する。契約の正本は `docs/music-studio/MUSIC_STUDIO_0_5_TRACK_PLAYBACK_CONTRACT.md` とする。
 
-これらは検討候補であり、正式な0.5 entry conditionではない。次のMS番号も未定義のため、この文書では新設しない。
+新Trackの追加は0.5 scopeに含めず、0.6候補とする。次のMS番号は未定義のため新設しない。
 
 ## LINK-01着手前にティアが決めること
 

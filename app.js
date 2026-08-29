@@ -1463,5 +1463,6 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.1',()=>B
  .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.12',()=>Boolean(window.MusicStudioEditor)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.2',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.12',()=>Boolean(window.MusicStudioAudio)))
+ .then(()=>loadMusicStudioScript('music-studio-playback','./music-studio-playback.js?v=1.0.0',()=>Boolean(window.MusicStudioPlayback)))
  .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.80',()=>Boolean(window.MusicStudio)))
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));
