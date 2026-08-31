@@ -134,6 +134,19 @@ test('Mac Chrome with Web MIDI renders device selection instead of Safari guidan
   assert.match(html,/aria-label="MIDI機器選択"/);assert.match(html,/>↻ 再検出</);assert.match(html,/接続状態/);
   assert.doesNotMatch(html,/SafariではMIDI入力を利用できません|Mac Chromeで開いてください/);
 });
+test('MIDI editor auto initializes once after initial render and again in a reloaded runtime',async()=>{
+  const exercise=async suffix=>{
+    let requests=0;const first={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},second={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},firstAccess={inputs:new Map([['keys',first]]),onstatechange:null},secondAccess={inputs:new Map([['keys',second]]),onstatechange:null},navigator={requestMIDIAccess:async()=>++requests===1?firstAccess:secondAccess},timers=[];
+    const{app,window}=load(navigator),project=app.makeProject({projectId:`auto-midi-${suffix}`,projectName:'Auto MIDI'}),route=`music-studio/midi-editor/${project.projectId}`,preview=[];
+    window.document={};window.location.hash=`#${route}`;window.setTimeout=callback=>{timers.push(callback);return timers.length};app.state.projects=[project];app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,noteOn:(pitch,velocity)=>preview.push(['on',pitch,velocity]),noteOff:pitch=>preview.push(['off',pitch])};
+    app.renderRoute(route);app.renderRoute(route);assert.equal(timers.length,1);assert.equal(requests,0);timers.shift()();await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests,1);assert.equal(app.state.midiInput.initialized,true);assert.equal(app.state.midiInput.access,firstAccess);assert.equal(app.state.midiInput.inputs.length,1);assert.equal(app.state.midiInput.inputs[0],first);assert.equal(app.state.midiInput.selectedId,'keys');assert.equal(typeof first.onmidimessage,'function');assert.equal(typeof firstAccess.onstatechange,'function');
+    first.onmidimessage({data:[0x90,60,101],timeStamp:10});first.onmidimessage({data:[0x80,60,0],timeStamp:20});assert.deepEqual(preview,[['on',60,101],['off',60]]);
+    app.editorSelectPart('drums');app.renderRoute(route);app.editorSelectMidiTarget('bass');app.renderRoute(route);assert.equal(requests,1);assert.equal(timers.length,0);
+    await app.editorSelectMidiInput('__rescan__');assert.equal(requests,2);assert.equal(first.onmidimessage,null);assert.equal(firstAccess.onstatechange,null);assert.equal(app.state.midiInput.access,secondAccess);assert.equal(app.state.midiInput.selectedId,'keys');assert.equal(typeof second.onmidimessage,'function');assert.equal(typeof secondAccess.onstatechange,'function');
+  };
+  await exercise('initial');await exercise('reload');
+});
 test('iPad Chrome without Web MIDI receives generic capability guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'};
   const{app}=load(navigator),project=app.makeProject({projectId:'ipad-chrome-midi',projectName:'iPad Chrome MIDI'});
