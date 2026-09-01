@@ -78,7 +78,8 @@ test('editor chrome is compact, Melody helpers stay intact, and Correction uses 
   const{app}=load(),project=app.makeProject({projectId:'compact-editor-surfaces',projectName:'Compact editor surfaces'});
   app.state.projects=[project];const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(html,/class="music-editor-chrome"><header class="music-editor-heading"/);
-  assert.match(html,/class="music-part-workflow music-melody-workflow"><summary><b>MIDI入力・演奏補助<\/b>/);
+  assert.match(html,/class="music-editor-menu music-part-workflow music-melody-workflow"><summary><b>演奏補助<\/b>/);
+  assert.ok(html.indexOf('music-part-workflow music-melody-workflow')<html.indexOf('class="music-part-tabs"'));
   assert.doesNotMatch(html,/<p class="music-kicker">Melody workflow<\/p><h2[^>]*>メロディ制作<\/h2>/);
   for(const preserved of ['melodyInputDuration','melodyInputVelocity','メロディ入力鍵盤','editorSelectMeasureRange','editorToggleLock','editorPrepareRegeneration'])assert.match(html,new RegExp(preserved));
   assert.doesNotMatch(html,/MS-RESTART-10|Editor UI shell/);
@@ -104,7 +105,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(html,/>Melody<\/button>/);assert.match(html,/>Drums<\/button>/);assert.match(html,/>Bass<\/button>/);
   assert.doesNotMatch(html,/>Melody<span>|>Drums<span>|>Bass<span>/);
   assert.doesNotMatch(html,/music-editor-status|Melody · 0ノート · 選択 0 · コピー 0/);
-  const workflow=html.match(/<details class="music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
+  const workflow=html.match(/<details class="music-editor-menu music-part-workflow music-melody-workflow">([\s\S]*?)<\/details>/)?.[1]||'';
   assert.doesNotMatch(workflow,/editorInitializeMidi|editorStartMidiRecording|editorStopMidiRecording|MIDI Keyboard|MIDI Input|Record（録音）|Stop（停止）/);
   assert.doesNotMatch(html,/Back（戻る）|Next（進む）/);
   for(const label of ['Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Preview（プレビュー）','Cancel（キャンセル）','Record（録音）','Play（再生）','Stop（停止）'])assert.match(html,new RegExp(label.replace(/[（）]/g,value=>`\\${value}`)));
@@ -125,6 +126,9 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-piano-viewport\{height:clamp\(660px,calc\(100vh - 134px\),796px\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section\{padding-top:6px\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom h2\{margin-bottom:3px;line-height:1\.1\}/);
+  assert.match(css,/html:has\(\.music-midi-editor-page\)[^{]*\{height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom\{box-sizing:border-box;height:clamp\(180px,30dvh,280px\);max-height:30dvh;[^}]*overflow-y:auto/);
+  assert.match(css,/\.music-midi-editor-page \.music-part-workflow-popover\{right:0;left:auto;width:min\(760px,calc\(100vw - 24px\)\);[^}]*overflow-y:auto/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
@@ -1140,7 +1144,7 @@ test('Drums input and persisted editor measure state also save immediately',asyn
 test('Drums Piano Roll and pads identify GM notes without exposing Melody-only correction',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'drum-labels',projectName:'Drum labels'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorSelectPart('drums');
   let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/<details class="music-part-workflow music-drums-workflow"><summary><b>Drum Pad・パターン候補<\/b><span>GM Note 36 \/ 38 \/ 42 \/ 46<\/span><\/summary>/);
+  assert.match(html,/<details class="music-editor-menu music-part-workflow music-drums-workflow"><summary><b>Drum Pad・パターン候補<\/b><span>GM Note 36 \/ 38 \/ 42 \/ 46<\/span><\/summary>/);
   for(const [pitch,name] of [[35,'Acoustic Bass Drum'],[36,'Kick'],[37,'Side Stick'],[38,'Snare'],[39,'Hand Clap'],[40,'Electric Snare'],[41,'Low Floor Tom'],[42,'Closed Hi-Hat'],[43,'High Floor Tom'],[44,'Pedal Hi-Hat'],[45,'Low Tom'],[46,'Open Hi-Hat'],[47,'Low-Mid Tom'],[48,'Hi-Mid Tom'],[49,'Crash Cymbal 1'],[50,'High Tom'],[51,'Ride Cymbal 1']])assert.match(html,new RegExp(`music-drum-name">${name}<\\/span><span class="music-drum-number">${pitch}`));
   for(const [pitch,name] of [[52,'Chinese Cymbal'],[53,'Ride Bell'],[54,'Tambourine'],[55,'Splash Cymbal'],[56,'Cowbell'],[57,'Crash Cymbal 2'],[58,'Vibraslap'],[59,'Ride Cymbal 2']]){assert.equal(app.drumNoteName(pitch),name);assert.match(html,new RegExp(`music-drum-name">${name}<\\/span><span class="music-drum-number">${pitch}`))}
   assert.equal(app.drumNoteName(36),'Kick');assert.equal(app.drumNoteName(38),'Snare');assert.equal(app.drumNoteName(42),'Closed Hi-Hat');assert.equal(app.drumNoteName(46),'Open Hi-Hat');assert.equal(app.drumNoteName(61),'Note 61');assert.match(html,/music-drum-name">Note 61<\/span><span class="music-drum-number">61/);
@@ -1157,7 +1161,7 @@ test('Drums Piano Roll and pads identify GM notes without exposing Melody-only c
 test('Bass Piano Roll identifies track range pitch and program without leaking to Melody or Drums',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'bass-clarity',projectName:'Bass clarity'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorSelectPart('bass');let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-bass-track-status" role="status">Bass Track · Channel 2 · GM Program 32 · Guide E1–G3（Note 28–55）/);assert.match(html,/class="music-bass-range-guide"[^>]*--bass-guide-top:[^;]+;--bass-guide-height:[^;]+/);assert.match(html,/Bass guide E1–G3 · Note 28–55/);
-  assert.match(html,/<details class="music-part-workflow music-bass-workflow"><summary><b>Bass候補・参照情報<\/b><span>Channel 2 · GM Program 32<\/span><\/summary>/);assert.doesNotMatch(html,/Melody Correction（メロディ補正）|melodyTransposePanel|melodyNoteLengthPanel/);
+  assert.match(html,/<details class="music-editor-menu music-part-workflow music-bass-workflow"><summary><b>Bass候補・参照情報<\/b><span>Channel 2 · GM Program 32<\/span><\/summary>/);assert.doesNotMatch(html,/Melody Correction（メロディ補正）|melodyTransposePanel|melodyNoteLengthPanel/);
   const session=app.state.midiEditor,core=window.MusicStudioEditor;session.playheadTick=137;app.editorAddNote();const note=core.selectedNotes(session)[0];assert.deepEqual([note.pitch,note.startTick,note.durationTicks,note.velocity],[36,137,120,100]);assert.equal(core.currentTrack(session).channel,2);assert.equal(core.currentTrack(session).program,32);
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/C2 · Note 36　V100/);assert.match(html,/C2 \/ Velocity 100 \/ Note 36 \/ 137 tick/);
   for(const part of ['melody','drums']){app.editorSelectPart(part);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.doesNotMatch(html,/music-bass-track-status|music-bass-range-guide|music-bass-workflow|Bass guide E1–G3/)}
