@@ -26,6 +26,8 @@ test('history buttons use Japanese rounded arrows at the right of the part tabs 
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="元に戻す"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="やり直す"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
   assert.equal((html.match(/editorUndo\(\)/g)||[]).length,1);assert.equal((html.match(/editorRedo\(\)/g)||[]).length,1);
+  for(const part of ['Melody','Drums','Bass'])assert.match(html,new RegExp(`class="music-part-tab-group"[^>]*>[\\s\\S]*?class="music-part-tab [^"]+"[^>]*>${part}<\\/button>[\\s\\S]*?aria-label="${part} Mute">M<\\/button>[\\s\\S]*?aria-label="${part} Solo">S<\\/button>`));
+  assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Mute"/g)||[]).length,3);assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Solo"/g)||[]).length,3);assert.doesNotMatch(html,/music-track-runtime-controls/);
   assert.doesNotMatch(html,/class="[^"]*music-history-control"|>Undo<\/span>|>Redo<\/span>/);
   app.editorPreviewCorrection();html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/editorApplyCorrection\(\)"[^>]*>Apply <span class="music-button-note">（適用）<\/span>/);
@@ -129,6 +131,8 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/html:has\(\.music-midi-editor-page\)[^{]*\{height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom\{box-sizing:border-box;height:clamp\(180px,30dvh,280px\);max-height:30dvh;[^}]*overflow-y:auto/);
   assert.match(css,/\.music-midi-editor-page \.music-part-workflow-popover\{right:0;left:auto;width:min\(760px,calc\(100vw - 24px\)\);[^}]*overflow-y:auto/);
+  assert.match(css,/@media\(min-width:901px\)\{[\s\S]*?\.music-midi-editor-page \.music-editor-bottom\{height:clamp\(360px,49dvh,450px\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider\{grid-template-columns:minmax\(110px,\.85fr\) minmax\(190px,1\.55fr\) minmax\(100px,\.8fr\) minmax\(130px,1fr\) minmax\(150px,1\.2fr\) auto/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',vendor:'Google Inc.',requestMIDIAccess:async()=>({inputs:new Map()})};
