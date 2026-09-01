@@ -131,7 +131,9 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/html:has\(\.music-midi-editor-page\)[^{]*\{height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom\{box-sizing:border-box;height:clamp\(180px,30dvh,280px\);max-height:30dvh;[^}]*overflow-y:auto/);
   assert.match(css,/\.music-midi-editor-page \.music-part-workflow-popover\{right:0;left:auto;width:min\(760px,calc\(100vw - 24px\)\);[^}]*overflow-y:auto/);
-  assert.match(css,/@media\(min-width:901px\)\{[\s\S]*?\.music-midi-editor-page \.music-editor-bottom\{height:clamp\(360px,49dvh,450px\)/);
+  assert.match(css,/@media\(min-width:901px\)\{[\s\S]*?\.music-midi-editor-page \.music-editor-bottom\{height:clamp\(340px,43dvh,396px\);max-height:43dvh;[^}]*grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom>\.music-partial-edit\{grid-column:1\/span 9;grid-row:1\}/);
+  assert.match(source,/const targetC=Math\.max\(0,Math\.min\(120,Math\.round\(bottomPitch\/12\)\*12\)\);viewport\.scrollTop=Math\.max\(0,viewport\.scrollTop\+\(bottomPitch-targetC\)\*PIANO_ROW_HEIGHT\)/);
   assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider\{grid-template-columns:minmax\(110px,\.85fr\) minmax\(190px,1\.55fr\) minmax\(100px,\.8fr\) minmax\(130px,1fr\) minmax\(150px,1\.2fr\) auto/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
