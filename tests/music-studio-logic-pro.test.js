@@ -147,6 +147,13 @@ test('MIDI editor auto initializes once after initial render and again in a relo
   };
   await exercise('initial');await exercise('reload');
 });
+test('MIDI editor auto initialization and Record fallback share one access request',async()=>{
+  let requests=0;const input={id:'keys',name:'Keystation Mini 32 MK3',onmidimessage:null},access={inputs:new Map([['keys',input]]),onstatechange:null},navigator={requestMIDIAccess:async()=>{requests++;return access}},timers=[];
+  const{app,window}=load(navigator),project=app.makeProject({projectId:'auto-midi-record-race',projectName:'Auto MIDI Record'}),route=`music-studio/midi-editor/${project.projectId}`;
+  window.document={};window.location.hash=`#${route}`;window.setTimeout=callback=>{timers.push(callback);return timers.length};window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};app.state.projects=[project];app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,allNotesOff(){},stopPreview(){},stopPlayback(){},stopMetronome(){}};
+  app.renderRoute(route);assert.equal(timers.length,1);const recording=app.editorStartMidiRecording({skipCountIn:true});timers.shift()();const result=await recording;await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(result.ok,true);assert.equal(app.state.midiInput.recording,true);assert.equal(requests,1);await app.editorStopMidiRecording();
+});
 test('iPad Chrome without Web MIDI receives generic capability guidance',()=>{
   const navigator={userAgent:'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) CriOS/127.0.0.0 Mobile/15E148 Safari/604.1',vendor:'Apple Computer, Inc.'};
   const{app}=load(navigator),project=app.makeProject({projectId:'ipad-chrome-midi',projectName:'iPad Chrome MIDI'});
