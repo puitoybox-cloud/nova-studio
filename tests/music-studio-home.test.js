@@ -156,12 +156,14 @@ test('host chrome isolation follows home, placeholder, and Nova routes',()=>{
 
 test('Music Studio CSS hides only host chrome on Music Studio routes',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  const hostCss=fs.readFileSync(path.join(__dirname,'..','style.css'),'utf8');
   assert.match(css,/body\.is-music-studio-route \.management-bottom/);
   assert.match(css,/body\.is-music-studio-route \.management-header/);
   assert.doesNotMatch(css,/(^|\n)\.management-bottom\s*\{[^}]*display\s*:\s*none/);
   assert.match(css,/body\.is-music-studio-route \.nova-wordmark\{display:none!important\}/);
   assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center;[^}]*background:transparent/);
   assert.match(css,/\.music-editor-chrome \.music-editor-heading\{position:static;display:flex;[^}]*align-items:center;justify-content:center;[^}]*background:transparent/);
+  assert.match(hostCss,/#toast:not\(\.show\)\{opacity:0\}\s*#toast\.show\{opacity:1\}/);
 });
 
 test('all host Music Studio entrances ignore a configured legacy URL and open the new home',()=>{

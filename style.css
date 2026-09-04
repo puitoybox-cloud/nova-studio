@@ -1024,3 +1024,5 @@ body.is-management-route.is-universe-route{background:linear-gradient(180deg,rgb
   .universe-main .universe{height:var(--universe-mobile-height)}
   .universe-main .universe-canvas{grid-template-columns:1fr}
 }
+#toast:not(.show){opacity:0}
+#toast.show{opacity:1}
