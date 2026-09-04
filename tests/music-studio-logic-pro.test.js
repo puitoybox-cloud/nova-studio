@@ -139,6 +139,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/@media\(min-width:901px\)\{\.music-midi-editor-page \.music-part-tabs\{box-sizing:border-box;width:100%;flex-wrap:nowrap\}\}/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom h2\{color:var\(--music-violet\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider :is\(textarea\[name="instruction"\],input\[name="model"\],input\[name="apiKey"\]\)\{height:20px;min-height:20px;padding-block:0\}/);
+  assert.match(css,/\.music-midi-editor-page \.music-edit-range input\{height:20px;min-height:20px;margin-top:0;padding-block:0\}/);
   assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider\{grid-template-columns:minmax\(110px,\.85fr\) minmax\(190px,1\.55fr\) minmax\(100px,\.8fr\) minmax\(130px,1fr\) minmax\(150px,1\.2fr\) auto/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{

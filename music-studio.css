@@ -613,6 +613,10 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
   .music-midi-editor-page .music-partial-edit-provider textarea{height:30px;min-height:30px}
   .music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:20px;min-height:20px;padding-block:0}
   .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}
+  .music-midi-editor-page .music-edit-range>div{flex:none}
+  .music-midi-editor-page .music-edit-range label{margin:0}
+  .music-midi-editor-page .music-edit-range input{height:20px;min-height:20px;margin-top:0;padding-block:0}
+  .music-midi-editor-page .music-edit-range p{margin-top:4px}
 }
 @media(max-width:600px){
   .music-midi-editor-page .music-editor-topbar{max-height:96px;overflow-y:auto;overscroll-behavior:contain}
