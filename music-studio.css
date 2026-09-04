@@ -435,6 +435,9 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 .music-midi-editor-page .music-correction-popover :is(.music-correction-target,.music-transpose-direction)>label{display:inline-flex;min-width:0;align-items:center;gap:7px;line-height:1.25;white-space:normal}.music-midi-editor-page .music-correction-popover input[type=radio]{appearance:auto;width:18px!important;min-width:18px!important;max-width:18px!important;height:18px!important;min-height:18px!important;max-height:18px!important;flex:0 0 18px;margin:0!important;padding:0!important;transform:none!important;accent-color:var(--music-editor-accent)}
 @media(max-width:900px){.music-midi-editor-page .music-correction-popover{position:fixed;top:min(260px,calc(100vh - 248px))!important;right:8px!important;bottom:8px;left:8px!important;width:auto!important;max-height:calc(100vh - 88px)}}
 /* Group the display helpers by task while preserving every existing editor action. */
+.music-midi-editor-page .music-edit-tool-groups{display:flex;min-width:0;flex-wrap:wrap;align-content:flex-start;gap:4px}
+.music-midi-editor-page .music-edit-tool-group{display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:3px;padding:3px}
+.music-midi-editor-page .music-note-length-group .music-note-length-label{flex-basis:100%}
 .music-midi-editor-page .music-display-assist>.music-assist-layout{display:grid;min-width:0;gap:10px;align-content:start}
 .music-midi-editor-page .music-assist-block,.music-midi-editor-page .music-assist-card{box-sizing:border-box;min-width:0}
 .music-midi-editor-page .music-assist-snap-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
@@ -449,6 +452,7 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 .music-midi-editor-page .music-assist-description{min-width:0;margin:8px 0 0;color:#b8c7d9;font-size:.72rem;font-weight:500;line-height:1.45;overflow-wrap:break-word}
 .music-midi-editor-page .music-assist-description span{color:#9fb0c5}
 .music-midi-editor-page .music-assist-zoom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
+.music-midi-editor-page .music-assist-zoom,.music-midi-editor-page .music-assist-card{padding:4px}
 .music-midi-editor-page .music-assist-zoom>button{width:100%;min-height:36px}
 .music-midi-editor-page .music-assist-zoom-value{justify-self:center;color:var(--music-ink);font-size:.78rem;white-space:nowrap}
 .music-midi-editor-page .music-assist-range-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -534,18 +538,22 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 }
 /* Record preparation and click-track controls remain grouped inside Playback. */
 .music-midi-editor-page .music-editor-bottom .music-transport-controls{display:grid;min-width:0;gap:8px;align-content:start}
-.music-midi-editor-page .music-transport-main,.music-midi-editor-page .music-transport-options{display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:6px}
-.music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-transport-options>button{flex:0 1 auto}
+.music-midi-editor-page .music-transport-main,.music-midi-editor-page .music-count-in-options{display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:6px}
+.music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-count-in-options>button{flex:0 1 auto}
 .music-midi-editor-page .music-transport-main>button:first-child::after{display:inline-grid;min-width:18px;height:18px;place-items:center;margin-left:5px;border:1px solid #526985;border-radius:4px;content:'R';font-size:.64rem;line-height:1}
-.music-midi-editor-page .music-transport-options{padding-top:7px;border-top:1px solid rgba(82,105,133,.45)}
-.music-midi-editor-page .music-transport-options>span{color:#b8c7d9;font-size:.7rem;font-weight:750;white-space:nowrap}
+.music-midi-editor-page .music-count-in-group,.music-midi-editor-page .music-metronome-group{display:grid;min-width:0;gap:4px;padding:7px 3px 3px;border-top:1px solid rgba(82,105,133,.45)}
+.music-midi-editor-page .music-count-in-options>span{color:#b8c7d9;font-size:.7rem;font-weight:750;white-space:nowrap}
+.music-midi-editor-page .music-metronome-group>button{width:max-content;max-width:100%}
 .music-midi-editor-page .music-count-in-display{display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:5px;padding-top:2px;color:#9fb0c5;font-size:.7rem}
 .music-midi-editor-page .music-count-in-display>b{margin-right:2px;color:#dce8f6}
 .music-midi-editor-page .music-count-in-display>span{display:grid;width:22px;height:22px;place-items:center;border:1px solid #41546b;border-radius:50%;background:#0a1522;color:#b8c7d9;font-weight:850}
 .music-midi-editor-page .music-count-in-display.is-counting>span.is-current{border-color:#fbbf24;background:#fbbf24;color:#111827;box-shadow:0 0 0 3px rgba(251,191,36,.2)}
+.music-midi-editor-page .music-editor-bottom :is(.music-edit-tool-group,.music-assist-block,.music-assist-card,.music-edit-range-content,.music-partial-edit-content,.music-transport-main,.music-count-in-group,.music-metronome-group){gap:3px;margin:0;padding:3px;border-left:2px solid rgba(139,92,246,.48);border-radius:4px;background:rgba(10,21,34,.42)}
+.music-midi-editor-page .music-editor-bottom :is(.music-assist-snap,.music-assist-quantize,.music-assist-card,.music-edit-range-content,.music-partial-edit-content,.music-count-in-group){padding-right:calc(3px - .18rem);padding-left:calc(3px + .18rem)}
+.music-midi-editor-page .music-editor-bottom :is(.music-assist-snap,.music-assist-quantize,.music-assist-card,.music-partial-edit-content,.music-count-in-group) button{margin-left:0}
 @media(max-width:900px){
-  .music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-transport-options>button{flex:1 1 120px}
-  .music-midi-editor-page .music-transport-options>span{flex:1 1 100%;text-align:center}
+  .music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-count-in-options>button{flex:1 1 120px}
+  .music-midi-editor-page .music-count-in-options>span{flex:1 1 100%;text-align:center}
 }
 .music-midi-editor-page .music-piano-roll .music-note-label{position:absolute;top:0;right:18px;bottom:0;left:4px;display:flex;width:auto;height:auto;align-items:center;overflow:hidden;line-height:inherit;pointer-events:none;white-space:nowrap}
 .music-midi-editor-page .music-note-label,.music-midi-editor-page .music-midi-note.is-selected .music-note-label{font-weight:650;opacity:1;filter:none;transform:none}
@@ -560,9 +568,77 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 .music-midi-note.is-locked::before{position:absolute;inset:0;content:'';background:repeating-linear-gradient(135deg,transparent 0,transparent 5px,rgba(255,255,255,.1) 5px,rgba(255,255,255,.1) 7px);pointer-events:none}
 .music-note-lock-icon{position:relative;z-index:1;margin-right:3px;font-size:.72em}
 .music-midi-note.is-locked.is-selected{outline:2px solid var(--music-amber)}
-.music-edit-range>div{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.music-edit-range label{display:grid;gap:4px;min-width:112px}.music-edit-range input{min-height:36px;width:100%;padding:6px 8px}.music-edit-range p{margin:8px 0 0}
-.music-partial-edit{min-width:260px}.music-partial-edit-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.music-partial-edit-heading h2{margin:0}.music-partial-edit-status{padding:3px 8px;border:1px solid #526985;border-radius:999px;background:#0a1522;color:#dce8f6;font-size:.68rem;font-weight:800}.music-partial-edit>p{margin:6px 0}.music-partial-edit-actions{display:flex;flex-wrap:wrap;gap:6px}.music-partial-edit-summary{display:grid;grid-template-columns:repeat(4,minmax(58px,1fr));gap:6px;margin:8px 0 0}.music-partial-edit-summary>div{padding:5px 6px;border:1px solid rgba(82,105,133,.55);border-radius:6px;background:#0a1522;text-align:center}.music-partial-edit-summary :is(dt,dd){margin:0}.music-partial-edit-summary dt{color:#9fb0c5;font-size:.62rem}.music-partial-edit-summary dd{color:#e7f0fa;font-size:.9rem;font-weight:850}
+
+/* Keep the MIDI editor within the viewport; its dense tool region scrolls internally. */
+html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page) #music-studio-app,body.is-music-studio-route:has(.music-midi-editor-page) #app,body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,body.is-music-studio-route:has(.music-midi-editor-page) .management-main{height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden}
+.music-midi-editor-page,body.is-management-route .management-main>.music-midi-editor-page{display:flex;box-sizing:border-box;height:100vh;height:100dvh;max-height:100dvh;min-height:0;flex-direction:column;margin:0;overflow:hidden}
+.music-midi-editor-page .music-editor-topbar{min-height:0;flex:0 0 auto}
+.music-midi-editor-page .music-part-tabs,.music-midi-editor-page .music-track-runtime-controls{flex:0 0 auto}
+.music-midi-editor-page .music-editor-layout{min-height:150px;flex:1 1 auto;overflow:hidden}
+.music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;max-height:none}
+.music-midi-editor-page .music-editor-bottom{box-sizing:border-box;height:clamp(180px,30dvh,280px);max-height:30dvh;min-height:0;flex:0 0 clamp(180px,30dvh,280px);margin-block:6px 0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.music-midi-editor-page .music-editor-bottom>section{border:0;border-radius:0;outline:0;background:transparent;box-shadow:none}
+.music-midi-editor-page .music-editor-bottom h2{color:var(--music-violet)}
+.music-midi-editor-page .music-part-workflow{width:max-content;max-width:100%;min-height:0;margin:0;border:0;background:transparent;box-shadow:none}
+.music-midi-editor-page .music-part-workflow>summary{min-height:32px;padding:3px 8px;white-space:nowrap}
+.music-midi-editor-page .music-part-workflow>summary span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.music-midi-editor-page .music-part-workflow-popover{right:0;left:auto;width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow-y:auto;overscroll-behavior:contain}
+/* Keep each Track's routing tab and its existing Mute / Solo handlers in one compact row. */
+.music-midi-editor-page .music-part-tab-group{display:flex;min-width:0;align-items:center;gap:3px}
+.music-midi-editor-page .music-part-tab-list{display:flex;min-width:0;align-items:center;gap:7px}
+.music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{width:92px;min-width:92px}
+.music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{border-color:#34475b;border-radius:9px;background:rgba(82,105,133,.28);color:#c7d2e2;box-shadow:inset 0 1px rgba(255,255,255,.035);font-size:.84rem}
+.music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab.music-primary{border-color:rgba(139,92,246,.72);background:rgba(109,40,217,.18);color:#ddd6fe;box-shadow:inset 0 -2px #7c3aed}
+.music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){display:inline-flex;box-sizing:border-box;width:28px;min-width:28px;max-width:28px;height:28px;min-height:28px;max-height:28px;align-items:center;justify-content:center;padding:0;border-radius:7px;font-size:.72rem;line-height:1}
+.music-midi-editor-page .music-part-tabs .music-history-controls{flex:none;margin-right:0;margin-left:auto}
+@media(min-width:901px){.music-midi-editor-page .music-part-tabs{box-sizing:border-box;width:100%;flex-wrap:nowrap}}
+@media(min-width:901px){
+  .music-midi-editor-page .music-editor-bottom{height:clamp(340px,43dvh,396px);max-height:43dvh;flex-basis:clamp(340px,43dvh,396px);grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:max-content;align-items:start;gap:6px}
+  .music-midi-editor-page .music-editor-bottom>section{min-height:0;padding:8px}
+  .music-midi-editor-page .music-editor-bottom>section:nth-child(1){grid-column:span 4;grid-row:2}
+  .music-midi-editor-page .music-editor-bottom>.music-display-assist{grid-column:span 5;grid-row:2}
+  .music-midi-editor-page .music-editor-bottom>.music-edit-range{grid-column:span 3;grid-row:2}
+  .music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:1/span 9;grid-row:1}
+  .music-midi-editor-page .music-editor-bottom>section:last-child{grid-column:10/span 3;grid-row:1}
+  .music-midi-editor-page .music-editor-bottom h2{margin-bottom:4px}
+  .music-midi-editor-page .music-editor-bottom section>div{gap:5px}
+  .music-midi-editor-page .music-partial-edit-provider{grid-template-columns:minmax(110px,.85fr) minmax(190px,1.55fr) minmax(100px,.8fr) minmax(130px,1fr) minmax(150px,1.2fr) auto;align-items:end}
+  .music-midi-editor-page .music-partial-edit-instruction{grid-column:auto}
+  .music-midi-editor-page .music-partial-edit-provider textarea{height:34px;min-height:34px;resize:vertical}
+}
+@media(max-width:900px){.music-midi-editor-page .music-editor-bottom{grid-auto-rows:max-content;align-items:start}.music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:1/-1}}
+@media(min-width:1400px){
+  .music-midi-editor-page .music-editor-bottom{grid-template-columns:minmax(250px,1.25fr) minmax(280px,1.4fr) minmax(155px,.75fr) minmax(380px,1.8fr) minmax(190px,1fr);grid-template-rows:max-content;column-gap:5px}
+  .music-midi-editor-page .music-editor-bottom>section{grid-row:1!important;min-width:0;padding:6px}
+  .music-midi-editor-page .music-editor-bottom>section:nth-child(1){grid-column:1}
+  .music-midi-editor-page .music-editor-bottom>.music-display-assist{grid-column:2}
+  .music-midi-editor-page .music-editor-bottom>.music-edit-range{grid-column:3}
+  .music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:4}
+  .music-midi-editor-page .music-editor-bottom>section:last-child{grid-column:5}
+  .music-midi-editor-page .music-editor-bottom button{min-height:28px;padding:3px 5px;font-size:.7rem}
+  .music-midi-editor-page .music-editor-bottom :is(input,select,textarea){min-width:0;min-height:30px;height:30px;padding:3px 5px;font-size:.7rem}
+  .music-midi-editor-page .music-editor-bottom :is(label,b,p){font-size:.68rem}
+  .music-midi-editor-page .music-partial-edit-provider{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:4px 0}
+  .music-midi-editor-page .music-partial-edit-provider textarea{height:30px;min-height:30px}
+  .music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:20px;min-height:20px;padding-block:0}
+  .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}
+  .music-midi-editor-page .music-edit-range-fields{flex:none}
+  .music-midi-editor-page .music-edit-range label{margin:0}
+  .music-midi-editor-page .music-edit-range input{height:20px;min-height:20px;margin-top:0;padding-block:0}
+  .music-midi-editor-page .music-edit-range p{margin-top:1px}
+}
+@media(max-width:600px){
+  .music-midi-editor-page .music-editor-topbar{max-height:96px;overflow-y:auto;overscroll-behavior:contain}
+  .music-midi-editor-page .music-editor-layout{min-height:140px}
+  .music-midi-editor-page .music-editor-bottom{height:clamp(180px,34dvh,300px);max-height:34dvh;flex-basis:clamp(180px,34dvh,300px);grid-auto-rows:max-content;align-items:start}
+  .music-midi-editor-page .music-part-workflow-popover{position:fixed;top:104px;right:8px;bottom:8px;left:8px;width:auto;max-height:calc(100dvh - 112px)}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group{flex:1 1 100%}
+  .music-midi-editor-page .music-part-tab-list{width:100%;flex-wrap:wrap}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{width:auto;min-width:0;flex:1 1 auto}
+}
+.music-edit-range-content{display:flex!important;min-width:0;flex-direction:column;align-items:stretch!important}.music-edit-range-fields{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.music-edit-range label{display:grid;gap:4px;min-width:112px}.music-edit-range input{min-height:36px;width:100%;padding:6px 8px}.music-edit-range p{margin:8px 0 0}
+.music-partial-edit{min-width:260px}.music-partial-edit-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.music-partial-edit-heading h2{margin:0}.music-partial-edit-status{padding:3px 8px;border:1px solid #526985;border-radius:999px;background:#0a1522;color:#dce8f6;font-size:.68rem;font-weight:800}.music-partial-edit-content{display:block!important;min-width:0}.music-partial-edit-content>p{margin:6px 0}.music-partial-edit-actions{display:flex;flex-wrap:wrap;gap:6px}.music-partial-edit-summary{display:grid;grid-template-columns:repeat(4,minmax(58px,1fr));gap:6px;margin:8px 0 0}.music-partial-edit-summary>div{padding:0;border:0;border-radius:0;background:transparent;text-align:center;overflow:visible}.music-partial-edit-summary :is(dt,dd){margin:0;overflow:visible}.music-partial-edit-summary dt{color:#9fb0c5;font-size:.62rem}.music-partial-edit-summary dd{padding-block:1px;color:#e7f0fa;font-size:.9rem;font-weight:850;line-height:1.25}
 .music-partial-edit-provider{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:8px 0}.music-partial-edit-provider label{display:grid;gap:3px;min-width:0}.music-partial-edit-provider label>span{color:#b8c7d9;font-size:.68rem;font-weight:750}.music-partial-edit-provider :is(input,select,textarea){box-sizing:border-box;width:100%;min-width:0}.music-partial-edit-provider textarea{min-height:54px;resize:vertical}.music-partial-edit-instruction{grid-column:span 2}.music-partial-edit-provider button{align-self:end}.music-partial-edit-provider-status{padding:6px 8px;border-radius:6px;background:#0a1522}.music-partial-edit-provider-status.is-loading{color:#8fd7ff}.music-partial-edit-provider-status.is-success{color:#83e6ae}.music-partial-edit-provider-status.is-error{color:#ffb0b0}
 @media(max-width:820px){.music-partial-edit-provider{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.music-partial-edit-actions>button{flex:1 1 calc(50% - 6px)}.music-partial-edit-summary{grid-template-columns:repeat(2,minmax(70px,1fr))}}
+@media(max-width:600px){.music-partial-edit-actions>button{flex:1 1 calc(50% - 6px)}}
 @media(max-width:600px){.music-partial-edit-provider{grid-template-columns:minmax(0,1fr)}.music-partial-edit-instruction{grid-column:auto}}

@@ -156,12 +156,14 @@ test('host chrome isolation follows home, placeholder, and Nova routes',()=>{
 
 test('Music Studio CSS hides only host chrome on Music Studio routes',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  const hostCss=fs.readFileSync(path.join(__dirname,'..','style.css'),'utf8');
   assert.match(css,/body\.is-music-studio-route \.management-bottom/);
   assert.match(css,/body\.is-music-studio-route \.management-header/);
   assert.doesNotMatch(css,/(^|\n)\.management-bottom\s*\{[^}]*display\s*:\s*none/);
   assert.match(css,/body\.is-music-studio-route \.nova-wordmark\{display:none!important\}/);
   assert.match(css,/\.music-editor-chrome\{display:flex;min-height:48px;align-items:center;justify-content:center;[^}]*background:transparent/);
   assert.match(css,/\.music-editor-chrome \.music-editor-heading\{position:static;display:flex;[^}]*align-items:center;justify-content:center;[^}]*background:transparent/);
+  assert.match(hostCss,/#toast:not\(\.show\)\{opacity:0\}\s*#toast\.show\{opacity:1\}/);
 });
 
 test('all host Music Studio entrances ignore a configured legacy URL and open the new home',()=>{
@@ -188,17 +190,17 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.39/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.48/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.98/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.98/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.114/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.114/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.3/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.12/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.12/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.12/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.80/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.80/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.88/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.88/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
