@@ -437,7 +437,7 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 /* Group the display helpers by task while preserving every existing editor action. */
 .music-midi-editor-page .music-edit-tool-groups{display:flex;min-width:0;flex-wrap:wrap;align-content:flex-start;gap:4px}
 .music-midi-editor-page .music-edit-tool-group{display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:3px;padding:3px}
-.music-midi-editor-page :is(.music-edit-tool-group,.music-count-in-group,.music-metronome-group){border-left:2px solid rgba(139,92,246,.48);border-radius:4px;background:rgba(10,21,34,.42)}
+.music-midi-editor-page :is(.music-edit-tool-group,.music-assist-block,.music-assist-card,.music-transport-main,.music-count-in-group,.music-metronome-group){border-left:2px solid rgba(139,92,246,.48);border-radius:4px;background:rgba(10,21,34,.42)}
 .music-midi-editor-page .music-note-length-group .music-note-length-label{flex-basis:100%}
 .music-midi-editor-page .music-display-assist>.music-assist-layout{display:grid;min-width:0;gap:10px;align-content:start}
 .music-midi-editor-page .music-assist-block,.music-midi-editor-page .music-assist-card{box-sizing:border-box;min-width:0}
@@ -453,7 +453,7 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 .music-midi-editor-page .music-assist-description{min-width:0;margin:8px 0 0;color:#b8c7d9;font-size:.72rem;font-weight:500;line-height:1.45;overflow-wrap:break-word}
 .music-midi-editor-page .music-assist-description span{color:#9fb0c5}
 .music-midi-editor-page .music-assist-zoom{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
-.music-midi-editor-page .music-assist-zoom,.music-midi-editor-page .music-assist-card{padding:4px;border-left:2px solid rgba(139,92,246,.48);border-radius:4px;background:rgba(10,21,34,.32)}
+.music-midi-editor-page .music-assist-zoom,.music-midi-editor-page .music-assist-card{padding:4px}
 .music-midi-editor-page .music-assist-zoom>button{width:100%;min-height:36px}
 .music-midi-editor-page .music-assist-zoom-value{justify-self:center;color:var(--music-ink);font-size:.78rem;white-space:nowrap}
 .music-midi-editor-page .music-assist-range-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -575,7 +575,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-midi-editor-page .music-editor-layout{min-height:150px;flex:1 1 auto;overflow:hidden}
 .music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;max-height:none}
 .music-midi-editor-page .music-editor-bottom{box-sizing:border-box;height:clamp(180px,30dvh,280px);max-height:30dvh;min-height:0;flex:0 0 clamp(180px,30dvh,280px);margin-block:6px 0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
-.music-midi-editor-page .music-editor-bottom>section{border:0;border-radius:0;outline:0;box-shadow:none}
+.music-midi-editor-page .music-editor-bottom>section{border:0;border-radius:0;outline:0;background:transparent;box-shadow:none}
 .music-midi-editor-page .music-editor-bottom h2{color:var(--music-violet)}
 .music-midi-editor-page .music-part-workflow{width:max-content;max-width:100%;min-height:0;margin:0;border:0;background:transparent;box-shadow:none}
 .music-midi-editor-page .music-part-workflow>summary{min-height:32px;padding:3px 8px;white-space:nowrap}
