@@ -606,7 +606,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
   .music-midi-editor-page .music-partial-edit-instruction{grid-column:auto}
   .music-midi-editor-page .music-partial-edit-provider textarea{height:34px;min-height:34px;resize:vertical}
 }
-@media(max-width:900px){.music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:1/-1}}
+@media(max-width:900px){.music-midi-editor-page .music-editor-bottom{grid-auto-rows:max-content;align-items:start}.music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:1/-1}}
 @media(min-width:1400px){
   .music-midi-editor-page .music-editor-bottom{grid-template-columns:minmax(250px,1.25fr) minmax(280px,1.4fr) minmax(155px,.75fr) minmax(380px,1.8fr) minmax(190px,1fr);grid-template-rows:max-content;column-gap:5px}
   .music-midi-editor-page .music-editor-bottom>section{grid-row:1!important;min-width:0;padding:6px}
