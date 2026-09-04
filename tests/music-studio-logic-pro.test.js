@@ -144,6 +144,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(source,/music-edit-mode-group[\s\S]*?music-lock-group[\s\S]*?music-clipboard-group[\s\S]*?music-selection-group[\s\S]*?music-note-length-group[\s\S]*?music-velocity-group/);
   assert.match(source,/music-count-in-group[\s\S]*?countInBeatDisplay\(session\)[\s\S]*?music-metronome-group/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom :is\(\.music-edit-tool-group,\.music-assist-block,\.music-assist-card,\.music-edit-range-content,\.music-partial-edit-content,\.music-transport-main,\.music-count-in-group,\.music-metronome-group\)\{gap:3px;margin:0;padding:3px;border-left:2px solid rgba\(139,92,246,\.48\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom :is\(\.music-assist-snap,\.music-assist-quantize,\.music-assist-card,\.music-edit-range-content,\.music-partial-edit-content,\.music-count-in-group\)\{padding-right:calc\(3px - \.18rem\);padding-left:calc\(3px \+ \.18rem\)\}/);
   assert.match(source,/music-edit-range-content[\s\S]*?music-edit-range-fields[\s\S]*?Edit Range:/);
   assert.match(source,/music-partial-edit-heading[\s\S]*?music-partial-edit-content[\s\S]*?music-partial-edit-summary/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom>section\{border:0;border-radius:0;outline:0;background:transparent;box-shadow:none\}/);

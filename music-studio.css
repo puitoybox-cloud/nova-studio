@@ -549,6 +549,8 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 .music-midi-editor-page .music-count-in-display>span{display:grid;width:22px;height:22px;place-items:center;border:1px solid #41546b;border-radius:50%;background:#0a1522;color:#b8c7d9;font-weight:850}
 .music-midi-editor-page .music-count-in-display.is-counting>span.is-current{border-color:#fbbf24;background:#fbbf24;color:#111827;box-shadow:0 0 0 3px rgba(251,191,36,.2)}
 .music-midi-editor-page .music-editor-bottom :is(.music-edit-tool-group,.music-assist-block,.music-assist-card,.music-edit-range-content,.music-partial-edit-content,.music-transport-main,.music-count-in-group,.music-metronome-group){gap:3px;margin:0;padding:3px;border-left:2px solid rgba(139,92,246,.48);border-radius:4px;background:rgba(10,21,34,.42)}
+.music-midi-editor-page .music-editor-bottom :is(.music-assist-snap,.music-assist-quantize,.music-assist-card,.music-edit-range-content,.music-partial-edit-content,.music-count-in-group){padding-right:calc(3px - .18rem);padding-left:calc(3px + .18rem)}
+.music-midi-editor-page .music-editor-bottom :is(.music-assist-snap,.music-assist-quantize,.music-assist-card,.music-partial-edit-content,.music-count-in-group) button{margin-left:0}
 @media(max-width:900px){
   .music-midi-editor-page .music-transport-main>button,.music-midi-editor-page .music-count-in-options>button{flex:1 1 120px}
   .music-midi-editor-page .music-count-in-options>span{flex:1 1 100%;text-align:center}
