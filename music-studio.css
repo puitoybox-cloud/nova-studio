@@ -569,6 +569,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-midi-editor-page .music-editor-layout{min-height:150px;flex:1 1 auto;overflow:hidden}
 .music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;max-height:none}
 .music-midi-editor-page .music-editor-bottom{box-sizing:border-box;height:clamp(180px,30dvh,280px);max-height:30dvh;min-height:0;flex:0 0 clamp(180px,30dvh,280px);margin-block:6px 0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.music-midi-editor-page .music-editor-bottom h2{color:var(--music-violet)}
 .music-midi-editor-page .music-part-workflow{width:max-content;max-width:100%;min-height:0;margin:0;border:0;background:transparent;box-shadow:none}
 .music-midi-editor-page .music-part-workflow>summary{min-height:32px;padding:3px 8px;white-space:nowrap}
 .music-midi-editor-page .music-part-workflow>summary span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -610,6 +611,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
   .music-midi-editor-page .music-editor-bottom :is(label,b,p){font-size:.68rem}
   .music-midi-editor-page .music-partial-edit-provider{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:4px 0}
   .music-midi-editor-page .music-partial-edit-provider textarea{height:30px;min-height:30px}
+  .music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:20px;min-height:20px;padding-block:0}
   .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}
 }
 @media(max-width:600px){
