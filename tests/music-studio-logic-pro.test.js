@@ -140,6 +140,9 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom h2\{color:var\(--music-violet\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider :is\(textarea\[name="instruction"\],input\[name="model"\],input\[name="apiKey"\]\)\{height:20px;min-height:20px;padding-block:0\}/);
   assert.match(css,/\.music-midi-editor-page \.music-edit-range input\{height:20px;min-height:20px;margin-top:0;padding-block:0\}/);
+  assert.match(css,/\.music-partial-edit-summary>div\{padding:0;border:0;border-radius:0;background:transparent;text-align:center;overflow:visible\}/);
+  assert.match(source,/music-edit-mode-group[\s\S]*?music-lock-group[\s\S]*?music-clipboard-group[\s\S]*?music-selection-group[\s\S]*?music-note-length-group[\s\S]*?music-velocity-group/);
+  assert.match(source,/music-count-in-group[\s\S]*?countInBeatDisplay\(session\)[\s\S]*?music-metronome-group/);
   assert.match(css,/\.music-midi-editor-page \.music-partial-edit-provider\{grid-template-columns:minmax\(110px,\.85fr\) minmax\(190px,1\.55fr\) minmax\(100px,\.8fr\) minmax\(130px,1fr\) minmax\(150px,1\.2fr\) auto/);
 });
 test('Mac Chrome with Web MIDI renders device selection instead of Safari guidance',()=>{
@@ -887,6 +890,8 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-editor-bottom section>div>button\{flex:0 0 auto;max-width:100%\}/);
   assert.match(html,/<span class="music-record-dot" aria-hidden="true">●<\/span> Record（録音）/);
   for(const label of ['Clear Loop（ループ解除）','Play（再生）','Stop（停止）','Snap ON（スナップON）','Fit Range（音域を表示）','Add Measure（小節を追加）','Select（選択）','Add Note（ノート追加）','Eraser（消しゴム）','Copy（コピー）','Paste（貼り付け）','Duplicate（複製）','Select All（全選択）','Match Length（長さを揃える）','Match Velocity（Velocityを揃える）'])assert.ok(html.includes(label));
+  assert.match(html,/music-edit-mode-group[\s\S]*?music-lock-group[\s\S]*?music-clipboard-group[\s\S]*?music-selection-group[\s\S]*?music-note-length-group[\s\S]*?music-velocity-group/);
+  assert.match(html,/music-count-in-group[\s\S]*?music-count-in-display[\s\S]*?music-metronome-group/);
   for(const label of ['Project（プロジェクト情報）','Shortcuts（ショートカット）','Import / Export（読み込み／書き出し）','Melody Correction（メロディ補正）','Saved（保存済み）','MIDI入力'])assert.ok(html.includes(label));
   assert.match(html,/onclick="MusicStudio\.editorStopTransport\(\)"/);
   const transport=html.match(/<div class="music-transport-controls">([\s\S]*?)<\/div>/)?.[1]||'',transportLabels=['Record（録音）','Play（再生）','Stop（停止）','Loop ','Clear Loop（ループ解除）'];
