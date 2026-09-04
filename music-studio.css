@@ -581,6 +581,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab.music-primary{border-color:rgba(139,92,246,.72);background:rgba(109,40,217,.18);color:#ddd6fe;box-shadow:inset 0 -2px #7c3aed}
 .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){display:inline-flex;box-sizing:border-box;width:28px;min-width:28px;max-width:28px;height:28px;min-height:28px;max-height:28px;align-items:center;justify-content:center;padding:0;border-radius:7px;font-size:.72rem;line-height:1}
 .music-midi-editor-page .music-part-tabs .music-history-controls{flex:none;margin-right:0;margin-left:auto}
+@media(min-width:901px){.music-midi-editor-page .music-part-tabs{box-sizing:border-box;width:100%;flex-wrap:nowrap}}
 @media(min-width:901px){
   .music-midi-editor-page .music-editor-bottom{height:clamp(340px,43dvh,396px);max-height:43dvh;flex-basis:clamp(340px,43dvh,396px);grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:max-content;align-items:start;gap:6px}
   .music-midi-editor-page .music-editor-bottom>section{min-height:0;padding:8px}
