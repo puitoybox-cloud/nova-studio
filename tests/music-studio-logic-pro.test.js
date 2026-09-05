@@ -21,10 +21,10 @@ test('major and placeholder routes omit the retired back and next navigation',()
   for(const route of routes){const html=app.renderRoute(route);assert.doesNotMatch(html,/class="music-flow-nav"|← 戻る|次へ →|Back（戻る）|Next（進む）/,route)}
   const editor=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(editor,/class="music-editor-chrome"><header class="music-editor-heading"/);
 });
-test('Project popup BPM uses editor tempo fallback and validates the existing range and decimal step',async()=>{
+test('Project popup omits BPM while Current Tempo keeps editor tempo fallback and validation',async()=>{
   const{app}=load(),repo=app.memoryRepository(),withTempo=app.makeProject({projectId:'bpm-ui-tempo',projectName:'BPM UI',bpm:111,midiData:{tempo:132.5,tracks:[{part:'melody',notes:[]}]}});app.setRepository(repo);await repo.put(withTempo);app.state.projects=[withTempo];let html=app.renderRoute(`music-studio/midi-editor/${withTempo.projectId}`);
-  assert.match(html,/class="music-editor-popover music-project-popover"/);assert.match(html,/class="music-project-bpm">BPM<input type="number" min="20" max="400" step="0\.1"[^>]*value="132\.5"[^>]*editorSetBpm/);
-  const withoutMidi=app.makeProject({projectId:'bpm-ui-project',projectName:'Project BPM',bpm:98.4});app.state.projects=[withoutMidi];app.state.midiEditor=null;html=app.renderRoute(`music-studio/midi-editor/${withoutMidi.projectId}`);assert.match(html,/value="98\.4"[^>]*aria-label="Project BPM"/);
+  assert.match(html,/class="music-editor-popover music-project-popover"/);assert.doesNotMatch(html,/music-project-bpm|aria-label="Project BPM"/);assert.match(html,/value="132\.5"[^>]*aria-label="Current Tempo BPM"[^>]*editorSetBpm/);
+  const withoutMidi=app.makeProject({projectId:'bpm-ui-project',projectName:'Project BPM',bpm:98.4});app.state.projects=[withoutMidi];app.state.midiEditor=null;html=app.renderRoute(`music-studio/midi-editor/${withoutMidi.projectId}`);assert.doesNotMatch(html,/music-project-bpm|aria-label="Project BPM"/);assert.match(html,/value="98\.4"[^>]*aria-label="Current Tempo BPM"/);
   const session=app.state.midiEditor,undo=session.undo.length,redo=session.redo.length;assert.equal(app.editorSetBpm(19).ok,false);assert.equal(app.editorSetBpm(401).ok,false);assert.equal(session.midiData.tempo,98.4);assert.equal(session.undo.length,undo);assert.equal(session.redo.length,redo)
 });
 test('Project popup reuses the guarded New Project route and keeps the existing Open Project action',()=>{
@@ -61,6 +61,7 @@ test('Melody Correction is an overlay with complete basic controls and transient
   ]}]}});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),core=window.MusicStudioEditor,session=app.state.midiEditor;
   assert.match(html,/<summary>Melody Correction（メロディ補正）<\/summary>/);assert.match(html,/name="key"/);assert.match(html,/Pentatonic/);assert.match(html,/name="quantize"/);assert.match(html,/>OFF<\/option>/);assert.match(html,/name="strength" type="range"/);assert.match(html,/name="swing" type="range"/);assert.match(html,/value="selected"/);assert.match(html,/value="measures"/);assert.doesNotMatch(html,/class="music-correction-tools"/);assert.match(html,/AIメロディ生成：未実装/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-midi-editor-page \.music-correction-popover label\{color:var\(--music-ink\);font-weight:700\}/);assert.match(css,/fieldset\.music-correction-target\{padding-top:10px\}/);assert.match(css,/\.music-midi-editor-page \.music-correction-target legend\{margin-left:0;padding:0 5px;background:#081421;color:var\(--music-blue\);line-height:1\.4\}/);
   core.selectNote(session,'target');
   const form={elements:{key:{value:'C'},scale:{value:'Major'},quantize:{value:'1/16'},strength:{value:'100'},swing:{value:'0'},target:{value:'selected'},measureFrom:{value:'1'},measureTo:{value:'1'}}};
   window.document={querySelector:selector=>selector==='#melodyCorrectionForm'?form:null};
