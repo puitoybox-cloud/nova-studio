@@ -42,3 +42,5 @@ test('Melody, Drums and Bass export as separate named MIDI tracks',()=>{
   assert.equal(result.validation.data.tracks.find(track=>track.name==='Bass').program,32);
   assert.equal(JSON.stringify(result.validation.data.tracks.find(track=>track.name==='Bass').notes[0]),'{"id":"b1","pitch":28,"startTick":240,"durationTicks":960,"velocity":88}');
 });
+
+test('tempo map writes one sorted Tempo Meta Event per tick including decimal BPM',()=>{const midi=load(),data=base(midi);data.tempo=120;data.tempoMap=[{tick:1920,bpm:90},{tick:960,bpm:137.5},{tick:960,bpm:150},{tick:0,bpm:80}];const result=midi.createMidiFile(data),map=result.inspection.tracks[0].tempoMap;assert.equal(map.length,3);assert.equal(JSON.stringify(map.map(item=>item.tick)),JSON.stringify([0,960,1920]));assert.ok(Math.abs(map[0].bpm-120)<.001);assert.ok(Math.abs(map[1].bpm-150)<.001);assert.ok(Math.abs(map[2].bpm-90)<.001);assert.equal(map[1].microsecondsPerQuarter,Math.round(60000000/150))});
