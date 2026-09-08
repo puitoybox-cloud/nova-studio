@@ -1,5 +1,18 @@
 # Nova Studio Changelog
 
+## Music Studio 0.5開発系列（PR #203〜#217）— Implementation complete
+
+- Melody／Drums／Bassを1曲の3Trackとして扱う共通Playback、Transport／Scheduler、Track tab MIDI routingを完成
+- Muteを既存track fieldで保存し、Soloをruntime-onlyとする互換方針と3Track操作UIを追加
+- MIDI Input Assignment、Drums／Bass MIDI recording、GM Drum Mapとtrack別preview／recordingを追加
+- Save／Import／Export回帰、Note Length Presets、MIDI reload自動初期化、Editor internal scroll／UIを整備
+- Project BPM同期、Current Tempo、Tempo Change／tempoMap、MIDI tempo export／importを追加し、既存Playbackと保存形式を維持
+- Editor内New Project、Project／Shortcuts／Import・Export／演奏補助／MIDI Inputのsticky popup Close、Melody Correctionのcompact UI・紫accent・fieldset見出し・内部scrollを整備
+- Project popup BPM UIとInput To UIは表示せず、New Project／Open Project、Correction、MIDI往復、Logic Pro Integrationの既存処理を維持
+- Logic Pro実制作確認で、初期BPM 72、4/4、3小節目から90 BPM、3Track分離、Melody／Drums／Bassのnote位置・長さ、GM Drum配置、Track timing、保存後reload、Mute／Solo、3Track Playback、およびMusic Studioとの再生整合に合格
+- 完了時検証は `node --test` 518 passed / 0 failed、repository内全JavaScript `node --check` 55ファイル成功
+- `APP_VERSION 1.4.0`、`music-studio-project` `schemaVersion 1.0`、既存MS番号を維持し、新しいMS番号、Live Provider API通信、保存schema変更を追加していない
+
 ## Music Studio 0.4開発系列（PR #185〜#202）— Implementation complete
 
 この見出しの`0.4`はGit branch／PRで使用した開発系列名であり、アプリの`APP_VERSION 1.4.0`、`music-studio-project` schema Version 1、`MS-xx`作業番号とは別の管理軸である。
