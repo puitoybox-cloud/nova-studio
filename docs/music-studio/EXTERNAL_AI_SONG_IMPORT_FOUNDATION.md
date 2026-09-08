@@ -2,7 +2,7 @@
 
 ## Scope
 
-This foundation adds a provider-neutral boundary for user-supplied external songs. It does not call an AI service, alter Logic Pro projects, or add a new editor UI.
+This foundation adds a provider-neutral boundary for user-supplied external songs. The editor exposes that boundary through a separate compact External Song Import entry; it does not call an AI service or alter Logic Pro projects.
 
 - MIDI input reuses the existing independent SMF Type 0/1 parser and Version 1 conversion.
 - Every imported MIDI track keeps a source-derived unique Track ID and enters with `roleAssignment: "unassigned"`.
@@ -11,9 +11,19 @@ This foundation adds a provider-neutral boundary for user-supplied external song
 - Editor normalization adds the existing empty Melody, Drums, and Bass compatibility tracks without deleting, reordering, or promoting imported tracks.
 - All MIDI export includes additional imported tracks; part exports retain the existing Melody, Drums, and Bass behavior.
 
+## Editor UI connection
+
+- Selecting a `.mid` or `.midi` file calls `MusicStudioExternalSongImport.prepareMidiImport(...)`; parsing and assignment policy are not duplicated in the UI.
+- A new Version 1 project is persisted only after parsing, Track Registry validation, summary validation, and project validation succeed.
+- The result displays file name, MIDI type, total and playable track counts, note count, initial BPM, time signature, and the unassigned status.
+- The existing MIDI Import and Logic Pro MIDI Import remain independent and retain their prior behavior.
+- Track review and manual role assignment are intentionally deferred to the next change.
+
 ## Audio boundary
 
 WAV, MP3, AIFF, CAF, M4A, FLAC, and OGG intake creates a metadata-only descriptor. It does not read or retain the body or path and returns `awaiting-audio-processing`. A future implementation may attach stem separation, Audio-to-MIDI, and explicit track review behind `nextBoundary`; none of those stages run in this change.
+
+The editor UI accepts MIDI only in this stage. Audio UI intake remains deferred.
 
 Audio bytes and paths are not inserted into `music-studio-project`. The existing `schemaVersion: 1.0` and `APP_VERSION: 1.4.0` remain unchanged.
 
