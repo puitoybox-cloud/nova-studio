@@ -105,3 +105,45 @@ test('external import summary CSS stays compact and responsive',()=>{
   assert.match(css,/\.music-external-import\{display:grid;gap:7px;padding:9px/);
   assert.match(css,/@media\(max-width:600px\)\{\.music-external-import-result dl\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}\}/);
 });
+
+test('external Track Review shows identifiers summaries and explicit unassigned defaults without auto assignment',()=>{
+  const{app,editor}=loadApp(),project=app.makeProject({projectId:'review-ui',projectName:'Review UI',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'external-vocal',name:'Melody',channel:10,program:53,roleAssignment:'unassigned',notes:[{id:'n1',pitch:67,startTick:0,durationTicks:480,velocity:90}]}
+  ]}});app.state.projects=[project];const html=app.renderRoute('music-studio/midi-editor/review-ui'),review=editor.externalReviewTracks(app.state.midiEditor.midiData);
+  assert.equal(review[0].roleAssignment,'unassigned');assert.equal(review[0].id,'external-vocal');assert.equal(review[0].noteCount,1);
+  for(const text of ['External Track Review / Assignment','external-vocal','Melody','Channel 10','Program 53','1 notes','Current: unassigned','Apply Assignment','Cancel'])assert.match(html,new RegExp(text));
+  assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.id==='external-vocal').part,undefined);
+});
+
+test('manual Melody Drums Bass assignments and return to Unassigned preserve Track IDs notes and save reload',async()=>{
+  const{app,editor}=loadApp(),repo=app.memoryRepository(),tracks=['melody','drums','bass'].map((role,index)=>({id:`external-${role}`,name:`AI ${role}`,channel:index+1,program:40+index,roleAssignment:'unassigned',notes:[{id:`note-${role}`,pitch:60+index,startTick:index*240,durationTicks:480,velocity:80+index}]})),project=app.makeProject({projectId:'assignment-save',projectName:'Assignment Save',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks}});app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.midiEditorView(project.projectId);
+  const before=JSON.stringify(editor.externalReviewTracks(app.state.midiEditor.midiData).map(track=>[track.id,track.noteCount,track.channel,track.program]));
+  for(const role of ['melody','drums','bass'])app.editorDraftExternalTrackAssignment(`external-${role}`,role);
+  const applied=await app.editorApplyExternalTrackAssignments(),stored=await repo.get(project.projectId),session=editor.createSession(stored);
+  assert.equal(applied.ok,true);assert.deepEqual(Array.from(editor.externalReviewTracks(session.midiData),track=>track.roleAssignment),['melody','drums','bass']);
+  assert.equal(JSON.stringify(editor.externalReviewTracks(session.midiData).map(track=>[track.id,track.noteCount,track.channel,track.program])),before);
+  app.state.midiEditor=session;app.state.externalTrackAssignmentDraft=null;app.editorDraftExternalTrackAssignment('external-melody','unassigned');assert.equal((await app.editorApplyExternalTrackAssignments()).ok,true);
+  assert.equal((await repo.get(project.projectId)).midiData.tracks.find(track=>track.id==='external-melody').roleAssignment,'unassigned');
+});
+
+test('invalid and duplicate external assignments are atomic and Cancel is non-destructive',()=>{
+  const{app,editor}=loadApp(),project=app.makeProject({projectId:'assignment-conflict',projectName:'Conflict',midiData:{version:1,tracks:[
+    {id:'external-a',name:'A',roleAssignment:'unassigned',notes:[{id:'a1',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
+    {id:'external-b',name:'B',roleAssignment:'unassigned',notes:[{id:'b1',pitch:62,startTick:0,durationTicks:480,velocity:90}]}
+  ]}});app.state.projects=[project];app.midiEditorView(project.projectId);const before=JSON.stringify(app.state.midiEditor.midiData.tracks);
+  const conflict=editor.applyExternalTrackAssignments(app.state.midiEditor,{'external-a':'melody','external-b':'melody'}),invalid=editor.applyExternalTrackAssignments(app.state.midiEditor,{'missing':'bass'});
+  assert.equal(conflict.applied,false);assert.ok(conflict.errors.includes('duplicate-role'));assert.equal(invalid.applied,false);assert.equal(JSON.stringify(app.state.midiEditor.midiData.tracks),before);
+  app.editorDraftExternalTrackAssignment('external-a','bass');assert.equal(app.editorCancelExternalTrackAssignments().cancelled,true);assert.equal(JSON.stringify(app.state.midiEditor.midiData.tracks),before);
+});
+
+test('assignment metadata keeps compatibility tracks separate and All MIDI exports each external Track once',()=>{
+  const{app,writer,editor}=loadApp(),project=app.makeProject({projectId:'assignment-export',projectName:'Export',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'external-kit',name:'AI Drums',channel:10,program:null,roleAssignment:'drums',notes:[{id:'d1',pitch:38,startTick:0,durationTicks:120,velocity:100}]}
+  ]}});app.state.projects=[project];const session=editor.createSession(project),external=session.midiData.tracks.find(track=>track.id==='external-kit'),input=app.midiExportInput({...project,midiData:session.midiData},'all'),result=writer.createMidiFile(input),parsed=writer.inspectMidiBytes(result.bytes);
+  assert.equal(external.part,undefined);assert.deepEqual(Array.from(session.midiData.tracks.filter(track=>track.part),track=>track.part),['melody','drums','bass']);assert.equal(input.tracks.filter(track=>track.id==='external-kit').length,1);assert.equal(parsed.tracks.filter(track=>track.name==='AI Drums').length,1);
+});
+
+test('External Track Review CSS remains compact at desktop tablet and phone boundaries',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-external-track-review\{margin:6px 0/);assert.match(css,/grid-template-columns:minmax\(0,1fr\) 150px/);assert.match(css,/@media\(max-width:600px\)\{\.music-external-track-row\{grid-template-columns:1fr\}/);
+});
