@@ -128,6 +128,24 @@ test('Editor render mounts exactly three review rows for the real six-Track comp
   for(const part of ['melody','drums','bass'])assert.doesNotMatch(html,new RegExp(`class="music-external-track-row" data-track-id="${part}"`));
 });
 
+test('production entry cache keys select the Review-capable Editor assets',()=>{
+  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
+  assert.match(index,/app\.js\?v=1\.5\.52/);
+  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.125/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.14/);assert.match(source,/music-studio\.js\?v=1\.4\.96/)}
+});
+
+test('All MIDI round trip mounts three external Review rows into the standalone document target',async()=>{
+  const{app,writer,window}=loadApp(),repo=app.memoryRepository(),recordedNotes=(prefix,pitch)=>Array.from({length:12},(_,index)=>({id:`${prefix}-${index}`,pitch,startTick:index*120,durationTicks:120,velocity:90})),source=app.makeProject({projectId:'recorded-source',projectName:'Recorded Source',midiData:{version:1,ppq:480,tempo:72,timeSignature:{numerator:4,denominator:4},tracks:[
+    {id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:recordedNotes('melody',60)},
+    {id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:recordedNotes('drums',38)},
+    {id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:recordedNotes('bass',36)}
+  ]}});app.setRepository(repo);app.state.projects=[source];
+  const exported=writer.createMidiFile(app.midiExportInput(source,'all')),imported=await app.importExternalSongFile(midiFile('recorded-All.mid',exported.bytes));assert.equal(imported.ok,true);
+  const target={innerHTML:''};window.document={body:{dataset:{musicStudioStandalone:'true'}},title:'',querySelector(selector){return selector==='#music-studio-app'?target:null}};window.location.hash=`#music-studio/midi-editor/${imported.project.projectId}`;app.mountStandalone();
+  assert.match(target.innerHTML,/class="music-studio-shell music-midi-editor-page"/);assert.match(target.innerHTML,/class="music-external-track-review" open/);assert.equal((target.innerHTML.match(/class="music-external-track-row"/g)||[]).length,3);assert.doesNotMatch(target.innerHTML,/class="music-external-track-review"[^>]*hidden/);
+  assert.ok(target.innerHTML.indexOf('music-midi-editor-page')<target.innerHTML.indexOf('music-external-track-review'));
+});
+
 test('External Track Review renders after import and repository reload, including assigned roles',async()=>{
   const{app,writer}=loadApp(),repo=app.memoryRepository();app.setRepository(repo);
   const imported=await app.importExternalSongFile(midiFile('review-after-import.mid',sourceMidi(writer))),route=`music-studio/midi-editor/${imported.project.projectId}`;
