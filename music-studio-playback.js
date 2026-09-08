@@ -17,11 +17,13 @@
     const id=String(track.id||'').toLowerCase();
     return TRACK_ROLES.has(id)?id:null
   }
+  function resolvePlaybackAudio(track={}){const declared=String(track.role||'').toLowerCase(),role=TRACK_ROLES.has(declared)?declared:playbackRole(track);return role?{mode:role,fallback:false,reason:null}:{mode:'melody',fallback:true,reason:'missing-core-role'}}
   function createPlaybackDescriptor(track={},playbackState={}){
-    const id=String(track.id||''),part=String(track.part||playbackRole(track)||''),role=playbackRole({...track,part}),storedMuted=track.muted===true;
-    return{id,part,role,channel:Number(track.channel),program:track.program==null?null:Number(track.program),notes:Array.isArray(track.notes)?track.notes.map(clone):[],muted:runtimeValue(playbackState,'mutedByTrackId',id,storedMuted)===true,solo:runtimeValue(playbackState,'soloByTrackId',id,false)===true,soloEligible:role!==null}
+    const id=String(track.id||''),part=String(track.part||playbackRole(track)||''),role=playbackRole({...track,part}),storedMuted=track.muted===true,audio=resolvePlaybackAudio({role});
+    return{id,part,role,channel:Number(track.channel),program:track.program==null?null:Number(track.program),audio,notes:Array.isArray(track.notes)?track.notes.map(clone):[],muted:runtimeValue(playbackState,'mutedByTrackId',id,storedMuted)===true,solo:runtimeValue(playbackState,'soloByTrackId',id,false)===true,soloEligible:role!==null}
   }
-  function createPlaybackDescriptors(tracks=[],playbackState={}){return(Array.isArray(tracks)?tracks:[]).map(track=>createPlaybackDescriptor(track,playbackState))}
+  function descriptorTracks(input=[]){return Array.isArray(input)?input:Array.isArray(input?.tracks)?input.tracks:[]}
+  function createPlaybackDescriptors(tracks=[],playbackState={}){return descriptorTracks(tracks).map(track=>createPlaybackDescriptor(track,playbackState))}
   function activePlaybackTracks(tracks=[],playbackState={}){const descriptors=createPlaybackDescriptors(tracks,playbackState),hasSolo=descriptors.some(track=>track.solo&&track.soloEligible);return(hasSolo?descriptors.filter(track=>track.solo&&track.soloEligible&&!track.muted):descriptors.filter(track=>!track.muted)).map(clone)}
   function normalizeTempoMap(items=[],initialTempo=120){const initial=Number(initialTempo),fallback=Number.isFinite(initial)&&initial>=20&&initial<=400?initial:120,byTick=new Map();for(const item of Array.isArray(items)?items:[]){const tick=Math.round(Number(item?.tick)),bpm=Number(item?.bpm??(Number(item?.microsecondsPerQuarter)>0?60000000/Number(item.microsecondsPerQuarter):NaN));if(Number.isInteger(tick)&&tick>=0&&Number.isFinite(bpm)&&bpm>=20&&bpm<=400)byTick.set(tick,{tick,bpm,microsecondsPerQuarter:Math.round(60000000/bpm),track:Number.isInteger(Number(item?.track))?Number(item.track):0})}byTick.set(0,{tick:0,bpm:fallback,microsecondsPerQuarter:Math.round(60000000/fallback),track:byTick.get(0)?.track??0});return[...byTick.values()].sort((a,b)=>a.tick-b.tick)}
   function tempoAtTick(tick,tempoMap=[],initialTempo=120){let tempo=Number(initialTempo)||120;for(const item of normalizeTempoMap(tempoMap,tempo)){if(item.tick>tick)break;tempo=item.bpm}return tempo}
@@ -38,5 +40,5 @@
     if(playable.length===1&&synth?.playNotes)return synth.playNotes(playable[0].notes,timing);
     return{ok:false,trackCount:active.length,noteCount:0,durationMs:0,reason:'track-playback-unavailable'}
   }
-  root.MusicStudioPlayback={playbackRole,createPlaybackDescriptor,createPlaybackDescriptors,activePlaybackTracks,normalizeTempoMap,tempoAtTick,tickDurationSeconds,tickAtSeconds,createTransportState,schedulePlaybackTracks};
+  root.MusicStudioPlayback={playbackRole,resolvePlaybackAudio,createPlaybackDescriptor,createPlaybackDescriptors,activePlaybackTracks,normalizeTempoMap,tempoAtTick,tickDurationSeconds,tickAtSeconds,createTransportState,schedulePlaybackTracks};
 })(typeof window!=='undefined'?window:globalThis);

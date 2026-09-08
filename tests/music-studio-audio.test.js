@@ -127,6 +127,16 @@ test('track-aware playback preserves track and note identity on one shared timel
   ]);
   assert.equal(new Set(result.scheduledNotes.map(note=>note.startTime)).size,1);
 });
+test('descriptor audio resolution preserves core paths and safely falls back incomplete unknown tracks',async()=>{
+  const audio=load(),synth=audio.createSynth({AudioContext:Context});await synth.unlock();
+  assert.deepEqual(JSON.parse(JSON.stringify(audio.resolveTrackAudio({role:'melody',audio:{}}))),{mode:'melody',fallback:false,reason:null});
+  assert.deepEqual(JSON.parse(JSON.stringify(audio.resolveTrackAudio({role:'drums'}))),{mode:'drums',fallback:false,reason:null});
+  assert.deepEqual(JSON.parse(JSON.stringify(audio.resolveTrackAudio({role:'bass'}))),{mode:'bass',fallback:false,reason:null});
+  assert.deepEqual(JSON.parse(JSON.stringify(audio.resolveTrackAudio({id:'unknown',audio:{mode:'drums'}}))),{mode:'melody',fallback:true,reason:'missing-core-role'});
+  const result=synth.playTracks([{id:'unknown',channel:3,notes:[{id:'u',pitch:72,startTick:0,durationTicks:240,velocity:80}]}],{ppq:480,tempo:120});
+  assert.equal(result.ok,true);assert.equal(result.noteCount,1);assert.equal(result.scheduledNotes[0].soundPath,'melody');assert.equal(result.scheduledNotes[0].audible,true);
+  assert.equal(synth.diagnostics.drumVoicesCreated,0);assert.equal(synth.context.oscillators[0].type,'sine')
+});
 test('track-aware loop bounds share one range and retain Drums duration without synthesizing it',async()=>{
   const synth=load().createSynth({AudioContext:Context});await synth.unlock();const result=synth.playTracks([
     {id:'drums',part:'drums',channel:10,program:null,notes:[{id:'crossing-drum',pitch:46,startTick:360,durationTicks:480,velocity:105}]},
