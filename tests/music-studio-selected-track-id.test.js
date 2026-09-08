@@ -68,3 +68,12 @@ test('runtime selection never changes Project JSON track fields or persistent sh
   core.selectTrackById(session,'external-strings');assert.deepEqual(plain(session.midiData),shape);assert.deepEqual(plain(session.midiData.tracks.find(track=>track.id==='external-strings')),unknownBefore);
   for(const container of [session.midiData,session.savedMidiData,...session.midiData.tracks])assert.equal(Object.hasOwn(container,'selectedTrackId'),false)
 });
+
+test('addNotesToTrack writes only the first exact Track ID and preserves unknown fields',()=>{
+  const core=load(),source=project();source.midiData.tracks.push({id:'external-strings',name:'Duplicate',channel:4,notes:[]});const session=core.createSession(source),matches=session.midiData.tracks.filter(track=>track.id==='external-strings'),metadata=plain(matches[0]);
+  core.selectTrackById(session,'external-strings');core.addNotesToTrack(session,'external-strings',[{id:'recorded',pitch:75,startTick:240,durationTicks:120,velocity:99,inputChannel:10,extension:{keep:true}}]);assert.equal(matches[0].notes.length,2);assert.equal(matches[1].notes.length,0);assert.deepEqual(plain(matches[0].notes[1]),{id:'recorded',pitch:75,startTick:240,durationTicks:120,velocity:99,locked:false,inputChannel:10,extension:{keep:true}});assert.deepEqual(plain({...matches[0],notes:metadata.notes}),metadata);assert.deepEqual(Array.from(session.selectedNoteIds),['recorded']);core.undo(session);assert.equal(core.getTrackById(session.midiData.tracks,'external-strings').notes.length,1);core.redo(session);assert.equal(core.getTrackById(session.midiData.tracks,'external-strings').notes.length,2)
+});
+
+test('addNotesToTrack ignores invalid IDs without changing session state',()=>{
+  const core=load(),session=core.createSession(project());for(const id of ['missing','',null,42]){const before=JSON.stringify(session);assert.equal(core.addNotesToTrack(session,id,[{pitch:60,startTick:0}]),session);assert.equal(JSON.stringify(session),before)}
+});
