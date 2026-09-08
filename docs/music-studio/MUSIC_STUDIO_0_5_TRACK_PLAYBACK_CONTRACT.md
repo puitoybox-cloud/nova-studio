@@ -77,3 +77,13 @@ The scheduler does not edit tracks, notes, Project state, Undo / Redo, loop stat
 - `APP_VERSION` remains `1.4.0`.
 - No settings field, IndexedDB version, environment variable, credential, provider, or live API boundary changes.
 - Playback descriptors, active selection, Transport snapshots, and Solo state are runtime-only.
+
+## Music Studio 0.5 completion record
+
+The PR1 contract above remains the compatibility boundary. Final implementation and acceptance for the 0.5 development series were completed through PR #217, with PR #203 through PR #217 merged to main.
+
+The completed 0.5 scope connects Melody, Drums, and Bass to one shared three-track Playback and Transport timeline; preserves track-tab MIDI routing; applies the documented persisted Mute and runtime-only Solo policy; supports MIDI Input Assignment and Drums/Bass recording; and retains Version 1 Save, Import, Export, reload, and Logic Pro MIDI round trips. Editor follow-up work also completed Note Length Presets, internal scrolling, BPM synchronization, Current Tempo, Tempo Change and `tempoMap`, the Editor New Project entry, sticky popup Close controls, and Correction UI adjustments.
+
+Acceptance used 518 passing automated tests, syntax checks for all 55 repository JavaScript files, and an actual Logic Pro production round trip. The production check confirmed three separate Melody/Drums/Bass tracks, 4/4, initial 72 BPM, a 90 BPM change from measure 3, note positions and lengths, GM drum placement, track timing, save/reload persistence, Mute/Solo, three-track Playback, and matching Music Studio/Logic Pro playback.
+
+Future track additions and other post-0.5 enhancements are not part of this completion record. They do not change this PR1 contract, `APP_VERSION 1.4.0`, `schemaVersion: 1.0`, or the existing `MS-xx` identifiers.

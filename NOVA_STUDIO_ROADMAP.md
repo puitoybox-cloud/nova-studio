@@ -80,10 +80,10 @@ Music Studioには用途の異なる複数の管理軸がある。これらは�
 | MS-01 / MS-01F | ✅ 完成 | 専用home、独立表示 | 共通navigationをMusic Studio routeだけで非表示。 |
 | MS-02 | ✅ 完成 | Version 1 project管理 | 非破壊JSON入出力と専用IndexedDB。 |
 | MS-03 / MS-03N | ✅ 完成 | 設定、backup、自動保存・夜間安全策 | 設定APIをMS-04以降の正本にする。 |
-| MS-04 | 🔵 ティア確認待ち | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復を採用。専用案内、事前検証、音声一時参照を実装。実機受入後に完成判定。 |
-| MS-05 | 🟨 ティア確認待ち | Standard MIDI File生成・検証基盤 | 依存なしType 1 writer、tempo・拍子・UTF-8 track名、複数track、内部再解析、履歴、無data無出力、118テスト。Logic Pro実機確認待ち。 |
-| MS-06 | 🟨 ティア確認待ち | Logic Pro MIDI読み込み・解析・安全な再編集基盤 | 独立Type 0/1 parser、Running Status、Meta／channel event、tempo／拍子map、note組立、Program／CC保持、preview、新規／複製、履歴、MS-05往復。 |
-| MS-07 | 🟡 実装済み・継続改善 | MIDI Composerホーム・共通Editor | MS-06解析基盤を再利用した編集入口、Melody／Drums／Bass共通Editor、保存・再生・録音・部分編集基盤がmainに存在する。独立したMS-07受入完了記録は確認できない。 |
+| MS-04 | ✅ 完成 | Logic Pro X連携方式の調査・設計 | SMF Type 1手動往復、専用案内、事前検証、音声一時参照を実装。Music Studio 0.5のLogic Pro実制作確認で手動往復と再生整合を受入済み。 |
+| MS-05 | ✅ 完成 | Standard MIDI File生成・検証基盤 | 依存なしType 1 writer、tempo・拍子・UTF-8 track名、複数track、内部再解析、履歴、無data無出力を実装。Logic Proで3Track、初期BPM、Tempo Change、note位置・長さを確認済み。 |
+| MS-06 | ✅ 完成 | Logic Pro MIDI読み込み・解析・安全な再編集基盤 | 独立Type 0/1 parser、Running Status、Meta／channel event、tempo／拍子map、note組立、Program／CC保持、preview、新規／複製、履歴、MS-05往復を実装し、Logic Proからの実制作MIDI Importを受入済み。 |
+| MS-07 | ✅ 0.5範囲完成・継続改善 | MIDI Composerホーム・共通Editor | 0.5範囲のMelody／Drums／Bass共通Editor、3Track Playback、Mute／Solo、MIDI routing／recording、GM Drum Map、保存・MIDI往復、Note Length、BPM／Tempo、Editor UIを完成。新Track等の将来拡張は別の継続改善として扱う。 |
 
 MS-04の調査・実装・未対応範囲は `docs/music-studio/MS-04_LOGIC_PRO_INTEGRATION.md` を正本とする。Logic Proの自動起動・直接操作・project file編集、外部送信は採用しない。
 
@@ -111,11 +111,15 @@ PR #185〜#201で予定していた実装範囲をmainへ追加し、Music Studi
 
 既知事項：Gemini Live success remains unconfirmed; safe provider-error and timeout handling are confirmed. Geminiの両Live確認でProject非変更とcredential非保持を確認した。結果からprovider側障害、実装不具合、利用不能のいずれも断定しない。
 
-### Music Studio 0.5開発系列：開始
+### Music Studio 0.5開発系列：完了
 
 Music Studio 0.5は、Melody／Drums／Bassを編集可能な3パートから1曲として実制作可能な3Trackへ引き上げる開発系列として開始した。
 
 主なscopeは、3Track同時Playback、共通Transport／Scheduler、Mute／Solo、Drums／Bass Playback、GM Drum Map、MIDI Input Assignment、Drums／Bass Web MIDI Record、保存・Import／Export回帰、およびLogic Pro実制作確認とする。PR1では、既存EditorとAudio schedulerを再利用し、Track Playback契約、識別、descriptor、Transport／Scheduler境界、およびMute／Solo保存方針を固定する。契約の正本は `docs/music-studio/MUSIC_STUDIO_0_5_TRACK_PLAYBACK_CONTRACT.md` とする。
+
+PR #203〜#217はmainへMerge済み。3Track Playback、Mute／Solo、MIDI routing／recording、GM Drum Map、Save／Import／Export、Note Length Presets、MIDI reload自動初期化、Editor internal scroll／UI、BPM sync、Current Tempo、Tempo Change／tempoMap、MIDI tempo export／import、Editor内New Project、popup Close統一、Correction UI調整を0.5完了範囲として確認した。
+
+自動検証は `node --test` 518 passed / 0 failed、repository内全JavaScript `node --check` 55ファイル成功。Logic Pro実制作確認では、Melody／Drums／Bassの3Track分離、初期BPM 72、4/4、3小節目から90 BPM、note位置・長さ、GM Drum配置、Track timing、保存後reload、Mute／Solo、3Track Playback、およびMusic StudioとLogic Proの再生整合に合格した。
 
 新Trackの追加は0.5 scopeに含めず、0.6候補とする。次のMS番号は未定義のため新設しない。
 
