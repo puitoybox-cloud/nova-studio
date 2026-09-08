@@ -1460,10 +1460,11 @@ function loadMusicStudioScript(datasetKey,src,ready){
 }
 loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>Boolean(window.MusicStudioMidi))
  .then(()=>loadMusicStudioScript('music-studio-midi-parser','./music-studio-midi-parser.js?v=1.4.1',()=>Boolean(window.MusicStudioMidiParser)))
- .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.14',()=>Boolean(window.MusicStudioEditor)))
+ .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.15',()=>window.MusicStudioEditor?.ASSET_VERSION==='1.4.15'&&typeof window.MusicStudioEditor.externalReviewTracks==='function'))
  .then(()=>loadMusicStudioScript('music-studio-external-song-import','./music-studio-external-song-import.js?v=1.0.0',()=>Boolean(window.MusicStudioExternalSongImport)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.2',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.13',()=>Boolean(window.MusicStudioAudio)))
  .then(()=>loadMusicStudioScript('music-studio-playback','./music-studio-playback.js?v=1.0.1',()=>Boolean(window.MusicStudioPlayback)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.96',()=>Boolean(window.MusicStudio)))
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.97',()=>window.MusicStudio?.ASSET_VERSION==='1.4.97'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))
+ .then(()=>{window.MusicStudioRuntime=Object.freeze({hostLoader:'1.5.53',stylesheet:'1.4.125',editor:window.MusicStudioEditor.ASSET_VERSION,studio:window.MusicStudio.ASSET_VERSION,reviewApi:typeof window.MusicStudioEditor.externalReviewTracks})})
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));
