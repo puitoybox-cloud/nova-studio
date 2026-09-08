@@ -1299,6 +1299,16 @@ test('MIDI Import three-track inference is independent from runtime Input Assign
   const{app,window}=load(),project=app.makeProject({projectName:'Assignment Independent Import',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:64,startTick:0,durationTicks:480,velocity:91}]},{id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[{id:'d',pitch:38,startTick:240,durationTicks:120,velocity:112}]},{id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:[{id:'b',pitch:40,startTick:480,durationTicks:960,velocity:83}]}]}}),bytes=window.MusicStudioMidi.createMidiFile(app.midiExportInput(project,'all')).bytes;
   for(const targetPart of ['melody','drums','bass']){app.state.midiInput.targetPart=targetPart;const converted=window.MusicStudioMidiParser.convertParsedMidiToProjectData(window.MusicStudioMidiParser.parseMidiFile(bytes)),tracks=Object.fromEntries(converted.tracks.filter(track=>track.part).map(track=>[track.part,track]));assert.equal(converted.importSource.trackAssignments.map(item=>item.part).join(','),'melody,drums,bass');assert.deepEqual([tracks.melody.channel,tracks.drums.channel,tracks.bass.channel],[1,10,2]);assert.deepEqual([tracks.melody.notes[0].pitch,tracks.drums.notes[0].pitch,tracks.bass.notes[0].pitch],[64,38,40]);assert.equal(app.state.midiInput.targetPart,targetPart)}
 });
+test('All MIDI export preserves external unassigned tracks without promoting their roles',()=>{const{app,window}=load(),project=app.makeProject({projectName:'External Tracks',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+  {id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[]},
+  {id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[]},
+  {id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:[]},
+  {id:'midi-track-2',roleAssignment:'unassigned',name:'AI Vocal',channel:1,program:53,notes:[{id:'v1',pitch:67,startTick:0,durationTicks:480,velocity:91}]},
+  {id:'midi-track-3',roleAssignment:'unassigned',name:'AI Strings',channel:3,program:48,notes:[{id:'s1',pitch:72,startTick:0,durationTicks:960,velocity:82}]}
+]}}),all=app.midiExportInput(project,'all'),melody=app.midiExportInput(project,'melody'),made=window.MusicStudioMidi.createMidiFile(all),parsed=window.MusicStudioMidiParser.parseMidiFile(made.bytes).normalized;
+  assert.deepEqual(Array.from(all.tracks.filter(track=>track.roleAssignment==='unassigned'),track=>track.id),['midi-track-2','midi-track-3']);assert.equal(melody.tracks.some(track=>track.roleAssignment==='unassigned'),false);assert.deepEqual(Array.from(parsed.tracks.filter(track=>track.noteCount),track=>track.name),['AI Vocal','AI Strings']);
+});
+
 test('MIDI export keeps the existing empty-track policy',()=>{const{app,window}=load(),project=app.makeProject({projectName:'Empty Track Policy',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
   {id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
   {id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[]},{id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:[]}

@@ -193,6 +193,8 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(indexSource,/app\.js\?v=1\.5\.51/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
+  assert.match(hostSource,/loadMusicStudioScript\('music-studio-external-song-import'/);
+  assert.match(standaloneSource,/music-studio-external-song-import\.js\?v=1\.0\.0/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.123/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.123/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
