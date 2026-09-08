@@ -5,11 +5,13 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 function load(){
-  const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer};window.window=window;
+  let sequence=0;const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,console,Intl,Date,Math,JSON,crypto:{randomUUID:()=>`external-${++sequence}`},location:{hash:'#music-studio'},localStorage:{getItem(){return null},setItem(){},removeItem(){}},addEventListener(){},setTimeout,clearTimeout};window.window=window;
   const context={window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent};
   for(const name of ['music-studio-midi.js','music-studio-midi-parser.js','music-studio-editor.js','music-studio-external-song-import.js'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),context,{filename:name});
-  return{writer:window.MusicStudioMidi,editor:window.MusicStudioEditor,intake:window.MusicStudioExternalSongImport};
+  return{window,writer:window.MusicStudioMidi,editor:window.MusicStudioEditor,intake:window.MusicStudioExternalSongImport};
 }
+function loadApp(){const loaded=load(),source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');vm.runInNewContext(source,{window:loaded.window,globalThis:loaded.window},{filename:'music-studio.js'});return{...loaded,app:loaded.window.MusicStudio}}
+function midiFile(name,bytes,type='audio/midi'){const data=Uint8Array.from(bytes);return{name,size:data.length,type,async arrayBuffer(){return data.buffer},slice(start,end){const part=data.slice(start,end);return{async arrayBuffer(){return part.buffer}}}}}
 
 function sourceMidi(writer){return writer.createMidiFile({version:1,ppq:480,tempo:118,timeSignature:{numerator:4,denominator:4},tracks:[
   {id:'voice',name:'AI Vocal',channel:1,program:53,notes:[{id:'v1',pitch:67,startTick:0,durationTicks:480,velocity:91}]},
@@ -61,4 +63,45 @@ test('intake rejects empty unsupported and mismatched source kinds without proje
   assert.equal(intake.classifyFile({name:'empty.wav',size:0,type:'audio/wav'}).ok,false);
   assert.throws(()=>intake.prepareAudioImport({name:'notes.txt',size:10,type:'text/plain'}),/確認できません/);
   assert.throws(()=>intake.prepareMidiImport(new Uint8Array([1]),{name:'audio.wav',size:1,type:'audio/wav'}),/MIDIファイルではありません/);
+});
+
+test('Editor exposes a separate compact External Song Import MIDI entry',()=>{
+  const{app}=loadApp(),project=app.makeProject({projectId:'ui-source',projectName:'UI Source'});app.state.projects=[project];
+  const html=app.renderRoute('music-studio/midi-editor/ui-source');
+  assert.match(html,/External Song Import（外部楽曲取り込み）/);
+  assert.match(html,/id="externalSongMidiImport"[^>]*accept="audio\/midi,audio\/x-midi,\.mid,\.midi"/);
+  assert.match(html,/MusicStudio\.importExternalSongFile\(this\.files\[0\]\)/);
+  assert.match(html,/id="editorMidiImport"/);
+  assert.match(html,/Logic Pro Integration（連携）/);
+});
+
+test('UI import calls the PR 223 boundary and creates an unassigned Version 1 project with summary',async()=>{
+  const{app,writer,intake}=loadApp(),repo=app.memoryRepository(),bytes=sourceMidi(writer);app.setRepository(repo);
+  let calls=0;const prepare=intake.prepareMidiImport;intake.prepareMidiImport=(...args)=>{calls++;return prepare(...args)};
+  const result=await app.importExternalSongFile(midiFile('AI Arrangement.mid',bytes)),stored=await repo.get(result.project.projectId);
+  assert.equal(result.ok,true);assert.equal(calls,1);assert.equal(stored.schemaVersion,'1.0');assert.equal(app.APP_VERSION,'1.4.0');
+  const external=stored.midiData.tracks.filter(track=>track.roleAssignment==='unassigned');
+  assert.equal(external.length,3);assert.ok(external.every(track=>track.part===undefined));
+  assert.deepEqual(Array.from(external,track=>track.name),['AI Vocal','AI Drums','AI Strings']);
+  assert.equal(stored.importSource.trackAssignmentPolicy,'explicit-only');
+  const summary=app.externalSongImportHtml();
+  for(const text of ['Import成功：AI Arrangement.mid','MIDI Type','Track','playable Track','note','BPM','拍子','Trackの割当はまだ行われていません'])assert.match(summary,new RegExp(text));
+});
+
+test('cancel and failed external import leave every existing project unchanged',async()=>{
+  const{app}=loadApp(),repo=app.memoryRepository(),existing=app.makeProject({projectId:'keep',projectName:'Keep',productionNotes:'unchanged'});app.setRepository(repo);await repo.put(existing);app.state.projects=[existing];const before=JSON.stringify(await repo.list());
+  assert.equal((await app.importExternalSongFile()).cancelled,true);
+  const broken=await app.importExternalSongFile(midiFile('broken.mid',[0,1,2,3]));
+  assert.equal(broken.ok,false);assert.equal(JSON.stringify(await repo.list()),before);assert.match(app.externalSongImportHtml(),/Import失敗/);
+});
+
+test('repository failure does not expose a partial external project',async()=>{
+  const{app,writer}=loadApp(),base=app.memoryRepository(),existing=app.makeProject({projectId:'keep',projectName:'Keep'}),repo={...base,async put(project){if(project.projectId!=='keep')throw Error('storage unavailable');return base.put(project)}};app.setRepository(repo);await repo.put(existing);app.state.projects=[existing];const before=JSON.stringify(app.state.projects),result=await app.importExternalSongFile(midiFile('failure.mid',sourceMidi(writer)));
+  assert.equal(result.ok,false);assert.equal(JSON.stringify(app.state.projects),before);assert.deepEqual(Array.from(await repo.list(),item=>item.projectId),['keep']);
+});
+
+test('external import summary CSS stays compact and responsive',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
+  assert.match(css,/\.music-external-import\{display:grid;gap:7px;padding:9px/);
+  assert.match(css,/@media\(max-width:600px\)\{\.music-external-import-result dl\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}\}/);
 });

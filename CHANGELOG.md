@@ -1,5 +1,14 @@
 # Nova Studio Changelog
 
+## External AI Song Import UI接続
+
+- MIDI Composerの既存Import / Export内へ、通常MIDI Importとは独立したコンパクトなExternal Song Import入口を追加
+- 選択したMIDIをPR #223の`prepareMidiImport(...)`へ接続し、全source Trackを`roleAssignment: unassigned`のまま新規Version 1 projectへ保存
+- file名、MIDI Type、全／playable Track数、note数、BPM、拍子、Import成否、未割当状態を表示
+- 解析・Track Registry・project検証または保存に失敗した場合、既存projectを変更しない
+- Audio UI、Track review／手動割当、Stem separation、Audio-to-MIDI、外部API、Logic Pro自動操作は未実装
+- `APP_VERSION 1.4.0`、`schemaVersion 1.0`、既存MIDI／Logic Pro Import・Exportを維持
+
 ## External AI Song Import基盤（初回PR）
 
 - 外部サービス非依存のMIDI／音声Import境界を追加し、既存SMF parser、Track Registry、Editor、保存、Type 1 MIDI writerを再利用
