@@ -115,6 +115,34 @@ test('external Track Review shows identifiers summaries and explicit unassigned 
   assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.id==='external-vocal').part,undefined);
 });
 
+test('Editor render mounts exactly three review rows for the real six-Track compatibility layout',()=>{
+  const{app,editor}=loadApp(),notes=(prefix,pitch)=>Array.from({length:12},(_,index)=>({id:`${prefix}-${index}`,pitch,startTick:index*120,durationTicks:120,velocity:90})),compatibility=['melody','drums','bass'].map(part=>({id:part,name:part,part,roleAssignment:part,notes:[]})),external=[
+    {id:'midi-track-2',name:'Melody',channel:1,program:1,roleAssignment:'unassigned',notes:notes('m2',60)},
+    {id:'midi-track-3',name:'Drums',channel:10,program:null,roleAssignment:'unassigned',notes:notes('m3',38)},
+    {id:'midi-track-4',name:'Bass',channel:2,program:33,roleAssignment:'unassigned',notes:notes('m4',36)}
+  ],project=app.makeProject({projectId:'real-review-case',projectName:'Real Review Case',midiData:{version:1,ppq:480,tempo:72,timeSignature:{numerator:4,denominator:4},tracks:[...compatibility,...external]}});app.state.projects=[project];
+  const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),review=editor.externalReviewTracks(app.state.midiEditor.midiData);
+  assert.equal(review.length,3);assert.equal(review.reduce((sum,track)=>sum+track.noteCount,0),36);assert.deepEqual(Array.from(review,track=>track.id),['midi-track-2','midi-track-3','midi-track-4']);
+  assert.equal((html.match(/class="music-external-track-review"/g)||[]).length,1);assert.equal((html.match(/class="music-external-track-row"/g)||[]).length,3);
+  for(const id of ['midi-track-2','midi-track-3','midi-track-4'])assert.match(html,new RegExp(`data-track-id="${id}"`));
+  for(const part of ['melody','drums','bass'])assert.doesNotMatch(html,new RegExp(`class="music-external-track-row" data-track-id="${part}"`));
+});
+
+test('External Track Review renders after import and repository reload, including assigned roles',async()=>{
+  const{app,writer}=loadApp(),repo=app.memoryRepository();app.setRepository(repo);
+  const imported=await app.importExternalSongFile(midiFile('review-after-import.mid',sourceMidi(writer))),route=`music-studio/midi-editor/${imported.project.projectId}`;
+  let html=app.renderRoute(route);assert.equal((html.match(/class="music-external-track-row"/g)||[]).length,3);
+  const stored=await repo.get(imported.project.projectId);stored.midiData.tracks.filter(track=>!track.part).forEach((track,index)=>{track.roleAssignment=['melody','drums','bass'][index]});await repo.put(stored);
+  app.state.projects=await repo.list();app.state.midiEditor=null;app.state.externalTrackAssignmentDraft=null;html=app.renderRoute(route);
+  assert.equal((html.match(/class="music-external-track-row"/g)||[]).length,3);for(const role of ['melody','drums','bass'])assert.match(html,new RegExp(`Current: ${role}`));
+});
+
+test('External Track Review stays absent without external Tracks and cannot flex-collapse when present',()=>{
+  const{app}=loadApp(),project=app.makeProject({projectId:'compatibility-only',projectName:'Compatibility Only'});app.state.projects=[project];
+  assert.doesNotMatch(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/music-external-track-review/);
+  const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-midi-editor-page>\.music-external-track-review\{[^}]*min-height:34px;flex:0 0 auto;[^}]*overflow-y:auto/);
+});
+
 test('manual Melody Drums Bass assignments and return to Unassigned preserve Track IDs notes and save reload',async()=>{
   const{app,editor}=loadApp(),repo=app.memoryRepository(),tracks=['melody','drums','bass'].map((role,index)=>({id:`external-${role}`,name:`AI ${role}`,channel:index+1,program:40+index,roleAssignment:'unassigned',notes:[{id:`note-${role}`,pitch:60+index,startTick:index*240,durationTicks:480,velocity:80+index}]})),project=app.makeProject({projectId:'assignment-save',projectName:'Assignment Save',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks}});app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.midiEditorView(project.projectId);
   const before=JSON.stringify(editor.externalReviewTracks(app.state.midiEditor.midiData).map(track=>[track.id,track.noteCount,track.channel,track.program]));

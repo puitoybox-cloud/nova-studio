@@ -575,6 +575,7 @@ body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle,body.is-mu
 html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page) #music-studio-app,body.is-music-studio-route:has(.music-midi-editor-page) #app,body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,body.is-music-studio-route:has(.music-midi-editor-page) .management-main{height:100vh;height:100dvh;min-height:0;max-height:100dvh;overflow:hidden}
 .music-midi-editor-page,body.is-management-route .management-main>.music-midi-editor-page{display:flex;box-sizing:border-box;height:100vh;height:100dvh;max-height:100dvh;min-height:0;flex-direction:column;margin:0;overflow:hidden}
 .music-midi-editor-page .music-editor-topbar{min-height:0;flex:0 0 auto}
+.music-midi-editor-page>.music-external-track-review{box-sizing:border-box;max-height:min(32dvh,280px);min-height:34px;flex:0 0 auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
 .music-midi-editor-page .music-part-tabs,.music-midi-editor-page .music-track-runtime-controls{flex:0 0 auto}
 .music-midi-editor-page .music-editor-layout{min-height:150px;flex:1 1 auto;overflow:hidden}
 .music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;max-height:none}
