@@ -123,6 +123,12 @@ PR #203〜#217はmainへMerge済み。3Track Playback、Mute／Solo、MIDI routi
 
 新Trackの追加は0.5 scopeに含めず、0.6候補とする。次のMS番号は未定義のため新設しない。
 
+### External AI Song Import基盤
+
+最初のPRでは新しいMS番号やTrack UIを追加せず、provider-neutralな内部Import境界を先行する。MIDIは既存Type 0／1 parserで解析し、全source TrackをTrack ID単位かつ未割当で保持する。Melody／Drums／Bassへの自動昇格は行わず、既存Editorの互換用3Trackと追加Trackを共存させる。All MIDI Exportは追加Trackも保持する。
+
+完成音源はmetadata-onlyの入口で停止し、audio body／pathをprojectへ保存しない。stem separation、Audio-to-MIDI、Track reviewは将来の明示的な処理境界とし、今回実行しない。`schemaVersion: 1.0`と`APP_VERSION: 1.4.0`を維持する。
+
 ## LINK-01着手前にティアが決めること
 
 1. 選択情報の共有範囲を同一ページ内だけにするか、外部サイトにも渡すか。

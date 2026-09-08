@@ -1,5 +1,13 @@
 # Nova Studio Changelog
 
+## External AI Song Import基盤（初回PR）
+
+- 外部サービス非依存のMIDI／音声Import境界を追加し、既存SMF parser、Track Registry、Editor、保存、Type 1 MIDI writerを再利用
+- 外部MIDI Trackを`roleAssignment: unassigned`で保持し、名前、Program、channel、順序からMelody／Drums／Bassへ自動昇格させない方針を追加
+- duplicate／invalid Track IDをproject作成前に拒否し、追加TrackをAll MIDIからLogic Proへ戻せる往復経路を追加
+- 音声はmetadata-only descriptorでstem separation／Audio-to-MIDI前に停止し、binary・path・外部AIサービス情報をproject schemaへ保存しない
+- `APP_VERSION 1.4.0`、`music-studio-project` `schemaVersion 1.0`、既存Logic Pro Importの推定挙動と3Track UIを維持
+
 ## Music Studio 0.5開発系列（PR #203〜#217）— Implementation complete
 
 - Melody／Drums／Bassを1曲の3Trackとして扱う共通Playback、Transport／Scheduler、Track tab MIDI routingを完成
