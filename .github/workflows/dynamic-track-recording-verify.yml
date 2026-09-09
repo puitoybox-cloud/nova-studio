@@ -13,8 +13,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Node tests
-        run: node --test
+      - name: Node test diagnostics
+        shell: bash
+        run: |
+          set +e
+          node --test 2>&1 | tee /tmp/node-test.log
+          echo ${PIPESTATUS[0]} > /tmp/node-test.status
+          exit 0
+      - name: Upload Node diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-log
+          path: /tmp/node-test.*
+      - name: Require Node green
+        run: test "$(cat /tmp/node-test.status)" = "0"
       - name: JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Diff whitespace diagnostics
@@ -45,4 +57,3 @@ jobs:
           trap 'kill $SERVER_PID' EXIT
           sleep 2
           node scripts/music-studio-dynamic-track-recording-browser-smoke.js
-      # Verification rerun marker 2.
