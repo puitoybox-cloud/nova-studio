@@ -531,7 +531,7 @@ test('Piano Roll shortcuts share button actions and never fire from an input',as
   for(const part of ['drums','bass']){app.editorSelectPart(part);const before=played,spaceEvent=event(' ');assert.equal(app.editorHandleShortcut(spaceEvent),true);await new Promise(resolve=>setTimeout(resolve,0));assert.equal(app.state.melodyAudio.playing,true);assert.equal(played,before+1);assert.equal(spaceEvent.prevented,true);app.editorStopTransport()}
   app.editorHandleShortcut(event('Escape'));assert.equal(core.selectedIds(app.state.midiEditor).length,0);
   core.selectAllNotes(app.state.midiEditor);app.editorHandleShortcut(event('Delete'));assert.equal(core.currentTrack(app.state.midiEditor).notes.length,0);
-  assert.match(source,/addEventListener\?\.\('keydown',editorHandleShortcut,true\)/);assert.match(source,/removeEventListener\?\.\('keydown',editorHandleShortcut,true\)/);assert.match(source,/code==='NumpadEnter'/);
+  assert.match(source,/function dispatchEditorShortcut\(event\)\{return root\.MusicStudio\?\.editorHandleShortcut\?\.\(event\)/);assert.match(source,/addEventListener\?\.\('keydown',dispatchEditorShortcut,true\)/);assert.match(source,/removeEventListener\?\.\('keydown',dispatchEditorShortcut,true\)/);assert.match(source,/code==='NumpadEnter'/);
 });
 test('playback target selection accepts one or multiple canonical tracks without changing their order',()=>{
   const{app}=load(),project=app.makeProject({projectId:'playback-targets',projectName:'Playback targets'});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const session=app.state.midiEditor,before=JSON.stringify(session.midiData.tracks);

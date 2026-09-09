@@ -23,13 +23,12 @@ function load(selectedId='ext-b'){
   const synth={supported:()=>true,unlock:async()=>true,stopPlayback:()=>{},playTracks:(tracks,timing)=>{scheduledTracks=plain(tracks);const notes=tracks.flatMap(track=>track.notes||[]);return{ok:true,trackCount:tracks.length,noteCount:notes.length,durationMs:10,playbackStart:0,secondsPerTick:.001,timelineDurationSeconds:.01,tempoMap:timing.tempoMap||[],startTick:Number(timing.startTick)||0,endTick:Number(timing.endTick)||1920,scheduledNotes:notes}}};
   window.MusicStudioAudio={createSynth:()=>synth};
   window.MusicStudio={
-    __dynamicTrackSelectionInstalled:true,
     state:{midiEditor:session,midiInput:{recording:false,countingIn:false},melodyAudio:{synth:null,playing:false,starting:false,playRequest:0,playbackTimer:null,playbackFrame:null,playbackState:{mutedByTrackId:{},soloByTrackId:{}},transport:null,status:''}},
-    resolveCurrentTrackSelection(){const track=core.currentTrack(session),caps=core.resolveTrackCapabilities(track);return{id:track.id,name:core.resolveTrackDisplayName(track),kind:core.resolveCoreTrackSlot(track)?'core':'external',capabilities:caps}},
     editorToggleMelodyPlayback(){originalToggleCalls++;return{ok:true,source:'core'}},
     async editorStopTransport(){stopCalls++;this.state.melodyAudio.playing=false;this.state.melodyAudio.starting=false;return{ok:true,playbackStopped:true}},
     editorHandleShortcut(){shortcutCalls++;return'original-shortcut'}
   };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.js'),'utf8'),window);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-playback.js'),'utf8'),window);
   return{window,core,session,api:window.MusicStudio,get originalToggleCalls(){return originalToggleCalls},get stopCalls(){return stopCalls},get shortcutCalls(){return shortcutCalls},get scheduledTracks(){return scheduledTracks}}
 }
@@ -48,6 +47,17 @@ test('External playback schedules only the selected Track and preserves MIDI pro
   assert.equal(result.ok,true);assert.equal(result.noteCount,1);assert.deepEqual(Array.from(env.scheduledTracks,track=>track.id),['ext-b']);assert.deepEqual(Array.from(env.api.state.melodyAudio.transport.activePlaybackTrackIds),['ext-b']);assert.equal(JSON.stringify(env.session.midiData),before);assert.equal(env.originalToggleCalls,0)
 });
 
+test('real Selection to Playback install boundary routes Play button Space and Stop by the same External Track ID',async()=>{
+  const env=load('ext-b'),current=env.core.currentTrack(env.session),playButton={onclick:()=>env.api.editorToggleMelodyPlayback()};
+  assert.equal(env.api.__dynamicTrackSelectionInstalled,true);assert.equal(env.api.__dynamicTrackPlaybackInstalled,true);assert.equal(env.api.__dynamicTrackPlaybackVersion,'1.0.1');
+  assert.equal(env.api.resolveCurrentTrackSelection().id,'ext-b');assert.equal(current.id,'ext-b');assert.deepEqual(Array.from(current.notes,note=>note.id),['b2']);
+  const buttonResult=await playButton.onclick();assert.equal(buttonResult.ok,true);assert.equal(buttonResult.noteCount,1);assert.deepEqual(Array.from(env.scheduledTracks,track=>track.id),['ext-b']);assert.equal(env.originalToggleCalls,0);
+  await env.api.editorStopTransport();assert.equal(env.stopCalls,1);
+  let prevented=false;assert.equal(env.api.editorHandleShortcut({code:'Space',key:' ',preventDefault(){prevented=true}}),true);assert.equal(prevented,true);
+  await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(Array.from(env.scheduledTracks,track=>track.id),['ext-b']);assert.equal(env.originalToggleCalls,0);
+  env.api.state.melodyAudio.playing=true;const stopped=await env.api.editorToggleMelodyPlayback();assert.equal(stopped.playbackStopped,true);assert.equal(env.stopCalls,2)
+});
+
 test('Core Melody Drums Bass playback remains delegated to the existing transport',async()=>{
   const env=load('core-drums'),result=await env.api.editorToggleMelodyPlayback();assert.equal(result.source,'core');assert.equal(env.originalToggleCalls,1);assert.equal(env.scheduledTracks.length,0);assert.equal(env.stopCalls,0)
 });
@@ -58,7 +68,7 @@ test('Stop while External playback is active uses the exported transport stop AP
 
 test('Space shortcut is restored for External playback without opening other gated shortcuts',()=>{
   const env=load('ext-a');let prevented=false;const handled=env.api.editorHandleShortcut({key:' ',preventDefault(){prevented=true}});assert.equal(handled,true);assert.equal(prevented,true);assert.equal(env.shortcutCalls,0);
-  assert.equal(env.api.editorHandleShortcut({key:'Delete'}),'original-shortcut');assert.equal(env.shortcutCalls,1)
+  assert.equal(env.api.editorHandleShortcut({key:'Delete'}),false);assert.equal(env.shortcutCalls,0)
 });
 
 test('Dynamic Playback does not widen Recording Correction Partial Edit or Track assignment scope',()=>{
@@ -68,7 +78,7 @@ test('Dynamic Playback does not widen Recording Correction Partial Edit or Track
 });
 
 test('Nova Studio host and standalone Music Studio load playback routing after Dynamic Track Selection',()=>{
-  for(const file of ['index.html','music-studio.html']){const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8'),selection=html.indexOf('music-studio-dynamic-track-selection.js'),playback=html.indexOf('music-studio-dynamic-track-playback.js');assert.ok(selection>=0);assert.ok(playback>selection)}
+  for(const file of ['index.html','music-studio.html']){const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8'),selection=html.indexOf('music-studio-dynamic-track-selection.js'),playback=html.indexOf('music-studio-dynamic-track-playback.js?v=1.0.1');assert.ok(selection>=0);assert.ok(playback>selection)}
 });
 
 test('Playback routing keeps project schema and app version unchanged',()=>{

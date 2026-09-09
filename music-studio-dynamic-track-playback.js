@@ -2,6 +2,7 @@
 (function(root){
   'use strict';
 
+  const ASSET_VERSION='1.0.1';
   const CORE_AUDIO_ROLES=new Set(['melody','drums','bass']);
 
   function currentExternalSelection(api=root.MusicStudio){
@@ -99,6 +100,7 @@
   function install(api=root.MusicStudio,core=root.MusicStudioEditor){
     if(!api||!core||!root.MusicStudioPlayback||!api.__dynamicTrackSelectionInstalled||api.__dynamicTrackPlaybackInstalled)return false;
     api.__dynamicTrackPlaybackInstalled=true;
+    api.__dynamicTrackPlaybackVersion=ASSET_VERSION;
     const originalToggle=api.editorToggleMelodyPlayback,originalShortcut=api.editorHandleShortcut;
     api.resolveExternalPlaybackTrack=()=>resolveExternalPlaybackTrack(api,core);
     api.editorPlayExternalTrack=()=>playExternalTrack(api,core);
@@ -123,6 +125,6 @@
     if(timer!=null)root.clearInterval(timer);let attempts=0;timer=root.setInterval(()=>{attempts+=1;if(install()||root.MusicStudio?.__dynamicTrackPlaybackInstalled||attempts>=200){root.clearInterval(timer);timer=null}},25);return false
   }
 
-  root.MusicStudioDynamicTrackPlayback={currentExternalSelection,resolveExternalPlaybackTrack,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
+  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
   bootWithRetry();if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
