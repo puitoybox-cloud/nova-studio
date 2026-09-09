@@ -45,3 +45,4 @@ jobs:
           trap 'kill $SERVER_PID' EXIT
           sleep 2
           node scripts/music-studio-dynamic-track-recording-browser-smoke.js
+      # Verification rerun marker 2.
