@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const ASSET_VERSION='1.0.0';
+  const ASSET_VERSION='1.0.1';
 
   function resolveRecordingDestination(api=root.MusicStudio,core=root.MusicStudioEditor){
     const session=api?.state?.midiEditor,current=api?.resolveCurrentTrackSelection?.(session);
@@ -16,6 +16,27 @@
   function currentExternalRecording(api=root.MusicStudio,core=root.MusicStudioEditor){
     const destination=resolveRecordingDestination(api,core);
     return destination?.current?.kind==='external'?destination:null
+  }
+
+  function shortcutTargetBlocked(event){
+    const raw=event?.target,target=raw?.nodeType===3?raw.parentElement:raw;
+    return Boolean(target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))
+  }
+
+  function transportShortcut(event){
+    if(!event||event.isComposing||event.repeat||shortcutTargetBlocked(event))return null;
+    const key=String(event.key||''),code=String(event.code||''),lower=key.toLowerCase(),meta=Boolean(event.metaKey),control=Boolean(event.ctrlKey),shift=Boolean(event.shiftKey),option=Boolean(event.altKey);
+    if(!meta&&!control&&!option&&!shift&&(code==='KeyR'||lower==='r'))return'record';
+    if(!meta&&!control&&!option&&!shift&&(code==='Space'||key===' '||key==='Spacebar'))return'playback';
+    if(!meta&&!option&&(code==='Enter'||code==='NumpadEnter'||key==='Enter'||key==='Return'))return'go-start';
+    return null
+  }
+
+  function goToStart(api=root.MusicStudio){
+    const session=api?.state?.midiEditor;if(!session)return false;
+    session.playheadTick=0;
+    const line=root.document?.querySelector?.('.music-playhead');if(line)line.style.left='0%';
+    return true
   }
 
   function enhanceRecordingUi(api=root.MusicStudio,core=root.MusicStudioEditor){
@@ -36,8 +57,8 @@
 
   function install(api=root.MusicStudio,core=root.MusicStudioEditor){
     if(!api||!core||!api.__dynamicTrackSelectionInstalled||api.__dynamicTrackRecordingInstalled)return false;
-    const originalStart=api.editorStartMidiRecording,originalToggle=api.editorToggleMidiRecording;
-    if(typeof originalStart!=='function'||typeof originalToggle!=='function')return false;
+    const originalStart=api.editorStartMidiRecording,originalToggle=api.editorToggleMidiRecording,originalShortcut=api.editorHandleShortcut;
+    if(typeof originalStart!=='function'||typeof originalToggle!=='function'||typeof originalShortcut!=='function')return false;
     api.__dynamicTrackRecordingInstalled=true;
     api.__dynamicTrackRecordingVersion=ASSET_VERSION;
     api.resolveRecordingDestination=()=>resolveRecordingDestination(api,core);
@@ -66,6 +87,25 @@
       return Promise.resolve(api.editorStartMidiRecording())
     };
 
+    api.editorHandleShortcut=function(event){
+      const intent=transportShortcut(event);
+      if(intent==='record'){
+        event.preventDefault?.();
+        api.editorToggleMidiRecording();
+        return true
+      }
+      if(intent==='playback'){
+        event.preventDefault?.();
+        api.editorToggleMelodyPlayback?.();
+        return true
+      }
+      if(intent==='go-start'){
+        event.preventDefault?.();
+        return goToStart(api)
+      }
+      return originalShortcut.call(this,event)
+    };
+
     const run=()=>enhanceRecordingUi(api,core);run();
     if(typeof root.MutationObserver==='function'&&root.document?.body){const observer=new root.MutationObserver(()=>run());observer.observe(root.document.body,{childList:true,subtree:true});api.__dynamicTrackRecordingObserver=observer}
     return true
@@ -77,6 +117,6 @@
     if(timer!=null)root.clearInterval(timer);let attempts=0;timer=root.setInterval(()=>{attempts+=1;if(install()||root.MusicStudio?.__dynamicTrackRecordingInstalled||attempts>=200){root.clearInterval(timer);timer=null}},25);return false
   }
 
-  root.MusicStudioDynamicTrackRecording={ASSET_VERSION,resolveRecordingDestination,currentExternalRecording,enhanceRecordingUi,install,bootWithRetry};
+  root.MusicStudioDynamicTrackRecording={ASSET_VERSION,resolveRecordingDestination,currentExternalRecording,transportShortcut,goToStart,enhanceRecordingUi,install,bootWithRetry};
   bootWithRetry();if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
