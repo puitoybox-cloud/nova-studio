@@ -1309,6 +1309,14 @@ test('All MIDI export preserves external unassigned tracks without promoting the
   assert.deepEqual(Array.from(all.tracks.filter(track=>track.roleAssignment==='unassigned'),track=>track.id),['midi-track-2','midi-track-3']);assert.equal(melody.tracks.some(track=>track.roleAssignment==='unassigned'),false);assert.deepEqual(Array.from(parsed.tracks.filter(track=>track.noteCount),track=>track.name),['AI Vocal','AI Strings']);
 });
 
+test('All MIDI export input preserves external classification metadata and emits each track once',()=>{const{app}=load(),project=app.makeProject({projectName:'Classified External Tracks',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
+  {id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[]},{id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[]},{id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:[]},
+  {id:'lead-piano',name:'Lead Piano',roleAssignment:'piano',trackType:'midi-melodic',channel:1,program:0,unsupportedEvents:[{type:15}],notes:[{id:'p1',pitch:64,startTick:0,durationTicks:480,velocity:91}]},
+  {id:'external-kit',name:'External Kit',roleAssignment:'drums',trackType:'midi-drums',channel:10,program:null,notes:[{id:'d1',pitch:36,startTick:0,durationTicks:120,velocity:110}]}
+]}}),before=JSON.stringify(project),all=app.midiExportInput(project,'all'),piano=all.tracks.find(track=>track.id==='lead-piano'),kit=all.tracks.find(track=>track.id==='external-kit');
+  assert.equal(all.tracks.filter(track=>track.id==='lead-piano').length,1);assert.equal(all.tracks.filter(track=>track.id==='external-kit').length,1);assert.deepEqual([piano.trackType,piano.roleAssignment,piano.notes[0].id],['midi-melodic','piano','p1']);assert.deepEqual([kit.trackType,kit.roleAssignment,kit.notes[0].id],['midi-drums','drums','d1']);assert.deepEqual(JSON.parse(JSON.stringify(piano.unsupportedEvents)),[{type:15}]);assert.equal(JSON.stringify(project),before)
+});
+
 test('MIDI export keeps the existing empty-track policy',()=>{const{app,window}=load(),project=app.makeProject({projectName:'Empty Track Policy',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[
   {id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
   {id:'drums',part:'drums',name:'Drums',channel:10,program:null,notes:[]},{id:'bass',part:'bass',name:'Bass',channel:2,program:32,notes:[]}

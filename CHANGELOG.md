@@ -1,5 +1,13 @@
 # Nova Studio Changelog
 
+## Dynamic MIDI Track Model / Capability Registry Foundation
+
+- Track identity, optional technical type, musical role, exact core compatibility slot, display name, role cardinality, and derived capabilitiesを独立したmodelとして定義
+- `midi-melodic`／`midi-drums`／`audio`／`unknown`と、将来Roleを含む11種のcatalogを追加し、roleの名前・channel・Program・順序による自動推測を禁止
+- Core Melody／Drums／Bass、External melodic／drum MIDI、Audio、Unknownのcapability matrixを追加（UI／Playback／Recordingには未接続）
+- valid `trackType`だけを任意保存値として維持し、missing値のbackfill、invalid `roleAssignment` repair、schema／IndexedDB migrationを行わない境界を追加
+- legacy `trackPart()`、External Reviewの4候補、Track ID／notes／metadata／順序、All MIDI Exportの非重複、`APP_VERSION 1.4.0`、`schemaVersion 1.0`を維持
+
 ## External Track Review / Assignment UI
 
 - External Song Importで保存したTrackをEditor内のcompact Reviewで一覧化し、Track ID、name、channel、Program、note数、現在の`roleAssignment`を表示
