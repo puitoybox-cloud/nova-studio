@@ -12,7 +12,19 @@ jobs:
         with:
           node-version: '22'
       - name: Node tests
-        run: node --test
+        run: |
+          set +e
+          set -o pipefail
+          node --test 2>&1 | tee /tmp/node-test.log
+          status=${PIPESTATUS[0]}
+          echo "$status" > /tmp/node-test-status
+          exit 0
+      - name: Upload Node test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-log
+          path: /tmp/node-test.log
       - name: JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Diff whitespace
@@ -24,8 +36,23 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Responsive browser smoke
         run: |
+          set +e
+          set -o pipefail
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/nova-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
           sleep 2
-          node scripts/music-studio-dynamic-track-recording-browser-smoke.js
+          node scripts/music-studio-dynamic-track-recording-browser-smoke.js 2>&1 | tee /tmp/browser-smoke.log
+          status=${PIPESTATUS[0]}
+          echo "$status" > /tmp/browser-smoke-status
+          exit 0
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-log
+          path: /tmp/browser-smoke.log
+      - name: Require green diagnostics
+        run: |
+          test "$(cat /tmp/node-test-status)" = "0"
+          test "$(cat /tmp/browser-smoke-status)" = "0"
