@@ -29,10 +29,21 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
-      - name: Responsive browser smoke
+      - name: Responsive browser smoke diagnostics
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/nova-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
           sleep 2
-          node scripts/music-studio-dynamic-track-recording-browser-smoke.js
+          set +e
+          node scripts/music-studio-dynamic-track-recording-browser-smoke.js 2>&1 | tee /tmp/browser-smoke.log
+          status=${PIPESTATUS[0]}
+          echo "BROWSER_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+      - name: Upload browser diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-log
+          path: /tmp/browser-smoke.log
+      - name: Require browser green
+        run: test "${BROWSER_STATUS}" = "0"
