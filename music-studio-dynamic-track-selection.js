@@ -32,8 +32,7 @@
     }
     const external=indexed.filter(item=>{
       if(!validTrackId(item.track?.id)||used.has(item.track.id)||item.slot)return false;
-      const type=trackType(item.track,core),caps=capabilities(item.track,core);
-      return MIDI_TYPES.has(type)&&(caps.canEditNotes||caps.canPlayMidi||caps.canRecordMidi)
+      return MIDI_TYPES.has(trackType(item.track,core))
     }).sort((a,b)=>{
       const ao=Number(a.track?.order),bo=Number(b.track?.order),av=Number.isFinite(ao)?ao:Number.POSITIVE_INFINITY,bv=Number.isFinite(bo)?bo:Number.POSITIVE_INFINITY;
       return av-bv||a.index-b.index
