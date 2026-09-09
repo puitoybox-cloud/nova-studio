@@ -57,7 +57,7 @@ jobs:
                   messages.push(`${message.type()}: ${text}`)
                 });
                 await page.goto('http://127.0.0.1:8765/music-studio.html#music-studio',{waitUntil:'load'});
-                const metrics=await page.evaluate(()=>{
+                const initial=await page.evaluate(()=>{
                   const midiData={tracks:[
                     {id:'m',part:'melody',name:'Melody',channel:1,program:0,muted:false,notes:[{id:'mn',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
                     {id:'d',part:'drums',name:'Drums',channel:10,program:null,muted:false,notes:[{id:'dn',pitch:36,startTick:0,durationTicks:120,velocity:100}]},
@@ -77,28 +77,43 @@ jobs:
                   const children=[...strip.querySelectorAll('.music-dynamic-track-group')];
                   const afterTop=document.querySelector('.music-editor-layout').getBoundingClientRect().top;
                   const allSameRow=children.length>0&&children.every(child=>Math.abs(child.getBoundingClientRect().top-children[0].getBoundingClientRect().top)<2);
-                  const review=Boolean(document.querySelector('.music-external-track-review-entry'));
-                  const target=document.querySelector('[data-track-id="ext-b"] .music-dynamic-track-button');
-                  target?.click();
-                  const current=MusicStudio.resolveCurrentTrackSelection();
+                  return{
+                    beforeTop,afterTop,
+                    allSameRow,
+                    review:Boolean(document.querySelector('.music-external-track-review-entry')),
+                    count:children.length,
+                    targetFound:Boolean(document.querySelector('[data-track-id="ext-b"] .music-dynamic-track-button')),
+                    bodyOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+                  }
+                });
+                await page.click('[data-track-id="ext-b"] .music-dynamic-track-button');
+                await page.waitForFunction(()=>document.querySelector('.music-midi-editor-page')?.dataset.currentTrackMode==='selection-only');
+                const current=await page.evaluate(()=>{
+                  const strip=document.querySelector('.music-dynamic-track-strip');
+                  const groups=[...strip.querySelectorAll('.music-dynamic-track-group')];
                   const record=document.querySelector('[onclick*="editorToggleMidiRecording"]');
                   const play=document.querySelector('[onclick*="editorToggleMelodyPlayback"]');
                   const partialControls=[...document.querySelectorAll('.music-partial-edit button,.music-partial-edit input,.music-partial-edit select,.music-partial-edit textarea')];
+                  const correctionControls=[...document.querySelectorAll('.music-correction-menu button,.music-correction-menu input,.music-correction-menu select,.music-correction-menu textarea')];
+                  const selected=MusicStudio.resolveCurrentTrackSelection();
                   const currentTrack=MusicStudio.state.midiEditor.midiData.tracks.find(track=>track.id==='ext-b');
                   return{
-                    beforeTop,afterTop,
-                    stripHeight:strip?.getBoundingClientRect().height??0,
-                    stripScrollHeight:strip?.scrollHeight??0,
-                    stripClientHeight:strip?.clientHeight??0,
-                    allSameRow,review,count:children.length,targetFound:Boolean(target),
-                    currentId:current?.id,selectedTrackId:MusicStudio.state.midiEditor.selectedTrackId,
-                    recordDisabled:record?.disabled===true,playDisabled:play?.disabled===true,
-                    partialControlCount:partialControls.length,partialAllDisabled:partialControls.length>0&&partialControls.every(control=>control.disabled),
+                    currentId:selected?.id,
+                    selectedTrackId:MusicStudio.state.midiEditor.selectedTrackId,
+                    recordDisabled:record?.disabled===true,
+                    playDisabled:play?.disabled===true,
+                    partialControlCount:partialControls.length,
+                    partialAllDisabled:partialControls.length>0&&partialControls.every(control=>control.disabled),
+                    correctionAllDisabled:correctionControls.length===0||correctionControls.every(control=>control.disabled),
                     role:currentTrack?.roleAssignment,
                     noteIds:MusicStudio.state.midiEditor.midiData.tracks.flatMap(track=>track.notes||[]).map(note=>note.id),
+                    stripScrollHeight:strip?.scrollHeight??0,
+                    stripClientHeight:strip?.clientHeight??0,
+                    allSameRow:groups.length>0&&groups.every(group=>Math.abs(group.getBoundingClientRect().top-groups[0].getBoundingClientRect().top)<2),
                     bodyOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
-                  };
+                  }
                 });
+                const metrics={...initial,...current};
                 console.log(`browser @${width}: ${JSON.stringify(metrics)}`);
                 assert.equal(metrics.count,5,`Track count @${width}`);
                 assert.equal(metrics.targetFound,true,`External target @${width}`);
@@ -109,6 +124,7 @@ jobs:
                 assert.equal(metrics.recordDisabled,true,`Record gated @${width}`);
                 assert.equal(metrics.playDisabled,true,`Playback gated @${width}`);
                 assert.equal(metrics.partialAllDisabled,true,`Partial Edit gated @${width}`);
+                assert.equal(metrics.correctionAllDisabled,true,`Correction gated @${width}`);
                 assert.equal(metrics.role,'unassigned',`roleAssignment preserved @${width}`);
                 assert.deepEqual(metrics.noteIds,['mn','dn','bn','en','en2'],`notes preserved @${width}`);
                 assert.ok(metrics.afterTop<=metrics.beforeTop+2,`Piano Roll pushed down @${width}: ${metrics.beforeTop} -> ${metrics.afterTop}`);
