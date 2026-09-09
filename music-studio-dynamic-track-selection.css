@@ -2,6 +2,7 @@
 .music-midi-editor-page .music-dynamic-track-nav{
   min-width:0;
   align-items:center;
+  flex-wrap:nowrap;
 }
 .music-midi-editor-page .music-dynamic-track-strip{
   display:flex;

@@ -88,7 +88,7 @@ test('All MIDI Export path remains all-track based and is not rewritten as roleA
 
 test('responsive Track strip is one row at 1440 820 and 390 boundaries without vertical Track stacking',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.css'),'utf8');
-  assert.match(css,/flex-wrap:nowrap/);assert.match(css,/overflow-x:auto/);assert.match(css,/@media \(max-width:820px\)/);assert.match(css,/@media \(max-width:390px\)/);assert.doesNotMatch(css,/flex-direction\s*:\s*column/)
+  assert.match(css,/\.music-dynamic-track-nav\{[^}]*flex-wrap:nowrap/s);assert.match(css,/\.music-dynamic-track-strip\{[^}]*flex-wrap:nowrap/s);assert.match(css,/overflow-x:auto/);assert.match(css,/@media \(max-width:820px\)/);assert.match(css,/@media \(max-width:390px\)/);assert.doesNotMatch(css,/flex-direction\s*:\s*column/)
 });
 
 test('standalone HTML loads Dynamic Selection CSS and JS after the existing editor stack',()=>{

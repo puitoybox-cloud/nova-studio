@@ -69,14 +69,16 @@ jobs:
                   project.midiData=midiData;
                   MusicStudio.state.projects=[project];
                   MusicStudio.state.midiEditor=MusicStudioEditor.createSession(project);
+                  history.replaceState(null,'','#music-studio/midi-editor/browser-dynamic');
                   const host=document.querySelector('#music-studio-app');
-                  host.innerHTML=MusicStudio.midiEditorView(project.projectId);
+                  host.innerHTML=MusicStudio.renderRoute('music-studio/midi-editor/browser-dynamic');
                   const beforeTop=document.querySelector('.music-editor-layout').getBoundingClientRect().top;
                   MusicStudio.enhanceDynamicTrackSelection();
                   let strip=document.querySelector('.music-dynamic-track-strip');
                   let groups=[...strip.querySelectorAll('.music-dynamic-track-group')];
                   const afterTop=document.querySelector('.music-editor-layout').getBoundingClientRect().top;
-                  const initialSameRow=groups.length>0&&groups.every(group=>Math.abs(group.getBoundingClientRect().top-groups[0].getBoundingClientRect().top)<2);
+                  const groupCenter=group=>{const rect=group.getBoundingClientRect();return rect.top+rect.height/2};
+                  const initialSameRow=groups.length>0&&groups.every(group=>Math.abs(groupCenter(group)-groupCenter(groups[0]))<2);
                   const review=Boolean(document.querySelector('.music-external-track-review-entry'));
                   const target=document.querySelector('[data-track-id="ext-b"] .music-dynamic-track-button');
                   target?.click();
@@ -99,7 +101,7 @@ jobs:
                     partialGuard:partialGuard?.reason,correctionGuard:correctionGuard?.reason,recordGuard:recordGuard?.reason,playGuard:playGuard?.reason,
                     role:currentTrack?.roleAssignment,
                     noteIds:MusicStudio.state.midiEditor.midiData.tracks.flatMap(track=>track.notes||[]).map(note=>note.id),
-                    allSameRow:initialSameRow&&groups.length>0&&groups.every(group=>Math.abs(group.getBoundingClientRect().top-groups[0].getBoundingClientRect().top)<2),
+                    allSameRow:initialSameRow&&groups.length>0&&groups.every(group=>Math.abs(groupCenter(group)-groupCenter(groups[0]))<2),
                     stripScrollHeight:strip?.scrollHeight??0,stripClientHeight:strip?.clientHeight??0,
                     bodyOverflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
                   }
