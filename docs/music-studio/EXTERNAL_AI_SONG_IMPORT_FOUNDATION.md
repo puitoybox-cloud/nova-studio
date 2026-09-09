@@ -38,3 +38,5 @@ Audio bytes and paths are not inserted into `music-studio-project`. The existing
 ## Compatibility boundary
 
 The existing Logic Pro MIDI import keeps its prior suggestion policy. The new external-song MIDI entry requests the parser's `explicit-only` assignment policy, so existing saved data and existing import behavior do not migrate. Project JSON, IndexedDB, backup, reload, Editor, Playback, and Standard MIDI File writer continue using their existing Version 1 structures.
+
+The Dynamic MIDI Track Model foundation now defines optional technical `trackType`, the complete future Musical Role catalog, exact core compatibility slots, role cardinality metadata, and derived capabilities. These definitions do not expand the current four-choice Review UI or connect external Tracks to editing, Playback, or Recording. See `DYNAMIC_MIDI_TRACK_MODEL.md`.

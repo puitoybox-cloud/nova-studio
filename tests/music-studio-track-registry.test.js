@@ -74,3 +74,46 @@ test('registry does not add delete reorder repair or persist tracks',()=>{
   assert.deepEqual(Array.from(registry.validation.duplicateIds),['melody']);assert.deepEqual(Array.from(registry.validation.invalidIndexes),[3]);
   assert.equal(JSON.stringify(midiData),before);assert.equal(Object.hasOwn(midiData,'registry'),false)
 });
+
+test('track type catalog prefers valid explicit values and uses only technical legacy evidence',()=>{
+  const core=load(),type=core.resolveTrackType;
+  assert.deepEqual(plain(core.TRACK_TYPES),{MIDI_MELODIC:'midi-melodic',MIDI_DRUMS:'midi-drums',AUDIO:'audio',UNKNOWN:'unknown'});
+  for(const value of Object.values(core.TRACK_TYPES))assert.equal(type({trackType:value,channel:value==='audio'?10:1}),value);
+  assert.equal(type({trackType:'invalid',channel:1}),'midi-melodic');assert.equal(type({channel:1}),'midi-melodic');assert.equal(type({notes:[]}),'midi-melodic');assert.equal(type({}),'unknown');
+  assert.equal(type({id:'external-channel-10',channel:10}),'midi-drums');assert.equal(core.resolveTrackRole({id:'external-channel-10',channel:10}),'unassigned');assert.equal(core.resolveCoreTrackSlot({id:'external-channel-10',channel:10}),null)
+});
+
+test('track role catalog separates explicit role core fallback and unassigned without inference',()=>{
+  const core=load();
+  assert.deepEqual(Object.values(plain(core.TRACK_ROLES)),['unassigned','melody','drums','bass','vocal','piano','guitar','strings','synth','fx','other']);
+  assert.equal(core.resolveTrackRole({part:'melody',roleAssignment:'strings'}),'strings');
+  for(const role of ['melody','drums','bass']){assert.equal(core.resolveTrackRole({part:role}),role);assert.equal(core.resolveTrackRole({id:role}),role)}
+  assert.equal(core.resolveTrackRole({part:'melody',roleAssignment:'invalid'}),'melody');assert.equal(core.resolveTrackRole({id:'external',roleAssignment:'invalid'}),'unassigned');assert.equal(core.resolveTrackRole({id:'external'}),'unassigned');
+  for(const track of [{id:'x',name:'Drums'},{id:'x',program:32},{id:'x',channel:10},{id:'x',order:0}])assert.equal(core.resolveTrackRole(track),'unassigned')
+});
+
+test('core slots require exact compatibility part or canonical ID and ignore assignment and heuristics',()=>{
+  const core=load();assert.deepEqual(plain(core.CORE_TRACK_SLOTS),{MELODY:'melody',DRUMS:'drums',BASS:'bass'});
+  for(const slot of ['melody','drums','bass']){assert.equal(core.resolveCoreTrackSlot({part:slot,id:`custom-${slot}`}),slot);assert.equal(core.resolveCoreTrackSlot({id:slot}),slot)}
+  for(const track of [{id:'external',roleAssignment:'melody'},{id:'kit',channel:10},{id:'Melody'},{id:'external',part:'Melody'},{id:'external',name:'Bass',program:32}])assert.equal(core.resolveCoreTrackSlot(track),null)
+});
+
+test('role cardinality is future registry metadata and leaves current four-role assignment contract unchanged',()=>{
+  const core=load(),cardinality=plain(core.ROLE_CARDINALITY);
+  for(const role of ['melody','drums','bass'])assert.equal(cardinality[role].maxExternalAssignments,1);
+  for(const role of ['unassigned','vocal','piano','guitar','strings','synth','fx','other'])assert.equal(cardinality[role].maxExternalAssignments,null);
+  assert.deepEqual(Array.from(core.EXTERNAL_TRACK_ROLES),['unassigned','melody','drums','bass']);assert.equal(core.validateExternalTrackAssignments([{id:'external',roleAssignment:'unassigned'}],{external:'vocal'}).ok,false)
+});
+
+test('capability matrix distinguishes core external MIDI audio and unknown tracks',()=>{
+  const core=load(),caps=track=>plain(core.resolveTrackCapabilities(track)),melodic={canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:false,supportsDrumLabels:false,supportsPartialEdit:false},drum={...melodic,supportsDrumLabels:true},none={canEditNotes:false,canRecordMidi:false,canPlayMidi:false,supportsPitchCorrection:false,supportsDrumLabels:false,supportsPartialEdit:false};
+  assert.deepEqual(caps({part:'melody'}),{...melodic,supportsPitchCorrection:true,supportsPartialEdit:true});assert.deepEqual(caps({part:'drums'}),{...drum,supportsPartialEdit:true});assert.deepEqual(caps({part:'bass'}),{...melodic,supportsPartialEdit:true});
+  assert.deepEqual(caps({id:'external-melodic',trackType:'midi-melodic'}),melodic);assert.deepEqual(caps({id:'external-drums',trackType:'midi-drums'}),drum);assert.deepEqual(caps({trackType:'audio'}),none);assert.deepEqual(caps({trackType:'unknown'}),none)
+});
+
+test('classification normalization preserves identity content name role and optional valid type only',()=>{
+  const core=load(),note={id:'n',pitch:60,startTick:0,durationTicks:480,velocity:90},base={id:'external',name:'Lead Piano',roleAssignment:'piano',channel:1,program:0,order:4,notes:[note],unsupportedEvents:[{type:15}]},before=JSON.stringify(base),missing=core.normalizeTrackClassification(base),valid=core.normalizeTrackClassification({...base,trackType:'midi-melodic'}),invalid=core.normalizeTrackClassification({...base,trackType:'not-a-type'}),invalidRole=core.normalizeTrackClassification({...base,roleAssignment:'broken'});
+  assert.equal(Object.hasOwn(missing,'trackType'),false);assert.equal(valid.trackType,'midi-melodic');assert.equal(Object.hasOwn(invalid,'trackType'),false);assert.equal(invalidRole.roleAssignment,'broken');
+  for(const value of [missing,valid,invalid,invalidRole]){assert.equal(value.id,'external');assert.equal(value.name,'Lead Piano');assert.deepEqual(plain(value.notes),[note]);assert.deepEqual(plain(value.unsupportedEvents),[{type:15}])}
+  assert.equal(JSON.stringify(base),before);valid.notes[0].pitch=1;assert.equal(note.pitch,60);assert.equal(core.resolveTrackDisplayName(valid),'Lead Piano')
+});
