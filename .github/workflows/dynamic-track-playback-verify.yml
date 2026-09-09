@@ -1,0 +1,28 @@
+name: Dynamic Track Playback Verify
+on:
+  push:
+    branches:
+      - agent/music-studio-dynamic-track-playback-routing
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Node tests
+        run: node --test
+      - name: Check every JavaScript file
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+            count=$((count+1))
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+          echo "Checked JavaScript files: $count"
+      - name: Diff whitespace check
+        run: git diff --check origin/main...HEAD
