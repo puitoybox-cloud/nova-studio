@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -28,7 +30,7 @@ jobs:
       - name: JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Diff whitespace
-        run: git diff --check origin/main...HEAD
+        run: git diff --check 970b9563ac4a0ddd25086434494ff1087e862108...HEAD
       - name: Install Playwright
         run: |
           npm init -y >/dev/null 2>&1
