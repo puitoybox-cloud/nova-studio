@@ -42,7 +42,7 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/nova-http.log 2>&1 &
           server_pid=$!
           trap 'kill $server_pid || true' EXIT
-          node <<'NODE'
+          node <<'NODE' 2>&1 | tee browser-smoke.log
           const {chromium}=require('playwright');
           const assert=require('node:assert/strict');
           (async()=>{
@@ -120,3 +120,11 @@ jobs:
             }finally{await browser.close()}
           })().catch(error=>{console.error(error);process.exit(1)});
           NODE
+      - name: Upload browser smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dynamic-track-selection-browser-smoke
+          path: browser-smoke.log
+          if-no-files-found: warn
+          retention-days: 1
