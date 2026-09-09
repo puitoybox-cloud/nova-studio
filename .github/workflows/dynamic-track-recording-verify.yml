@@ -17,8 +17,20 @@ jobs:
         run: node --test
       - name: JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
-      - name: Diff whitespace
-        run: git diff --check 970b9563ac4a0ddd25086434494ff1087e862108...HEAD
+      - name: Diff whitespace diagnostics
+        shell: bash
+        run: |
+          set +e
+          git diff --check 970b9563ac4a0ddd25086434494ff1087e862108...HEAD 2>&1 | tee /tmp/diff-check.log
+          echo ${PIPESTATUS[0]} > /tmp/diff-check.status
+          exit 0
+      - name: Upload diff diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-check-log
+          path: /tmp/diff-check.*
+      - name: Require diff green
+        run: test "$(cat /tmp/diff-check.status)" = "0"
       - name: Clean worktree
         run: test -z "$(git status --porcelain)"
       - name: Install Playwright
@@ -33,4 +45,3 @@ jobs:
           trap 'kill $SERVER_PID' EXIT
           sleep 2
           node scripts/music-studio-dynamic-track-recording-browser-smoke.js
-      # Temporary PR verification only; remove after the final green run.
