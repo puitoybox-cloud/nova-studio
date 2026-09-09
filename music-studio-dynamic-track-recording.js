@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const ASSET_VERSION='1.0.1';
+  const ASSET_VERSION='1.0.2';
 
   function resolveRecordingDestination(api=root.MusicStudio,core=root.MusicStudioEditor){
     const session=api?.state?.midiEditor,current=api?.resolveCurrentTrackSelection?.(session);
@@ -95,6 +95,8 @@
         return true
       }
       if(intent==='playback'){
+        const destination=resolveRecordingDestination(api,core);
+        if(destination?.current?.kind!=='external')return originalShortcut.call(this,event);
         event.preventDefault?.();
         api.editorToggleMelodyPlayback?.();
         return true
