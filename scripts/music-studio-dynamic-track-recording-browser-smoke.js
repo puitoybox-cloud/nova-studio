@@ -7,8 +7,10 @@ const viewports=[{width:1440,height:900},{width:820,height:900},{width:390,heigh
 async function sendNote(page,pitch,velocity=100){
   await page.evaluate(({pitch,velocity})=>__fakeMidiInput.onmidimessage({data:[0x90,pitch,velocity],timeStamp:performance.now()}),{pitch,velocity});
   await page.waitForTimeout(30);
-  const live=await page.evaluate(()=>MusicStudio.state.midiInput.recording&&MusicStudio.state.midiInput.recorder?.active?.size>0);
-  assert.equal(live,true,'live note must be active before note-off');
+  const live=await page.evaluate(()=>({recording:MusicStudio.state.midiInput.recording,stateLive:MusicStudio.state.midiInput.liveNotes.some(note=>note.active),domLive:Boolean(document.querySelector('[data-live-note-id]'))}));
+  assert.equal(live.recording,true,'recording must remain active after note-on');
+  assert.equal(live.stateLive,true,'existing live-note state must contain the held note');
+  assert.equal(live.domLive,true,'existing live-note DOM path must render the held note');
   await page.evaluate(({pitch})=>__fakeMidiInput.onmidimessage({data:[0x80,pitch,0],timeStamp:performance.now()+125}),{pitch});
 }
 async function recordTrack(page,trackId,pitch){
