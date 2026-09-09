@@ -1,5 +1,14 @@
 # Nova Studio Changelog
 
+## External Track Review / Assignment UI
+
+- External Song Importで保存したTrackをEditor内のcompact Reviewで一覧化し、Track ID、name、channel、Program、note数、現在の`roleAssignment`を表示
+- Unassigned／Melody／Drums／Bassをユーザーが選択し、Apply Assignmentで明示確定するmetadata-only割当を追加。Cancel時はprojectを変更しない
+- external Track間は`1 role = 1 Track`として重複をApply時に一括拒否し、invalid Track／role／Registryでも全Trackを非変更に維持
+- external Track自身のID、notes、channel、Programを維持し、既存3 compatibility Trackへのnote転記、dynamic Track tab、AI／heuristic分類は行わない
+- Assignment後もEditor normalizationとAll MIDI Exportでexternal Trackを自動昇格・重複させず、保存、reload、JSON、backupのVersion 1経路を維持
+- `APP_VERSION 1.4.0`、`schemaVersion 1.0`を維持。割当Trackの直接編集は次PR以降のTrack UI拡張へ分離
+
 ## External AI Song Import UI接続
 
 - MIDI Composerの既存Import / Export内へ、通常MIDI Importとは独立したコンパクトなExternal Song Import入口を追加

@@ -17,7 +17,15 @@ This foundation adds a provider-neutral boundary for user-supplied external song
 - A new Version 1 project is persisted only after parsing, Track Registry validation, summary validation, and project validation succeed.
 - The result displays file name, MIDI type, total and playable track counts, note count, initial BPM, time signature, and the unassigned status.
 - The existing MIDI Import and Logic Pro MIDI Import remain independent and retain their prior behavior.
-- Track review and manual role assignment are intentionally deferred to the next change.
+
+## External Track Review / Assignment
+
+- The editor lists each external Track carrying an explicit `roleAssignment`, including Track ID, name, MIDI channel, optional Program, note count, and current assignment.
+- The user may draft Unassigned, Melody, Drums, or Bass and must choose Apply Assignment before project data changes. Cancel discards the draft.
+- Assignment changes only the external Track's optional `roleAssignment`; Track ID, notes, channel, Program, ordering, and the three fixed compatibility Tracks remain unchanged.
+- One external Track per assigned role is accepted. Duplicate roles, unknown Track IDs, invalid roles, and invalid Track Registry data reject the complete Apply operation without partial mutation.
+- The fixed Editor tabs still resolve by `part`, so assignment metadata does not make an external Track directly editable in this change. Dynamic Track UI is a separate future boundary.
+- Normalization and All MIDI Export treat every explicit external assignment as metadata and do not heuristically promote or duplicate that Track.
 
 ## Audio boundary
 
