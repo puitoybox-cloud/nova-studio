@@ -19,7 +19,7 @@ function load(selectedId='ext-b'){
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-playback.js'),'utf8'),window);
   const core=window.MusicStudioEditor,session=core.createSession(fixture());core.selectTrackById(session,selectedId);
-  let originalToggleCalls=0,shortcutCalls=0,scheduledTracks=[];
+  let originalToggleCalls=0,stopCalls=0,shortcutCalls=0,scheduledTracks=[];
   const synth={supported:()=>true,unlock:async()=>true,stopPlayback:()=>{},playTracks:(tracks,timing)=>{scheduledTracks=plain(tracks);const notes=tracks.flatMap(track=>track.notes||[]);return{ok:true,trackCount:tracks.length,noteCount:notes.length,durationMs:10,playbackStart:0,secondsPerTick:.001,timelineDurationSeconds:.01,tempoMap:timing.tempoMap||[],startTick:Number(timing.startTick)||0,endTick:Number(timing.endTick)||1920,scheduledNotes:notes}}};
   window.MusicStudioAudio={createSynth:()=>synth};
   window.MusicStudio={
@@ -27,10 +27,11 @@ function load(selectedId='ext-b'){
     state:{midiEditor:session,midiInput:{recording:false,countingIn:false},melodyAudio:{synth:null,playing:false,starting:false,playRequest:0,playbackTimer:null,playbackFrame:null,playbackState:{mutedByTrackId:{},soloByTrackId:{}},transport:null,status:''}},
     resolveCurrentTrackSelection(){const track=core.currentTrack(session),caps=core.resolveTrackCapabilities(track);return{id:track.id,name:core.resolveTrackDisplayName(track),kind:core.resolveCoreTrackSlot(track)?'core':'external',capabilities:caps}},
     editorToggleMelodyPlayback(){originalToggleCalls++;return{ok:true,source:'core'}},
+    async editorStopTransport(){stopCalls++;this.state.melodyAudio.playing=false;this.state.melodyAudio.starting=false;return{ok:true,playbackStopped:true}},
     editorHandleShortcut(){shortcutCalls++;return'original-shortcut'}
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-playback.js'),'utf8'),window);
-  return{window,core,session,api:window.MusicStudio,get originalToggleCalls(){return originalToggleCalls},get shortcutCalls(){return shortcutCalls},get scheduledTracks(){return scheduledTracks}}
+  return{window,core,session,api:window.MusicStudio,get originalToggleCalls(){return originalToggleCalls},get stopCalls(){return stopCalls},get shortcutCalls(){return shortcutCalls},get scheduledTracks(){return scheduledTracks}}
 }
 
 test('selected External MIDI Track resolves by exact Track ID without mutating source data',()=>{
@@ -48,11 +49,11 @@ test('External playback schedules only the selected Track and preserves MIDI pro
 });
 
 test('Core Melody Drums Bass playback remains delegated to the existing transport',async()=>{
-  const env=load('core-drums'),result=await env.api.editorToggleMelodyPlayback();assert.equal(result.source,'core');assert.equal(env.originalToggleCalls,1);assert.equal(env.scheduledTracks.length,0)
+  const env=load('core-drums'),result=await env.api.editorToggleMelodyPlayback();assert.equal(result.source,'core');assert.equal(env.originalToggleCalls,1);assert.equal(env.scheduledTracks.length,0);assert.equal(env.stopCalls,0)
 });
 
-test('Stop while External playback is active delegates to the existing transport stop path',async()=>{
-  const env=load('ext-a');env.api.state.melodyAudio.playing=true;const result=await env.api.editorToggleMelodyPlayback();assert.equal(result.source,'core');assert.equal(env.originalToggleCalls,1)
+test('Stop while External playback is active uses the exported transport stop API instead of the PR 227 playback gate',async()=>{
+  const env=load('ext-a');env.api.state.melodyAudio.playing=true;const result=await env.api.editorToggleMelodyPlayback();assert.equal(result.playbackStopped,true);assert.equal(env.stopCalls,1);assert.equal(env.originalToggleCalls,0);assert.equal(env.api.state.melodyAudio.playing,false)
 });
 
 test('Space shortcut is restored for External playback without opening other gated shortcuts',()=>{
