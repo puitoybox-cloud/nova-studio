@@ -66,7 +66,14 @@
 
   function renderEditor(api,doc=root.document){
     const session=api?.state?.midiEditor,page=doc?.querySelector?.('.music-midi-editor-page');
-    if(!session||!page||typeof api.midiEditorView!=='function')return false;
+    if(!session||!page)return false;
+    if(typeof api.editorClearSelection==='function'){
+      api.editorClearSelection();
+      const next=doc.querySelector('.music-midi-editor-page');
+      if(next)enhanceEditor(next,api,root.MusicStudioEditor,doc);
+      return Boolean(next)
+    }
+    if(typeof api.midiEditorView!=='function')return false;
     const scrollTop=page.scrollTop||0,scrollLeft=page.scrollLeft||0,markup=api.midiEditorView(session.projectId);
     page.outerHTML=markup;
     const next=doc.querySelector('.music-midi-editor-page');
@@ -146,7 +153,22 @@
     return true
   }
 
-  const exported={CORE_ORDER:[...CORE_ORDER],createSelectionModel,resolveCurrentSelection,selectTrack,enhanceEditor,install};
+  let bootTimer=null;
+  function bootWithRetry(){
+    if(install())return true;
+    if(root.MusicStudio?.__dynamicTrackSelectionInstalled)return true;
+    if(typeof root.setInterval!=='function')return false;
+    if(bootTimer!=null)root.clearInterval(bootTimer);
+    let attempts=0;
+    bootTimer=root.setInterval(()=>{
+      attempts+=1;
+      if(install()||root.MusicStudio?.__dynamicTrackSelectionInstalled||attempts>=200){root.clearInterval(bootTimer);bootTimer=null}
+    },25);
+    return false
+  }
+
+  const exported={CORE_ORDER:[...CORE_ORDER],createSelectionModel,resolveCurrentSelection,selectTrack,enhanceEditor,install,bootWithRetry};
   root.MusicStudioDynamicTrackSelection=exported;
-  if(root.MusicStudio&&root.MusicStudioEditor)install();
+  bootWithRetry();
+  if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
