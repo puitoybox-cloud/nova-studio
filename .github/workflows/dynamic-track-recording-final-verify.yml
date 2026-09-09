@@ -1,0 +1,38 @@
+name: Dynamic Track Recording Final Verify
+on:
+  push:
+    branches:
+      - agent/music-studio-dynamic-track-recording-final-verify
+jobs:
+  verify-final-head:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/music-studio-dynamic-track-recording-routing
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert final target HEAD
+        run: test "$(git rev-parse HEAD)" = "f9d2e7e8e1ae9450ca2d91a447f206fa7f26bb4b"
+      - name: Node tests
+        run: node --test
+      - name: JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Diff whitespace
+        run: git diff --check 970b9563ac4a0ddd25086434494ff1087e862108...HEAD
+      - name: Clean worktree
+        run: test -z "$(git status --porcelain)"
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Responsive browser smoke
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/nova-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 2
+          node scripts/music-studio-dynamic-track-recording-browser-smoke.js
