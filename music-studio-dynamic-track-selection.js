@@ -1,4 +1,4 @@
-/* Dynamic Track Selection UI: Track-ID based selection without expanding playback/recording/editing scope. */
+/* Dynamic Track Selection UI: Track-ID based selection without expanding unrelated editing scope. */
 (function(root){
   'use strict';
 
@@ -10,7 +10,7 @@
     'editorApplyQuantize','editorPianoInput','editorDrumInput','editorGenerateCandidate','editorApplyCandidate',
     'editorStartPartialEdit','editorPreviewPartialEditPitchUp','editorRunPartialEditProvider','editorApplyPartialEdit',
     'editorPreviewCorrection','editorApplyCorrection','editorPreviewTranspose','editorApplyTranspose','editorPreviewNoteLength','editorApplyNoteLength',
-    'editorToggleMidiRecording','editorStartMidiRecording','editorToggleMelodyPlayback','editorPlayMelody'
+    'editorToggleMelodyPlayback','editorPlayMelody'
   ];
 
   function validTrackId(value){return typeof value==='string'&&value.trim()!==''}
@@ -120,8 +120,9 @@
     page.classList.add('is-external-track-selected');
     page.querySelectorAll('.music-midi-note').forEach(note=>{note.disabled=true;note.setAttribute('aria-disabled','true');note.removeAttribute('onpointerdown')});
     page.querySelectorAll('.music-partial-edit button,.music-partial-edit input,.music-partial-edit select,.music-partial-edit textarea,.music-edit-range input,.music-correction-menu button,.music-correction-menu input,.music-correction-menu select,.music-correction-menu textarea').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
-    const actionNames=['editorAddNote','editorDeleteNote','editorCopy','editorPaste','editorDuplicate','editorSelectAllNotes','editorLockSelectedNotes','editorUnlockSelectedNotes','editorMatchDuration','editorMatchVelocity','editorApplyQuantize','editorAddMeasures','editorRemoveMeasures','editorToggleMidiRecording','editorToggleMelodyPlayback'];
+    const actionNames=['editorAddNote','editorDeleteNote','editorCopy','editorPaste','editorDuplicate','editorSelectAllNotes','editorLockSelectedNotes','editorUnlockSelectedNotes','editorMatchDuration','editorMatchVelocity','editorApplyQuantize','editorAddMeasures','editorRemoveMeasures','editorToggleMelodyPlayback'];
     for(const name of actionNames)page.querySelectorAll(`[onclick*="${name}"]`).forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
+    if(current.capabilities.canRecordMidi!==true)page.querySelectorAll('[onclick*="editorToggleMidiRecording"]').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
     page.querySelectorAll('.music-editor-transfer button').forEach(control=>{if(/^Export (?!All)/.test(control.textContent||'')){control.disabled=true;control.title='Current external Track export is not connected in this phase.'}});
     page.dataset.currentTrackMode='selection-only';page.dataset.currentTrackId=current.id;page.dataset.currentTrackCanEditNotes=String(current.capabilities.canEditNotes===true);page.dataset.currentTrackCanPlayMidi=String(current.capabilities.canPlayMidi===true);page.dataset.currentTrackCanRecordMidi=String(current.capabilities.canRecordMidi===true)
   }
@@ -132,7 +133,7 @@
     const key=`${current.id}|${model.map(item=>item.id).join('|')}`;if(page.dataset.dynamicTrackSelectionKey===key)return true;
     page.dataset.dynamicTrackSelectionKey=key;page.dataset.currentTrackId=current.id;page.dataset.currentTrackType=current.trackType;page.dataset.currentTrackRole=current.role;
     renderTrackStrip(page,model,api,doc);
-    const heading=page.querySelector('#midiEditorTitle');if(heading){heading.textContent=current.kind==='core'?`${current.name}制作`:`Current Track：${current.name}`;heading.dataset.trackId=current.id;heading.title=current.kind==='external'?'Selection only. Dynamic Playback / Recording / full editing are not connected yet.':''}
+    const heading=page.querySelector('#midiEditorTitle');if(heading){heading.textContent=current.kind==='core'?`${current.name}制作`:`Current Track：${current.name}`;heading.dataset.trackId=current.id;heading.title=current.kind==='external'?'Dynamic Playback / Recording are capability-gated. Correction / Partial Edit remain unavailable.':''}
     if(current.kind==='external')disableExternalEditing(page,current);else page.classList.remove('is-external-track-selected');
     return true
   }
