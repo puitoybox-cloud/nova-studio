@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '22'
       - name: Assert final target HEAD
-        run: test "$(git rev-parse HEAD)" = "45dad021abda6ae98e55430a315ab6c043319060"
+        run: test "$(git rev-parse HEAD)" = "265e2b2df796dd519206d5b19154ac3e6362f624"
       - name: Node tests
         run: node --test
       - name: JavaScript syntax
