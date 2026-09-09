@@ -46,8 +46,8 @@ test('Current Track resolves by selected Track ID and invalid runtime IDs safely
 test('External selection preserves Track data roleAssignment Core Tracks and note identity without copies',()=>{
   const{core,selection}=load(),session=core.createSession(project()),before=plain(session.midiData),api={state:{midiEditor:session,partialEditSession:{kept:true},midiMultiSelect:true}};
   assert.equal(selection.selectTrack('ext-b',api,core,null),true);assert.equal(session.selectedTrackId,'ext-b');assert.deepEqual(plain(session.midiData),before);
-  assert.equal(session.midiData.tracks.find(track=>track.id==='ext-b').roleAssignment,'strings');assert.deepEqual(session.midiData.tracks.find(track=>track.id==='ext-b').notes.map(note=>note.id),['b2']);
-  assert.deepEqual(session.midiData.tracks.find(track=>track.id==='core-melody').notes.map(note=>note.id),['m']);assert.deepEqual(session.midiData.tracks.find(track=>track.id==='core-drums').notes.map(note=>note.id),['d']);assert.deepEqual(session.midiData.tracks.find(track=>track.id==='core-bass').notes.map(note=>note.id),['b'])
+  assert.equal(session.midiData.tracks.find(track=>track.id==='ext-b').roleAssignment,'strings');assert.deepEqual(Array.from(session.midiData.tracks.find(track=>track.id==='ext-b').notes,note=>note.id),['b2']);
+  assert.deepEqual(Array.from(session.midiData.tracks.find(track=>track.id==='core-melody').notes,note=>note.id),['m']);assert.deepEqual(Array.from(session.midiData.tracks.find(track=>track.id==='core-drums').notes,note=>note.id),['d']);assert.deepEqual(Array.from(session.midiData.tracks.find(track=>track.id==='core-bass').notes,note=>note.id),['b'])
 });
 
 test('invalid Track ID selection is rejected without any session mutation',()=>{
