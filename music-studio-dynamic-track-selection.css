@@ -1,0 +1,61 @@
+/* Dynamic Track Selection UI — one-row Track-ID strip. */
+.music-midi-editor-page .music-dynamic-track-nav{
+  min-width:0;
+  align-items:center;
+  flex-wrap:nowrap;
+}
+.music-midi-editor-page .music-dynamic-track-strip{
+  display:flex;
+  flex:1 1 auto;
+  min-width:0;
+  max-width:100%;
+  flex-wrap:nowrap;
+  gap:.35rem;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.music-midi-editor-page .music-dynamic-track-group{
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:center;
+  gap:.18rem;
+  min-width:0;
+}
+.music-midi-editor-page .music-dynamic-track-button{
+  flex:0 0 auto;
+  max-width:12rem;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.music-midi-editor-page .music-dynamic-track-group.is-external .music-dynamic-track-button{
+  max-width:13rem;
+}
+.music-midi-editor-page.is-external-track-selected .music-part-workflow,
+.music-midi-editor-page.is-external-track-selected .music-correction-menu{
+  display:none !important;
+}
+.music-midi-editor-page.is-external-track-selected .music-midi-note[disabled]{
+  cursor:default;
+}
+@media (max-width:820px){
+  .music-midi-editor-page .music-dynamic-track-strip{gap:.25rem}
+  .music-midi-editor-page .music-dynamic-track-button{max-width:10.5rem}
+  .music-midi-editor-page .music-history-controls{flex:0 0 auto}
+}
+@media (max-width:390px){
+  .music-midi-editor-page .music-dynamic-track-nav{
+    flex-wrap:nowrap;
+    gap:.25rem;
+  }
+  .music-midi-editor-page .music-dynamic-track-strip{
+    flex-wrap:nowrap;
+    gap:.2rem;
+  }
+  .music-midi-editor-page .music-dynamic-track-button{max-width:8.5rem}
+  .music-midi-editor-page .music-dynamic-track-group>button{min-height:30px}
+}
