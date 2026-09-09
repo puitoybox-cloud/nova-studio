@@ -60,8 +60,9 @@ test('Recording capability gate rejects a selected Track without canRecordMidi',
 
 test('Selection gate no longer blocks recording while Correction and Partial Edit remain gated',()=>{
   const source=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.js'),'utf8');
-  assert.doesNotMatch(source,/BLOCKED_EXTERNAL_ACTIONS=[\s\S]*?'editorToggleMidiRecording'/);assert.doesNotMatch(source,/BLOCKED_EXTERNAL_ACTIONS=[\s\S]*?'editorStartMidiRecording'/);
-  for(const action of ['editorPreviewCorrection','editorStartPartialEdit'])assert.match(source,new RegExp(`'${action}'`))
+  const blocked=source.match(/const BLOCKED_EXTERNAL_ACTIONS=\[([\s\S]*?)\];/)?.[1]||'';
+  assert.doesNotMatch(blocked,/editorToggleMidiRecording/);assert.doesNotMatch(blocked,/editorStartMidiRecording/);
+  for(const action of ['editorPreviewCorrection','editorStartPartialEdit'])assert.match(blocked,new RegExp(`'${action}'`))
 });
 
 test('Existing recording engine commits by exact recordingTrackId and preserves fallback only for legacy missing selection',()=>{
