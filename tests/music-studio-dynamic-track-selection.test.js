@@ -19,17 +19,39 @@ test('Review Assignment UI remains separate from Selection UI',()=>{const app=fs
 test('External selection keeps note editing playback correction and Partial Edit gated while recording is capability-routed separately',()=>{const source=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.js'),'utf8');for(const action of ['editorAddNote','editorToggleMelodyPlayback','editorStartPartialEdit','editorPreviewCorrection'])assert.ok(source.includes(`'${action}'`));assert.ok(!source.includes("'editorToggleMidiRecording'"));assert.match(source,/core-track-required/);assert.match(source,/supportsPartialEdit/)});
 test('All MIDI Export path remains all-track based and is not rewritten as roleAssignment selection',()=>{const app=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');assert.match(app,/scope==='all'\|\|track\.part===scope/);assert.match(app,/const MIDI_EXPORT_SCOPES=\{melody:'Melody',drums:'Drums',bass:'Bass',all:'All'\}/)});
 test('responsive Track strip is one row at 1440 820 and 390 boundaries without vertical Track stacking',()=>{const css=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.css'),'utf8');assert.match(css,/\.music-dynamic-track-nav\{[^}]*flex-wrap:nowrap/s);assert.match(css,/\.music-dynamic-track-strip\{[^}]*flex-wrap:nowrap/s);assert.match(css,/overflow-x:auto/);assert.match(css,/@media \(max-width:820px\)/);assert.match(css,/@media \(max-width:390px\)/);assert.doesNotMatch(css,/flex-direction\s*:\s*column/)});
-test('standalone HTML loads Dynamic Selection CSS and JS after the existing editor stack',()=>{const html=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');assert.match(html,/music-studio-dynamic-track-selection\.css\?v=1\.0\.0/);assert.match(html,/music-studio-dynamic-track-selection\.js\?v=1\.0\.2/);assert.ok(html.indexOf('music-studio.js?v=1.4.98')<html.indexOf('music-studio-dynamic-track-selection.js?v=1.0.2'))});
-test('Nova Studio host loads Dynamic Selection assets without changing Music Studio APP_VERSION or schemaVersion',()=>{const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),app=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');assert.match(html,/music-studio-dynamic-track-selection\.css\?v=1\.0\.0/);assert.match(html,/music-studio-dynamic-track-selection\.js\?v=1\.0\.2/);assert.match(app,/const APP_VERSION='1\.4\.0'/);assert.match(app,/const SCHEMA_VERSION='1\.0'/)});
+test('standalone HTML loads Dynamic Selection CSS and JS after the existing editor stack',()=>{const html=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');assert.match(html,/music-studio-dynamic-track-selection\.css\?v=1\.0\.0/);assert.match(html,/music-studio-dynamic-track-selection\.js\?v=1\.0\.3/);assert.ok(html.indexOf('music-studio.js?v=1.4.98')<html.indexOf('music-studio-dynamic-track-selection.js?v=1.0.3'))});
+test('Nova Studio host loads Dynamic Selection assets without changing Music Studio APP_VERSION or schemaVersion',()=>{const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),app=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');assert.match(html,/music-studio-dynamic-track-selection\.css\?v=1\.0\.0/);assert.match(html,/music-studio-dynamic-track-selection\.js\?v=1\.0\.3/);assert.match(app,/const APP_VERSION='1\.4\.0'/);assert.match(app,/const SCHEMA_VERSION='1\.0'/)});
 
-function deletionHarness(){
+function deletionHarness({onSelectNote}={}){
   const{core,selection}=load(),source=project();
   source.midiData.tracks.find(track=>track.id==='ext-a').notes.push({id:'shared',pitch:73,startTick:480,durationTicks:240,velocity:72},{id:'locked-a',pitch:75,startTick:960,durationTicks:240,velocity:72,locked:true});
   source.midiData.tracks.find(track=>track.id==='ext-b').notes.push({id:'shared',pitch:76,startTick:960,durationTicks:240,velocity:73});
-  const session=core.createSession(source),api={state:{midiEditor:session,midiMultiSelect:false,partialEditSession:null},editorHandleShortcut(){return true},editorStartNoteDrag(){return'core-drag'},editorSelectNote(id,additive){core.selectNote(session,id,{additive});return true},editorDeleteNote(){const before=core.editableNotes(core.selectedNotes(session)).length;if(!before)return false;core.deleteSelected(session);return true},editorUndo(){core.undo(session);return true},editorAddNote(){return true},editorCopy(){return true},editorPaste(){return true},editorDuplicate(){return true},editorSelectAllNotes(){return true},editorLockSelectedNotes(){return true},editorUnlockSelectedNotes(){return true},editorMatchDuration(){return true},editorMatchVelocity(){return true},editorApplyQuantize(){return true}};
+  const session=core.createSession(source),api={state:{midiEditor:session,midiMultiSelect:false,partialEditSession:null},editorHandleShortcut(){return true},editorStartNoteDrag(){return'core-drag'},editorSelectNote(id,additive){onSelectNote?.(api,id);core.selectNote(session,id,{additive});return true},editorDeleteNote(){const before=core.editableNotes(core.selectedNotes(session)).length;if(!before)return false;core.deleteSelected(session);return true},editorUndo(){core.undo(session);return true},editorAddNote(){return true},editorCopy(){return true},editorPaste(){return true},editorDuplicate(){return true},editorSelectAllNotes(){return true},editorLockSelectedNotes(){return true},editorUnlockSelectedNotes(){return true},editorMatchDuration(){return true},editorMatchVelocity(){return true},editorApplyQuantize(){return true}};
   assert.equal(selection.install(api,core,null),true);
   return{core,selection,session,api,track:id=>session.midiData.tracks.find(item=>item.id===id)}
 }
+
+test('External pointer selection captures exact Track ID before synchronous repaint and Eraser delete',()=>{
+  let provenanceDuringRepaint=null;
+  const h=deletionHarness({onSelectNote:api=>{provenanceDuringRepaint=api.__externalNoteSelectionTrackId}}),beforeB=plain(h.track('ext-b').notes);
+  h.core.selectTrackById(h.session,'ext-a');
+  assert.equal(h.api.editorStartNoteDrag({button:0,preventDefault(){}},'a'),true);
+  assert.equal(provenanceDuringRepaint,'ext-a');
+  assert.deepEqual(Array.from(h.core.selectedIds(h.session)),['a']);
+  assert.equal(h.api.editorDeleteNote(),true);
+  assert.equal(h.track('ext-a').notes.some(note=>note.id==='a'),false);
+  assert.deepEqual(plain(h.track('ext-b').notes),beforeB)
+});
+
+test('External pointer selection aborts without mutation when repaint changes the current Track',()=>{
+  const h=deletionHarness({onSelectNote:()=>{h.core.selectTrackById(h.session,'ext-b')}});
+  h.core.selectTrackById(h.session,'ext-a');
+  const before=plain(h.session.midiData),undo=h.session.undo.length;
+  assert.equal(h.api.editorStartNoteDrag({button:0,preventDefault(){}},'a'),false);
+  assert.equal(h.api.editorDeleteNote(),false);
+  assert.deepEqual(plain(h.session.midiData),before);
+  assert.equal(h.session.undo.length,undo)
+});
 
 test('External delete is exact-Track-ID scoped and Undo restores only that Track',()=>{
   const h=deletionHarness(),coreBefore=plain(h.session.midiData.tracks.slice(0,3)),bBefore=plain(h.track('ext-b').notes);
