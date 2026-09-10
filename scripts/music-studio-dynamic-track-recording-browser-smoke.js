@@ -24,18 +24,21 @@ async function verifyCountInRouting(page){await selectTrack(page,'external-b');a
 async function verifyExternalDeleteUndo(page){
   await selectTrack(page,'external-a');
   const before=await page.evaluate(()=>Object.fromEntries(MusicStudio.state.midiEditor.midiData.tracks.map(track=>[track.id,track.notes.map(note=>note.id)])));
-  await page.evaluate(()=>MusicStudio.editorStartNoteDrag({button:0,preventDefault(){}},'a'));
-  await page.keyboard.press('Delete');
+  await page.locator('.music-midi-note[data-note-id="a"]').dispatchEvent('pointerdown',{button:0,pointerId:7,pointerType:'mouse'});
+  await page.waitForFunction(()=>document.querySelector('.music-midi-note[data-note-id="a"]')?.classList.contains('is-selected'));
+  await page.locator('[onclick="MusicStudio.editorDeleteNote()"]', {hasText:'Eraser'}).click();
   const deleted=await page.evaluate(()=>Object.fromEntries(MusicStudio.state.midiEditor.midiData.tracks.map(track=>[track.id,track.notes.map(note=>note.id)])));
   assert.deepEqual(deleted['external-a'],before['external-a'].filter(id=>id!=='a'));
   for(const id of ['external-b','external-drums','melody','drums','bass'])assert.deepEqual(deleted[id],before[id]);
   await page.keyboard.press('Meta+z');
   const restored=await page.evaluate(()=>Object.fromEntries(MusicStudio.state.midiEditor.midiData.tracks.map(track=>[track.id,track.notes.map(note=>note.id)])));
   assert.deepEqual(restored,before);
-  await page.evaluate(()=>MusicStudio.editorStartNoteDrag({button:0,preventDefault(){}},'locked-a'));
+  await page.locator('.music-midi-note[data-note-id="a"]').dispatchEvent('pointerdown',{button:0,pointerId:8,pointerType:'mouse'});await page.keyboard.press('Delete');assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(track=>track.id==='external-a').notes.some(note=>note.id==='a')),false);await page.keyboard.press('Meta+z');
+  await page.locator('.music-midi-note[data-note-id="a"]').dispatchEvent('pointerdown',{button:0,pointerId:9,pointerType:'mouse'});await page.keyboard.press('Backspace');assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(track=>track.id==='external-a').notes.some(note=>note.id==='a')),false);await page.keyboard.press('Meta+z');
+  await page.locator('.music-midi-note[data-note-id="locked-a"]').dispatchEvent('pointerdown',{button:0,pointerId:10,pointerType:'mouse'});
   await page.keyboard.press('Delete');
   assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(track=>track.id==='external-a').notes.some(note=>note.id==='locked-a')),true);
-  await page.evaluate(()=>MusicStudio.editorStartNoteDrag({button:0,preventDefault(){}},'a'));
+  await page.locator('.music-midi-note[data-note-id="a"]').dispatchEvent('pointerdown',{button:0,pointerId:11,pointerType:'mouse'});
   await selectTrack(page,'external-b');
   await page.evaluate(()=>{MusicStudio.state.midiEditor.selectedNoteId='b';MusicStudio.state.midiEditor.selectedNoteIds=['b']});
   const bBefore=await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(track=>track.id==='external-b').notes.map(note=>note.id));
