@@ -7,7 +7,7 @@
   const BLOCKED_EXTERNAL_ACTIONS=[
     'editorPianoInput','editorDrumInput','editorGenerateCandidate','editorApplyCandidate',
     'editorStartPartialEdit','editorPreviewPartialEditPitchUp','editorRunPartialEditProvider','editorApplyPartialEdit',
-    'editorPreviewCorrection','editorApplyCorrection','editorPreviewNoteLength','editorApplyNoteLength',
+    'editorPreviewCorrection','editorApplyCorrection',
     'editorToggleMelodyPlayback','editorPlayMelody'
   ];
 
@@ -57,11 +57,13 @@
     page.querySelectorAll('.music-midi-note').forEach(note=>{note.disabled=false;note.removeAttribute('aria-disabled');note.querySelectorAll?.('.music-note-resize').forEach(handle=>{handle.style.pointerEvents='';handle.removeAttribute?.('aria-hidden')})});
     page.querySelectorAll('.music-partial-edit button,.music-partial-edit input,.music-partial-edit select,.music-partial-edit textarea,.music-edit-range input,.music-correction-menu button,.music-correction-menu input,.music-correction-menu select,.music-correction-menu textarea').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
     const transposePreview=api?.state?.midiEditor?.transposePreview,transposeTarget=api?.state?.midiEditor?.transposeSettings?.target||'all';page.querySelectorAll('.music-transpose-panel button,.music-transpose-panel input,.music-transpose-panel select').forEach(control=>{const action=control.getAttribute?.('onclick')||'',needsPreview=/editor(?:Apply|Cancel)Transpose/.test(action),needsMeasures=/transposeMeasure(?:From|To)/.test(control.name||''),enabled=(!needsPreview||Boolean(transposePreview))&&(!needsMeasures||transposeTarget==='measures');control.disabled=!enabled;if(enabled)control.removeAttribute?.('aria-disabled');else control.setAttribute?.('aria-disabled','true')});
+    const noteLengthPreview=api?.state?.midiEditor?.noteLengthPreview,noteLengthTarget=api?.state?.midiEditor?.noteLengthSettings?.target||'all';page.querySelectorAll('.music-note-length-panel button,.music-note-length-panel input,.music-note-length-panel select').forEach(control=>{const action=control.getAttribute?.('onclick')||'',needsPreview=/editor(?:Apply|Cancel)NoteLength/.test(action),needsMeasures=/noteLengthMeasure(?:From|To)/.test(control.name||''),enabled=(!needsPreview||Boolean(noteLengthPreview))&&(!needsMeasures||noteLengthTarget==='measures');control.disabled=!enabled;if(enabled)control.removeAttribute?.('aria-disabled');else control.setAttribute?.('aria-disabled','true')});
     const actionNames=['editorAddMeasures','editorRemoveMeasures','editorToggleMelodyPlayback'];
     for(const name of actionNames)page.querySelectorAll(`[onclick*="${name}"]`).forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
     page.querySelectorAll('[onclick*="editorDeleteNote"]').forEach(control=>{control.disabled=false;control.removeAttribute('aria-disabled')});
     if(current.capabilities.canRecordMidi!==true)page.querySelectorAll('[onclick*="editorToggleMidiRecording"]').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
     page.querySelectorAll('.music-editor-transfer button').forEach(control=>{if(/^Export (?!All)/.test(control.textContent||'')){control.disabled=true;control.title='Current external Track export is not connected in this phase.'}});
+    const batchSummary=page.querySelector('.music-correction-menu > summary');if(batchSummary)batchSummary.textContent='Transpose / Note Length（一括編集）';
     page.dataset.currentTrackMode=current.capabilities.canEditNotes===true?'note-editing':'read-only';page.dataset.currentTrackId=current.id;page.dataset.currentTrackCanEditNotes=String(current.capabilities.canEditNotes===true);page.dataset.currentTrackCanPlayMidi=String(current.capabilities.canPlayMidi===true);page.dataset.currentTrackCanRecordMidi=String(current.capabilities.canRecordMidi===true)
   }
 
