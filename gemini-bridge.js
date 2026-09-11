@@ -237,7 +237,11 @@
       try {
         await copyText(prompt);
         notify('Gemini用プロンプトをコピーしました');
-        if (openAfter) window.open(settings.geminiUrl, '_blank', 'noopener,noreferrer');
+        if (openAfter) {
+          const safeUrl = window.NovaSecurity?.safeNavigationUrl(settings.geminiUrl, location.href) || '';
+          if (!safeUrl) return notify('Gemini URLはHTTPSを指定してください');
+          window.open(safeUrl, '_blank', 'noopener,noreferrer');
+        }
       } catch (_) {
         notify('コピーできませんでした。ブラウザの許可を確認してください');
       }
