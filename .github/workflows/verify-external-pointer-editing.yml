@@ -24,7 +24,7 @@ jobs:
           echo "Checked $count JavaScript files"
         shell: bash
       - name: Diff whitespace
-        run: git diff --check origin/main...HEAD
+        run: git diff --check HEAD^1..HEAD
       - name: Install Playwright Chromium
         run: |
           npm install --no-save playwright@1.55.0
