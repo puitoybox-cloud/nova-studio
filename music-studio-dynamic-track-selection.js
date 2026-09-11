@@ -5,7 +5,7 @@
   const CORE_ORDER=['melody','drums','bass'];
   const MIDI_TYPES=new Set(['midi-melodic','midi-drums']);
   const BLOCKED_EXTERNAL_ACTIONS=[
-    'editorApplyQuantize','editorPianoInput','editorDrumInput','editorGenerateCandidate','editorApplyCandidate',
+    'editorPianoInput','editorDrumInput','editorGenerateCandidate','editorApplyCandidate',
     'editorStartPartialEdit','editorPreviewPartialEditPitchUp','editorRunPartialEditProvider','editorApplyPartialEdit',
     'editorPreviewCorrection','editorApplyCorrection','editorPreviewTranspose','editorApplyTranspose','editorPreviewNoteLength','editorApplyNoteLength',
     'editorToggleMelodyPlayback','editorPlayMelody'
@@ -56,7 +56,7 @@
     page.classList.add('is-external-track-selected');
     page.querySelectorAll('.music-midi-note').forEach(note=>{note.disabled=false;note.removeAttribute('aria-disabled');note.querySelectorAll?.('.music-note-resize').forEach(handle=>{handle.style.pointerEvents='';handle.removeAttribute?.('aria-hidden')})});
     page.querySelectorAll('.music-partial-edit button,.music-partial-edit input,.music-partial-edit select,.music-partial-edit textarea,.music-edit-range input,.music-correction-menu button,.music-correction-menu input,.music-correction-menu select,.music-correction-menu textarea').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
-    const actionNames=['editorApplyQuantize','editorAddMeasures','editorRemoveMeasures','editorToggleMelodyPlayback'];
+    const actionNames=['editorAddMeasures','editorRemoveMeasures','editorToggleMelodyPlayback'];
     for(const name of actionNames)page.querySelectorAll(`[onclick*="${name}"]`).forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
     page.querySelectorAll('[onclick*="editorDeleteNote"]').forEach(control=>{control.disabled=false;control.removeAttribute('aria-disabled')});
     if(current.capabilities.canRecordMidi!==true)page.querySelectorAll('[onclick*="editorToggleMidiRecording"]').forEach(control=>{control.disabled=true;control.setAttribute('aria-disabled','true')});
