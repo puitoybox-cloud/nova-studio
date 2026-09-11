@@ -7,7 +7,7 @@ const viewports=[{width:1440,height:900},{width:820,height:900},{width:390,heigh
 const externalIds=['external-melody','external-drums','external-bass'];
 const coreIds=['melody','drums','bass'];
 
-async function selectTrack(page,trackId){assert.equal(await page.evaluate(id=>MusicStudio.editorSelectTrack(id),trackId),true);await page.waitForFunction(id=>MusicStudio.resolveCurrentTrackSelection().id===id,trackId);assert.equal(await page.locator('.music-midi-editor-page').getAttribute('data-current-track-mode'),'note-editing')}
+async function selectTrack(page,trackId){assert.equal(await page.evaluate(id=>MusicStudio.editorSelectTrack(id),trackId),true);await page.waitForFunction(id=>MusicStudio.resolveCurrentTrackSelection().id===id,trackId);assert.equal(await page.locator('.music-midi-editor-page').getAttribute('data-current-track-can-edit-notes'),'true')}
 async function clickAction(page,name){const control=page.locator(`[onclick="MusicStudio.${name}()"]`).first();await control.scrollIntoViewIfNeeded();assert.equal(await control.isDisabled(),false,`${name} should be enabled`);await control.click()}
 async function snapshot(page){return page.evaluate(()=>Object.fromEntries(MusicStudio.state.midiEditor.midiData.tracks.map(track=>[track.id,JSON.parse(JSON.stringify(track.notes||[]))])))}
 async function assertOtherTracksUnchanged(page,target,before){const after=await snapshot(page);for(const[id,notes]of Object.entries(before))if(id!==target)assert.deepEqual(after[id],notes,`${target} edit changed ${id}`);return after}
