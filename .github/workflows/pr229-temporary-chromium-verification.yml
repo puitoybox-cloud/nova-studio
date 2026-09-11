@@ -1,0 +1,89 @@
+name: PR 229 Temporary Chromium Verification
+
+on:
+  push:
+    branches:
+      - verify/pr229-exact-eaf5-chromium
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout verification branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Confirm exact product tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="eaf5d4f18b30101962cf1c32b8c3153e2de2b8b4"
+          actual_parent="$(git rev-parse HEAD^)"
+          echo "Expected product commit: $expected"
+          echo "Workflow commit parent:   $actual_parent"
+          test "$actual_parent" = "$expected"
+          git diff --exit-code "$expected" HEAD -- . ':(exclude).github/workflows/pr229-temporary-chromium-verification.yml'
+          echo "Product code is byte-for-byte unchanged from exact PR #229 HEAD."
+
+      - name: Show exact asset identifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD^
+          git hash-object music-studio-dynamic-track-recording.js
+          git hash-object music-studio-dynamic-track-selection.js
+          grep -n "dynamic-track-recording.js\|dynamic-track-selection.js" music-studio.html index.html || true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright without modifying repository manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start exact-tree localhost server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pr229-http.log 2>&1 &
+          echo $! > /tmp/pr229-http.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8765/music-studio.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/pr229-http.log
+          exit 1
+
+      - name: Run Chromium responsive browser smoke
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:8765
+        run: node scripts/music-studio-dynamic-track-recording-browser-smoke.js
+
+      - name: Repository verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test
+          while IFS= read -r -d '' file; do node --check "$file"; done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0)
+          git diff --check "$expected" HEAD -- . ':(exclude).github/workflows/pr229-temporary-chromium-verification.yml'
+        env:
+          expected: eaf5d4f18b30101962cf1c32b8c3153e2de2b8b4
+
+      - name: Confirm working tree product files unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          test -z "$(git status --porcelain --untracked-files=no)"
