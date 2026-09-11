@@ -1,0 +1,39 @@
+name: Temporary external quantize verification
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Node regression tests
+        run: node --test
+      - name: JavaScript syntax
+        run: |
+          count=0
+          while IFS= read -r file; do
+            node --check "$file" >/dev/null
+            count=$((count+1))
+          done < <(find . -type f -name '*.js' -not -path './.git/*' | sort)
+          echo "Checked $count JavaScript files"
+        shell: bash
+      - name: Diff whitespace
+        run: git diff --check origin/main...HEAD
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Chromium 1440 820 390 Quantize smoke
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/nova-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node scripts/music-studio-external-quantize-browser-smoke.js
