@@ -31,7 +31,7 @@ async function verify(browser,viewport){
   await badInput.setInputFiles({name:'malicious.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(malicious))});await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>JSON.stringify(state)),before);assert.equal(await page.evaluate(()=>globalThis.pwned),undefined);
 
-  const navigation=await page.evaluate(()=>{const opened=[];const original=window.open;window.open=url=>opened.push(url);openApp('promptStudio','javascript:alert(1)');openApp('promptStudio','data:text/html,x');openApp('promptStudio','https://example.com/path');window.open=original;return opened});
+  const navigation=await page.evaluate(()=>{const opened=[];const original=window.open;state.apps.push({id:'securityNavigation',name:'Security Navigation',available:true,enabled:true,openInNewTab:true});window.open=url=>opened.push(url);openApp('securityNavigation','javascript:alert(1)');openApp('securityNavigation','data:text/html,x');openApp('securityNavigation','https://example.com/path');window.open=original;return opened});
   assert.deepEqual(navigation,['https://example.com/path']);
 
   await page.evaluate(()=>openApp('musicStudio'));await page.waitForSelector('.music-studio-shell,.music-midi-editor-page');
