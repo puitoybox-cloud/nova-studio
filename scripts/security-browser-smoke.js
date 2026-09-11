@@ -16,7 +16,7 @@ async function verify(browser,viewport){
 
   await page.evaluate(()=>setView('backup'));
   const input=page.locator('input[type=file][accept*="json"]').first();assert.equal(await input.count(),1);
-  const normal={format:'nova-studio-backup',schemaVersion:'1.0',data:{storyArchiveCards:[{id:'security_card',title:'Security Card',body:'normal',category:'キャラクター',images:[{id:'security_image',name:'Preview',previewDataUrl:'data:image/png;base64,iVBORw0KGgo='}]}]}};
+  const normal={format:'nova-studio-backup',schemaVersion:'1.0',data:{storyArchiveCards:[{id:'security_card',type:'storyArchiveCard',title:'Security Card',body:'normal',category:'キャラクター',projectId:'project_tia_nova',episodeId:'episode_tia_nova_all',images:[{id:'security_image',name:'Preview',previewDataUrl:'data:image/png;base64,iVBORw0KGgo='}]}]}};
   await input.setInputFiles({name:'normal.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(normal))});
   await page.waitForFunction(()=>state.storyArchiveCards.some(card=>card.id==='security_card'));
   await page.evaluate(()=>openStoryArchive());await page.waitForSelector('[data-card-id="security_card"]');
