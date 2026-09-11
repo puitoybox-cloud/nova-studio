@@ -1,4 +1,4 @@
-name: PR 229 Temporary Chromium Verification
+name: PR 229 Final Exact-Head Chromium Verification
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - verify/pr229-exact-eaf5-chromium
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  verify-and-fix:
+  verify-final-head:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -19,77 +19,23 @@ jobs:
           ref: agent/music-studio-dynamic-track-recording-routing
           fetch-depth: 0
 
-      - name: Confirm exact PR head before patch
+      - name: Confirm exact final PR head
         shell: bash
         run: |
           set -euo pipefail
-          expected="eaf5d4f18b30101962cf1c32b8c3153e2de2b8b4"
+          expected="e6a1e6100a433bf11599d4c99863d87d333c3791"
           actual="$(git rev-parse HEAD)"
           echo "Expected PR head: $expected"
           echo "Actual PR head:   $actual"
           test "$actual" = "$expected"
           test -z "$(git status --porcelain)"
 
-      - name: Apply minimal External Delete shortcut fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('music-studio-dynamic-track-selection.js')
-          text = path.read_text()
-          old = "    const shortcut=api.editorHandleShortcut;if(typeof shortcut==='function')api.editorHandleShortcut=function(event,...args){if(isExternalSelection(api,core)&&!externalDeleteShortcut(event))return false;return shortcut.call(this,event,...args)};"
-          new = "    const shortcut=api.editorHandleShortcut;if(typeof shortcut==='function')api.editorHandleShortcut=function(event,...args){if(!isExternalSelection(api,core))return shortcut.call(this,event,...args);if(!externalDeleteShortcut(event))return false;const key=String(event?.key||''),meta=Boolean(event?.metaKey||event?.ctrlKey),option=Boolean(event?.altKey),shift=Boolean(event?.shiftKey);if(!meta&&!option&&!shift&&(key==='Delete'||key==='Backspace')){if(!(core?.selectedIds?.(api.state?.midiEditor)||[]).length)return false;event?.preventDefault?.();api.editorDeleteNote?.();return true}return shortcut.call(this,event,...args)};"
-          if text.count(old) != 1:
-              raise SystemExit(f'expected shortcut wrapper exactly once, found {text.count(old)}')
-          path.write_text(text.replace(old, new))
-
-          old_asset = 'music-studio-dynamic-track-selection.js?v=1.0.4'
-          new_asset = 'music-studio-dynamic-track-selection.js?v=1.0.5'
-          for name in ('music-studio.html', 'index.html'):
-              p = Path(name)
-              s = p.read_text()
-              if s.count(old_asset) != 1:
-                  raise SystemExit(f'{name}: expected selection asset version exactly once, found {s.count(old_asset)}')
-              p.write_text(s.replace(old_asset, new_asset))
-
-          test_path = Path('tests/music-studio-dynamic-track-selection.test.js')
-          tests = test_path.read_text()
-          if "1\\.0\\.4" not in tests:
-              raise SystemExit('expected escaped selection asset-version assertion')
-          tests = tests.replace("1\\.0\\.4", "1\\.0\\.5")
-          tests = tests.replace(old_asset, new_asset)
-          marker = "test('External keyboard Delete is routed through the guarded API delete instead of the original lexical shortcut closure',()=>{const source=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.js'),'utf8');assert.match(source,/if\(!isExternalSelection\(api,core\)\)return shortcut\.call/);assert.match(source,/key==='Delete'\|\|key==='Backspace'/);assert.match(source,/api\.editorDeleteNote\?\.\(\)/)});\n"
-          if marker not in tests:
-              tests += "\n" + marker
-          test_path.write_text(tests)
-
-          playback_path = Path('tests/music-studio-dynamic-track-playback.test.js')
-          playback = playback_path.read_text()
-          old_test = "test('Space and the explicitly allowed Delete shortcut reach their External handlers without opening other gated shortcuts',()=>{const env=load('ext-a');let prevented=false;const handled=env.api.editorHandleShortcut({key:' ',preventDefault(){prevented=true}});assert.equal(handled,true);assert.equal(prevented,true);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'Delete'}),'original-shortcut');assert.equal(env.shortcutCalls,1);assert.equal(env.api.editorHandleShortcut({key:'c',metaKey:true}),false);assert.equal(env.shortcutCalls,1)});"
-          new_test = "test('Space remains routed while External Delete without a selected note and other gated shortcuts stay blocked',()=>{const env=load('ext-a');let prevented=false;const handled=env.api.editorHandleShortcut({key:' ',preventDefault(){prevented=true}});assert.equal(handled,true);assert.equal(prevented,true);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'Delete'}),false);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'c',metaKey:true}),false);assert.equal(env.shortcutCalls,0)});"
-          if playback.count(old_test) != 1:
-              raise SystemExit(f'expected playback shortcut test exactly once, found {playback.count(old_test)}')
-          playback_path.write_text(playback.replace(old_test, new_test))
-
-          smoke_path = Path('scripts/music-studio-dynamic-track-recording-browser-smoke.js')
-          smoke = smoke_path.read_text()
-          old_smoke = "assert.equal(state.current,'external-b');assert.equal(state.a,1);assert.equal(state.b,2);"
-          new_smoke = "assert.equal(state.current,'external-b');assert.equal(state.a,2);assert.equal(state.b,2);"
-          if smoke.count(old_smoke) != 1:
-              raise SystemExit(f'expected stale-selection final-state assertion exactly once, found {smoke.count(old_smoke)}')
-          smoke_path.write_text(smoke.replace(old_smoke, new_smoke))
-          PY
-          git diff -- music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js tests/music-studio-dynamic-track-playback.test.js scripts/music-studio-dynamic-track-recording-browser-smoke.js
-          git diff --check
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Run repository verification before push
+      - name: Run final repository verification
         shell: bash
         run: |
           set -euo pipefail
@@ -101,6 +47,7 @@ jobs:
           done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0)
           echo "node --check files: $count"
           git diff --check
+          test -z "$(git status --porcelain)"
 
       - name: Install Playwright without modifying manifests
         shell: bash
@@ -109,12 +56,11 @@ jobs:
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
 
-      - name: Start patched-tree localhost server
+      - name: Start exact-final-tree localhost server
         shell: bash
         run: |
           set -euo pipefail
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pr229-http.log 2>&1 &
-          echo $! > /tmp/pr229-http.pid
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:8765/music-studio.html >/dev/null; then
               exit 0
@@ -124,7 +70,7 @@ jobs:
           cat /tmp/pr229-http.log
           exit 1
 
-      - name: Run Chromium responsive browser smoke before push
+      - name: Run final Chromium responsive browser smoke
         id: browser_smoke
         continue-on-error: true
         env:
@@ -132,14 +78,14 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node scripts/music-studio-dynamic-track-recording-browser-smoke.js 2>&1 | tee /tmp/pr229-browser-smoke.log
+          node scripts/music-studio-dynamic-track-recording-browser-smoke.js 2>&1 | tee /tmp/pr229-final-browser-smoke.log
 
-      - name: Upload browser smoke log
+      - name: Upload final browser smoke log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr229-browser-smoke-log
-          path: /tmp/pr229-browser-smoke.log
+          name: pr229-final-browser-smoke-log
+          path: /tmp/pr229-final-browser-smoke.log
           if-no-files-found: error
           retention-days: 1
 
@@ -147,25 +93,5 @@ jobs:
         if: steps.browser_smoke.outcome == 'failure'
         shell: bash
         run: |
-          echo 'Browser smoke failed. Full log follows:'
-          cat /tmp/pr229-browser-smoke.log
+          cat /tmp/pr229-final-browser-smoke.log
           exit 1
-
-      - name: Confirm only intended product files changed
-        shell: bash
-        run: |
-          set -euo pipefail
-          git status --short
-          unexpected="$(git status --porcelain --untracked-files=no | awk '{print $2}' | grep -Ev '^(music-studio-dynamic-track-selection\.js|music-studio\.html|index\.html|tests/music-studio-dynamic-track-selection\.test\.js|tests/music-studio-dynamic-track-playback\.test\.js|scripts/music-studio-dynamic-track-recording-browser-smoke\.js)$' || true)"
-          test -z "$unexpected"
-
-      - name: Commit and push fix to Draft PR branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js tests/music-studio-dynamic-track-playback.test.js scripts/music-studio-dynamic-track-recording-browser-smoke.js
-          git commit -m "fix: guard external track delete shortcuts by track id"
-          git push origin HEAD:agent/music-studio-dynamic-track-recording-routing
-          echo "NEW_PR_HEAD=$(git rev-parse HEAD)"
