@@ -117,9 +117,31 @@ jobs:
           exit 1
 
       - name: Run Chromium responsive browser smoke before push
+        id: browser_smoke
+        continue-on-error: true
         env:
           SMOKE_BASE_URL: http://127.0.0.1:8765
-        run: node scripts/music-studio-dynamic-track-recording-browser-smoke.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/music-studio-dynamic-track-recording-browser-smoke.js 2>&1 | tee /tmp/pr229-browser-smoke.log
+
+      - name: Upload browser smoke log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr229-browser-smoke-log
+          path: /tmp/pr229-browser-smoke.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Fail if browser smoke failed
+        if: steps.browser_smoke.outcome == 'failure'
+        shell: bash
+        run: |
+          echo 'Browser smoke failed. Full log follows:'
+          cat /tmp/pr229-browser-smoke.log
+          exit 1
 
       - name: Confirm only intended product files changed
         shell: bash
