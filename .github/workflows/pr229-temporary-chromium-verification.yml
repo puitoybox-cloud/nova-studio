@@ -45,25 +45,35 @@ jobs:
               raise SystemExit(f'expected shortcut wrapper exactly once, found {text.count(old)}')
           path.write_text(text.replace(old, new))
 
+          old_asset = 'music-studio-dynamic-track-selection.js?v=1.0.4'
+          new_asset = 'music-studio-dynamic-track-selection.js?v=1.0.5'
           for name in ('music-studio.html', 'index.html'):
               p = Path(name)
               s = p.read_text()
-              old_version = 'music-studio-dynamic-track-selection.js?v=1.0.4'
-              if s.count(old_version) != 1:
-                  raise SystemExit(f'{name}: expected selection asset version exactly once, found {s.count(old_version)}')
-              p.write_text(s.replace(old_version, 'music-studio-dynamic-track-selection.js?v=1.0.5'))
+              if s.count(old_asset) != 1:
+                  raise SystemExit(f'{name}: expected selection asset version exactly once, found {s.count(old_asset)}')
+              p.write_text(s.replace(old_asset, new_asset))
 
           test_path = Path('tests/music-studio-dynamic-track-selection.test.js')
           tests = test_path.read_text()
           if "1\\.0\\.4" not in tests:
-              raise SystemExit('expected existing selection asset-version assertions')
+              raise SystemExit('expected escaped selection asset-version assertion')
           tests = tests.replace("1\\.0\\.4", "1\\.0\\.5")
+          tests = tests.replace(old_asset, new_asset)
           marker = "test('External keyboard Delete is routed through the guarded API delete instead of the original lexical shortcut closure',()=>{const source=fs.readFileSync(path.join(__dirname,'..','music-studio-dynamic-track-selection.js'),'utf8');assert.match(source,/if\(!isExternalSelection\(api,core\)\)return shortcut\.call/);assert.match(source,/key==='Delete'\|\|key==='Backspace'/);assert.match(source,/api\.editorDeleteNote\?\.\(\)/)});\n"
           if marker not in tests:
               tests += "\n" + marker
           test_path.write_text(tests)
+
+          playback_path = Path('tests/music-studio-dynamic-track-playback.test.js')
+          playback = playback_path.read_text()
+          old_test = "test('Space and the explicitly allowed Delete shortcut reach their External handlers without opening other gated shortcuts',()=>{const env=load('ext-a');let prevented=false;const handled=env.api.editorHandleShortcut({key:' ',preventDefault(){prevented=true}});assert.equal(handled,true);assert.equal(prevented,true);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'Delete'}),'original-shortcut');assert.equal(env.shortcutCalls,1);assert.equal(env.api.editorHandleShortcut({key:'c',metaKey:true}),false);assert.equal(env.shortcutCalls,1)});"
+          new_test = "test('Space remains routed while External Delete without a selected note and other gated shortcuts stay blocked',()=>{const env=load('ext-a');let prevented=false;const handled=env.api.editorHandleShortcut({key:' ',preventDefault(){prevented=true}});assert.equal(handled,true);assert.equal(prevented,true);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'Delete'}),false);assert.equal(env.shortcutCalls,0);assert.equal(env.api.editorHandleShortcut({key:'c',metaKey:true}),false);assert.equal(env.shortcutCalls,0)});"
+          if playback.count(old_test) != 1:
+              raise SystemExit(f'expected playback shortcut test exactly once, found {playback.count(old_test)}')
+          playback_path.write_text(playback.replace(old_test, new_test))
           PY
-          git diff -- music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js
+          git diff -- music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js tests/music-studio-dynamic-track-playback.test.js
           git diff --check
 
       - name: Set up Node
@@ -116,7 +126,7 @@ jobs:
         run: |
           set -euo pipefail
           git status --short
-          unexpected="$(git status --porcelain --untracked-files=no | awk '{print $2}' | grep -Ev '^(music-studio-dynamic-track-selection\.js|music-studio\.html|index\.html|tests/music-studio-dynamic-track-selection\.test\.js)$' || true)"
+          unexpected="$(git status --porcelain --untracked-files=no | awk '{print $2}' | grep -Ev '^(music-studio-dynamic-track-selection\.js|music-studio\.html|index\.html|tests/music-studio-dynamic-track-selection\.test\.js|tests/music-studio-dynamic-track-playback\.test\.js)$' || true)"
           test -z "$unexpected"
 
       - name: Commit and push fix to Draft PR branch
@@ -125,7 +135,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js
+          git add music-studio-dynamic-track-selection.js music-studio.html index.html tests/music-studio-dynamic-track-selection.test.js tests/music-studio-dynamic-track-playback.test.js
           git commit -m "fix: guard external track delete shortcuts by track id"
           git push origin HEAD:agent/music-studio-dynamic-track-recording-routing
           echo "NEW_PR_HEAD=$(git rev-parse HEAD)"
