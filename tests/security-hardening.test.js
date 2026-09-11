@@ -24,6 +24,11 @@ test('crafted card and image identifiers cannot reach executable inline syntax',
   const hardened=app.slice(app.indexOf('/* Imported identifiers stay in inert data attributes.'));
   assert.match(hardened,/data-archive-action="open-image"/);
   assert.doesNotMatch(hardened,/archiveImageCard=function\([^]*?onclick=/);
+  for(const file of ['story-archive-home-unified.js','story-archive-search-enhancement.js']){
+    const source=fs.readFileSync(path.join(root,file),'utf8');
+    assert.match(source,/data-archive-action="open-card"/);
+    assert.doesNotMatch(source,/openStoryArchiveDetail\('\$\{card\.id\}'\)/);
+  }
 });
 
 test('image previews accept raster data only and reject event or script payloads',()=>{
