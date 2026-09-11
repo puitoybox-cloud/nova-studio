@@ -1,0 +1,24 @@
+name: Temporary External Track Editing Chromium Smoke
+on:
+  push:
+    branches:
+      - verify/external-track-editing-expansion-2
+permissions:
+  contents: read
+jobs:
+  chromium-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.51.1
+          npx playwright install --with-deps chromium
+      - name: Start static server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/nova-http.log 2>&1 &
+      - name: Run Chromium smoke
+        run: node scripts/music-studio-external-track-editing-browser-smoke.js
