@@ -34,6 +34,12 @@
 }
 .music-midi-editor-page .music-dynamic-track-group.is-external .music-dynamic-track-button{
   max-width:13rem;
+  font-size:.78rem;
+  line-height:1;
+}
+.music-midi-editor-page .music-drums-workflow>summary::before,
+.music-midi-editor-page .music-bass-workflow>summary::before{
+  content:'✦';
 }
 .music-midi-editor-page.is-external-track-selected .music-part-workflow{
   display:none !important;
