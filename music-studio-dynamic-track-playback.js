@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const ASSET_VERSION='1.0.2';
+  const ASSET_VERSION='1.0.3';
   const CORE_AUDIO_ROLES=new Set(['melody','drums','bass']);
 
   function currentExternalSelection(api=root.MusicStudio){
@@ -32,12 +32,13 @@
   }
 
   function resolveExternalPlaybackTracks(api=root.MusicStudio,core=root.MusicStudioEditor){
-    const selected=resolveExternalPlaybackTrack(api,core);if(!selected)return[];
     const solos=api?.state?.melodyAudio?.playbackState?.soloByTrackId||{},soloIds=new Set(Object.entries(solos).filter(([,value])=>value===true).map(([id])=>id));
-    if(!soloIds.size)return[selected];
     const model=api?.createTrackSelectionModel?.()||[];
-    return model.filter(item=>item?.capabilities?.canPlayMidi===true&&soloIds.has(item.id)).map(item=>playbackTrack(api,item,core)).filter(Boolean)
+    if(soloIds.size)return model.filter(item=>item?.capabilities?.canPlayMidi===true&&soloIds.has(item.id)).map(item=>playbackTrack(api,item,core)).filter(Boolean);
+    const selected=resolveExternalPlaybackTrack(api,core);return selected?[selected]:[]
   }
+
+  function hasExternalSolo(api=root.MusicStudio){const solos=api?.state?.melodyAudio?.playbackState?.soloByTrackId||{},model=api?.createTrackSelectionModel?.()||[];return model.some(item=>item?.kind==='external'&&item?.capabilities?.canPlayMidi===true&&solos[item.id]===true)}
 
   function externalTrackAudible(trackId,playbackState={}){
     const muted=playbackState?.mutedByTrackId?.[trackId]===true;
@@ -96,7 +97,7 @@
 
   async function playExternalTrack(api=root.MusicStudio,core=root.MusicStudioEditor){
     const session=api?.state?.midiEditor,audio=api?.state?.melodyAudio,midi=api?.state?.midiInput,selected=resolveExternalPlaybackTrack(api,core),tracks=resolveExternalPlaybackTracks(api,core);
-    if(!session||!audio||!selected)return{ok:false,reason:'external-track-required'};
+    if(!session||!audio||!selected&&!hasExternalSolo(api))return{ok:false,reason:'external-track-required'};
     if(!tracks.length)return{ok:false,reason:'solo-filtered'};
     if(!tracks.some(track=>track.notes.length))return{ok:false,reason:'no-notes'};
     const runtime=playbackRuntime(tracks,audio.playbackState||{}),active=root.MusicStudioPlayback?.activePlaybackTracks?.(tracks,runtime)||tracks.filter(track=>externalTrackAudible(track.id,runtime));
@@ -134,8 +135,8 @@
     api.resolveExternalPlaybackTracks=()=>resolveExternalPlaybackTracks(api,core);
     api.editorPlayExternalTrack=()=>playExternalTrack(api,core);
     api.editorToggleMelodyPlayback=function(...args){
-      const current=currentExternalSelection(api),audio=api.state?.melodyAudio;
-      if(!current)return originalToggle?.apply(this,args);
+      const current=currentExternalSelection(api),externalSolo=hasExternalSolo(api),audio=api.state?.melodyAudio;
+      if(!current&&!externalSolo)return originalToggle?.apply(this,args);
       if(audio?.playing||audio?.starting||api.state?.midiInput?.recording)return stopExternalPlayback(api);
       return playExternalTrack(api,core)
     };
@@ -154,6 +155,6 @@
     if(timer!=null)root.clearInterval(timer);let attempts=0;timer=root.setInterval(()=>{attempts+=1;if(install()||root.MusicStudio?.__dynamicTrackPlaybackInstalled||attempts>=200){root.clearInterval(timer);timer=null}},25);return false
   }
 
-  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,resolveExternalPlaybackTracks,externalTrackAudible,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
+  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,resolveExternalPlaybackTracks,hasExternalSolo,externalTrackAudible,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
   bootWithRetry();if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
