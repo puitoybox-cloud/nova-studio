@@ -54,8 +54,12 @@
   font-weight:750;
 }
 .music-external-track-review{
+  top:108px !important;
   left:auto !important;
   right:12px !important;
+}
+.music-midi-editor-page:has(.music-external-track-review[open]) .music-correction-menu[open]>.music-correction-popover{
+  display:none !important;
 }
 .music-external-track-review-head{
   min-height:0 !important;
@@ -83,9 +87,11 @@
   .music-midi-editor-page .music-dynamic-track-strip{gap:.25rem}
   .music-midi-editor-page .music-dynamic-track-button{max-width:10.5rem}
   .music-midi-editor-page .music-history-controls{flex:0 0 auto}
+  .music-external-track-review{top:96px !important}
 }
 @media (max-width:600px){
   .music-external-track-review{
+    top:88px !important;
     left:auto !important;
     right:8px !important;
   }
