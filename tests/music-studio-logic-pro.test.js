@@ -83,6 +83,12 @@ test('Core and exact-ID External Melody render capability-gated Correction with 
   const menu={open:true},button={closest:selector=>selector==='.music-editor-menu'?menu:null};assert.equal(app.editorClosePopup(button),true);assert.equal(menu.open,false);menu.open=true;assert.equal(menu.open,true);
   assert.equal(window.MusicStudioEditor.selectTrackById(app.state.midiEditor,'melody'),true);html=app.renderRoute(route);assert.match(html,/id="melodyCorrectionForm"/);assert.equal(window.MusicStudioEditor.selectTrackById(app.state.midiEditor,'external-duplicate'),true);html=app.renderRoute(route);assert.match(html,/<summary>Melody Correction（メロディ補正）<\/summary>/);assert.match(html,/id="melodyCorrectionForm"/);
 });
+test('External Drums assignment never renders or executes Melody Correction even with melodic source type',()=>{
+  const{app,window}=load(),project=app.makeProject({projectId:'external-drums-correction-gate',projectName:'External drums gate',midiData:{tracks:[
+    {id:'melody',part:'melody',name:'Melody',notes:[]},{id:'drums',part:'drums',name:'Drums',channel:10,notes:[]},{id:'bass',part:'bass',name:'Bass',notes:[]},
+    {id:'external-drums',name:'Drums',trackType:'midi-melodic',roleAssignment:'drums',channel:1,notes:[{id:'kick',pitch:36,startTick:0,durationTicks:120,velocity:100}]}
+  ]}});app.state.projects=[project];const route=`music-studio/midi-editor/${project.projectId}`;app.renderRoute(route);assert.equal(window.MusicStudioEditor.selectTrackById(app.state.midiEditor,'external-drums'),true);const html=app.renderRoute(route),before=JSON.stringify(window.MusicStudioEditor.currentTrack(app.state.midiEditor).notes);assert.match(html,/<summary>Transpose \/ Note Length（一括編集）<\/summary>/);assert.doesNotMatch(html,/id="melodyCorrectionForm"|External Melody Correctionパネル|editorPreviewCorrection/);app.editorPreviewCorrection();assert.equal(app.state.midiEditor.correctionPreview,null);assert.equal(JSON.stringify(window.MusicStudioEditor.currentTrack(app.state.midiEditor).notes),before)
+});
 test('Correction repaint preserves page Piano Roll and popover scroll while notices are overlay toasts',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'stable-correction-ui',projectName:'Stable correction UI',midiData:{tracks:[{part:'melody',notes:[{id:'note',pitch:61,startTick:119,durationTicks:251,velocity:90}]}]}});
   app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
