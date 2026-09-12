@@ -38,6 +38,44 @@
 .music-midi-editor-page.is-external-track-selected .music-part-workflow{
   display:none !important;
 }
+.music-midi-editor-page .music-melody-workflow{
+  display:none !important;
+}
+.music-midi-editor-page.is-external-track-selected .music-correction-menu>summary{
+  font-size:0 !important;
+}
+.music-midi-editor-page.is-external-track-selected .music-correction-menu>summary::before{
+  font-size:1.05rem !important;
+}
+.music-midi-editor-page.is-external-track-selected .music-correction-menu>summary::after{
+  content:'Melody Correction（メロディ補正）';
+  color:var(--music-ink);
+  font-size:.84rem;
+  font-weight:750;
+}
+.music-external-track-review{
+  left:auto !important;
+  right:12px !important;
+}
+.music-external-track-review-head{
+  min-height:0 !important;
+  justify-content:flex-end !important;
+  gap:0 !important;
+  padding:4px 6px !important;
+  border-bottom:0 !important;
+}
+.music-external-track-review-head>div{
+  display:none !important;
+}
+.music-external-track-review-head>button{
+  min-height:28px !important;
+  padding:3px 8px !important;
+  font-size:.72rem !important;
+  line-height:1.15 !important;
+}
+.music-external-track-review-body{
+  max-height:calc(min(82dvh,720px) - 38px) !important;
+}
 .music-midi-editor-page.is-external-track-selected .music-midi-note[disabled]{
   cursor:default;
 }
@@ -45,6 +83,12 @@
   .music-midi-editor-page .music-dynamic-track-strip{gap:.25rem}
   .music-midi-editor-page .music-dynamic-track-button{max-width:10.5rem}
   .music-midi-editor-page .music-history-controls{flex:0 0 auto}
+}
+@media (max-width:600px){
+  .music-external-track-review{
+    left:auto !important;
+    right:8px !important;
+  }
 }
 @media (max-width:390px){
   .music-midi-editor-page .music-dynamic-track-nav{
