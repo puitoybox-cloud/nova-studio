@@ -1,0 +1,11 @@
+Project NOVA / Music Studio — PR #237 Temporary Preview
+
+Product source commit:
+2da53b7d356077a43fcafc8c47601f306db993a9
+
+The temporary branch differs from that product source only by these verification files:
+- START_PR237_PREVIEW.command
+- STOP_PR237_PREVIEW.command
+- PR237_EXACT_HEAD.txt
+
+No product code, product asset, schema, IndexedDB version, provider setting, or deployment setting is changed.
