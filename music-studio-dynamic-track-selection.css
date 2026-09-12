@@ -35,8 +35,7 @@
 .music-midi-editor-page .music-dynamic-track-group.is-external .music-dynamic-track-button{
   max-width:13rem;
 }
-.music-midi-editor-page.is-external-track-selected .music-part-workflow,
-.music-midi-editor-page.is-external-track-selected .music-correction-menu{
+.music-midi-editor-page.is-external-track-selected .music-part-workflow{
   display:none !important;
 }
 .music-midi-editor-page.is-external-track-selected .music-midi-note[disabled]{
