@@ -106,9 +106,9 @@ test('role cardinality is future registry metadata and leaves current four-role 
 });
 
 test('capability matrix distinguishes core external MIDI audio and unknown tracks',()=>{
-  const core=load(),caps=track=>plain(core.resolveTrackCapabilities(track)),melodic={canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:false,supportsDrumLabels:false,supportsPartialEdit:false},drum={...melodic,supportsDrumLabels:true},none={canEditNotes:false,canRecordMidi:false,canPlayMidi:false,supportsPitchCorrection:false,supportsDrumLabels:false,supportsPartialEdit:false};
-  assert.deepEqual(caps({part:'melody'}),{...melodic,supportsPitchCorrection:true,supportsPartialEdit:true});assert.deepEqual(caps({part:'drums'}),{...drum,supportsPartialEdit:true});assert.deepEqual(caps({part:'bass'}),{...melodic,supportsPartialEdit:true});
-  assert.deepEqual(caps({id:'external-melodic',trackType:'midi-melodic'}),melodic);assert.deepEqual(caps({id:'external-drums',trackType:'midi-drums'}),drum);assert.deepEqual(caps({trackType:'audio'}),none);assert.deepEqual(caps({trackType:'unknown'}),none)
+  const core=load(),caps=track=>plain(core.resolveTrackCapabilities(track)),melodic={canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:true,supportsDrumLabels:false,supportsPartialEdit:false},drum={...melodic,supportsPitchCorrection:false,supportsDrumLabels:true},none={canEditNotes:false,canRecordMidi:false,canPlayMidi:false,supportsPitchCorrection:false,supportsDrumLabels:false,supportsPartialEdit:false};
+  assert.deepEqual(caps({part:'melody'}),{...melodic,supportsPartialEdit:true});assert.deepEqual(caps({part:'drums'}),{...drum,supportsPartialEdit:true});assert.deepEqual(caps({part:'bass'}),{...melodic,supportsPitchCorrection:false,supportsPartialEdit:true});
+  assert.deepEqual(caps({id:'external-melodic',trackType:'midi-melodic'}),melodic);assert.deepEqual(caps({id:'external-drums',trackType:'midi-drums'}),drum);assert.deepEqual(caps({id:'assigned-drums',trackType:'midi-melodic',roleAssignment:'drums'}),drum);assert.deepEqual(caps({trackType:'audio'}),none);assert.deepEqual(caps({trackType:'unknown'}),none)
 });
 
 test('classification normalization preserves identity content name role and optional valid type only',()=>{
