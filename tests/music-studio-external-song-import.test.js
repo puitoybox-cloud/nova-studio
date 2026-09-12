@@ -113,7 +113,7 @@ test('external Track Review shows identifiers summaries and explicit unassigned 
   assert.equal(review[0].roleAssignment,'unassigned');assert.equal(review[0].id,'external-vocal');assert.equal(review[0].noteCount,1);
   for(const text of ['External Track Review / Assignment','external-vocal','Melody','Channel 10','Program 53','1 notes','Current: unassigned','Apply Assignment','Cancel'])assert.match(html,new RegExp(text));
   assert.match(html,/class="music-secondary music-external-track-review-entry"[^>]*aria-haspopup="dialog"[^>]*>External Tracks 1 \/ Review<\/button>/);
-  assert.match(html,/<dialog class="music-external-track-review" id="externalTrackReviewDialog"/);assert.doesNotMatch(html,/<dialog class="music-external-track-review"[^>]*\sopen(?:\s|>)/);
+  assert.match(html,/<dialog class="music-editor-popover music-external-track-review" id="externalTrackReviewDialog"/);assert.doesNotMatch(html,/<dialog class="music-editor-popover music-external-track-review"[^>]*\sopen(?:\s|>)/);assert.match(html,/aria-label="External Track Reviewを閉じる">× Close（閉じる）/);
   assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.id==='external-vocal').part,undefined);
 });
 
@@ -125,7 +125,7 @@ test('Editor render mounts exactly three review rows for the real six-Track comp
   ],project=app.makeProject({projectId:'real-review-case',projectName:'Real Review Case',midiData:{version:1,ppq:480,tempo:72,timeSignature:{numerator:4,denominator:4},tracks:[...compatibility,...external]}});app.state.projects=[project];
   const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),review=editor.externalReviewTracks(app.state.midiEditor.midiData);
   assert.equal(review.length,3);assert.equal(review.reduce((sum,track)=>sum+track.noteCount,0),36);assert.deepEqual(Array.from(review,track=>track.id),['midi-track-2','midi-track-3','midi-track-4']);
-  assert.equal((html.match(/class="music-external-track-review"/g)||[]).length,1);assert.equal((html.match(/music-external-track-review-entry/g)||[]).length,1);assert.equal((html.match(/class="music-external-track-row"/g)||[]).length,3);
+  assert.equal((html.match(/music-editor-popover music-external-track-review/g)||[]).length,1);assert.equal((html.match(/music-external-track-review-entry/g)||[]).length,1);assert.equal((html.match(/class="music-external-track-row"/g)||[]).length,3);
   for(const id of ['midi-track-2','midi-track-3','midi-track-4'])assert.match(html,new RegExp(`data-track-id="${id}"`));
   for(const part of ['melody','drums','bass'])assert.doesNotMatch(html,new RegExp(`class="music-external-track-row" data-track-id="${part}"`));
 });
@@ -133,14 +133,14 @@ test('Editor render mounts exactly three review rows for the real six-Track comp
 test('production entry cache keys select the Review-capable Editor assets',()=>{
   const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8'),studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8'),entries=`${index}\n${host}\n${standalone}`;
   assert.match(index,/app\.js\?v=1\.5\.54/);
-  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.126/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.15/);assert.match(source,/music-studio\.js\?v=1\.4\.98/)}
-  assert.match(host,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.15'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.15/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.98/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
+  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.127/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.16/);assert.match(source,/music-studio\.js\?v=1\.4\.100/)}
+  assert.match(host,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.16'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
+  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.16/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.100/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
 });
 
 test('runtime markers expose only module versions and the Review API type',()=>{
-  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.15');assert.equal(app.ASSET_VERSION,'1.4.98');assert.equal(typeof editor.externalReviewTracks,'function');
-  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.15',studio:'1.4.98',reviewApi:'function'});
+  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.16');assert.equal(app.ASSET_VERSION,'1.4.100');assert.equal(typeof editor.externalReviewTracks,'function');
+  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.16',studio:'1.4.100',reviewApi:'function'});
 });
 
 test('All MIDI round trip mounts three external Review rows into the standalone document target',async()=>{
@@ -151,7 +151,7 @@ test('All MIDI round trip mounts three external Review rows into the standalone 
   ]}});app.setRepository(repo);app.state.projects=[source];
   const exported=writer.createMidiFile(app.midiExportInput(source,'all')),imported=await app.importExternalSongFile(midiFile('recorded-All.mid',exported.bytes));assert.equal(imported.ok,true);
   const target={innerHTML:''};window.document={body:{dataset:{musicStudioStandalone:'true'}},title:'',querySelector(selector){return selector==='#music-studio-app'?target:null}};window.location.hash=`#music-studio/midi-editor/${imported.project.projectId}`;app.mountStandalone();
-  assert.match(target.innerHTML,/class="music-studio-shell music-midi-editor-page"/);assert.match(target.innerHTML,/music-external-track-review-entry/);assert.match(target.innerHTML,/<dialog class="music-external-track-review"/);assert.equal((target.innerHTML.match(/class="music-external-track-row"/g)||[]).length,3);assert.doesNotMatch(target.innerHTML,/<dialog class="music-external-track-review"[^>]*\sopen(?:\s|>)/);
+  assert.match(target.innerHTML,/class="music-studio-shell music-midi-editor-page"/);assert.match(target.innerHTML,/music-external-track-review-entry/);assert.match(target.innerHTML,/<dialog class="music-editor-popover music-external-track-review"/);assert.equal((target.innerHTML.match(/class="music-external-track-row"/g)||[]).length,3);assert.doesNotMatch(target.innerHTML,/<dialog class="music-editor-popover music-external-track-review"[^>]*\sopen(?:\s|>)/);
   assert.ok(target.innerHTML.indexOf('music-midi-editor-page')<target.innerHTML.indexOf('music-external-track-review'));
 });
 
@@ -170,9 +170,9 @@ test('External Track Review stays absent without external Tracks and closed moda
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-external-track-review:not\(\[open\]\)\{display:none\}/);assert.match(css,/\.music-external-track-review\{[^}]*max-height:min\(82dvh,720px\)[^}]*overflow:hidden/);assert.doesNotMatch(css,/\.music-midi-editor-page>\.music-external-track-review/);
 });
 
-test('compact Review entry opens the native modal without changing assignment data',()=>{
+test('compact Review entry opens as a non-modal Music Studio popover without changing assignment data',()=>{
   const{app,window}=loadApp(),project=app.makeProject({projectId:'modal-open',projectName:'Modal Open',midiData:{version:1,tracks:[{id:'external-a',name:'External A',roleAssignment:'unassigned',notes:[]}]}});app.state.projects=[project];const before=JSON.stringify(project.midiData.tracks);app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  const dialog={calls:0,showModal(){this.calls++}};window.document={getElementById:id=>id==='externalTrackReviewDialog'?dialog:null};assert.equal(app.openHelp('externalTrackReviewDialog'),true);assert.equal(dialog.calls,1);assert.equal(JSON.stringify(project.midiData.tracks),before);
+  const dialog={calls:0,classList:{contains:name=>name==='music-external-track-review'},show(){this.calls++},showModal(){throw new Error('Review must not use showModal')}};window.document={getElementById:id=>id==='externalTrackReviewDialog'?dialog:null};assert.equal(app.openHelp('externalTrackReviewDialog'),true);assert.equal(dialog.calls,1);assert.equal(JSON.stringify(project.midiData.tracks),before);
 });
 
 test('manual Melody Drums Bass assignments and return to Unassigned preserve Track IDs notes and save reload',async()=>{
@@ -205,5 +205,5 @@ test('assignment metadata keeps compatibility tracks separate and All MIDI expor
 
 test('External Track Review CSS remains compact at desktop tablet and phone boundaries',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
-  assert.match(css,/\.music-midi-editor-page \.music-external-track-review-entry\{[^}]*white-space:nowrap/);assert.match(css,/\.music-external-track-review::backdrop/);assert.match(css,/grid-template-columns:minmax\(0,1fr\) 150px/);assert.match(css,/@media\(max-width:600px\)\{[^}]*\.music-external-track-review-entry/);assert.match(css,/\.music-external-track-review\{width:calc\(100vw - 16px\);max-height:calc\(100dvh - 20px\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-external-track-review-entry\{[^}]*white-space:nowrap/);assert.doesNotMatch(css,/\.music-external-track-review::backdrop/);assert.match(css,/\.music-external-track-review\{position:fixed;z-index:85;top:76px;right:12px/);assert.match(css,/grid-template-columns:minmax\(0,1fr\) 150px/);assert.match(css,/@media\(max-width:600px\)\{[^}]*\.music-external-track-review-entry/);assert.match(css,/\.music-external-track-review\{width:calc\(100vw - 16px\);max-height:calc\(100dvh - 20px\)/);
 });
