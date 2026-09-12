@@ -18,6 +18,7 @@
     const summary=doc.createElement('summary');
     summary.textContent=entry.textContent||'External Tracks / Review';
     summary.setAttribute('aria-label',summary.textContent);
+    summary.title=summary.textContent;
 
     const popover=doc.createElement('div');
     popover.className='music-editor-popover music-external-track-review';
@@ -30,6 +31,12 @@
     entry.replaceWith(menu);
     dialog.remove();
 
+    /* Explicit toggle keeps Review reliable even when legacy dialog/openHelp handlers are present. */
+    summary.addEventListener('click',event=>{
+      event.preventDefault();
+      menu.open=!menu.open;
+      if(menu.open)menu.dataset.reviewWasOpen='true';
+    });
     menu.addEventListener('toggle',()=>{
       if(menu.open){menu.dataset.reviewWasOpen='true';return}
       if(menu.dataset.reviewWasOpen!=='true')return;
