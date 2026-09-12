@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.100';
+  const ASSET_VERSION='1.4.101';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -516,7 +516,7 @@
   function editorRemoveTempoChange(){const session=state.midiEditor,input=validateTempoChange(session?.tempoChangeDraft||{});if(!input.ok){notice(input.reason,'error');return input}const before=session.midiData.tempoMap||[];session.tempoChangePreview=null;const tempoMap=persistTempoMap(session,before.filter(item=>Number(item.tick)!==input.tick));return{ok:true,changed:tempoMap.length!==before.length,tempoMap}}
   function editorClearTempoChanges(){const session=state.midiEditor;if(!session)return{ok:false};const changed=(session.midiData.tempoMap||[]).some(item=>Number(item.tick)>0);session.tempoChangePreview=null;const tempoMap=persistTempoMap(session,[]);return{ok:true,changed,tempoMap}}
   function editorSetTrackMuted(trackId,muted){const session=state.midiEditor,editor=root.MusicStudioEditor;if(!session||!editor?.setTrackMuted)return false;editor.setTrackMuted(session,trackId,muted===true);scheduleMidiEditorSave();repaintEditor();return true}
-  function editorSetTrackSolo(trackId,solo){const track=editorPlaybackTracks().find(item=>item.id===trackId||item.part===trackId);if(!track)return false;const current=state.melodyAudio.playbackState.soloByTrackId||{};state.melodyAudio.playbackState.soloByTrackId={...current,[track.id]:solo===true};repaintEditor();return true}
+  function editorSetTrackSolo(trackId,solo){const tracks=root.MusicStudioEditor?.createTrackRegistry?.(state.midiEditor?.midiData)?.tracks||state.midiEditor?.midiData?.tracks||[],track=tracks.find(item=>item.id===trackId)||tracks.find(item=>item.part===trackId);if(!track)return false;const current=state.melodyAudio.playbackState.soloByTrackId||{};state.melodyAudio.playbackState.soloByTrackId={...current,[track.id]:solo===true};repaintEditor();return true}
   function editorSelectNote(id,additive=false){root.MusicStudioEditor.selectNote(state.midiEditor,id,{toggle:additive||state.midiMultiSelect});repaintEditor()}
   function editorSyncDragSelection(deltaPitch=0){
     const session=state.midiEditor,core=root.MusicStudioEditor,document=root.document;if(!session||!core||!document)return[];const selectedIds=new Set(core.selectedIds(session)),shift=Math.round(Number(deltaPitch)||0),pitches=[...new Set((core.currentTrack(session)?.notes||[]).filter(note=>selectedIds.has(note.id)).map(note=>Math.max(0,Math.min(127,note.pitch+shift))))].sort((a,b)=>b-a),selectedPitches=new Set(pitches);

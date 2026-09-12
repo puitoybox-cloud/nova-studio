@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const ASSET_VERSION='1.0.1';
+  const ASSET_VERSION='1.0.2';
   const CORE_AUDIO_ROLES=new Set(['melody','drums','bass']);
 
   function currentExternalSelection(api=root.MusicStudio){
@@ -25,6 +25,12 @@
     const current=currentExternalSelection(api);if(!current)return null;
     const track=sourceTrack(api,current);if(!track)return null;
     return{...track,id:track.id,part:playbackPart(track,core),notes:Array.isArray(track.notes)?track.notes.map(note=>({...note})):[]}
+  }
+
+  function externalTrackAudible(trackId,playbackState={}){
+    const muted=playbackState?.mutedByTrackId?.[trackId]===true;
+    const solos=playbackState?.soloByTrackId||{},hasSolo=Object.values(solos).some(value=>value===true);
+    return !muted&&(!hasSolo||solos[trackId]===true)
   }
 
   function timelineTicks(session){
@@ -74,6 +80,8 @@
     const session=api?.state?.midiEditor,audio=api?.state?.melodyAudio,midi=api?.state?.midiInput,track=resolveExternalPlaybackTrack(api,core);
     if(!session||!audio||!track)return{ok:false,reason:'external-track-required'};
     if(!track.notes.length)return{ok:false,reason:'no-notes'};
+    const runtime={...(audio.playbackState||{}),mutedByTrackId:{...(audio.playbackState?.mutedByTrackId||{}),[track.id]:track.muted===true||audio.playbackState?.mutedByTrackId?.[track.id]===true}};
+    if(!externalTrackAudible(track.id,runtime))return{ok:false,reason:runtime.mutedByTrackId[track.id]?'muted':'solo-filtered'};
     if(audio.starting||audio.playing||midi?.recording)return{ok:false,reason:'transport-busy'};
     const synth=audio.synth||(audio.synth=root.MusicStudioAudio?.createSynth?.({volume:.12}));
     if(!synth?.supported?.())return{ok:false,reason:'playback-unavailable'};
@@ -125,6 +133,6 @@
     if(timer!=null)root.clearInterval(timer);let attempts=0;timer=root.setInterval(()=>{attempts+=1;if(install()||root.MusicStudio?.__dynamicTrackPlaybackInstalled||attempts>=200){root.clearInterval(timer);timer=null}},25);return false
   }
 
-  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
+  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,externalTrackAudible,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
   bootWithRetry();if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
