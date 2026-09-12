@@ -4,11 +4,6 @@
 
   let frame=null;
 
-  function cancelReview(menu,api){
-    if(!menu?.open||typeof api?.editorCancelExternalTrackAssignments!=='function')return;
-    menu.dataset.reviewWasOpen='true';
-  }
-
   function normalizeReviewPopover(doc=root.document,api=root.MusicStudio){
     const page=doc?.querySelector?.('.music-midi-editor-page');
     if(!page)return false;
@@ -41,7 +36,6 @@
       menu.dataset.reviewWasOpen='false';
       if(api?.state?.externalTrackAssignmentDraft&&typeof api.editorCancelExternalTrackAssignments==='function')api.editorCancelExternalTrackAssignments();
     });
-    cancelReview(menu,api);
     return true;
   }
 
@@ -53,8 +47,8 @@
 
   if(root.document){
     root.addEventListener?.('DOMContentLoaded',schedule,{once:true});
-    const observer=new MutationObserver(schedule);
-    observer.observe(root.document.documentElement,{childList:true,subtree:true});
+    const Observer=root.MutationObserver;
+    if(Observer){const observer=new Observer(schedule);observer.observe(root.document.documentElement,{childList:true,subtree:true})}
     schedule();
   }
 })(typeof window!=='undefined'?window:globalThis);
