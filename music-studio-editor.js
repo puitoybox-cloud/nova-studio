@@ -1,7 +1,7 @@
 /* MS-RESTART-02: shared, dependency-free MIDI note editing model. */
 (function(root){
   'use strict';
-  const ASSET_VERSION='1.4.17';
+  const ASSET_VERSION='1.4.18';
   const PARTS={melody:{id:'melody',name:'Melody',channel:1,program:0,pitch:60},drums:{id:'drums',name:'Drums',channel:10,program:null,pitch:36},bass:{id:'bass',name:'Bass',channel:2,program:32,pitch:36}};
   const TRACK_TYPES=Object.freeze({MIDI_MELODIC:'midi-melodic',MIDI_DRUMS:'midi-drums',AUDIO:'audio',UNKNOWN:'unknown'});
   const TRACK_ROLES=Object.freeze({UNASSIGNED:'unassigned',MELODY:'melody',DRUMS:'drums',BASS:'bass',VOCAL:'vocal',PIANO:'piano',GUITAR:'guitar',STRINGS:'strings',SYNTH:'synth',FX:'fx',OTHER:'other'});
@@ -390,7 +390,7 @@
   function resolveTrackCapabilities(track){
     const coreSlot=resolveCoreTrackSlot(track),trackType=resolveTrackType(track);
     if(coreSlot)return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:coreSlot===CORE_TRACK_SLOTS.MELODY,supportsDrumLabels:coreSlot===CORE_TRACK_SLOTS.DRUMS,supportsPartialEdit:true});
-    if(trackType===TRACK_TYPES.MIDI_MELODIC||trackType===TRACK_TYPES.MIDI_DRUMS)return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:trackType===TRACK_TYPES.MIDI_MELODIC,supportsDrumLabels:trackType===TRACK_TYPES.MIDI_DRUMS,supportsPartialEdit:false});
+    if(trackType===TRACK_TYPES.MIDI_MELODIC||trackType===TRACK_TYPES.MIDI_DRUMS){const drumRole=resolveTrackRole(track)===TRACK_ROLES.DRUMS;return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:trackType===TRACK_TYPES.MIDI_MELODIC&&!drumRole,supportsDrumLabels:trackType===TRACK_TYPES.MIDI_DRUMS||drumRole,supportsPartialEdit:false})}
     return EMPTY_CAPABILITIES
   }
   function normalizeTrackClassification(track={}){const normalized=track&&typeof track==='object'&&!Array.isArray(track)?clone(track):{};if(Object.prototype.hasOwnProperty.call(normalized,'trackType')&&!TRACK_TYPE_VALUES.includes(normalized.trackType))delete normalized.trackType;return normalized}

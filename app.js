@@ -1468,7 +1468,7 @@ function loadMusicStudioScript(datasetKey,src,ready){
 }
 loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>Boolean(window.MusicStudioMidi))
  .then(()=>loadMusicStudioScript('music-studio-midi-parser','./music-studio-midi-parser.js?v=1.4.1',()=>Boolean(window.MusicStudioMidiParser)))
- .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.17',()=>window.MusicStudioEditor?.ASSET_VERSION==='1.4.17'&&typeof window.MusicStudioEditor.externalReviewTracks==='function'))
+ .then(()=>loadMusicStudioScript('music-studio-editor','./music-studio-editor.js?v=1.4.18',()=>window.MusicStudioEditor?.ASSET_VERSION==='1.4.18'&&typeof window.MusicStudioEditor.externalReviewTracks==='function'))
  .then(()=>loadMusicStudioScript('music-studio-external-song-import','./music-studio-external-song-import.js?v=1.0.0',()=>Boolean(window.MusicStudioExternalSongImport)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.2',()=>Boolean(window.MusicStudioMidiInput)))
  .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.13',()=>Boolean(window.MusicStudioAudio)))

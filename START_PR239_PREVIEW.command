@@ -1,7 +1,7 @@
 #!/bin/bash
 set -u
 
-PREVIEW_SHA="71012a2ed0ff7d81cd4303b2251ceebaddc1d626"
+PREVIEW_SHA="f9620e44201a46fb3fe77b22dfdcd7bb815df10d"
 PREVIEW_PORT="8765"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PREVIEW_URL="http://127.0.0.1:${PREVIEW_PORT}/music-studio.html?verification=${PREVIEW_SHA}#music-studio"
