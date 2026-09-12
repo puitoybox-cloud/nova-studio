@@ -23,6 +23,14 @@
   align-items:center;
   gap:.18rem;
   min-width:0;
+  padding:2px;
+  border:1px solid rgba(142,164,190,.28);
+  border-radius:9px;
+  background:rgba(14,27,43,.42);
+}
+.music-midi-editor-page .music-dynamic-track-group.is-external{
+  border-color:rgba(139,92,246,.42);
+  background:rgba(91,33,182,.12);
 }
 .music-midi-editor-page .music-dynamic-track-button{
   flex:0 0 auto;
@@ -36,6 +44,12 @@
   max-width:13rem;
   font-size:.78rem;
   line-height:1;
+}
+.music-midi-editor-page .music-dynamic-track-group>button:not(.music-dynamic-track-button){
+  flex:0 0 30px;
+  width:30px;
+  min-width:30px;
+  padding-inline:0;
 }
 .music-midi-editor-page .music-drums-workflow>summary::before,
 .music-midi-editor-page .music-bass-workflow>summary::before{

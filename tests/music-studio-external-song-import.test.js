@@ -133,14 +133,14 @@ test('Editor render mounts exactly three review rows for the real six-Track comp
 test('production entry cache keys select the Review-capable Editor assets',()=>{
   const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8'),studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8'),entries=`${index}\n${host}\n${standalone}`;
   assert.match(index,/app\.js\?v=1\.5\.54/);
-  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.127/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.16/);assert.match(source,/music-studio\.js\?v=1\.4\.100/)}
+  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.127/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.16/);assert.match(source,/music-studio\.js\?v=1\.4\.101/)}
   assert.match(host,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.16'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.16/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.100/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
+  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.16/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.101/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
 });
 
 test('runtime markers expose only module versions and the Review API type',()=>{
-  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.16');assert.equal(app.ASSET_VERSION,'1.4.100');assert.equal(typeof editor.externalReviewTracks,'function');
-  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.16',studio:'1.4.100',reviewApi:'function'});
+  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.16');assert.equal(app.ASSET_VERSION,'1.4.101');assert.equal(typeof editor.externalReviewTracks,'function');
+  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.16',studio:'1.4.101',reviewApi:'function'});
 });
 
 test('All MIDI round trip mounts three external Review rows into the standalone document target',async()=>{
