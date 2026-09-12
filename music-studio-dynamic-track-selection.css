@@ -39,7 +39,19 @@
 }
 .music-midi-editor-page .music-drums-workflow>summary::before,
 .music-midi-editor-page .music-bass-workflow>summary::before{
+  content:none !important;
+}
+.music-midi-editor-page .music-drums-workflow>summary>b::before,
+.music-midi-editor-page .music-bass-workflow>summary>b::before{
+  display:inline-grid;
+  width:1.15em;
+  place-items:center;
+  margin-right:5px;
+  color:var(--music-violet);
   content:'✦';
+  font-size:1.05em;
+  line-height:1;
+  vertical-align:middle;
 }
 .music-midi-editor-page.is-external-track-selected .music-part-workflow{
   display:none !important;
@@ -56,8 +68,9 @@
 .music-midi-editor-page.is-external-track-selected .music-correction-menu>summary::after{
   content:'Melody Correction（メロディ補正）';
   color:var(--music-ink);
-  font-size:.84rem;
+  font-size:.69rem;
   font-weight:750;
+  line-height:1.12;
 }
 .music-midi-editor-page .music-external-track-review-menu{
   position:relative;
@@ -113,6 +126,9 @@
   cursor:default;
 }
 @media (max-width:900px){
+  .music-midi-editor-page.is-external-track-selected .music-correction-menu>summary::after{
+    font-size:.75rem;
+  }
   .music-midi-editor-page .music-external-track-review-menu>.music-external-track-review{
     position:fixed;
     top:max(76px,env(safe-area-inset-top));
