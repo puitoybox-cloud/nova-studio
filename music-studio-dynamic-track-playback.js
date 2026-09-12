@@ -21,16 +21,34 @@
     return CORE_AUDIO_ROLES.has(role)?role:'melody'
   }
 
-  function resolveExternalPlaybackTrack(api=root.MusicStudio,core=root.MusicStudioEditor){
-    const current=currentExternalSelection(api);if(!current)return null;
+  function playbackTrack(api,current,core=root.MusicStudioEditor){
     const track=sourceTrack(api,current);if(!track)return null;
     return{...track,id:track.id,part:playbackPart(track,core),notes:Array.isArray(track.notes)?track.notes.map(note=>({...note})):[]}
+  }
+
+  function resolveExternalPlaybackTrack(api=root.MusicStudio,core=root.MusicStudioEditor){
+    const current=currentExternalSelection(api);if(!current)return null;
+    return playbackTrack(api,current,core)
+  }
+
+  function resolveExternalPlaybackTracks(api=root.MusicStudio,core=root.MusicStudioEditor){
+    const selected=resolveExternalPlaybackTrack(api,core);if(!selected)return[];
+    const solos=api?.state?.melodyAudio?.playbackState?.soloByTrackId||{},soloIds=new Set(Object.entries(solos).filter(([,value])=>value===true).map(([id])=>id));
+    if(!soloIds.size)return[selected];
+    const model=api?.createTrackSelectionModel?.()||[];
+    return model.filter(item=>item?.capabilities?.canPlayMidi===true&&soloIds.has(item.id)).map(item=>playbackTrack(api,item,core)).filter(Boolean)
   }
 
   function externalTrackAudible(trackId,playbackState={}){
     const muted=playbackState?.mutedByTrackId?.[trackId]===true;
     const solos=playbackState?.soloByTrackId||{},hasSolo=Object.values(solos).some(value=>value===true);
     return !muted&&(!hasSolo||solos[trackId]===true)
+  }
+
+  function playbackRuntime(tracks=[],playbackState={}){
+    const muted={...(playbackState?.mutedByTrackId||{})};
+    for(const track of tracks)if(track?.muted===true)muted[track.id]=true;
+    return{...(playbackState||{}),mutedByTrackId:muted}
   }
 
   function timelineTicks(session){
@@ -63,7 +81,7 @@
 
   function enhancePlaybackUi(api=root.MusicStudio){
     const current=currentExternalSelection(api),page=root.document?.querySelector?.('.music-midi-editor-page');if(!current||!page)return false;
-    const track=sourceTrack(api,current),audio=api.state?.melodyAudio||{},play=page.querySelector?.('[onclick*="editorToggleMelodyPlayback"]'),stop=page.querySelector?.('[onclick*="editorStopTransport"]'),hasNotes=Array.isArray(track?.notes)&&track.notes.length>0,busy=api.state?.midiInput?.recording||api.state?.midiInput?.countingIn;
+    const tracks=resolveExternalPlaybackTracks(api),audio=api.state?.melodyAudio||{},play=page.querySelector?.('[onclick*="editorToggleMelodyPlayback"]'),stop=page.querySelector?.('[onclick*="editorStopTransport"]'),hasNotes=tracks.some(track=>Array.isArray(track?.notes)&&track.notes.length>0),busy=api.state?.midiInput?.recording||api.state?.midiInput?.countingIn;
     if(play){play.disabled=!hasNotes||Boolean(busy);play.setAttribute('aria-disabled',String(play.disabled));play.setAttribute('aria-pressed',String(Boolean(audio.playing||audio.starting)));if(!play.disabled)play.title=`${current.name}をTrack IDで再生`}
     if(stop){stop.disabled=!(audio.playing||audio.starting||busy);stop.setAttribute('aria-disabled',String(stop.disabled))}
     page.dataset.currentTrackMode='playback';page.dataset.currentTrackPlaybackId=current.id;
@@ -77,11 +95,12 @@
   }
 
   async function playExternalTrack(api=root.MusicStudio,core=root.MusicStudioEditor){
-    const session=api?.state?.midiEditor,audio=api?.state?.melodyAudio,midi=api?.state?.midiInput,track=resolveExternalPlaybackTrack(api,core);
-    if(!session||!audio||!track)return{ok:false,reason:'external-track-required'};
-    if(!track.notes.length)return{ok:false,reason:'no-notes'};
-    const runtime={...(audio.playbackState||{}),mutedByTrackId:{...(audio.playbackState?.mutedByTrackId||{}),[track.id]:track.muted===true||audio.playbackState?.mutedByTrackId?.[track.id]===true}};
-    if(!externalTrackAudible(track.id,runtime))return{ok:false,reason:runtime.mutedByTrackId[track.id]?'muted':'solo-filtered'};
+    const session=api?.state?.midiEditor,audio=api?.state?.melodyAudio,midi=api?.state?.midiInput,selected=resolveExternalPlaybackTrack(api,core),tracks=resolveExternalPlaybackTracks(api,core);
+    if(!session||!audio||!selected)return{ok:false,reason:'external-track-required'};
+    if(!tracks.length)return{ok:false,reason:'solo-filtered'};
+    if(!tracks.some(track=>track.notes.length))return{ok:false,reason:'no-notes'};
+    const runtime=playbackRuntime(tracks,audio.playbackState||{}),active=root.MusicStudioPlayback?.activePlaybackTracks?.(tracks,runtime)||tracks.filter(track=>externalTrackAudible(track.id,runtime));
+    if(!active.length)return{ok:false,reason:tracks.every(track=>runtime.mutedByTrackId?.[track.id]===true)?'muted':'solo-filtered'};
     if(audio.starting||audio.playing||midi?.recording)return{ok:false,reason:'transport-busy'};
     const synth=audio.synth||(audio.synth=root.MusicStudioAudio?.createSynth?.({volume:.12}));
     if(!synth?.supported?.())return{ok:false,reason:'playback-unavailable'};
@@ -91,12 +110,13 @@
     audio.starting=false;
     const loop=loopRange(session),total=timelineTicks(session),initial=loop.enabled&&(session.playheadTick<loop.start||session.playheadTick>=loop.end)?loop.start:Math.max(0,Number(session.playheadTick)||0);
     setPlayhead(session,initial);
-    const transport=root.MusicStudioPlayback?.createTransportState?.(session.midiData,{playing:true,currentTick:initial,playbackState:audio.playbackState||{}})||{ppq:session.midiData.ppq,bpm:session.midiData.tempo,tempoMap:session.midiData.tempoMap,currentTick:initial};
+    const transport=root.MusicStudioPlayback?.createTransportState?.(session.midiData,{playing:true,currentTick:initial,playbackState:runtime})||{ppq:session.midiData.ppq,bpm:session.midiData.tempo,tempoMap:session.midiData.tempoMap,currentTick:initial};
     const schedule=(startTick,endTick,looping)=>{
       if(request!==audio.playRequest)return{ok:false,reason:'cancelled'};
       synth.stopPlayback?.();
-      const result=root.MusicStudioPlayback?.schedulePlaybackTracks?.(synth,[track],{...transport,startTick,endTick,leadSeconds:looping?0:undefined,playbackState:audio.playbackState||{}})||{ok:false,noteCount:0,reason:'track-playback-contract-unavailable'};
-      audio.playing=result.ok&&result.noteCount>0;audio.transport={...transport,playing:audio.playing,currentTick:startTick,playbackStartOrigin:result.playbackStart,activePlaybackTrackIds:[track.id]};audio.status=audio.playing?(looping?'External Trackループ再生中':'External Track再生中'):'この範囲に再生できるノートがありません';enhancePlaybackUi(api);
+      const result=root.MusicStudioPlayback?.schedulePlaybackTracks?.(synth,tracks,{...transport,startTick,endTick,leadSeconds:looping?0:undefined,playbackState:runtime})||{ok:false,noteCount:0,reason:'track-playback-contract-unavailable'};
+      const activeIds=(root.MusicStudioPlayback?.activePlaybackTracks?.(tracks,runtime)||active).map(track=>track.id);
+      audio.playing=result.ok&&result.noteCount>0;audio.transport={...transport,playing:audio.playing,currentTick:startTick,playbackStartOrigin:result.playbackStart,activePlaybackTrackIds:activeIds};audio.status=audio.playing?(looping?(activeIds.length>1?'External Tracksループ再生中':'External Trackループ再生中'):(activeIds.length>1?'External Tracks再生中':'External Track再生中')):'この範囲に再生できるノートがありません';enhancePlaybackUi(api);
       if(!audio.playing)return result;
       const duration=looping?(result.timelineDurationSeconds??Math.max(1,endTick-startTick)*(result.secondsPerTick||0))*1000:result.durationMs;
       audio.playbackTimer=root.setTimeout?.(()=>{if(request!==audio.playRequest)return;if(loop.enabled)schedule(loop.start,loop.end,true);else stopExternalPlayback(api)},Math.max(1,Number(duration)||1))??null;
@@ -111,6 +131,7 @@
     api.__dynamicTrackPlaybackVersion=ASSET_VERSION;
     const originalToggle=api.editorToggleMelodyPlayback,originalShortcut=api.editorHandleShortcut;
     api.resolveExternalPlaybackTrack=()=>resolveExternalPlaybackTrack(api,core);
+    api.resolveExternalPlaybackTracks=()=>resolveExternalPlaybackTracks(api,core);
     api.editorPlayExternalTrack=()=>playExternalTrack(api,core);
     api.editorToggleMelodyPlayback=function(...args){
       const current=currentExternalSelection(api),audio=api.state?.melodyAudio;
@@ -133,6 +154,6 @@
     if(timer!=null)root.clearInterval(timer);let attempts=0;timer=root.setInterval(()=>{attempts+=1;if(install()||root.MusicStudio?.__dynamicTrackPlaybackInstalled||attempts>=200){root.clearInterval(timer);timer=null}},25);return false
   }
 
-  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,externalTrackAudible,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
+  root.MusicStudioDynamicTrackPlayback={ASSET_VERSION,currentExternalSelection,resolveExternalPlaybackTrack,resolveExternalPlaybackTracks,externalTrackAudible,playExternalTrack,stopExternalPlayback,enhancePlaybackUi,install,bootWithRetry};
   bootWithRetry();if(typeof root.addEventListener==='function')root.addEventListener('hashchange',bootWithRetry);
 })(typeof window!=='undefined'?window:globalThis);
