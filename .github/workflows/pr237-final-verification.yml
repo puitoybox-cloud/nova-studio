@@ -1,0 +1,50 @@
+name: PR237 Final Verification
+
+on:
+  push:
+    branches:
+      - verification/pr237-final-395ab9b
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR product head
+        uses: actions/checkout@v4
+        with:
+          ref: 395ab9b30f731944ffc830de024a689db0a753c6
+          fetch-depth: 0
+
+      - name: Verify exact HEAD
+        run: |
+          test "$(git rev-parse HEAD)" = "395ab9b30f731944ffc830de024a689db0a753c6"
+          echo "Exact product HEAD: $(git rev-parse HEAD)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: node --test
+        run: node --test
+
+      - name: node --check all repository JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+            count=$((count + 1))
+          done < <(find . -type f -name '*.js' -not -path './node_modules/*' -print0 | sort -z)
+          echo "JavaScript files checked: $count"
+
+      - name: git diff --check
+        shell: bash
+        run: |
+          git diff --check
+          git diff --check dd12eb6f95b9900ec6a8cee50e1cc4cf44bde562..395ab9b30f731944ffc830de024a689db0a753c6
