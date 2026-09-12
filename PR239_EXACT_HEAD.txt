@@ -1,0 +1,11 @@
+Project NOVA / Music Studio — PR #239 Exact-head Preview
+
+Product source commit:
+71012a2ed0ff7d81cd4303b2251ceebaddc1d626
+
+The temporary branch differs from that product source only by these verification files:
+- START_PR239_PREVIEW.command
+- STOP_PR239_PREVIEW.command
+- PR239_EXACT_HEAD.txt
+
+No product code, product asset, schema, IndexedDB version, provider setting, or deployment setting is changed.
