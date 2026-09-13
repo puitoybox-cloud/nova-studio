@@ -1,0 +1,46 @@
+name: Music Audio Helper macOS
+
+on:
+  push:
+    branches:
+      - agent/music-studio-audio-stem-midi-pipeline
+    paths:
+      - 'tools/music-audio-pipeline/**'
+      - '.github/workflows/music-audio-helper-macos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_ROOT="$RUNNER_TEMP/Nova Music Audio Helper.app"
+          CONTENTS="$APP_ROOT/Contents"
+          MACOS="$CONTENTS/MacOS"
+          RESOURCES="$CONTENTS/Resources"
+          mkdir -p "$MACOS" "$RESOURCES/pipeline"
+          cp tools/music-audio-pipeline/mac-app/Info.plist "$CONTENTS/Info.plist"
+          cp tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper "$MACOS/NovaMusicAudioHelper"
+          chmod +x "$MACOS/NovaMusicAudioHelper"
+          cp tools/music-audio-pipeline/server.py "$RESOURCES/pipeline/server.py"
+          cp tools/music-audio-pipeline/requirements.txt "$RESOURCES/pipeline/requirements.txt"
+          /usr/bin/plutil -lint "$CONTENTS/Info.plist"
+          /usr/bin/codesign --force --deep --sign - "$APP_ROOT"
+          /usr/bin/codesign --verify --deep --strict "$APP_ROOT"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_ROOT" "$RUNNER_TEMP/Nova-Music-Audio-Helper-macOS.zip"
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nova-Music-Audio-Helper-macOS
+          path: ${{ runner.temp }}/Nova-Music-Audio-Helper-macOS.zip
+          if-no-files-found: error
+          retention-days: 14
