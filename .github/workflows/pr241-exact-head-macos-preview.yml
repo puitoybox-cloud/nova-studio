@@ -1,0 +1,50 @@
+name: PR241 exact-head macOS Preview
+
+on:
+  push:
+    branches:
+      - verification/pr241-exact-head-macos-preview
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build exact-head preview app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_ROOT="$RUNNER_TEMP/Nova Music Studio PR241 Preview.app"
+          CONTENTS="$APP_ROOT/Contents"
+          MACOS="$CONTENTS/MacOS"
+          RESOURCES="$CONTENTS/Resources"
+          mkdir -p "$MACOS" "$RESOURCES/pipeline" "$RESOURCES/site"
+          cp verification/pr241-preview/Info.plist "$CONTENTS/Info.plist"
+          cp verification/pr241-preview/NovaMusicStudioPR241Preview "$MACOS/NovaMusicStudioPR241Preview"
+          chmod +x "$MACOS/NovaMusicStudioPR241Preview"
+          cp tools/music-audio-pipeline/server.py "$RESOURCES/pipeline/server.py"
+          cp tools/music-audio-pipeline/requirements.txt "$RESOURCES/pipeline/requirements.txt"
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'verification' \
+            --exclude 'node_modules' \
+            ./ "$RESOURCES/site/"
+          printf '%s\n' 'd50204ac623814154a425885a06815d8ef4ae3c3' > "$RESOURCES/site/PR241_EXACT_HEAD.txt"
+          /usr/bin/plutil -lint "$CONTENTS/Info.plist"
+          /usr/bin/codesign --force --deep --sign - "$APP_ROOT"
+          /usr/bin/codesign --verify --deep --strict "$APP_ROOT"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_ROOT" "$RUNNER_TEMP/Nova-Music-Studio-PR241-Exact-Head-Preview.zip"
+
+      - name: Upload exact-head preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nova-Music-Studio-PR241-Exact-Head-Preview
+          path: ${{ runner.temp }}/Nova-Music-Studio-PR241-Exact-Head-Preview.zip
+          if-no-files-found: error
+          retention-days: 14

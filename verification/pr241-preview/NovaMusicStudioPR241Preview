@@ -1,0 +1,89 @@
+#!/bin/bash
+set -euo pipefail
+
+APP_NAME="Nova Music Studio PR241 Preview"
+EXPECTED_HEAD="d50204ac623814154a425885a06815d8ef4ae3c3"
+APP_RESOURCES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+SUPPORT_DIR="$HOME/Library/Application Support/$APP_NAME"
+PIPELINE_DIR="$SUPPORT_DIR/pipeline"
+SITE_DIR="$SUPPORT_DIR/site"
+VENV_DIR="$PIPELINE_DIR/.venv"
+AUDIO_LOG="$PIPELINE_DIR/audio-pipeline.log"
+PREVIEW_LOG="$SUPPORT_DIR/preview-server.log"
+AUDIO_HEALTH="http://127.0.0.1:8766/health"
+PREVIEW_MARKER="http://127.0.0.1:8765/PR241_EXACT_HEAD.txt"
+PREVIEW_URL="http://127.0.0.1:8765/music-studio.html?pr241=$EXPECTED_HEAD"
+
+show_dialog(){
+  /usr/bin/osascript -e "display dialog \"$1\" buttons {\"OK\"} default button \"OK\" with title \"$APP_NAME\"" >/dev/null 2>&1 || true
+}
+
+show_notification(){
+  /usr/bin/osascript -e "display notification \"$1\" with title \"$APP_NAME\"" >/dev/null 2>&1 || true
+}
+
+is_audio_helper(){
+  /usr/bin/curl -fsS --max-time 2 "$AUDIO_HEALTH" 2>/dev/null | /usr/bin/grep -q '"localOnly"[[:space:]]*:[[:space:]]*true'
+}
+
+is_exact_preview(){
+  [ "$(/usr/bin/curl -fsS --max-time 2 "$PREVIEW_MARKER" 2>/dev/null || true)" = "$EXPECTED_HEAD" ]
+}
+
+mkdir -p "$PIPELINE_DIR" "$SITE_DIR"
+/usr/bin/rsync -a --delete --exclude '.venv' --exclude 'audio-pipeline.log' --exclude '.pipeline.pid' "$APP_RESOURCES/pipeline/" "$PIPELINE_DIR/"
+/usr/bin/rsync -a --delete "$APP_RESOURCES/site/" "$SITE_DIR/"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  show_dialog "Python 3が見つかりません。PR #241 Previewを起動できません。"
+  exit 1
+fi
+
+if ! is_audio_helper; then
+  if /usr/sbin/lsof -tiTCP:8766 -sTCP:LISTEN >/dev/null 2>&1; then
+    show_dialog "Macの8766番ポートを別のアプリが使用しています。安全のため停止しました。"
+    exit 1
+  fi
+  if [ ! -x "$VENV_DIR/bin/python" ]; then
+    show_notification "音声処理の初回セットアップを開始します。完了までお待ちください。"
+    python3 -m venv "$VENV_DIR"
+    "$VENV_DIR/bin/python" -m pip install --upgrade pip wheel
+    "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
+    "$VENV_DIR/bin/pip" install -r "$PIPELINE_DIR/requirements.txt"
+  fi
+  if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
+    "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
+  fi
+  : > "$AUDIO_LOG"
+  (cd "$PIPELINE_DIR" && PYTHONUNBUFFERED=1 nohup "$VENV_DIR/bin/python" -u server.py > "$AUDIO_LOG" 2>&1 & echo $! > .pipeline.pid)
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    is_audio_helper && break
+    sleep 1
+  done
+  if ! is_audio_helper; then
+    show_dialog "Audio Helperを起動できませんでした。ログ: $AUDIO_LOG"
+    exit 1
+  fi
+fi
+
+if ! is_exact_preview; then
+  if /usr/sbin/lsof -tiTCP:8765 -sTCP:LISTEN >/dev/null 2>&1; then
+    show_dialog "Macの8765番ポートで別のPreviewが動いています。先にそのPreviewを停止してください。"
+    exit 1
+  fi
+  : > "$PREVIEW_LOG"
+  nohup python3 -m http.server 8765 --bind 127.0.0.1 --directory "$SITE_DIR" > "$PREVIEW_LOG" 2>&1 &
+  echo $! > "$SUPPORT_DIR/preview-server.pid"
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    is_exact_preview && break
+    sleep 1
+  done
+fi
+
+if ! is_exact_preview; then
+  show_dialog "PR #241 exact-head Previewを起動できませんでした。ログ: $PREVIEW_LOG"
+  exit 1
+fi
+
+show_notification "PR #241 exact-head PreviewをChromeで開きます。"
+/usr/bin/open -a "Google Chrome" "$PREVIEW_URL" || /usr/bin/open "$PREVIEW_URL"
