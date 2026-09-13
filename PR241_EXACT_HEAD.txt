@@ -1,0 +1,8 @@
+PR #241 exact-head Preview
+
+Product PR: #241
+Product branch: agent/music-studio-audio-stem-midi-pipeline
+Product HEAD: a77f72eb38287a9a6e05d0f84062332ad2b95a38
+Base main: eece14c4d694616d5139b3780196a580f3004523
+
+This verification branch adds preview helper files only. Product files must remain identical to Product HEAD.
