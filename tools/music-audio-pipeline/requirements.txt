@@ -1,0 +1,7 @@
+setuptools<82
+demucs>=4,<5
+basic-pitch>=0.4,<1
+mido>=1.3,<2
+librosa>=0.10,<1
+soundfile>=0.12,<1
+numpy<2
