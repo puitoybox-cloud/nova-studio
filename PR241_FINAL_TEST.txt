@@ -1,0 +1,5 @@
+PR #241 FINAL TEST CLEAN
+Product HEAD: 164b1d5a0297af5c564188bf6e9e43e6e7ce95cf
+Purpose: Intel Mac / Chrome local verification only.
+This branch starts exactly from the PR #241 product HEAD and adds only the three Preview helper files.
+The launcher stops any older Nova server.py helper on port 8766, starts the product helper with Bash, waits for health success, verifies music-studio.html returns HTTP 200, then opens Chrome.
