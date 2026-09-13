@@ -1,0 +1,5 @@
+PR #241 FINAL TEST
+Product HEAD: 516a3cafd1c63bcff9fada9bb7bcc7ae24d5375b
+Purpose: Intel Mac / Chrome local verification only.
+The launcher verifies music-studio.html exists and returns HTTP 200 before opening Chrome.
+Preview helper files are not product changes.
