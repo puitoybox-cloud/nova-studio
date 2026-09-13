@@ -1,0 +1,5 @@
+PR #241 FINAL TEST FIXED
+Product HEAD: 164b1d5a0297af5c564188bf6e9e43e6e7ce95cf
+Purpose: Intel Mac / Chrome local verification only.
+This branch starts exactly from the PR #241 product HEAD and adds only the three Preview helper files.
+The launcher stops an earlier Nova audio helper, repairs pkg_resources compatibility through the product startup script, verifies music-studio.html returns HTTP 200, then opens Chrome.
