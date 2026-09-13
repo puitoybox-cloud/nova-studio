@@ -34,8 +34,14 @@ fi
 if [ ! -x "$VENV_DIR/bin/python" ]; then
   echo "初回セットアップを開始します。"
   "$PYTHON_BIN" -m venv "$VENV_DIR"
-  "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
+  "$VENV_DIR/bin/python" -m pip install --upgrade pip wheel
+  "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
   "$VENV_DIR/bin/pip" install -r requirements.txt
+fi
+
+if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
+  echo "Audio Pipelineの互換部品を修復します。"
+  "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
 fi
 
 if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
