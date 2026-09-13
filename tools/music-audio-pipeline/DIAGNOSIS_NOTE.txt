@@ -1,0 +1,10 @@
+PR #241 startup diagnosis note
+
+If the local Audio Pipeline cannot start, START_AUDIO_PIPELINE.command now:
+- checks whether the health endpoint is already responding
+- checks whether TCP port 8766 is occupied by another process
+- starts Python in unbuffered mode
+- polls the /health endpoint for up to 10 seconds
+- prints audio-pipeline.log directly in Terminal when startup fails
+
+This file is documentation only and does not change runtime behavior.
