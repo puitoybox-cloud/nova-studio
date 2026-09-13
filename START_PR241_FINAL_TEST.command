@@ -34,18 +34,21 @@ for STALE_PID in $(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true); do
   fi
 done
 
-for OLD_PIPELINE_PID in $(lsof -tiTCP:"$PIPELINE_PORT" -sTCP:LISTEN 2>/dev/null || true); do
-  OLD_PIPELINE_COMMAND="$(ps -p "$OLD_PIPELINE_PID" -o command= 2>/dev/null || true)"
-  if [[ "$OLD_PIPELINE_COMMAND" == *"python"* && "$OLD_PIPELINE_COMMAND" == *"server.py"* ]]; then
-    echo "前のAudio Pipelineを停止します: PID $OLD_PIPELINE_PID"
-    kill "$OLD_PIPELINE_PID" 2>/dev/null || true
+if lsof -tiTCP:"$PIPELINE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  HEALTH_BODY="$(curl -fsS --max-time 2 "http://127.0.0.1:${PIPELINE_PORT}/health" 2>/dev/null || true)"
+  if printf '%s' "$HEALTH_BODY" | grep -q '"localOnly": true'; then
+    echo "前のNova Audio Pipelineを確認しました。停止します。"
+    for OLD_PIPELINE_PID in $(lsof -tiTCP:"$PIPELINE_PORT" -sTCP:LISTEN 2>/dev/null || true); do
+      echo "前のAudio Pipelineを停止します: PID $OLD_PIPELINE_PID"
+      kill "$OLD_PIPELINE_PID" 2>/dev/null || true
+    done
   else
-    echo "ERROR: 127.0.0.1:$PIPELINE_PORT は別のアプリが使用しています。"
-    echo "$OLD_PIPELINE_COMMAND"
+    echo "ERROR: 127.0.0.1:$PIPELINE_PORT はNova Audio Pipeline以外のアプリが使用しています。"
+    lsof -nP -iTCP:"$PIPELINE_PORT" -sTCP:LISTEN || true
     read -r "?Enterで閉じます..." || true
     exit 1
   fi
-done
+fi
 
 for _ in 1 2 3 4 5 6 7 8 9 10; do
   if ! lsof -tiTCP:"$PIPELINE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
@@ -76,7 +79,7 @@ chmod u+x "$PIPELINE_DIR/START_AUDIO_PIPELINE.command" "$PIPELINE_DIR/STOP_AUDIO
 
 PIPELINE_OK=0
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-  if curl -fsS --max-time 2 "http://127.0.0.1:${PIPELINE_PORT}/health" >/dev/null 2>&1; then
+  if curl -fsS --max-time 2 "http://127.0.0.1:${PIPELINE_PORT}/health" | grep -q '"localOnly": true'; then
     PIPELINE_OK=1
     break
   fi
