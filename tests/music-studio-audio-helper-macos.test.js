@@ -24,7 +24,7 @@ test('macOS helper bundle has a stable app identity', () => {
 });
 
 test('macOS helper workflow packages and verifies an app artifact', () => {
-  assert.match(workflow, /runs-on: macos-13/);
+  assert.match(workflow, /runs-on: macos-15-intel/);
   assert.match(workflow, /codesign --verify --deep --strict/);
   assert.match(workflow, /Nova-Music-Audio-Helper-macOS\.zip/);
   assert.match(workflow, /actions\/upload-artifact@v4/);
