@@ -1,0 +1,8 @@
+PR #241 exact-head Preview v2
+Product HEAD: 516a3cafd1c63bcff9fada9bb7bcc7ae24d5375b
+Preview branch: verification/pr241-exact-head-preview-v2
+Purpose: Mac / Chrome real-device verification after startup-diagnostics fix
+Product files are unchanged by this preview helper layer.
+Ready: prohibited
+Merge: prohibited
+Force push: prohibited
