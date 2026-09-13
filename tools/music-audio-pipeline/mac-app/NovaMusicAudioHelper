@@ -1,0 +1,71 @@
+#!/bin/bash
+set -euo pipefail
+
+APP_NAME="Nova Music Audio Helper"
+APP_RESOURCES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+SUPPORT_DIR="$HOME/Library/Application Support/$APP_NAME"
+PIPELINE_DIR="$SUPPORT_DIR/pipeline"
+VENV_DIR="$PIPELINE_DIR/.venv"
+LOG_FILE="$PIPELINE_DIR/audio-pipeline.log"
+HEALTH_URL="http://127.0.0.1:8766/health"
+MUSIC_STUDIO_URL="https://puitoybox-cloud.github.io/nova-studio/music-studio.html"
+
+show_dialog(){
+  /usr/bin/osascript -e "display dialog \"$1\" buttons {\"OK\"} default button \"OK\" with title \"$APP_NAME\"" >/dev/null 2>&1 || true
+}
+
+show_notification(){
+  /usr/bin/osascript -e "display notification \"$1\" with title \"$APP_NAME\"" >/dev/null 2>&1 || true
+}
+
+is_nova_pipeline(){
+  /usr/bin/curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null | /usr/bin/grep -q '"localOnly"[[:space:]]*:[[:space:]]*true'
+}
+
+mkdir -p "$PIPELINE_DIR"
+/usr/bin/rsync -a --delete --exclude '.venv' --exclude 'audio-pipeline.log' --exclude '.pipeline.pid' "$APP_RESOURCES/pipeline/" "$PIPELINE_DIR/"
+cd "$PIPELINE_DIR"
+
+if is_nova_pipeline; then
+  /usr/bin/open -a "Google Chrome" "$MUSIC_STUDIO_URL" || /usr/bin/open "$MUSIC_STUDIO_URL"
+  exit 0
+fi
+
+if /usr/sbin/lsof -tiTCP:8766 -sTCP:LISTEN >/dev/null 2>&1; then
+  show_dialog "Macの8766番ポートを別のアプリが使用しています。Nova Audio Helperは安全のため停止しました。"
+  exit 1
+fi
+
+if ! /usr/bin/command -v python3 >/dev/null 2>&1; then
+  show_dialog "Python 3が見つかりません。Nova Audio Helperを起動できません。"
+  exit 1
+fi
+
+if [ ! -x "$VENV_DIR/bin/python" ]; then
+  show_notification "初回セットアップを開始します。少し時間がかかります。"
+  python3 -m venv "$VENV_DIR"
+  "$VENV_DIR/bin/python" -m pip install --upgrade pip wheel
+  "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
+  "$VENV_DIR/bin/pip" install -r requirements.txt
+fi
+
+if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
+  "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
+fi
+
+: > "$LOG_FILE"
+PYTHONUNBUFFERED=1 nohup "$VENV_DIR/bin/python" -u server.py > "$LOG_FILE" 2>&1 &
+echo $! > .pipeline.pid
+
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  if is_nova_pipeline; then
+    show_notification "Audio Helperを起動しました。Music Studioを開きます。"
+    /usr/bin/open -a "Google Chrome" "$MUSIC_STUDIO_URL" || /usr/bin/open "$MUSIC_STUDIO_URL"
+    exit 0
+  fi
+  sleep 1
+done
+
+MESSAGE="Audio Helperを起動できませんでした。ログ: $LOG_FILE"
+show_dialog "$MESSAGE"
+exit 1
