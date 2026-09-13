@@ -36,11 +36,28 @@ A missing or silent stem is skipped rather than creating an empty Track.
 
 ## Mac startup
 
-`tools/music-audio-pipeline/START_AUDIO_PIPELINE.command` creates a private Python virtual environment on the first run and installs the local processing dependencies. Later runs reuse that environment.
+Routine use is designed to avoid Terminal.
 
-`tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command` stops the local helper.
+The repository contains a macOS helper app packaging workflow. It builds `Nova Music Audio Helper.app`, bundles the local pipeline source, and produces a downloadable ZIP artifact.
 
-The first Demucs processing can download the model if it is not already cached. This is a model/package download, not a Provider or External AI API request.
+On launch, the app:
+
+1. copies the bundled pipeline into `~/Library/Application Support/Nova Music Audio Helper/pipeline`;
+2. creates or reuses a private Python virtual environment;
+3. installs or repairs the local-only dependencies, including `setuptools<82` compatibility for `pkg_resources`;
+4. starts the helper on `127.0.0.1:8766`;
+5. confirms `/health` reports the Nova local-only helper;
+6. opens Music Studio in Chrome.
+
+If the helper is already healthy, the app simply opens Music Studio. It does not open Terminal.
+
+`tools/music-audio-pipeline/START_AUDIO_PIPELINE.command` and `STOP_AUDIO_PIPELINE.command` remain developer/fallback helpers and are not intended as the normal day-to-day user path.
+
+The first Demucs processing can download the model if it is not already cached. This is a model/package download, not a Provider or External AI API request. The selected song audio is not sent to the model source.
+
+## macOS packaging
+
+`.github/workflows/music-audio-helper-macos.yml` packages the app on macOS, validates `Info.plist`, ad-hoc signs the bundle, verifies the signature, and uploads `Nova-Music-Audio-Helper-macOS.zip` as a workflow artifact.
 
 ## Safety and compatibility
 
