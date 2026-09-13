@@ -1,1 +1,141 @@
-/* placeholder */
+/* Local-only audio -> stems -> MIDI bridge for Music Studio. */
+(function(root){
+  'use strict';
+
+  const VERSION='1.0.0';
+  const ENDPOINT='http://127.0.0.1:8766';
+  const AUDIO_EXTENSIONS=new Set(['wav','wave','mp3','aif','aiff','caf','m4a','flac','ogg']);
+  const AUDIO_ACCEPT='audio/wav,audio/x-wav,audio/mpeg,audio/aiff,audio/x-aiff,audio/x-caf,audio/mp4,audio/flac,audio/ogg,.wav,.wave,.mp3,.aif,.aiff,.caf,.m4a,.flac,.ogg';
+  const MIDI_ACCEPT='audio/midi,audio/x-midi,.mid,.midi';
+  let installed=false;
+  let processing=false;
+  let originalImport=null;
+  let observer=null;
+
+  function extension(name=''){
+    const match=String(name).toLowerCase().match(/\.([a-z0-9]+)$/);
+    return match?.[1]||'';
+  }
+
+  function isAudioFile(file){
+    if(!file)return false;
+    const ext=extension(file.name),mime=String(file.type||'').toLowerCase();
+    return AUDIO_EXTENSIONS.has(ext)||mime.startsWith('audio/')&&!/midi/.test(mime);
+  }
+
+  function decodeBase64(value=''){
+    const binary=root.atob?root.atob(value):Buffer.from(value,'base64').toString('binary');
+    const bytes=new Uint8Array(binary.length);
+    for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
+    return bytes;
+  }
+
+  function makeMidiFile(bytes,name){
+    const blob=new Blob([bytes],{type:'audio/midi'});
+    if(typeof root.File==='function')return new root.File([blob],name,{type:'audio/midi',lastModified:Date.now()});
+    blob.name=name;blob.lastModified=Date.now();return blob;
+  }
+
+  function statusElement(){
+    const section=root.document?.querySelector?.('.music-external-import');
+    if(!section)return null;
+    let target=section.querySelector?.('#externalAudioPipelineStatus');
+    if(!target){
+      target=root.document.createElement('p');
+      target.id='externalAudioPipelineStatus';
+      target.className='music-external-import-status';
+      section.appendChild(target);
+    }
+    return target;
+  }
+
+  function setStatus(message,kind='info'){
+    const target=statusElement();
+    if(!target)return;
+    target.textContent=message;
+    target.dataset.kind=kind;
+    target.setAttribute('role',kind==='error'?'alert':'status');
+  }
+
+  function enhanceExternalInput(){
+    const input=root.document?.querySelector?.('#externalSongMidiImport');
+    if(!input)return false;
+    input.accept=`${MIDI_ACCEPT},${AUDIO_ACCEPT}`;
+    input.dataset.audioPipeline='local';
+    input.title='MIDIまたは音声ファイルを選択します。音声はMac内のローカル処理でStem分離してMIDI化します。';
+    const section=input.closest?.('.music-external-import');
+    if(section&&!section.querySelector?.('[data-audio-pipeline-help]')){
+      const help=root.document.createElement('p');
+      help.dataset.audioPipelineHelp='true';
+      help.className='music-external-import-status';
+      help.textContent='音声（MP3 / WAVなど）はMac内でStem分離 → Audio-to-MIDI → Track Reviewへ進みます。外部AI APIへ音声は送信しません。';
+      section.appendChild(help);
+    }
+    return true;
+  }
+
+  async function parseError(response){
+    try{const data=await response.json();return String(data?.message||data?.error||`Local audio pipeline error (${response.status})`)}catch(_){return`Local audio pipeline error (${response.status})`}
+  }
+
+  async function processAudioLocally(file){
+    const response=await root.fetch(`${ENDPOINT}/process`,{
+      method:'POST',
+      headers:{
+        'Content-Type':String(file.type||'application/octet-stream'),
+        'X-Nova-Audio-Pipeline':'1',
+        'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input'))
+      },
+      body:file
+    });
+    if(!response.ok)throw Error(await parseError(response));
+    const payload=await response.json();
+    if(!payload?.ok||!payload?.midiBase64)throw Error(String(payload?.message||'ローカル音声処理のMIDI結果を受け取れませんでした。'));
+    return payload;
+  }
+
+  async function importAudioFile(file){
+    const api=root.MusicStudio;
+    if(!api||typeof originalImport!=='function')return{ok:false,message:'Music StudioのImport機能を読み込めません。'};
+    if(processing)return{ok:false,busy:true,message:'音声をStem分離・MIDI化しています。'};
+    processing=true;
+    setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
+    try{
+      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`),midiFile=makeMidiFile(bytes,midiName);
+      setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`,'success');
+      const result=await originalImport(midiFile);
+      if(result?.ok){
+        api.state.externalSongImport={...(api.state.externalSongImport||{}),audioPipeline:{sourceFileName:String(file.name||''),midiFileName:midiName,stems:Array.isArray(payload.stems)?payload.stems.slice():[],bpm:payload.bpm??null,localOnly:true}};
+      }
+      return{...result,audioPipeline:payload};
+    }catch(error){
+      const message=error?.message||String(error);
+      if(api.state)api.state.externalSongImport={status:'error',message:`音声のStem分離 / MIDI化に失敗しました：${message}`};
+      setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
+      return{ok:false,error,message};
+    }finally{processing=false}
+  }
+
+  function install(){
+    const api=root.MusicStudio;
+    if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
+    originalImport=api.importExternalSongFile.bind(api);
+    api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput};
+    installed=true;
+    enhanceExternalInput();
+    if(root.MutationObserver&&root.document?.body){
+      observer=new root.MutationObserver(()=>enhanceExternalInput());
+      observer.observe(root.document.body,{childList:true,subtree:true});
+    }
+    return true;
+  }
+
+  function installWhenReady(attempt=0){
+    if(install())return;
+    if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
+  }
+
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,install});
+  installWhenReady();
+})(typeof window!=='undefined'?window:globalThis);
