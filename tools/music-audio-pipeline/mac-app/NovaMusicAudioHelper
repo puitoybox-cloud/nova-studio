@@ -36,7 +36,7 @@ if /usr/sbin/lsof -tiTCP:8766 -sTCP:LISTEN >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! /usr/bin/command -v python3 >/dev/null 2>&1; then
+if ! command -v python3 >/dev/null 2>&1; then
   show_dialog "Python 3が見つかりません。Nova Audio Helperを起動できません。"
   exit 1
 fi
