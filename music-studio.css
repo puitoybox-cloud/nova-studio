@@ -184,7 +184,7 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
   .music-midi-editor-page .music-part-workflow[open]{position:fixed;z-index:78;inset:12px;max-height:calc(100dvh - 24px);overflow:auto;background:#0b151f}
 }
 
-.music-cleanup-popover{position:fixed;z-index:80;right:12px;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 140px);padding:12px;overflow-y:auto;overscroll-behavior:contain}
+.music-cleanup-popover{position:fixed;z-index:80;top:max(76px,env(safe-area-inset-top));right:12px;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 140px);padding:12px;overflow-y:auto;overscroll-behavior:contain}
 .music-cleanup-panel-close{position:sticky;z-index:2;top:0;display:block;min-height:30px;margin:0 0 6px auto;padding:4px 8px}
 @media(max-width:900px){.music-cleanup-popover{right:8px;bottom:8px;left:8px;width:auto;max-height:calc(100vh - 88px)}}
 
