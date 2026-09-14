@@ -53,6 +53,17 @@ async function verify(browser,viewport){
   assert.ok(bounds.y>=0);
   assert.ok(bounds.x+bounds.width<=viewport.width+1);
   assert.ok(bounds.y+bounds.height<=viewport.height+1);
+  const paintState=await popover.evaluate(node=>{
+    const rect=node.getBoundingClientRect(),x=Math.round(rect.left+rect.width/2),y=Math.round(rect.top+Math.min(rect.height/2,80));
+    const hit=document.elementFromPoint(x,y);
+    const ancestors=[];
+    for(let current=node.parentElement;current;current=current.parentElement){
+      const style=getComputedStyle(current);
+      ancestors.push({tag:current.tagName,className:current.className,overflowX:style.overflowX,overflowY:style.overflowY,contain:style.contain,transform:style.transform,filter:style.filter,backdropFilter:style.backdropFilter});
+    }
+    return{hitInside:Boolean(hit&&(hit===node||node.contains(hit))),hitTag:hit?.tagName||null,hitClass:hit?.className||'',ancestors};
+  });
+  assert.equal(paintState.hitInside,true,JSON.stringify(paintState));
   assert.equal(await popover.locator('#generatedCleanupQuantize').isVisible(),true);
   assert.equal(await popover.getByText('同じ位置・音程の重複Noteを除く',{exact:false}).isVisible(),true);
   assert.equal(await popover.getByText('同じ音程の短い重なりを整える',{exact:false}).isVisible(),true);
