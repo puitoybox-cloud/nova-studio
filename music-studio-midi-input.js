@@ -3,6 +3,7 @@
   'use strict';
   const clamp=(value,min,max)=>Math.min(max,Math.max(min,Math.round(Number(value)||0)));
   const key=(channel,pitch)=>`${channel}:${pitch}`;
+  let nativeMessageHandler=null;
   function isSupported(navigatorLike=root.navigator){return typeof navigatorLike?.requestMIDIAccess==='function'}
   function supportInfo(navigatorLike=root.navigator){
     const webMidi=isSupported(navigatorLike),userAgent=String(navigatorLike?.userAgent||''),vendor=String(navigatorLike?.vendor||''),safariToken=/Safari/i.test(userAgent),otherBrowser=/(?:Chrome|Chromium|CriOS|Edg|EdgiOS|OPR|FxiOS)/i.test(userAgent),safariLike=!webMidi&&/Apple Computer/i.test(vendor)&&safariToken&&!otherBrowser;
@@ -21,5 +22,24 @@
     return api
   }
   async function requestAccess(navigatorLike=root.navigator){if(!isSupported(navigatorLike))return{supported:false,access:null,inputs:[]};const access=await navigatorLike.requestMIDIAccess({sysex:false}),inputs=[...(access.inputs?.values?.()||[])];return{supported:true,access,inputs}}
-  root.MusicStudioMidiInput={isSupported,supportInfo,createMessageGate,createRecorder,requestAccess};
+  function normalizeNativeMessage(payload){
+    const data=Array.from(payload?.data||[]).slice(0,3).map(Number),timeStamp=Number(payload?.timeStamp??payload?.timestamp);
+    if(data.length!==3||data.some((value,index)=>!Number.isInteger(value)||value<0||value>(index===0?255:127)))return null;
+    const command=data[0]&0xf0;
+    if(command!==0x80&&command!==0x90)return null;
+    return{data,timeStamp:Number.isFinite(timeStamp)?timeStamp:(root.performance?.now?.()??Date.now()),source:'native-core-midi'}
+  }
+  function setNativeMessageHandler(handler){nativeMessageHandler=typeof handler==='function'?handler:null;return nativeMessageHandler!==null}
+  function receiveNativeMessage(payload){
+    const message=normalizeNativeMessage(payload);
+    if(!message)return{accepted:false,reason:'invalid-message'};
+    if(!nativeMessageHandler)return{accepted:false,reason:'no-handler'};
+    nativeMessageHandler(message);
+    return{accepted:true,message}
+  }
+  function nativeBridgeInfo(rootLike=root){
+    const bridge=rootLike?.NovaMusicNativeMidi;
+    return{available:bridge?.isAvailable===true,platform:String(bridge?.platform||''),version:String(bridge?.version||'')}
+  }
+  root.MusicStudioMidiInput={isSupported,supportInfo,createMessageGate,createRecorder,requestAccess,normalizeNativeMessage,setNativeMessageHandler,receiveNativeMessage,nativeBridgeInfo};
 })(typeof window!=='undefined'?window:globalThis);
