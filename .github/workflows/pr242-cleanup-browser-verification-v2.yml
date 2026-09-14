@@ -1,0 +1,37 @@
+name: PR242 cleanup popover browser verification v2
+
+on:
+  push:
+    branches:
+      - temporary/pr242-cleanup-popover-browser-verification-v2
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start exact-head preview server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pr242-preview.log 2>&1 &
+          echo $! > /tmp/pr242-preview.pid
+      - name: Verify 1440 / 820 / 390 and Console
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:8765
+        run: node scripts/music-studio-generated-midi-cleanup-browser-smoke.js
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f /tmp/pr242-preview.pid ]; then
+            kill "$(cat /tmp/pr242-preview.pid)" 2>/dev/null || true
+          fi
