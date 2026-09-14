@@ -5,6 +5,7 @@ on:
     branches:
       - agent/music-studio-core-midi-wrapper-foundation
       - agent/music-studio-native-app-shell
+      - agent/music-studio-native-app-target-foundation
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
@@ -25,3 +26,7 @@ jobs:
       - name: Test native wrapper package
         working-directory: tools/music-native-wrapper
         run: swift test
+
+      - name: Build native app target
+        working-directory: tools/music-native-wrapper
+        run: swift build --product MusicStudioNativeApp
