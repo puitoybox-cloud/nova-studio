@@ -1,0 +1,26 @@
+name: Music Native Wrapper Swift
+
+on:
+  push:
+    branches:
+      - agent/music-studio-core-midi-wrapper-foundation
+    paths:
+      - 'tools/music-native-wrapper/**'
+      - '.github/workflows/music-native-wrapper-swift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swift-test:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Test native wrapper package
+        working-directory: tools/music-native-wrapper
+        run: swift test
