@@ -14,6 +14,13 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.websiteDataStore = .default()
         webConfiguration.defaultWebpagePreferences.allowsContentJavaScript = true
+        webConfiguration.userContentController.addUserScript(
+            WKUserScript(
+                source: MusicStudioWebMidiBridge.nativeWebMidiShimSource,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+        )
         self.webView = WKWebView(frame: .zero, configuration: webConfiguration)
 
         super.init()
