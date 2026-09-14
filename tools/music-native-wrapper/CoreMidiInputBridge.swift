@@ -4,10 +4,10 @@ import Foundation
 /// Receives MIDI 1.0 channel voice messages from Core MIDI and forwards only
 /// Note On / Note Off events to the web bridge.
 ///
-/// This class deliberately keeps the native surface narrow. Music Studio owns
-/// recording, timing, duplicate suppression, Track-ID routing and persistence.
+/// Music Studio remains responsible for recording timing, duplicate suppression,
+/// Track-ID routing, undo/redo and project persistence.
 final class CoreMidiInputBridge {
-    typealias MessageHandler = (_ bytes: [UInt8], _ hostTimestamp: UInt64) -> Void
+    typealias MessageHandler = (_ bytes: [UInt8]) -> Void
 
     private var client = MIDIClientRef()
     private var inputPort = MIDIPortRef()
@@ -46,8 +46,7 @@ final class CoreMidiInputBridge {
         for index in 0..<sourceCount {
             let source = MIDIGetSource(index)
             guard source != 0 else { continue }
-            let connectStatus = MIDIPortConnectSource(inputPort, source, nil)
-            if connectStatus == noErr {
+            if MIDIPortConnectSource(inputPort, source, nil) == noErr {
                 connectedSources.append(source)
             }
         }
@@ -70,17 +69,17 @@ final class CoreMidiInputBridge {
     }
 
     private func receive(_ eventList: UnsafePointer<MIDIEventList>) {
-        var packet = UnsafePointer<MIDIEventPacket>(&eventList.pointee.packet)
-
-        for packetIndex in 0..<Int(eventList.pointee.numPackets) {
-            let timestamp = packet.pointee.timeStamp
-            for word in packet.words() {
-                if let bytes = Self.noteBytes(fromMIDI1UMP: word) {
-                    onMessage(bytes, timestamp)
+        withUnsafePointer(to: eventList.pointee.packet) { firstPacket in
+            var packet = firstPacket
+            for packetIndex in 0..<Int(eventList.pointee.numPackets) {
+                for word in packet.words() {
+                    if let bytes = Self.noteBytes(fromMIDI1UMP: word) {
+                        onMessage(bytes)
+                    }
                 }
-            }
-            if packetIndex + 1 < Int(eventList.pointee.numPackets) {
-                packet = UnsafePointer(MIDIEventPacketNext(packet))
+                if packetIndex + 1 < Int(eventList.pointee.numPackets) {
+                    packet = UnsafePointer(MIDIEventPacketNext(packet))
+                }
             }
         }
     }
