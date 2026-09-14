@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import NovaMusicNativeWrapper
 
 struct MusicStudioRootView: View {
     var body: some View {
