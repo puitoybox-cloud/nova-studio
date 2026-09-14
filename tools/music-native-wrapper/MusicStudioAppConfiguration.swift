@@ -4,6 +4,10 @@ struct MusicStudioAppConfiguration: Equatable {
     let startURL: URL
     let allowedHosts: Set<String>
 
+    static let production = MusicStudioAppConfiguration(
+        startURL: URL(string: "https://puitoybox-cloud.github.io/nova-studio/music-studio.html")!
+    )
+
     init(startURL: URL, allowedHosts: Set<String>? = nil) {
         self.startURL = startURL
         if let allowedHosts {
