@@ -54,8 +54,8 @@ async function verify(browser,viewport){
   assert.ok(bounds.x+bounds.width<=viewport.width+1);
   assert.ok(bounds.y+bounds.height<=viewport.height+1);
   assert.equal(await popover.locator('#generatedCleanupQuantize').isVisible(),true);
-  assert.equal(await popover.getByText('重複Note除去',{exact:false}).isVisible(),true);
-  assert.equal(await popover.getByText('短い同音程重なり整理',{exact:false}).isVisible(),true);
+  assert.equal(await popover.getByText('同じ位置・音程の重複Noteを除く',{exact:false}).isVisible(),true);
+  assert.equal(await popover.getByText('同じ音程の短い重なりを整える',{exact:false}).isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorApplyGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorCancelGeneratedMidiCleanup()"]') .isVisible(),true);
