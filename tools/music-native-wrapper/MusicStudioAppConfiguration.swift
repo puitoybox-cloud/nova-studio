@@ -1,14 +1,14 @@
 import Foundation
 
-struct MusicStudioAppConfiguration: Equatable {
-    let startURL: URL
-    let allowedHosts: Set<String>
+public struct MusicStudioAppConfiguration: Equatable {
+    public let startURL: URL
+    public let allowedHosts: Set<String>
 
-    static let production = MusicStudioAppConfiguration(
+    public static let production = MusicStudioAppConfiguration(
         startURL: URL(string: "https://puitoybox-cloud.github.io/nova-studio/music-studio.html")!
     )
 
-    init(startURL: URL, allowedHosts: Set<String>? = nil) {
+    public init(startURL: URL, allowedHosts: Set<String>? = nil) {
         self.startURL = startURL
         if let allowedHosts {
             self.allowedHosts = Set(allowedHosts.map { $0.lowercased() })
@@ -19,7 +19,7 @@ struct MusicStudioAppConfiguration: Equatable {
         }
     }
 
-    func allows(_ url: URL) -> Bool {
+    public func allows(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "file" else {
             return false
         }
