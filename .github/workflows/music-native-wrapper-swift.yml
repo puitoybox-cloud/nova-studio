@@ -42,3 +42,19 @@ jobs:
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
         run: xcodebuild -project MusicStudioNative.xcodeproj -target MusicStudioiPad -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package macOS app for real-device verification
+        working-directory: tools/music-native-wrapper
+        run: |
+          printf '%s\n' "${GITHUB_SHA}" > PR247_EXACT_HEAD.txt
+          ditto -c -k --sequesterRsrc --keepParent "build/Debug/Music Studio.app" "MusicStudioMac-PR247.zip"
+
+      - name: Upload macOS app verification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicStudioMac-PR247-${{ github.sha }}
+          path: |
+            tools/music-native-wrapper/MusicStudioMac-PR247.zip
+            tools/music-native-wrapper/PR247_EXACT_HEAD.txt
+          if-no-files-found: error
+          retention-days: 7
