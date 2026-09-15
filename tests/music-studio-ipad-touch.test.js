@@ -26,6 +26,14 @@ test('one-finger Piano Roll gesture routes vertical motion to pitch scroll and h
   assert.match(touch,/drag\.scroll\.scrollLeft=Math\.max\(0,drag\.startLeft-dx\)/);
 });
 
+test('empty-roll touch scrolling suppresses the legacy coarse-pointer playhead path',()=>{
+  assert.match(touch,/suppressPointerUntil/);
+  assert.match(touch,/event\.pointerType!==['"]touch['"]/);
+  assert.match(touch,/rollFor\(event\.target\).*music-midi-note,.music-note-resize/s);
+  assert.match(touch,/stopImmediatePropagation/);
+  assert.match(touch,/markTouchGesture\(\)/);
+});
+
 test('two-finger Piano Roll gesture converts pinch distance to existing editor zoom',()=>{
   assert.match(touch,/event\.touches\?\.length>=2/);
   assert.match(touch,/ratio=current\/pinch\.startDistance/);
@@ -33,6 +41,6 @@ test('two-finger Piano Roll gesture converts pinch distance to existing editor z
 });
 
 test('touch bridge preserves note and control gestures during one-finger scrolling',()=>{
-  assert.match(touch,/const INTERACTIVE=.*\.music-midi-note.*\.music-note-resize.*\.music-pitch-hit/);
-  assert.match(touch,/event\.target\?\.closest\?\.\(INTERACTIVE\)/);
+  assert.match(touch,/const EDIT_INTERACTIVE=.*\.music-midi-note.*\.music-note-resize.*\.music-pitch-hit/);
+  assert.match(touch,/event\.target\?\.closest\?\.\(EDIT_INTERACTIVE\)/);
 });
