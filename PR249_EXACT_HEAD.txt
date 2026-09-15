@@ -1,0 +1,9 @@
+PR #249 exact-head iPad Preview
+Product HEAD: f9db6218b78ada74fc817c67e4279a34514f66d0
+Product branch: agent/music-studio-ipad-full-width
+Preview-only helper files:
+- START_PR249_IPAD_PREVIEW.command
+- STOP_PR249_IPAD_PREVIEW.command
+- PR249_EXACT_HEAD.txt
+The temporary verification workflow is excluded from the packaged Preview.
+Product files in the Preview are the exact product HEAD above.
