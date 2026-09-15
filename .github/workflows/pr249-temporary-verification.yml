@@ -45,6 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          chmod +x START_PR249_IPAD_PREVIEW.command STOP_PR249_IPAD_PREVIEW.command
           rm -rf .git .github
           zip -qr "$RUNNER_TEMP/PR249-iPad-exact-head-724225d.zip" .
 
