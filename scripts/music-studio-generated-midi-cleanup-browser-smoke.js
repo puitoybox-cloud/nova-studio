@@ -40,9 +40,9 @@ async function verify(browser,viewport){
   await page.waitForSelector('.music-midi-editor-page');
   assert.equal(await page.evaluate(()=>MusicStudio.editorSelectTrack('external-melody')),true);
   await page.waitForFunction(()=>MusicStudio.resolveCurrentTrackSelection()?.id==='external-melody');
-  const menu=page.locator('.music-cleanup-menu');
+  let menu=page.locator('.music-cleanup-menu');
   const summary=menu.locator('summary');
-  const popover=menu.locator('.music-cleanup-popover');
+  let popover=menu.locator('.music-cleanup-popover');
   assert.equal(await summary.isVisible(),true);
   await summary.click();
   assert.equal(await menu.getAttribute('open'),'');
@@ -59,6 +59,10 @@ async function verify(browser,viewport){
   assert.equal(await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorApplyGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorCancelGeneratedMidiCleanup()"]') .isVisible(),true);
+  await page.evaluate(()=>MusicStudio.editorSetTrackSolo(MusicStudio.resolveCurrentTrackSelection().id,true));
+  menu=page.locator('.music-cleanup-menu');popover=menu.locator('.music-cleanup-popover');
+  assert.equal(await menu.getAttribute('open'),'');
+  assert.equal(await popover.isVisible(),true);
   const unexpected=messages.filter(message=>message.type==='error'||message.type==='warning');
   assert.deepEqual(unexpected,[]);
   await page.close();

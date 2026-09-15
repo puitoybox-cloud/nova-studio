@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.104';
+  const ASSET_VERSION='1.4.105';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -355,6 +355,11 @@
       menu.ontoggle=()=>{view.correctionMenuOpen=menu.open;if(menu.open)root.requestAnimationFrame?.(fitCorrectionPopover)};
       if(menu.open){fitCorrectionPopover();const popover=menu.querySelector?.('.music-correction-popover');if(popover)popover.scrollTop=Number(view.correctionPopoverScrollTop)||0}
     }
+    const cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu');
+    if(cleanupMenu&&view){
+      if(view.generatedCleanupMenuOpen)cleanupMenu.open=true;
+      cleanupMenu.ontoggle=()=>{view.generatedCleanupMenuOpen=cleanupMenu.open};
+    }
     updateNoteLabelLayout();
   }
   function syncEditorPianoPosition(pianoScroll=root.document?.querySelector?.('.music-piano-scroll')){
@@ -437,7 +442,7 @@
     const preview=session.generatedCleanupPreview,summary=preview?.summary,tracks=root.MusicStudioEditor.generatedMidiTracks(session);
     if(!tracks.length)return'';
     const selected=value=>(preview?.options?.quantize||'OFF')===value?'selected':'',result=summary?`<p role="status"><b>${summary.tracks} Tracks</b> / 重複 ${summary.duplicatesRemoved} / 重なり ${summary.overlapsTrimmed} / Quantize ${summary.quantized}</p>`:'<p role="status">ApplyまではProjectを変更しません。</p>';
-    return`<details class="music-editor-menu music-cleanup-menu" ${preview?'open':''}><summary>Generated MIDI Cleanup（一括整理）</summary><div class="music-editor-popover music-cleanup-popover" aria-label="Generated MIDI Cleanup（一括整理）"><div class="music-correction-sticky-header"><button type="button" class="music-secondary music-cleanup-panel-close" onclick="MusicStudio.editorClosePopup(this)">× 閉じる</button></div><h3>External MIDI ${tracks.length} Trackをまとめて整理</h3><label>Quantize（タイミング）<select id="generatedCleanupQuantize"><option value="OFF" ${selected('OFF')}>OFF（変更しない）</option><option value="1/8" ${selected('1/8')}>1/8</option><option value="1/16" ${selected('1/16')}>1/16</option><option value="1/32" ${selected('1/32')}>1/32</option></select></label><label><input id="generatedCleanupDuplicates" type="checkbox" ${preview?.options?.removeDuplicates===false?'':'checked'}> 同じ位置・音程の重複Noteを除く</label><label><input id="generatedCleanupOverlaps" type="checkbox" ${preview?.options?.cleanShortOverlaps===false?'':'checked'}> 同じ音程の短い重なりを整える</label>${result}<div class="music-correction-actions"><button class="music-secondary" onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()">Preview（確認）</button><button class="music-primary" onclick="MusicStudio.editorApplyGeneratedMidiCleanup()" ${preview?'':'disabled'}>Apply（適用）</button><button class="music-secondary" onclick="MusicStudio.editorCancelGeneratedMidiCleanup()" ${preview?'':'disabled'}>Cancel</button></div><p class="music-assist-description">Core Melody / Drums / Bass、Locked Note、Track ID・役割・音色・順番・metadataは変更しません。</p></div></details>`
+    return`<details class="music-editor-menu music-cleanup-menu" ${preview||session.view?.generatedCleanupMenuOpen?'open':''}><summary>Generated MIDI Cleanup（一括整理）</summary><div class="music-editor-popover music-cleanup-popover" aria-label="Generated MIDI Cleanup（一括整理）"><div class="music-correction-sticky-header"><button type="button" class="music-secondary music-cleanup-panel-close" onclick="MusicStudio.editorClosePopup(this)">× 閉じる</button></div><h3>External MIDI ${tracks.length} Trackをまとめて整理</h3><label>Quantize（タイミング）<select id="generatedCleanupQuantize"><option value="OFF" ${selected('OFF')}>OFF（変更しない）</option><option value="1/8" ${selected('1/8')}>1/8</option><option value="1/16" ${selected('1/16')}>1/16</option><option value="1/32" ${selected('1/32')}>1/32</option></select></label><label><input id="generatedCleanupDuplicates" type="checkbox" ${preview?.options?.removeDuplicates===false?'':'checked'}> 同じ位置・音程の重複Noteを除く</label><label><input id="generatedCleanupOverlaps" type="checkbox" ${preview?.options?.cleanShortOverlaps===false?'':'checked'}> 同じ音程の短い重なりを整える</label>${result}<div class="music-correction-actions"><button class="music-secondary" onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()">Preview（確認）</button><button class="music-primary" onclick="MusicStudio.editorApplyGeneratedMidiCleanup()" ${preview?'':'disabled'}>Apply（適用）</button><button class="music-secondary" onclick="MusicStudio.editorCancelGeneratedMidiCleanup()" ${preview?'':'disabled'}>Cancel</button></div><p class="music-assist-description">Core Melody / Drums / Bass、Locked Note、Track ID・役割・音色・順番・metadataは変更しません。</p></div></details>`
   }
   function editorTopBar(project,session){
     const current=midiExportSummary(project,session.part),all=midiExportSummary(project,'all'),melody=session.part==='melody',selectedTrack=root.MusicStudioEditor.currentTrack(session),externalMidi=!root.MusicStudioEditor.resolveCoreTrackRole(selectedTrack)&&['midi-melodic','midi-drums'].includes(root.MusicStudioEditor.resolveTrackType(selectedTrack)),correction=melody||externalMidi?melodyCorrectionPopover(session):'',externalCount=root.MusicStudioEditor.externalReviewTracks(session.midiData).length,externalReview=externalCount?`<button type="button" class="music-secondary music-external-track-review-entry" aria-haspopup="dialog" onclick="MusicStudio.openHelp('externalTrackReviewDialog')">External Tracks ${externalCount} / Review</button>`:'',shortcuts=`<div class="music-editor-popover music-shortcuts-popover" aria-label="Shortcuts（ショートカット／操作ガイド）"><header><b>？ Shortcuts</b><span>ショートカット／操作ガイド</span></header><section><h3>基本操作</h3><dl><div><dt>Space</dt><dd>再生／停止</dd></div><div><dt>Enter／Return</dt><dd>Go to Start（先頭へ戻る）</dd></div><div><dt>⌘Z</dt><dd>Undo（元に戻す）</dd></div><div><dt>⇧⌘Z</dt><dd>Redo（やり直す）</dd></div></dl></section><section><h3>編集</h3><dl><div><dt>⌘C</dt><dd>Copy（コピー）</dd></div><div><dt>⌘V</dt><dd>Paste（貼り付け）</dd></div><div><dt>⌘A</dt><dd>Select All（全選択）</dd></div><div><dt>N</dt><dd>Add Note（ノート追加）</dd></div></dl></section><section><h3>ノート操作</h3><dl><div><dt>ドラッグ</dt><dd>移動／右端で長さ変更</dd></div><div><dt>空白ドラッグ</dt><dd>範囲選択</dd></div><div><dt>Shift＋クリック</dt><dd>選択追加</dd></div><div><dt>Command＋クリック</dt><dd>選択切替</dd></div><div><dt>音名をタップ</dt><dd>その音を試聴</dd></div><div><dt>赤い再生ライン</dt><dd>再生・ノート追加位置</dd></div></dl><p>赤い再生ライン：再生・ノート追加位置。ルーラーや空き位置で移動。</p></section><div class="music-shortcuts-devices"><section><h3>Mac</h3><p>上記のキーボード操作を使用できます。入力欄では動作しません。</p></section><section><h3>iPad</h3><p>キーボード操作は使わず、画面ボタンだけでもすべて操作できます。</p></section></div></div>`;
@@ -496,17 +501,18 @@
   }
   function signatureLabel(signature){return`${signature.numerator}/${signature.denominator}`}
   function repaintEditor(){
-    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover');
+    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover'),cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu');
     const pageX=Number(root.scrollX??root.pageXOffset)||0,pageY=Number(root.scrollY??root.pageYOffset)||0;
     if(view){
       if(viewport)view.pitchScrollTop=viewport.scrollTop;if(pianoScroll)view.pitchScrollLeft=pianoScroll.scrollLeft;
       if(menu)view.correctionMenuOpen=menu.open;
+      if(cleanupMenu)view.generatedCleanupMenuOpen=cleanupMenu.open;
       if(popover)view.correctionPopoverScrollTop=popover.scrollTop;
     }
     requestPaint();
     if(typeof root.scrollTo==='function'){try{root.scrollTo({left:pageX,top:pageY,behavior:'instant'})}catch(_){root.scrollTo(pageX,pageY)}}
     restoreEditorPitchScroll();
-    if(viewport||menu)root.requestAnimationFrame?.(()=>{if(typeof root.scrollTo==='function'){try{root.scrollTo({left:pageX,top:pageY,behavior:'instant'})}catch(_){root.scrollTo(pageX,pageY)}}fitCorrectionPopover()});
+    if(viewport||menu||cleanupMenu)root.requestAnimationFrame?.(()=>{if(typeof root.scrollTo==='function'){try{root.scrollTo({left:pageX,top:pageY,behavior:'instant'})}catch(_){root.scrollTo(pageX,pageY)}}fitCorrectionPopover()});
   }
   function editorCloseCorrectionPanel(){
     const menu=root.document?.querySelector?.('.music-correction-menu'),view=state.midiEditor?.view;
