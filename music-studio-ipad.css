@@ -73,6 +73,20 @@
     padding:0 48px;
   }
 
+  /* Keep the hamburger inside the same compact header band as Melody制作. */
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{
+    top:max(0px,env(safe-area-inset-top));
+    left:max(4px,env(safe-area-inset-left));
+    width:32px;
+    height:32px;
+    min-height:32px;
+    padding:0!important;
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph{
+    font-size:20px;
+  }
+
   .music-midi-editor-page .music-editor-chrome .music-editor-heading{
     min-height:32px;
     gap:4px;
