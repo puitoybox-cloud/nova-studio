@@ -1,0 +1,12 @@
+Project NOVA / Music Studio — PR #249 Exact-head iPad Preview
+
+Product source commit:
+d7185bed0a811f79e7ea72e5a5634f42d6759d84
+
+The temporary Preview branch differs from that product source only by these files:
+- START_PR249_IPAD_PREVIEW.command
+- STOP_PR249_IPAD_PREVIEW.command
+- PR249_EXACT_HEAD.txt
+
+The Preview server binds to the Mac's local network so an M1 iPad on the same Wi-Fi can open the exact product HEAD.
+No product code, product asset, schema, IndexedDB version, provider setting, or deployment setting is changed.
