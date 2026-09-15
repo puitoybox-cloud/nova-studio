@@ -1,0 +1,35 @@
+/* iPad editor width parity: keep the Mac editor layout while removing only outer iPad whitespace. */
+@media (min-width:601px) and (max-width:1366px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+  body.music-studio-page:has(.music-midi-editor-page) #music-studio-app{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .music-studio-shell,
+  body.is-music-studio-route:has(.music-midi-editor-page) .music-studio-shell{
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+    padding-inline:max(4px,env(safe-area-inset-left)) max(4px,env(safe-area-inset-right));
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .management-layout,
+  body.music-studio-page:has(.music-midi-editor-page) .management-main,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-main{
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+  }
+
+  .music-midi-editor-page,
+  body.is-management-route .management-main>.music-midi-editor-page{
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+    padding-right:max(4px,env(safe-area-inset-right));
+    padding-left:max(4px,env(safe-area-inset-left));
+  }
+}
