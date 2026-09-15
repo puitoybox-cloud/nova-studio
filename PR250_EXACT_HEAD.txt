@@ -1,0 +1,3 @@
+PR #250 iPad Piano Roll pointer fix exact-head Preview
+Product HEAD: b8b6f9226c1b39172b2e7f040ed228fae7fe01c3
+Verification branch adds Preview-only helper files. Product code must match the product HEAD above.
