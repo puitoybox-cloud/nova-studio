@@ -1,0 +1,53 @@
+name: PR249 Temporary Verification
+
+on:
+  push:
+    branches:
+      - temporary/pr249-724225d-exact-head-preview
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify exact product ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          PRODUCT_HEAD="724225d21b676a77663bab52ce488f66fc404274"
+          git merge-base --is-ancestor "$PRODUCT_HEAD" HEAD
+          test "$(git diff --name-only "$PRODUCT_HEAD"...HEAD | grep -Ev '^(START_PR249_IPAD_PREVIEW\.command|STOP_PR249_IPAD_PREVIEW\.command|PR249_EXACT_HEAD\.txt|\.github/workflows/pr249-temporary-verification\.yml)$' | wc -l | tr -d ' ')" = "0"
+
+      - name: Run node tests
+        run: node --test
+
+      - name: Check all repository JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+
+      - name: Check whitespace
+        run: git diff --check 724225d21b676a77663bab52ce488f66fc404274^..724225d21b676a77663bab52ce488f66fc404274
+
+      - name: Package exact-head Preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .git .github
+          zip -qr "$RUNNER_TEMP/PR249-iPad-exact-head-724225d.zip" .
+
+      - name: Upload exact-head Preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PR249-iPad-exact-head-724225d
+          path: ${{ runner.temp }}/PR249-iPad-exact-head-724225d.zip
+          if-no-files-found: error
+          retention-days: 14
