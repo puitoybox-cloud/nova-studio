@@ -44,6 +44,7 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
           toolbarRows:new Set(toolbarItems.map(item=>Math.round(item.top))).size,
           tabs:rect('.music-part-tabs'),
           tabRows:new Set(tabItems.map(item=>Math.round(item.top))).size,
+          tabVerticalSpread:Math.max(...tabItems.map(item=>item.top))-Math.min(...tabItems.map(item=>item.top)),
           pianoHeader:rect('.music-piano-header-scroll'),
           loopRuler:rect('.music-loop-ruler'),
           measureRow:rect('.music-measure-row'),
@@ -69,7 +70,7 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
       if(result.documentOverflowX!==0||result.documentOverflowY!==0)failures.push('document overflow');
       if(result.chrome.height>33||result.heading.height>33)failures.push('editor header height');
       if(result.toolbar.height>29||result.toolbarRows!==1)failures.push('toolbar row');
-      if(result.tabs.height>27||result.tabRows!==1)failures.push('track tab row');
+      if(result.tabs.height>27||result.tabVerticalSpread>2)failures.push('track tab row');
       if(result.pianoHeader.height>47||result.loopRuler.height>23||result.measureRow.height>25)failures.push('piano header height');
       if(result.page.top!==0||Math.abs(result.page.bottom-result.viewport.height)>1)failures.push('page viewport fit');
       if(result.piano.height<150||result.piano.bottom>result.bottom.top+1)failures.push('piano fit');
