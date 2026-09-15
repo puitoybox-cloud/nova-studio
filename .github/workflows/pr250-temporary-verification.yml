@@ -1,0 +1,23 @@
+name: PR250 Temporary Verification
+on:
+  push:
+    branches:
+      - temporary/pr250-touch-verification
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify exact product ancestry
+        run: |
+          test "$(git rev-parse HEAD^)" = "2d7d62035fe74e6bf1fe652a552b56a6c80a48a8"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/pr250-temporary-verification.yml"
+      - name: Run node tests
+        run: node --test
+      - name: Check all repository JavaScript
+        run: |
+          find . -type f -name '*.js' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do node --check "$file"; done
+      - name: Check product whitespace
+        run: git diff --check ec59f2176803b37b1ae934828cfc46e656e699e2..2d7d62035fe74e6bf1fe652a552b56a6c80a48a8
