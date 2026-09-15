@@ -1,0 +1,23 @@
+name: PR250 preview package
+on:
+  push:
+    branches: [temporary/pr250-scroll-fix-verification]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact product marker
+        run: grep -F '8098b5e2cf1f2c65d6c6dec6f1298fd21d83804f' PR250_EXACT_HEAD.txt
+      - name: Make launchers executable
+        run: chmod +x START_PR250_PREVIEW.command STOP_PR250_PREVIEW.command
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PR250-iPad-scroll-fix-exact-head-8098b5e
+          path: |
+            .
+            !.git
+            !.github/workflows/pr250-preview-package.yml
+          include-hidden-files: true
