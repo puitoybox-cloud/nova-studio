@@ -46,10 +46,10 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
             pianoHeight:getComputedStyle(document.querySelector('.music-piano-viewport')).height,
             bottomHeight:getComputedStyle(document.querySelector('.music-editor-bottom')).height,
             bottomColumns:getComputedStyle(document.querySelector('.music-editor-bottom')).gridTemplateColumns
-          },
-          console:messages.filter(m=>m.type==='error'||m.type==='warning')
+          }
         };
       });
+      result.console=messages.filter(m=>m.type==='error'||m.type==='warning');
       console.log(JSON.stringify(result));
       await context.close();
     }
