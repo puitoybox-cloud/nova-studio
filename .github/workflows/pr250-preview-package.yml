@@ -1,0 +1,23 @@
+name: PR250 pointer fix preview package
+on:
+  push:
+    branches: [temporary/pr250-pointer-fix-verification]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact product marker
+        run: grep -F 'b8b6f9226c1b39172b2e7f040ed228fae7fe01c3' PR250_EXACT_HEAD.txt
+      - name: Make launchers executable
+        run: chmod +x START_PR250_PREVIEW.command STOP_PR250_PREVIEW.command
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PR250-iPad-pointer-fix-exact-head-b8b6f92
+          path: |
+            .
+            !.git
+            !.github/workflows/pr250-preview-package.yml
+          include-hidden-files: true
