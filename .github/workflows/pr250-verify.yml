@@ -1,0 +1,30 @@
+name: PR250 temporary verification
+
+on:
+  push:
+    branches:
+      - agent/music-studio-ipad-piano-touch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: node --test
+        run: node --test
+      - name: node --check all repository JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+      - name: git diff --check
+        run: git diff --check "${{ github.event.before }}" "${{ github.sha }}"
