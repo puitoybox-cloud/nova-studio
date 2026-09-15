@@ -19,7 +19,9 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
         const project=app.makeProject({projectId:'pr249-layout',projectName:'PR249 Layout',midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4},tracks:[
           {id:'core-melody',part:'melody',name:'Melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:90}]},
           {id:'core-drums',part:'drums',name:'Drums',notes:[]},
-          {id:'core-bass',part:'bass',name:'Bass',notes:[]}
+          {id:'core-bass',part:'bass',name:'Bass',notes:[]},
+          {id:'external-piano',name:'External Piano',trackType:'midi-melodic',notes:[]},
+          {id:'external-drums',name:'External Drums',trackType:'midi-drums',notes:[]}
         ]}});
         const repo=app.memoryRepository();app.setRepository(repo);await repo.put(project);app.state.projects=[project];
         location.hash='music-studio/midi-editor/pr249-layout';
@@ -29,11 +31,22 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
         const rect=s=>document.querySelector(s)?.getBoundingClientRect().toJSON();
         const sections=[...document.querySelectorAll('.music-editor-bottom>section')].map(section=>({title:section.querySelector('h2')?.textContent.trim(),...section.getBoundingClientRect().toJSON()}));
         const rows=[...new Set(sections.map(s=>Math.round(s.top)))];
+        const toolbarItems=[...document.querySelector('.music-editor-topbar').children].filter(item=>getComputedStyle(item).display!=='none').map(item=>item.getBoundingClientRect().toJSON());
+        const tabItems=[...document.querySelectorAll('.music-part-tab-group,.music-history-controls')].map(item=>item.getBoundingClientRect().toJSON());
         return{
           viewport:{width:innerWidth,height:innerHeight},
           coarse:matchMedia('(pointer:coarse)').matches,
           landscape:matchMedia('(orientation:landscape)').matches,
           page:rect('.music-midi-editor-page'),
+          chrome:rect('.music-editor-chrome'),
+          heading:rect('.music-editor-heading'),
+          toolbar:rect('.music-editor-topbar'),
+          toolbarRows:new Set(toolbarItems.map(item=>Math.round(item.top))).size,
+          tabs:rect('.music-part-tabs'),
+          tabRows:new Set(tabItems.map(item=>Math.round(item.top))).size,
+          pianoHeader:rect('.music-piano-header-scroll'),
+          loopRuler:rect('.music-loop-ruler'),
+          measureRow:rect('.music-measure-row'),
           piano:rect('.music-editor-layout'),
           bottom:rect('.music-editor-bottom'),
           sections,
@@ -54,6 +67,10 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
       if(!result.coarse||!result.landscape)failures.push('iPad media conditions');
       if(result.rows!==1||result.sections.length!==5)failures.push('five-region row');
       if(result.documentOverflowX!==0||result.documentOverflowY!==0)failures.push('document overflow');
+      if(result.chrome.height>33||result.heading.height>33)failures.push('editor header height');
+      if(result.toolbar.height>29||result.toolbarRows!==1)failures.push('toolbar row');
+      if(result.tabs.height>27||result.tabRows!==1)failures.push('track tab row');
+      if(result.pianoHeader.height>47||result.loopRuler.height>23||result.measureRow.height>25)failures.push('piano header height');
       if(result.page.top!==0||Math.abs(result.page.bottom-result.viewport.height)>1)failures.push('page viewport fit');
       if(result.piano.height<150||result.piano.bottom>result.bottom.top+1)failures.push('piano fit');
       if(result.bottom.bottom>result.viewport.height+1||result.sections.some(section=>section.top<0||section.top>=result.viewport.height))failures.push('bottom region visibility');

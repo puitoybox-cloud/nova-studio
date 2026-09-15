@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 
 test('standalone Music Studio loads the iPad width override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.2');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.3');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
 });
@@ -58,4 +58,24 @@ test('iPad landscape bottom controls keep Mac order in one five-column row', () 
 test('iPad landscape controls remain compact but operable', () => {
   assert.match(css, /\.music-editor-bottom button\{[^}]*min-height:32px;/s);
   assert.match(css, /\.music-editor-bottom :is\(input,select,textarea\)\{[^}]*min-height:32px;[^}]*height:32px;/s);
+});
+
+test('iPad landscape upper editor chrome stays compact and toolbar stays on one row', () => {
+  assert.match(css, /\.music-editor-chrome\{[^}]*min-height:32px;[^}]*flex:0 0 32px;[^}]*padding:0 48px;/s);
+  assert.match(css, /\.music-editor-chrome \.music-editor-heading h1\{[^}]*font-size:\.88rem;[^}]*line-height:1;/s);
+  assert.match(css, /\.music-editor-topbar\{[^}]*min-height:28px;[^}]*max-height:28px;[^}]*flex:0 0 28px;[^}]*flex-wrap:nowrap;[^}]*overflow-x:hidden;/s);
+  assert.match(css, /\.music-editor-topbar \.music-editor-menu>summary,[^{]+\{[^}]*min-height:24px;[^}]*height:24px;[^}]*font-size:\.6rem;/s);
+});
+
+test('iPad landscape track tabs remain a compact single row', () => {
+  assert.match(css, /\.music-part-tabs\{[^}]*min-height:26px;[^}]*flex:0 0 26px;[^}]*flex-wrap:nowrap;[^}]*overflow-x:auto;[^}]*overflow-y:hidden;/s);
+  assert.match(css, /\.music-part-tab-list\{[^}]*min-width:max-content;[^}]*flex-wrap:nowrap;/s);
+  assert.match(css, /\.music-history-controls>button\{[^}]*height:22px;[^}]*min-height:22px;[^}]*max-height:22px;/s);
+});
+
+test('iPad landscape Piano Roll ruler keeps all information in a shorter header', () => {
+  assert.match(css, /\.music-piano-frame\{--music-piano-header-height:46px\}/);
+  assert.match(css, /\.music-loop-ruler\{height:22px\}/);
+  assert.match(css, /\.music-loop-ruler\+\.music-measure-row,[^{]+\{[^}]*height:24px!important;[^}]*min-height:24px!important;[^}]*max-height:24px!important;/s);
+  assert.match(css, /\.music-time-ruler,[^{]+\{height:10px\}/s);
 });

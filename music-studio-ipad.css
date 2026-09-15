@@ -65,6 +65,177 @@
     min-height:0;
   }
 
+  /* Keep the existing Mac chrome, but use its dense one-line rhythm on iPad landscape. */
+  .music-midi-editor-page .music-editor-chrome{
+    box-sizing:border-box;
+    min-height:32px;
+    flex:0 0 32px;
+    padding:0 48px;
+  }
+
+  .music-midi-editor-page .music-editor-chrome .music-editor-heading{
+    min-height:32px;
+    gap:4px;
+  }
+
+  .music-midi-editor-page .music-editor-chrome .music-editor-heading h1{
+    font-size:.88rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-editor-guide-button{
+    min-height:22px;
+    gap:3px;
+    padding:1px 5px;
+    font-size:.64rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-editor-guide-button>span:first-child{
+    width:16px;
+    height:16px;
+    flex-basis:16px;
+    font-size:.64rem;
+  }
+
+  .music-midi-editor-page .music-editor-topbar{
+    box-sizing:border-box;
+    width:100%;
+    min-height:28px;
+    max-height:28px;
+    flex:0 0 28px;
+    flex-wrap:nowrap;
+    gap:2px;
+    padding:1px 3px;
+    overflow-x:hidden;
+    overflow-y:visible;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
+  .music-midi-editor-page .music-editor-topbar>.music-external-track-review-entry,
+  .music-midi-editor-page .music-editor-topbar>.music-editor-save{
+    width:auto;
+    min-width:0;
+    flex:0 1 auto;
+  }
+
+  .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{
+    width:auto;
+    min-width:0;
+    flex:0 1 auto;
+    margin-right:0;
+    margin-left:auto;
+  }
+
+  .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary,
+  .music-midi-editor-page .music-editor-topbar>button{
+    box-sizing:border-box;
+    width:auto;
+    min-width:0;
+    min-height:24px;
+    height:24px;
+    padding:1px 4px;
+    overflow:hidden;
+    font-size:.6rem;
+    line-height:1;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary::before,
+  .music-midi-editor-page .music-editor-topbar .music-editor-save::before{
+    width:.9em;
+    margin-right:2px;
+    font-size:.9em;
+  }
+
+  .music-midi-editor-page .music-midi-input-menu>summary::after{margin-left:3px}
+  .music-midi-editor-page .music-saved-explain{display:none}
+
+  .music-midi-editor-page .music-part-tabs{
+    box-sizing:border-box;
+    width:100%;
+    min-height:26px;
+    flex:0 0 26px;
+    flex-wrap:nowrap;
+    gap:2px;
+    margin:1px 0 2px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-part-tab-list{
+    min-width:max-content;
+    flex:1 0 auto;
+    flex-wrap:nowrap;
+    gap:2px;
+  }
+
+  .music-midi-editor-page .music-part-tab-group{gap:1px}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{
+    width:72px;
+    min-width:72px;
+  }
+
+  .music-midi-editor-page .music-part-tabs button,
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab),
+  .music-midi-editor-page .music-history-controls>button{
+    box-sizing:border-box;
+    height:22px;
+    min-height:22px;
+    max-height:22px;
+    padding:0 4px;
+    font-size:.62rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){
+    width:22px;
+    min-width:22px;
+    max-width:22px;
+  }
+
+  .music-midi-editor-page .music-history-controls{gap:2px;margin-left:4px}
+  .music-midi-editor-page .music-history-controls>button{min-width:52px}
+  .music-midi-editor-page .music-history-icon{width:15px;height:15px}
+
+  .music-midi-editor-page .music-track-runtime-controls{
+    min-height:24px;
+    flex:0 0 24px;
+    gap:3px;
+    margin:0 0 2px;
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+
+  .music-midi-editor-page .music-track-runtime-control{gap:2px;padding:1px 3px}
+  .music-midi-editor-page .music-track-runtime-control span{min-width:38px;font-size:.62rem}
+  .music-midi-editor-page .music-track-runtime-control button{width:22px;min-height:20px;padding:0;font-size:.62rem}
+
+  .music-midi-editor-page .music-piano-frame{--music-piano-header-height:46px}
+  .music-midi-editor-page .music-loop-ruler{height:22px}
+  .music-midi-editor-page .music-loop-selection{top:2px;bottom:2px}
+  .music-midi-editor-page .music-loop-ruler+.music-measure-row,
+  .music-midi-editor-page .music-measure-row,
+  .music-midi-editor-page .music-measure{
+    height:24px!important;
+    min-height:24px!important;
+    max-height:24px!important;
+  }
+
+  .music-midi-editor-page .music-measure{
+    padding:0 3px;
+    font-size:.66rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-time-ruler,
+  .music-midi-editor-page .music-playhead-handle{height:10px}
+  .music-midi-editor-page .music-loop-length,
+  .music-midi-editor-page .music-loop-selection-label{font-size:.56rem;line-height:1}
+
   /* Match the Mac editor's five-region row within the shorter Safari viewport. */
   .music-midi-editor-page .music-editor-bottom{
     height:clamp(276px,36svh,330px);
