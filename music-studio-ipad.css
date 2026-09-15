@@ -9,6 +9,7 @@
 
   body.music-studio-page:has(.music-midi-editor-page) .music-studio-shell,
   body.is-music-studio-route:has(.music-midi-editor-page) .music-studio-shell{
+    box-sizing:border-box;
     width:100%;
     max-width:none;
     margin-inline:0;
@@ -26,10 +27,11 @@
 
   .music-midi-editor-page,
   body.is-management-route .management-main>.music-midi-editor-page{
+    box-sizing:border-box;
     width:100%;
     max-width:none;
     margin-inline:0;
-    padding-right:max(4px,env(safe-area-inset-right));
-    padding-left:max(4px,env(safe-area-inset-left));
+    padding-right:0;
+    padding-left:0;
   }
 }
