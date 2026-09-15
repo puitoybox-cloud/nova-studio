@@ -6,6 +6,17 @@ const{chromium}=require('playwright');
 const baseUrl=process.env.SMOKE_BASE_URL||'http://127.0.0.1:8765';
 const viewports=[{width:1440,height:900},{width:820,height:900},{width:390,height:844}];
 
+async function assertSingleVisiblePanel(page,menu,closeSelector){
+  assert.equal(await page.locator('.music-editor-topbar > .music-editor-menu[open]').count(),1);
+  const popover=menu.locator(':scope > .music-editor-popover');
+  assert.equal(await popover.isVisible(),true);
+  const close=popover.locator(`:scope > .music-correction-sticky-header > ${closeSelector}, :scope > ${closeSelector}`);
+  assert.equal(await close.count(),1);
+  assert.equal(await close.isVisible(),true);
+  assert.equal(await close.evaluate(button=>button.parentElement.parentElement===button.closest('.music-editor-popover')),true);
+  return popover.boundingBox();
+}
+
 async function verify(browser,viewport){
   const page=await browser.newPage({viewport});
   const messages=[];
@@ -38,20 +49,39 @@ async function verify(browser,viewport){
     location.hash='music-studio/midi-editor/cleanup-popover-smoke';
   });
   await page.waitForSelector('.music-midi-editor-page');
+  let correction=page.locator('.music-correction-menu');
+  const projectMenu=page.locator('.music-project-menu');
+  await projectMenu.locator('summary').click();
+  assert.equal(await projectMenu.getAttribute('open'),'');
+  await correction.locator('summary').click();
+  assert.equal(await projectMenu.getAttribute('open'),null);
+  const coreCorrectionBounds=await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close');
+  await page.evaluate(()=>MusicStudio.editorSetTrackSolo(MusicStudio.resolveCurrentTrackSelection().id,true));
+  correction=page.locator('.music-correction-menu');
+  assert.equal(await correction.getAttribute('open'),'');
+  assert.deepEqual(await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close'),coreCorrectionBounds);
+  await correction.locator('.music-correction-panel-close').click();
+  assert.equal(await correction.getAttribute('open'),null);
   assert.equal(await page.evaluate(()=>MusicStudio.editorSelectTrack('external-melody')),true);
   await page.waitForFunction(()=>MusicStudio.resolveCurrentTrackSelection()?.id==='external-melody');
   let menu=page.locator('.music-cleanup-menu');
   const summary=menu.locator('summary');
   let popover=menu.locator('.music-cleanup-popover');
   assert.equal(await summary.isVisible(),true);
-  const correction=page.locator('.music-correction-menu');
+  correction=page.locator('.music-correction-menu');
+  await projectMenu.locator('summary').click();
+  assert.equal(await projectMenu.getAttribute('open'),'');
   await correction.locator('summary').click();
   assert.equal(await correction.getAttribute('open'),'');
+  assert.equal(await projectMenu.getAttribute('open'),null);
+  const externalCorrectionBounds=await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close');
+  await page.evaluate(()=>MusicStudio.editorSetTrackSolo(MusicStudio.resolveCurrentTrackSelection().id,true));
+  correction=page.locator('.music-correction-menu');
+  assert.deepEqual(await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close'),externalCorrectionBounds);
   await summary.click();
   assert.equal(await menu.getAttribute('open'),'');
   assert.equal(await correction.getAttribute('open'),null);
-  assert.equal(await popover.isVisible(),true);
-  const bounds=await popover.boundingBox();
+  const bounds=await assertSingleVisiblePanel(page,menu,'.music-cleanup-panel-close');
   assert.ok(bounds);
   assert.ok(bounds.x>=0);
   assert.ok(bounds.y>=0);
@@ -63,7 +93,7 @@ async function verify(browser,viewport){
   assert.equal(await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorApplyGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorCancelGeneratedMidiCleanup()"]') .isVisible(),true);
-  assert.equal(await popover.locator('.music-cleanup-panel-close').count(),1);
+  assert.equal(await popover.locator(':scope > .music-correction-sticky-header > .music-cleanup-panel-close').count(),1);
   await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .click();
   menu=page.locator('.music-cleanup-menu');popover=menu.locator('.music-cleanup-popover');
   assert.equal(await menu.getAttribute('open'),'');
@@ -82,7 +112,14 @@ async function verify(browser,viewport){
   menu=page.locator('.music-cleanup-menu');popover=menu.locator('.music-cleanup-popover');
   assert.equal(await menu.getAttribute('open'),'');
   assert.equal(await popover.isVisible(),true);
+  await assertSingleVisiblePanel(page,menu,'.music-cleanup-panel-close');
   assert.deepEqual(await popover.boundingBox(),bounds);
+  await correction.locator('summary').click();
+  assert.equal(await menu.getAttribute('open'),null);
+  await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close');
+  await menu.locator('summary').click();
+  assert.equal(await correction.getAttribute('open'),null);
+  await assertSingleVisiblePanel(page,menu,'.music-cleanup-panel-close');
   const unexpected=messages.filter(message=>message.type==='error'||message.type==='warning');
   assert.deepEqual(unexpected,[]);
   await page.close();

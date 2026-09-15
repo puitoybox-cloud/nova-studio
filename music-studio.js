@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.106';
+  const ASSET_VERSION='1.4.107';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -349,16 +349,18 @@
     const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),headerScroll=root.document?.querySelector?.('.music-piano-header-scroll'),scrollbar=root.document?.querySelector?.('.music-piano-scrollbar');
     if(viewport&&viewport.dataset.scrollReady!=='true'){viewport.scrollTop=Number(viewport.dataset.initialScrollTop)||0;viewport.scrollLeft=0;alignEditorPitchBottomToC(viewport);viewport.dataset.scrollReady='true';root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(viewport))}
     if(pianoScroll){if(pianoScroll.dataset.scrollReady!=='true'){pianoScroll.scrollLeft=Math.max(0,Number(view?.pitchScrollLeft)||0);pianoScroll.dataset.scrollReady='true'}syncEditorPianoPosition(pianoScroll);pianoScroll.onscroll=()=>{syncEditorPianoPosition(pianoScroll);editorRememberPitchScroll(pianoScroll,'horizontal')};if(scrollbar)scrollbar.onscroll=()=>{if(Math.abs(pianoScroll.scrollLeft-scrollbar.scrollLeft)>.5){pianoScroll.scrollLeft=scrollbar.scrollLeft;syncEditorPianoPosition(pianoScroll);editorRememberPitchScroll(pianoScroll,'horizontal')}}}
-    const menu=root.document?.querySelector?.('.music-correction-menu'),cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu');
+    const menu=root.document?.querySelector?.('.music-correction-menu'),cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu'),editorMenus=[...(root.document?.querySelectorAll?.('.music-editor-topbar > .music-editor-menu')||[])];
+    const closeOtherEditorMenus=active=>{for(const other of editorMenus){if(other===active||!other.open)continue;other.open=false;if(other===menu)view.correctionMenuOpen=false;if(other===cleanupMenu)view.generatedCleanupMenuOpen=false}};
+    for(const editorMenu of editorMenus){if(editorMenu===menu||editorMenu===cleanupMenu)continue;editorMenu.ontoggle=()=>{if(editorMenu.open)closeOtherEditorMenus(editorMenu)}}
     if(menu&&view){
       if(view.correctionMenuOpen&&!view.generatedCleanupMenuOpen)menu.open=true;
       else if(view.generatedCleanupMenuOpen)menu.open=false;
-      menu.ontoggle=()=>{view.correctionMenuOpen=menu.open;if(menu.open&&cleanupMenu){cleanupMenu.open=false;view.generatedCleanupMenuOpen=false}if(menu.open)root.requestAnimationFrame?.(fitCorrectionPopover)};
+      menu.ontoggle=()=>{view.correctionMenuOpen=menu.open;if(menu.open){closeOtherEditorMenus(menu);root.requestAnimationFrame?.(fitCorrectionPopover)}};
       if(menu.open){fitCorrectionPopover();const popover=menu.querySelector?.('.music-correction-popover');if(popover)popover.scrollTop=Number(view.correctionPopoverScrollTop)||0}
     }
     if(cleanupMenu&&view){
       if(view.generatedCleanupMenuOpen)cleanupMenu.open=true;
-      cleanupMenu.ontoggle=()=>{view.generatedCleanupMenuOpen=cleanupMenu.open;if(cleanupMenu.open&&menu){menu.open=false;view.correctionMenuOpen=false}};
+      cleanupMenu.ontoggle=()=>{view.generatedCleanupMenuOpen=cleanupMenu.open;if(cleanupMenu.open)closeOtherEditorMenus(cleanupMenu)};
     }
     updateNoteLabelLayout();
   }
