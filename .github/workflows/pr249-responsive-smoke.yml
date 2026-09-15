@@ -1,0 +1,26 @@
+name: PR249 Responsive Browser Smoke
+
+on:
+  push:
+    branches:
+      - verification/pr249-responsive-smoke
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser runtime
+        run: |
+          npm install --no-save playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Verify 1440 820 390 and console
+        run: node scripts/security-browser-smoke.js
