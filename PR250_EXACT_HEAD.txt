@@ -1,0 +1,5 @@
+PR #250 exact-head iPad touch Preview
+Product HEAD: 2d7d62035fe74e6bf1fe652a552b56a6c80a48a8
+Base main: ec59f2176803b37b1ae934828cfc46e656e699e2
+Preview helpers are not product files.
+Use START_PR250_IPAD_TOUCH_PREVIEW.command on the Mac, then open the printed iPad LAN URL on the M1 iPad.
