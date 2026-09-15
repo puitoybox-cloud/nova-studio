@@ -12,8 +12,10 @@ jobs:
           fetch-depth: 0
       - name: Verify exact product ancestry
         run: |
-          test "$(git rev-parse HEAD^)" = "2d7d62035fe74e6bf1fe652a552b56a6c80a48a8"
-          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/pr250-temporary-verification.yml"
+          git merge-base --is-ancestor 2d7d62035fe74e6bf1fe652a552b56a6c80a48a8 HEAD
+          ALLOWED='^(.github/workflows/pr250-temporary-verification.yml|START_PR250_IPAD_TOUCH_PREVIEW.command|STOP_PR250_IPAD_TOUCH_PREVIEW.command|PR250_EXACT_HEAD.txt)$'
+          EXTRA=$(git diff --name-only 2d7d62035fe74e6bf1fe652a552b56a6c80a48a8..HEAD | grep -Ev "$ALLOWED" || true)
+          test -z "$EXTRA"
       - name: Run node tests
         run: node --test
       - name: Check all repository JavaScript
@@ -21,3 +23,14 @@ jobs:
           find . -type f -name '*.js' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do node --check "$file"; done
       - name: Check product whitespace
         run: git diff --check ec59f2176803b37b1ae934828cfc46e656e699e2..2d7d62035fe74e6bf1fe652a552b56a6c80a48a8
+      - name: Package exact-head Preview
+        run: |
+          chmod +x START_PR250_IPAD_TOUCH_PREVIEW.command STOP_PR250_IPAD_TOUCH_PREVIEW.command
+          rm -rf .git .github
+          zip -qr PR250-iPad-touch-exact-head-2d7d620.zip .
+      - name: Upload exact-head Preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PR250-iPad-touch-exact-head-2d7d620
+          path: PR250-iPad-touch-exact-head-2d7d620.zip
+          retention-days: 14
