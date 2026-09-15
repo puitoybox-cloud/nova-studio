@@ -6,18 +6,29 @@ const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
 const touch=fs.readFileSync(path.join(root,'music-studio-ipad-touch.js'),'utf8');
+const ipadCss=fs.readFileSync(path.join(root,'music-studio-ipad.css'),'utf8');
 
-test('Music Studio loads the iPad Piano Roll touch bridge after the editor API',()=>{
+test('Music Studio loads current iPad Piano Roll gesture assets',()=>{
+  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.5/);
   const core=html.indexOf('./music-studio.js?v=1.4.103');
-  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.3');
-  assert.ok(core>=0);
-  assert.ok(bridge>core);
+  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.4');
+  assert.ok(core>=0);assert.ok(bridge>core);
 });
 
-test('iPad touch bridge is restricted to coarse-pointer landscape',()=>{
-  assert.match(touch,/orientation: landscape/);
-  assert.match(touch,/hover: none/);
-  assert.match(touch,/pointer: coarse/);
+test('iPad gesture bridge is restricted to coarse-pointer landscape',()=>{
+  assert.match(touch,/orientation: landscape/);assert.match(touch,/hover: none/);assert.match(touch,/pointer: coarse/);
+});
+
+test('Piano Roll owns touch gestures on iPad landscape',()=>{
+  assert.match(ipadCss,/\.music-piano-viewport\{[^}]*touch-action:none/);
+  assert.match(ipadCss,/\.music-piano-roll\{touch-action:none\}/);
+});
+
+test('empty-roll pointerdown is intercepted before legacy playhead selection',()=>{
+  assert.match(touch,/event\.pointerType==='touch'/);
+  assert.match(touch,/emptyRollTouch\(event\)/);
+  assert.match(touch,/addEventListener\?\.\('pointerdown',onPointerDown,\{capture:true,passive:false\}\)/);
+  assert.match(touch,/stopImmediatePropagation/);
 });
 
 test('one-finger Piano Roll gesture routes vertical motion to pitch scroll and horizontal motion to timeline scroll',()=>{
@@ -26,21 +37,13 @@ test('one-finger Piano Roll gesture routes vertical motion to pitch scroll and h
   assert.match(touch,/drag\.scroll\.scrollLeft=Math\.max\(0,drag\.startLeft-dx\)/);
 });
 
-test('empty-roll touch scrolling suppresses the legacy coarse-pointer playhead path',()=>{
-  assert.match(touch,/suppressPointerUntil/);
-  assert.match(touch,/event\.pointerType!==['"]touch['"]/);
-  assert.match(touch,/rollFor\(event\.target\).*music-midi-note,.music-note-resize/s);
-  assert.match(touch,/stopImmediatePropagation/);
-  assert.match(touch,/markTouchGesture\(\)/);
-});
-
-test('two-finger Piano Roll gesture converts pinch distance to existing editor zoom',()=>{
-  assert.match(touch,/event\.touches\?\.length>=2/);
-  assert.match(touch,/ratio=current\/pinch\.startDistance/);
+test('two active touch pointers drive existing editor zoom',()=>{
+  assert.match(touch,/points\.length>=2/);
+  assert.match(touch,/ratio=pinch\.lastDistance\/pinch\.startDistance/);
   assert.match(touch,/root\.MusicStudio\?\.editorZoom\?\.\(steps\)/);
 });
 
-test('touch bridge preserves note and control gestures during one-finger scrolling',()=>{
+test('note and control pointer gestures remain on the existing editor path',()=>{
   assert.match(touch,/const EDIT_INTERACTIVE=.*\.music-midi-note.*\.music-note-resize.*\.music-pitch-hit/);
-  assert.match(touch,/event\.target\?\.closest\?\.\(EDIT_INTERACTIVE\)/);
+  assert.match(touch,/!event\.target\?\.closest\?\.\(EDIT_INTERACTIVE\)/);
 });
