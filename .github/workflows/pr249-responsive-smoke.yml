@@ -30,3 +30,4 @@ jobs:
             sleep 1
           done
           node scripts/security-browser-smoke.js
+          node scripts/pr249-ipad-layout-browser-smoke.js
