@@ -9,7 +9,7 @@ const touch=fs.readFileSync(path.join(root,'music-studio-ipad-touch.js'),'utf8')
 
 test('Music Studio loads the iPad Piano Roll touch bridge after the editor API',()=>{
   const core=html.indexOf('./music-studio.js?v=1.4.103');
-  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.0');
+  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.1');
   assert.ok(core>=0);
   assert.ok(bridge>core);
 });
