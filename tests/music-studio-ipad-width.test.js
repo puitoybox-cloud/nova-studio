@@ -67,6 +67,11 @@ test('iPad landscape upper editor chrome stays compact and toolbar stays on one 
   assert.match(css, /\.music-editor-topbar \.music-editor-menu>summary,[^{]+\{[^}]*min-height:24px;[^}]*height:24px;[^}]*font-size:\.6rem;/s);
 });
 
+test('iPad landscape hamburger stays inside the Melody制作 header band', () => {
+  assert.match(css, /body\.music-studio-page:has\(\.music-midi-editor-page\) \.nova-menu-toggle\{[^}]*top:max\(0px,env\(safe-area-inset-top\)\);[^}]*left:max\(4px,env\(safe-area-inset-left\)\);[^}]*width:32px;[^}]*height:32px;[^}]*min-height:32px;/s);
+  assert.match(css, /body\.music-studio-page:has\(\.music-midi-editor-page\) \.nova-menu-glyph\{[^}]*font-size:20px;/s);
+});
+
 test('iPad landscape track tabs remain a compact single row', () => {
   assert.match(css, /\.music-part-tabs\{[^}]*min-height:26px;[^}]*flex:0 0 26px;[^}]*flex-wrap:nowrap;[^}]*overflow-x:auto;[^}]*overflow-y:hidden;/s);
   assert.match(css, /\.music-part-tab-list\{[^}]*min-width:max-content;[^}]*flex-wrap:nowrap;/s);
