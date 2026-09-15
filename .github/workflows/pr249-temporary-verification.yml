@@ -14,14 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify exact product ancestry
         shell: bash
         run: |
           set -euo pipefail
           PRODUCT_HEAD="724225d21b676a77663bab52ce488f66fc404274"
+          git cat-file -e "$PRODUCT_HEAD^{commit}"
           git merge-base --is-ancestor "$PRODUCT_HEAD" HEAD
-          test "$(git diff --name-only "$PRODUCT_HEAD"...HEAD | grep -Ev '^(START_PR249_IPAD_PREVIEW\.command|STOP_PR249_IPAD_PREVIEW\.command|PR249_EXACT_HEAD\.txt|\.github/workflows/pr249-temporary-verification\.yml)$' | wc -l | tr -d ' ')" = "0"
+          unexpected="$(git diff --name-only "$PRODUCT_HEAD"...HEAD | grep -Ev '^(START_PR249_IPAD_PREVIEW\.command|STOP_PR249_IPAD_PREVIEW\.command|PR249_EXACT_HEAD\.txt|\.github/workflows/pr249-temporary-verification\.yml)$' || true)"
+          test -z "$unexpected"
 
       - name: Run node tests
         run: node --test
