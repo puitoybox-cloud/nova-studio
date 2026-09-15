@@ -1,0 +1,303 @@
+/* iPad editor width parity: keep the Mac editor layout while removing only outer iPad whitespace. */
+@media (min-width:601px) and (max-width:1366px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+  body.music-studio-page:has(.music-midi-editor-page) #music-studio-app{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .music-studio-shell,
+  body.is-music-studio-route:has(.music-midi-editor-page) .music-studio-shell{
+    box-sizing:border-box;
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+    padding-inline:max(4px,env(safe-area-inset-left)) max(4px,env(safe-area-inset-right));
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .management-layout,
+  body.music-studio-page:has(.music-midi-editor-page) .management-main,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-main{
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+  }
+
+  .music-midi-editor-page,
+  body.is-management-route .management-main>.music-midi-editor-page{
+    box-sizing:border-box;
+    width:100%;
+    max-width:none;
+    margin-inline:0;
+    padding-right:0;
+    padding-left:0;
+  }
+
+  html:has(.music-midi-editor-page),
+  body.music-studio-page:has(.music-midi-editor-page),
+  body.is-music-studio-route:has(.music-midi-editor-page),
+  body.music-studio-page:has(.music-midi-editor-page) #music-studio-app,
+  body.is-music-studio-route:has(.music-midi-editor-page) #app,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,
+  body.is-music-studio-route:has(.music-midi-editor-page) .management-main{
+    height:100svh;
+    max-height:100svh;
+    overflow:hidden;
+  }
+
+  .music-midi-editor-page,
+  body.is-management-route .management-main>.music-midi-editor-page{
+    height:100svh;
+    max-height:100svh;
+    overflow:hidden;
+  }
+
+  .music-midi-editor-page .music-editor-layout{
+    min-height:150px;
+    flex:1 1 auto;
+    overflow:hidden;
+  }
+
+  .music-midi-editor-page .music-piano-viewport{
+    height:100%!important;
+    min-height:0;
+  }
+
+  /* Keep the existing Mac chrome, but use its dense one-line rhythm on iPad landscape. */
+  .music-midi-editor-page .music-editor-chrome{
+    box-sizing:border-box;
+    min-height:32px;
+    flex:0 0 32px;
+    padding:0 48px;
+  }
+
+  /* Keep the hamburger inside the same compact header band as Melody制作. */
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{
+    top:max(0px,env(safe-area-inset-top));
+    left:max(4px,env(safe-area-inset-left));
+    width:32px;
+    height:32px;
+    min-height:32px;
+    padding:0!important;
+  }
+
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph{
+    font-size:20px;
+  }
+
+  .music-midi-editor-page .music-editor-chrome .music-editor-heading{
+    min-height:32px;
+    gap:4px;
+  }
+
+  .music-midi-editor-page .music-editor-chrome .music-editor-heading h1{
+    font-size:.88rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-editor-guide-button{
+    min-height:22px;
+    gap:3px;
+    padding:1px 5px;
+    font-size:.64rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-editor-guide-button>span:first-child{
+    width:16px;
+    height:16px;
+    flex-basis:16px;
+    font-size:.64rem;
+  }
+
+  .music-midi-editor-page .music-editor-topbar{
+    box-sizing:border-box;
+    width:100%;
+    min-height:28px;
+    max-height:28px;
+    flex:0 0 28px;
+    flex-wrap:nowrap;
+    gap:2px;
+    padding:1px 3px;
+    overflow-x:hidden;
+    overflow-y:visible;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
+  .music-midi-editor-page .music-editor-topbar>.music-external-track-review-entry,
+  .music-midi-editor-page .music-editor-topbar>.music-editor-save{
+    width:auto;
+    min-width:0;
+    flex:0 1 auto;
+  }
+
+  .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{
+    width:auto;
+    min-width:0;
+    flex:0 1 auto;
+    margin-right:0;
+    margin-left:auto;
+  }
+
+  .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary,
+  .music-midi-editor-page .music-editor-topbar>button{
+    box-sizing:border-box;
+    width:auto;
+    min-width:0;
+    min-height:24px;
+    height:24px;
+    padding:1px 4px;
+    overflow:hidden;
+    font-size:.6rem;
+    line-height:1;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary::before,
+  .music-midi-editor-page .music-editor-topbar .music-editor-save::before{
+    width:.9em;
+    margin-right:2px;
+    font-size:.9em;
+  }
+
+  .music-midi-editor-page .music-midi-input-menu>summary::after{margin-left:3px}
+  .music-midi-editor-page .music-saved-explain{display:none}
+
+  .music-midi-editor-page .music-part-tabs{
+    box-sizing:border-box;
+    width:100%;
+    min-height:26px;
+    flex:0 0 26px;
+    flex-wrap:nowrap;
+    gap:2px;
+    margin:1px 0 2px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+  }
+
+  .music-midi-editor-page .music-part-tab-list{
+    min-width:max-content;
+    flex:1 0 auto;
+    flex-wrap:nowrap;
+    gap:2px;
+  }
+
+  .music-midi-editor-page .music-part-tab-group{gap:1px}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{
+    width:72px;
+    min-width:72px;
+  }
+
+  .music-midi-editor-page .music-part-tabs button,
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab),
+  .music-midi-editor-page .music-history-controls>button{
+    box-sizing:border-box;
+    height:22px;
+    min-height:22px;
+    max-height:22px;
+    padding:0 4px;
+    font-size:.62rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){
+    width:22px;
+    min-width:22px;
+    max-width:22px;
+  }
+
+  .music-midi-editor-page .music-history-controls{gap:2px;margin-left:4px}
+  .music-midi-editor-page .music-history-controls>button{min-width:52px}
+  .music-midi-editor-page .music-history-icon{width:15px;height:15px}
+
+  .music-midi-editor-page .music-track-runtime-controls{
+    min-height:24px;
+    flex:0 0 24px;
+    gap:3px;
+    margin:0 0 2px;
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+
+  .music-midi-editor-page .music-track-runtime-control{gap:2px;padding:1px 3px}
+  .music-midi-editor-page .music-track-runtime-control span{min-width:38px;font-size:.62rem}
+  .music-midi-editor-page .music-track-runtime-control button{width:22px;min-height:20px;padding:0;font-size:.62rem}
+
+  .music-midi-editor-page .music-piano-frame{--music-piano-header-height:46px}
+  .music-midi-editor-page .music-loop-ruler{height:22px}
+  .music-midi-editor-page .music-loop-selection{top:2px;bottom:2px}
+  .music-midi-editor-page .music-loop-ruler+.music-measure-row,
+  .music-midi-editor-page .music-measure-row,
+  .music-midi-editor-page .music-measure{
+    height:24px!important;
+    min-height:24px!important;
+    max-height:24px!important;
+  }
+
+  .music-midi-editor-page .music-measure{
+    padding:0 3px;
+    font-size:.66rem;
+    line-height:1;
+  }
+
+  .music-midi-editor-page .music-time-ruler,
+  .music-midi-editor-page .music-playhead-handle{height:10px}
+  .music-midi-editor-page .music-loop-length,
+  .music-midi-editor-page .music-loop-selection-label{font-size:.56rem;line-height:1}
+
+  /* Match the Mac editor's five-region row within the shorter Safari viewport. */
+  .music-midi-editor-page .music-editor-bottom{
+    height:clamp(276px,36svh,330px);
+    max-height:36svh;
+    flex-basis:clamp(276px,36svh,330px);
+    grid-template-columns:1.15fr 1.25fr .75fr 1.65fr .9fr;
+    grid-template-rows:minmax(0,1fr);
+    grid-auto-rows:unset;
+    align-items:start;
+    column-gap:5px;
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+
+  .music-midi-editor-page .music-editor-bottom>section{
+    min-width:0;
+    min-height:0;
+    grid-row:1!important;
+    padding:6px;
+  }
+
+  .music-midi-editor-page .music-editor-bottom>section:nth-child(1){grid-column:1}
+  .music-midi-editor-page .music-editor-bottom>.music-display-assist{grid-column:2}
+  .music-midi-editor-page .music-editor-bottom>.music-edit-range{grid-column:3}
+  .music-midi-editor-page .music-editor-bottom>.music-partial-edit{grid-column:4}
+  .music-midi-editor-page .music-editor-bottom>section:last-child{grid-column:5}
+
+  .music-midi-editor-page .music-editor-bottom button{
+    min-height:32px;
+    padding:3px 5px;
+    font-size:.72rem;
+  }
+
+  .music-midi-editor-page .music-editor-bottom :is(input,select,textarea){
+    min-width:0;
+    min-height:32px;
+    height:32px;
+    padding:3px 5px;
+    font-size:.72rem;
+  }
+
+  .music-midi-editor-page .music-editor-bottom :is(label,b,p){font-size:.7rem}
+  .music-midi-editor-page .music-partial-edit-provider{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:4px 0}
+  .music-midi-editor-page .music-partial-edit-provider textarea{height:32px;min-height:32px}
+  .music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:24px;min-height:24px;padding-block:0}
+  .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}
+  .music-midi-editor-page .music-edit-range-fields{flex:none}
+  .music-midi-editor-page .music-edit-range label{min-width:0;margin:0}
+  .music-midi-editor-page .music-edit-range input{height:24px;min-height:24px;margin-top:0;padding-block:0}
+  .music-midi-editor-page .music-edit-range p{margin-top:1px}
+}
