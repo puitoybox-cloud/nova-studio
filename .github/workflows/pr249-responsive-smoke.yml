@@ -23,4 +23,10 @@ jobs:
           npm install --no-save playwright@1.58.2
           npx playwright install --with-deps chromium
       - name: Verify 1440 820 390 and console
-        run: node scripts/security-browser-smoke.js
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pr249-http.log 2>&1 &
+          for attempt in 1 2 3 4 5; do
+            curl --silent --fail http://127.0.0.1:8765/index.html >/dev/null && break
+            sleep 1
+          done
+          node scripts/security-browser-smoke.js
