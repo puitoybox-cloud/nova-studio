@@ -1,0 +1,5 @@
+Draft PR #250 exact product HEAD
+8098b5e2cf1f2c65d6c6dec6f1298fd21d83804f
+
+Preview-only branch: temporary/pr250-scroll-fix-verification
+Product files are exactly inherited from the product HEAD above; this branch only adds preview helper files and packaging workflow.
