@@ -50,7 +50,16 @@ const viewports=[{width:1180,height:820},{width:1024,height:768},{width:1366,hei
         };
       });
       result.console=messages.filter(m=>m.type==='error'||m.type==='warning');
-      console.log(JSON.stringify(result));
+      const failures=[];
+      if(!result.coarse||!result.landscape)failures.push('iPad media conditions');
+      if(result.rows!==1||result.sections.length!==5)failures.push('five-region row');
+      if(result.documentOverflowX!==0||result.documentOverflowY!==0)failures.push('document overflow');
+      if(result.page.top!==0||Math.abs(result.page.bottom-result.viewport.height)>1)failures.push('page viewport fit');
+      if(result.piano.height<150||result.piano.bottom>result.bottom.top+1)failures.push('piano fit');
+      if(result.bottom.bottom>result.viewport.height+1||result.sections.some(section=>section.top<0||section.top>=result.viewport.height))failures.push('bottom region visibility');
+      if(result.console.length)failures.push('console');
+      console.log(JSON.stringify({...result,failures}));
+      if(failures.length)throw new Error(`layout assertions failed: ${failures.join(', ')}`);
       await context.close();
     }
   }finally{await browser.close()}
