@@ -1,7 +1,7 @@
 #!/bin/bash
 set -u
 
-PREVIEW_SHA="d7185bed0a811f79e7ea72e5a5634f42d6759d84"
+PREVIEW_SHA="8f4d9bc4058db024eedca86baee3765607647e97"
 PREVIEW_PORT="8765"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PID_FILE="/tmp/nova-studio-pr249-ipad-preview.pid"
