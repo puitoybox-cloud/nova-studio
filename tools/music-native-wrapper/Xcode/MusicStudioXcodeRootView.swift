@@ -11,17 +11,24 @@ private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
 
 struct MusicStudioXcodeRootView: View {
     var body: some View {
-        ZStack {
-            Color.black
-                .ignoresSafeArea()
-            MusicStudioXcodeWebViewContainer()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+#if os(macOS)
+        MusicStudioXcodeWebViewContainer()
+            .ignoresSafeArea()
+#else
+        GeometryReader { proxy in
+            ZStack(alignment: .topLeading) {
+                Color.black.ignoresSafeArea()
+                MusicStudioXcodeWebViewContainer()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        // Keep the iPad system status content readable at the top, but make
-        // the surrounding system area black and let Music Studio reach both
-        // horizontal edges and the bottom edge.
+        // Own the complete iPad window instead of asking WKWebView to fill
+        // the safe-area-sized SwiftUI proposal. This removes the horizontal
+        // gutters while leaving the system status content visible above it.
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .preferredColorScheme(.dark)
+#endif
     }
 }
 
@@ -52,9 +59,14 @@ struct MusicStudioXcodeWebViewContainer: UIViewRepresentable {
         webView.backgroundColor = musicBackground
         webView.scrollView.backgroundColor = musicBackground
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
+        webView.scrollView.scrollIndicatorInsets = .zero
         return webView
     }
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        uiView.scrollView.contentInset = .zero
+        uiView.scrollView.scrollIndicatorInsets = .zero
+    }
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) { coordinator.stop() }
     final class Coordinator {
         private var host: MusicStudioWebViewHost?
