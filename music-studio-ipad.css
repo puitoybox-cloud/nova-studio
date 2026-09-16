@@ -19,8 +19,8 @@
   .music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;overscroll-behavior:contain}
   .music-midi-editor-page .music-editor-chrome{box-sizing:border-box;min-height:26px;flex:0 0 26px;padding:0 48px}
 
-  /* True hamburger: three structural lines, not a font glyph. Keep below iPad status content. */
-  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{position:fixed!important;top:26px!important;left:max(6px,env(safe-area-inset-left))!important;display:flex!important;align-items:center!important;justify-content:center!important;width:30px!important;height:24px!important;min-width:30px!important;min-height:24px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;z-index:1001}
+  /* True hamburger: three equal CSS lines. Place it in the app header row, below the iPad status bar. */
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{position:fixed!important;top:calc(env(safe-area-inset-top) + 3px)!important;left:max(8px,env(safe-area-inset-left))!important;display:flex!important;align-items:center!important;justify-content:center!important;width:30px!important;height:24px!important;min-width:30px!important;min-height:24px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;z-index:1001}
   body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;width:18px!important;height:16px!important;font-size:0!important;line-height:0!important}
   body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph>span{display:block!important;width:18px!important;height:2px!important;min-height:2px!important;margin:0!important;padding:0!important;border:0!important;border-radius:2px!important;background:#f2f5f8!important;box-shadow:none!important;transform:none!important}
 
