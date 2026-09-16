@@ -11,7 +11,7 @@ const ipadCss=fs.readFileSync(path.join(root,'music-studio-ipad.css'),'utf8');
 require(path.join(root,'music-studio-ipad-touch.js'));
 
 test('Music Studio loads current iPad Piano Roll gesture assets',()=>{
-  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.7/);
+  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.14/);
   const core=html.indexOf('./music-studio.js?v=1.4.103');
   const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.6');
   assert.ok(core>=0);assert.ok(bridge>core);
@@ -21,9 +21,9 @@ test('iPad gesture bridge is restricted to coarse-pointer landscape',()=>{
   assert.match(touch,/orientation: landscape/);assert.match(touch,/hover: none/);assert.match(touch,/pointer: coarse/);
 });
 
-test('Piano Roll owns touch gestures on iPad landscape',()=>{
-  assert.match(ipadCss,/\.music-piano-viewport\{[^}]*touch-action:none/);
-  assert.match(ipadCss,/\.music-piano-roll\{touch-action:none\}/);
+test('Piano Roll keeps browser multi-touch available for the WKWebView fallback',()=>{
+  assert.doesNotMatch(ipadCss,/touch-action\s*:\s*none/);
+  assert.match(ipadCss,/\.music-piano-viewport\{[^}]*overscroll-behavior:contain/);
 });
 
 test('empty-roll pointerdown is intercepted before legacy playhead selection',()=>{
