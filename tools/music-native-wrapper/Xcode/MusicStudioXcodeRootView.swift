@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
-    startURL: URL(string: "https://cdn.jsdelivr.net/gh/puitoybox-cloud/nova-studio@448554e4282747a5c58a708f820131e079d94d53/music-studio.html?raw=1")!,
+    startURL: URL(string: "https://cdn.jsdelivr.net/gh/puitoybox-cloud/nova-studio@eeb7258358e632d01600eb8f73b2765d8d7e4a68/music-studio.html?raw=1")!,
     allowedHosts: [
         "cdn.jsdelivr.net",
         "puitoybox-cloud.github.io"
@@ -11,10 +11,14 @@ private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
 
 struct MusicStudioXcodeRootView: View {
     var body: some View {
-        MusicStudioXcodeWebViewContainer()
-            // Keep the iPad system status row above Music Studio, while still
-            // allowing the editor to use the full landscape width.
-            .ignoresSafeArea(.container, edges: .horizontal)
+        ZStack {
+            Color(red: 8.0 / 255.0, green: 17.0 / 255.0, blue: 29.0 / 255.0)
+                .ignoresSafeArea()
+            MusicStudioXcodeWebViewContainer()
+                // The iPad status row remains system-owned at the top.
+                // Music Studio uses the complete available landscape width and bottom edge.
+                .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        }
     }
 }
 
@@ -52,7 +56,11 @@ struct MusicStudioXcodeWebViewContainer: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> WKWebView {
-        context.coordinator.makeWebView()
+        let webView = context.coordinator.makeWebView()
+        webView.isOpaque = false
+        webView.backgroundColor = UIColor(red: 8.0 / 255.0, green: 17.0 / 255.0, blue: 29.0 / 255.0, alpha: 1)
+        webView.scrollView.backgroundColor = webView.backgroundColor
+        return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
