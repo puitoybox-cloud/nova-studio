@@ -25,6 +25,11 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
 
         super.init()
         webView.navigationDelegate = self
+        #if os(iOS)
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
+        webView.scrollView.scrollIndicatorInsets = .zero
+        #endif
     }
 
     public func start() {
