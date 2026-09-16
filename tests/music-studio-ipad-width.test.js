@@ -8,27 +8,34 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'music-studio.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
+const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-layout.css'), 'utf8');
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.15');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.16');
+  const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.3');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
+  assert.ok(followUp > ipad);
 });
 
-test('iPad width override is limited to landscape coarse pointers from 601px through 1366px', () => {
-  const media = css.match(/@media\s*\(([^\n{]+)\)\{/);
-  assert.ok(media);
-  assert.match(media[1], /min-width:601px/);
-  assert.match(media[1], /max-width:1366px/);
-  assert.match(media[1], /orientation:landscape/);
-  assert.match(media[1], /hover:none/);
-  assert.match(media[1], /pointer:coarse/);
+test('iPad width overrides cover every landscape coarse-pointer viewport above phone width', () => {
+  for (const source of [css, followUpCss]) {
+    const media = source.match(/@media\s*\(([^\n{]+)\)\{/);
+    assert.ok(media);
+    assert.match(media[1], /min-width:601px/);
+    assert.doesNotMatch(media[1], /max-width/);
+    assert.match(media[1], /orientation:landscape/);
+    assert.match(media[1], /hover:none/);
+    assert.match(media[1], /pointer:coarse/);
+  }
 });
 
 test('iPad editor fills the native wrapper width without viewport breakout margins', () => {
-  assert.match(css,/\.music-studio-shell:has\(\.music-midi-editor-page\)[^{]*\{[^}]*width:100%!important;[^}]*max-width:none!important;[^}]*margin:0!important;[^}]*padding:0!important;/s);
-  assert.match(css,/\.management-layout:has\(\.music-midi-editor-page\)[^{]*\.music-midi-editor-page\{[^}]*width:100%!important;[^}]*max-width:none!important;[^}]*transform:none!important;/s);
+  assert.match(css,/body\.is-music-studio-route \.music-studio-shell:has\(\.music-midi-editor-page\)/);
+  assert.match(css,/\.music-studio-shell:has\(\.music-midi-editor-page\)\{box-sizing:border-box;width:100%!important;max-width:none!important;margin:0!important;padding:0!important\}/);
+  assert.match(css,/\.management-layout:has\(\.music-midi-editor-page\)/);
+  assert.match(css,/,\.music-midi-editor-page\{position:static!important;box-sizing:border-box;width:100%!important;max-width:none!important;[^}]*transform:none!important\}/);
   assert.doesNotMatch(css,/margin-left:calc\(50% - 50vw\)/);
   assert.doesNotMatch(css,/margin-right:calc\(50% - 50vw\)/);
 });

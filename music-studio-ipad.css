@@ -1,5 +1,5 @@
 /* iPad editor width parity: preserve the accepted PR #249 structure and fit it to landscape. */
-@media (min-width:601px) and (max-width:1366px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
   html,body.music-studio-page,body.is-music-studio-route{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0;overflow-x:hidden;background:#08111d}
   body.music-studio-page #music-studio-app,body.is-music-studio-route #app{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin:0;padding:0}
   body.music-studio-page:has(.music-midi-editor-page) #music-studio-app{width:100%;max-width:none;min-width:0;margin:0;padding:0}
