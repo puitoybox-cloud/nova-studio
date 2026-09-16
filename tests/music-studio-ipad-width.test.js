@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 
 test('standalone Music Studio loads the iPad width override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.7');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.8');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
 });
@@ -46,8 +46,8 @@ test('iPad landscape editor uses the stable Safari viewport and keeps page overf
   assert.ok(css.includes('.music-piano-viewport{height:100%!important;min-height:0;'));
 });
 
-test('iPad landscape bottom controls keep Mac order in one five-column row', () => {
-  assert.match(css, /\.music-editor-bottom\{[^}]*height:clamp\(276px,36svh,330px\);[^}]*max-height:36svh;[^}]*flex-basis:clamp\(276px,36svh,330px\);[^}]*grid-template-columns:1\.05fr 1\.55fr \.75fr 1\.5fr \.85fr;[^}]*grid-template-rows:minmax\(0,1fr\);/s);
+test('iPad landscape bottom controls preserve the accepted PR249 five-column proportions', () => {
+  assert.match(css, /\.music-editor-bottom\{[^}]*height:clamp\(276px,36svh,330px\);[^}]*max-height:36svh;[^}]*flex-basis:clamp\(276px,36svh,330px\);[^}]*grid-template-columns:1\.15fr 1\.25fr \.75fr 1\.65fr \.9fr;[^}]*grid-template-rows:minmax\(0,1fr\);/s);
   assert.match(css, />section\{[^}]*grid-row:1!important;/s);
   assert.match(css, />section:nth-child\(1\)\{grid-column:1\}/);
   assert.match(css, />\.music-display-assist\{grid-column:2\}/);
@@ -61,11 +61,16 @@ test('iPad landscape controls remain compact but operable', () => {
   assert.match(css, /\.music-editor-bottom :is\(input,select,textarea\)\{[^}]*min-height:32px;[^}]*height:32px;/s);
 });
 
-test('Snap and Quantize controls reserve one-row widths without overflow artifacts', () => {
-  assert.match(css, /\.music-assist-snap-controls\{[^}]*grid-template-columns:minmax\(130px,1fr\) minmax\(112px,auto\);/s);
-  assert.match(css, /\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(92px,1fr\) minmax\(128px,auto\) minmax\(58px,auto\);/s);
+test('Snap and Quantize controls fit inside their section without clipping', () => {
+  assert.match(css, /\.music-assist-snap-controls\{[^}]*grid-template-columns:minmax\(0,1fr\) minmax\(76px,88px\);/s);
+  assert.match(css, /\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(0,1fr\) minmax\(76px,88px\) minmax\(64px,72px\);/s);
   assert.match(css, /\.music-assist-snap-controls>button::before,[^{]+\{display:none!important;content:none!important\}/s);
-  assert.match(css, /\.music-assist-quantize-controls>button:last-child\{[^}]*min-width:58px;[^}]*white-space:nowrap;/s);
+  assert.match(css, /\.music-assist-snap-controls select,[^{]+\{[^}]*width:100%;[^}]*min-width:0;[^}]*max-width:100%;[^}]*padding-right:20px/s);
+  assert.match(css, /\.music-assist-quantize-controls>button:last-child\{[^}]*width:100%;[^}]*min-width:0;[^}]*max-width:100%;[^}]*overflow:hidden;[^}]*white-space:nowrap;/s);
+});
+
+test('iPad Piano Roll CSS does not globally disable WKWebView pinch gestures', () => {
+  assert.doesNotMatch(css, /touch-action\s*:\s*none/);
 });
 
 test('iPad landscape upper editor chrome stays compact and toolbar stays on one row', () => {
