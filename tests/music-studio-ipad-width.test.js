@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.14');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.15');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
 });
