@@ -1,6 +1,10 @@
 import SwiftUI
 import WebKit
 
+private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
+    startURL: URL(string: "https://cdn.jsdelivr.net/gh/puitoybox-cloud/nova-studio@8d16076cd954d201ea8f46473a56eeb3287caf85/music-studio.html")!
+)
+
 struct MusicStudioXcodeRootView: View {
     var body: some View {
         MusicStudioXcodeWebViewContainer()
@@ -26,7 +30,7 @@ struct MusicStudioXcodeWebViewContainer: NSViewRepresentable {
         private var host: MusicStudioWebViewHost?
 
         func makeWebView() -> WKWebView {
-            let host = MusicStudioWebViewHost(configuration: .production, platform: "mac")
+            let host = MusicStudioWebViewHost(configuration: pr250VerificationConfiguration, platform: "mac")
             self.host = host
             host.start()
             return host.webView
@@ -55,7 +59,7 @@ struct MusicStudioXcodeWebViewContainer: UIViewRepresentable {
         private var host: MusicStudioWebViewHost?
 
         func makeWebView() -> WKWebView {
-            let host = MusicStudioWebViewHost(configuration: .production, platform: "ipad")
+            let host = MusicStudioWebViewHost(configuration: pr250VerificationConfiguration, platform: "ipad")
             self.host = host
             host.start()
             return host.webView
