@@ -2,7 +2,7 @@
 
 This directory combines two immutable inputs without merging either product PR:
 
-- Product: PR #250 at `37cc2f8042a8dbb2c1fa99e8528612712bbe464d`
+- Product: PR #250 at `ac752f033128e89b3551d823ca523f05eb674a30`
 - Native foundation: PR #248 at `5f3454ba85620c00054f7dfdcc4bf301496007cd`
   (including PR #247 at `f88976e3f83fdec6ad0bf7b02955a63bf874ee77`)
 
