@@ -11,7 +11,7 @@ const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 
 test('standalone Music Studio loads the iPad width override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.6');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.7');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
 });
@@ -31,6 +31,7 @@ test('iPad editor uses the full available width without restoring outer max widt
   assert.ok(css.includes('body.music-studio-page #music-studio-app,body.is-music-studio-route #app{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin:0;padding:0}'));
   assert.ok(css.includes('.management-main{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin-inline:0;padding-inline:0}'));
   assert.ok(css.includes('.music-midi-editor-page{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin-inline:0;'));
+  assert.match(css,/\.music-midi-editor-page\{position:relative;left:50%;width:100vw!important;max-width:100vw!important;transform:translateX\(-50%\);margin:0!important\}/);
 });
 
 test('safe-area padding is applied once at the editor edge', () => {
@@ -60,10 +61,11 @@ test('iPad landscape controls remain compact but operable', () => {
   assert.match(css, /\.music-editor-bottom :is\(input,select,textarea\)\{[^}]*min-height:32px;[^}]*height:32px;/s);
 });
 
-test('Snap and Quantize controls reserve one-row widths inside the wider assist column', () => {
+test('Snap and Quantize controls reserve one-row widths without overflow artifacts', () => {
   assert.match(css, /\.music-assist-snap-controls\{[^}]*grid-template-columns:minmax\(130px,1fr\) minmax\(112px,auto\);/s);
-  assert.match(css, /\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(92px,1fr\) minmax\(128px,auto\) minmax\(44px,auto\);/s);
-  assert.match(css, /\.music-assist-quantize-controls>label\{[^}]*white-space:nowrap/s);
+  assert.match(css, /\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(92px,1fr\) minmax\(128px,auto\) minmax\(58px,auto\);/s);
+  assert.match(css, /\.music-assist-snap-controls>button::before,[^{]+\{display:none!important;content:none!important\}/s);
+  assert.match(css, /\.music-assist-quantize-controls>button:last-child\{[^}]*min-width:58px;[^}]*white-space:nowrap;/s);
 });
 
 test('iPad landscape upper editor chrome stays compact and toolbar stays on one row', () => {
