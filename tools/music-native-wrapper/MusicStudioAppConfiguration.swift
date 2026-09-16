@@ -19,7 +19,7 @@ public struct MusicStudioAppConfiguration: Equatable {
         }
         return MusicStudioAppConfiguration(
             startURL: startURL,
-            verificationMarker: "PR #250 HEAD b8b6f9226c1b39172b2e7f040ed228fae7fe01c3"
+            verificationMarker: "PR #250 HEAD 37cc2f8042a8dbb2c1fa99e8528612712bbe464d"
         )
     }
 

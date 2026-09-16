@@ -4,8 +4,12 @@ import NovaMusicNativeWrapper
 
 struct MusicStudioRootView: View {
     var body: some View {
-        MusicStudioWebViewContainer()
-            .ignoresSafeArea()
+        ZStack {
+            Color.black.ignoresSafeArea()
+            MusicStudioWebViewContainer()
+                .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        }
+        .preferredColorScheme(.dark)
     }
 }
 

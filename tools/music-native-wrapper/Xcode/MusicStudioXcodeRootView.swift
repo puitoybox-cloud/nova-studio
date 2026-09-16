@@ -3,8 +3,12 @@ import WebKit
 
 struct MusicStudioXcodeRootView: View {
     var body: some View {
-        MusicStudioXcodeWebViewContainer()
-            .ignoresSafeArea()
+        ZStack {
+            Color.black.ignoresSafeArea()
+            MusicStudioXcodeWebViewContainer()
+                .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        }
+        .preferredColorScheme(.dark)
     }
 }
 

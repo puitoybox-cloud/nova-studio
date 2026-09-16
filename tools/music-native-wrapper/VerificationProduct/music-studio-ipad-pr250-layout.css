@@ -1,0 +1,61 @@
+/* PR #250 iPad landscape follow-up: preserve compact controls and place MENU in the Melody heading row. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{
+    position:fixed!important;
+    top:0!important;
+    left:8px!important;
+    width:30px!important;
+    height:26px!important;
+    min-width:30px!important;
+    min-height:26px!important;
+    z-index:1001!important;
+  }
+  .music-midi-editor-page .music-editor-chrome{position:relative!important;padding-left:42px!important}
+  .music-midi-editor-page .music-editor-topbar{padding-left:3px!important}
+
+  .music-midi-editor-page .music-assist-snap-controls{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(92px,112px);
+    align-items:center;
+    gap:4px;
+    width:100%;
+    min-width:0;
+  }
+  .music-midi-editor-page .music-assist-quantize-controls{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(104px,122px) minmax(58px,66px);
+    align-items:center;
+    gap:4px;
+    width:100%;
+    min-width:0;
+  }
+  .music-midi-editor-page .music-assist-snap-controls>label,
+  .music-midi-editor-page .music-assist-quantize-controls>label{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    align-items:center;
+    gap:3px;
+    min-width:0;
+    overflow:hidden;
+  }
+  .music-midi-editor-page .music-assist-snap-controls>button,
+  .music-midi-editor-page .music-assist-quantize-controls>button{
+    width:100%;
+    min-width:0;
+    max-width:none;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .music-midi-editor-page .music-assist-snap-controls select,
+  .music-midi-editor-page .music-assist-quantize-controls select{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+  .music-midi-editor-page .music-assist-quantize-controls>button:last-child{
+    width:100%;
+    min-width:0;
+    max-width:none;
+  }
+}

@@ -34,6 +34,14 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
 
         super.init()
         webView.navigationDelegate = self
+        #if os(iOS)
+        webView.isOpaque = false
+        webView.backgroundColor = .black
+        webView.scrollView.backgroundColor = .black
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
+        webView.scrollView.scrollIndicatorInsets = .zero
+        #endif
     }
 
     public func start() {
