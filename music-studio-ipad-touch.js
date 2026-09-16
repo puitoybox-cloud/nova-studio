@@ -28,6 +28,15 @@
     const initial=distance(points[0],points[1]);if(!initial)return false;
     pinch={viewport,startDistance:initial,lastDistance:initial};drag=null;return true;
   }
+  function applyLiveZoom(state,currentDistance){
+    if(!state||!currentDistance)return 0;
+    const steps=zoomSteps(state.startDistance,currentDistance);
+    if(!steps)return 0;
+    root.MusicStudio?.editorZoom?.(steps);
+    state.startDistance=currentDistance;
+    state.lastDistance=currentDistance;
+    return steps;
+  }
 
   function onPointerDown(event){
     if(!coarseLandscape()||event.pointerType!=='touch')return;
@@ -48,7 +57,11 @@
     const viewport=entry.viewport,points=pointsFor(viewport);
     if(points.length>=2){
       if(!pinch)startPinch(viewport);
-      if(pinch){pinch.lastDistance=distance(points[0],points[1])||pinch.lastDistance}
+      if(pinch){
+        const current=distance(points[0],points[1])||pinch.lastDistance;
+        pinch.lastDistance=current;
+        applyLiveZoom(pinch,current);
+      }
       stop(event);return;
     }
     if(!drag||drag.pointerId!==event.pointerId){stop(event);return}
@@ -85,7 +98,9 @@
 
   function onTouchMove(event){
     if(!touchPinch||event.touches?.length<2)return;
-    touchPinch.lastDistance=distance(touchPoint(event.touches[0]),touchPoint(event.touches[1]))||touchPinch.lastDistance;
+    const current=distance(touchPoint(event.touches[0]),touchPoint(event.touches[1]))||touchPinch.lastDistance;
+    touchPinch.lastDistance=current;
+    applyLiveZoom(touchPinch,current);
     stop(event);
   }
 
