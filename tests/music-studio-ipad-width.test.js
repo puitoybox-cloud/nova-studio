@@ -13,10 +13,28 @@ const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-lay
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
   const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.16');
-  const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.3');
+  const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.4');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
   assert.ok(followUp > ipad);
+});
+
+test('standalone iPad home reuses the formal Nova Studio hero and bridge assets', () => {
+  assert.match(html, /style\.css\?v=1\.4\.9/);
+  assert.match(html, /nova-unified-ui\.css\?v=1\.1\.10/);
+  assert.match(html, /gemini-bridge\.js\?v=1\.5\.2/);
+  assert.match(html, /nova-menu\.js\?v=1\.0\.4/);
+  assert.equal((html.match(/data-music-home-style/g) || []).length, 4);
+  assert.match(fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8'), /function standaloneHero\(\).*MUSIC PRODUCTION.*Music Studio.*MIDI \/ Logic Pro/s);
+  assert.match(fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8'), /\[data-music-home-style\][\s\S]*?sheet\.disabled=isEditor/);
+  assert.match(fs.readFileSync(path.join(root, 'nova-menu.js'), 'utf8'), /#app,#music-studio-app,#musicStudioRoot/);
+});
+
+test('iPad home compaction is isolated from the editor and non-touch desktop', () => {
+  assert.match(followUpCss, /@media \(min-width:601px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
+  assert.match(followUpCss, /body\.music-studio-page\.is-studio-route:not\(:has\(\.music-midi-editor-page\)\)/);
+  assert.match(followUpCss, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero\{[^}]*height:112px/s);
 });
 
 test('iPad width overrides cover every landscape coarse-pointer viewport above phone width', () => {
