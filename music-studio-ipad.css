@@ -1,6 +1,6 @@
 /* iPad editor width parity: preserve the accepted PR #249 structure and fit it to landscape. */
 @media (min-width:601px) and (max-width:1366px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
-  html,body.music-studio-page,body.is-music-studio-route{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0;overflow-x:hidden}
+  html,body.music-studio-page,body.is-music-studio-route{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0;overflow-x:hidden;background:#08111d}
   body.music-studio-page #music-studio-app,body.is-music-studio-route #app{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin:0;padding:0}
   body.music-studio-page:has(.music-midi-editor-page) #music-studio-app{width:100%;max-width:none;min-width:0;margin:0;padding:0}
   body.music-studio-page:has(.music-midi-editor-page) .music-studio-shell,
@@ -13,8 +13,8 @@
   html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page),body.is-music-studio-route:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-page) #music-studio-app,body.is-music-studio-route:has(.music-midi-editor-page) #app,body.is-music-studio-route:has(.music-midi-editor-page) .management-layout,body.is-music-studio-route:has(.music-midi-editor-page) .management-main{height:100svh;max-height:100svh;overflow:hidden}
   .music-midi-editor-page,body.is-management-route .management-main>.music-midi-editor-page{height:100svh;max-height:100svh;overflow:hidden}
 
-  /* Break only the outer editor wrapper out to the physical viewport edge. Inner wrappers then inherit that width. */
-  body.music-studio-page .music-studio-shell:has(.music-midi-editor-page),body.is-music-studio-route .music-studio-shell:has(.music-midi-editor-page){box-sizing:border-box;width:100vw!important;max-width:none!important;margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important;padding:0!important}
+  /* The native wrapper owns the iPad safe area. Fill every pixel it gives the web app. */
+  body.music-studio-page .music-studio-shell:has(.music-midi-editor-page),body.is-music-studio-route .music-studio-shell:has(.music-midi-editor-page){box-sizing:border-box;width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
   body.music-studio-page .management-layout:has(.music-midi-editor-page),body.music-studio-page .management-main:has(.music-midi-editor-page),body.is-music-studio-route .management-layout:has(.music-midi-editor-page),body.is-music-studio-route .management-main:has(.music-midi-editor-page),.music-midi-editor-page{position:static!important;box-sizing:border-box;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;transform:none!important}
 
   .music-midi-editor-page .music-editor-layout{height:50svh!important;min-height:0!important;max-height:50svh!important;flex:0 0 50svh!important;overflow:hidden}
@@ -22,8 +22,8 @@
   .music-midi-editor-page .music-piano-viewport{height:100%!important;min-height:0;overscroll-behavior:contain}
   .music-midi-editor-page .music-editor-chrome{box-sizing:border-box;min-height:26px;flex:0 0 26px;padding:0 48px}
 
-  /* Keep the menu out of the iPad status-clock row without making the header taller. */
-  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{position:fixed!important;top:max(34px,calc(env(safe-area-inset-top) + 3px))!important;left:max(8px,env(safe-area-inset-left))!important;display:flex!important;align-items:center!important;justify-content:center!important;width:30px!important;height:24px!important;min-width:30px!important;min-height:24px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;z-index:1001}
+  /* Web content already begins below the native iPad status row. Keep MENU in the first app row. */
+  body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{position:fixed!important;top:27px!important;left:8px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:30px!important;height:24px!important;min-width:30px!important;min-height:24px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;z-index:1001}
   body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;width:18px!important;height:16px!important;font-size:0!important;line-height:0!important}
   body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph>span{display:block!important;width:18px!important;height:2px!important;min-height:2px!important;margin:0!important;padding:0!important;border:0!important;border-radius:2px!important;background:#f2f5f8!important;box-shadow:none!important;transform:none!important}
   .music-midi-editor-page .music-editor-topbar{padding-left:40px!important}
