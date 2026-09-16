@@ -8,12 +8,14 @@
   const active=new Map();
   let drag=null;
   let pinch=null;
+  let touchPinch=null;
 
   function viewportFor(target){return target?.closest?.(SELECTOR)||null}
   function pianoScroll(viewport){return viewport?.querySelector?.('.music-piano-scroll')||null}
   function rollFor(target){return target?.closest?.('.music-piano-roll')||null}
   function point(event){return{x:Number(event?.clientX)||0,y:Number(event?.clientY)||0}}
   function distance(a,b){return Math.hypot(b.x-a.x,b.y-a.y)}
+  function touchPoint(touch){return{x:Number(touch?.clientX)||0,y:Number(touch?.clientY)||0}}
   function remember(viewport,scroll){
     root.MusicStudio?.editorRememberPitchScroll?.(viewport,'vertical');
     if(scroll)root.MusicStudio?.editorRememberPitchScroll?.(scroll,'horizontal');
@@ -41,6 +43,7 @@
 
   function onPointerMove(event){
     if(!coarseLandscape()||event.pointerType!=='touch'||!active.has(event.pointerId))return;
+    if(touchPinch){stop(event);return}
     const p=point(event),entry=active.get(event.pointerId);active.set(event.pointerId,{...entry,...p});
     const viewport=entry.viewport,points=pointsFor(viewport);
     if(points.length>=2){
@@ -61,18 +64,44 @@
 
   function finishPinch(){
     if(!pinch)return false;
-    const ratio=pinch.lastDistance/pinch.startDistance;
-    const steps=ratio>=1.08?Math.max(1,Math.min(6,Math.round((ratio-1)*5))):ratio<=.92?-Math.max(1,Math.min(6,Math.round((1-ratio)*5))):0;
+    const steps=zoomSteps(pinch.startDistance,pinch.lastDistance);
     const viewport=pinch.viewport,scroll=pianoScroll(viewport);pinch=null;
     if(steps)root.MusicStudio?.editorZoom?.(steps);else remember(viewport,scroll);
     return Boolean(steps);
+  }
+
+  function zoomSteps(startDistance,lastDistance){
+    const ratio=lastDistance/startDistance;
+    return ratio>=1.08?Math.max(1,Math.min(6,Math.round((ratio-1)*5))):ratio<=.92?-Math.max(1,Math.min(6,Math.round((1-ratio)*5))):0;
+  }
+
+  function onTouchStart(event){
+    if(!coarseLandscape()||event.touches?.length<2)return;
+    const viewport=viewportFor(event.target);if(!viewport||event.target?.closest?.(EDIT_INTERACTIVE))return;
+    const initial=distance(touchPoint(event.touches[0]),touchPoint(event.touches[1]));if(!initial)return;
+    touchPinch={viewport,startDistance:initial,lastDistance:initial};
+    active.clear();drag=null;pinch=null;stop(event);
+  }
+
+  function onTouchMove(event){
+    if(!touchPinch||event.touches?.length<2)return;
+    touchPinch.lastDistance=distance(touchPoint(event.touches[0]),touchPoint(event.touches[1]))||touchPinch.lastDistance;
+    stop(event);
+  }
+
+  function onTouchEnd(event){
+    if(!touchPinch||event.touches?.length>=2)return;
+    const current=touchPinch;touchPinch=null;
+    const steps=zoomSteps(current.startDistance,current.lastDistance);
+    if(steps)root.MusicStudio?.editorZoom?.(steps);else remember(current.viewport,pianoScroll(current.viewport));
+    stop(event);
   }
 
   function onPointerUp(event){
     if(event.pointerType!=='touch'||!active.has(event.pointerId))return;
     const entry=active.get(event.pointerId),viewport=entry.viewport,scroll=pianoScroll(viewport);
     active.delete(event.pointerId);
-    if(pinch&&pointsFor(viewport).length<2)finishPinch();
+    if(!touchPinch&&pinch&&pointsFor(viewport).length<2)finishPinch();
     if(drag?.pointerId===event.pointerId){remember(viewport,scroll);drag=null}
     if(active.size===0){pinch=null;drag=null}
     stop(event);
@@ -87,6 +116,10 @@
   root.document?.addEventListener?.('pointermove',onPointerMove,{capture:true,passive:false});
   root.document?.addEventListener?.('pointerup',onPointerUp,{capture:true,passive:false});
   root.document?.addEventListener?.('pointercancel',onPointerCancel,{capture:true,passive:false});
+  root.document?.addEventListener?.('touchstart',onTouchStart,{capture:true,passive:false});
+  root.document?.addEventListener?.('touchmove',onTouchMove,{capture:true,passive:false});
+  root.document?.addEventListener?.('touchend',onTouchEnd,{capture:true,passive:false});
+  root.document?.addEventListener?.('touchcancel',onTouchEnd,{capture:true,passive:false});
 
-  root.MusicStudioIPadTouch={distance,coarseLandscape};
+  root.MusicStudioIPadTouch={distance,zoomSteps,coarseLandscape};
 })(typeof window!=='undefined'?window:globalThis);
