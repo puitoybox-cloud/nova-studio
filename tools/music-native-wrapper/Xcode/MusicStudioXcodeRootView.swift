@@ -12,7 +12,9 @@ private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
 struct MusicStudioXcodeRootView: View {
     var body: some View {
         MusicStudioXcodeWebViewContainer()
-            .ignoresSafeArea()
+            // Keep the iPad system status row above Music Studio, while still
+            // allowing the editor to use the full landscape width.
+            .ignoresSafeArea(.container, edges: .horizontal)
     }
 }
 
