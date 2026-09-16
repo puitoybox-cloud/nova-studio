@@ -8,10 +8,12 @@ const html=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
 const touch=fs.readFileSync(path.join(root,'music-studio-ipad-touch.js'),'utf8');
 const ipadCss=fs.readFileSync(path.join(root,'music-studio-ipad.css'),'utf8');
 
+require(path.join(root,'music-studio-ipad-touch.js'));
+
 test('Music Studio loads current iPad Piano Roll gesture assets',()=>{
-  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.5/);
+  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.6/);
   const core=html.indexOf('./music-studio.js?v=1.4.103');
-  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.4');
+  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.5');
   assert.ok(core>=0);assert.ok(bridge>core);
 });
 
@@ -39,8 +41,23 @@ test('one-finger Piano Roll gesture routes vertical motion to pitch scroll and h
 
 test('two active touch pointers drive existing editor zoom',()=>{
   assert.match(touch,/points\.length>=2/);
-  assert.match(touch,/ratio=pinch\.lastDistance\/pinch\.startDistance/);
+  assert.match(touch,/zoomSteps\(pinch\.startDistance,pinch\.lastDistance\)/);
   assert.match(touch,/root\.MusicStudio\?\.editorZoom\?\.\(steps\)/);
+});
+
+test('WKWebView multi-touch fallback drives the same zoom path without duplicating pointer zoom',()=>{
+  assert.match(touch,/addEventListener\?\.\('touchstart',onTouchStart,\{capture:true,passive:false\}\)/);
+  assert.match(touch,/addEventListener\?\.\('touchmove',onTouchMove,\{capture:true,passive:false\}\)/);
+  assert.match(touch,/if\(!touchPinch&&pinch&&pointsFor\(viewport\)\.length<2\)finishPinch\(\)/);
+  assert.match(touch,/zoomSteps\(current\.startDistance,current\.lastDistance\)/);
+});
+
+test('pinch distance maps deterministically to bounded zoom steps',()=>{
+  const {zoomSteps}=globalThis.MusicStudioIPadTouch;
+  assert.equal(zoomSteps(100,120),1);
+  assert.equal(zoomSteps(100,80),-1);
+  assert.equal(zoomSteps(100,105),0);
+  assert.equal(zoomSteps(100,400),6);
 });
 
 test('note and control pointer gestures remain on the existing editor path',()=>{
