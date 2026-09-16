@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 private let pr250VerificationConfiguration = MusicStudioAppConfiguration(
-    startURL: URL(string: "https://cdn.jsdelivr.net/gh/puitoybox-cloud/nova-studio@5d6ec783fa52fef60645894383f9baff3b512c6d/music-studio.html?raw=1")!,
+    startURL: URL(string: "https://cdn.jsdelivr.net/gh/puitoybox-cloud/nova-studio@d41883fa563c218df677452c74187670d49f5dea/music-studio.html?raw=1")!,
     allowedHosts: [
         "cdn.jsdelivr.net",
         "puitoybox-cloud.github.io"
