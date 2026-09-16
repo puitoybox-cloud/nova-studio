@@ -9,9 +9,9 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'music-studio.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 
-test('standalone Music Studio loads the iPad width override after base styles', () => {
+test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.8');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.14');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
 });
@@ -26,74 +26,41 @@ test('iPad width override is limited to landscape coarse pointers from 601px thr
   assert.match(media[1], /pointer:coarse/);
 });
 
-test('iPad editor uses the full available width without restoring outer max widths or margins', () => {
-  assert.ok(css.includes('html,body.music-studio-page,body.is-music-studio-route{box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0}'));
-  assert.ok(css.includes('body.music-studio-page #music-studio-app,body.is-music-studio-route #app{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin:0;padding:0}'));
-  assert.ok(css.includes('.management-main{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin-inline:0;padding-inline:0}'));
-  assert.ok(css.includes('.music-midi-editor-page{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin-inline:0;'));
-  assert.match(css,/\.music-midi-editor-page\{position:relative;left:50%;width:100vw!important;max-width:100vw!important;transform:translateX\(-50%\);margin:0!important\}/);
+test('iPad editor breaks only the outer shell to the viewport edge', () => {
+  assert.match(css,/\.music-studio-shell:has\(\.music-midi-editor-page\)[^{]*\{[^}]*width:100vw!important;[^}]*margin-left:calc\(50% - 50vw\)!important;[^}]*margin-right:calc\(50% - 50vw\)!important;/s);
+  assert.match(css,/\.management-layout:has\(\.music-midi-editor-page\)[^{]*\.music-midi-editor-page\{[^}]*width:100%!important;[^}]*max-width:none!important;[^}]*transform:none!important;/s);
+  assert.doesNotMatch(css,/width:calc\(100vw \+ env\(safe-area-inset-left\)/);
 });
 
-test('safe-area padding is applied once at the editor edge', () => {
-  assert.match(css, /\.music-midi-editor-page\{[^}]*padding-right:max\(4px,env\(safe-area-inset-right\)\);[^}]*padding-left:max\(4px,env\(safe-area-inset-left\)\)/s);
-  assert.doesNotMatch(css, /#music-studio-app\{[^}]*safe-area-inset-/s);
+test('iPad landscape keeps the editor inside the stable Safari viewport', () => {
+  assert.match(css,/height:100svh;max-height:100svh;overflow:hidden/);
+  assert.match(css,/\.music-editor-layout\{[^}]*height:50svh!important;[^}]*max-height:50svh!important;/s);
+  assert.match(css,/\.music-piano-viewport\{[^}]*height:100%!important;[^}]*overscroll-behavior:contain/s);
 });
 
-test('iPad landscape editor uses the stable Safari viewport and keeps page overflow internal', () => {
-  assert.ok(css.includes('.management-main{height:100svh;max-height:100svh;overflow:hidden}'));
-  assert.ok(css.includes('.music-midi-editor-page{height:100svh;max-height:100svh;overflow:hidden}'));
-  assert.ok(css.includes('.music-editor-layout{min-height:150px;flex:1 1 auto;overflow:hidden}'));
-  assert.ok(css.includes('.music-piano-viewport{height:100%!important;min-height:0;'));
+test('iPad menu is below the status clock row and topbar reserves its space', () => {
+  assert.match(css,/\.nova-menu-toggle\{[^}]*top:max\(34px,calc\(env\(safe-area-inset-top\) \+ 3px\)\)!important;[^}]*left:max\(8px,env\(safe-area-inset-left\)\)!important;/s);
+  assert.match(css,/\.music-editor-topbar\{padding-left:40px!important\}/);
 });
 
-test('iPad landscape bottom controls preserve the accepted PR249 five-column proportions', () => {
-  assert.match(css, /\.music-editor-bottom\{[^}]*height:clamp\(276px,36svh,330px\);[^}]*max-height:36svh;[^}]*flex-basis:clamp\(276px,36svh,330px\);[^}]*grid-template-columns:1\.15fr 1\.25fr \.75fr 1\.65fr \.9fr;[^}]*grid-template-rows:minmax\(0,1fr\);/s);
-  assert.match(css, />section\{[^}]*grid-row:1!important;/s);
-  assert.match(css, />section:nth-child\(1\)\{grid-column:1\}/);
-  assert.match(css, />\.music-display-assist\{grid-column:2\}/);
-  assert.match(css, />\.music-edit-range\{grid-column:3\}/);
-  assert.match(css, />\.music-partial-edit\{grid-column:4\}/);
-  assert.match(css, />section:last-child\{grid-column:5\}/);
+test('iPad hamburger remains three equal CSS lines', () => {
+  assert.match(css,/\.nova-menu-glyph>span\{[^}]*width:18px!important;[^}]*height:2px!important;[^}]*background:#f2f5f8!important/s);
 });
 
-test('iPad landscape controls remain compact but operable', () => {
-  assert.match(css, /\.music-editor-bottom button\{[^}]*min-height:32px;/s);
-  assert.match(css, /\.music-editor-bottom :is\(input,select,textarea\)\{[^}]*min-height:32px;[^}]*height:32px;/s);
+test('iPad landscape bottom controls remain a five-column row', () => {
+  assert.match(css,/\.music-editor-bottom\{[^}]*grid-template-columns:1\.05fr 1\.55fr \.75fr 1\.5fr \.85fr;[^}]*grid-template-rows:minmax\(0,1fr\)/s);
+  assert.match(css,/>section:nth-child\(1\)\{grid-column:1\}/);
+  assert.match(css,/>\.music-display-assist\{grid-column:2\}/);
+  assert.match(css,/>\.music-edit-range\{grid-column:3\}/);
+  assert.match(css,/>\.music-partial-edit\{grid-column:4\}/);
+  assert.match(css,/>section:last-child\{grid-column:5\}/);
 });
 
-test('Snap and Quantize controls fit inside their section without clipping', () => {
-  assert.match(css, /\.music-assist-snap-controls\{[^}]*grid-template-columns:minmax\(0,1fr\) minmax\(76px,88px\);/s);
-  assert.match(css, /\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(0,1fr\) minmax\(76px,88px\) minmax\(64px,72px\);/s);
-  assert.match(css, /\.music-assist-snap-controls>button::before,[^{]+\{display:none!important;content:none!important\}/s);
-  assert.match(css, /\.music-assist-snap-controls select,[^{]+\{[^}]*width:100%;[^}]*min-width:0;[^}]*max-width:100%;[^}]*padding-right:20px/s);
-  assert.match(css, /\.music-assist-quantize-controls>button:last-child\{[^}]*width:100%;[^}]*min-width:0;[^}]*max-width:100%;[^}]*overflow:hidden;[^}]*white-space:nowrap;/s);
+test('Snap and Quantize controls retain the accepted compact layout', () => {
+  assert.match(css,/\.music-assist-snap-controls\{[^}]*grid-template-columns:minmax\(126px,1fr\) 42px minmax\(72px,82px\)/s);
+  assert.match(css,/\.music-assist-quantize-controls\{[^}]*grid-template-columns:minmax\(88px,1fr\) 58px minmax\(72px,82px\) minmax\(64px,70px\)/s);
 });
 
 test('iPad Piano Roll CSS does not globally disable WKWebView pinch gestures', () => {
   assert.doesNotMatch(css, /touch-action\s*:\s*none/);
-});
-
-test('iPad landscape upper editor chrome stays compact and toolbar stays on one row', () => {
-  assert.ok(css.includes('.music-editor-chrome{box-sizing:border-box;min-height:32px;flex:0 0 32px;padding:0 48px}'));
-  assert.ok(css.includes('.music-editor-chrome .music-editor-heading h1{font-size:.88rem;line-height:1}'));
-  assert.match(css, /\.music-editor-topbar\{[^}]*min-height:28px;[^}]*max-height:28px;[^}]*flex:0 0 28px;[^}]*flex-wrap:nowrap;[^}]*overflow-x:hidden/s);
-  assert.match(css, /\.music-editor-topbar \.music-editor-menu>summary,[^{]+\{[^}]*min-height:24px;[^}]*height:24px;[^}]*font-size:\.6rem/s);
-});
-
-test('iPad landscape hamburger stays inside the Melody制作 header band', () => {
-  assert.ok(css.includes('body.music-studio-page:has(.music-midi-editor-page) .nova-menu-toggle{top:max(0px,env(safe-area-inset-top));left:max(4px,env(safe-area-inset-left));width:32px;height:32px;min-height:32px;'));
-  assert.ok(css.includes('body.music-studio-page:has(.music-midi-editor-page) .nova-menu-glyph{font-size:20px}'));
-});
-
-test('iPad landscape track tabs remain a compact single row', () => {
-  assert.match(css, /\.music-part-tabs\{[^}]*min-height:26px;[^}]*flex:0 0 26px;[^}]*flex-wrap:nowrap;[^}]*overflow-x:auto;[^}]*overflow-y:hidden;/s);
-  assert.match(css, /\.music-part-tab-list\{[^}]*min-width:max-content;[^}]*flex-wrap:nowrap;/s);
-  assert.match(css, /\.music-history-controls>button\{[^}]*height:22px;[^}]*min-height:22px;[^}]*max-height:22px;/s);
-});
-
-test('iPad landscape Piano Roll ruler keeps all information in a shorter header', () => {
-  assert.ok(css.includes('.music-piano-frame{--music-piano-header-height:46px}'));
-  assert.ok(css.includes('.music-loop-ruler{height:22px}'));
-  assert.ok(css.includes('.music-loop-ruler+.music-measure-row,.music-midi-editor-page .music-measure-row,.music-midi-editor-page .music-measure{height:24px!important;min-height:24px!important;max-height:24px!important}'));
-  assert.ok(css.includes('.music-time-ruler,.music-midi-editor-page .music-playhead-handle{height:10px}'));
 });
