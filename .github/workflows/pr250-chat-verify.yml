@@ -1,0 +1,33 @@
+name: PR250 Chat Verification
+
+on:
+  push:
+    branches:
+      - verification/pr250-chat-8d16076
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact verification HEAD
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node tests
+        run: node --test
+
+      - name: Check all JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+
+      - name: Diff whitespace check against PR250 base
+        run: git diff --check ec59f2176803b37b1ae934828cfc46e656e699e2 HEAD
