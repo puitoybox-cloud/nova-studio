@@ -48,9 +48,19 @@
   .music-midi-editor-page .music-editor-bottom :is(input,select,textarea){min-width:0;min-height:32px;height:32px;padding:3px 5px;font-size:.72rem}
   .music-midi-editor-page .music-editor-bottom :is(label,b,p){font-size:.7rem}.music-midi-editor-page .music-partial-edit-provider{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:4px 0}
   .music-midi-editor-page .music-assist-snap-controls{grid-template-columns:minmax(130px,1fr) minmax(112px,auto);gap:6px}
-  .music-midi-editor-page .music-assist-quantize-controls{grid-template-columns:minmax(92px,1fr) minmax(128px,auto) minmax(44px,auto);gap:6px}
+  .music-midi-editor-page .music-assist-quantize-controls{grid-template-columns:minmax(92px,1fr) minmax(128px,auto) minmax(58px,auto);gap:6px}
   .music-midi-editor-page .music-assist-snap-controls>button,.music-midi-editor-page .music-assist-quantize-controls>button,.music-midi-editor-page .music-assist-snap-controls>label,.music-midi-editor-page .music-assist-quantize-controls>label{min-width:0;white-space:nowrap}
+  .music-midi-editor-page .music-assist-snap-controls>button{overflow:hidden}
+  .music-midi-editor-page .music-assist-snap-controls>button::before,.music-midi-editor-page .music-assist-snap-controls>button::after{display:none!important;content:none!important}
+  .music-midi-editor-page .music-assist-quantize-controls>button:last-child{min-width:58px;width:auto;white-space:nowrap;word-break:keep-all}
   .music-midi-editor-page .music-assist-snap-controls select,.music-midi-editor-page .music-assist-quantize-controls select{min-width:70px}
   .music-midi-editor-page .music-partial-edit-provider textarea{height:32px;min-height:32px}.music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:24px;min-height:24px;padding-block:0}
   .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}.music-midi-editor-page .music-edit-range-fields{flex:none}.music-midi-editor-page .music-edit-range label{min-width:0;margin:0}.music-midi-editor-page .music-edit-range input{height:24px;min-height:24px;margin-top:0;padding-block:0}.music-midi-editor-page .music-edit-range p{margin-top:1px}
+
+  /* Force the editor itself to the WKWebView viewport width. This bypasses inherited shell widths while preserving only safe-area padding. */
+  body.music-studio-page .music-studio-shell:has(.music-midi-editor-page),
+  body.is-music-studio-route .music-studio-shell:has(.music-midi-editor-page),
+  body.music-studio-page .management-layout:has(.music-midi-editor-page),
+  body.music-studio-page .management-main:has(.music-midi-editor-page){width:100vw!important;max-width:100vw!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
+  .music-midi-editor-page{position:relative;left:50%;width:100vw!important;max-width:100vw!important;transform:translateX(-50%);margin:0!important}
 }
