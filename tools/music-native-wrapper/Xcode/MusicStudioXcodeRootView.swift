@@ -13,10 +13,13 @@ struct MusicStudioXcodeRootView: View {
     var body: some View {
         ZStack {
             Color(red: 8.0 / 255.0, green: 17.0 / 255.0, blue: 29.0 / 255.0)
-                .ignoresSafeArea()
             MusicStudioXcodeWebViewContainer()
-                .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // Keep only the top system-status safe area. The root itself must own
+        // the horizontal/bottom extension or SwiftUI can keep the WebView at
+        // the safe-area width even when the child ignores those edges.
+        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
     }
 }
 
