@@ -11,9 +11,9 @@ const ipadCss=fs.readFileSync(path.join(root,'music-studio-ipad.css'),'utf8');
 require(path.join(root,'music-studio-ipad-touch.js'));
 
 test('Music Studio loads current iPad Piano Roll gesture assets',()=>{
-  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.6/);
+  assert.match(html,/music-studio-ipad\.css\?v=1\.0\.7/);
   const core=html.indexOf('./music-studio.js?v=1.4.103');
-  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.5');
+  const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.6');
   assert.ok(core>=0);assert.ok(bridge>core);
 });
 
@@ -39,17 +39,17 @@ test('one-finger Piano Roll gesture routes vertical motion to pitch scroll and h
   assert.match(touch,/drag\.scroll\.scrollLeft=Math\.max\(0,drag\.startLeft-dx\)/);
 });
 
-test('two active touch pointers drive existing editor zoom',()=>{
+test('two active touch pointers drive existing editor zoom while the pinch is moving',()=>{
   assert.match(touch,/points\.length>=2/);
-  assert.match(touch,/zoomSteps\(pinch\.startDistance,pinch\.lastDistance\)/);
+  assert.match(touch,/applyLiveZoom\(pinch,current\)/);
   assert.match(touch,/root\.MusicStudio\?\.editorZoom\?\.\(steps\)/);
 });
 
-test('WKWebView multi-touch fallback drives the same zoom path without duplicating pointer zoom',()=>{
+test('WKWebView multi-touch fallback drives live zoom without duplicating pointer zoom',()=>{
   assert.match(touch,/addEventListener\?\.\('touchstart',onTouchStart,\{capture:true,passive:false\}\)/);
   assert.match(touch,/addEventListener\?\.\('touchmove',onTouchMove,\{capture:true,passive:false\}\)/);
+  assert.match(touch,/applyLiveZoom\(touchPinch,current\)/);
   assert.match(touch,/if\(!touchPinch&&pinch&&pointsFor\(viewport\)\.length<2\)finishPinch\(\)/);
-  assert.match(touch,/zoomSteps\(current\.startDistance,current\.lastDistance\)/);
 });
 
 test('pinch distance maps deterministically to bounded zoom steps',()=>{
