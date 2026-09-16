@@ -1,0 +1,5 @@
+PR #242 exact-head verification
+Product HEAD: 5c9b7c6d8cfbaf31f00dcecf54491411a3c8e8a0
+Verification branch: verification/pr242-exact-head-5c9b7c6
+This branch is for Intel Mac / Chrome verification only.
+Product code is unchanged from the parent product HEAD.
