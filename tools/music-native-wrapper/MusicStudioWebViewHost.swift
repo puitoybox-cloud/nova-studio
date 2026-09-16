@@ -31,6 +31,18 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
         midiCoordinator = coordinator
         _ = coordinator.start()
+
+        if configuration.startURL.host?.lowercased() == "raw.githubusercontent.com" {
+            URLSession.shared.dataTask(with: configuration.startURL) { [weak self] data, _, error in
+                guard let self, error == nil, let data, let html = String(data: data, encoding: .utf8) else { return }
+                let baseURL = self.configuration.startURL.deletingLastPathComponent().appendingPathComponent("")
+                DispatchQueue.main.async {
+                    self.webView.loadHTMLString(html, baseURL: baseURL)
+                }
+            }.resume()
+            return
+        }
+
         webView.load(URLRequest(url: configuration.startURL))
     }
 
