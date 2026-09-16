@@ -26,10 +26,11 @@ test('iPad width override is limited to landscape coarse pointers from 601px thr
   assert.match(media[1], /pointer:coarse/);
 });
 
-test('iPad editor breaks only the outer shell to the viewport edge', () => {
-  assert.match(css,/\.music-studio-shell:has\(\.music-midi-editor-page\)[^{]*\{[^}]*width:100vw!important;[^}]*margin-left:calc\(50% - 50vw\)!important;[^}]*margin-right:calc\(50% - 50vw\)!important;/s);
+test('iPad editor fills the native wrapper width without viewport breakout margins', () => {
+  assert.match(css,/\.music-studio-shell:has\(\.music-midi-editor-page\)[^{]*\{[^}]*width:100%!important;[^}]*max-width:none!important;[^}]*margin:0!important;[^}]*padding:0!important;/s);
   assert.match(css,/\.management-layout:has\(\.music-midi-editor-page\)[^{]*\.music-midi-editor-page\{[^}]*width:100%!important;[^}]*max-width:none!important;[^}]*transform:none!important;/s);
-  assert.doesNotMatch(css,/width:calc\(100vw \+ env\(safe-area-inset-left\)/);
+  assert.doesNotMatch(css,/margin-left:calc\(50% - 50vw\)/);
+  assert.doesNotMatch(css,/margin-right:calc\(50% - 50vw\)/);
 });
 
 test('iPad landscape keeps the editor inside the stable Safari viewport', () => {
@@ -38,8 +39,8 @@ test('iPad landscape keeps the editor inside the stable Safari viewport', () => 
   assert.match(css,/\.music-piano-viewport\{[^}]*height:100%!important;[^}]*overscroll-behavior:contain/s);
 });
 
-test('iPad menu is below the status clock row and topbar reserves its space', () => {
-  assert.match(css,/\.nova-menu-toggle\{[^}]*top:max\(34px,calc\(env\(safe-area-inset-top\) \+ 3px\)\)!important;[^}]*left:max\(8px,env\(safe-area-inset-left\)\)!important;/s);
+test('iPad menu sits in the first app row after the native status safe area', () => {
+  assert.match(css,/\.nova-menu-toggle\{[^}]*top:27px!important;[^}]*left:8px!important;/s);
   assert.match(css,/\.music-editor-topbar\{padding-left:40px!important\}/);
 });
 
