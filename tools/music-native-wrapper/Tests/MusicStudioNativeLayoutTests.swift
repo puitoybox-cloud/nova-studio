@@ -24,6 +24,18 @@ final class MusicStudioNativeLayoutTests: XCTestCase {
         XCTAssertTrue(project.contains("UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"))
     }
 
+    func testIPadTargetUsesAppIconAssetWithoutChangingMacIconSettings() throws {
+        let project = try source("MusicStudioNative.xcodeproj/project.pbxproj")
+        let appIcon = try source("Assets.xcassets/AppIcon.appiconset/Contents.json")
+
+        XCTAssertEqual(project.components(separatedBy: "ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon").count - 1, 2)
+        XCTAssertEqual(project.components(separatedBy: "A20000000000000000000011").count - 1, 2)
+        XCTAssertFalse(project.contains("A10000000000000000000011"))
+        XCTAssertTrue(appIcon.contains("MusicStudio-AppIcon-1024.png"))
+        XCTAssertTrue(appIcon.contains("\"platform\" : \"ios\""))
+        XCTAssertTrue(appIcon.contains("\"size\" : \"1024x1024\""))
+    }
+
     func testIPadRootPreservesOnlyTheTopSystemSafeArea() throws {
         let root = try source("Xcode/MusicStudioXcodeRootView.swift")
 

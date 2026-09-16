@@ -21,7 +21,8 @@ let package = Package(
                 "MusicStudioApp.swift",
                 "MusicStudioRootView.swift",
                 "VERIFICATION.md",
-                "VerificationProduct"
+                "VerificationProduct",
+                "Assets.xcassets"
             ],
             sources: [
                 "CoreMidiInputBridge.swift",
@@ -44,7 +45,8 @@ let package = Package(
                 "MusicStudioAppConfiguration.swift",
                 "MusicStudioWebViewHost.swift",
                 "VERIFICATION.md",
-                "VerificationProduct"
+                "VerificationProduct",
+                "Assets.xcassets"
             ],
             sources: ["MusicStudioApp.swift", "MusicStudioRootView.swift"]
         ),
