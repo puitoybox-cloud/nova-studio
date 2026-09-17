@@ -13,7 +13,7 @@ const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-lay
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.127');
   const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.16');
-  const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.4');
+  const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.5');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
   assert.ok(followUp > ipad);
@@ -35,6 +35,12 @@ test('iPad home compaction is isolated from the editor and non-touch desktop', (
   assert.match(followUpCss, /body\.music-studio-page\.is-studio-route:not\(:has\(\.music-midi-editor-page\)\)/);
   assert.match(followUpCss, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero\{[^}]*height:112px/s);
+});
+
+test('iPad home Hero reaches both viewport edges with MENU over the formal artwork', () => {
+  assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero\{[^}]*width:calc\(100% \+ \(2 \* var\(--nova-route-inline-padding\)\)\);[^}]*max-width:none;[^}]*margin-inline:calc\(-1 \* var\(--nova-route-inline-padding\)\);/s);
+  assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero>\.atelier-hero-media>img\{[^}]*object-fit:cover;[^}]*object-position:center;/s);
+  assert.match(fs.readFileSync(path.join(root, 'nova-menu.js'), 'utf8'), /hero\?target\.prepend\(toggle\)/);
 });
 
 test('iPad width overrides cover every landscape coarse-pointer viewport above phone width', () => {
