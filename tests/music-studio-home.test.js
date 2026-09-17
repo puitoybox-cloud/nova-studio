@@ -202,7 +202,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.18/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.18/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.13/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.13/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.127/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.127/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.103/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.103/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.103/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.104/);
   assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.18'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
   assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.103'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
   assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.55',stylesheet:'1\.4\.127'/);
