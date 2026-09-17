@@ -15,10 +15,17 @@
     padding-bottom:8px;
   }
   body.music-studio-page.is-studio-route:not(:has(.music-midi-editor-page)) .nova-studio-route-main>.atelier-hero{
+    width:calc(100% + (2 * var(--nova-route-inline-padding)));
+    max-width:none;
     height:112px;
     aspect-ratio:auto;
+    margin-inline:calc(-1 * var(--nova-route-inline-padding));
     margin-bottom:5px;
     border-radius:16px;
+  }
+  body.music-studio-page.is-studio-route:not(:has(.music-midi-editor-page)) .nova-studio-route-main>.atelier-hero>.atelier-hero-media>img{
+    object-fit:cover;
+    object-position:center;
   }
   body.music-studio-page.is-studio-route:not(:has(.music-midi-editor-page)) .nova-studio-route-content{
     padding:7px!important;
