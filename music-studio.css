@@ -187,6 +187,8 @@ body.music-studio-page .nova-menu-toggle,body.is-music-studio-route .nova-menu-t
 .music-cleanup-popover{position:fixed;z-index:80;top:max(76px,env(safe-area-inset-top));right:12px;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 140px);padding:12px;overflow-y:auto;overscroll-behavior:contain}
 .music-cleanup-panel-close{position:sticky;z-index:2;top:0;display:block;min-height:30px;margin:0 0 6px auto;padding:4px 8px}
 @media(max-width:900px){.music-cleanup-popover{right:8px;bottom:8px;left:8px;width:auto;max-height:calc(100vh - 88px)}}
+/* Host route panels use backdrop-filter, which makes fixed descendants relative to the panel in Chrome. Keep editor overlays viewport-fixed. */
+.nova-unified-content:has(>.music-midi-editor-page),.nova-studio-route-content:has(>.music-midi-editor-page){overflow:visible;-webkit-backdrop-filter:none;backdrop-filter:none}
 
 /* Music Studio 0.2 contextual guides: presentation only. */
 .music-first-song-actions{display:flex;flex:none;flex-wrap:wrap;gap:9px}.music-guide-window{max-width:820px}.music-guide-window .music-page-header{display:grid;gap:10px}.music-guide-window .music-page-header :is(h1,p){margin:0}.music-guide-window .music-page-header .music-primary{justify-self:start}.music-guide-window-content{padding:20px 0;border:1px solid var(--music-line);border-radius:20px;background:var(--music-panel)}
