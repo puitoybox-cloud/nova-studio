@@ -134,9 +134,9 @@ test('production entry cache keys select the Review-capable Editor assets',()=>{
   const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8'),studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8'),entries=`${index}\n${host}\n${standalone}`;
   assert.match(index,/app\.js\?v=1\.5\.55/);
   for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.127/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.18/)}
-  assert.match(host,/music-studio\.js\?v=1\.4\.103/);assert.match(standalone,/music-studio\.js\?v=1\.4\.104/);
+  assert.match(host,/music-studio\.js\?v=1\.4\.103/);assert.match(standalone,/music-studio\.js\?v=1\.4\.105/);
   assert.match(host,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.18'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.18/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.10[34]/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
+  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.18/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.10[35]/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
 });
 
 test('runtime markers expose only module versions and the Review API type',()=>{

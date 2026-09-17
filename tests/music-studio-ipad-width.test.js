@@ -26,7 +26,7 @@ test('standalone iPad home reuses the formal Nova Studio hero and bridge assets'
   assert.match(html, /nova-menu\.js\?v=1\.0\.4/);
   assert.equal((html.match(/data-music-home-style/g) || []).length, 4);
   const app = fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8');
-  assert.match(app, /function standaloneHero\(\).*music-studio-home-hero-20260917\.png.*MUSIC PRODUCTION.*Music Studio/s);
+  assert.match(app, /function standaloneHero\(\).*music-studio-home-hero-20260804-3\.jpeg.*MUSIC PRODUCTION.*Music Studio/s);
   assert.doesNotMatch(app.slice(app.indexOf('function standaloneHero'), app.indexOf('function standalonePage')), /MIDI \/ Logic Pro|studio-hero-badge/);
   assert.match(fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8'), /\[data-music-home-style\][\s\S]*?sheet\.disabled=isEditor/);
   assert.match(fs.readFileSync(path.join(root, 'nova-menu.js'), 'utf8'), /#app,#music-studio-app,#musicStudioRoot/);
@@ -43,7 +43,7 @@ test('iPad home Hero aligns with Home content and MENU overlays the uncropped fo
   assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero\{[^}]*width:100%;[^}]*max-width:100%;[^}]*margin-inline:0;/s);
   assert.match(followUpCss, /\.nova-studio-route-main>\.atelier-hero>\.atelier-hero-media>img\{[^}]*object-fit:contain;[^}]*object-position:center;/s);
   assert.match(fs.readFileSync(path.join(root, 'nova-menu.js'), 'utf8'), /hero\?target\.prepend\(toggle\)/);
-  assert.equal(fs.statSync(path.join(root, 'assets/images/home/music-studio-home-hero-20260917.png')).size > 0, true);
+  assert.equal(fs.statSync(path.join(root, 'assets/images/home/music-studio-home-hero-20260804-3.jpeg')).size > 0, true);
 });
 
 test('iPad width overrides cover every landscape coarse-pointer viewport above phone width', () => {
