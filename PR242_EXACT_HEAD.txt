@@ -1,0 +1,7 @@
+PR #242 Generated MIDI Cleanup exact-head Preview
+
+Product HEAD: 22401b74458c6bdac76b8d73d5b757dd2fa56b4b
+Preview branch: verification/pr242-22401b7
+
+The preview commit may differ from Product HEAD only by this marker and the
+START/STOP helper commands. Product runtime files must remain byte-identical.
