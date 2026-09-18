@@ -12,6 +12,8 @@ final class CoreMidiInputBridge {
     private var client = MIDIClientRef()
     private var inputPort = MIDIPortRef()
     private var connectedSources: [MIDIEndpointRef] = []
+    private let connectionLock = NSLock()
+    private let sourceRefreshQueue = DispatchQueue(label: "NovaMusicStudio.CoreMidiSources")
     private let onMessage: MessageHandler
 
     init(onMessage: @escaping MessageHandler) {
@@ -26,7 +28,15 @@ final class CoreMidiInputBridge {
     func start() -> OSStatus {
         stop()
 
-        var status = MIDIClientCreateWithBlock("Nova Music Studio" as CFString, &client) { _ in }
+        var status = MIDIClientCreateWithBlock("Nova Music Studio" as CFString, &client) { [weak self] _ in
+            // A USB MIDI endpoint can be published after the client starts even
+            // when it was already attached before app launch. Reconcile on every
+            // Core MIDI setup notification so the input port never remains bound
+            // only to the launch-time snapshot.
+            self?.sourceRefreshQueue.async { [weak self] in
+                self?.refreshSources()
+            }
+        }
         guard status == noErr else { return status }
 
         status = MIDIInputPortCreateWithProtocol(
@@ -42,18 +52,12 @@ final class CoreMidiInputBridge {
             return status
         }
 
-        let sourceCount = MIDIGetNumberOfSources()
-        for index in 0..<sourceCount {
-            let source = MIDIGetSource(index)
-            guard source != 0 else { continue }
-            if MIDIPortConnectSource(inputPort, source, nil) == noErr {
-                connectedSources.append(source)
-            }
-        }
+        refreshSources()
         return noErr
     }
 
     func stop() {
+        connectionLock.lock()
         if inputPort != 0 {
             for source in connectedSources {
                 MIDIPortDisconnectSource(inputPort, source)
@@ -62,10 +66,48 @@ final class CoreMidiInputBridge {
             MIDIPortDispose(inputPort)
             inputPort = 0
         }
-        if client != 0 {
-            MIDIClientDispose(client)
-            client = 0
+        let clientToDispose = client
+        client = 0
+        connectionLock.unlock()
+
+        // Disposing a client may synchronously emit a setup notification. Do
+        // not hold the connection lock across that callback.
+        if clientToDispose != 0 { MIDIClientDispose(clientToDispose) }
+    }
+
+    private func refreshSources() {
+        connectionLock.lock()
+        defer { connectionLock.unlock() }
+        guard inputPort != 0 else { return }
+
+        let availableSources = (0..<MIDIGetNumberOfSources())
+            .map(MIDIGetSource)
+            .filter { $0 != 0 }
+        let changes = Self.sourceChanges(
+            available: availableSources,
+            connected: connectedSources
+        )
+
+        for source in changes.disconnect {
+            MIDIPortDisconnectSource(inputPort, source)
         }
+        connectedSources.removeAll { changes.disconnect.contains($0) }
+
+        for source in changes.connect where MIDIPortConnectSource(inputPort, source, nil) == noErr {
+            connectedSources.append(source)
+        }
+    }
+
+    static func sourceChanges(
+        available: [MIDIEndpointRef],
+        connected: [MIDIEndpointRef]
+    ) -> (connect: [MIDIEndpointRef], disconnect: [MIDIEndpointRef]) {
+        let availableSet = Set(available)
+        let connectedSet = Set(connected)
+        return (
+            connect: available.filter { !connectedSet.contains($0) },
+            disconnect: connected.filter { !availableSet.contains($0) }
+        )
     }
 
     private func receive(_ eventList: UnsafePointer<MIDIEventList>) {

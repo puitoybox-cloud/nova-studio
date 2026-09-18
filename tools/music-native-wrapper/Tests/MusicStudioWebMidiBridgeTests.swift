@@ -96,4 +96,19 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         )
         XCTAssertTrue(source.contains("NovaMusicNativeMidiShim?.dispatch(payload) ?? window.MusicStudioMidiInput?.receiveNativeMessage(payload)"))
     }
+
+    func testCoreMidiWordReachesRegisteredSyntheticInputHandlerExactlyOnce() throws {
+        let context = try makeContext(performanceNow: "() => 250.25")
+        let bytes = try XCTUnwrap(
+            CoreMidiInputBridge.noteBytes(fromMIDI1UMP: 0x20903C64)
+        )
+        let payload = bytes.map(String.init).joined(separator: ",")
+
+        context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = event => received.push({ data: Array.from(event.data), timeStamp: event.timeStamp });")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({ data: [\(payload)] });")
+
+        XCTAssertEqual(context.evaluateScript("received.length")?.toInt32(), 1)
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(received[0].data)")?.toString(), "[144,60,100]")
+        XCTAssertEqual(context.evaluateScript("received[0].timeStamp")?.toDouble(), 250.25)
+    }
 }
