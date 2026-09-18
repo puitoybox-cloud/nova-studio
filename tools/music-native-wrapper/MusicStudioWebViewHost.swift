@@ -1,13 +1,13 @@
 import Foundation
 import WebKit
 
-final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
-    let webView: WKWebView
-    let configuration: MusicStudioAppConfiguration
+public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
+    public let webView: WKWebView
+    public let configuration: MusicStudioAppConfiguration
     private var midiCoordinator: NativeMidiCoordinator?
     private let platform: String
 
-    init(configuration: MusicStudioAppConfiguration, platform: String) {
+    public init(configuration: MusicStudioAppConfiguration, platform: String) {
         self.configuration = configuration
         self.platform = platform
 
@@ -20,7 +20,7 @@ final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         webView.navigationDelegate = self
     }
 
-    func start() {
+    public func start() {
         guard configuration.allows(configuration.startURL) else { return }
 
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
@@ -29,13 +29,13 @@ final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         webView.load(URLRequest(url: configuration.startURL))
     }
 
-    func stop() {
+    public func stop() {
         midiCoordinator?.stop()
         midiCoordinator = nil
         webView.stopLoading()
     }
 
-    func webView(
+    public func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
@@ -47,7 +47,7 @@ final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         decisionHandler(configuration.allows(url) ? .allow : .cancel)
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard let url = webView.url, configuration.allows(url) else { return }
         #if os(iOS)
         let platformName = "ipad"
