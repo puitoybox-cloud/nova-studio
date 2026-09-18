@@ -1,0 +1,7 @@
+PR #233 External Track Quantize exact-head Preview
+
+Product HEAD: 2f8efc3eeb43c7e114e35491d0815a99a033c054
+Preview branch: verification/pr233-2f8efc3
+
+The preview commit may differ from Product HEAD only by this marker and the
+START/STOP helper commands. Product runtime files must remain byte-identical.
