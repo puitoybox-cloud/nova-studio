@@ -94,8 +94,9 @@ final class CoreMidiInputBridge {
         let command = status & 0xF0
         guard command == 0x80 || command == 0x90 else { return nil }
 
-        let data1 = UInt8((word >> 8) & 0x7F)
-        let data2 = UInt8(word & 0x7F)
+        let data1 = UInt8((word >> 8) & 0xFF)
+        let data2 = UInt8(word & 0xFF)
+        guard data1 <= 127, data2 <= 127 else { return nil }
         return [status, data1, data2]
     }
 }

@@ -21,6 +21,10 @@ jobs:
       - name: Swift version
         run: swift --version
 
+      - name: Build native wrapper package
+        working-directory: tools/music-native-wrapper
+        run: swift build
+
       - name: Test native wrapper package
         working-directory: tools/music-native-wrapper
         run: swift test
