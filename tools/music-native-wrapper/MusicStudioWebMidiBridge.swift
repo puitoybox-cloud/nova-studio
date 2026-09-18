@@ -7,6 +7,7 @@ final class NativeMidiDiagnostics {
     private weak var webView: WKWebView?
     private let lock = NSLock()
     private var stages: [String: [String: Any]] = [:]
+    private var messageCounts: [String: [String: Int]] = [:]
     private var lastMessage = "Waiting for a physical MIDI note"
 
     init(webView: WKWebView) {
@@ -31,6 +32,24 @@ final class NativeMidiDiagnostics {
         let kind = command == 0x80 || (command == 0x90 && bytes[2] == 0) ? "Note Off" : "Note On"
         lock.lock()
         lastMessage = "\(kind) / pitch \(bytes[1]) / velocity \(bytes[2])"
+        let snapshot = makeSnapshot()
+        lock.unlock()
+        publish(snapshot)
+    }
+
+    func markMessage(_ stage: String, status: String, bytes: [UInt8], detail: String) {
+        guard bytes.count == 3 else { return }
+        let command = bytes[0] & 0xF0
+        let kind = command == 0x80 || (command == 0x90 && bytes[2] == 0) ? "Note Off" : "Note On"
+        lock.lock()
+        var counts = messageCounts[stage] ?? ["Note On": 0, "Note Off": 0]
+        counts[kind, default: 0] += 1
+        messageCounts[stage] = counts
+        stages[stage] = [
+            "status": status,
+            "detail": "\(detail) / Note On \(counts["Note On", default: 0]) / Note Off \(counts["Note Off", default: 0])",
+            "count": counts.values.reduce(0, +)
+        ]
         let snapshot = makeSnapshot()
         lock.unlock()
         publish(snapshot)
@@ -158,9 +177,15 @@ final class MusicStudioWebMidiBridge {
       }
 
       function dispatch(payload) {
-        window.NovaNativeMidiDiagnostics?.update({ stages: { F: { status: 'PASS', detail: 'dispatch entered', count: ((window.__novaMidiFCount || 0) + 1) } } });
-        window.__novaMidiFCount = (window.__novaMidiFCount || 0) + 1;
         const data = Array.from(payload?.data || []);
+        const kind = data[0] === 0x80 || (data[0] === 0x90 && data[2] === 0) ? 'Note Off' : 'Note On';
+        function diagnosticCount(stage, detail) {
+          const counts = window.__novaMidiDiagnosticCounts ||= {};
+          const value = counts[stage] ||= { 'Note On': 0, 'Note Off': 0 };
+          value[kind]++;
+          window.NovaNativeMidiDiagnostics?.update({ stages: { [stage]: { status: 'PASS', detail: `${detail} / Note On ${value['Note On']} / Note Off ${value['Note Off']}`, count: value['Note On'] + value['Note Off'] } } });
+        }
+        diagnosticCount('F', 'dispatch entered');
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
         if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
           return { accepted: false, reason: 'invalid-message' };
@@ -179,8 +204,7 @@ final class MusicStudioWebMidiBridge {
         };
         if (typeof input.onmidimessage === 'function') {
           input.onmidimessage(event);
-          window.__novaMidiGCount = (window.__novaMidiGCount || 0) + 1;
-          window.NovaNativeMidiDiagnostics?.update({ stages: { G: { status: 'PASS', detail: 'existing handler returned', count: window.__novaMidiGCount } } });
+          diagnosticCount('G', 'existing handler returned');
         }
         for (const listener of listeners) listener(event);
         return { accepted: true };
@@ -217,7 +241,7 @@ final class MusicStudioWebMidiBridge {
             ) { [weak diagnostics] result in
                 switch result {
                 case .success:
-                    diagnostics?.mark("E", status: "PASS", detail: "callAsyncJavaScript completed", increment: true)
+                    diagnostics?.markMessage("E", status: "PASS", bytes: bytes, detail: "callAsyncJavaScript completed")
                 case .failure(let error):
                     diagnostics?.mark("E", status: "FAIL", detail: String(describing: type(of: error)))
                 }

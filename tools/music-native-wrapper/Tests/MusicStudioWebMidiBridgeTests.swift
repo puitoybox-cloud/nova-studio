@@ -109,6 +109,7 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(context.evaluateScript("updates.length")?.toInt32(), 2)
         XCTAssertEqual(context.evaluateScript("updates[0].stages.F.status")?.toString(), "PASS")
         XCTAssertEqual(context.evaluateScript("updates[1].stages.G.status")?.toString(), "PASS")
+        XCTAssertTrue(context.evaluateScript("updates[0].stages.F.detail.includes('Note On 1 / Note Off 0')")?.toBool() == true)
     }
 
     func testCoreMidiWordReachesRegisteredSyntheticInputHandlerExactlyOnce() throws {

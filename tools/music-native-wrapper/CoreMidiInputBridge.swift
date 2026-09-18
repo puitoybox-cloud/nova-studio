@@ -131,7 +131,7 @@ final class CoreMidiInputBridge {
             for packetIndex in 0..<Int(eventList.pointee.numPackets) {
                 for word in packet.words() {
                     if let bytes = Self.noteBytes(fromMIDI1UMP: word) {
-                        diagnostics.mark("C", status: "PASS", detail: Self.messageSummary(bytes), increment: true)
+                        diagnostics.markMessage("C", status: "PASS", bytes: bytes, detail: Self.messageSummary(bytes))
                         diagnostics.note(bytes)
                         onMessage(bytes)
                     } else if Self.isNoteLikeMIDI1UMP(word) {

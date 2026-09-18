@@ -6,7 +6,7 @@ final class NativeMidiCoordinator {
     private let webBridge: MusicStudioWebMidiBridge
     private let diagnostics: NativeMidiDiagnostics
     private lazy var midiBridge = CoreMidiInputBridge(diagnostics: diagnostics) { [weak self] bytes in
-        self?.diagnostics.mark("D", status: "PASS", detail: Self.messageSummary(bytes), increment: true)
+        self?.diagnostics.markMessage("D", status: "PASS", bytes: bytes, detail: Self.messageSummary(bytes))
         self?.webBridge.sendNoteMessage(bytes)
     }
 
