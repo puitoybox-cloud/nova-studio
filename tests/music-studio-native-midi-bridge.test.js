@@ -21,11 +21,20 @@ test('native bridge accepts validated note-on and note-off messages',()=>{
   assert.equal(received.length,2);
 });
 
+test('native bridge accepts velocity-zero note-on for existing note-off handling',()=>{
+  const midi=load(),received=[];
+  midi.setNativeMessageHandler(message=>received.push(message));
+  assert.equal(midi.receiveNativeMessage({data:[0x90,60,0],timeStamp:1250}).accepted,true);
+  assert.deepEqual(Array.from(received[0].data),[0x90,60,0]);
+});
+
 test('native bridge rejects malformed, out-of-range, and non-note messages',()=>{
   const midi=load();
   midi.setNativeMessageHandler(()=>assert.fail('invalid message must not be delivered'));
   assert.equal(midi.receiveNativeMessage({data:[0x90,60]}).accepted,false);
+  assert.equal(midi.receiveNativeMessage({data:[0x90,60,1,2]}).accepted,false);
   assert.equal(midi.receiveNativeMessage({data:[0x90,128,1]}).accepted,false);
+  assert.equal(midi.receiveNativeMessage({data:[0x90,60,1.5]}).accepted,false);
   assert.equal(midi.receiveNativeMessage({data:[0xb0,1,64]}).accepted,false);
   assert.equal(midi.receiveNativeMessage({data:['x',60,64]}).accepted,false);
 });
