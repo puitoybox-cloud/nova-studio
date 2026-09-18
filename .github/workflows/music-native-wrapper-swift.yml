@@ -6,6 +6,7 @@ on:
       - agent/music-studio-core-midi-wrapper-foundation
       - agent/music-studio-native-app-shell
       - agent/music-studio-native-app-target-foundation
+      - agent/music-studio-xcode-app-foundation
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
@@ -23,6 +24,9 @@ jobs:
       - name: Swift version
         run: swift --version
 
+      - name: Xcode version
+        run: xcodebuild -version
+
       - name: Build native wrapper package
         working-directory: tools/music-native-wrapper
         run: swift build
@@ -31,6 +35,14 @@ jobs:
         working-directory: tools/music-native-wrapper
         run: swift test
 
-      - name: Build native app target
+      - name: Build Swift package app target
         working-directory: tools/music-native-wrapper
         run: swift build --product MusicStudioNativeApp
+
+      - name: Build macOS Xcode app target
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug CODE_SIGNING_ALLOWED=NO build
+
+      - name: Build iPad simulator Xcode app target
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
