@@ -18,7 +18,9 @@ let package = Package(
             sources: [
                 "CoreMidiInputBridge.swift",
                 "MusicStudioWebMidiBridge.swift",
-                "NativeMidiCoordinator.swift"
+                "NativeMidiCoordinator.swift",
+                "MusicStudioAppConfiguration.swift",
+                "MusicStudioWebViewHost.swift"
             ]
         ),
         .testTarget(

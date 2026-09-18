@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - agent/music-studio-core-midi-wrapper-foundation
+      - agent/music-studio-native-app-shell
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
