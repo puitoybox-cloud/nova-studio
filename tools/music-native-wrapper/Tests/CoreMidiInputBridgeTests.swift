@@ -38,4 +38,24 @@ final class CoreMidiInputBridgeTests: XCTestCase {
         XCTAssertNil(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: invalidPitch))
         XCTAssertNil(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: invalidVelocity))
     }
+
+    func testSourceReconciliationConnectsLateSourceAndDisconnectsRemovedSource() {
+        let changes = CoreMidiInputBridge.sourceChanges(
+            available: [20, 30],
+            connected: [10, 20]
+        )
+
+        XCTAssertEqual(changes.connect, [30])
+        XCTAssertEqual(changes.disconnect, [10])
+    }
+
+    func testSourceReconciliationDoesNotReconnectExistingSources() {
+        let changes = CoreMidiInputBridge.sourceChanges(
+            available: [10, 20],
+            connected: [10, 20]
+        )
+
+        XCTAssertTrue(changes.connect.isEmpty)
+        XCTAssertTrue(changes.disconnect.isEmpty)
+    }
 }

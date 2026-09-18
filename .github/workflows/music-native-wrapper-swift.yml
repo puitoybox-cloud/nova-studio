@@ -7,6 +7,7 @@ on:
       - agent/music-studio-native-app-shell
       - agent/music-studio-native-app-target-foundation
       - agent/music-studio-xcode-app-foundation
+      - agent/music-studio-native-web-midi-shim
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
@@ -41,8 +42,24 @@ jobs:
 
       - name: Build macOS Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
 
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
         run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package macOS app for real-device verification
+        working-directory: tools/music-native-wrapper
+        run: |
+          printf '%s\n' "${GITHUB_SHA}" > PR248_EXACT_HEAD.txt
+          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
+
+      - name: Upload macOS app verification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicStudioMac-PR248-${{ github.sha }}
+          path: |
+            tools/music-native-wrapper/MusicStudioMac-PR248.zip
+            tools/music-native-wrapper/PR248_EXACT_HEAD.txt
+          if-no-files-found: error
+          retention-days: 7
