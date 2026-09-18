@@ -28,6 +28,10 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
 
+      - name: Build native wrapper package
+        working-directory: tools/music-native-wrapper
+        run: swift build
+
       - name: Test native wrapper package
         working-directory: tools/music-native-wrapper
         run: swift test
@@ -38,17 +42,17 @@ jobs:
 
       - name: Build macOS Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -target MusicStudioMac -configuration Debug CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
 
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -target MusicStudioiPad -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper
         run: |
           printf '%s\n' "${GITHUB_SHA}" > PR248_EXACT_HEAD.txt
-          ditto -c -k --sequesterRsrc --keepParent "build/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
+          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
 
       - name: Upload macOS app verification artifact
         uses: actions/upload-artifact@v4

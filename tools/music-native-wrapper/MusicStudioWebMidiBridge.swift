@@ -19,6 +19,7 @@ final class MusicStudioWebMidiBridge {
       if (typeof navigator.requestMIDIAccess === 'function') return;
 
       const listeners = new Set();
+      let lastTimestamp = 0;
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
@@ -50,21 +51,27 @@ final class MusicStudioWebMidiBridge {
         sysexEnabled: false
       };
 
+      function pageTimestamp() {
+        const now = Number(globalThis.performance?.now?.());
+        if (Number.isFinite(now) && now >= lastTimestamp) lastTimestamp = now;
+        return lastTimestamp;
+      }
+
       function dispatch(payload) {
         const data = Array.from(payload?.data || []);
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
-        const status = Number(data[0]);
-        const command = status & 0xf0;
-        if (!Number.isInteger(status) || (command !== 0x80 && command !== 0x90)) {
+        if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
           return { accepted: false, reason: 'invalid-message' };
         }
-        if (data.slice(1).some(value => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 127)) {
+        const status = Number(data[0]);
+        const command = status & 0xf0;
+        if (command !== 0x80 && command !== 0x90) {
           return { accepted: false, reason: 'invalid-message' };
         }
 
         const event = {
           data: Uint8Array.from(data.map(Number)),
-          timeStamp: performance.now(),
+          timeStamp: pageTimestamp(),
           target: input,
           currentTarget: input
         };

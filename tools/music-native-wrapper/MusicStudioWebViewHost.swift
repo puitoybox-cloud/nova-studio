@@ -28,6 +28,8 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     }
 
     public func start() {
+        guard configuration.allows(configuration.startURL) else { return }
+
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
         midiCoordinator = coordinator
         _ = coordinator.start()
