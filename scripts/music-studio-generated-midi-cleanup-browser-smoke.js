@@ -5,6 +5,7 @@ const assert=require('node:assert/strict');
 const{chromium}=require('playwright');
 const baseUrl=process.env.SMOKE_BASE_URL||'http://127.0.0.1:8765';
 const viewports=[{width:1440,height:900},{width:820,height:900},{width:390,height:844}];
+const placement=box=>({x:box.x,y:box.y,width:box.width});
 
 async function assertSingleVisiblePanel(page,menu,closeSelector){
   await page.waitForFunction(()=>document.querySelectorAll('.music-editor-topbar > .music-editor-menu[open]').length===1);
@@ -85,6 +86,7 @@ async function verify(browser,viewport){
   await page.waitForFunction(()=>!document.querySelector('.music-project-menu')?.open);
   assert.equal(await projectMenu.getAttribute('open'),null);
   const externalCorrectionBounds=await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close');
+  const correctionUi=await correction.locator('.music-correction-popover').evaluate(element=>{const label=element.querySelector('.music-correction-target label'),checkbox=element.querySelector('input[type="checkbox"]'),button=element.querySelector('.music-correction-actions button'),section=element.querySelector('.music-correction-target'),style=node=>{const value=getComputedStyle(node);return{display:value.display,gap:value.gap,minHeight:value.minHeight,padding:value.padding,borderRadius:value.borderRadius,borderTopWidth:value.borderTopWidth}};return{label:style(label),checkbox:{width:checkbox?.getBoundingClientRect().width||0,height:checkbox?.getBoundingClientRect().height||0},button:style(button),section:style(section)}});
   await page.evaluate(()=>MusicStudio.editorSetTrackSolo(MusicStudio.resolveCurrentTrackSelection().id,true));
   correction=page.locator('.music-correction-menu');
   assert.deepEqual(await assertSingleVisiblePanel(page,correction,'.music-correction-panel-close'),externalCorrectionBounds);
@@ -103,18 +105,25 @@ async function verify(browser,viewport){
   assert.ok(Math.abs(bounds.width-transferBounds.width)<=1);
   if(transferStyle.position==='fixed')assert.deepEqual(await popover.evaluate(element=>{const filtered=[];for(let parent=element.parentElement;parent;parent=parent.parentElement){const style=getComputedStyle(parent),filters=[style.backdropFilter,style.webkitBackdropFilter].filter(Boolean);if(filters.some(value=>value!=='none'))filtered.push(parent.className||parent.tagName)}return filtered}),[]);
   assert.equal(await popover.locator('#generatedCleanupQuantize').isVisible(),true);
-  assert.equal(await popover.getByText('同じ位置・音程の重複Noteを除く',{exact:false}).isVisible(),true);
-  assert.equal(await popover.getByText('同じ音程の短い重なりを整える',{exact:false}).isVisible(),true);
+  assert.equal(await popover.getByText('重複Note削除',{exact:true}).isVisible(),true);
+  assert.equal(await popover.getByText('同じ音程の短い重なり整理',{exact:true}).isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorApplyGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator('[onclick="MusicStudio.editorCancelGeneratedMidiCleanup()"]') .isVisible(),true);
   assert.equal(await popover.locator(':scope > .music-popup-close-row > .music-popup-close').count(),1);
+  const cleanupUi=await popover.evaluate(element=>{const label=element.querySelector('.music-correction-target label'),checkbox=element.querySelector('input[type="checkbox"]'),button=element.querySelector('.music-correction-actions button'),section=element.querySelector('.music-correction-target'),style=node=>{const value=getComputedStyle(node);return{display:value.display,gap:value.gap,minHeight:value.minHeight,padding:value.padding,borderRadius:value.borderRadius,borderTopWidth:value.borderTopWidth}};return{label:style(label),checkbox:{width:checkbox.getBoundingClientRect().width,height:checkbox.getBoundingClientRect().height},button:style(button),section:style(section)}});
+  assert.equal(cleanupUi.label.display,correctionUi.label.display);
+  assert.ok(parseFloat(cleanupUi.label.gap)<=8);
+  assert.deepEqual(cleanupUi.button,correctionUi.button);
+  assert.deepEqual(cleanupUi.section,correctionUi.section);
+  assert.ok(cleanupUi.checkbox.width<=20&&cleanupUi.checkbox.height<=20);
+  assert.equal(await popover.locator('.music-external-import,.music-transfer-actions,.music-toggle').count(),0);
   await popover.locator('[onclick="MusicStudio.editorPreviewGeneratedMidiCleanup()"]') .click();
   await page.waitForFunction(()=>document.querySelector('.music-cleanup-menu')?.open&&Boolean(MusicStudio.state.midiEditor.generatedCleanupPreview));
   menu=page.locator('.music-cleanup-menu');popover=menu.locator('.music-cleanup-popover');
   assert.equal(await menu.getAttribute('open'),'');
   assert.equal(await page.evaluate(()=>Boolean(MusicStudio.state.midiEditor.generatedCleanupPreview)),true);
-  assert.deepEqual(await popover.boundingBox(),bounds);
+  assert.deepEqual(placement(await popover.boundingBox()),placement(bounds));
   await popover.locator('[onclick="MusicStudio.editorCancelGeneratedMidiCleanup()"]') .click();
   await page.waitForFunction(()=>!MusicStudio.state.midiEditor.generatedCleanupPreview);
   await page.waitForFunction(()=>document.querySelector('.music-cleanup-menu')?.open);
