@@ -8,6 +8,7 @@ on:
       - agent/music-studio-native-app-target-foundation
       - agent/music-studio-xcode-app-foundation
       - agent/music-studio-native-web-midi-shim
+      - verification/pr248-native-midi-diagnostics
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
@@ -51,15 +52,19 @@ jobs:
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper
         run: |
-          printf '%s\n' "${GITHUB_SHA}" > PR248_EXACT_HEAD.txt
-          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
+          printf 'PRODUCT_HEAD=%s\nDIAGNOSTIC_COMMIT=%s\n' \
+            'de9eaca4a8018fe6708d66cccaf0b708f441fdbf' \
+            "${GITHUB_SHA}" > PR248_NATIVE_MIDI_DIAGNOSTICS.txt
+          ditto -c -k --sequesterRsrc --keepParent \
+            "build/DerivedData/Build/Products/Debug/Music Studio.app" \
+            "MusicStudioMac-PR248-NativeMIDIDiagnostics.zip"
 
       - name: Upload macOS app verification artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MusicStudioMac-PR248-${{ github.sha }}
+          name: MusicStudioMac-PR248-NativeMIDIDiagnostics-${{ github.sha }}
           path: |
-            tools/music-native-wrapper/MusicStudioMac-PR248.zip
-            tools/music-native-wrapper/PR248_EXACT_HEAD.txt
+            tools/music-native-wrapper/MusicStudioMac-PR248-NativeMIDIDiagnostics.zip
+            tools/music-native-wrapper/PR248_NATIVE_MIDI_DIAGNOSTICS.txt
           if-no-files-found: error
           retention-days: 7

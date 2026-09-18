@@ -5,6 +5,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     public let webView: WKWebView
     public let configuration: MusicStudioAppConfiguration
     private var midiCoordinator: NativeMidiCoordinator?
+    private let midiDiagnostics: NativeMidiDiagnostics
     private let platform: String
 
     public init(configuration: MusicStudioAppConfiguration, platform: String) {
@@ -21,7 +22,15 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
                 forMainFrameOnly: true
             )
         )
+        webConfiguration.userContentController.addUserScript(
+            WKUserScript(
+                source: MusicStudioWebMidiBridge.diagnosticPanelSource,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: true
+            )
+        )
         self.webView = WKWebView(frame: .zero, configuration: webConfiguration)
+        self.midiDiagnostics = NativeMidiDiagnostics(webView: self.webView)
 
         super.init()
         webView.navigationDelegate = self
@@ -30,7 +39,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     public func start() {
         guard configuration.allows(configuration.startURL) else { return }
 
-        let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
+        let coordinator = NativeMidiCoordinator(webView: webView, platform: platform, diagnostics: midiDiagnostics)
         midiCoordinator = coordinator
         _ = coordinator.start()
         webView.load(URLRequest(url: configuration.startURL))
@@ -61,6 +70,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         #else
         let platformName = "mac"
         #endif
-        MusicStudioWebMidiBridge(webView: webView).installCapabilityMetadata(platform: platformName)
+        MusicStudioWebMidiBridge(webView: webView, diagnostics: midiDiagnostics).installCapabilityMetadata(platform: platformName)
+        midiDiagnostics.replay()
     }
 }

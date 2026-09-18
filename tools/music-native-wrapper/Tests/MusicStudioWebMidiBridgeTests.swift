@@ -23,10 +23,13 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
     func testHostInjectsOneMainFrameShimAtDocumentStart() {
         let host = MusicStudioWebViewHost(configuration: .production, platform: "mac")
         let scripts = host.webView.configuration.userContentController.userScripts
-        XCTAssertEqual(scripts.count, 1)
+        XCTAssertEqual(scripts.count, 2)
         XCTAssertEqual(scripts[0].injectionTime, .atDocumentStart)
         XCTAssertTrue(scripts[0].isForMainFrameOnly)
         XCTAssertEqual(scripts[0].source, MusicStudioWebMidiBridge.nativeWebMidiShimSource)
+        XCTAssertEqual(scripts[1].injectionTime, .atDocumentStart)
+        XCTAssertTrue(scripts[1].isForMainFrameOnly)
+        XCTAssertEqual(scripts[1].source, MusicStudioWebMidiBridge.diagnosticPanelSource)
     }
 
     func testShimExposesTheMusicStudioRequestMIDIAccessContract() throws {
@@ -95,6 +98,17 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
                 .appendingPathComponent("MusicStudioWebMidiBridge.swift"))
         )
         XCTAssertTrue(source.contains("NovaMusicNativeMidiShim?.dispatch(payload) ?? window.MusicStudioMidiInput?.receiveNativeMessage(payload)"))
+    }
+
+    func testDiagnosticHooksObserveShimAndExistingHandlerWithoutReplacingIt() throws {
+        let context = try makeContext()
+        context.evaluateScript("var updates = []; NovaNativeMidiDiagnostics = { update: value => updates.push(value) }; var existing = 0; NovaMusicNativeMidiShim.input.onmidimessage = () => existing++;")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({ data: [0x90, 60, 100] });")
+
+        XCTAssertEqual(context.evaluateScript("existing")?.toInt32(), 1)
+        XCTAssertEqual(context.evaluateScript("updates.length")?.toInt32(), 2)
+        XCTAssertEqual(context.evaluateScript("updates[0].stages.F.status")?.toString(), "PASS")
+        XCTAssertEqual(context.evaluateScript("updates[1].stages.G.status")?.toString(), "PASS")
     }
 
     func testCoreMidiWordReachesRegisteredSyntheticInputHandlerExactlyOnce() throws {

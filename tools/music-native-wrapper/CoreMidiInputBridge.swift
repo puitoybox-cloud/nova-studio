@@ -15,8 +15,10 @@ final class CoreMidiInputBridge {
     private let connectionLock = NSLock()
     private let sourceRefreshQueue = DispatchQueue(label: "NovaMusicStudio.CoreMidiSources")
     private let onMessage: MessageHandler
+    private let diagnostics: NativeMidiDiagnostics
 
-    init(onMessage: @escaping MessageHandler) {
+    init(diagnostics: NativeMidiDiagnostics, onMessage: @escaping MessageHandler) {
+        self.diagnostics = diagnostics
         self.onMessage = onMessage
     }
 
@@ -83,6 +85,12 @@ final class CoreMidiInputBridge {
         let availableSources = (0..<MIDIGetNumberOfSources())
             .map(MIDIGetSource)
             .filter { $0 != 0 }
+        let sourceSummary = availableSources.map(Self.endpointName).joined(separator: ", ")
+        diagnostics.mark(
+            "A",
+            status: connectedSources.isEmpty ? "WAIT" : "PASS",
+            detail: "sources \(availableSources.count)" + (sourceSummary.isEmpty ? "" : " / \(sourceSummary)")
+        )
         let changes = Self.sourceChanges(
             available: availableSources,
             connected: connectedSources
@@ -93,8 +101,14 @@ final class CoreMidiInputBridge {
         }
         connectedSources.removeAll { changes.disconnect.contains($0) }
 
-        for source in changes.connect where MIDIPortConnectSource(inputPort, source, nil) == noErr {
-            connectedSources.append(source)
+        for source in changes.connect {
+            let result = MIDIPortConnectSource(inputPort, source, nil)
+            if result == noErr {
+                connectedSources.append(source)
+                diagnostics.mark("A", status: "PASS", detail: "connected / \(Self.endpointName(source))")
+            } else {
+                diagnostics.mark("A", status: "FAIL", detail: "connect OSStatus \(result) / \(Self.endpointName(source))")
+            }
         }
     }
 
@@ -111,12 +125,17 @@ final class CoreMidiInputBridge {
     }
 
     private func receive(_ eventList: UnsafePointer<MIDIEventList>) {
+        diagnostics.mark("B", status: "PASS", detail: "Core MIDI packet callback", increment: true)
         withUnsafePointer(to: eventList.pointee.packet) { firstPacket in
             var packet = firstPacket
             for packetIndex in 0..<Int(eventList.pointee.numPackets) {
                 for word in packet.words() {
                     if let bytes = Self.noteBytes(fromMIDI1UMP: word) {
+                        diagnostics.mark("C", status: "PASS", detail: Self.messageSummary(bytes), increment: true)
+                        diagnostics.note(bytes)
                         onMessage(bytes)
+                    } else if Self.isNoteLikeMIDI1UMP(word) {
+                        diagnostics.mark("C", status: "DECODE REJECT", detail: "note-like MIDI 1.0 UMP rejected")
                     }
                 }
                 if packetIndex + 1 < Int(eventList.pointee.numPackets) {
@@ -124,6 +143,25 @@ final class CoreMidiInputBridge {
                 }
             }
         }
+    }
+
+    private static func endpointName(_ source: MIDIEndpointRef) -> String {
+        var value: Unmanaged<CFString>?
+        guard MIDIObjectGetStringProperty(source, kMIDIPropertyDisplayName, &value) == noErr,
+              let name = value?.takeRetainedValue() else { return "MIDI source" }
+        return name as String
+    }
+
+    private static func isNoteLikeMIDI1UMP(_ word: UInt32) -> Bool {
+        guard ((word >> 28) & 0x0F) == 0x02 else { return false }
+        let command = UInt8((word >> 16) & 0xF0)
+        return command == 0x80 || command == 0x90
+    }
+
+    private static func messageSummary(_ bytes: [UInt8]) -> String {
+        let command = bytes[0] & 0xF0
+        let kind = command == 0x80 || (command == 0x90 && bytes[2] == 0) ? "Note Off" : "Note On"
+        return "\(kind) / pitch \(bytes[1]) / velocity \(bytes[2])"
     }
 
     /// MIDI 1.0 Channel Voice UMP is a single 32-bit word:
