@@ -23,7 +23,9 @@
   }
   async function requestAccess(navigatorLike=root.navigator){if(!isSupported(navigatorLike))return{supported:false,access:null,inputs:[]};const access=await navigatorLike.requestMIDIAccess({sysex:false}),inputs=[...(access.inputs?.values?.()||[])];return{supported:true,access,inputs}}
   function normalizeNativeMessage(payload){
-    const data=Array.from(payload?.data||[]).slice(0,3).map(Number),timeStamp=Number(payload?.timeStamp??payload?.timestamp);
+    const rawData=payload?.data;
+    if(!rawData||typeof rawData.length!=='number'||rawData.length!==3)return null;
+    const data=Array.from(rawData).map(Number),timeStamp=Number(payload?.timeStamp??payload?.timestamp);
     if(data.length!==3||data.some((value,index)=>!Number.isInteger(value)||value<0||value>(index===0?255:127)))return null;
     const command=data[0]&0xf0;
     if(command!==0x80&&command!==0x90)return null;

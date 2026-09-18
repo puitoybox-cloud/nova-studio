@@ -20,13 +20,19 @@ public struct MusicStudioAppConfiguration: Equatable {
     }
 
     public func allows(_ url: URL) -> Bool {
-        guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "file" else {
-            return false
+        if startURL.isFileURL {
+            // Local mode is selected only by a local start URL. Keep it separate
+            // from the remote allowlist and reject file URLs with a remote host.
+            return url.isFileURL && url.host == nil
         }
-        if scheme == "file" {
-            return startURL.isFileURL
-        }
-        guard let host = url.host?.lowercased() else { return false }
+
+        guard
+            startURL.scheme?.lowercased() == "https",
+            startURL.host != nil,
+            url.scheme?.lowercased() == "https",
+            let host = url.host?.lowercased()
+        else { return false }
+
         return allowedHosts.contains(host)
     }
 }

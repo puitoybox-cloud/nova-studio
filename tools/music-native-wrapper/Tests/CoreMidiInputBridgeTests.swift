@@ -26,4 +26,16 @@ final class CoreMidiInputBridgeTests: XCTestCase {
         let midi2Word: UInt32 = 0x40903C00
         XCTAssertNil(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: midi2Word))
     }
+
+    func testMidiDataByteBoundariesArePreserved() {
+        let highestNoteOnChannel16: UInt32 = 0x209F7F7F
+        XCTAssertEqual(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: highestNoteOnChannel16), [0x9F, 127, 127])
+    }
+
+    func testMalformedMidiDataBytesAreRejectedInsteadOfMasked() {
+        let invalidPitch: UInt32 = 0x20908040
+        let invalidVelocity: UInt32 = 0x20903C80
+        XCTAssertNil(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: invalidPitch))
+        XCTAssertNil(CoreMidiInputBridge.noteBytes(fromMIDI1UMP: invalidVelocity))
+    }
 }
