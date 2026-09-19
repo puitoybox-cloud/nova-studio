@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.111';
+  const ASSET_VERSION='1.4.112';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -585,7 +585,7 @@
   function editorMoveSelected(deltaTick,deltaPitch){root.MusicStudioEditor.moveSelected(state.midiEditor,deltaTick,deltaPitch);scheduleMidiEditorSave();repaintEditor()}
   function editorResizeSelected(deltaDuration){root.MusicStudioEditor.resizeSelected(state.midiEditor,deltaDuration);scheduleMidiEditorSave();repaintEditor()}
   function editorSetSnap(value){if(!SNAP_VALUES.includes(value)||!state.midiEditor)return false;(state.midiEditor.view||(state.midiEditor.view={})).snap=value;persistEditorView();repaintEditor();return true}
-  function editorSetEditRange(startMeasure,endMeasure){const session=state.midiEditor;if(!session)return false;const current=session.editRange||session.midiData.editor.editRange||{startMeasure:1,endMeasure:1},start=startMeasure==null?current.startMeasure:startMeasure,end=endMeasure==null?current.endMeasure:endMeasure,range=root.MusicStudioEditor.setEditRange(session,{startMeasure:startMeasure!=null&&Number(start)>Number(end)?start:startMeasure==null&&Number(end)<Number(start)?end:start,endMeasure:endMeasure!=null&&Number(end)<Number(start)?end:endMeasure==null&&Number(start)>Number(end)?start:end});scheduleMidiEditorSave();repaintEditor();return range}
+  function editorSetEditRange(startMeasure,endMeasure){const session=state.midiEditor,core=root.MusicStudioEditor;if(!session)return false;const current=session.editRange||session.midiData.editor.editRange||{startMeasure:1,endMeasure:1},start=startMeasure==null?current.startMeasure:startMeasure,end=endMeasure==null?current.endMeasure:endMeasure,range=core.setEditRange(session,{startMeasure:startMeasure!=null&&Number(start)>Number(end)?start:startMeasure==null&&Number(end)<Number(start)?end:start,endMeasure:endMeasure!=null&&Number(end)<Number(start)?end:endMeasure==null&&Number(start)>Number(end)?start:end}),track=core.currentTrack(session),partial=state.partialEditSession,active=['created','result-ready','preview-ready'].includes(partial?.status);if(active&&!core.resolveCoreTrackRole(track)&&partial.request.trackId===track?.id&&core.resolveTrackCapabilities(track).supportsPartialEdit===true){state.partialEditSession=core.createPartialEditSession(core.createPartialEditRequest(session,{trackId:track.id,range}));resetPartialEditProviderRun()}scheduleMidiEditorSave();repaintEditor();return range}
   function editorToggleSnap(){if(!state.midiEditor)return false;const view=state.midiEditor.view||(state.midiEditor.view={});view.snapEnabled=view.snapEnabled===false;persistEditorView();repaintEditor();return view.snapEnabled}
   function editorSetQuantize(value){if(!QUANTIZE_VALUES.includes(value)||!state.midiEditor)return false;(state.midiEditor.view||(state.midiEditor.view={})).quantize=value;persistEditorView();repaintEditor();return true}
   function editorToggleQuantize(){if(!state.midiEditor)return false;const view=state.midiEditor.view||(state.midiEditor.view={});view.quantizeEnabled=view.quantizeEnabled!==true;persistEditorView();repaintEditor();return view.quantizeEnabled}

@@ -9,7 +9,7 @@ const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-play
 
 test('host shell cache-busts the current Music Studio loader',()=>{
   const host=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),loader=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),version=loader.match(/hostLoader:'([^']+)'/)?.[1];
-  assert.equal(version,'1.5.59');
+  assert.equal(version,'1.5.60');
   assert.match(host,new RegExp(`app\\.js\\?v=${version.replaceAll('.','\\.')}`));
 });
 
@@ -196,7 +196,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.59/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.60/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-external-song-import'/);
@@ -208,10 +208,10 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.20/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.20/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.13/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.13/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.131/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.131/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.111/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.111/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.112/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.112/);
   assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.20'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.111'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
-  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.59',stylesheet:'1\.4\.131'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.112'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.60',stylesheet:'1\.4\.131'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
