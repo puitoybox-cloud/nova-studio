@@ -1,0 +1,7 @@
+Project NOVA / Music Studio — PR #253 Exact-head Preview
+
+Product HEAD: 6b8905aceef746cd6f88099c486c2853411d951e
+Preview branch: verification/pr253-6b8905a
+
+The preview commit may differ from Product HEAD only by this marker and the
+START/STOP helper commands. Product runtime files remain byte-identical.
