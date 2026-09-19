@@ -7,6 +7,12 @@ const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
 const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-playback.js'),'utf8');
 
+test('host shell cache-busts the current Music Studio loader',()=>{
+  const host=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),loader=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),version=loader.match(/hostLoader:'([^']+)'/)?.[1];
+  assert.equal(version,'1.5.59');
+  assert.match(host,new RegExp(`app\\.js\\?v=${version.replaceAll('.','\\.')}`));
+});
+
 function loadMusicStudio(){
   const classes=new Set();
   const location={hash:'#home'};
@@ -190,7 +196,7 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.58/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.59/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-external-song-import'/);
