@@ -18,7 +18,7 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 if curl --silent --fail "$MARKER_URL" 2>/dev/null | grep --fixed-strings --quiet "Product HEAD: $PRODUCT_SHA"; then
-  open -a "Google Chrome" "$MARKER_URL" "$PREVIEW_URL" 2>/dev/null || open "$PREVIEW_URL"
+  open -na "Google Chrome" --args --incognito "$MARKER_URL" "$PREVIEW_URL" 2>/dev/null || open "$PREVIEW_URL"
   echo "指定HEADのPR #252 Previewはすでに起動しています。"
   echo "製品HEAD: $PRODUCT_SHA"
   exit 0
@@ -38,7 +38,7 @@ echo "$SERVER_PID" >"$PID_FILE"
 
 for _ in 1 2 3 4 5; do
   if curl --silent --fail "$MARKER_URL" | grep --fixed-strings --quiet "Product HEAD: $PRODUCT_SHA"; then
-    open -a "Google Chrome" "$MARKER_URL" "$PREVIEW_URL" 2>/dev/null || open "$PREVIEW_URL"
+    open -na "Google Chrome" --args --incognito "$MARKER_URL" "$PREVIEW_URL" 2>/dev/null || open "$PREVIEW_URL"
     echo "PR #252 exact-head Previewを起動しました。"
     echo "製品HEAD: $PRODUCT_SHA"
     echo "verification marker: $MARKER_URL"
