@@ -1,7 +1,7 @@
 /* MS-RESTART-02: shared, dependency-free MIDI note editing model. */
 (function(root){
   'use strict';
-  const ASSET_VERSION='1.4.19';
+  const ASSET_VERSION='1.4.20';
   const PARTS={melody:{id:'melody',name:'Melody',channel:1,program:0,pitch:60},drums:{id:'drums',name:'Drums',channel:10,program:null,pitch:36},bass:{id:'bass',name:'Bass',channel:2,program:32,pitch:36}};
   const TRACK_TYPES=Object.freeze({MIDI_MELODIC:'midi-melodic',MIDI_DRUMS:'midi-drums',AUDIO:'audio',UNKNOWN:'unknown'});
   const TRACK_ROLES=Object.freeze({UNASSIGNED:'unassigned',MELODY:'melody',DRUMS:'drums',BASS:'bass',VOCAL:'vocal',PIANO:'piano',GUITAR:'guitar',STRINGS:'strings',SYNTH:'synth',FX:'fx',OTHER:'other'});
@@ -22,12 +22,12 @@
   function editableNotes(notes=[]){return notes.filter(note=>!isNoteLocked(note))}
   function normalizeEditRange(range={},totalMeasures=1){const total=int(totalMeasures,1,10000,1),rawStart=Number(range?.startMeasure),rawEnd=Number(range?.endMeasure),start=Number.isFinite(rawStart)?Math.round(rawStart):1,end=Number.isFinite(rawEnd)?Math.round(rawEnd):start,clampedStart=Math.max(1,Math.min(total,start)),clampedEnd=Math.max(1,Math.min(total,end));return{startMeasure:Math.min(clampedStart,clampedEnd),endMeasure:Math.max(clampedStart,clampedEnd)}}
   function measureRangeToTicks(range={},midiData={}){const ppq=int(midiData?.ppq,24,9600,480),signature=midiData?.timeSignature||{numerator:4,denominator:4},numerator=int(signature.numerator,1,16,4),denominator=[1,2,4,8,16,32].includes(Number(signature.denominator))?Number(signature.denominator):4,totalMeasures=int(midiData?.editor?.measureCount,1,10000,1),normalized=normalizeEditRange(range,totalMeasures),measureTicks=ppq*4/denominator*numerator;return{...normalized,startTick:(normalized.startMeasure-1)*measureTicks,endTick:normalized.endMeasure*measureTicks,measureTicks}}
-  function notesInRange(session,range=session?.midiData?.editor?.editRange,part=session?.part){const track=session?.midiData?.tracks?.find(item=>item.part===part),ticks=measureRangeToTicks(range,session?.midiData||{});return(track?.notes||[]).filter(note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick)}
-  function editableNotesInRange(session,range=session?.midiData?.editor?.editRange,part=session?.part){return editableNotes(notesInRange(session,range,part))}
+  function notesInRange(session,range=session?.midiData?.editor?.editRange,part,trackId){const track=trackId?getTrackById(session?.midiData?.tracks,trackId):arguments.length>=3?session?.midiData?.tracks?.find(item=>item.part===part):currentTrack(session),ticks=measureRangeToTicks(range,session?.midiData||{});return(track?.notes||[]).filter(note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick)}
+  function editableNotesInRange(session,range=session?.midiData?.editor?.editRange,part,trackId){return editableNotes(arguments.length>=3?notesInRange(session,range,part,trackId):notesInRange(session,range))}
   function compareRequestNotes(a,b){return a.startTick-b.startTick||a.pitch-b.pitch||String(a.id).localeCompare(String(b.id))}
   function validatePartialEditRequest(session,request){
-    const errors=[],track=session?.midiData?.tracks?.find(item=>item.part===request?.part);
-    if(!PARTS[request?.part]||!track||String(track.id)!==String(request?.trackId))errors.push('track');
+    const errors=[],track=getTrackById(session?.midiData?.tracks,request?.trackId),semanticPart=track?resolveCoreTrackRole(track):null;
+    if(!track||request?.part!==(semanticPart||null)||resolveTrackCapabilities(track).supportsPartialEdit!==true)errors.push('track');
     const range=request?.range||{},ticks=measureRangeToTicks(range,session?.midiData||{}),validRange=Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick&&range.startMeasure===ticks.startMeasure&&range.endMeasure===ticks.endMeasure&&range.startTick===ticks.startTick&&range.endTick===ticks.endTick;
     if(!validRange)errors.push('range');
     const targetIds=Array.isArray(request?.targetNoteIds)?request.targetNoteIds:[],lockedIds=Array.isArray(request?.lockedNoteIds)?request.lockedNoteIds:[],requestNotes=Array.isArray(request?.notes)?request.notes:[];
@@ -36,7 +36,7 @@
     if(!unique(targetIds)||!unique(lockedIds)||!unique(requestNotes.map(note=>note?.id)))errors.push('duplicate');
     const overlap=targetIds.some(noteId=>lockedIds.includes(noteId));if(overlap)errors.push('overlap');
     if(track&&validRange){
-      const inRange=notesInRange(session,range,request.part),byId=new Map(inRange.map(note=>[note.id,note])),expectedTargets=inRange.filter(note=>!isNoteLocked(note)).map(note=>note.id),expectedLocked=inRange.filter(isNoteLocked).map(note=>note.id),sameIds=(actual,expected)=>actual.length===expected.length&&actual.every(noteId=>expected.includes(noteId));
+      const inRange=notesInRange(session,range,request.part,request.trackId),byId=new Map(inRange.map(note=>[note.id,note])),expectedTargets=inRange.filter(note=>!isNoteLocked(note)).map(note=>note.id),expectedLocked=inRange.filter(isNoteLocked).map(note=>note.id),sameIds=(actual,expected)=>actual.length===expected.length&&actual.every(noteId=>expected.includes(noteId));
       if(!sameIds(targetIds,expectedTargets)||targetIds.some(noteId=>!byId.has(noteId)||isNoteLocked(byId.get(noteId))))errors.push('targets');
       if(!sameIds(lockedIds,expectedLocked)||lockedIds.some(noteId=>!byId.has(noteId)||!isNoteLocked(byId.get(noteId))))errors.push('locked');
       if(!sameIds(requestNotes.map(note=>note?.id),inRange.map(note=>note.id)))errors.push('notes');
@@ -45,9 +45,9 @@
     return{ok:errors.length===0,errors:[...new Set(errors)]}
   }
   function createPartialEditRequest(session,options={}){
-    const part=options.part??session?.part,track=session?.midiData?.tracks?.find(item=>item.part===part);
-    if(!PARTS[part]||!track)throw Error('Partial edit request requires a valid track.');
-    const ticks=measureRangeToTicks(options.range??session?.editRange??session?.midiData?.editor?.editRange,session.midiData),range={startMeasure:ticks.startMeasure,endMeasure:ticks.endMeasure,startTick:ticks.startTick,endTick:ticks.endTick},source=notesInRange(session,range,part);
+    const track=options.trackId?getTrackById(session?.midiData?.tracks,options.trackId):currentTrack(session),part=track?resolveCoreTrackRole(track):null;
+    if(!track||resolveTrackCapabilities(track).supportsPartialEdit!==true)throw Error('Partial edit request requires a valid track.');
+    const ticks=measureRangeToTicks(options.range??session?.editRange??session?.midiData?.editor?.editRange,session.midiData),range={startMeasure:ticks.startMeasure,endMeasure:ticks.endMeasure,startTick:ticks.startTick,endTick:ticks.endTick},source=notesInRange(session,range,part,track.id);
     if(new Set(source.map(note=>note.id)).size!==source.length)throw Error('Partial edit request contains duplicate note IDs.');
     const notes=source.map(clone).sort(compareRequestNotes),request={version:1,trackId:String(track.id),part,range,targetNoteIds:notes.filter(note=>!isNoteLocked(note)).map(note=>note.id),lockedNoteIds:notes.filter(isNoteLocked).map(note=>note.id),notes},validation=validatePartialEditRequest(session,request);
     if(!validation.ok)throw Error(`Invalid partial edit request: ${validation.errors.join(', ')}`);
@@ -58,7 +58,7 @@
     const errors=[],range=request?.range||{},changes=result?.changes||{},updates=Array.isArray(changes.updates)?changes.updates:[],adds=Array.isArray(changes.adds)?changes.adds:[],deleteIds=Array.isArray(changes.deleteNoteIds)?changes.deleteNoteIds:[],targets=Array.isArray(request?.targetNoteIds)?request.targetNoteIds:[],locked=Array.isArray(request?.lockedNoteIds)?request.lockedNoteIds:[],requestNotes=Array.isArray(request?.notes)?request.notes:[],targetSet=new Set(targets),lockedSet=new Set(locked),noteById=new Map(requestNotes.map(note=>[note.id,note]));
     if(result?.version!==1||request?.version!==1)errors.push('version');
     if(!result||typeof result!=='object'||Array.isArray(result)||!result.request||typeof result.request!=='object'||!result.changes||typeof result.changes!=='object'||!Array.isArray(changes.updates)||!Array.isArray(changes.adds)||!Array.isArray(changes.deleteNoteIds))errors.push('shape');
-    if(!PARTS[request?.part]||result?.part!==request?.part||String(result?.trackId)!==String(request?.trackId))errors.push('track');
+    if(!(request?.part==null||PARTS[request.part])||result?.part!==request?.part||String(result?.trackId)!==String(request?.trackId))errors.push('track');
     const validRange=Number.isInteger(range.startMeasure)&&Number.isInteger(range.endMeasure)&&Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick;
     if(!validRange||JSON.stringify(result?.range)!==JSON.stringify(range))errors.push('range');
     if(JSON.stringify(result?.request)!==JSON.stringify(request))errors.push('request');
@@ -332,10 +332,10 @@
     if(!resultValidation.ok)return{applied:false,reason:'invalid-result',errors:clone(resultValidation.errors)};
     const previewValidation=validatePartialEditPreview(request,result,preview);
     if(!previewValidation.ok)return{applied:false,reason:'invalid-preview',errors:clone(previewValidation.errors)};
-    const track=session?.midiData?.tracks?.find(item=>item.part===request.part),currentRange=measureRangeToTicks(session?.editRange??session?.midiData?.editor?.editRange,session?.midiData||{}),range=request.range;
-    if(session?.part!==request.part||!track||String(track.id)!==String(request.trackId))return{applied:false,reason:'stale-track'};
+    const track=getTrackById(session?.midiData?.tracks,request.trackId),currentRange=measureRangeToTicks(session?.editRange??session?.midiData?.editor?.editRange,session?.midiData||{}),range=request.range;
+    if(currentTrackId(session)!==request.trackId||!track||resolveTrackCapabilities(track).supportsPartialEdit!==true)return{applied:false,reason:'stale-track'};
     if(currentRange.startMeasure!==range.startMeasure||currentRange.endMeasure!==range.endMeasure||currentRange.startTick!==range.startTick||currentRange.endTick!==range.endTick)return{applied:false,reason:'stale-range'};
-    const currentBefore=notesInRange(session,range,request.part).map(clone).sort(compareRequestNotes);
+    const currentBefore=notesInRange(session,range,request.part,request.trackId).map(clone).sort(compareRequestNotes);
     if(JSON.stringify(currentBefore)!==JSON.stringify(preview.beforeNotes))return{applied:false,reason:'stale-project'};
     const addIds=new Set(result.changes.adds.map(note=>note.id));
     for(const item of session.midiData.tracks)for(const note of item.notes||[])if(addIds.has(note.id))return{applied:false,reason:'id-conflict'};
@@ -390,7 +390,7 @@
   function resolveTrackCapabilities(track){
     const coreSlot=resolveCoreTrackSlot(track),trackType=resolveTrackType(track);
     if(coreSlot)return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:coreSlot===CORE_TRACK_SLOTS.MELODY,supportsDrumLabels:coreSlot===CORE_TRACK_SLOTS.DRUMS,supportsPartialEdit:true});
-    if(trackType===TRACK_TYPES.MIDI_MELODIC||trackType===TRACK_TYPES.MIDI_DRUMS){const drumRole=resolveTrackRole(track)===TRACK_ROLES.DRUMS;return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:trackType===TRACK_TYPES.MIDI_MELODIC&&!drumRole,supportsDrumLabels:trackType===TRACK_TYPES.MIDI_DRUMS||drumRole,supportsPartialEdit:false})}
+    if(trackType===TRACK_TYPES.MIDI_MELODIC||trackType===TRACK_TYPES.MIDI_DRUMS){const drumRole=resolveTrackRole(track)===TRACK_ROLES.DRUMS;return Object.freeze({canEditNotes:true,canRecordMidi:true,canPlayMidi:true,supportsPitchCorrection:trackType===TRACK_TYPES.MIDI_MELODIC&&!drumRole,supportsDrumLabels:trackType===TRACK_TYPES.MIDI_DRUMS||drumRole,supportsPartialEdit:true})}
     return EMPTY_CAPABILITIES
   }
   function normalizeTrackClassification(track={}){const normalized=track&&typeof track==='object'&&!Array.isArray(track)?clone(track):{};if(Object.prototype.hasOwnProperty.call(normalized,'trackType')&&!TRACK_TYPE_VALUES.includes(normalized.trackType))delete normalized.trackType;return normalized}
