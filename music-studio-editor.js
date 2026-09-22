@@ -1,7 +1,7 @@
 /* MS-RESTART-02: shared, dependency-free MIDI note editing model. */
 (function(root){
   'use strict';
-  const ASSET_VERSION='1.4.20';
+  const ASSET_VERSION='1.4.21';
   const PARTS={melody:{id:'melody',name:'Melody',channel:1,program:0,pitch:60},drums:{id:'drums',name:'Drums',channel:10,program:null,pitch:36},bass:{id:'bass',name:'Bass',channel:2,program:32,pitch:36}};
   const TRACK_TYPES=Object.freeze({MIDI_MELODIC:'midi-melodic',MIDI_DRUMS:'midi-drums',AUDIO:'audio',UNKNOWN:'unknown'});
   const TRACK_ROLES=Object.freeze({UNASSIGNED:'unassigned',MELODY:'melody',DRUMS:'drums',BASS:'bass',VOCAL:'vocal',PIANO:'piano',GUITAR:'guitar',STRINGS:'strings',SYNTH:'synth',FX:'fx',OTHER:'other'});
