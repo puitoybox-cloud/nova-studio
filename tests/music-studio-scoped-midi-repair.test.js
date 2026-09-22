@@ -171,3 +171,18 @@ test('core refuses Apply if measure was locked after Preview',()=>{
  assert.equal(core.applyScopedMidiRepair(session,result).reason,'out-of-range');
  assert.equal(session.undo.length,0);
 });
+
+test('Apply rejects unexpected pitch changes and invalid note duration',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ result.afterNotes.find(n=>n.id==='move').pitch=61;
+ assert.equal(core.applyScopedMidiRepair(session,result).reason,'unexpected-note-change');
+ result.afterNotes.find(n=>n.id==='move').pitch=60;
+ result.afterNotes.find(n=>n.id==='move').durationTicks=0;
+ assert.equal(core.applyScopedMidiRepair(session,result).reason,'invalid-note');
+ assert.equal(session.undo.length,0);
+});
