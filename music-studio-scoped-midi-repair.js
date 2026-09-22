@@ -31,11 +31,13 @@
       }
     }
     // Exact duplicates only; never remove a locked note or infer that a short note is unwanted.
+    const originalById=new Map(before.map(note=>[note.id,note]));
     const seen=new Set();
     for(let i=0;i<after.length;i++){
       const note=after[i];
       if(!eligible(note))continue;
-      const key=signature([note.pitch,note.startTick,note.durationTicks,note.velocity,note.inputChannel??null]);
+      const original=originalById.get(note.id);
+      const key=signature([original.pitch,original.startTick,original.durationTicks,original.velocity,original.inputChannel??null]);
       if(seen.has(key)){
         changes.push({type:'duplicate',noteId:note.id});
         after.splice(i--,1);
