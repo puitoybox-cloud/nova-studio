@@ -3,7 +3,12 @@ name: Music Audio Helper macOS
 on:
   push:
     branches:
-      - agent/music-studio-audio-stem-midi-pipeline
+      - main
+      - agent/music-audio-helper-boundary-tests
+    paths:
+      - 'tools/music-audio-pipeline/**'
+      - '.github/workflows/music-audio-helper-macos.yml'
+  pull_request:
     paths:
       - 'tools/music-audio-pipeline/**'
       - '.github/workflows/music-audio-helper-macos.yml'
@@ -17,6 +22,9 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
+
+      - name: Test local HTTP boundary without ML dependencies
+        run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
 
       - name: Build app bundle
         shell: bash
@@ -40,7 +48,7 @@ jobs:
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nova-Music-Audio-Helper-macOS
+          name: Nova-Music-Audio-Helper-macOS-${{ github.sha }}
           path: ${{ runner.temp }}/Nova-Music-Audio-Helper-macOS.zip
           if-no-files-found: error
           retention-days: 14
