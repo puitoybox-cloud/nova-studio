@@ -102,3 +102,20 @@ test('timing repair never pushes a note end beyond selected measure',()=>{
  assert.equal(result.ok,true);
  assert.equal(result.afterNotes.find(n=>n.id==='end-edge').startTick,3835);
 });
+
+test('no-op preview does not create Undo history or dirty project',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:4,measureTo:4});
+ assert.equal(result.ok,true);assert.equal(result.changes.length,0);
+ const applied=core.applyScopedMidiRepair(session,result);
+ assert.equal(applied.ok,true);assert.equal(applied.applied,false);assert.equal(session.undo.length,0);
+});
+test('UI prevents applying a changed range or resolution without new Preview',()=>{
+ const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+ assert.ok(studio.includes('from!==preview.measureFrom||to!==preview.measureTo||resolution!==preview.resolution'));
+ assert.ok(studio.includes("preview?.changes?.length?'':'disabled'"));
+});
