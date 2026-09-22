@@ -21,7 +21,7 @@
     const tolerance=input.toleranceTicks??Math.max(1,Math.floor(step/4));
     if(!Number.isInteger(tolerance)||tolerance<0||tolerance>step/2)return{ok:false,reason:'invalid-tolerance'};
     const before=clone(track.notes),after=clone(before),changes=[],suggestions=[];
-    const eligible=n=>!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end;
+    const eligible=n=>!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end&&n.startTick+n.durationTicks<=end;
     for(const note of after){
       if(!eligible(note))continue;
       const snapped=Math.round(note.startTick/step)*step;
