@@ -545,12 +545,12 @@
       const before=original.get(note.id);
       if(!before)return{ok:false,reason:'unexpected-note'};
       if(!Number.isInteger(note.startTick)||!Number.isInteger(note.durationTicks)||note.durationTicks<1)return{ok:false,reason:'invalid-note'};
-      const beforeMetadata=clone(before),afterMetadata=clone(note);
-      delete beforeMetadata.startTick;delete beforeMetadata.durationTicks;delete afterMetadata.startTick;delete afterMetadata.durationTicks;
-      if(JSON.stringify(beforeMetadata)!==JSON.stringify(afterMetadata))return{ok:false,reason:'unexpected-note-change'};
       if(touchesLockedMeasure(note)&&JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'};
       if((before.locked||touchesLockedMeasure(before)||before.startTick<start||before.startTick>=end||before.startTick+before.durationTicks>end)&&JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'};
       if(note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end){if(JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'}}
+      const beforeMetadata=clone(before),afterMetadata=clone(note);
+      delete beforeMetadata.startTick;delete beforeMetadata.durationTicks;delete afterMetadata.startTick;delete afterMetadata.durationTicks;
+      if(JSON.stringify(beforeMetadata)!==JSON.stringify(afterMetadata))return{ok:false,reason:'unexpected-note-change'};
     }
     for(const note of track.notes){if(!afterIds.has(note.id)&&(note.locked||touchesLockedMeasure(note)||note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end))return{ok:false,reason:'out-of-range'}}
     if(JSON.stringify(track.notes)===JSON.stringify(repair.afterNotes))return{ok:true,applied:false,changes:[]};
