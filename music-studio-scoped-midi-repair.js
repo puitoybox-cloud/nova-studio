@@ -7,7 +7,7 @@
     const data=project?.midiData,tracks=data?.tracks,ppq=data?.ppq,signatureData=data?.timeSignature;
     if(!Array.isArray(tracks)||!Number.isInteger(ppq)||ppq<1)return{ok:false,reason:'invalid-project'};
     const numerator=signatureData?.numerator,denominator=signatureData?.denominator;
-    if(!Number.isInteger(numerator)||!Number.isInteger(denominator)||denominator<1)return{ok:false,reason:'invalid-signature'};
+    if(!Number.isInteger(numerator)||numerator<1||!Number.isInteger(denominator)||denominator<1)return{ok:false,reason:'invalid-signature'};
     const bar=ppq*4*numerator/denominator;
     if(!Number.isInteger(bar)||bar<1)return{ok:false,reason:'unsupported-signature'};
     const track=tracks.find(t=>t.id===input.trackId);
@@ -16,9 +16,10 @@
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)return{ok:false,reason:'invalid-range'};
     const begin=(from-1)*bar,end=to*bar;
     const resolution=input.resolution??'1/16',denom=Number(String(resolution).split('/')[1]);
-    if(![4,8,16,32].includes(denom))return{ok:false,reason:'invalid-resolution'};
+    if(!['1/4','1/8','1/16','1/32'].includes(resolution)||![4,8,16,32].includes(denom))return{ok:false,reason:'invalid-resolution'};
     const step=Math.round(ppq*4/denom);
-    const tolerance=input.toleranceTicks??Math.max(1,Math.floor(step/4));
+    if(step<1||!Number.isInteger(step))return{ok:false,reason:'unsupported-resolution'};
+    const tolerance=input.toleranceTicks??Math.max(0,Math.floor(step/4));
     if(!Number.isInteger(tolerance)||tolerance<0||tolerance>step/2)return{ok:false,reason:'invalid-tolerance'};
     const before=clone(track.notes),after=clone(before),changes=[],suggestions=[];
     const eligible=n=>!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end&&n.startTick+n.durationTicks<=end;
@@ -39,6 +40,7 @@
       const original=originalById.get(note.id);
       const key=signature([original.pitch,original.startTick,original.durationTicks,original.velocity,original.inputChannel??null]);
       if(seen.has(key)){
+        for(let j=changes.length-1;j>=0;j--)if(changes[j].noteId===note.id)changes.splice(j,1);
         changes.push({type:'duplicate',noteId:note.id});
         after.splice(i--,1);
       }else seen.add(key);
