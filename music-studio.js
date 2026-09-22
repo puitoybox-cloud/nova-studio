@@ -518,12 +518,13 @@
   }
   function signatureLabel(signature){return`${signature.numerator}/${signature.denominator}`}
   function repaintEditor(options={}){
-    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover'),cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu');
+    const view=state.midiEditor?.view,viewport=root.document?.querySelector?.('.music-piano-viewport'),pianoScroll=root.document?.querySelector?.('.music-piano-scroll'),menu=root.document?.querySelector?.('.music-correction-menu'),popover=menu?.querySelector?.('.music-correction-popover'),cleanupMenu=root.document?.querySelector?.('.music-cleanup-menu'),scopedMenu=root.document?.querySelector?.('.music-scoped-repair-menu');
     const pageX=Number(root.scrollX??root.pageXOffset)||0,pageY=Number(root.scrollY??root.pageYOffset)||0;
     if(view){
       if(viewport)view.pitchScrollTop=viewport.scrollTop;if(pianoScroll)view.pitchScrollLeft=pianoScroll.scrollLeft;
       if(menu)view.correctionMenuOpen=menu.open;
       if(cleanupMenu&&!options.preserveCleanupMenu)view.generatedCleanupMenuOpen=cleanupMenu.open;
+       if(scopedMenu&&!options.preserveScopedRepairMenu)view.scopedMidiRepairMenuOpen=scopedMenu.open;
       if(popover)view.correctionPopoverScrollTop=popover.scrollTop;
     }
     requestPaint();
@@ -750,9 +751,9 @@
     if(!result.ok)return notice('修正範囲・Trackを確認してください: '+result.reason,'info');
     result.resolution=resolution;session.scopedMidiRepairPreview=result;session.view.scopedMidiRepairMenuOpen=true;
     notice('修正候補 '+result.changes.length+'件 / 手動確認 '+result.suggestions.length+'件。Applyまでは変更しません。','success');
-    repaintEditor();return result;
+    repaintEditor({preserveScopedRepairMenu:true});return result;
   }
-  function editorCancelScopedMidiRepair(){const session=state.midiEditor;if(!session)return false;session.scopedMidiRepairPreview=null;session.view.scopedMidiRepairMenuOpen=true;repaintEditor();return true}
+  function editorCancelScopedMidiRepair(){const session=state.midiEditor;if(!session)return false;session.scopedMidiRepairPreview=null;session.view.scopedMidiRepairMenuOpen=true;repaintEditor({preserveScopedRepairMenu:true});return true}
   function editorApplyScopedMidiRepair(){
     const session=state.midiEditor,preview=session?.scopedMidiRepairPreview;
     if(!preview)return notice('先にPreviewを作成してください。','info');
@@ -761,7 +762,7 @@
     const result=root.MusicStudioEditor.applyScopedMidiRepair(session,preview);
     if(!result.ok)return notice('Applyを中止しました: '+result.reason,'info');
     session.scopedMidiRepairPreview=null;session.view.scopedMidiRepairMenuOpen=true;
-    if(result.applied)scheduleMidiEditorSave();notice(result.applied?'指定小節の修正 '+result.changes.length+'件を適用しました。Undoで戻せます。':'変更はありませんでした。',result.applied?'success':'info');repaintEditor();return result;
+    if(result.applied)scheduleMidiEditorSave();notice(result.applied?'指定小節の修正 '+result.changes.length+'件を適用しました。Undoで戻せます。':'変更はありませんでした。',result.applied?'success':'info');repaintEditor({preserveScopedRepairMenu:true});return result;
   }
   function editorPreviewGeneratedMidiCleanup(){const session=state.midiEditor;if(!session)return false;const result=root.MusicStudioEditor.previewGeneratedMidiCleanup(session,{quantize:root.document?.querySelector('#generatedCleanupQuantize')?.value||'OFF',removeDuplicates:root.document?.querySelector('#generatedCleanupDuplicates')?.checked!==false,cleanShortOverlaps:root.document?.querySelector('#generatedCleanupOverlaps')?.checked!==false});if(!result.ok)return notice(result.reason,'info');session.view.generatedCleanupMenuOpen=true;const summary=result.preview.summary;notice(`${summary.tracks} TrackのPreviewを作成しました。Applyまでは変更しません。`,'success');repaintEditor({preserveCleanupMenu:true});return result}
   function editorCancelGeneratedMidiCleanup(){const session=state.midiEditor,result=root.MusicStudioEditor.cancelGeneratedMidiCleanup(session);if(session?.view)session.view.generatedCleanupMenuOpen=true;notice('一括整理Previewを破棄しました。Projectは変更していません。','info');repaintEditor({preserveCleanupMenu:true});return result}
