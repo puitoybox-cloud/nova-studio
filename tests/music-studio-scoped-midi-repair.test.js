@@ -94,3 +94,11 @@ test('changing track invalidates a pending scoped repair preview',()=>{
  core.selectTrackById(session,'ext-bass');
  assert.equal(session.scopedMidiRepairPreview,null);
 });
+
+test('timing repair never pushes a note end beyond selected measure',()=>{
+ const p=project();
+ p.midiData.tracks[0].notes.push(note('end-edge',3835,5));
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ assert.equal(result.afterNotes.find(n=>n.id==='end-edge').startTick,3835);
+});
