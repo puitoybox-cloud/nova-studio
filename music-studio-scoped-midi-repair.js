@@ -25,7 +25,7 @@
     for(const note of after){
       if(!eligible(note))continue;
       const snapped=Math.round(note.startTick/step)*step;
-      if(snapped>=begin&&snapped<end&&Math.abs(snapped-note.startTick)<=tolerance&&snapped!==note.startTick){
+      if(snapped>=begin&&snapped<end&&snapped+note.durationTicks<=end&&Math.abs(snapped-note.startTick)<=tolerance&&snapped!==note.startTick){
         changes.push({type:'timing',noteId:note.id,before:note.startTick,after:snapped});
         note.startTick=snapped;
       }
