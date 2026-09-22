@@ -136,3 +136,20 @@ test('removed exact duplicates have only a duplicate change, not a timing change
  assert.equal(result.ok,true);
  assert.deepEqual(plain(result.changes.filter(c=>c.noteId==='duplicate')),[{type:'duplicate',noteId:'duplicate'}]);
 });
+
+test('part changes and Redo invalidate stale scoped repair previews',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ session.scopedMidiRepairPreview={ok:true};core.selectPart(session,'melody');
+ assert.equal(session.scopedMidiRepairPreview,null);
+ session.scopedMidiRepairPreview={ok:true};core.redo(session);
+ assert.equal(session.scopedMidiRepairPreview,null);
+});
+test('scoped repair menu preserves its state during Preview and Apply repaint',()=>{
+ const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+ assert.ok(studio.includes('view.scopedMidiRepairMenuOpen=scopedMenu.open'));
+ assert.ok(studio.includes('repaintEditor({preserveScopedRepairMenu:true})'));
+});
