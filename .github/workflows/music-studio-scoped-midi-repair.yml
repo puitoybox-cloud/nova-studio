@@ -1,0 +1,116 @@
+name: Music Studio scoped MIDI repair
+
+on:
+  pull_request:
+    paths:
+      - 'music-studio-scoped-midi-repair.js'
+      - 'music-studio-editor.js'
+      - 'music-studio.js'
+      - 'music-studio.html'
+      - 'app.js'
+      - 'tests/music-studio-scoped-midi-repair.test.js'
+      - '.github/workflows/music-studio-scoped-midi-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scoped-midi-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run scoped repair regression tests
+        run: node --test tests/music-studio-scoped-midi-repair.test.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check music-studio-scoped-midi-repair.js
+          node --check music-studio-editor.js
+          node --check music-studio.js
+          node --check app.js
+          node --check tests/music-studio-scoped-midi-repair.test.js
+      - name: Check PR whitespace
+        run: git diff --check "origin/${{ github.base_ref }}...HEAD"
+
+      - name: Build exact-head Intel Mac preview ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          ROOT="Nova-Music-Studio-PR254-Exact-Head-${HEAD_SHA:0:12}"
+          mkdir -p "$RUNNER_TEMP/$ROOT"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/$ROOT"
+          printf 'PR #254 exact product HEAD: %s\nProduct files: git archive of exact HEAD\nPreview helpers are generated separately by GitHub Actions.\n' "$HEAD_SHA" > "$RUNNER_TEMP/$ROOT/PR254_EXACT_HEAD.txt"
+          cat > "$RUNNER_TEMP/$ROOT/START_PR254_PREVIEW.command" <<'SCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+          cd "$(dirname "$0")"
+          DIR="$PWD"
+          PORT=8765
+          echo "PR #254 exact-head verification:"
+          cat PR254_EXACT_HEAD.txt
+          if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+            echo "Port $PORT is already occupied. Nothing was changed or stopped."
+            read -r -p "Press Return to close..."
+            exit 1
+          fi
+          if ! command -v python3 >/dev/null 2>&1; then
+            echo "python3 is required. Nothing was started."
+            read -r -p "Press Return to close..."
+            exit 1
+          fi
+          nohup python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$DIR" > "$DIR/PR254_PREVIEW_SERVER.log" 2>&1 < /dev/null &
+          PID=$!
+          echo "$PID" > "$DIR/PR254_PREVIEW_SERVER.pid"
+          sleep 2
+          if ! kill -0 "$PID" 2>/dev/null; then
+            echo "Preview server did not start. See PR254_PREVIEW_SERVER.log"
+            rm -f "$DIR/PR254_PREVIEW_SERVER.pid"
+            read -r -p "Press Return to close..."
+            exit 1
+          fi
+          echo "Verification: $(cat PR254_EXACT_HEAD.txt)"
+          echo "Preview: http://127.0.0.1:$PORT/music-studio.html"
+          open -a "Google Chrome" "http://127.0.0.1:$PORT/music-studio.html" || open "http://127.0.0.1:$PORT/music-studio.html"
+          read -r -p "Press Return to close this terminal (server remains running)..."
+          SCRIPT
+          cat > "$RUNNER_TEMP/$ROOT/STOP_PR254_PREVIEW.command" <<'SCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+          cd "$(dirname "$0")"
+          echo "PR #254 exact-head verification:"
+          cat PR254_EXACT_HEAD.txt
+          PID_FILE="$PWD/PR254_PREVIEW_SERVER.pid"
+          if [ ! -f "$PID_FILE" ]; then
+            echo "No preview PID file; nothing to stop."
+          else
+            PID="$(cat "$PID_FILE")"
+            CMD="$(ps -p "$PID" -o command= 2>/dev/null || true)"
+            if [[ "$PID" =~ ^[0-9]+$ ]] && [[ "$CMD" == *"http.server 8765"* ]] && [[ "$CMD" == *"$PWD"* ]]; then
+              kill "$PID" 2>/dev/null || true
+              echo "Stopped only this preview server (PID $PID)."
+            else
+              echo "PID is no longer this preview server; no process was stopped."
+            fi
+            rm -f "$PID_FILE"
+          fi
+          read -r -p "Press Return to close..."
+          SCRIPT
+          chmod +x "$RUNNER_TEMP/$ROOT/"*.command
+          (cd "$RUNNER_TEMP" && zip -q -r "$GITHUB_WORKSPACE/PR254-Exact-Head-Preview.zip" "$ROOT")
+          echo "PRODUCT_HEAD=$HEAD_SHA" >> "$GITHUB_ENV"
+          echo "PRODUCT_FILE_DIFF=0" >> "$GITHUB_ENV"
+      - name: Upload Mac exact-head preview ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: PR254-Exact-Head-Preview
+          path: PR254-Exact-Head-Preview.zip
+          if-no-files-found: error
+          retention-days: 14
