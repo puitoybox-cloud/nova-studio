@@ -53,10 +53,11 @@
       if(eligible(note)&&note.durationTicks<step/4)suggestions.push({type:'short-note',noteId:note.id});
     }
     // Trim only small overlaps of the same pitch and channel, entirely inside the requested measures.
-    const sorted=[...after].sort((a,b)=>a.startTick-b.startTick);
-    for(let i=0;i<sorted.length;i++){
-      const note=sorted[i];if(!eligible(note)||note.startTick+note.durationTicks>end)continue;
-      const next=sorted.slice(i+1).find(n=>n.pitch===note.pitch&&(n.inputChannel??null)===(note.inputChannel??null));
+    const sorted=[...after].sort((a,b)=>a.startTick-b.startTick),nextByPitchChannel=new Map();
+    for(let i=sorted.length-1;i>=0;i--){
+      const note=sorted[i],key=signature([note.pitch,note.inputChannel??null]),next=nextByPitchChannel.get(key);
+      nextByPitchChannel.set(key,note);
+      if(!eligible(note)||note.startTick+note.durationTicks>end)continue;
       if(!next||next.startTick<begin||next.startTick>=end)continue;
       const overlap=note.startTick+note.durationTicks-next.startTick;
       if(overlap>0&&overlap<=Math.min(step/2,Math.floor(note.durationTicks/4))&&next.startTick>note.startTick){
