@@ -1,0 +1,35 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const ctx={};ctx.globalThis=ctx;
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-scoped-midi-repair.js'),'utf8'),ctx);
+const repair=ctx.MusicStudioScopedMidiRepair;
+const plain=v=>JSON.parse(JSON.stringify(v));
+const note=(id,startTick,durationTicks=120,locked=false)=>({id,pitch:60,startTick,durationTicks,velocity:80,locked});
+function project(){return{midiData:{ppq:480,timeSignature:{numerator:4,denominator:4},tracks:[{id:'ext-piano',notes:[note('before',120),note('move',1930),note('duplicate',1930),note('locked',1950,120,true),note('outside',3840)]},{id:'ext-bass',notes:[note('bass',1930)]}]}}}
+test('repair only the selected track and measures; preserve input and locked notes',()=>{
+ const p=project(),original=plain(p),result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);assert.deepEqual(plain(p),original);
+ assert.equal(result.afterNotes.find(n=>n.id==='move').startTick,1920);
+ assert.equal(result.afterNotes.some(n=>n.id==='duplicate'),false);
+ assert.equal(result.afterNotes.find(n=>n.id==='locked').startTick,1950);
+ assert.equal(result.afterNotes.find(n=>n.id==='before').startTick,120);
+ assert.equal(result.afterNotes.find(n=>n.id==='outside').startTick,3840);
+ const applied=repair.apply(p,result);assert.equal(applied.ok,true);
+ assert.deepEqual(plain(p),original);assert.deepEqual(plain(applied.project.midiData.tracks[1]),original.midiData.tracks[1]);
+});
+test('reject stale preview and invalid measure range',()=>{
+ const p=project(),result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2});
+ p.midiData.tracks[0].notes[0].pitch=61;
+ assert.equal(repair.apply(p,result).reason,'stale-preview');
+ assert.equal(repair.preview(p,{trackId:'ext-piano',measureFrom:3,measureTo:2}).reason,'invalid-range');
+});
+test('short notes are suggestions, not automatically deleted',()=>{
+ const p=project();p.midiData.tracks[0].notes.push(note('short',2000,8));
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2});
+ assert.equal(result.afterNotes.some(n=>n.id==='short'),true);
+ assert.equal(result.suggestions.some(s=>s.noteId==='short'),true);
+});
