@@ -3,11 +3,12 @@ name: Music Native Wrapper Swift
 on:
   push:
     branches:
-      - agent/music-studio-core-midi-wrapper-foundation
-      - agent/music-studio-native-app-shell
-      - agent/music-studio-native-app-target-foundation
-      - agent/music-studio-xcode-app-foundation
-      - agent/music-studio-native-web-midi-shim
+      - main
+      - agent/music-studio-current-main-build-verification
+    paths:
+      - 'tools/music-native-wrapper/**'
+      - '.github/workflows/music-native-wrapper-swift.yml'
+  pull_request:
     paths:
       - 'tools/music-native-wrapper/**'
       - '.github/workflows/music-native-wrapper-swift.yml'
@@ -51,15 +52,15 @@ jobs:
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper
         run: |
-          printf '%s\n' "${GITHUB_SHA}" > PR248_EXACT_HEAD.txt
-          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
+          printf '%s\n' "${GITHUB_SHA}" > MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
+          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-Exact-Head.zip"
 
       - name: Upload macOS app verification artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MusicStudioMac-PR248-${{ github.sha }}
+          name: MusicStudioMac-Exact-Head-${{ github.sha }}
           path: |
-            tools/music-native-wrapper/MusicStudioMac-PR248.zip
-            tools/music-native-wrapper/PR248_EXACT_HEAD.txt
+            tools/music-native-wrapper/MusicStudioMac-Exact-Head.zip
+            tools/music-native-wrapper/MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
           if-no-files-found: error
           retention-days: 7
