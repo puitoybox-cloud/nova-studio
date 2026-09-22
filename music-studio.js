@@ -747,7 +747,7 @@
     const session=state.midiEditor,core=root.MusicStudioEditor,engine=root.MusicStudioScopedMidiRepair;
     if(!session||!engine)return notice('Scoped MIDI Repairを読み込めませんでした。','info');
     const track=core.currentTrack(session),from=Number(root.document?.querySelector('#scopedRepairFrom')?.value),to=Number(root.document?.querySelector('#scopedRepairTo')?.value),resolution=root.document?.querySelector('#scopedRepairResolution')?.value||'1/16';
-    const result=engine.preview({midiData:session.midiData},{trackId:track.id,measureFrom:from,measureTo:to,resolution});
+    const result=engine.preview({midiData:session.midiData},{trackId:track.id,measureFrom:from,measureTo:to,resolution,lockedMeasures:session.lockedMeasures});
     if(!result.ok)return notice('修正範囲・Trackを確認してください: '+result.reason,'info');
     result.resolution=resolution;session.scopedMidiRepairPreview=result;session.view.scopedMidiRepairMenuOpen=true;
     notice('修正候補 '+result.changes.length+'件 / 手動確認 '+result.suggestions.length+'件。Applyまでは変更しません。','success');
