@@ -73,3 +73,24 @@ test('notes crossing the requested measure end remain unchanged',()=>{
  assert.equal(result.ok,true);
  assert.deepEqual(plain(result.afterNotes.find(n=>n.id==='crossing')),plain(p.midiData.tracks[0].notes.find(n=>n.id==='crossing')));
 });
+
+test('UI loads repair module before Music Studio and exposes Preview/Apply/Cancel',()=>{
+ const standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
+ const host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+ const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+ const module='music-studio-scoped-midi-repair.js?v=1.0.0';
+ assert.ok(standalone.indexOf(module)>0&&standalone.indexOf(module)<standalone.indexOf('music-studio.js?v='));
+ assert.ok(host.indexOf(module)>0&&host.indexOf(module)<host.indexOf("loadMusicStudioScript('music-studio','"));
+ for(const name of ['editorPreviewScopedMidiRepair','editorApplyScopedMidiRepair','editorCancelScopedMidiRepair'])assert.ok(studio.includes('api.'+name+'='+name));
+ assert.ok(studio.includes('session.scopedMidiRepairPreview.afterNotes'));
+});
+test('changing track invalidates a pending scoped repair preview',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';p.midiData.tracks[1].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ session.scopedMidiRepairPreview=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2});
+ core.selectTrackById(session,'ext-bass');
+ assert.equal(session.scopedMidiRepairPreview,null);
+});
