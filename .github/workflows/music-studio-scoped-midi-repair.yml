@@ -1,0 +1,39 @@
+name: Music Studio scoped MIDI repair
+
+on:
+  pull_request:
+    paths:
+      - 'music-studio-scoped-midi-repair.js'
+      - 'music-studio-editor.js'
+      - 'music-studio.js'
+      - 'music-studio.html'
+      - 'app.js'
+      - 'tests/music-studio-scoped-midi-repair.test.js'
+      - '.github/workflows/music-studio-scoped-midi-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scoped-midi-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run scoped repair regression tests
+        run: node --test tests/music-studio-scoped-midi-repair.test.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check music-studio-scoped-midi-repair.js
+          node --check music-studio-editor.js
+          node --check music-studio.js
+          node --check app.js
+          node --check tests/music-studio-scoped-midi-repair.test.js
+      - name: Check PR whitespace
+        run: git diff --check "origin/${{ github.base_ref }}...HEAD"
