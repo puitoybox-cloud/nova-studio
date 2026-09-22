@@ -33,3 +33,30 @@ test('short notes are suggestions, not automatically deleted',()=>{
  assert.equal(result.afterNotes.some(n=>n.id==='short'),true);
  assert.equal(result.suggestions.some(s=>s.noteId==='short'),true);
 });
+
+test('core apply creates one Undo and preserves other external tracks',()=>{
+ const window={crypto:{randomUUID:(()=>{let id=0;return()=>String(++id)})()}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';p.midiData.tracks[1].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const other=plain(session.midiData.tracks[1]),original=plain(core.currentTrack(session).notes);
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ const applied=core.applyScopedMidiRepair(session,result);
+ assert.equal(applied.ok,true);assert.equal(session.undo.length,1);
+ assert.deepEqual(plain(session.midiData.tracks[1]),other);
+ core.undo(session);
+ assert.deepEqual(plain(core.currentTrack(session).notes),original);
+});
+test('core refuses forged changes outside the selected measure',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';p.midiData.tracks[1].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2});
+ result.afterNotes.find(n=>n.id==='before').pitch=61;
+ assert.equal(core.applyScopedMidiRepair(session,result).reason,'out-of-range');
+ assert.equal(session.undo.length,0);
+});
