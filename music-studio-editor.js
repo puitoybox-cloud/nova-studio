@@ -535,6 +535,7 @@
     if(!repair?.ok||typeof repair.trackId!=='string'||!Array.isArray(repair.afterNotes)||typeof repair.sourceSignature!=='string')return{ok:false,reason:'invalid-preview'};
     const track=getTrackById(session?.midiData?.tracks,repair.trackId);
     if(!track||track.id!==currentTrackId(session)||JSON.stringify(track.notes)!==repair.sourceSignature)return{ok:false,reason:'stale-preview'};
+    if(resolveCoreTrackRole(track)||!['midi-melodic','midi-drums'].includes(resolveTrackType(track)))return{ok:false,reason:'not-external-midi'};
     const from=repair.measureFrom,to=repair.measureTo,bar=measureTicks(session);
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)return{ok:false,reason:'invalid-range'};
     const start=(from-1)*bar,end=to*bar,original=new Map(track.notes.map(note=>[note.id,note])),afterIds=new Set(),lockedMeasures=new Set(session.lockedMeasures||[]);
