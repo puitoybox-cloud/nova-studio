@@ -537,16 +537,17 @@
     if(!track||track.id!==currentTrackId(session)||JSON.stringify(track.notes)!==repair.sourceSignature)return{ok:false,reason:'stale-preview'};
     const from=repair.measureFrom,to=repair.measureTo,bar=measureTicks(session);
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)return{ok:false,reason:'invalid-range'};
-    const start=(from-1)*bar,end=to*bar,original=new Map(track.notes.map(note=>[note.id,note])),afterIds=new Set();
+    const start=(from-1)*bar,end=to*bar,original=new Map(track.notes.map(note=>[note.id,note])),afterIds=new Set(),lockedMeasures=new Set(session.lockedMeasures||[]);
+    const touchesLockedMeasure=note=>{const first=Math.floor(note.startTick/bar)+1,last=Math.floor((note.startTick+note.durationTicks-1)/bar)+1;for(let measure=first;measure<=last;measure++)if(lockedMeasures.has(measure))return true;return false};
     for(const note of repair.afterNotes){
       if(afterIds.has(note.id))return{ok:false,reason:'duplicate-id'};
       afterIds.add(note.id);
       const before=original.get(note.id);
       if(!before)return{ok:false,reason:'unexpected-note'};
-      if((before.locked||before.startTick<start||before.startTick>=end||before.startTick+before.durationTicks>end)&&JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'};
+      if((before.locked||touchesLockedMeasure(before)||before.startTick<start||before.startTick>=end||before.startTick+before.durationTicks>end)&&JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'};
       if(note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end){if(JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'}}
     }
-    for(const note of track.notes){if(!afterIds.has(note.id)&&(note.locked||note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end))return{ok:false,reason:'out-of-range'}}
+    for(const note of track.notes){if(!afterIds.has(note.id)&&(note.locked||touchesLockedMeasure(note)||note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end))return{ok:false,reason:'out-of-range'}}
     if(JSON.stringify(track.notes)===JSON.stringify(repair.afterNotes))return{ok:true,applied:false,changes:[]};
     change(session,()=>{track.notes=clone(repair.afterNotes);session.selectionTrackId=null;session.selectedNoteId=null;session.selectedNoteIds=[]});
     return{ok:true,applied:true,changes:clone(repair.changes||[])};
