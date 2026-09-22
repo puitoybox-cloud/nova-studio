@@ -60,3 +60,16 @@ test('core refuses forged changes outside the selected measure',()=>{
  assert.equal(core.applyScopedMidiRepair(session,result).reason,'out-of-range');
  assert.equal(session.undo.length,0);
 });
+
+test('nearby distinct original notes are not deleted when timing snaps together',()=>{
+ const p=project();p.midiData.tracks[0].notes.push(note('nearby',1935));
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ assert.equal(result.afterNotes.some(n=>n.id==='nearby'),true);
+});
+test('notes crossing the requested measure end remain unchanged',()=>{
+ const p=project();p.midiData.tracks[0].notes.push(note('crossing',3810,200));
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ assert.deepEqual(plain(result.afterNotes.find(n=>n.id==='crossing')),plain(p.midiData.tracks[0].notes.find(n=>n.id==='crossing')));
+});
