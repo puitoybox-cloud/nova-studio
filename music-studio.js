@@ -756,6 +756,8 @@
   function editorApplyScopedMidiRepair(){
     const session=state.midiEditor,preview=session?.scopedMidiRepairPreview;
     if(!preview)return notice('先にPreviewを作成してください。','info');
+    const from=Number(root.document?.querySelector('#scopedRepairFrom')?.value),to=Number(root.document?.querySelector('#scopedRepairTo')?.value),resolution=root.document?.querySelector('#scopedRepairResolution')?.value;
+    if(from!==preview.measureFrom||to!==preview.measureTo||resolution!==preview.resolution)return notice('小節または補正基準が変更されました。Previewを作り直してください。','info');
     const result=root.MusicStudioEditor.applyScopedMidiRepair(session,preview);
     if(!result.ok)return notice('Applyを中止しました: '+result.reason,'info');
     session.scopedMidiRepairPreview=null;session.view.scopedMidiRepairMenuOpen=true;
