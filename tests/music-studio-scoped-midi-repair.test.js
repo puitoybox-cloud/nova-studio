@@ -238,3 +238,10 @@ test('short overlap never changes a locked note',()=>{
  assert.equal(result.ok,true);
  assert.equal(result.afterNotes.find(n=>n.id==='locked-first').durationTicks,125);
 });
+
+test('large preview summaries render at most fifty items while preserving total count',()=>{
+ const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+ assert.ok(studio.includes('previewItems.slice(0,50)'));
+ assert.ok(studio.includes('previewItems.length-50'));
+ assert.ok(studio.includes('preview.changes.length'));
+});
