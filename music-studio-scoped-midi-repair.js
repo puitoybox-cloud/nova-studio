@@ -22,7 +22,9 @@
     const tolerance=input.toleranceTicks??Math.max(0,Math.floor(step/4));
     if(!Number.isInteger(tolerance)||tolerance<0||tolerance>step/2)return{ok:false,reason:'invalid-tolerance'};
     const before=clone(track.notes),after=clone(before),changes=[],suggestions=[];
-    const eligible=n=>!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end&&n.startTick+n.durationTicks<=end;
+    const lockedMeasures=new Set(Array.isArray(input.lockedMeasures)?input.lockedMeasures.filter(Number.isInteger):[]);
+    const touchesLockedMeasure=n=>{const first=Math.floor(n.startTick/bar)+1,last=Math.floor((n.startTick+n.durationTicks-1)/bar)+1;for(let measure=first;measure<=last;measure++)if(lockedMeasures.has(measure))return true;return false};
+    const eligible=n=>!touchesLockedMeasure(n)&&!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end&&n.startTick+n.durationTicks<=end;
     for(const note of after){
       if(!eligible(note))continue;
       const snapped=Math.round(note.startTick/step)*step;
