@@ -119,3 +119,20 @@ test('UI prevents applying a changed range or resolution without new Preview',()
  assert.ok(studio.includes('from!==preview.measureFrom||to!==preview.measureTo||resolution!==preview.resolution'));
  assert.ok(studio.includes("preview?.changes?.length?'':'disabled'"));
 });
+
+test('invalid signatures and malformed grid settings fail without mutation',()=>{
+ const p=project(),before=plain(p);
+ p.midiData.timeSignature.numerator=0;
+ assert.equal(repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2}).reason,'invalid-signature');
+ p.midiData.timeSignature.numerator=4;
+ assert.equal(repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,resolution:'1/16/8'}).reason,'invalid-resolution');
+ p.midiData.ppq=1;
+ assert.equal(repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,resolution:'1/32'}).reason,'unsupported-resolution');
+ p.midiData.ppq=480;
+ assert.deepEqual(plain(p),before);
+});
+test('removed exact duplicates have only a duplicate change, not a timing change',()=>{
+ const result=repair.preview(project(),{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ assert.deepEqual(plain(result.changes.filter(c=>c.noteId==='duplicate')),[{type:'duplicate',noteId:'duplicate'}]);
+});
