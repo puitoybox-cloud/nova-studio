@@ -547,6 +547,7 @@
       if(note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end){if(JSON.stringify(note)!==JSON.stringify(before))return{ok:false,reason:'out-of-range'}}
     }
     for(const note of track.notes){if(!afterIds.has(note.id)&&(note.locked||note.startTick<start||note.startTick>=end||note.startTick+note.durationTicks>end))return{ok:false,reason:'out-of-range'}}
+    if(JSON.stringify(track.notes)===JSON.stringify(repair.afterNotes))return{ok:true,applied:false,changes:[]};
     change(session,()=>{track.notes=clone(repair.afterNotes);session.selectionTrackId=null;session.selectedNoteId=null;session.selectedNoteIds=[]});
     return{ok:true,applied:true,changes:clone(repair.changes||[])};
   }
