@@ -40,7 +40,8 @@
       const note=after[i];
       if(!eligible(note))continue;
       const original=originalById.get(note.id);
-      const key=signature([original.pitch,original.startTick,original.durationTicks,original.velocity,original.inputChannel??null]);
+      const {id:_noteId,...originalFields}=original;
+      const key=signature(Object.keys(originalFields).sort().map(field=>[field,originalFields[field]]));
       if(seen.has(key)){
         for(let j=changes.length-1;j>=0;j--)if(changes[j].noteId===note.id)changes.splice(j,1);
         changes.push({type:'duplicate',noteId:note.id});
