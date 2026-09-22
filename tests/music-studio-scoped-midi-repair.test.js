@@ -199,3 +199,23 @@ test('standalone and host load current editor and Studio asset versions',()=>{
   assert.ok(host.includes("ASSET_VERSION==='"+version+"'"));
  }
 });
+
+test('duplicate candidates with distinct provenance metadata remain separate',()=>{
+ const p=project();
+ p.midiData.tracks[0].notes.find(n=>n.id==='move').sourceNoteId='stem-a';
+ p.midiData.tracks[0].notes.find(n=>n.id==='duplicate').sourceNoteId='stem-b';
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ assert.equal(result.ok,true);
+ assert.equal(result.afterNotes.some(n=>n.id==='duplicate'),true);
+});
+test('Apply refuses a track reclassified as a core track after Preview',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ core.currentTrack(session).part='melody';
+ assert.equal(core.applyScopedMidiRepair(session,result).reason,'not-external-midi');
+ assert.equal(session.undo.length,0);
+});
