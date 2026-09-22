@@ -153,3 +153,21 @@ test('scoped repair menu preserves its state during Preview and Apply repaint',(
  assert.ok(studio.includes('view.scopedMidiRepairMenuOpen=scopedMenu.open'));
  assert.ok(studio.includes('repaintEditor({preserveScopedRepairMenu:true})'));
 });
+
+test('locked measures are excluded from repair even if notes are unlocked',()=>{
+ const p=project();
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20,lockedMeasures:[2]});
+ assert.equal(result.ok,true);assert.equal(result.changes.length,0);
+ assert.deepEqual(plain(result.afterNotes),plain(p.midiData.tracks[0].notes));
+});
+test('core refuses Apply if measure was locked after Preview',()=>{
+ const window={crypto:{randomUUID:()=> 'id'}};window.window=window;window.globalThis=window;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8'),window);
+ const core=window.MusicStudioEditor,p=project();p.projectId='scoped-repair';
+ p.midiData.tracks[0].trackType='midi-melodic';
+ const session=core.createSession(p);core.selectTrackById(session,'ext-piano');
+ const result=repair.preview({midiData:session.midiData},{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:20});
+ session.lockedMeasures=[2];
+ assert.equal(core.applyScopedMidiRepair(session,result).reason,'out-of-range');
+ assert.equal(session.undo.length,0);
+});
