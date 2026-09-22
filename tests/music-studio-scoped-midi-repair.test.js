@@ -219,3 +219,22 @@ test('Apply refuses a track reclassified as a core track after Preview',()=>{
  assert.equal(core.applyScopedMidiRepair(session,result).reason,'not-external-midi');
  assert.equal(session.undo.length,0);
 });
+
+test('same-pitch short overlap is trimmed without changing other pitches or tracks',()=>{
+ const p=project(),notes=p.midiData.tracks[0].notes;
+ notes.push(note('overlap-first',2100,125),note('overlap-next',2220,120),{...note('other-pitch',2220,120),pitch:61});
+ const bass=plain(p.midiData.tracks[1]);
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:0});
+ assert.equal(result.ok,true);
+ assert.equal(result.afterNotes.find(n=>n.id==='overlap-first').durationTicks,120);
+ assert.equal(result.afterNotes.find(n=>n.id==='other-pitch').durationTicks,120);
+ assert.deepEqual(plain(p.midiData.tracks[1]),bass);
+ assert.equal(result.changes.some(c=>c.type==='duration'&&c.noteId==='overlap-first'),true);
+});
+test('short overlap never changes a locked note',()=>{
+ const p=project(),notes=p.midiData.tracks[0].notes;
+ notes.push(note('locked-first',2100,125,true),note('locked-next',2220,120));
+ const result=repair.preview(p,{trackId:'ext-piano',measureFrom:2,measureTo:2,toleranceTicks:0});
+ assert.equal(result.ok,true);
+ assert.equal(result.afterNotes.find(n=>n.id==='locked-first').durationTicks,125);
+});
