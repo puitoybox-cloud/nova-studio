@@ -23,6 +23,8 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Swift version
         run: swift --version
@@ -53,13 +55,13 @@ jobs:
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper
         run: |
-          printf '%s\n' "${GITHUB_SHA}" > MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
+          printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
           ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-Exact-Head.zip"
 
       - name: Upload macOS app verification artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MusicStudioMac-Exact-Head-${{ github.sha }}
+          name: MusicStudioMac-Exact-Head-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             tools/music-native-wrapper/MusicStudioMac-Exact-Head.zip
             tools/music-native-wrapper/MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
