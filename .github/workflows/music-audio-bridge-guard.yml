@@ -31,5 +31,7 @@ jobs:
           node --check music-studio-audio-pipeline.js
           node --check tests/music-studio-audio-pipeline.test.js
           node --check tests/music-studio-audio-pipeline-startup.test.js
+      - name: Repository JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Whitespace integrity
         run: git diff --check HEAD^ HEAD
