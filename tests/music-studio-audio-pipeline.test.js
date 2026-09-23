@@ -64,6 +64,64 @@ test('invalid local MIDI never reaches import and preserves existing review stat
   assert.equal(host.MusicStudio.state.externalSongImport.status,'error');
 });
 
+test('successful local conversion reaches original MIDI importer with review metadata',async()=>{
+  let host,importCalls=0,importedFile;
+  const header=[0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0];
+  const track=[0x4d,0x54,0x72,0x6b,0,0,0,4,0,0xff,0x2f,0];
+  const midi=Buffer.from([...header,...track]).toString('base64');
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={
+      state:{externalSongImport:{status:'review',tracks:[{id:'E1'}]}},
+      async importExternalSongFile(file){importCalls++;importedFile=file;return{ok:true}}
+    };
+    window.fetch=async(url,request)=>{
+      assert.equal(url,'http://127.0.0.1:8766/process');
+      assert.equal(request.method,'POST');
+      assert.equal(request.headers['X-Nova-Audio-Pipeline'],'1');
+      return{ok:true,async json(){return{ok:true,midiBase64:midi,stems:['Vocals','Piano'],bpm:120}}};
+    };
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,true);
+  assert.equal(importCalls,1);
+  assert.equal(importedFile.name,'song_stems.mid');
+  assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'E1');
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.sourceFileName,'song.wav');
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.localOnly,true);
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.bpm,120);
+});
+
+test('second audio request is rejected while first processes without duplicate fetch',async()=>{
+  let host,fetchCalls=0,release;
+  const pending=new Promise(resolve=>{release=resolve});
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(){return{ok:true}}};
+    window.fetch=async()=>{fetchCalls++;await pending;throw Error('mock processing stopped')};
+  });
+  const first=host.MusicStudio.importExternalSongFile({name:'first.wav',type:'audio/wav'});
+  const second=await host.MusicStudio.importExternalSongFile({name:'second.wav',type:'audio/wav'});
+  assert.equal(second.ok,false);
+  assert.equal(second.busy,true);
+  assert.equal(fetchCalls,1);
+  release();
+  assert.equal((await first).ok,false);
+});
+
+test('native MIDI files bypass audio helper even when MIME is wrong',async()=>{
+  let host,fetchCalls=0,importCalls=0;
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(){importCalls++;return{ok:true}}};
+    window.fetch=async()=>{fetchCalls++;throw Error('audio helper should not be called')};
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'notes.mid',type:'audio/wav'});
+  assert.equal(result.ok,true);
+  assert.equal(importCalls,1);
+  assert.equal(fetchCalls,0);
+});
+
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
