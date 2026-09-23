@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import threading
+import time
 import unittest
 from http.client import HTTPConnection
 from pathlib import Path
@@ -74,7 +75,7 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(response_headers["Access-Control-Allow-Origin"], headers["Origin"])
         self.assertEqual(processor.call_count, 1)
-        self.assertFalse(processor.call_args.args[0].exists(), "Temporary input must be deleted")
+        # The HTTP response can arrive before the handler exits its TemporaryDirectory.\n        # Wait briefly for the server-side cleanup rather than racing that finalizer.\n        temporary_input = processor.call_args.args[0]\n        deadline = time.monotonic() + 3\n        while temporary_input.exists() and time.monotonic() < deadline:\n            time.sleep(0.01)\n        self.assertFalse(temporary_input.exists(), "Temporary input must be deleted")
 
 
 if __name__ == "__main__":
