@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - agent/music-studio-cache-version-consistency
+      - verification/music-studio-baseline-combined
   pull_request:
     paths:
       - 'index.html'
@@ -21,8 +22,7 @@ jobs:
           fetch-depth: 2
       - name: Cache and entry regression tests
         run: node --test tests/music-studio-external-song-import.test.js tests/music-studio-home.test.js tests/music-studio-ipad-touch.test.js
-      - name: Repository Node regression suite (other Draft PR #259 pending)
-        continue-on-error: true
+      - name: Repository Node regression suite (required combined Draft check)
         run: node --test
       - name: Repository JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
