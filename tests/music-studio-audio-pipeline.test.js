@@ -122,6 +122,18 @@ test('native MIDI files bypass audio helper even when MIME is wrong',async()=>{
   assert.equal(fetchCalls,0);
 });
 
+test('local helper size and connection failures are actionable without sending audio',async()=>{
+  let fetchCalls=0;
+  const bridge=loadBridge(window=>{
+    window.fetch=async()=>{fetchCalls++;throw Error('connection refused')};
+  });
+  await assert.rejects(bridge.processAudioLocally({name:'huge.wav',size:500*1024*1024+1}),/500 MiB/);
+  await assert.rejects(bridge.processAudioLocally({name:'empty.wav',size:0}),/500 MiB/);
+  assert.equal(fetchCalls,0);
+  await assert.rejects(bridge.processAudioLocally({name:'song.wav',size:128,type:'audio/wav'}),/START_AUDIO_PIPELINE.command/);
+  assert.equal(fetchCalls,1);
+});
+
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
