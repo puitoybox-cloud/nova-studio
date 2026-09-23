@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import tempfile
 import traceback
 import urllib.parse
@@ -28,7 +29,7 @@ ALLOWED_ORIGINS = {
     "http://localhost:8765",
     "https://puitoybox-cloud.github.io",
 }
-STEM_PROGRAMS = {
+PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.\nSTEM_PROGRAMS = {
     "Vocals": 53,
     "Bass": 33,
     "Piano": 0,
@@ -282,6 +283,9 @@ class Handler(BaseHTTPRequestHandler):
         if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
             self._json(415, {"ok": False, "message": "対応する音声形式ではありません。"})
             return
+        if not PROCESS_LOCK.acquire(blocking=False):
+            self._json(409, {"ok": False, "busy": True, "message": "別の音声を処理中です。完了後に再試行してください。"})
+            return
         try:
             with tempfile.TemporaryDirectory(prefix="nova-music-audio-") as temp:
                 work_dir = Path(temp)
@@ -301,6 +305,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as error:
             traceback.print_exc()
             self._json(500, {"ok": False, "message": str(error)})
+        finally:
+            PROCESS_LOCK.release()
 
     def log_message(self, format, *args):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")
