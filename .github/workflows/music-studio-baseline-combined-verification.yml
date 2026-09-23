@@ -1,0 +1,20 @@
+name: Music Studio combined Draft baseline verification
+on:
+  push:
+    branches:
+      - verification/music-studio-baseline-combined
+  workflow_dispatch:
+
+jobs:
+  full-node-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Entire repository Node test suite (required)
+        run: node --test
+      - name: All repository JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Whitespace integrity
+        run: git diff --check HEAD^ HEAD
