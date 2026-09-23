@@ -64,6 +64,35 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         status, _, _ = self.request("POST", "/process", body=b"x", headers=headers)
         self.assertEqual(status, 415)
 
+    def test_second_request_is_rejected_while_first_conversion_is_running(self):
+        entered = threading.Event()
+        release = threading.Event()
+        first_result = []
+
+        def slow_processor(source, work_dir):
+            entered.set()
+            if not release.wait(timeout=5):
+                raise RuntimeError("Test processor was not released")
+            return {"ok": True, "localOnly": True, "midiBase64": "TVRoZA=="}
+
+        headers = {"Origin": "https://puitoybox-cloud.github.io",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
+        with patch.object(server_module, "process_audio", side_effect=slow_processor) as processor:
+            first = threading.Thread(target=lambda: first_result.append(
+                self.request("POST", "/process", body=b"first", headers=headers)))
+            first.start()
+            try:
+                self.assertTrue(entered.wait(timeout=3), "First conversion did not start")
+                status, _, payload = self.request("POST", "/process", body=b"second", headers=headers)
+                self.assertEqual(status, 409)
+                self.assertTrue(payload["busy"])
+                self.assertEqual(processor.call_count, 1)
+            finally:
+                release.set()
+                first.join(timeout=5)
+        self.assertFalse(first.is_alive())
+        self.assertEqual(first_result[0][0], 200)
+
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
         headers = {"Origin": "https://puitoybox-cloud.github.io",
                    "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
