@@ -40,6 +40,8 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertTrue(payload["localOnly"])
         self.assertEqual(payload["host"], "127.0.0.1")
         self.assertEqual(payload["port"], 8766)
+        self.assertIsInstance(payload["demucs"], bool)
+        self.assertIsInstance(payload["basicPitch"], bool)
         self.assertEqual(headers["Cache-Control"], "no-store")
 
     def test_unknown_endpoint_and_disallowed_origin(self):
