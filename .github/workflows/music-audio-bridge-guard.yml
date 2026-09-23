@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Node regression tests
         run: node --test tests/music-studio-audio-pipeline.test.js tests/music-studio-audio-pipeline-startup.test.js tests/music-studio-audio-e2e.test.js
       - name: Repository Node regression suite (required full integration)
@@ -37,4 +37,4 @@ jobs:
       - name: Repository JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Whitespace integrity
-        run: git diff --check HEAD^ HEAD
+        run: git diff --check origin/main...HEAD
