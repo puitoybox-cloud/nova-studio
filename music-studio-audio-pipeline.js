@@ -31,6 +31,9 @@
       throw Error('ローカル音声処理のMIDIデータが不正、または64 MiBを超えています。');
     }
     const binary=root.atob?root.atob(value):Buffer.from(value,'base64').toString('binary');
+    if((root.btoa?root.btoa(binary):Buffer.from(binary,'binary').toString('base64'))!==value){
+      throw Error('ローカル音声処理のMIDIデータが不正です。');
+    }
     if(binary.length>MAX_MIDI_BYTES)throw Error('ローカル音声処理のMIDIデータが64 MiBを超えています。');
     const bytes=new Uint8Array(binary.length);
     for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
