@@ -26,6 +26,9 @@ jobs:
       - name: Test local HTTP boundary without ML dependencies
         run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
 
+      - name: Validate local helper command syntax
+        run: bash -n tools/music-audio-pipeline/START_AUDIO_PIPELINE.command tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper
+
       - name: Build app bundle
         shell: bash
         run: |
