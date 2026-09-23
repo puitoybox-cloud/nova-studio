@@ -9,7 +9,7 @@ const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-play
 
 test('host shell cache-busts the current Music Studio loader',()=>{
   const host=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),loader=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),version=loader.match(/hostLoader:'([^']+)'/)?.[1];
-  assert.equal(version,'1.5.62');
+  assert.equal(version,'1.5.63');
   assert.match(host,new RegExp(`app\\.js\\?v=${version.replaceAll('.','\\.')}`));
 });
 
