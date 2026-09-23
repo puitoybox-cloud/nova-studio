@@ -230,6 +230,34 @@ test('unexpected helper stem metadata cannot disrupt a valid MIDI import',async(
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.stems.length,0);
 });
 
+test('helper-provided MIDI filename is a safe basename with MIDI extension',async()=>{
+  let host,importedFile;
+  const midi=Buffer.from([0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0,0x4d,0x54,0x72,0x6b,0,0,0,4,0,0xff,0x2f,0]).toString('base64');
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(file){importedFile=file;return{ok:true}}};
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:midi,midiFileName:'../../other\\\\folder/\u0000evil.wav'}}});
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,true);
+  assert.equal(importedFile.name,'evil.wav.mid');
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.midiFileName,'evil.wav.mid');
+});
+
+test('missing importer result is not reported as successful Track Review',async()=>{
+  let host;
+  const midi=Buffer.from([0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0,0x4d,0x54,0x72,0x6b,0,0,0,4,0,0xff,0x2f,0]).toString('base64');
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(){return undefined}};
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:midi}}});
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.match(result.message,/MIDI取り込み結果/);
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline,undefined);
+});
+
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
