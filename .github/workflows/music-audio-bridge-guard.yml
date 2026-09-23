@@ -1,0 +1,29 @@
+name: Music Audio Bridge Guard
+on:
+  push:
+    branches:
+      - agent/music-audio-bridge-midi-guard
+    paths:
+      - 'music-studio-audio-pipeline.js'
+      - 'tests/music-studio-audio-pipeline.test.js'
+      - '.github/workflows/music-audio-bridge-guard.yml'
+  pull_request:
+    paths:
+      - 'music-studio-audio-pipeline.js'
+      - 'tests/music-studio-audio-pipeline.test.js'
+      - '.github/workflows/music-audio-bridge-guard.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node regression tests
+        run: node --test tests/music-studio-audio-pipeline.test.js
+      - name: JavaScript syntax
+        run: |
+          node --check music-studio-audio-pipeline.js
+          node --check tests/music-studio-audio-pipeline.test.js
+      - name: Whitespace integrity
+        run: git diff --check HEAD^ HEAD
