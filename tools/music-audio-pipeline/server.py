@@ -29,7 +29,8 @@ ALLOWED_ORIGINS = {
     "http://localhost:8765",
     "https://puitoybox-cloud.github.io",
 }
-PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.\nSTEM_PROGRAMS = {
+PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.
+STEM_PROGRAMS = {
     "Vocals": 53,
     "Bass": 33,
     "Piano": 0,
