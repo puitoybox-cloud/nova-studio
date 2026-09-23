@@ -20,7 +20,8 @@
   function isAudioFile(file){
     if(!file)return false;
     const ext=extension(file.name),mime=String(file.type||'').toLowerCase();
-    return AUDIO_EXTENSIONS.has(ext)||mime.startsWith('audio/')&&!/midi/.test(mime);
+    if(ext==='mid'||ext==='midi'||/midi/.test(mime))return false;
+    return AUDIO_EXTENSIONS.has(ext)||mime.startsWith('audio/');
   }
 
   function decodeBase64(value=''){
@@ -28,6 +29,13 @@
     const bytes=new Uint8Array(binary.length);
     for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
     return bytes;
+  }
+
+  function assertMidiHeader(bytes){
+    if(bytes.length<14||bytes[0]!==0x4d||bytes[1]!==0x54||bytes[2]!==0x68||bytes[3]!==0x64||
+      bytes[4]!==0||bytes[5]!==0||bytes[6]!==0||bytes[7]!==6){
+      throw Error('ローカル音声処理の結果が有効なMIDIファイルではありません。元の曲は変更していません。');
+    }
   }
 
   function makeMidiFile(bytes,name){
@@ -102,6 +110,7 @@
     setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
     try{
       const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`),midiFile=makeMidiFile(bytes,midiName);
+      assertMidiHeader(bytes);
       setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`,'success');
       const result=await originalImport(midiFile);
       if(result?.ok){
@@ -121,7 +130,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -136,6 +145,6 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader,install});
   installWhenReady();
 })(typeof window!=='undefined'?window:globalThis);
