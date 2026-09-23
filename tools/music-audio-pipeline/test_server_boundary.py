@@ -104,7 +104,13 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(response_headers["Access-Control-Allow-Origin"], headers["Origin"])
         self.assertEqual(processor.call_count, 1)
-        # The HTTP response can arrive before the handler exits its TemporaryDirectory.\n        # Wait briefly for the server-side cleanup rather than racing that finalizer.\n        temporary_input = processor.call_args.args[0]\n        deadline = time.monotonic() + 3\n        while temporary_input.exists() and time.monotonic() < deadline:\n            time.sleep(0.01)\n        self.assertFalse(temporary_input.exists(), "Temporary input must be deleted")
+        # The HTTP response can arrive before the handler exits its TemporaryDirectory.
+        # Wait briefly for the server-side cleanup rather than racing that finalizer.
+        temporary_input = processor.call_args.args[0]
+        deadline = time.monotonic() + 3
+        while temporary_input.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(temporary_input.exists(), "Temporary input must be deleted")
 
 
 if __name__ == "__main__":
