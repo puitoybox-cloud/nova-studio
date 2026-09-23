@@ -117,6 +117,18 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(recovered.call_count, 1)
 
+    def test_timeout_returns_gateway_timeout_and_releases_lock(self):
+        headers = {"Origin": "http://localhost:8765",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "slow.wav"}
+        with patch.object(server_module, "process_audio", side_effect=server_module.subprocess.TimeoutExpired("demucs", 3600)):
+            status, _, payload = self.request("POST", "/process", body=b"audio", headers=headers)
+        self.assertEqual(status, 504)
+        self.assertFalse(payload["ok"])
+        deadline = time.monotonic() + 3
+        while server_module.PROCESS_LOCK.locked() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(server_module.PROCESS_LOCK.locked())
+
     def test_filename_sanitization_keeps_audio_inside_temporary_directory(self):
         self.assertEqual(server_module.safe_name("../../song.wav"), "song.wav")
         self.assertEqual(server_module.safe_name("%2e%2e%2f%2e%2e%2fnotes.wav"), "notes.wav")
