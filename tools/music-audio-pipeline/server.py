@@ -49,7 +49,7 @@ STEM_CHANNELS = {
 
 
 def safe_name(raw: str) -> str:
-    value = Path(urllib.parse.unquote(raw or "audio-input")).name
+    value = Path(urllib.parse.unquote(raw or "audio-input").replace("\\", "/")).name
     value = "".join(ch for ch in value if ch.isalnum() or ch in " ._-()[]")[:180].strip()
     return value or "audio-input.wav"
 
