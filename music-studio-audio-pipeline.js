@@ -32,9 +32,18 @@
   }
 
   function assertMidiHeader(bytes){
-    if(bytes.length<14||bytes[0]!==0x4d||bytes[1]!==0x54||bytes[2]!==0x68||bytes[3]!==0x64||
-      bytes[4]!==0||bytes[5]!==0||bytes[6]!==0||bytes[7]!==6){
-      throw Error('ローカル音声処理の結果が有効なMIDIファイルではありません。元の曲は変更していません。');
+    const invalid=()=>{throw Error('ローカル音声処理の結果が有効なMIDIファイルではありません。元の曲は変更していません。')};
+    if(bytes.length<22||bytes[0]!==0x4d||bytes[1]!==0x54||bytes[2]!==0x68||bytes[3]!==0x64||
+      bytes[4]!==0||bytes[5]!==0||bytes[6]!==0||bytes[7]!==6)invalid();
+    const format=(bytes[8]<<8)|bytes[9],trackCount=(bytes[10]<<8)|bytes[11],division=(bytes[12]<<8)|bytes[13];
+    if(format>2||trackCount===0||(format===0&&trackCount!==1)||division===0)invalid();
+    let offset=14;
+    for(let track=0;track<trackCount;track++){
+      if(offset+8>bytes.length||bytes[offset]!==0x4d||bytes[offset+1]!==0x54||
+        bytes[offset+2]!==0x72||bytes[offset+3]!==0x6b)invalid();
+      const size=(bytes[offset+4]*0x1000000)+(bytes[offset+5]<<16)+(bytes[offset+6]<<8)+bytes[offset+7];
+      offset+=8+size;
+      if(offset>bytes.length)invalid();
     }
   }
 
