@@ -5,6 +5,7 @@
   const VERSION='1.0.0';
   const ENDPOINT='http://127.0.0.1:8766';
   const MAX_AUDIO_BYTES=500*1024*1024;
+  const MAX_MIDI_BYTES=64*1024*1024;
   const AUDIO_EXTENSIONS=new Set(['wav','wave','mp3','aif','aiff','caf','m4a','flac','ogg']);
   const AUDIO_ACCEPT='audio/wav,audio/x-wav,audio/mpeg,audio/aiff,audio/x-aiff,audio/x-caf,audio/mp4,audio/flac,audio/ogg,.wav,.wave,.mp3,.aif,.aiff,.caf,.m4a,.flac,.ogg';
   const MIDI_ACCEPT='audio/midi,audio/x-midi,.mid,.midi';
@@ -26,7 +27,11 @@
   }
 
   function decodeBase64(value=''){
+    if(typeof value!=='string'||value.length===0||value.length>Math.ceil(MAX_MIDI_BYTES/3)*4+4||!/^[A-Za-z0-9+/]*={0,2}$/.test(value)||value.length%4!==0){
+      throw Error('ローカル音声処理のMIDIデータが不正、または64 MiBを超えています。');
+    }
     const binary=root.atob?root.atob(value):Buffer.from(value,'base64').toString('binary');
+    if(binary.length>MAX_MIDI_BYTES)throw Error('ローカル音声処理のMIDIデータが64 MiBを超えています。');
     const bytes=new Uint8Array(binary.length);
     for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
     return bytes;
@@ -128,7 +133,7 @@
       const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
-      setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`);
+      setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
       const result=await originalImport(midiFile);
       if(result?.ok){
         setStatus('Stem MIDIをTrack Reviewへ取り込みました。','success');
