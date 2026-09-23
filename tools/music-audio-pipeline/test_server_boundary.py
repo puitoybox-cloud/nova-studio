@@ -145,6 +145,14 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertEqual(server_module.safe_name("folder%5Cother.mp3"), "other.mp3")
         self.assertEqual(server_module.safe_name("..%5C..%5Cother.wav"), "other.wav")
 
+    def test_stop_command_refuses_to_kill_stale_or_unrelated_pid(self):
+        stop = Path(__file__).with_name("STOP_AUDIO_PIPELINE.command").read_text()
+        self.assertIn('[[ "$PID" =~ ^[0-9]+$ ]]', stop)
+        self.assertIn('COMMAND="$(/bin/ps -p "$PID" -o command=', stop)
+        self.assertIn('[[ "$COMMAND" != *server.py* ]]', stop)
+        self.assertIn('-a -p "$PID" -iTCP:8766 -sTCP:LISTEN', stop)
+        self.assertLess(stop.index('if [[ "$COMMAND" != *python* ]]'), stop.index('kill "$PID"'))
+
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
         headers = {"Origin": "https://puitoybox-cloud.github.io",
                    "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
