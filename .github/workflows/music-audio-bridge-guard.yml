@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Node regression tests
         run: node --test tests/music-studio-audio-pipeline.test.js
       - name: JavaScript syntax
