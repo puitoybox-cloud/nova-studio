@@ -134,6 +134,50 @@ test('local helper size and connection failures are actionable without sending a
   assert.equal(fetchCalls,1);
 });
 
+test('helper busy response does not call MIDI importer or discard existing tracks',async()=>{
+  let host,importCalls=0;
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={
+      state:{externalSongImport:{status:'review',tracks:[{id:'E5'}]}},
+      async importExternalSongFile(){importCalls++;return{ok:true}}
+    };
+    window.fetch=async()=>({
+      ok:false,status:409,
+      async json(){return{ok:false,busy:true,message:'別の音声を処理中です。完了後に再試行してください。'}}
+    });
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.match(result.message,/別の音声を処理中/);
+  assert.equal(importCalls,0);
+  assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'E5');
+});
+
+test('failed MIDI importer does not claim successful Track Review',async()=>{
+  let host,status;
+  const header=[0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0];
+  const track=[0x4d,0x54,0x72,0x6b,0,0,0,4,0,0xff,0x2f,0];
+  loadBridge(window=>{
+    host=window;
+    status={dataset:{},setAttribute(){},textContent:''};
+    const section={querySelector(){return status}};
+    window.document={querySelector(selector){return selector==='.music-external-import'?section:null}};
+    window.MusicStudio={
+      state:{externalSongImport:{tracks:[{id:'existing'}]}},
+      async importExternalSongFile(){return{ok:false,message:'MIDI import failed'}}
+    };
+    window.fetch=async()=>({
+      ok:true,async json(){return{ok:true,midiBase64:Buffer.from([...header,...track]).toString('base64')}}
+    });
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.equal(status.dataset.kind,'error');
+  assert.match(status.textContent,/MIDI import failed/);
+  assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'existing');
+});
+
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
