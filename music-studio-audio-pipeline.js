@@ -56,6 +56,12 @@
     }
   }
 
+  function safeMidiName(value){
+    const leaf=String(value||'').replace(/\\/g,'/').split('/').pop().replace(/[\u0000-\u001f\u007f]/g,'').trim();
+    const stem=leaf.replace(/\.(?:mid|midi)$/i,'').replace(/[^\p{L}\p{N} ._()\[\]-]/gu,'_').slice(0,160).trim();
+    return `${stem||'audio_stems'}.mid`;
+  }
+
   function makeMidiFile(bytes,name){
     const blob=new Blob([bytes],{type:'audio/midi'});
     if(typeof root.File==='function')return new root.File([blob],name,{type:'audio/midi',lastModified:Date.now()});
@@ -133,7 +139,7 @@
     processing=true;
     setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
     try{
-      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
+      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
       setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
@@ -144,7 +150,7 @@
       }else{
         setStatus(String(result?.message||'Stem MIDIのTrack Reviewへの取り込みを確認できませんでした。'),'error');
       }
-      return{...result,audioPipeline:payload};
+      return{...(result||{ok:false,message:'MIDI取り込み結果を確認できませんでした。'}),audioPipeline:payload};
     }catch(error){
       const message=error?.message||String(error);
       if(api.state){
