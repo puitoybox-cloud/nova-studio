@@ -129,7 +129,7 @@
       return{...result,audioPipeline:payload};
     }catch(error){
       const message=error?.message||String(error);
-      if(api.state)api.state.externalSongImport={status:'error',message:`音声のStem分離 / MIDI化に失敗しました：${message}`};
+      if(api.state)api.state.externalSongImport={...(api.state.externalSongImport||{}),status:'error',message:`音声のStem分離 / MIDI化に失敗しました：${message}`};
       setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
       return{ok:false,error,message};
     }finally{processing=false}
