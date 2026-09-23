@@ -91,6 +91,7 @@ test('successful local conversion reaches original MIDI importer with review met
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.sourceFileName,'song.wav');
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.localOnly,true);
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.bpm,120);
+  assert.equal(Object.hasOwn(result.audioPipeline,'midiBase64'),false,'Do not retain large MIDI payload in result');
 });
 
 test('second audio request is rejected while first processes without duplicate fetch',async()=>{
