@@ -4,6 +4,8 @@
 
   const VERSION='1.0.0';
   const ENDPOINT='http://127.0.0.1:8766';
+  const MAX_AUDIO_BYTES=500*1024*1024;
+  const MAX_MIDI_BYTES=64*1024*1024;
   const AUDIO_EXTENSIONS=new Set(['wav','wave','mp3','aif','aiff','caf','m4a','flac','ogg']);
   const AUDIO_ACCEPT='audio/wav,audio/x-wav,audio/mpeg,audio/aiff,audio/x-aiff,audio/x-caf,audio/mp4,audio/flac,audio/ogg,.wav,.wave,.mp3,.aif,.aiff,.caf,.m4a,.flac,.ogg';
   const MIDI_ACCEPT='audio/midi,audio/x-midi,.mid,.midi';
@@ -20,14 +22,44 @@
   function isAudioFile(file){
     if(!file)return false;
     const ext=extension(file.name),mime=String(file.type||'').toLowerCase();
-    return AUDIO_EXTENSIONS.has(ext)||mime.startsWith('audio/')&&!/midi/.test(mime);
+    if(ext==='mid'||ext==='midi'||/midi/.test(mime))return false;
+    return AUDIO_EXTENSIONS.has(ext)||mime.startsWith('audio/');
   }
 
   function decodeBase64(value=''){
+    if(typeof value!=='string'||value.length===0||value.length>Math.ceil(MAX_MIDI_BYTES/3)*4+4||!/^[A-Za-z0-9+/]*={0,2}$/.test(value)||value.length%4!==0){
+      throw Error('ローカル音声処理のMIDIデータが不正、または64 MiBを超えています。');
+    }
     const binary=root.atob?root.atob(value):Buffer.from(value,'base64').toString('binary');
+    if((root.btoa?root.btoa(binary):Buffer.from(binary,'binary').toString('base64'))!==value){
+      throw Error('ローカル音声処理のMIDIデータが不正です。');
+    }
+    if(binary.length>MAX_MIDI_BYTES)throw Error('ローカル音声処理のMIDIデータが64 MiBを超えています。');
     const bytes=new Uint8Array(binary.length);
     for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
     return bytes;
+  }
+
+  function assertMidiHeader(bytes){
+    const invalid=()=>{throw Error('ローカル音声処理の結果が有効なMIDIファイルではありません。元の曲は変更していません。')};
+    if(bytes.length<22||bytes[0]!==0x4d||bytes[1]!==0x54||bytes[2]!==0x68||bytes[3]!==0x64||
+      bytes[4]!==0||bytes[5]!==0||bytes[6]!==0||bytes[7]!==6)invalid();
+    const format=(bytes[8]<<8)|bytes[9],trackCount=(bytes[10]<<8)|bytes[11],division=(bytes[12]<<8)|bytes[13];
+    if(format>2||trackCount===0||(format===0&&trackCount!==1)||division===0)invalid();
+    let offset=14;
+    for(let track=0;track<trackCount;track++){
+      if(offset+8>bytes.length||bytes[offset]!==0x4d||bytes[offset+1]!==0x54||
+        bytes[offset+2]!==0x72||bytes[offset+3]!==0x6b)invalid();
+      const size=(bytes[offset+4]*0x1000000)+(bytes[offset+5]<<16)+(bytes[offset+6]<<8)+bytes[offset+7];
+      offset+=8+size;
+      if(offset>bytes.length)invalid();
+    }
+  }
+
+  function safeMidiName(value){
+    const leaf=String(value||'').replace(/\\/g,'/').split('/').pop().replace(/[\u0000-\u001f\u007f]/g,'').trim();
+    const stem=leaf.replace(/\.(?:mid|midi)$/i,'').replace(/[^\p{L}\p{N} ._()\[\]-]/gu,'_').slice(0,160).trim();
+    return `${stem||'audio_stems'}.mid`;
   }
 
   function makeMidiFile(bytes,name){
@@ -79,7 +111,11 @@
   }
 
   async function processAudioLocally(file){
-    const response=await root.fetch(`${ENDPOINT}/process`,{
+    if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
+      throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');
+    }
+    let response;
+    try{response=await root.fetch(`${ENDPOINT}/process`,{
       method:'POST',
       headers:{
         'Content-Type':String(file.type||'application/octet-stream'),
@@ -87,7 +123,9 @@
         'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input'))
       },
       body:file
-    });
+    })}catch(error){
+      throw Error('MacのローカルAudio Helperに接続できません。START_AUDIO_PIPELINE.commandを起動し、127.0.0.1:8766の接続を確認してください。',{cause:error});
+    }
     if(!response.ok)throw Error(await parseError(response));
     const payload=await response.json();
     if(!payload?.ok||!payload?.midiBase64)throw Error(String(payload?.message||'ローカル音声処理のMIDI結果を受け取れませんでした。'));
@@ -101,16 +139,29 @@
     processing=true;
     setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
     try{
-      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`),midiFile=makeMidiFile(bytes,midiName);
-      setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`,'success');
+      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
+      assertMidiHeader(bytes);
+      const midiFile=makeMidiFile(bytes,midiName);
+      setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
       const result=await originalImport(midiFile);
+      const {midiBase64:unusedMidiBytes,...pipelineMetadata}=payload;
       if(result?.ok){
-        api.state.externalSongImport={...(api.state.externalSongImport||{}),audioPipeline:{sourceFileName:String(file.name||''),midiFileName:midiName,stems:Array.isArray(payload.stems)?payload.stems.slice():[],bpm:payload.bpm??null,localOnly:true}};
+        setStatus('Stem MIDIをTrack Reviewへ取り込みました。','success');
+        const {audioPipelineError:previousError,...reviewState}=api.state.externalSongImport||{};
+        api.state.externalSongImport={...reviewState,audioPipeline:{sourceFileName:String(file.name||''),midiFileName:midiName,stems:Array.isArray(payload.stems)?payload.stems.slice():[],bpm:payload.bpm??null,localOnly:true}};
+      }else{
+        setStatus(String(result?.message||'Stem MIDIのTrack Reviewへの取り込みを確認できませんでした。'),'error');
       }
-      return{...result,audioPipeline:payload};
+      return{...(result||{ok:false,message:'MIDI取り込み結果を確認できませんでした。'}),audioPipeline:pipelineMetadata};
     }catch(error){
       const message=error?.message||String(error);
-      if(api.state)api.state.externalSongImport={status:'error',message:`音声のStem分離 / MIDI化に失敗しました：${message}`};
+      if(api.state){
+        const previous=api.state.externalSongImport||{};
+        const failure=`音声のStem分離 / MIDI化に失敗しました：${message}`;
+        api.state.externalSongImport=Array.isArray(previous.tracks)&&previous.tracks.length
+          ?{...previous,audioPipelineError:failure}
+          :{...previous,status:'error',message:failure};
+      }
       setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
       return{ok:false,error,message};
     }finally{processing=false}
@@ -121,7 +172,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -136,6 +187,6 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader,install});
   installWhenReady();
 })(typeof window!=='undefined'?window:globalThis);
