@@ -128,10 +128,13 @@
       const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=String(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
-      setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`,'success');
+      setStatus(`分離完了：${(payload.stems||[]).join(' / ')||'Stem'}。Music StudioへTrackとして取り込みます。`);
       const result=await originalImport(midiFile);
       if(result?.ok){
+        setStatus('Stem MIDIをTrack Reviewへ取り込みました。','success');
         api.state.externalSongImport={...(api.state.externalSongImport||{}),audioPipeline:{sourceFileName:String(file.name||''),midiFileName:midiName,stems:Array.isArray(payload.stems)?payload.stems.slice():[],bpm:payload.bpm??null,localOnly:true}};
+      }else{
+        setStatus(String(result?.message||'Stem MIDIのTrack Reviewへの取り込みを確認できませんでした。'),'error');
       }
       return{...result,audioPipeline:payload};
     }catch(error){
