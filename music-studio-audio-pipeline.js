@@ -139,7 +139,13 @@
       return{...result,audioPipeline:payload};
     }catch(error){
       const message=error?.message||String(error);
-      if(api.state)api.state.externalSongImport={...(api.state.externalSongImport||{}),status:'error',message:`音声のStem分離 / MIDI化に失敗しました：${message}`};
+      if(api.state){
+        const previous=api.state.externalSongImport||{};
+        const failure=`音声のStem分離 / MIDI化に失敗しました：${message}`;
+        api.state.externalSongImport=Array.isArray(previous.tracks)&&previous.tracks.length
+          ?{...previous,audioPipelineError:failure}
+          :{...previous,status:'error',message:failure};
+      }
       setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
       return{ok:false,error,message};
     }finally{processing=false}
