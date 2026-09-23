@@ -4,6 +4,7 @@
 
   const VERSION='1.0.0';
   const ENDPOINT='http://127.0.0.1:8766';
+  const MAX_AUDIO_BYTES=500*1024*1024;
   const AUDIO_EXTENSIONS=new Set(['wav','wave','mp3','aif','aiff','caf','m4a','flac','ogg']);
   const AUDIO_ACCEPT='audio/wav,audio/x-wav,audio/mpeg,audio/aiff,audio/x-aiff,audio/x-caf,audio/mp4,audio/flac,audio/ogg,.wav,.wave,.mp3,.aif,.aiff,.caf,.m4a,.flac,.ogg';
   const MIDI_ACCEPT='audio/midi,audio/x-midi,.mid,.midi';
@@ -96,7 +97,11 @@
   }
 
   async function processAudioLocally(file){
-    const response=await root.fetch(`${ENDPOINT}/process`,{
+    if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
+      throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');
+    }
+    let response;
+    try{response=await root.fetch(`${ENDPOINT}/process`,{
       method:'POST',
       headers:{
         'Content-Type':String(file.type||'application/octet-stream'),
@@ -104,7 +109,9 @@
         'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input'))
       },
       body:file
-    });
+    })}catch(error){
+      throw Error('MacのローカルAudio Helperに接続できません。START_AUDIO_PIPELINE.commandを起動し、127.0.0.1:8766の接続を確認してください。',{cause:error});
+    }
     if(!response.ok)throw Error(await parseError(response));
     const payload=await response.json();
     if(!payload?.ok||!payload?.midiBase64)throw Error(String(payload?.message||'ローカル音声処理のMIDI結果を受け取れませんでした。'));
