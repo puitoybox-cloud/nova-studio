@@ -7,6 +7,7 @@ locally, returned as a merged Type 1 MIDI file, then deleted with the temp tree.
 from __future__ import annotations
 
 import base64
+import importlib.util
 import json
 import math
 import os
@@ -259,8 +260,8 @@ class Handler(BaseHTTPRequestHandler):
             "host": HOST,
             "port": PORT,
             "python": sys.version.split()[0],
-            "demucs": True,
-            "basicPitch": True,
+            "demucs": importlib.util.find_spec("demucs") is not None,
+            "basicPitch": importlib.util.find_spec("basic_pitch") is not None,
         })
 
     def do_POST(self):
