@@ -23,6 +23,8 @@ jobs:
           fetch-depth: 2
       - name: Node regression tests
         run: node --test tests/music-studio-audio-pipeline.test.js tests/music-studio-audio-pipeline-startup.test.js
+      - name: Repository Node regression suite
+        run: node --test
       - name: JavaScript syntax
         run: |
           node --check music-studio-audio-pipeline.js
