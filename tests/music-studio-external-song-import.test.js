@@ -139,8 +139,8 @@ test('production entry cache keys select the Review-capable Editor assets',()=>{
 });
 
 test('runtime markers expose only module versions and the Review API type',()=>{
-  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.20');assert.equal(app.ASSET_VERSION,'1.4.112');assert.equal(typeof editor.externalReviewTracks,'function');
-  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.20',studio:'1.4.112',reviewApi:'function'});
+  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.21');assert.equal(app.ASSET_VERSION,'1.4.113');assert.equal(typeof editor.externalReviewTracks,'function');
+  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.21',studio:'1.4.113',reviewApi:'function'});
 });
 
 test('All MIDI round trip mounts three external Review rows into the standalone document target',async()=>{
