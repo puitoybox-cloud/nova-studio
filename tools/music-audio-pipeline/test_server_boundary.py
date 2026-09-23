@@ -141,6 +141,9 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertEqual(server_module.safe_name("../../song.wav"), "song.wav")
         self.assertEqual(server_module.safe_name("%2e%2e%2f%2e%2e%2fnotes.wav"), "notes.wav")
         self.assertEqual(server_module.safe_name("folder%2Fother.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("folder\\\\other.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("folder%5Cother.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("..%5C..%5Cother.wav"), "other.wav")
 
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
         headers = {"Origin": "https://puitoybox-cloud.github.io",
