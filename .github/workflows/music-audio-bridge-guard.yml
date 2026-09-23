@@ -1,0 +1,40 @@
+name: Music Audio Bridge Guard
+on:
+  push:
+    branches:
+      - agent/music-audio-bridge-midi-guard
+    paths:
+      - 'music-studio-audio-pipeline.js'
+      - 'tests/music-studio-audio-pipeline.test.js'
+      - 'tests/music-studio-audio-e2e.test.js'
+      - '.github/workflows/music-audio-bridge-guard.yml'
+  pull_request:
+    paths:
+      - 'music-studio-audio-pipeline.js'
+      - 'tests/music-studio-audio-pipeline.test.js'
+      - 'tests/music-studio-audio-e2e.test.js'
+      - '.github/workflows/music-audio-bridge-guard.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Node regression tests
+        run: node --test tests/music-studio-audio-pipeline.test.js tests/music-studio-audio-pipeline-startup.test.js tests/music-studio-audio-e2e.test.js
+      - name: Repository Node regression suite (baseline audit)
+        continue-on-error: true # Six pre-existing failures outside this PR; targeted audio tests remain required.
+        run: node --test
+      - name: JavaScript syntax
+        run: |
+          node --check music-studio-audio-pipeline.js
+          node --check tests/music-studio-audio-pipeline.test.js
+          node --check tests/music-studio-audio-pipeline-startup.test.js
+          node --check tests/music-studio-audio-e2e.test.js
+      - name: Repository JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Whitespace integrity
+        run: git diff --check HEAD^ HEAD
