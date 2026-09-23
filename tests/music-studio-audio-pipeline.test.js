@@ -199,6 +199,20 @@ test('invalid helper base64 cannot reach the MIDI importer',async()=>{
   assert.match(result.message,/MIDI/);
 });
 
+test('noncanonical base64 cannot reach MIDI import even if its bytes decode to a MIDI header',async()=>{
+  let host,importCalls=0;
+  const valid=Buffer.from([0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0,0x4d,0x54,0x72,0x6b,0,0,0,4,0,0xff,0x2f,0]).toString('base64');
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{status:'review',tracks:[{id:'E1'}]}},async importExternalSongFile(){importCalls++;return{ok:true}}};
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:valid.slice(0,-2)+'=='}}});
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.equal(importCalls,0);
+  assert.equal(host.MusicStudio.state.externalSongImport.status,'review');
+});
+
 test('unexpected helper stem metadata cannot disrupt a valid MIDI import',async()=>{
   let host,importCalls=0;
   const header=[0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0];
