@@ -44,6 +44,14 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertIsInstance(payload["basicPitch"], bool)
         self.assertEqual(headers["Cache-Control"], "no-store")
 
+    def test_health_does_not_advertise_missing_audio_dependencies(self):
+        with patch.object(server_module.importlib.util, "find_spec", return_value=None):
+            status, _, payload = self.request("GET", "/health")
+        self.assertEqual(status, 200)
+        self.assertFalse(payload["demucs"])
+        self.assertFalse(payload["basicPitch"])
+        self.assertTrue(payload["localOnly"])
+
     def test_unknown_endpoint_and_disallowed_origin(self):
         status, _, _ = self.request("GET", "/missing")
         self.assertEqual(status, 404)
