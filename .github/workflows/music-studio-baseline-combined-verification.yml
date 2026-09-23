@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - verification/music-studio-baseline-combined
+      - verification/music-studio-all-drafts-255
   workflow_dispatch:
 
 jobs:
