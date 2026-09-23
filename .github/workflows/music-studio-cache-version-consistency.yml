@@ -21,6 +21,9 @@ jobs:
           fetch-depth: 2
       - name: Cache and entry regression tests
         run: node --test tests/music-studio-external-song-import.test.js tests/music-studio-home.test.js tests/music-studio-ipad-touch.test.js
+      - name: Repository Node regression suite (other Draft PR #259 pending)
+        continue-on-error: true
+        run: node --test
       - name: Repository JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Whitespace integrity
