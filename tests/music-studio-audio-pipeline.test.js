@@ -20,7 +20,19 @@ test('audio pipeline bridge recognizes supported local audio and keeps MIDI sepa
   assert.equal(bridge.isAudioFile({name:'song.wav',type:'audio/wav'}),true);
   assert.equal(bridge.isAudioFile({name:'song.mp3',type:'audio/mpeg'}),true);
   assert.equal(bridge.isAudioFile({name:'song.mid',type:'audio/midi'}),false);
+  assert.equal(bridge.isAudioFile({name:'song.mid',type:'audio/wav'}),false);
+  assert.equal(bridge.isAudioFile({name:'song.midi',type:'audio/x-midi'}),false);
+  assert.equal(bridge.isAudioFile({name:'song.wav',type:'audio/midi'}),false);
   assert.equal(bridge.isAudioFile({name:'notes.txt',type:'text/plain'}),false);
+});
+
+test('audio bridge rejects corrupt or truncated MIDI before external import',()=>{
+  const bridge=loadBridge();
+  const valid=Uint8Array.from([0x4d,0x54,0x68,0x64,0,0,0,6,0,1,0,1,1,0xe0]);
+  assert.doesNotThrow(()=>bridge.assertMidiHeader(valid));
+  assert.throws(()=>bridge.assertMidiHeader(valid.subarray(0,13)),/MIDI/);
+  assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([0,0,0,0,...valid.subarray(4)])),/MIDI/);
+  assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...valid.subarray(0,7),7,...valid.subarray(8)])),/MIDI/);
 });
 
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
