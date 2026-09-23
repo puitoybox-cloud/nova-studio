@@ -61,7 +61,8 @@ test('invalid local MIDI never reaches import and preserves existing review stat
   assert.equal(result.ok,false);
   assert.equal(importCalls,0);
   assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'keep-this-track');
-  assert.equal(host.MusicStudio.state.externalSongImport.status,'error');
+  assert.equal(host.MusicStudio.state.externalSongImport.status,'review');
+  assert.match(host.MusicStudio.state.externalSongImport.audioPipelineError,/MIDI/);
 });
 
 test('successful local conversion reaches original MIDI importer with review metadata',async()=>{
@@ -152,6 +153,8 @@ test('helper busy response does not call MIDI importer or discard existing track
   assert.match(result.message,/別の音声を処理中/);
   assert.equal(importCalls,0);
   assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'E5');
+  assert.equal(host.MusicStudio.state.externalSongImport.status,'review');
+  assert.match(host.MusicStudio.state.externalSongImport.audioPipelineError,/別の音声を処理中/);
 });
 
 test('failed MIDI importer does not claim successful Track Review',async()=>{
