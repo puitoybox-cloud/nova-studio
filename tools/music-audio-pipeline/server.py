@@ -7,12 +7,14 @@ locally, returned as a merged Type 1 MIDI file, then deleted with the temp tree.
 from __future__ import annotations
 
 import base64
+import importlib.util
 import json
 import math
 import os
 import shutil
 import subprocess
 import sys
+import threading
 import tempfile
 import traceback
 import urllib.parse
@@ -28,6 +30,7 @@ ALLOWED_ORIGINS = {
     "http://localhost:8765",
     "https://puitoybox-cloud.github.io",
 }
+PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.
 STEM_PROGRAMS = {
     "Vocals": 53,
     "Bass": 33,
@@ -46,7 +49,7 @@ STEM_CHANNELS = {
 
 
 def safe_name(raw: str) -> str:
-    value = Path(urllib.parse.unquote(raw or "audio-input")).name
+    value = Path(urllib.parse.unquote(raw or "audio-input").replace("\\", "/")).name
     value = "".join(ch for ch in value if ch.isalnum() or ch in " ._-()[]")[:180].strip()
     return value or "audio-input.wav"
 
@@ -257,8 +260,8 @@ class Handler(BaseHTTPRequestHandler):
             "host": HOST,
             "port": PORT,
             "python": sys.version.split()[0],
-            "demucs": True,
-            "basicPitch": True,
+            "demucs": importlib.util.find_spec("demucs") is not None,
+            "basicPitch": importlib.util.find_spec("basic_pitch") is not None,
         })
 
     def do_POST(self):
@@ -282,6 +285,9 @@ class Handler(BaseHTTPRequestHandler):
         if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
             self._json(415, {"ok": False, "message": "対応する音声形式ではありません。"})
             return
+        if not PROCESS_LOCK.acquire(blocking=False):
+            self._json(409, {"ok": False, "busy": True, "message": "別の音声を処理中です。完了後に再試行してください。"})
+            return
         try:
             with tempfile.TemporaryDirectory(prefix="nova-music-audio-") as temp:
                 work_dir = Path(temp)
@@ -301,6 +307,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as error:
             traceback.print_exc()
             self._json(500, {"ok": False, "message": str(error)})
+        finally:
+            PROCESS_LOCK.release()
 
     def log_message(self, format, *args):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")
