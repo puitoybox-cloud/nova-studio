@@ -73,7 +73,7 @@ test('successful local conversion reaches original MIDI importer with review met
   loadBridge(window=>{
     host=window;
     window.MusicStudio={
-      state:{externalSongImport:{status:'review',tracks:[{id:'E1'}]}},
+      state:{externalSongImport:{status:'review',tracks:[{id:'E1'}],audioPipelineError:'earlier conversion failed'}},
       async importExternalSongFile(file){importCalls++;importedFile=file;return{ok:true}}
     };
     window.fetch=async(url,request)=>{
@@ -91,6 +91,7 @@ test('successful local conversion reaches original MIDI importer with review met
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.sourceFileName,'song.wav');
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.localOnly,true);
   assert.equal(host.MusicStudio.state.externalSongImport.audioPipeline.bpm,120);
+  assert.equal(host.MusicStudio.state.externalSongImport.audioPipelineError,undefined,'Success clears prior audio error');
   assert.equal(Object.hasOwn(result.audioPipeline,'midiBase64'),false,'Do not retain large MIDI payload in result');
 });
 
