@@ -12,10 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Entire repository Node test suite (required)
         run: node --test
       - name: All repository JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
-      - name: Whitespace integrity
-        run: git diff --check HEAD^ HEAD
+      - name: Python local HTTP boundary regression
+        run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
+      - name: Audio helper shell syntax
+        run: bash -n tools/music-audio-pipeline/START_AUDIO_PIPELINE.command tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper
+      - name: Full integration whitespace integrity against main
+        run: git diff --check origin/main...HEAD
