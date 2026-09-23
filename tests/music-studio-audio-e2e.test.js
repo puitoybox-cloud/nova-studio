@@ -84,3 +84,25 @@ test('invalid synthetic helper MIDI cannot create a project or overwrite an exis
   assert.equal(result.ok,false);
   assert.equal(JSON.stringify(await repo.list()),before);
 });
+
+test('helper busy and connection failures preserve the real repository and prior Track Review',async()=>{
+  const window=fixture(),app=window.MusicStudio,repo=app.memoryRepository();app.setRepository(repo);
+  const existing=app.makeProject({projectId:'safe-existing',projectName:'Existing music'});
+  await repo.put(existing);
+  app.state.externalSongImport={status:'review',tracks:[{id:'existing-external',notes:[{id:'n1',pitch:64}]}]};
+  const before=JSON.stringify(await repo.list());
+  let calls=0;
+  window.fetch=async()=>{calls++;return{ok:false,status:409,async json(){return{ok:false,busy:true,message:'別の音声を処理中です。'}}}};
+  const busy=await app.importExternalSongFile({name:'busy.wav',type:'audio/wav',size:100});
+  assert.equal(busy.ok,false);
+  assert.equal(calls,1);
+  assert.equal(JSON.stringify(await repo.list()),before);
+  assert.equal(app.state.externalSongImport.status,'review');
+  assert.equal(app.state.externalSongImport.tracks[0].id,'existing-external');
+  window.fetch=async()=>{throw Error('mock connection refused')};
+  const disconnected=await app.importExternalSongFile({name:'offline.wav',type:'audio/wav',size:100});
+  assert.equal(disconnected.ok,false);
+  assert.match(disconnected.message,/START_AUDIO_PIPELINE.command/);
+  assert.equal(JSON.stringify(await repo.list()),before);
+  assert.equal(app.state.externalSongImport.tracks[0].id,'existing-external');
+});
