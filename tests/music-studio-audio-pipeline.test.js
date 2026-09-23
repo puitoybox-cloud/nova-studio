@@ -6,10 +6,11 @@ const vm=require('node:vm');
 
 const root=path.join(__dirname,'..');
 
-function loadBridge(){
+function loadBridge(configure){
   const source=fs.readFileSync(path.join(root,'music-studio-audio-pipeline.js'),'utf8');
   const window={Uint8Array,Blob,Buffer,console,setTimeout(){},atob(value){return Buffer.from(value,'base64').toString('binary')}};
   window.window=window;
+  configure?.(window);
   vm.runInNewContext(source,{window,globalThis:window,Uint8Array,Blob,Buffer,console},{filename:'music-studio-audio-pipeline.js'});
   return window.MusicStudioAudioPipeline;
 }
@@ -39,6 +40,28 @@ test('audio bridge validates MIDI header, track count and chunk boundaries',()=>
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header,...track.slice(0,7),5,...track.slice(8)])),/MIDI/);
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header,0,...track.slice(1)])),/MIDI/);
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header.slice(0,8),0,3,...header.slice(10),...track])),/MIDI/);
+});
+
+test('invalid local MIDI never reaches import and preserves existing review state',async()=>{
+  let importCalls=0,host;
+  const existing={status:'review',tracks:[{id:'keep-this-track'}]};
+  const bridge=loadBridge(window=>{
+    host=window;
+    window.MusicStudio={
+      state:{externalSongImport:existing},
+      async importExternalSongFile(){importCalls++;return{ok:true}}
+    };
+    window.fetch=async()=>({
+      ok:true,
+      async json(){return{ok:true,midiBase64:Buffer.from('not midi').toString('base64')}}
+    });
+  });
+  assert.equal(bridge.install(),false);
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.equal(importCalls,0);
+  assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'keep-this-track');
+  assert.equal(host.MusicStudio.state.externalSongImport.status,'error');
 });
 
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
