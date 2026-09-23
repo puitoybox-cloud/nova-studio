@@ -93,6 +93,33 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertFalse(first.is_alive())
         self.assertEqual(first_result[0][0], 200)
 
+    def test_failed_conversion_releases_lock_and_deletes_temporary_input(self):
+        headers = {"Origin": "http://127.0.0.1:8765",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "failed.wav"}
+        with patch.object(server_module, "process_audio", side_effect=RuntimeError("mock conversion failure")) as processor:
+            status, _, payload = self.request("POST", "/process", body=b"audio", headers=headers)
+        self.assertEqual(status, 500)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(processor.call_count, 1)
+        temporary_input = processor.call_args.args[0]
+        deadline = time.monotonic() + 3
+        while (temporary_input.exists() or server_module.PROCESS_LOCK.locked()) and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(temporary_input.exists())
+        self.assertFalse(server_module.PROCESS_LOCK.locked())
+        with patch.object(server_module, "process_audio", return_value={
+            "ok": True, "localOnly": True, "midiBase64": "TVRoZA==",
+        }) as recovered:
+            status, _, payload = self.request("POST", "/process", body=b"next", headers=headers)
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(recovered.call_count, 1)
+
+    def test_filename_sanitization_keeps_audio_inside_temporary_directory(self):
+        self.assertEqual(server_module.safe_name("../../song.wav"), "song.wav")
+        self.assertEqual(server_module.safe_name("%2e%2e%2f%2e%2e%2fnotes.wav"), "notes.wav")
+        self.assertEqual(server_module.safe_name("folder%2Fother.mp3"), "other.mp3")
+
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
         headers = {"Origin": "https://puitoybox-cloud.github.io",
                    "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
