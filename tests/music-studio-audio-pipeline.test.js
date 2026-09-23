@@ -38,7 +38,7 @@ test('audio bridge validates MIDI header, track count and chunk boundaries',()=>
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header.slice(0,11),2,...header.slice(12),...track])),/MIDI/);
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header,...track.slice(0,7),5,...track.slice(8)])),/MIDI/);
   assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header,0,...track.slice(1)])),/MIDI/);
-  assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header.slice(0,8),0,0,...header.slice(10),...track])),/MIDI/);
+  assert.throws(()=>bridge.assertMidiHeader(Uint8Array.from([...header.slice(0,8),0,3,...header.slice(10),...track])),/MIDI/);
 });
 
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
