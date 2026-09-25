@@ -3,7 +3,6 @@ on:
   workflow_dispatch:
   push:
     branches: [verification/music-studio-all-drafts-255]
-    paths: ['verification/pr262/**', '.github/workflows/music-studio-pr262-preview.yml']
 permissions:
   contents: read
 jobs:
