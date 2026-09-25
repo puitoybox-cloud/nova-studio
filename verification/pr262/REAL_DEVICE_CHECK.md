@@ -15,6 +15,7 @@ The `PRODUCT_HEAD.txt` in the browser artifact identifies the checked-out produc
 On the same exact-head Mac / Chrome preview, import `PR262_synthetic_melody_test.wav` into a new test project. In the combined MIDI export, inspect **Vocals (E1)** specifically: its six notes should have MIDI pitches `60, 64, 67, 72, 67, 60` (C4, E4, G4, C5, G4, C4), approximately 0.75 seconds apart. Listen to E1 in isolation and confirm that E4 is not F4 and sustained notes are not split. The other five stems are separate transcription results; their combined note count is not the melody accuracy measure. Record the exact product hash, E1 pitches, E1 count, and Console warnings/errors. Do not alter an existing saved song or backup.
 Use Browser Preview and local source Helper artifacts labeled with the **same final product HEAD**; an artifact built before the audio accuracy fix cannot verify this result.
 Begin the Mac check after the exact-head Browser Preview and Helper source packaging workflows both succeed for that HEAD.
+The CI audio accuracy test uses Python 3.11; the local Helper still uses the Mac's Python 3 installation, so record that version if setup fails.
 
 ## M1 iPad / Safari
 

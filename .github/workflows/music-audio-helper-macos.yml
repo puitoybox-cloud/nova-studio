@@ -26,6 +26,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install audio accuracy test dependencies
         run: |
           python3 -m venv "$RUNNER_TEMP/audio-test-venv"
