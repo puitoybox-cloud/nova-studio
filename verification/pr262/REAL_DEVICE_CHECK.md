@@ -10,6 +10,10 @@ The `PRODUCT_HEAD.txt` in the browser artifact identifies the checked-out produc
 4. Import a locally generated short synthetic WAV. Check progress or failure text, six named stems **if all six actually yield notes**, Track Review, exact Track ID editing, Save/Reopen, scoped repair Preview/Cancel/Apply/Undo, single and combined MIDI export, then import exported MIDI into Logic Pro and re-export/reimport it into a second test project. Record missing stems as a result, not an automatic failure if the fixture is silent in those stems. Verify original and test projects are distinct.
 5. Stop the browser preview with `verification/pr262/STOP_PR262_PREVIEW.command`. Stop the Helper separately. Check Chrome Console error and warning entries and note which operation caused each.
 
+## Audio accuracy check for the September 25 fixture
+
+On the same exact-head Mac / Chrome preview, import `PR262_synthetic_melody_test.wav` into a new test project. In the combined MIDI export, inspect **Vocals (E1)** specifically: its six notes should have MIDI pitches `60, 64, 67, 72, 67, 60` (C4, E4, G4, C5, G4, C4), approximately 0.75 seconds apart. Listen to E1 in isolation and confirm that E4 is not F4 and sustained notes are not split. The other five stems are separate transcription results; their combined note count is not the melody accuracy measure. Record the exact product hash, E1 pitches, E1 count, and Console warnings/errors. Do not alter an existing saved song or backup.
+
 ## M1 iPad / Safari
 
 Open the published HTTPS Music Studio URL in Safari, create a separate test project, rotate to landscape, inspect header and piano roll width, touch select/drag/resize, Save/Reopen, and check Safari Web Inspector via a Mac if available. This checks the **published site**, whose commit must be recorded separately; it is not an exact-head PR #262 check. Mac loopback cannot be reached from iPad and an untrusted LAN HTTP origin is not a substitute for an HTTPS preview. Audio Helper runs on the Mac only and its loopback endpoint cannot be used by the iPad.

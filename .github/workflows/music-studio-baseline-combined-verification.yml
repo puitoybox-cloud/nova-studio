@@ -17,6 +17,8 @@ jobs:
         run: node --test
       - name: All repository JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Install audio accuracy test dependencies
+        run: python3 -m pip install 'numpy<2' 'librosa>=0.10,<1' 'soundfile>=0.12,<1' 'mido>=1.3,<2'
       - name: Python local HTTP boundary regression
         run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
       - name: Audio helper shell syntax

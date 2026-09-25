@@ -110,6 +110,93 @@ def extract_note_events(midi_path: Path):
     return events
 
 
+def refine_clear_melody(events, source_path: Path):
+    """Correct and join fragments only where the original audio has a clear single tone.
+
+    A mixture with chords, percussion, or a strong harmonic spectrum is left to
+    Basic Pitch. This conservative check is useful when stem separation changes
+    the fundamental or Basic Pitch splits one continuous tone into several notes.
+    """
+    import librosa
+    import numpy as np
+
+    audio, sr = librosa.load(str(source_path), sr=22050, mono=True)
+    if len(audio) == 0:
+        return events
+
+    notes = []
+    active = {}
+    for time, kind, pitch, velocity in events:
+        key = int(pitch)
+        if kind == "note_on" and velocity > 0:
+            active.setdefault(key, []).append((float(time), int(velocity)))
+        elif key in active and active[key]:
+            start, strength = active[key].pop(0)
+            if time > start:
+                notes.append([start, float(time), key, strength])
+    if not notes:
+        return events
+
+    def reference_pitch(start, end):
+        center = (start + end) / 2
+        width = min(0.18, end - start)
+        if width < 0.075:
+            return None
+        left = max(0, int((center - width / 2) * sr))
+        segment = audio[left:min(len(audio), left + max(1, int(width * sr)))]
+        if len(segment) < int(0.075 * sr):
+            return None
+        segment = segment - np.mean(segment)
+        power = float(np.sum(segment * segment))
+        if power < len(segment) * 1e-7:
+            return None
+        # A window reduces spectral leakage at note edges. Require the strongest
+        # peak to explain almost all power: chords and harmonic instruments fail.
+        windowed = segment * np.hanning(len(segment))
+        spectrum = np.abs(np.fft.rfft(windowed, n=65536)) ** 2
+        frequencies = np.fft.rfftfreq(65536, d=1 / sr)
+        band = (frequencies >= 80) & (frequencies <= 1800)
+        indices = np.flatnonzero(band)
+        peak = indices[np.argmax(spectrum[band])]
+        frequency = frequencies[peak]
+        midi_pitch = round(69 + 12 * math.log2(frequency / 440))
+        if not 24 <= midi_pitch <= 96:
+            return None
+        # Measure the fraction of energy near the peak on the original waveform.
+        # The high threshold deliberately excludes chords and complex timbres.
+        nearby = (frequencies >= frequency - 12) & (frequencies <= frequency + 12)
+        if float(np.sum(spectrum[nearby])) / float(np.sum(spectrum[band])) < 0.85:
+            return None
+        return midi_pitch
+
+    def continuous_at(boundary):
+        def rms(start, end):
+            chunk = audio[max(0, int(start * sr)):min(len(audio), int(end * sr))]
+            return float(np.sqrt(np.mean(chunk * chunk))) if len(chunk) else 0.0
+        before = rms(boundary - 0.06, boundary - 0.03)
+        after = rms(boundary + 0.03, boundary + 0.06)
+        middle = rms(boundary - 0.009, boundary + 0.009)
+        return min(before, after) > 1e-4 and middle >= 0.65 * min(before, after)
+
+    for note in notes:
+        detected = reference_pitch(note[0], note[1])
+        if detected is not None and abs(detected - note[2]) <= 2:
+            note[2] = detected
+    notes.sort(key=lambda note: (note[0], note[2]))
+    merged = []
+    for note in notes:
+        if (merged and merged[-1][2] == note[2]
+                and -0.02 <= note[0] - merged[-1][1] <= 0.03
+                and continuous_at((note[0] + merged[-1][1]) / 2)):
+            merged[-1][1] = max(merged[-1][1], note[1])
+        else:
+            merged.append(note[:])
+    result = []
+    for start, end, pitch, velocity in merged:
+        result.extend(((start, "note_on", pitch, velocity), (end, "note_off", pitch, 0)))
+    return sorted(result, key=lambda event: (event[0], event[1] == "note_on"))
+
+
 def drum_events(stem_path: Path):
     import librosa
     import numpy as np
@@ -187,6 +274,8 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
             midi_path = work_dir / f"{label.lower()}.mid"
             transcribe_pitched_stem(stem_path, midi_path)
             events = extract_note_events(midi_path)
+            if label == "Vocals":
+                events = refine_clear_melody(events, source)
         note_count = sum(1 for event in events if event[1] == "note_on" and event[3] > 0)
         if note_count == 0:
             continue
