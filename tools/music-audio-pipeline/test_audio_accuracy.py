@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 import server
 
 
-@unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("mido", "librosa", "numpy")),
+@unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("mido", "soundfile", "numpy")),
                      "audio analysis dependencies are unavailable")
 class SyntheticMelodyAccuracyTests(unittest.TestCase):
     def test_observed_vocals_match_source_after_refinement(self):

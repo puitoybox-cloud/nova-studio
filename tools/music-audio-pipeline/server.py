@@ -117,10 +117,16 @@ def refine_clear_melody(events, source_path: Path):
     Basic Pitch. This conservative check is useful when stem separation changes
     the fundamental or Basic Pitch splits one continuous tone into several notes.
     """
-    import librosa
     import numpy as np
+    import soundfile as sf
 
-    audio, sr = librosa.load(str(source_path), sr=22050, mono=True)
+    try:
+        channels, sr = sf.read(str(source_path), dtype="float32", always_2d=True)
+        audio = np.mean(channels, axis=1)
+    except (RuntimeError, ValueError):
+        # Some supported containers require the runtime's librosa decoder.
+        import librosa
+        audio, sr = librosa.load(str(source_path), sr=22050, mono=True)
     if len(audio) == 0:
         return events
 
