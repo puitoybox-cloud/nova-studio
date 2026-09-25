@@ -27,10 +27,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install audio accuracy test dependencies
-        run: python3 -m pip install 'numpy<2' 'librosa>=0.10,<1' 'soundfile>=0.12,<1' 'mido>=1.3,<2'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/audio-test-venv"
+          "$RUNNER_TEMP/audio-test-venv/bin/python" -m pip install 'numpy<2' 'librosa>=0.10,<1' 'soundfile>=0.12,<1' 'mido>=1.3,<2'
 
       - name: Test local HTTP boundary and audio accuracy
-        run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
+        run: "$RUNNER_TEMP/audio-test-venv/bin/python" -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
 
       - name: Validate local helper command syntax
         run: bash -n tools/music-audio-pipeline/START_AUDIO_PIPELINE.command tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper
