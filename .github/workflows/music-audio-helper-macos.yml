@@ -46,6 +46,8 @@ jobs:
           chmod +x "$MACOS/NovaMusicAudioHelper"
           cp tools/music-audio-pipeline/server.py "$RESOURCES/pipeline/server.py"
           cp tools/music-audio-pipeline/requirements.txt "$RESOURCES/pipeline/requirements.txt"
+          cp tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command "$RESOURCES/pipeline/STOP_AUDIO_PIPELINE.command"
+          chmod +x "$RESOURCES/pipeline/STOP_AUDIO_PIPELINE.command"
           /usr/bin/plutil -lint "$CONTENTS/Info.plist"
           /usr/bin/codesign --force --deep --sign - "$APP_ROOT"
           /usr/bin/codesign --verify --deep --strict "$APP_ROOT"
