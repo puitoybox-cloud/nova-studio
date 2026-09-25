@@ -56,7 +56,28 @@ jobs:
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nova-Music-Audio-Helper-macOS-${{ github.event.pull_request.head.sha || github.sha }}
+          name: UNNOTARIZED-DO-NOT-LAUNCH-Nova-Music-Audio-Helper-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/Nova-Music-Audio-Helper-macOS.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Package inspectable local source for real-device verification
+        if: ${{ hashFiles('verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/PR262-Local-Audio-Helper-Source"
+          mkdir -p "$ROOT"
+          cp tools/music-audio-pipeline/{START_AUDIO_PIPELINE.command,STOP_AUDIO_PIPELINE.command,server.py,requirements.txt} "$ROOT/"
+          cp verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md "$ROOT/README.md"
+          printf '%s\n' '${{ github.event.pull_request.head.sha || github.sha }}' > "$ROOT/PRODUCT_HEAD.txt"
+          chmod +x "$ROOT/"*.command
+          ditto -c -k --sequesterRsrc --keepParent "$ROOT" "$RUNNER_TEMP/PR262-Local-Audio-Helper-Source.zip"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md') != '' }}
+        with:
+          name: PR262-Local-Audio-Helper-Source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/PR262-Local-Audio-Helper-Source.zip
           if-no-files-found: error
           retention-days: 14
