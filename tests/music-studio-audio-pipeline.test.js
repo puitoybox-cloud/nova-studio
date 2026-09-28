@@ -278,7 +278,7 @@ test('missing importer result is not reported as successful Track Review',async(
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.0/);
+  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.1/);
 });
 
 test('local helper is loopback-only and protects its POST boundary',()=>{

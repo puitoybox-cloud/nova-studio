@@ -17,7 +17,7 @@ Before importing, open `http://127.0.0.1:8766/health` and confirm `pipelineRevis
 Use Browser Preview and local source Helper artifacts labeled with the **same final product HEAD**; an artifact built before the audio accuracy fix cannot verify this result.
 Begin the Mac check after the exact-head Browser Preview and Helper source packaging workflows both succeed for that HEAD.
 The CI audio accuracy test uses Python 3.11 and binary NumPy, SoundFile, and Mido wheels; the local Helper still uses the Mac's Python 3 installation, so record that version if setup fails.
-The lightweight regression injects captured MIDI after the separation stage. The separate real conversion workflow runs Demucs and Basic Pitch with the fixture and uploads its actual MIDI and note report. A lightweight PASS alone does not establish full conversion accuracy.
+The lightweight regression injects captured MIDI after the separation stage. The separate real conversion workflow runs Demucs and Basic Pitch on a Linux CI runner with the fixture and uploads its actual MIDI and note report. A lightweight PASS alone does not establish full conversion accuracy, and Linux results do not replace Intel Mac real-device confirmation.
 
 ## M1 iPad / Safari
 
