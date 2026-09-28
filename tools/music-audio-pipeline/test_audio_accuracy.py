@@ -1,7 +1,12 @@
 """Regression against the WAV and MIDI captured during the September 25 test."""
 import importlib.util
+import base64
+import io
+import json
+import threading
 import sys
 import unittest
+from http.client import HTTPConnection
 from pathlib import Path
 from unittest.mock import patch
 
@@ -61,6 +66,51 @@ class SyntheticMelodyAccuracyTests(unittest.TestCase):
             self.assertEqual([message.note for message in output.tracks[1]
                               if message.type == "note_on" and message.velocity > 0],
                              [60, 64, 67, 72, 67, 60])
+
+    def test_http_upload_reaches_source_refinement_and_midi_response(self):
+        import mido
+        import shutil
+
+        source = ROOT / "fixtures" / "synthetic_six_notes.wav"
+        captured = mido.MidiFile(ROOT / "fixtures" / "observed_six_notes_stems.mid")
+        vocal_track = next(track for track in captured.tracks
+                           if any(msg.type == "track_name" and msg.name == "Vocals" for msg in track))
+        original = mido.MidiFile(type=1, ticks_per_beat=captured.ticks_per_beat)
+        original.tracks.append(vocal_track)
+
+        def separate(_source, output):
+            stems = output / "stems"
+            stems.mkdir(parents=True)
+            shutil.copyfile(source, stems / "vocals.wav")
+            return stems
+
+        local = server.ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
+        thread = threading.Thread(target=local.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with (patch.object(server, "estimate_bpm", return_value=120),
+                  patch.object(server, "run_demucs", side_effect=separate),
+                  patch.object(server, "transcribe_pitched_stem", side_effect=lambda _stem, target: original.save(target))):
+                connection = HTTPConnection("127.0.0.1", local.server_port, timeout=20)
+                try:
+                    connection.request("POST", "/process", body=source.read_bytes(), headers={
+                        "Origin": "http://127.0.0.1:8765", "X-Nova-Audio-Pipeline": "1",
+                        "X-Nova-File-Name": "synthetic_six_notes.wav"})
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 200)
+                    payload = json.loads(response.read())
+                finally:
+                    connection.close()
+            self.assertEqual(payload["pipelineRevision"], 2)
+            self.assertEqual(payload["noteCounts"]["Vocals"], 6)
+            output = mido.MidiFile(file=io.BytesIO(base64.b64decode(payload["midiBase64"])))
+            self.assertEqual([message.note for message in output.tracks[1]
+                              if message.type == "note_on" and message.velocity > 0],
+                             [60, 64, 67, 72, 67, 60])
+        finally:
+            local.shutdown()
+            local.server_close()
+            thread.join(timeout=5)
 
     def test_chord_like_source_does_not_override_pitch(self):
         import math

@@ -1,5 +1,6 @@
 """Dependency-free local HTTP boundary regression tests for the audio helper."""
 import importlib.util
+import hashlib
 import json
 import threading
 import time
@@ -42,6 +43,8 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertEqual(payload["port"], 8766)
         self.assertIsInstance(payload["demucs"], bool)
         self.assertIsInstance(payload["basicPitch"], bool)
+        self.assertEqual(payload["pipelineRevision"], 2)
+        self.assertEqual(payload["sourceDigest"], hashlib.sha256(SERVER_PATH.read_bytes()).hexdigest())
         self.assertEqual(headers["Cache-Control"], "no-store")
 
     def test_health_does_not_advertise_missing_audio_dependencies(self):
@@ -152,6 +155,12 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         self.assertIn('[[ "$COMMAND" != *server.py* ]]', stop)
         self.assertIn('-a -p "$PID" -iTCP:8766 -sTCP:LISTEN', stop)
         self.assertLess(stop.index('if [[ "$COMMAND" != *python* ]]'), stop.index('kill "$PID"'))
+
+    def test_start_command_rejects_another_running_source(self):
+        start = Path(__file__).with_name("START_AUDIO_PIPELINE.command").read_text()
+        self.assertIn('EXPECTED_SOURCE_DIGEST=', start)
+        self.assertIn('actual.get("sourceDigest")==expected', start)
+        self.assertIn('check_running_source || stale_helper_error', start)
 
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
         headers = {"Origin": "https://puitoybox-cloud.github.io",

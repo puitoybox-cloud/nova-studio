@@ -4,6 +4,7 @@
 
   const VERSION='1.0.0';
   const ENDPOINT='http://127.0.0.1:8766';
+  const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
   const MAX_MIDI_BYTES=64*1024*1024;
   const AUDIO_EXTENSIONS=new Set(['wav','wave','mp3','aif','aiff','caf','m4a','flac','ogg']);
@@ -128,6 +129,9 @@
     }
     if(!response.ok)throw Error(await parseError(response));
     const payload=await response.json();
+    if(payload?.pipelineRevision!==REQUIRED_PIPELINE_REVISION){
+      throw Error('別の版のAudio Helperが応答しています。以前のHelperをその配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、今回の製品HEADと一致するHelperソースを起動してください。');
+    }
     if(!payload?.ok||!payload?.midiBase64)throw Error(String(payload?.message||'ローカル音声処理のMIDI結果を受け取れませんでした。'));
     return payload;
   }

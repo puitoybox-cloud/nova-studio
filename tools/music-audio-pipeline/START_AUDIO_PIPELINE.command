@@ -7,6 +7,20 @@ VENV_DIR=".venv"
 PID_FILE=".pipeline.pid"
 LOG_FILE="audio-pipeline.log"
 HEALTH_URL="http://127.0.0.1:8766/health"
+EXPECTED_SOURCE_DIGEST="$(/usr/bin/shasum -a 256 server.py | /usr/bin/awk '{print $1}')"
+
+check_running_source(){
+  local health
+  health="$(curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null)" || return 1
+  printf '%s' "$health" | "$PYTHON_BIN" -c 'import json,sys; expected=sys.argv[1]; actual=json.load(sys.stdin); sys.exit(0 if actual.get("sourceDigest")==expected and actual.get("pipelineRevision")==2 else 1)' "$EXPECTED_SOURCE_DIGEST"
+}
+
+stale_helper_error(){
+  echo "別の版のAudio Helperが127.0.0.1:8766で起動しています。今回のserver.pyは使用されていません。"
+  echo "以前のHelperを、その配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、もう一度起動してください。"
+  echo "このスクリプトは別のプロセスを推測で停止しません。"
+  pause_and_exit 1
+}
 
 pause_and_exit(){
   local code="${1:-0}"
@@ -45,6 +59,7 @@ if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
 fi
 
 if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+  check_running_source || stale_helper_error
   echo "Audio Pipeline はすでに起動しています。"
   echo "$HEALTH_URL"
   pause_and_exit 0
@@ -52,6 +67,7 @@ fi
 rm -f "$PID_FILE"
 
 if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 2 "$HEALTH_URL" >/dev/null 2>&1; then
+  check_running_source || stale_helper_error
   echo "Audio Pipeline はすでに 127.0.0.1:8766 で起動しています。"
   echo "$HEALTH_URL"
   pause_and_exit 0

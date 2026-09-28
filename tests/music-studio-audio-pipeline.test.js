@@ -53,7 +53,7 @@ test('invalid local MIDI never reaches import and preserves existing review stat
     };
     window.fetch=async()=>({
       ok:true,
-      async json(){return{ok:true,midiBase64:Buffer.from('not midi').toString('base64')}}
+      async json(){return{ok:true,pipelineRevision:2,midiBase64:Buffer.from('not midi').toString('base64')}}
     });
   });
   assert.equal(bridge.install(),false);
@@ -63,6 +63,21 @@ test('invalid local MIDI never reaches import and preserves existing review stat
   assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'keep-this-track');
   assert.equal(host.MusicStudio.state.externalSongImport.status,'review');
   assert.match(host.MusicStudio.state.externalSongImport.audioPipelineError,/MIDI/);
+});
+
+test('older local Helper response cannot import stale transcription',async()=>{
+  let host,imports=0;
+  loadBridge(window=>{
+    host=window;
+    window.MusicStudio={state:{externalSongImport:{status:'review',tracks:[{id:'keep'}]}},
+      async importExternalSongFile(){imports++;return{ok:true}}};
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,version:1,midiBase64:'TVRoZA=='}}});
+  });
+  const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
+  assert.equal(result.ok,false);
+  assert.equal(imports,0);
+  assert.match(host.MusicStudio.state.externalSongImport.audioPipelineError,/別の版のAudio Helper/);
+  assert.equal(host.MusicStudio.state.externalSongImport.tracks[0].id,'keep');
 });
 
 test('successful local conversion reaches original MIDI importer with review metadata',async()=>{
@@ -80,7 +95,7 @@ test('successful local conversion reaches original MIDI importer with review met
       assert.equal(url,'http://127.0.0.1:8766/process');
       assert.equal(request.method,'POST');
       assert.equal(request.headers['X-Nova-Audio-Pipeline'],'1');
-      return{ok:true,async json(){return{ok:true,midiBase64:midi,stems:['Vocals','Piano'],bpm:120}}};
+      return{ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:midi,stems:['Vocals','Piano'],bpm:120}}};
     };
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
@@ -173,7 +188,7 @@ test('failed MIDI importer does not claim successful Track Review',async()=>{
       async importExternalSongFile(){return{ok:false,message:'MIDI import failed'}}
     };
     window.fetch=async()=>({
-      ok:true,async json(){return{ok:true,midiBase64:Buffer.from([...header,...track]).toString('base64')}}
+      ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:Buffer.from([...header,...track]).toString('base64')}}
     });
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
@@ -191,7 +206,7 @@ test('invalid helper base64 cannot reach the MIDI importer',async()=>{
       state:{externalSongImport:{status:'review',tracks:[{id:'E2'}]}},
       async importExternalSongFile(){importCalls++;return{ok:true}}
     };
-    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:'not-base64!'}}});
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:'not-base64!'}}});
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
   assert.equal(result.ok,false);
@@ -207,7 +222,7 @@ test('noncanonical base64 cannot reach MIDI import even if its bytes decode to a
   loadBridge(window=>{
     host=window;
     window.MusicStudio={state:{externalSongImport:{status:'review',tracks:[{id:'E1'}]}},async importExternalSongFile(){importCalls++;return{ok:true}}};
-    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:valid.slice(0,-2)+'=='}}});
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:valid.slice(0,-2)+'=='}}});
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
   assert.equal(result.ok,false);
@@ -223,7 +238,7 @@ test('unexpected helper stem metadata cannot disrupt a valid MIDI import',async(
     host=window;
     window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(){importCalls++;return{ok:true}}};
     window.fetch=async()=>({ok:true,async json(){return{
-      ok:true,midiBase64:Buffer.from([...header,...track]).toString('base64'),stems:'unexpected'
+      ok:true,pipelineRevision:2,midiBase64:Buffer.from([...header,...track]).toString('base64'),stems:'unexpected'
     }}});
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
@@ -238,7 +253,7 @@ test('helper-provided MIDI filename is a safe basename with MIDI extension',asyn
   loadBridge(window=>{
     host=window;
     window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(file){importedFile=file;return{ok:true}}};
-    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:midi,midiFileName:'../../other\\\\folder/\u0000evil.wav'}}});
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:midi,midiFileName:'../../other\\\\folder/\u0000evil.wav'}}});
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
   assert.equal(result.ok,true);
@@ -252,7 +267,7 @@ test('missing importer result is not reported as successful Track Review',async(
   loadBridge(window=>{
     host=window;
     window.MusicStudio={state:{externalSongImport:{}},async importExternalSongFile(){return undefined}};
-    window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:midi}}});
+    window.fetch=async()=>({ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:midi}}});
   });
   const result=await host.MusicStudio.importExternalSongFile({name:'song.wav',type:'audio/wav'});
   assert.equal(result.ok,false);

@@ -7,6 +7,7 @@ locally, returned as a merged Type 1 MIDI file, then deleted with the temp tree.
 from __future__ import annotations
 
 import base64
+import hashlib
 import importlib.util
 import json
 import math
@@ -23,6 +24,8 @@ from pathlib import Path
 
 HOST = "127.0.0.1"
 PORT = 8766
+PIPELINE_REVISION = 2
+SOURCE_DIGEST = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
 ALLOWED_ORIGINS = {
@@ -304,6 +307,8 @@ def process_audio(source: Path, work_dir: Path):
     return {
         "ok": True,
         "version": 1,
+        "pipelineRevision": PIPELINE_REVISION,
+        "sourceDigest": SOURCE_DIGEST,
         "localOnly": True,
         "bpm": bpm,
         "stems": stems,
@@ -351,6 +356,8 @@ class Handler(BaseHTTPRequestHandler):
         self._json(200, {
             "ok": True,
             "version": 1,
+            "pipelineRevision": PIPELINE_REVISION,
+            "sourceDigest": SOURCE_DIGEST,
             "localOnly": True,
             "host": HOST,
             "port": PORT,

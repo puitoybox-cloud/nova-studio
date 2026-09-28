@@ -40,7 +40,7 @@ test('synthetic local audio response reaches real Track Review, repository reloa
     assert.equal(request.method,'POST');
     assert.equal(request.headers['X-Nova-Audio-Pipeline'],'1');
     return{ok:true,async json(){return{ok:true,localOnly:true,stems:['Vocals','Bass'],
-      bpm:92,midiFileName:'synthetic_stems.mid',midiBase64:Buffer.from(bytes).toString('base64')}}};
+      bpm:92,midiFileName:'synthetic_stems.mid',pipelineRevision:2,midiBase64:Buffer.from(bytes).toString('base64')}}};
   };
   const result=await app.importExternalSongFile({name:'synthetic.wav',type:'audio/wav',size:1024});
   assert.equal(result.ok,true);
@@ -79,7 +79,7 @@ test('invalid synthetic helper MIDI cannot create a project or overwrite an exis
   const window=fixture(),app=window.MusicStudio,repo=app.memoryRepository();app.setRepository(repo);
   const existing=app.makeProject({projectId:'keep',projectName:'Keep'});await repo.put(existing);
   const before=JSON.stringify(await repo.list());
-  window.fetch=async()=>({ok:true,async json(){return{ok:true,midiBase64:Buffer.from('not MIDI').toString('base64')}}});
+  window.fetch=async()=>({ok:true,async json(){return{ok:true,pipelineRevision:2,midiBase64:Buffer.from('not MIDI').toString('base64')}}});
   const result=await app.importExternalSongFile({name:'bad.wav',type:'audio/wav',size:8});
   assert.equal(result.ok,false);
   assert.equal(JSON.stringify(await repo.list()),before);
