@@ -73,3 +73,9 @@ baseline failures remain failures; no tests or validation are weakened.
 
 No UI/console or Mac/iPad real-device result is claimed. No remote integration
 branch, Ready, Merge, Auto Merge, force push or external Provider/AI call is used.
+
+## Explicit partial unlock (2026-10-01 Tia decision)
+
+An explicit range unlock subtracts only its half-open tick interval from effective protection. Version 1 accepts optional additive `releaseRanges` per track; legacy numbered locks and captured legacy ranges remain unchanged. Relocking removes only the overlapping release interval. No release is created at load time. Note-level locks are independent. Legacy range capture uses initial scalar meter directly, never the integrated Editor's shortened A bar.
+
+Regression-first validation: seven new tests failed before implementation, then all 32 focused tests passed. Seven immutable #265 cases, including 6/8, scan 7,000 ticks each after partial unlock, and exercise Undo/Redo and JSON reopen. Synthetic IndexedDB/save, actual JSON import, and Backup/Restore preserve partial releases without modifying sources. Browser integration is still a separate coordinated unit; this module alone does not activate A UI or bypass legacy closures.

@@ -44,3 +44,39 @@ function fakeIndexedDB(){
     });return openRequest
   }}
 }
+
+test('explicit partial release leaves every unselected legacy tick protected and aliases unchanged',()=>{
+ const{core,locks}=load(),s=core.createSession(project({numerator:4,denominator:4},[{tick:0,numerator:4,denominator:4},{tick:960,numerator:3,denominator:4}])),before=plain(s.midiData);
+ assert.equal(locks.unlockRange(s,core,{trackId:'lead',startTick:0,endTick:960}).changed,true);
+ const state=locks.readState(s.midiData,core),target=state.tracks.find(t=>t.trackId==='lead');
+ assert.deepEqual(plain(target.legacyRanges),[{startTick:0,endTick:1920}]);assert.deepEqual(plain(target.releaseRanges),[{startTick:0,endTick:960}]);
+ for(let tick=0;tick<2400;tick++)assert.equal(locks.isProtected(s.midiData,core,'lead',{startTick:tick,durationTicks:1}),tick>=960&&tick<1920);
+ for(const key of ['parts','trackStates','lockedMeasures'])assert.deepEqual(plain(s.midiData.editor[key]),before.editor[key]);
+ assert.deepEqual(plain(s.midiData.tracks),before.tracks);assert.deepEqual(plain(s.midiData.timeSignatureMap),before.timeSignatureMap);
+ const expected=plain(s.midiData);core.undo(s);assert.equal(locks.isProtected(s.midiData,core,'lead',{startTick:0,durationTicks:1}),true);core.redo(s);assert.deepEqual(plain(s.midiData),expected);
+ const reopened=locks.createSession(plain({midiData:s.midiData}),core);assert.deepEqual(plain(locks.readState(reopened.midiData,core)),plain(state));
+});
+test('mixed legacy/new locks, overlapping release and relock retain exact half-open tick sets',()=>{
+ const{core,locks}=load(),s=core.createSession(project());locks.addRangeLock(s,core,{trackId:'lead',startTick:1800,endTick:2400});
+ locks.unlockRange(s,core,{trackId:'lead',startTick:900,endTick:2100});
+ for(let tick=0;tick<2500;tick++)assert.equal(locks.isProtected(s.midiData,core,'lead',{startTick:tick,durationTicks:1}),tick<900||(tick>=2100&&tick<2400));
+ locks.addRangeLock(s,core,{trackId:'lead',startTick:1000,endTick:1100});
+ for(let tick=0;tick<2500;tick++)assert.equal(locks.isProtected(s.midiData,core,'lead',{startTick:tick,durationTicks:1}),tick<900||(tick>=1000&&tick<1100)||(tick>=2100&&tick<2400));
+ const before=plain(s);assert.equal(locks.unlockRange(s,core,{trackId:'lead',startTick:3000,endTick:4000}).changed,false);assert.deepEqual(plain(s),before);
+ assert.equal(locks.edit(s,core,c=>core.addNote(c,{startTick:950,durationTicks:1})).ok,true);
+ assert.equal(locks.edit(s,core,c=>core.addNote(c,{startTick:1000,durationTicks:1})).ok,false);
+});
+test('partial release does not release explicit note locks or other tracks and fails closed on corrupt releases',()=>{
+ const{core,locks}=load(),s=core.createSession(project());s.midiData.tracks[0].notes[0].locked=true;
+ locks.unlockRange(s,core,{trackId:'lead',startTick:0,endTick:1920});assert.equal(locks.isProtected(s.midiData,core,'lead',s.midiData.tracks[0].notes[0]),true);
+ const other=locks.readState(s.midiData,core).tracks.find(t=>t.trackId!=='lead');assert.deepEqual(plain(other.rangeLocks),[]);
+ for(const value of [null,{},[{startTick:1,endTick:0}], [{startTick:0,endTick:Infinity}]]){const c=plain(s);c.midiData.editor.measureLocks.tracks.find(t=>t.trackId==='lead').releaseRanges=value;assert.throws(()=>locks.readState(c.midiData,core));}
+});
+for(const route of ['save','json','backup'])test('partial releases survive actual '+route+' persistence without changing source',async()=>{
+ const{core,locks,app}=load({indexedDB:fakeIndexedDB()}),p=app.makeProject(project()),s=core.createSession(p);locks.unlockRange(s,core,{trackId:'lead',startTick:0,endTick:960});p.midiData=plain(s.midiData);const before=plain(p),expected=plain(locks.readState(p.midiData,core));let restored;
+ if(route==='save'){const repo=app.indexedDbRepository();app.setRepository(repo);await repo.put(p);app.state.projects=[p];app.state.midiEditor=s;assert.equal((await app.saveMidiEditor({silent:true})).ok,true);restored=await repo.get(p.projectId);}
+ if(route==='json'){app.setRepository(app.memoryRepository());const result=await app.importText(JSON.stringify(p));assert.equal(result.ok,true);restored=result.project;}
+ if(route==='backup'){const repo=app.memoryRepository();app.setRepository(repo);app.state.projects=[p];const backup=plain(app.backupObject()),original=plain(backup);app.state.projects=[];assert.equal((await app.restoreBackup(backup,{settings:false,projects:true})).ok,true);restored=await repo.get(p.projectId);assert.deepEqual(backup,original);}
+ const reopened=locks.createSession(restored,core);assert.deepEqual(plain(locks.readState(reopened.midiData,core)),expected);assert.equal(locks.isProtected(reopened.midiData,core,'lead',{startTick:959,durationTicks:1}),false);assert.equal(locks.isProtected(reopened.midiData,core,'lead',{startTick:960,durationTicks:1}),true);assert.deepEqual(plain(p),before);
+});
+test('legacy range capture remains scalar even when Editor range API uses A boundaries',()=>{const{core,locks}=load(),s=core.createSession(project()),aCore={...core,measureRangeToTicks:()=>({measureTicks:960})};assert.equal(locks.readState(s.midiData,aCore).tracks.find(t=>t.trackId==='lead').legacyRanges[0].endTick,1920)});

@@ -31,7 +31,7 @@
   function legacyRanges(locked,bar){return locked.map(n=>range({startTick:(n-1)*bar,endTick:n*bar}))}
   function readState(data,core){
     if(typeof core?.measureRangeToTicks!=='function'||typeof core?.resolveCoreTrackRole!=='function')throw Error('missing-editor-dependency');
-    const list=tracks(data),meter=legacyMeter(data),bar=core.measureRangeToTicks({startMeasure:1,endMeasure:1},data).measureTicks;
+    const list=tracks(data),meter=legacyMeter(data),bar=meter.ppq*4*meter.numerator/meter.denominator;
     const saved=data.editor?.measureLocks;
     if(saved==null)return{version:1,legacyMeter:meter,tracks:list.map(track=>{const locked=legacyMeasures(data,core,track);return{trackId:track.id,legacyMeasures:locked,legacyRanges:legacyRanges(locked,bar),rangeLocks:[]}})};
     if(saved.version!==1||!Array.isArray(saved.tracks)||!equal(saved.legacyMeter,meter))throw Error('unsupported-or-changed-lock-context');
@@ -43,6 +43,7 @@
       const locked=legacyMeasures(data,core,track),expected=legacyRanges(locked,bar);
       if(!equal(item.legacyMeasures,locked)||!equal(item.legacyRanges,expected)||!Array.isArray(item.rangeLocks))throw Error('stale-or-corrupt-legacy-protection');
       item.rangeLocks.forEach(range);
+      if(Object.prototype.hasOwnProperty.call(item,'releaseRanges')){if(!Array.isArray(item.releaseRanges))throw Error('invalid-release-ranges');item.releaseRanges.forEach(range)}
     }
     return clone(saved);
   }
@@ -59,22 +60,51 @@
     const session=core.createSession(project);readState(session.midiData,core);return session;
   }
   function overlaps(a,b){return a.startTick<b.endTick&&a.endTick>b.startTick}
-  function rangesFor(state,trackId){const value=state.tracks.find(t=>t.trackId===trackId);if(!value)throw Error('missing-lock-track');return[...value.legacyRanges,...value.rangeLocks]}
-  function isProtected(data,core,trackId,note){const state=readState(data,core),span=noteRange(note);return note.locked===true||rangesFor(state,trackId).some(r=>overlaps(span,r))}
-  function addRangeLock(session,core,input){
+  function union(values){
+    const result=[];
+    for(const span of values.map(range).sort((a,b)=>a.startTick-b.startTick||a.endTick-b.endTick)){
+      const last=result[result.length-1];if(last&&span.startTick<=last.endTick)last.endTick=Math.max(last.endTick,span.endTick);else result.push(span);
+    }
+    return result;
+  }
+  function subtract(values,releases){
+    let result=union(values);
+    for(const cut of union(releases))result=result.flatMap(span=>!overlaps(span,cut)?[span]:[
+      ...(span.startTick<cut.startTick?[{startTick:span.startTick,endTick:cut.startTick}]:[]),
+      ...(cut.endTick<span.endTick?[{startTick:cut.endTick,endTick:span.endTick}]:[])
+    ]);
+    return result;
+  }
+  function rangesFor(state,trackId){const value=state.tracks.find(t=>t.trackId===trackId);if(!value)throw Error('missing-lock-track');return subtract([...value.legacyRanges,...value.rangeLocks],value.releaseRanges||[])}
+  function protectedRanges(data,core,trackId){return rangesFor(readState(data,core),trackId)}
+  function isProtected(data,core,trackId,note){const span=noteRange(note);return note.locked===true||protectedRanges(data,core,trackId).some(r=>overlaps(span,r))}
+  function mutateRange(session,core,input,release){
     const state=readState(session?.midiData,core),span=range(input),target=state.tracks.find(t=>t.trackId===input.trackId);
     if(!target)throw Error('missing-lock-track');
     const active=core.currentTrack(session),activeState=state.tracks.find(t=>t.trackId===active?.id);
     if(!activeState||!equal(measures(session.lockedMeasures),activeState.legacyMeasures))throw Error('stale-session-locks');
-    if(target.rangeLocks.some(item=>equal(item,span)))return{ok:true,changed:false};
-    target.rangeLocks.push(span);target.rangeLocks.sort((a,b)=>a.startTick-b.startTick||a.endTick-b.endTick);
-    // Use the existing Editor transaction so its snapshots own Undo/Redo and preview invalidation.
+    const original=clone(target);
+    if(release){
+      const cuts=rangesFor(state,input.trackId).filter(r=>overlaps(r,span)).map(r=>({startTick:Math.max(r.startTick,span.startTick),endTick:Math.min(r.endTick,span.endTick)}));
+      if(!cuts.length)return{ok:true,changed:false};
+      target.releaseRanges=union([...(target.releaseRanges||[]),...cuts]);
+    }else{
+      if(!target.rangeLocks.some(item=>equal(item,span))){target.rangeLocks.push(span);target.rangeLocks.sort((a,b)=>a.startTick-b.startTick||a.endTick-b.endTick)}
+      if(target.releaseRanges)target.releaseRanges=subtract(target.releaseRanges,[span]);
+    }
+    if(equal(original,target))return{ok:true,changed:false};
     const originalEditor=clone(session.midiData.editor);
     core.setSelectedMeasures(session,session.selectedMeasures);
-    // savePartState can synchronize differing legacy aliases. This new operation must not.
     session.midiData.editor=originalEditor;
     session.midiData.editor.measureLocks=state;core.updateDirty(session);
     return{ok:true,changed:true,range:clone(span)};
+  }
+  function addRangeLock(session,core,input){return mutateRange(session,core,input,false)}
+  function unlockRange(session,core,input){return mutateRange(session,core,input,true)}
+  function unlockMeasures(session,core,meter,input){
+    if(typeof meter?.rangeToTicks!=='function')throw Error('missing-meter-dependency');
+    const span=meter.rangeToTicks(session.midiData,input.startMeasure,input.endMeasure??input.startMeasure);
+    return unlockRange(session,core,{trackId:input.trackId,startTick:span.startTick,endTick:span.endTick});
   }
   function addMeasureLock(session,core,meter,input){
     if(typeof meter?.rangeToTicks!=='function')throw Error('missing-meter-dependency');
@@ -99,7 +129,7 @@
       for(const [id,note] of updated){if(protectedRanges.some(r=>overlaps(noteRange(note),r))&&!equal(original.get(id),note))throw Error('edit-entered-protected-range')}
     }
     // Even empty locked space must survive a timeline shrink.
-    if(after.totalTick!==before.totalTick&&Number.isFinite(after.totalTick)&&state.tracks.some(t=>[...t.legacyRanges,...t.rangeLocks].some(r=>r.endTick>after.totalTick)))throw Error('edit-truncated-protected-range');
+    if(after.totalTick!==before.totalTick&&Number.isFinite(after.totalTick)&&state.tracks.some(t=>rangesFor(state,t.trackId).some(r=>r.endTick>after.totalTick)))throw Error('edit-truncated-protected-range');
     return true;
   }
   function edit(session,core,operation){
@@ -113,5 +143,5 @@
       Object.assign(session,working);return{ok:true,result};
     }catch(error){return{ok:false,reason:error.message}}
   }
-  root.MusicStudioMeasureLocks=Object.freeze({createSession,readState,isProtected,addRangeLock,addMeasureLock,validateEdit,edit});
+  root.MusicStudioMeasureLocks=Object.freeze({createSession,readState,protectedRanges,isProtected,addRangeLock,addMeasureLock,unlockRange,unlockMeasures,validateEdit,edit});
 })(typeof window!=='undefined'?window:globalThis);
