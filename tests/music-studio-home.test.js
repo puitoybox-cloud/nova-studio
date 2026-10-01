@@ -205,12 +205,12 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.4/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
-  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.21/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.21/);
+  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.22/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.22/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.13/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.13/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.131/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.131/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.113/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.113/);
-  assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.21'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.113'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.114/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.114/);
+  assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.22'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.114'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
   assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.63',stylesheet:'1\.4\.131'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
