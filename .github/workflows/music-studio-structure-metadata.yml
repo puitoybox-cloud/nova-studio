@@ -1,0 +1,33 @@
+name: Music Studio structure metadata guard
+
+on:
+  pull_request:
+    paths:
+      - 'music-studio-midi-parser.js'
+      - 'tests/music-studio-midi-parser.test.js'
+      - '.github/workflows/music-studio-structure-metadata.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run MIDI parser regression tests
+        run: node --test tests/music-studio-midi-parser.test.js
+      - name: Run full Node test suite
+        run: node --test
+      - name: Check all JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Check PR whitespace
+        run: git diff --check "origin/${{ github.base_ref }}...HEAD"
