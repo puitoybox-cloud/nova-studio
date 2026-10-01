@@ -64,10 +64,15 @@
   function addRangeLock(session,core,input){
     const state=readState(session?.midiData,core),span=range(input),target=state.tracks.find(t=>t.trackId===input.trackId);
     if(!target)throw Error('missing-lock-track');
+    const active=core.currentTrack(session),activeState=state.tracks.find(t=>t.trackId===active?.id);
+    if(!activeState||!equal(measures(session.lockedMeasures),activeState.legacyMeasures))throw Error('stale-session-locks');
     if(target.rangeLocks.some(item=>equal(item,span)))return{ok:true,changed:false};
     target.rangeLocks.push(span);target.rangeLocks.sort((a,b)=>a.startTick-b.startTick||a.endTick-b.endTick);
     // Use the existing Editor transaction so its snapshots own Undo/Redo and preview invalidation.
+    const originalEditor=clone(session.midiData.editor);
     core.setSelectedMeasures(session,session.selectedMeasures);
+    // savePartState can synchronize differing legacy aliases. This new operation must not.
+    session.midiData.editor=originalEditor;
     session.midiData.editor.measureLocks=state;core.updateDirty(session);
     return{ok:true,changed:true,range:clone(span)};
   }
