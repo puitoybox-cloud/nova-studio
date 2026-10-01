@@ -136,7 +136,8 @@
     try{
       if(typeof operation!=='function'||operation.constructor?.name==='AsyncFunction')throw Error('async-or-invalid-edit-not-supported');
       readState(session?.midiData,core);
-      const working=clone(session),result=operation(working);
+      const working=clone(session),failureCount=core.editFailureCount?.(working)||0,result=operation(working);
+      if((core.editFailureCount?.(working)||0)>failureCount)throw Error('editor-rejected-protected-edit');
       if(result&&typeof result.then==='function')throw Error('async-edit-not-supported');
       if(result?.ok===false)throw Error(result.reason||'editor-rejected-edit');
       validateEdit(session.midiData,working.midiData,core);
