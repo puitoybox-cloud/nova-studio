@@ -69,3 +69,9 @@ test('key changes on separate Type 1 tracks are imported chronologically without
   assert.deepEqual(JSON.parse(JSON.stringify(data.keySignature)),{tick:0,sharps:-3,minor:true,track:2});
   assert.equal(parsed.tracks[0].events[0].tick,960);
 });
+
+test('project conversion preserves section-source markers without inventing sections',()=>{
+ const p=load().parser,first=track([...meta(960,6,[66]),...meta(0,47,[])]),second=track([...meta(0,6,[65]),...meta(960,47,[])]),parsed=p.parseMidiFile(smf(1,[first,second])),data=p.convertParsedMidiToProjectData(parsed);
+ assert.deepEqual(JSON.parse(JSON.stringify(data.markers)),[{tick:0,text:'A',track:2},{tick:960,text:'B',track:1}]);
+ assert.equal(data.sections,undefined);assert.equal(parsed.tracks[0].events[0].tick,960);
+});
