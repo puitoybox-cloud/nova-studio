@@ -58,3 +58,14 @@ test('unknown MIDI tracks remain additional tracks regardless of position',()=>{
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
+
+
+test('key changes on separate Type 1 tracks are imported chronologically without losing provenance',()=>{
+  const p=load().parser;
+  const first=track([...meta(960,89,[2,0]),...meta(0,47,[])]);
+  const second=track([...meta(0,89,[253,1]),...meta(480,89,[0,0]),...meta(480,47,[])]);
+  const parsed=p.parseMidiFile(smf(1,[first,second])),data=p.convertParsedMidiToProjectData(parsed);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.keySignatureMap.map(e=>[e.tick,e.sharps,e.minor,e.track]))),[[0,-3,true,2],[480,0,false,2],[960,2,false,1]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.keySignature)),{tick:0,sharps:-3,minor:true,track:2});
+  assert.equal(parsed.tracks[0].events[0].tick,960);
+});

@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node --test 2>&1 | tee "$RUNNER_TEMP/pr-full.log"
+          node --test --test-reporter=tap 2>&1 | tee "$RUNNER_TEMP/pr-full.log"
       - name: Verify full-suite failures introduce no regression from main
         shell: bash
         run: |
@@ -39,15 +39,25 @@ jobs:
           git worktree add --detach "$RUNNER_TEMP/main-baseline" "origin/${{ github.base_ref }}"
           (
             cd "$RUNNER_TEMP/main-baseline"
-            node --test > "$RUNNER_TEMP/main-full.log" 2>&1 || true
+            node --test --test-reporter=tap > "$RUNNER_TEMP/main-full.log" 2>&1 || true
           )
+          # Incomplete/crashed test processes must not look like an empty failure list.
+          for log in "$RUNNER_TEMP/pr-full.log" "$RUNNER_TEMP/main-full.log"; do
+            grep -Eq '^# tests [1-9][0-9]*$' "$log"
+            grep -Eq '^# fail [0-9]+$' "$log"
+            failures=$(sed -n 's/^# fail //p' "$log")
+            observed=$(grep -c '^not ok [0-9]' "$log" || true)
+            test "$failures" -eq "$observed"
+          done
           sed -n 's/^not ok [0-9][0-9]* - /not ok - /p' "$RUNNER_TEMP/pr-full.log" | sort > "$RUNNER_TEMP/pr-failures.txt"
           sed -n 's/^not ok [0-9][0-9]* - /not ok - /p' "$RUNNER_TEMP/main-full.log" | sort > "$RUNNER_TEMP/main-failures.txt"
           echo "PR head failures:"
           cat "$RUNNER_TEMP/pr-failures.txt"
           echo "main baseline failures:"
           cat "$RUNNER_TEMP/main-failures.txt"
-          diff -u "$RUNNER_TEMP/main-failures.txt" "$RUNNER_TEMP/pr-failures.txt"
+          comm -13 "$RUNNER_TEMP/main-failures.txt" "$RUNNER_TEMP/pr-failures.txt" > "$RUNNER_TEMP/new-failures.txt"
+          cat "$RUNNER_TEMP/new-failures.txt"
+          test ! -s "$RUNNER_TEMP/new-failures.txt"
       - name: Check all JavaScript syntax
         run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Check PR whitespace
