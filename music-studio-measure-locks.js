@@ -144,5 +144,5 @@
       Object.assign(session,working);return{ok:true,result};
     }catch(error){return{ok:false,reason:error.message}}
   }
-  root.MusicStudioMeasureLocks=Object.freeze({createSession,readState,protectedRanges,isProtected,addRangeLock,addMeasureLock,unlockRange,unlockMeasures,validateEdit,edit});
+  root.MusicStudioMeasureLocks=Object.freeze({TRANSACTION_REVISION:1,createSession,readState,protectedRanges,isProtected,addRangeLock,addMeasureLock,unlockRange,unlockMeasures,validateEdit,edit});
 })(typeof window!=='undefined'?window:globalThis);
