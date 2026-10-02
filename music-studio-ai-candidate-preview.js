@@ -116,7 +116,12 @@
   function narrowed(bundle,session,core,measureRange){
     if(!measureRange)return{result:bundle.result,preview:bundle.preview,selection:null};
     const selection=selectionForRange(bundle,measureRange),ticks=core.measureRangeToTicks(selection,session.midiData),inTicks=note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick,changes=bundle.result.changes;
-    const proposals={updates:changes.updates.filter(inTicks),adds:changes.adds.filter(inTicks),deleteNoteIds:changes.deleteNoteIds.filter(id=>{const note=(bundle.request.notes||[]).find(item=>item.id===id);return note&&inTicks(note)})};
+    const originals=new Map((bundle.request.notes||[]).map(note=>[note.id,note])),contained=note=>note&&inTicks(note)&&note.startTick+note.durationTicks<=ticks.endTick;
+    const updates=changes.updates.filter(inTicks),deleteNoteIds=changes.deleteNoteIds.filter(id=>inTicks(originals.get(id)||{}));
+    // Existing notes are indivisible: reject rather than alter their sound outside
+    // the adopted interval. New proposals can be shortened at the exact end.
+    if(updates.some(note=>!contained(note)||!contained(originals.get(note.id)))||deleteNoteIds.some(id=>!contained(originals.get(id))))throw Error('candidate-selection-boundary');
+    const proposals={updates,adds:changes.adds.filter(inTicks).map(note=>({...clone(note),durationTicks:Math.min(note.durationTicks,ticks.endTick-note.startTick)})),deleteNoteIds};
     const result=core.createPartialEditResult(bundle.request,proposals),preview=core.createPartialEditPreview(bundle.request,result);
     return{result,preview,selection};
   }
