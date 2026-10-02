@@ -30,34 +30,58 @@ async function exactAdoptionCases(browser,base,width){
     else{
       const notes=await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes));assert.ok(notes.length);assert.equal(Math.max(...notes.map(n=>n.startTick+n.durationTicks)),1000);
       assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);
-      const saved=await page.evaluateasync function familyApplyCase(browser,base,width){
-  const page=await browser.newPage({viewport:{width,height:1000}}),messages=[],external=[];
-  page.on('console',message=>{if(['error','warning'].includes(message.type()))messages.push({type:message.type(),text:message.text()})});
-  page.on('pageerror',error=>messages.push({type:'pageerror',text:error.message}));
-  await page.route('**/*',route=>{const url=route.request().url();if(url.startsWith(base+'/')||url.startsWith('data:'))return route.continue();external.push(url);return route.abort()});
-  await page.goto(`${base}/music-studio.html#music-studio`,{waitUntil:'networkidle'});await page.waitForFunction(()=>MusicStudio?.state.loaded===true);
-  await page.evaluate(async()=>{
-    const app=MusicStudio,p=app.makeProject({projectId:'family-atomic',projectName:'Family Atomic Fixture',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},totalTick:3840,editor:{measureCount:2,editRange:{startMeasure:1,endMeasure:2}},tracks:[{id:'melody',part:'melody',name:'Melody',notes:[]},{id:'drums',part:'drums',notes:[]},{id:'bass',part:'bass',notes:[]} ]}}),repo=app.memoryRepository();
-    await repo.put(p);window.__familyRepo=repo;app.setRepository(repo);app.state.projects=[p];location.hash='music-studio/midi-editor/family-atomic';
-  });
-  await page.waitForSelector('.music-ai-panel');await page.getByRole('button',{name:'A/B/C候補'}).click();await page.getByRole('button',{name:'Family A/B/Cを生成'}).click();await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.state.workspace.candidateSets.length>=6);
-  const source=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData));await page.getByRole('button',{name:'Family B Preview'}).click();await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyPreview?.variant==='B');assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
-  await page.getByRole('button',{name:'Apply Planを作成'}).click();await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyApplyPlan?.variant==='B');assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
-  await page.getByRole('button',{name:'Preflight',exact:true}).click();await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyApplyPreflight?.ok===true);assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
-  const undoBefore=await page.evaluate(()=>MusicStudio.state.midiEditor.undo.length);await page.getByRole('button',{name:'Confirm Family Apply'}).click();await page.waitForFunction(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'melody').notes.length>0&&MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'bass').notes.length===4);
-  assert.equal(await page.evaluate(before=>MusicStudio.state.midiEditor.undo.length===before+1,undoBefore),true);const applied=await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData));
-  await page.evaluate(()=>MusicStudioEditor.undo(MusicStudio.state.midiEditor));assert.equal(await page.evaluate(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'melody').notes.length),0);assert.equal(await page.evaluate(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'bass').notes.length),0);
-  await page.evaluate(()=>MusicStudioEditor.redo(MusicStudio.state.midiEditor));assert.deepEqual(await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData)),applied);
-  assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);const saved=await page.evaluate(async()=>__familyRepo.get('family-atomic'));assert.ok(saved.midiData.tracks.find(track=>track.id==='melody').notes.length);assert.equal(saved.midiData.tracks.find(track=>track.id==='bass').notes.length,4);assert.equal(saved.aiWorkspace.candidateSets.find(set=>set.kind==='melody').candidates.find(candidate=>candidate.candidateId==='B').status,'adopted');
-  assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await page.screenshot({path:`music-ai-family-apply-${width}.png`,fullPage:true});await page.close();return{result:'plan-preflight-atomic-apply-undo-redo-save',messages,external}
-}
-(async()=>{const p=await __boundaryRepo.get('boundary'),s=MusicStudioEditor.createCoordinatedSession(p);return{notes:MusicStudioEditor.currentTrack(s).notes,locks:p.midiData.editor.measureLocks,meter:p.midiData.timeSignatureMap,tempo:p.midiData.tempoMap}});assert.deepEqual(saved.notes,notes);assert.equal(saved.locks.tracks.find(t=>t.trackId==='melody').releaseRanges[0].endTick,1000);assert.equal(saved.meter[0].tick,1000);assert.equal(saved.tempo.find(t=>t.tick===777).tick,777);
+      const saved=await page.evaluate(async()=>{const p=await __boundaryRepo.get('boundary'),s=MusicStudioEditor.createCoordinatedSession(p);return{notes:MusicStudioEditor.currentTrack(s).notes,locks:p.midiData.editor.measureLocks,meter:p.midiData.timeSignatureMap,tempo:p.midiData.tempoMap}});assert.deepEqual(saved.notes,notes);assert.equal(saved.locks.tracks.find(t=>t.trackId==='melody').releaseRanges[0].endTick,1000);assert.equal(saved.meter[0].tick,1000);assert.equal(saved.tempo.find(t=>t.tick===777).tick,777);
       await page.evaluate(()=>MusicStudioEditor.undo(MusicStudio.state.midiEditor));assert.equal(await page.evaluate(()=>MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes.length),0);await page.evaluate(()=>MusicStudioEditor.redo(MusicStudio.state.midiEditor));assert.deepEqual(await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes)),notes);
     }
     assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await page.screenshot({path:`music-ai-boundary-${width}-${crossing?'reject':'apply'}.png`,fullPage:true});reports.push({crossing,result:crossing?'rejected-atomically':'exact-1000-save-undo-redo',messages,external});await page.close();
   }
   return reports;
 }
+async function familyApplyCase(browser,base,width){
+  const page=await browser.newPage({viewport:{width,height:1000}}),messages=[],external=[];
+  page.on('console',message=>{if(['error','warning'].includes(message.type()))messages.push({type:message.type(),text:message.text()})});
+  page.on('pageerror',error=>messages.push({type:'pageerror',text:error.message}));
+  await page.route('**/*',route=>{const url=route.request().url();if(url.startsWith(base+'/')||url.startsWith('data:'))return route.continue();external.push(url);return route.abort()});
+  await page.goto(`${base}/music-studio.html#music-studio`,{waitUntil:'networkidle'});await page.waitForFunction(()=>MusicStudio?.state.loaded===true);
+  await page.evaluate(async()=>{
+    const app=MusicStudio,p=app.makeProject({projectId:'family-atomic',projectName:'Family Atomic Fixture',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},totalTick:3840,editor:{measureCount:2,editRange:{startMeasure:1,endMeasure:2}},tracks:[{id:'melody',part:'melody',name:'Melody',notes:[]},{id:'drums',part:'drums',notes:[]},{id:'bass',part:'bass',notes:[]}]}}),repo=app.memoryRepository();
+    await repo.put(p);window.__familyRepo=repo;app.setRepository(repo);app.state.projects=[p];location.hash='music-studio/midi-editor/family-atomic';
+  });
+  await page.waitForSelector('.music-ai-panel');
+  await page.getByRole('button',{name:'A/B/C候補'}).click();
+  await page.getByRole('button',{name:'Family A/B/Cを生成'}).click();
+  await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.state.workspace.candidateSets.length>=6);
+  const source=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData));
+  await page.getByRole('button',{name:'Family B Preview'}).click();
+  await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyPreview?.variant==='B');
+  assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
+  await page.getByRole('button',{name:'Apply Planを作成'}).click();
+  await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyApplyPlan?.variant==='B');
+  assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
+  await page.getByRole('button',{name:'Preflight',exact:true}).click();
+  await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('family-atomic')?.familyApplyPreflight?.ok===true);
+  assert.equal(await page.evaluate(before=>JSON.stringify(MusicStudio.state.midiEditor.midiData)===before,source),true);
+  const undoBefore=await page.evaluate(()=>MusicStudio.state.midiEditor.undo.length);
+  await page.getByRole('button',{name:'Confirm Family Apply'}).click();
+  await page.waitForFunction(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'melody').notes.length>0&&MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'bass').notes.length===4);
+  assert.equal(await page.evaluate(before=>MusicStudio.state.midiEditor.undo.length===before+1,undoBefore),true);
+  const applied=await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData));
+  await page.evaluate(()=>MusicStudioEditor.undo(MusicStudio.state.midiEditor));
+  assert.equal(await page.evaluate(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'melody').notes.length),0);
+  assert.equal(await page.evaluate(()=>MusicStudioEditor.getTrackById(MusicStudio.state.midiEditor.midiData.tracks,'bass').notes.length),0);
+  await page.evaluate(()=>MusicStudioEditor.redo(MusicStudio.state.midiEditor));
+  assert.deepEqual(await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData)),applied);
+  assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);
+  const saved=await page.evaluate(async()=>__familyRepo.get('family-atomic'));
+  assert.ok(saved.midiData.tracks.find(track=>track.id==='melody').notes.length);
+  assert.equal(saved.midiData.tracks.find(track=>track.id==='bass').notes.length,4);
+  assert.equal(saved.aiWorkspace.candidateSets.find(set=>set.kind==='melody').candidates.find(candidate=>candidate.candidateId==='B').status,'adopted');
+  assert.deepEqual(messages,[]);assert.deepEqual(external,[]);
+  await page.screenshot({path:`music-ai-family-apply-${width}.png`,fullPage:true});
+  await page.close();
+  return{result:'plan-preflight-atomic-apply-undo-redo-save',messages,external}
+}
+
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const options={headless:true};if(process.env.CHROME_EXECUTABLE)options.executablePath=process.env.CHROME_EXECUTABLE;const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch(options),reports=[];
