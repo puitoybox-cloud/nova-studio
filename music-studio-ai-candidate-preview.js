@@ -131,5 +131,5 @@
     if(applied?.applied!==true)throw Error(`candidate-apply-rejected:${applied?.reason||'protected'}`);
     return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId,selection:clone(subset.selection)};
   }
-  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,applyPreview});
+  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
 })(typeof window!=='undefined'?window:globalThis);

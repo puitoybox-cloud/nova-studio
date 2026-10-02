@@ -470,7 +470,8 @@
     if(metadata&&(!mutableHistoryWorkspace(workspace)||!metadata.before||!metadata.after))return{applied:false,reason:'invalid-atomic-metadata'};
     if(metadata&&JSON.stringify(workspace)!==JSON.stringify(metadata.before))return{applied:false,reason:'stale-workspace'};
     if(metadata&&bound&&bound!==workspace)return{applied:false,reason:'history-workspace-mismatch'};
-    const metadataChanged=metadata&&JSON.stringify(metadata.before)!==JSON.stringify(metadata.after);
+    let metadataAfter=null;try{if(metadata)metadataAfter=clone(metadata.after)}catch(error){return{applied:false,reason:'invalid-atomic-metadata'}}
+    const metadataChanged=metadata&&JSON.stringify(metadata.before)!==JSON.stringify(metadataAfter);
     if(JSON.stringify(expected)===JSON.stringify(next)&&!metadataChanged)return{applied:true,changed:false};
     // Seed older MIDI history with the pre-transaction workspace, so Undo past
     // the first Family Apply cannot leave adopted metadata behind.
@@ -491,7 +492,7 @@
         session.selectedNoteId=ids.has(session.selectedNoteId)?session.selectedNoteId:(session.selectedNoteIds.at(-1)||null);
         session.selectionTrackId=session.selectedNoteIds.length?session.selectedTrackId:null
       });
-      if(metadata)restoreHistoryWorkspace(workspace,metadata.after);
+      if(metadata)restoreHistoryWorkspace(workspace,metadataAfter);
       return{applied:true,changed:true}
     }catch(error){if(seed){historyWorkspaces.delete(session);session.undo=oldUndo;session.redo=oldRedo}return{applied:false,reason:error.message}}
   }
