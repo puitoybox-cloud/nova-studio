@@ -447,7 +447,26 @@
   function setLoopRange(session,start,end,enabled=true){const editor=session.midiData.editor||(session.midiData.editor={}),from=Number(start),to=Number(end);if(!Number.isFinite(from)||!Number.isFinite(to)||from<0||to<=from){editor.loopEnabled=false;editor.loopStart=null;editor.loopEnd=null}else{editor.loopStart=Math.round(from);editor.loopEnd=Math.round(to);editor.loopEnabled=enabled===true}updateDirty(session);return session}
   function setLoopEnabled(session,enabled){const editor=session.midiData.editor||(session.midiData.editor={}),valid=Number.isFinite(Number(editor.loopStart))&&Number.isFinite(Number(editor.loopEnd))&&Number(editor.loopEnd)>Number(editor.loopStart);editor.loopEnabled=enabled===true&&valid;updateDirty(session);return editor.loopEnabled}
   function restore(session,value){session.midiData=clone(value.midiData);session.editRange=clone(session.midiData.editor.editRange);session.part=value.part;session.selectedTrackId=getTrackById(session.midiData.tracks,value.selectedTrackId)?.id||session.midiData.tracks.find(track=>track.part===value.part)?.id||null;session.selectionTrackId=value.selectionTrackId===session.selectedTrackId?value.selectionTrackId:null;session.selectedNoteId=session.selectionTrackId?value.selectedNoteId:null;session.selectedNoteIds=session.selectionTrackId?[...(value.selectedNoteIds||(value.selectedNoteId?[value.selectedNoteId]:[]))]:[];session.selectedMeasures=[...value.selectedMeasures];session.lockedMeasures=[...(value.lockedMeasures||[])];session.regenerationRequest=value.regenerationRequest?clone(value.regenerationRequest):null;session.playheadTick=value.playheadTick;session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null;session.generatedCleanupPreview=null;updateDirty(session);return session}
-  function change(session,operation){session.scopedMidiRepairPreview=null;session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null;session.generatedCleanupPreview=null;session.undo.push(snapshot(session));if(session.undo.length>100)session.undo.shift();session.redo=[];operation();updateDirty(session);return session}
+  const rejectedEdits=new WeakMap();
+  function lockDependency(){const api=root.MusicStudioMeasureLocks;if(api&&api.TRANSACTION_REVISION!==1)throw Error('unsupported-lock-dependency');return api}
+  function replaceSession(session,value){for(const key of Object.keys(session))delete session[key];Object.assign(session,value)}
+  class ProtectedEditError extends Error{constructor(reason){super(reason);this.code='protected-edit'}}
+  function change(session,operation,options={}){
+    const locks=lockDependency(),before=locks?clone(session):null;
+    try{
+      session.scopedMidiRepairPreview=null;session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null;session.generatedCleanupPreview=null;
+      session.undo.push(snapshot(session));if(session.undo.length>100)session.undo.shift();session.redo=[];operation();
+      if(locks){
+        const previous=clone(before.midiData),next=clone(session.midiData);
+        if(options.noteFlags){
+          // Explicit note flag actions can change only those flags, never range protection.
+          for(const track of previous.tracks){const updated=getTrackById(next.tracks,track.id);for(const note of track.notes){const replacement=updated?.notes?.find(n=>n.id===note.id);if(replacement){delete note.locked;delete replacement.locked}}}
+        }
+        locks.validateEdit(previous,next,root.MusicStudioEditor);
+      }
+      updateDirty(session);return session;
+    }catch(error){if(before){replaceSession(session,before);throw new ProtectedEditError(error.message)}throw error}
+  }
   function savePartState(session){const editor=session.midiData.editor||(session.midiData.editor={}),parts=editor.parts||(editor.parts={}),trackStates=editor.trackStates||(editor.trackStates={}),track=resolveEditorTrack(session),corePartAlias=resolveCoreTrackRole(track),value={...(trackStates[track?.id]||{}),selectedMeasures:[...session.selectedMeasures],lockedMeasures:[...session.lockedMeasures],regenerationRequest:session.regenerationRequest?clone(session.regenerationRequest):null};if(track?.id)trackStates[track.id]=value;if(corePartAlias){parts[corePartAlias]={...(parts[corePartAlias]||{}),...clone(value)};if(corePartAlias==='melody'){editor.selectedMeasures=[...value.selectedMeasures];editor.lockedMeasures=[...value.lockedMeasures];editor.regenerationRequest=value.regenerationRequest?clone(value.regenerationRequest):null}}}
   function selectPart(session,part){if(PARTS[part]){session.scopedMidiRepairPreview=null;if(part!==session.part||currentTrack(session)?.part!==part){session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null}savePartState(session);session.part=part;session.selectedTrackId=session.midiData.tracks.find(track=>track.part===part)?.id||session.selectedTrackId;session.selectionTrackId=null;session.selectedNoteId=null;session.selectedNoteIds=[];const value=trackState(session.midiData.editor,session.selectedTrackId,part);session.selectedMeasures=[...value.selectedMeasures];session.lockedMeasures=[...value.lockedMeasures];session.regenerationRequest=value.regenerationRequest?clone(value.regenerationRequest):null}return session}
   function selectTrackById(session,trackId){session.scopedMidiRepairPreview=null;const track=getTrackById(session?.midiData?.tracks,trackId);if(!track)return false;const role=resolveCoreTrackRole(track);if(role){selectPart(session,role);session.selectedTrackId=track.id;return true}savePartState(session);session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null;session.selectedTrackId=track.id;session.selectionTrackId=null;session.selectedNoteId=null;session.selectedNoteIds=[];const value=trackState(session.midiData.editor,track.id,null);session.selectedMeasures=[...value.selectedMeasures];session.lockedMeasures=[...value.lockedMeasures];session.regenerationRequest=value.regenerationRequest?clone(value.regenerationRequest):null;return true}
@@ -468,7 +487,7 @@
   function matchSelectedDuration(session){const notes=selectedNotes(session),reference=notes.find(note=>note.id===session.selectedNoteId)||notes[0];return reference&&notes.length>1?updateSelectedNotes(session,{durationTicks:reference.durationTicks}):session}
   function matchSelectedVelocity(session,velocity){const notes=selectedNotes(session),reference=notes.find(note=>note.id===session.selectedNoteId)||notes[0],value=Number.isFinite(Number(velocity))?Number(velocity):reference?.velocity;return reference&&notes.length>1?updateSelectedNotes(session,{velocity:value}):session}
   function deleteSelected(session){const selection=selectedIds(session),ids=new Set(editableNotes(currentTrack(session).notes.filter(note=>selection.includes(note.id))).map(note=>note.id));if(!ids.size)return session;return change(session,()=>{currentTrack(session).notes=currentTrack(session).notes.filter(note=>!ids.has(note.id));session.selectedNoteIds=selection.filter(noteId=>!ids.has(noteId));session.selectedNoteId=session.selectedNoteIds.at(-1)||null})}
-  function setSelectedLock(session,locked){const ids=new Set(selectedIds(session));if(!ids.size||!currentTrack(session).notes.some(note=>ids.has(note.id)&&isNoteLocked(note)!==locked))return session;return change(session,()=>{currentTrack(session).notes=currentTrack(session).notes.map(note=>ids.has(note.id)?normalizeNote({...note,locked},note):note)})}
+  function setSelectedLock(session,locked){const ids=new Set(selectedIds(session));if(!ids.size||!currentTrack(session).notes.some(note=>ids.has(note.id)&&isNoteLocked(note)!==locked))return session;return change(session,()=>{currentTrack(session).notes=currentTrack(session).notes.map(note=>ids.has(note.id)?normalizeNote({...note,locked},note):note)},{noteFlags:true})}
   function lockSelectedNotes(session){return setSelectedLock(session,true)}
   function unlockSelectedNotes(session){return setSelectedLock(session,false)}
   function undo(session){session.scopedMidiRepairPreview=null;session.correctionPreview=null;session.transposePreview=null;session.noteLengthPreview=null;const value=session.undo.pop();if(!value)return session;session.redo.push(snapshot(session));return restore(session,value)}
@@ -563,4 +582,31 @@
   Object.assign(root.MusicStudioEditor,{generatedMidiTracks,previewGeneratedMidiCleanup,cancelGeneratedMidiCleanup,applyGeneratedMidiCleanup,applyScopedMidiRepair});
   root.MusicStudioEditor.normalizeTempoMap=normalizeTempoMap;
   Object.assign(root.MusicStudioEditor,{ASSET_VERSION,EXTERNAL_TRACK_ROLES,externalReviewTracks,validateExternalTrackAssignments,applyExternalTrackAssignments});
+  const unguardedCreateSession=createSession;
+  createSession=function(project={}){
+    const locks=lockDependency(),data=project.midiData||{},editor=data.editor||{};
+    if(editor.measureLocks&&!locks)throw Error('missing-lock-dependency');
+    if(locks){
+      for(const scope of [editor,...Object.values(editor.parts||{}),...Object.values(editor.trackStates||{})]){
+        const values=scope?.lockedMeasures;if(values!=null&&(!Array.isArray(values)||values.some(n=>!Number.isSafeInteger(n)||n<1)))throw Error('unrecoverable-legacy-locks');
+      }
+      const ids=(data.tracks||[]).map(t=>t.id).filter(v=>v!=null);if(new Set(ids).size!==ids.length)throw Error('ambiguous-track-id');
+    }
+    const session=unguardedCreateSession(project);if(locks)locks.readState(session.midiData,root.MusicStudioEditor);return session;
+  };
+  root.MusicStudioEditor.createSession=createSession;
+  // The internal commit boundary enforces locks. Public adapters make rejection explicit
+  // and restore pre-command selection/preview state, including preparation before change().
+  Object.assign(root.MusicStudioEditor,{LOCK_COMMIT_REVISION:1,editFailureCount:session=>rejectedEdits.get(session)||0});
+  for(const name of ['addNote','addNotes','addNotesToPart','addNotesToTrack','updateNote','updateSelectedNotes','moveSelected','resizeSelected','setSelectedVelocity','matchSelectedDuration','matchSelectedVelocity','deleteSelected','lockSelectedNotes','unlockSelectedNotes','paste','duplicateSelected','extendTimelineMeasures','removeTimelineMeasures','toggleMeasure','setSelectedMeasures','toggleLockSelected','prepareRegeneration','applyCandidate','quantizeSelectedStarts','setSelectedNoteLength','applyTranspose','applySongTranspose','applyNoteLength','applyCorrection','applyPartialEditPreview','applyPartialEditSession','applyGeneratedMidiCleanup','applyScopedMidiRepair','applyExternalTrackAssignments']){
+    const command=root.MusicStudioEditor[name];if(typeof command!=='function')continue;root.MusicStudioEditor[name]=function(session,...args){
+      if(!lockDependency())return command(session,...args);
+      const before=clone(session);
+      try{return command(session,...args)}catch(error){
+        replaceSession(session,before);if(!(error instanceof ProtectedEditError))throw error;
+        rejectedEdits.set(session,(rejectedEdits.get(session)||0)+1);
+        return{ok:false,changed:false,code:error.code,reason:error.message};
+      }
+    };
+  }
 })(typeof window!=='undefined'?window:globalThis);
