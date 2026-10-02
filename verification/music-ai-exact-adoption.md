@@ -8,16 +8,18 @@ Selecting measure 1 for partial adoption in an A timeline changing at tick 1000 
 
 Two regression tests failed on the retrieved source before the correction. The corrected bridge shortens only newly added proposals to the selected exact end tick. Existing notes are indivisible: updates and deletions must keep both original and destination entirely inside the adopted interval, otherwise candidate-selection-boundary is raised before entering the Editor transaction. It does not split or rewrite existing notes, and it does not alter unselected proposals or the original Preview bundle.
 
-All musical commits still use the existing guarded Partial Edit path. Full adoption behavior, candidate families, explicit note/range protection, stale checks and Undo/Redo are retained. Host and standalone candidate asset cache keys advance from 1.0.0 to 1.0.1.
+All musical commits still use the existing guarded Partial Edit path. Full adoption behavior, candidate families, explicit note/range protection, stale checks and Undo/Redo are retained. Host and standalone candidate asset cache keys advance from 1.0.0 to 1.0.1; Assistant panel from 1.0.2 to 1.0.3.
+
+The real Chrome checkpoint exposed a further UI failure: MIDI Preview rebuilt the range fields from the full candidate range, discarding the user's narrower choice. The panel now retains that selection in transient UI state and clears it when generating a new candidate set. Invalid numeric selections raise a caught rejection rather than falling back to full adoption. This transient state is not added to saved projects.
 
 ## Local verification
 
 - Fresh detached #274: 993/993 PASS, FAIL 0, skipped 0.
-- Corrected source: 998/998 PASS, FAIL 0, skipped 0; five new regressions.
+- Corrected source: 1000/1000 PASS, FAIL 0, skipped 0; seven new regressions.
 - All 123 JavaScript files: node --check PASS.
 - git diff --check PASS.
 - Original seven meter/lock scenarios PASS.
-- Focused candidate suite: 17/17 PASS.
+- Focused candidate and panel integration suites: 26/26 PASS.
 - Additions ending at a truncated bar, indivisible crossing-note pitch/length/delete rejection, original Preview nonmutation, Undo/Redo, and legacy/new/additive-release coexistence are checked.
 
 The browser harness adds actual UI generation → MIDI Preview → selected measure Apply at tick 1000, save/reopen and Undo/Redo, plus atomic crossing-note rejection at each of 1440/820/390. Console warning/error/pageerror and external requests remain strict zero assertions. Only synthetic memory projects are used. Initial render must perform zero writes.
