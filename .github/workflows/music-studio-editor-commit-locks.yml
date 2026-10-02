@@ -1,0 +1,68 @@
+name: Music Studio Editor commit lock guard
+on:
+  pull_request:
+    paths:
+      - 'music-studio-editor.js'
+      - 'tests/music-studio-editor-commit-locks.test.js'
+      - 'tools/verify-node-baseline.js'
+      - 'verification/music-editor-commit-locks.md'
+      - '.github/workflows/music-studio-editor-commit-locks.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Obtain immutable dependencies without enabling browser loading
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin 7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c f06cf5ac29d2fa96857ce0dc623d6e1696f016a6
+          mkdir "$RUNNER_TEMP/lock-deps"
+          git show 7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c:music-studio-meter-map.js > "$RUNNER_TEMP/lock-deps/music-studio-meter-map.js"
+          git show f06cf5ac29d2fa96857ce0dc623d6e1696f016a6:music-studio-measure-locks.js > "$RUNNER_TEMP/lock-deps/music-studio-measure-locks.js"
+          echo "MUSIC_LOCK_DEPENDENCY_DIR=$RUNNER_TEMP/lock-deps" >> "$GITHUB_ENV"
+      - name: Focused commit regressions
+        run: node --test tests/music-studio-editor-commit-locks.test.js
+      - name: Full suite versus fresh main baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap > "$RUNNER_TEMP/head.tap" 2>&1 || true
+          git worktree add --detach "$RUNNER_TEMP/main-baseline" "origin/${{ github.base_ref || 'main' }}"
+          (cd "$RUNNER_TEMP/main-baseline"; node --test --test-reporter=tap > "$RUNNER_TEMP/main.tap" 2>&1 || true)
+          node tools/verify-node-baseline.js "$RUNNER_TEMP/head.tap" "$RUNNER_TEMP/main.tap"
+      - name: Local-only synthetic integration of Drafts 262 through 267
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline=552d56eafddfd192970c09f7d6278696cf8775c3
+          git fetch origin a857c27674d6949488ff8884948499966f9bca40 9c877b267a181b560332e07071b7f86539eb1cbf c052f1614155f8ccd8e84235d6218e81ccc53758 0101b246e219e3307ef55836b372f36fa331fa48
+          target="$RUNNER_TEMP/synthetic"
+          git worktree add --detach "$target" a857c27674d6949488ff8884948499966f9bca40
+          for ref in 9c877b267a181b560332e07071b7f86539eb1cbf c052f1614155f8ccd8e84235d6218e81ccc53758 7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c 0101b246e219e3307ef55836b372f36fa331fa48 f06cf5ac29d2fa96857ce0dc623d6e1696f016a6; do
+            while IFS= read -r file; do
+              mkdir -p "$target/$(dirname "$file")"
+              git show "$ref:$file" > "$target/$file"
+            done < <(git diff --name-only "$baseline" "$ref")
+          done
+          git show "$baseline:music-studio-editor.js" > "$RUNNER_TEMP/original-editor.js"
+          git merge-file -p "$target/music-studio-editor.js" "$RUNNER_TEMP/original-editor.js" music-studio-editor.js > "$RUNNER_TEMP/integrated-editor.js"
+          cp "$RUNNER_TEMP/integrated-editor.js" "$target/music-studio-editor.js"
+          cp tests/music-studio-editor-commit-locks.test.js "$target/tests/"
+          (cd "$target"; node --test --test-reporter=tap > "$RUNNER_TEMP/synthetic.tap" 2>&1)
+          cat "$RUNNER_TEMP/synthetic.tap" | tail -9
+          (cd "$target"; find . -type f -name '*.js' -not -path './node_modules/*' -not -path './.git/*' -print0 | xargs -0 -n1 node --check; git diff --check)
+      - name: All JavaScript syntax and PR whitespace
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
+          git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"
