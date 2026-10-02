@@ -24,7 +24,11 @@ The real Chrome checkpoint exposed a further UI failure: MIDI Preview rebuilt th
 
 The browser harness adds actual UI generation → MIDI Preview → selected measure Apply at tick 1000, save/reopen and Undo/Redo, plus atomic crossing-note rejection at each of 1440/820/390. Console warning/error/pageerror and external requests remain strict zero assertions. Only synthetic memory projects are used. Initial render must perform zero writes.
 
-Real browser verification is required on the checkpoint before opening the new independent Draft. No existing PR or main is changed. No real saved songs, real backups, automatic migration, Live Provider, External AI API, Ready, Merge, Auto Merge or force push.
+Real Chrome 154 verification completed SUCCESS on checkpoint HEAD bbc847960a2d7697982f5be020186d2effd5ac3e: [run 37018351490](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37018351490). All three widths PASS, with Console warning/error/pageerror and external requests empty. Initial render writes are zero; explicit saves and New Song creation write only synthetic repositories. Screenshots were downloaded and inspected. The corrected range remains 1–1 after Preview, new notes stop at tick 1000, crossing-note Apply is rejected without consuming Undo or marking adoption, and invalid input is rejected by the UI. Original Chord/Continuation/New Song flows also PASS.
+
+Fresh main baseline remains 774 total / 768 PASS / identical 6 FAIL (cache-version and invalid Track ID baseline). Fresh #274 is 993/993 PASS; corrected source is 1000/1000 PASS, new FAIL 0. This correction does not disable any baseline test. Machine-readable browser evidence is saved in music-ai-exact-adoption-browser.json.
+
+The first added browser attempt exposed the Preview range reset and correctly rejected an unintended full-range edit into protection. Both that UI failure and invalid-range fallback were fixed, rather than weakening the protected-range assertion. Remaining Linux screenshot font placeholders reflect missing Japanese fonts on the runner; physical-device Japanese rendering remains unverified. No existing PR or main is changed. No real saved songs, real backups, automatic migration, Live Provider, External AI API, Ready, Merge, Auto Merge or force push.
 
 ## Remaining device-only checks
 

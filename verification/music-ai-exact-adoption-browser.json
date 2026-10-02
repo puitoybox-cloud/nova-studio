@@ -1,0 +1,99 @@
+{
+  "verifiedHead": "bbc847960a2d7697982f5be020186d2effd5ac3e",
+  "workflowRun": 37018351490,
+  "report": {
+    "head": "working-tree",
+    "reports": [
+      {
+        "width": 1440,
+        "boundary": [
+          {
+            "crossing": false,
+            "result": "exact-1000-save-undo-redo",
+            "messages": [],
+            "external": []
+          },
+          {
+            "crossing": true,
+            "result": "rejected-atomically",
+            "messages": [],
+            "external": []
+          }
+        ],
+        "layout": {
+          "scrollWidth": 1440,
+          "innerWidth": 1440,
+          "rect": {
+            "left": 16,
+            "right": 1424,
+            "width": 1408
+          },
+          "display": "block"
+        },
+        "messages": [],
+        "external": [],
+        "writes": 2
+      },
+      {
+        "width": 820,
+        "boundary": [
+          {
+            "crossing": false,
+            "result": "exact-1000-save-undo-redo",
+            "messages": [],
+            "external": []
+          },
+          {
+            "crossing": true,
+            "result": "rejected-atomically",
+            "messages": [],
+            "external": []
+          }
+        ],
+        "layout": {
+          "scrollWidth": 820,
+          "innerWidth": 820,
+          "rect": {
+            "left": 10,
+            "right": 810,
+            "width": 800
+          },
+          "display": "block"
+        },
+        "messages": [],
+        "external": [],
+        "writes": 2
+      },
+      {
+        "width": 390,
+        "boundary": [
+          {
+            "crossing": false,
+            "result": "exact-1000-save-undo-redo",
+            "messages": [],
+            "external": []
+          },
+          {
+            "crossing": true,
+            "result": "rejected-atomically",
+            "messages": [],
+            "external": []
+          }
+        ],
+        "layout": {
+          "scrollWidth": 390,
+          "innerWidth": 390,
+          "rect": {
+            "left": 8,
+            "right": 382,
+            "width": 374
+          },
+          "display": "block"
+        },
+        "messages": [],
+        "external": [],
+        "writes": 2
+      }
+    ]
+  }
+}
