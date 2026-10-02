@@ -14,7 +14,7 @@
     if(!track||!Array.isArray(track.notes))return{ok:false,reason:'missing-track'};
     const from=input.measureFrom,to=input.measureTo;
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)return{ok:false,reason:'invalid-range'};
-    const begin=(from-1)*bar,end=to*bar;
+    const exact=input.exactRange,begin=exact?exact.startTick:(from-1)*bar,end=exact?exact.endTick:to*bar;if(!Number.isFinite(begin)||!Number.isFinite(end)||begin<0||end<=begin)return{ok:false,reason:'invalid-exact-range'};
     const resolution=input.resolution??'1/16',denom=Number(String(resolution).split('/')[1]);
     if(!['1/4','1/8','1/16','1/32'].includes(resolution)||![4,8,16,32].includes(denom))return{ok:false,reason:'invalid-resolution'};
     const step=Math.round(ppq*4/denom);
@@ -23,11 +23,11 @@
     if(!Number.isInteger(tolerance)||tolerance<0||tolerance>step/2)return{ok:false,reason:'invalid-tolerance'};
     const before=clone(track.notes),after=clone(before),changes=[],suggestions=[];
     const lockedMeasures=new Set(Array.isArray(input.lockedMeasures)?input.lockedMeasures.filter(Number.isInteger):[]);
-    const touchesLockedMeasure=n=>{const first=Math.floor(n.startTick/bar)+1,last=Math.floor((n.startTick+n.durationTicks-1)/bar)+1;for(let measure=first;measure<=last;measure++)if(lockedMeasures.has(measure))return true;return false};
+    const touchesLockedMeasure=n=>{if(Array.isArray(input.protectedRanges))return input.protectedRanges.some(r=>n.startTick<r.endTick&&n.startTick+n.durationTicks>r.startTick);const first=Math.floor(n.startTick/bar)+1,last=Math.floor((n.startTick+n.durationTicks-1)/bar)+1;for(let measure=first;measure<=last;measure++)if(lockedMeasures.has(measure))return true;return false};
     const eligible=n=>!touchesLockedMeasure(n)&&!n.locked&&Number.isInteger(n.startTick)&&Number.isInteger(n.durationTicks)&&n.durationTicks>0&&Number.isInteger(n.pitch)&&n.startTick>=begin&&n.startTick<end&&n.startTick+n.durationTicks<=end;
     for(const note of after){
       if(!eligible(note))continue;
-      const snapped=Math.round(note.startTick/step)*step;
+      const snapped=input.exactRange&&root.MusicStudioMeterMap?(()=>{const pos=root.MusicStudioMeterMap.positionAtTick(data,note.startTick);return Math.min(pos.measureEndTick,pos.measureStartTick+Math.round((note.startTick-pos.measureStartTick)/step)*step)})():Math.round(note.startTick/step)*step;
       if(snapped>=begin&&snapped<end&&snapped+note.durationTicks<=end&&Math.abs(snapped-note.startTick)<=tolerance&&snapped!==note.startTick){
         changes.push({type:'timing',noteId:note.id,before:note.startTick,after:snapped});
         note.startTick=snapped;

@@ -78,7 +78,7 @@ test('UI loads repair module before Music Studio and exposes Preview/Apply/Cance
  const standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
  const host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
  const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
- const module='music-studio-scoped-midi-repair.js?v=1.0.0';
+ const module='music-studio-scoped-midi-repair.js?v=1.0.1';
  assert.ok(standalone.indexOf(module)>0&&standalone.indexOf(module)<standalone.indexOf('music-studio.js?v='));
  assert.ok(host.indexOf(module)>0&&host.indexOf(module)<host.indexOf("loadMusicStudioScript('music-studio','"));
  for(const name of ['editorPreviewScopedMidiRepair','editorApplyScopedMidiRepair','editorCancelScopedMidiRepair'])assert.ok(studio.includes('api.'+name+'='+name));
@@ -192,7 +192,7 @@ test('standalone and host load current editor and Studio asset versions',()=>{
  const host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
  const editor=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');
  const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
- for(const [asset,version,source] of [['music-studio-editor','1.4.21',editor],['music-studio','1.4.113',studio]]){
+ for(const [asset,version,source] of [['music-studio-editor','1.4.23',editor],['music-studio','1.4.116',studio]]){
   assert.ok(source.includes("const ASSET_VERSION='"+version+"'"));
   assert.ok(standalone.includes(asset+'.js?v='+version));
   assert.ok(host.includes(asset+'.js?v='+version));
