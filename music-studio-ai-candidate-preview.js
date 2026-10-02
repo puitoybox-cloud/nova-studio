@@ -102,11 +102,18 @@
     if(!Number.isInteger(start)||!Number.isInteger(end)||start<bundle.request.range.startMeasure||end>bundle.request.range.endMeasure||end<start)throw Error('invalid-preview-selection');
     return{startMeasure:start,endMeasure:end};
   }
-  function applyPreview(session,core,bundle){
+  function narrowed(bundle,session,core,measureRange){
+    if(!measureRange)return{result:bundle.result,preview:bundle.preview,selection:null};
+    const selection=selectionForRange(bundle,measureRange),ticks=core.measureRangeToTicks(selection,session.midiData),inTicks=note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick,changes=bundle.result.changes;
+    const proposals={updates:changes.updates.filter(inTicks),adds:changes.adds.filter(inTicks),deleteNoteIds:changes.deleteNoteIds.filter(id=>{const note=(bundle.request.notes||[]).find(item=>item.id===id);return note&&inTicks(note)})};
+    const result=core.createPartialEditResult(bundle.request,proposals),preview=core.createPartialEditPreview(bundle.request,result);
+    return{result,preview,selection};
+  }
+  function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
-    const applied=core.applyPartialEditPreview(session,bundle.request,bundle.result,bundle.preview);
+    const subset=narrowed(bundle,session,core,measureRange),applied=core.applyPartialEditPreview(session,bundle.request,subset.result,subset.preview);
     if(applied?.applied!==true)throw Error(`candidate-apply-rejected:${applied?.reason||'protected'}`);
-    return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId};
+    return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId,selection:clone(subset.selection)};
   }
   root.MusicStudioAICandidatePreview=Object.freeze({VERSION,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,applyPreview});
 })(typeof window!=='undefined'?window:globalThis);
