@@ -3,6 +3,7 @@
   'use strict';
   const VERSION=1;
   const DEFAULT_KINDS=['melody','chord','section','arrangement','lyrics-structure'];
+  const UNCHANGED=['drums','tempo-map','time-signature-map','key-signature-map','markers','lock-protection'];
   const MIDI_KINDS=new Set(['melody','chord','continuation']);
   const clone=value=>JSON.parse(JSON.stringify(value));
   const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -51,7 +52,7 @@
       components.push({kind,setId:member.setId,candidateId:candidate.candidateId,candidateSignature:sig(candidate.value),familyId:candidate.value?.candidateFamily?.id||null,targetTrackId:bundle?.targetTrackId||null,targetTrackRole:bundle?.targetTrackId?core.resolveCoreTrackRole(core.getTrackById(session.midiData.tracks,bundle.targetTrackId)):null,range:bundle?.request?.range?clone(bundle.request.range):clone(candidate.value?.range||null),selection:range,bundle:bundle?clone(bundle):null,previewType:bundle?.type||'unavailable',changes:bundle?.result?.changes?{updates:bundle.result.changes.updates.length,adds:bundle.result.changes.adds.length,deletes:bundle.result.changes.deleteNoteIds.length}:null,metadata:MIDI_KINDS.has(kind)?null:clone(candidate.value)})
     }
     const familyId=collected.familyIds.length===1?collected.familyIds[0]:null,source={projectId:String(project?.projectId||''),projectRevision:project?.revision??null,midiData:clone(session.midiData),midiSignature:sig(session.midiData),editRange:rangeOf(session),workspaceSignature:sig(workspace),familySignatures:Object.fromEntries(components.map(component=>[component.kind,component.candidateSignature]))};
-    const plan={version:VERSION,kind:'family-apply-plan',variant:String(variant),familyId,kinds,source,components,issues:[...new Set(issues)],mutates:false};
+    const plan={version:VERSION,kind:'family-apply-plan',variant:String(variant),familyId,kinds,source,components,unchanged:clone(UNCHANGED),issues:[...new Set(issues)],mutates:false};
     plan.planId=sig({version:plan.version,variant:plan.variant,familyId:plan.familyId,kinds:plan.kinds,source:{projectId:source.projectId,projectRevision:source.projectRevision,midiSignature:source.midiSignature,workspaceSignature:source.workspaceSignature},components:components.map(component=>({kind:component.kind,setId:component.setId,candidateId:component.candidateId,candidateSignature:component.candidateSignature,selection:component.selection}))});
     return plan
   }
@@ -117,13 +118,14 @@
   }
   function planRows(plan){
     if(!plan||plan.kind!=='family-apply-plan')return[];
-    const rows=[`Family ${plan.variant} / ${plan.familyId||'family-id-missing'}`];
+    const rows=[`Family ${plan.variant} / ${plan.familyId||'family-id-missing'}`,`Project revision: ${plan.source.projectRevision??'none'}`];
     for(const component of plan.components){
-      if(component.previewType==='midi-preview')rows.push(`${component.kind}: ${component.targetTrackId} / ${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / +${component.changes?.adds||0} ~${component.changes?.updates||0} -${component.changes?.deletes||0}`);
+      if(component.previewType==='midi-preview')rows.push(`${component.kind}: ${component.targetTrackId} / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'} / +${component.changes?.adds||0} ~${component.changes?.updates||0} -${component.changes?.deletes||0}`);
       else rows.push(`${component.kind}: metadata only`)
     }
+    if(plan.unchanged?.length)rows.push(`Unchanged: ${plan.unchanged.join(', ')}`);
     if(plan.issues.length)rows.push(`Blocked: ${plan.issues.join(', ')}`);
     return rows
   }
-  root.MusicStudioAIFamilyApply=Object.freeze({VERSION,DEFAULT_KINDS:clone(DEFAULT_KINDS),createPlan,simulate,applyPlan,planRows});
+  root.MusicStudioAIFamilyApply=Object.freeze({VERSION,DEFAULT_KINDS:clone(DEFAULT_KINDS),UNCHANGED:clone(UNCHANGED),createPlan,simulate,applyPlan,planRows});
 })(typeof window!=='undefined'?window:globalThis);
