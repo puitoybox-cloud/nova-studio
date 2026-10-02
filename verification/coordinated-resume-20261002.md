@@ -1,6 +1,6 @@
 # Music Studio coordinated A timeline — verification record
 
-Verified 2026-10-02 JST. This independent checkpoint reconstructs the actual GitHub PR262–267 sources and connects their modules to the browser and the Editor's internal closures. The former unpublished 907-test prototype was not available and was not treated as published source.
+Verified 2026-10-02 JST. This independent checkpoint reconstructs the actual GitHub PR262–268 sources and connects their modules to the browser and the Editor's internal closures. The former unpublished 907-test prototype was not available and was not treated as published source.
 
 ## Fresh source verification
 
@@ -13,10 +13,11 @@ Verified 2026-10-02 JST. This independent checkpoint reconstructs the actual Git
 | PR265 | 7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c |
 | PR266 | 0101b246e219e3307ef55836b372f36fa331fa48 |
 | PR267 | f06cf5ac29d2fa96857ce0dc623d6e1696f016a6 |
+| PR268 | 909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee |
 
-These heads were retrieved afresh at the start and rechecked at completion. All six existing PRs remain Draft. PR267 CI [36880714212](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36880714212) completed SUCCESS. Main and PR256–267 were not modified.
+These heads were retrieved afresh at the start and rechecked at completion. All seven existing PRs remain Draft. PR267 CI [36880714212](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36880714212) completed SUCCESS. Main and PR256–267 were not modified.
 
-The six exact source heads were combined without textual conflicts. This is a new reconstruction; it does not claim to reproduce the earlier local prototype with four conflict files.
+PR262–267 combined without textual conflicts. PR268's internal commit guard was explicitly coordinated with the browser A implementation; its 33 original regression tests are included unchanged. This is a new reconstruction; it does not claim to reproduce the earlier local prototype with four conflict files.
 
 ## Implemented behavior
 
@@ -25,7 +26,7 @@ The six exact source heads were combined without textual conflicts. This is a ne
 - A new bar begins at the exact meter-change tick, including a change inside a bar. Earlier bar is truncated. Source meter and tempo event ticks are preserved.
 - Whole-command and internal change transactions validate protection. Failed commands restore session, Undo/Redo, selections and previews. Rejected nested mutations cannot be swallowed.
 - Covered commit paths: move, resize, delete, add, recording add, paste, repair apply, candidate apply, timeline resize, measure/range lock, partial unlock and Undo/Redo. Corrupt historical lock state is rejected without consuming Undo.
-- Existing lockedMeasures aliases and legacyRanges retain legacy tick protection, including different alias values. Additive range locks and releaseRanges coexist; partial unlock releases only the exact selected interval. Explicit note-lock commands remain supported.
+- Existing lockedMeasures aliases and legacyRanges retain legacy tick protection, including different alias values. Additive range locks and releaseRanges coexist; partial unlock releases only the exact selected interval. Explicit note-lock commands validate all fields other than the intended note flag. Commit protection also remains active for non-coordinated sessions whenever the real lock dependency is supplied; saved additive state without the dependency and malformed raw locks fail closed before normalization.
 - Ruler, segmented repeating grid, snap, visible range, pointer resize, measure add sequence and candidate ends use exact ticks, including truncated bars. Grid complexity is bounded by meter segments.
 - Recording receives a frozen tempo map and recording origin; onset, release, playhead and loop Stop use existing Playback timing services. Metronome closure schedules exact meter beats through tickDurationSeconds, with accents at new bar starts. Count-in remains a static local bar.
 - View initialization does not persist on load. Explicit edits or view interaction permit normal persistence. No saved-song migration or actual-user-data modification was performed.
@@ -37,13 +38,14 @@ The six exact source heads were combined without textual conflicts. This is a ne
 | unchanged main | 774 | 768 | 6 |
 | unchanged PR267 | 806 | 800 | 6 |
 | exact-source synthetic PR262–267 | 874 | 874 | 0 |
-| final coordinated reconstruction | 903 | 903 | 0 |
+| PR262–268 commit guard stage | 907 | 907 | 0 |
+| final coordinated reconstruction | 936 | 936 | 0 |
 
 PR267's six failures exactly match main. New failures zero. Combined PR262 sources already resolve these six baseline failures; none were disabled or skipped. Exact asset-version assertions were updated with the corresponding loader versions.
 
 Baseline identities: production entry Review-capable Editor asset keys; runtime version/Review API markers; host Music Studio cache key; sequential dependency loading without detached-script queries; current iPad gesture assets; invalid Track IDs preserving the entire session.
 
-Final suite adds 29 tests: 6 recording timing, 16 coordinated Editor, 4 actual browser-closure timing/loading, 3 coordinated persistence. All 109 JavaScript files pass node --check. git diff --check passes.
+Final suite retains PR268's 33 regressions and adds 29 tests: 6 recording timing, 16 coordinated Editor, 4 actual browser-closure timing/loading, 3 coordinated persistence. All 111 JavaScript files pass node --check. git diff --check passes.
 
 The immutable seven scenarios PASS: 4/4, 3/4, 6/8, bar-boundary change, mid-bar change, multiple changes and denominator change. They verify legacy ticks, exact new ranges, additive partial releases, JSON reopen and Undo/Redo. A separate temporary invocation of the same seven scenarios through createCoordinatedSession also PASS.
 
@@ -55,7 +57,7 @@ Local Chromium installation failed due to truncated ZIP downloads. The independe
 
 Verified source commit: ccae589316961596a92e39c0a310ab5ab8b84594.
 [Successful real Chrome + full Node workflow 36969120620](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36969120620).
-This run tests 900/900; the final three added persistence tests are recorded separately above and included in the subsequent exact-head checkpoint workflow.
+This run tests 900/900; the final persistence tests and PR268 tests are recorded separately above and included in the subsequent exact-head checkpoint workflow.
 
 | Viewport | Functional harness | Console error/warn/pageerror | External requests | Writes on load | Document width |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -85,4 +87,4 @@ Earlier harness failures were resolved: CSS decimal precision expectation, a rea
 - No production deployment, Ready, Merge, Auto Merge or force push. No Live Provider or External AI API traffic.
 - The integration is for independent Draft review only; existing PRs retain their original purposes.
 
-The checkpoint branch was explicitly authorized for unfinished work and verification records. A separate integration Draft PR may only be created after the final source checks and real-browser evidence pass.
+The checkpoint branch was explicitly authorized for unfinished work and verification records. The independent integration Draft is created only after final source checks and real-browser evidence pass.
