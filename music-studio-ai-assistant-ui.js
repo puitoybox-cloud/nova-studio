@@ -5,7 +5,7 @@
   const text=(value,max=2000)=>String(value??'').trim().slice(0,max);
   function requireWorkflow(){const api=root.MusicStudioAIWorkflow;if(!api)throw Error('ai-workflow-unavailable');return api}
   function createState(project,options={}){
-    const api=requireWorkflow(),workspace=api.createWorkspace(project,{createdAt:options.createdAt||'local-session'});
+    const api=requireWorkflow(),workspace=options.workspace?api.parseWorkspace(JSON.stringify(options.workspace),project):api.createWorkspace(project,{createdAt:options.createdAt||'local-session'});
     return{version:1,workspace,activeView:'assistant',instruction:'',activeRequestId:null,activeCandidateSetId:null,newSongDraft:{title:'',bpm:120,numerator:4,denominator:4,key:'',bars:16,mood:'',genre:'',tracks:['melody','drums','bass'],sections:[],memo:''},newSongPreview:null,lastError:null};
   }
   function validateState(state){return Boolean(state)&&state.version===1&&requireWorkflow().validateWorkspace(state.workspace).ok}
@@ -40,5 +40,6 @@
     const set=state.workspace.candidateSets.find(item=>item.setId===state.activeCandidateSetId)||null;
     return{mode:'local-only',networkAllowed:false,activeView:state.activeView,instruction:state.instruction,target:clone(target),request:clone(request),candidateSet:clone(set),newSongDraft:clone(state.newSongDraft),newSongPreview:clone(state.newSongPreview),history:clone(state.workspace.history)};
   }
-  root.MusicStudioAIAssistantUI={createState,validateState,setInstruction,previewEdit,runPreview,rejectActive,applyActive,setNewSongDraft,previewNewSong,confirmNewSong,createCandidates,decideCandidate,viewModel};
+  function workspaceForRevision(state,projectId,revision){if(!validateState(state)||state.workspace.projectId!==projectId)throw Error('invalid-ai-ui-state');const workspace=clone(state.workspace);workspace.baseRevision=revision;workspace.updatedAt=new Date().toISOString();return workspace}
+  root.MusicStudioAIAssistantUI={createState,validateState,setInstruction,previewEdit,runPreview,rejectActive,applyActive,setNewSongDraft,previewNewSong,confirmNewSong,createCandidates,decideCandidate,viewModel,workspaceForRevision};
 })(typeof window!=='undefined'?window:globalThis);
