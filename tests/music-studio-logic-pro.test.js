@@ -936,7 +936,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-piano-key\.is-white\{border-right-color:#9ca3af;border-bottom-color:#cbd5e1;background:linear-gradient\(90deg,#fffef9 0,#f8fafc 76%,#e5e7eb 100%\)/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-name\.is-white\{background:rgba\(255,254,249,\.94\);color:#111827/);assert.match(css,/\.music-midi-editor-page \.music-pitch-name\.is-black\{background:rgba\(7,12,19,\.92\);color:#f8fafc/);
   assert.doesNotMatch(html,/music-piano-key is-black" data-pitch="(?:60|62|64|65|67|69|71)"/);
-  assert.match(html,/>Bar 1<\/button>/);assert.doesNotMatch(html,/>小節 1<\/button>/);
+  assert.match(html,/><span class="music-measure-prefix">Bar <\/span><span>1<\/span><\/button>/);assert.doesNotMatch(html,/>小節 1<\/button>/);
   assert.match(css,/\.music-midi-editor-page\{--music-editor-surface:#0b141f/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:112px minmax\(0,1fr\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-key-layer,[^}]*\.music-pitch-hit-layer\{position:absolute;top:0/);
@@ -1075,8 +1075,8 @@ test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow ho
     session.view.zoom=zoom;html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
     assert.match(html,new RegExp(`class="music-piano-content" style="width:${zoom*100}%"`));
     assert.match(html,new RegExp(`class="music-piano-header-content" style="width:${zoom*100}%"`));
-    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*>Bar 1<\/button>/);
-    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*>Bar 2<\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>1<\/span><\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>2<\/span><\/button>/);
     assert.match(html,/class="music-loop-selection is-enabled" style="left:6\.25%;width:12\.5%"/);
     assert.match(html,/class="music-playhead" style="left:0%"/);
     assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);
@@ -1085,11 +1085,11 @@ test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow ho
 });
 test('long timelines thin measure text by Zoom without removing measure controls or grid geometry',()=>{
   const{app}=load(),project=app.makeProject({projectId:'long-ruler',projectName:'Long ruler',midiData:{editor:{measureCount:93},tracks:[{part:'melody',notes:[]}]}});app.state.projects=[project];
-  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.equal((html.match(/class="music-measure /g)||[]).length,93);assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 5','Bar 9','Bar 13','Bar 17']);assert.equal(labels.length,24);
-  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 3','Bar 5','Bar 7','Bar 9']);assert.equal((html.match(/class="music-measure /g)||[]).length,93);
-  for(let step=0;step<3;step++)app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  for(let step=0;step<3;step++)app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 2','Bar 3','Bar 4','Bar 5']);assert.equal(labels.length,93);assert.match(html,/--measure-size:[^;]+%;--beat-size:[^;]+%;--subdivision-size:/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-measure\{height:30px;overflow:visible;[^}]*white-space:nowrap/);assert.match(css,/\.music-measure\.has-label\{z-index:1\}/);
 });

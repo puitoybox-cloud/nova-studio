@@ -2,6 +2,17 @@ name: Coordinated Music Studio checkpoint verification
 on:
   push:
     branches: ['checkpoint/music-coordinated-20261002']
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'music-studio.js'
+      - 'music-studio.css'
+      - 'music-studio.html'
+      - 'app.js'
+      - 'index.html'
+      - 'scripts/music-studio-coordinated-browser-smoke.js'
+      - '.github/workflows/music-studio-coordinated-checkpoint.yml'
   workflow_dispatch:
 permissions:
   contents: read
