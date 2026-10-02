@@ -656,7 +656,7 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-external-import{display:grid;gap:7px;padding:9px;border:1px solid #67569a;border-radius:10px;background:#111a2b}.music-external-import>.music-file-action{min-width:0;padding:7px 9px}.music-external-import-status,.music-external-import-result p{margin:0;color:var(--music-muted);font-size:.75rem}.music-external-import-result{display:grid;gap:5px;padding:7px;border-radius:8px;background:#0b1725;font-size:.75rem}.music-external-import-result.is-success{border:1px solid #2f855a;color:var(--music-green)}.music-external-import-result.is-error{border:1px solid #b45353;color:#fca5a5}.music-external-import-result>span{overflow-wrap:anywhere}.music-external-import-result dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0}.music-external-import-result dl div{display:grid;gap:1px}.music-external-import-result dt{color:var(--music-muted)}.music-external-import-result dd{margin:0;font-weight:800}\n@media(max-width:600px){.music-external-import-result dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Exact A bars can be shorter than the label. Preserve their hit areas and show numbers first. */
-.music-midi-editor-page .music-measure{container-type:inline-size;overflow:hidden;padding-inline:1px;min-width:0}
+.music-midi-editor-page .music-measure{container-type:inline-size;display:block;white-space:nowrap;overflow:hidden;padding-inline:1px;min-width:0}
 @container (max-width:50px){.music-measure-prefix{display:none}}
 @media(max-width:600px){
   .music-midi-editor-page .music-part-tabs .music-part-tab-list{width:auto;min-width:0;flex:1 1 0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain}
