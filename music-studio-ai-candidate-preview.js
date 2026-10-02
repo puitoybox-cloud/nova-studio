@@ -48,20 +48,29 @@
       return{id:uniqueId(track,prefix,index,startTick),pitch:clamp(Math.round(pitch),0,127),startTick,durationTicks,velocity:clamp(Math.round(velocity),1,127)};
     });
   }
+  function phraseAdds(track,range,value,velocity,prefix){
+    const events=Array.isArray(value.phraseEvents)&&value.phraseEvents.length?value.phraseEvents:null;
+    if(!events)return spreadAdds(track,range,(value.scaleDegrees||[1,3,5,3,2,4,5,1]).map(degree=>degreePitch(value.key,degree,value.register)),velocity,prefix);
+    const units=events.reduce((sum,event)=>sum+clamp(Math.round(Number(event.durationUnits)||1),1,8),0),span=Math.max(1,range.endTick-range.startTick),unitTicks=Math.max(1,Math.floor(span/Math.max(1,units)));
+    let cursor=range.startTick;
+    return events.map((event,index)=>{
+      const eventUnits=clamp(Math.round(Number(event.durationUnits)||1),1,8),startTick=Math.min(range.endTick-1,cursor),durationTicks=Math.max(1,Math.min(eventUnits*unitTicks,range.endTick-startTick));cursor+=eventUnits*unitTicks;
+      return{id:uniqueId(track,prefix,index,startTick),pitch:degreePitch(value.key,event.degree,value.register),startTick,durationTicks,velocity:clamp(Math.round(velocity),1,127)};
+    });
+  }
   function melodyProposal(request,track,value){
     const ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id)),degrees=Array.isArray(value.scaleDegrees)&&value.scaleDegrees.length?value.scaleDegrees:[1,3,5,3,2,4,5,1];
     if(targets.length){
       return{updates:targets.map((note,index)=>({...clone(note),pitch:degreePitch(value.key,degrees[index%degrees.length],value.register)})),adds:[],deleteNoteIds:[]};
     }
-    const pitches=degrees.map(degree=>degreePitch(value.key,degree,value.register));
-    return{updates:[],adds:spreadAdds(track,request.range,pitches,88,`ai-melody-${value.variant||'A'}`),deleteNoteIds:[]};
+    return{updates:[],adds:phraseAdds(track,request.range,value,88,`ai-melody-${value.variant||'A'}`),deleteNoteIds:[]};
   }
   function continuationProposal(request,track,value){
-    const ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id)),degrees=value.method==='answer'?[5,4,2,1]:value.method==='sequence'?[2,3,4,3,5,4,3,2]:[1,3,2,1,1,3,2,1];
+    const ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id)),degrees=Array.isArray(value.phraseEvents)&&value.phraseEvents.length?value.phraseEvents.map(event=>event.degree):value.method==='answer'?[5,4,2,1]:value.method==='sequence'?[2,3,4,3,5,4,3,2]:[1,3,2,1,1,3,2,1];
     if(targets.length){
       return{updates:targets.map((note,index)=>({...clone(note),pitch:degreePitch(value.key,degrees[index%degrees.length],'mid')})),adds:[],deleteNoteIds:[]};
     }
-    return{updates:[],adds:spreadAdds(track,request.range,degrees.map(d=>degreePitch(value.key,d,'mid')),84,`ai-cont-${value.variant||'A'}`),deleteNoteIds:[]};
+    return{updates:[],adds:phraseAdds(track,request.range,{...value,register:'mid'},84,`ai-cont-${value.variant||'A'}`),deleteNoteIds:[]};
   }
   function chordBassProposal(request,track,value){
     const progression=Array.isArray(value.progression)&&value.progression.length?value.progression:['C','F','G','C'],pitches=progression.map(chordRootPitch),ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id));
@@ -72,14 +81,16 @@
   }
   function companionPlan(value,context={}){
     if(value.kind==='chord'){
-      return{kind:'chord-companion',bassRoots:(value.progression||[]).map(chord=>({chord,rootPitch:chordRootPitch(chord)})),arrangement:{roles:['melody','bass','drums'].filter(role=>(context.trackRoles||[]).includes(role)),policy:'candidate-only'}};
+      const melodyPhrase=context.melodyPhrase||context.sourcePhrase||{},sourceNotes=melodyPhrase.notes||[],slots=(value.progression||[]).map((chord,index)=>{const root=chordRootPitch(chord)%12,minor=/m(?!aj)/.test(chord),dim=/dim/.test(chord),tones=[root,(root+(minor||dim?3:4))%12,(root+(dim?6:7))%12],notes=sourceNotes.filter((_,noteIndex)=>noteIndex%(value.progression.length||1)===index),outside=notes.filter(note=>!tones.includes(((note.pitch%12)+12)%12));return{slot:index+1,chord,compatiblePitchClasses:tones,sourceNoteIds:notes.map(note=>note.id),outsideChordToneNoteIds:outside.map(note=>note.id),suggestion:outside.length?'review-passing-or-neighbor-tone':'compatible'};});
+      return{kind:'chord-companion',candidateFamily:clone(value.candidateFamily||null),bass:{candidateId:value.bassCandidate?.candidateId||value.variant,familyId:value.candidateFamily?.id,roots:(value.progression||[]).map(chord=>({chord,rootPitch:chordRootPitch(chord)})),policy:'candidate-only'},arrangement:{candidateId:value.arrangementCandidateRef?.candidateId||value.variant,familyId:value.candidateFamily?.id,roles:['melody','bass','drums'].filter(role=>(context.trackRoles||[]).includes(role)),policy:'candidate-only'},melodyAlignment:{policy:'preview-only',mutates:false,sourcePhraseFingerprint:melodyPhrase.fingerprint||'empty',sourceTrackId:melodyPhrase.trackId||null,slots}};
     }
     if(value.kind==='lyrics-structure'){
-      const count=Math.max(1,Number(value.lineCount)||4);
-      return{kind:'lyrics-melody-link',linkedMelodyCandidate:value.linkedMelodyCandidate||value.variant||'A',phraseSlots:Array.from({length:count},(_,index)=>({line:index+1,melodySlot:index+1,stressPolicy:value.stressPolicy||'speech-first'})),policy:'metadata-only'};
+      const lines=Array.isArray(value.lines)&&value.lines.length?value.lines:Array.from({length:Math.max(1,Number(value.lineCount)||4)},(_,index)=>({line:index+1,syllableCount:0,stress:[],melodyPhraseSlot:index+1}));
+      return{kind:'lyrics-melody-link',candidateFamily:clone(value.candidateFamily||null),linkedMelodyCandidate:value.linkedMelodyCandidate||value.variant||'A',phraseSlots:lines.map(line=>({line:line.line,melodySlot:line.melodyPhraseSlot,measureSlot:line.measureSlot,syllableCount:line.syllableCount,stress:clone(line.stress||[]),stressPolicy:value.stressPolicy||'speech-first'})),policy:'metadata-only'};
     }
-    if(value.kind==='arrangement')return{kind:'arrangement-plan',tracks:clone(value.tracks||[]),register:value.register,density:value.density,dynamics:value.dynamics,entry:value.entry,policy:'metadata-only'};
-    if(value.kind==='section')return{kind:'section-plan',shape:value.shape,plan:clone(value.plan||[]),policy:'metadata-only'};
+    if(value.kind==='arrangement')return{kind:'arrangement-plan',candidateFamily:clone(value.candidateFamily||null),sectionCandidateRef:clone(value.sectionCandidateRef||null),chordCandidateRef:clone(value.chordCandidateRef||null),tracks:clone(value.tracks||[]),register:value.register,density:value.density,dynamics:value.dynamics,entry:value.entry,policy:'metadata-only'};
+    if(value.kind==='section')return{kind:'section-plan',candidateFamily:clone(value.candidateFamily||null),arrangementCandidateRef:clone(value.arrangementCandidateRef||null),shape:value.shape,plan:clone(value.plan||[]),policy:'metadata-only'};
+    if(value.kind==='melody'||value.kind==='continuation')return{kind:'phrase-plan',candidateFamily:clone(value.candidateFamily||null),phrases:clone(value.phrases||[]),motif:clone(value.motif||null),sourcePhrase:clone(value.sourcePhrase||null),policy:'candidate-only'};
     return null;
   }
   function createPreview(session,core,candidate,options={}){
