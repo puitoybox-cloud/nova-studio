@@ -48,3 +48,16 @@ No automatic persistence migration was added. No actual device verification was 
 Playwright is installed but has no Chromium executable. Browser installation was attempted and failed with `End of central directory record signature not found` / truncated or non-ZIP downloads. Actual 1440/820/390 display and console error/warn checks are UNVERIFIED. No coordinated integration Draft PR was created, because implementation and browser checks are incomplete. This branch is a restart checkpoint, not a ready integration or device preview.
 
 No Ready, Merge, Auto Merge, force push, provider/AI API call or destructive storage operation occurred. No new physical Mac/iPad action is needed for this environment blocker. Existing PR262 Intel Mac Audio-to-MIDI and device checks remain separate and pending.
+
+
+## Authorized continuation checkpoint
+
+Tia explicitly authorized saving unfinished source and verification records to an independent checkpoint branch, while retaining the completed-verification gate for a new Draft PR. Initial remote checkpoint ce0fdd103551c389448ad4be4cd47e2b6bbd1c0d reproduces the local tree be8595f15d9612d305cf4975114d701ed223494a exactly.
+
+Continuation adds opt-in coordinated session creation, with actual browser loaders requiring meter and transaction dependencies. Internal closure range, position, timeline size, measure-target operations, candidate generation and commit guards now use exact A calculations. Complete-command rollback preserves session, previews and Undo/Redo on protected failures. Legacy fallback aliases are retained during coordinated selection and lock operations. Range toggle uses the additive release layer and does not rewrite legacy lock arrays. Loader cache versions and their exact-version assertions are synchronized.
+
+Browser A ruler, segmented repeating grid (bounded by meter-event count), visible-bar range, measure snap, pointer move/end resize, tempo-change entry and display are connected. Recording passes its start tick and frozen tempo map to the shared recorder. Recording playhead and loop Stop boundary use the same shared Tempo Map service. Actual metronome closure uses per-meter beat positions and tickDurationSeconds, restarting bar accents at exact change ticks. Count-in uses a static local bar. Protected recording commits return no committed notes.
+
+Local continuation suite: 897/897 PASS, zero FAIL. Seventeen new coordinated Editor/timing tests include real closure metronome scheduling, protected full-command rollback, exact release/relock, reopen/Undo/Redo and truncated-measure snap. Original seven immutable meter cases also PASS. No tests were disabled; prior six baseline failures remain on unchanged main/PR267, and are already resolved by combined PR262 sources. All-JavaScript syntax and whitespace checks PASS.
+
+Actual browser testing remains pending at this checkpoint. Local Chromium downloads are still unavailable. A branch-only Actions workflow and offline synthetic Playwright harness are added to attempt real installed Chrome on GitHub's runner at 1440/820/390, with console/page-error recording, external-request blocking, zero load-time repository writes, protected edits and save/reopen assertions. Do not equate VM closure tests with rendered browser verification. No new Draft PR has been created.

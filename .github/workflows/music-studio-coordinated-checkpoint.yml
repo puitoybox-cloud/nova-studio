@@ -1,0 +1,43 @@
+name: Coordinated Music Studio checkpoint verification
+on:
+  push:
+    branches: ['checkpoint/music-coordinated-20261002']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact-head Node, syntax, whitespace, immutable meter cases
+        run: |
+          node --test
+          git ls-files '*.js' -z | xargs -0 -n1 node --check
+          git diff 552d56eafddfd192970c09f7d6278696cf8775c3 HEAD --check
+          node tools/verify-music-measure-locks.js "$PWD/music-studio-meter-map.js"
+      - name: Browser harness dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          google-chrome --version
+      - name: Real Chrome 1440 / 820 / 390 and console
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > "$RUNNER_TEMP/nova-server.log" 2>&1 &
+          node scripts/music-studio-coordinated-browser-smoke.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coordinated-checkpoint-verification
+          path: |
+            coordinated-*.png
+            coordinated-browser-report.json
