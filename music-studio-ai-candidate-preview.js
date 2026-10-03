@@ -93,11 +93,38 @@
     if(value.kind==='melody'||value.kind==='continuation')return{kind:'phrase-plan',candidateFamily:clone(value.candidateFamily||null),phrases:clone(value.phrases||[]),motif:clone(value.motif||null),sourcePhrase:clone(value.sourcePhrase||null),policy:'candidate-only'};
     return null;
   }
+  function continuationSource(value,session,core){
+    if(value?.kind!=='continuation')throw Error('continuation-required');
+    const start=value.range?.startMeasure,end=value.range?.endMeasure,source=value.sourcePhrase;
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-continuation-range');
+    if(typeof source?.trackId!=='string'||!source.trackId||!Number.isSafeInteger(source.noteCount)||source.noteCount<0||source.noteCount>64||typeof source.fingerprint!=='string'||!Array.isArray(source.intervals)||source.intervals.length!==Math.max(0,source.noteCount-1)||source.intervals.some(n=>!Number.isSafeInteger(n)||Math.abs(n)>127)||value.derivedFromExisting!==(source.noteCount>0))throw Error('invalid-continuation-source');
+    const matches=(session?.midiData?.tracks||[]).filter(track=>track.id===source.trackId);
+    if(matches.length!==1||core.resolveCoreTrackRole?.(matches[0])==='drums')throw Error('continuation-source-track-required');
+    if(typeof core.measureRangeToTicks!=='function')throw Error('continuation-source-timeline-unavailable');
+    const ticks=core.measureRangeToTicks({startMeasure:start,endMeasure:end},session.midiData);
+    if(!Number.isSafeInteger(ticks.startTick)||!Number.isSafeInteger(ticks.endTick)||ticks.startTick<0||ticks.endTick<=ticks.startTick)throw Error('invalid-continuation-source-ticks');
+    if(value.range.startTick!==ticks.startTick||value.range.endTick!==ticks.endTick)throw Error('stale-continuation-source-range');
+    const notes=matches[0].notes;
+    if(!Array.isArray(notes))throw Error('invalid-continuation-source-notes');
+    // Reuse the existing generator's observed window and 64-note limit. Do not
+    // infer a new phrase boundary, destination or continuation composition rule.
+    const observed=notes.filter(note=>note?.startTick>=ticks.startTick&&note.startTick<ticks.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(0,64);
+    if(observed.some(note=>typeof note.id!=='string'||!note.id||!Number.isSafeInteger(note.pitch)||note.pitch<0||note.pitch>127||!Number.isSafeInteger(note.startTick)||!Number.isSafeInteger(note.durationTicks)||note.durationTicks<1||!Number.isSafeInteger(note.startTick+note.durationTicks)||!Number.isSafeInteger(note.velocity)||note.velocity<1||note.velocity>127)||new Set(observed.map(note=>note.id)).size!==observed.length)throw Error('invalid-continuation-source-notes');
+    const view={...session,selectedTrackId:source.trackId,editRange:{startMeasure:start,endMeasure:end}};
+    const context=requireComposition().createContext({musicalSettings:{key:value.key}},view,core),current=context.sourcePhrase;
+    if(context.key!==value.key||current.trackId!==source.trackId||current.noteCount!==source.noteCount||current.fingerprint!==source.fingerprint||JSON.stringify(current.intervals)!==JSON.stringify(source.intervals))throw Error('stale-continuation-source');
+    return{kind:'continuation-source-preview',trackId:source.trackId,range:{startMeasure:start,endMeasure:end,startTick:ticks.startTick,endTick:ticks.endTick},noteCount:source.noteCount,fingerprint:source.fingerprint,intervals:clone(source.intervals),observedNoteLimit:64,notes:clone(observed),mutates:false};
+  }
+  function continuationSourceRows(source){
+    if(source?.kind!=='continuation-source-preview')return[];
+    return[`Continuation source: ${source.trackId} / M${source.range.startMeasure}-${source.range.endMeasure} / tick ${source.range.startTick}-${source.range.endTick} / ${source.noteCount} observed notes (limit ${source.observedNoteLimit}) / recorded fingerprint and intervals verified; generation rules unchanged`];
+  }
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
+    if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);
     if(kind==='arrangement')companion.timeline=composition.arrangementTimeline(value,session,core,options.measureRange??null);
     if(kind==='section')companion.timeline=composition.sectionTimeline(value,session,core,options.measureRange??null);
     if(kind==='lyrics-structure'){companion.timeline=composition.lyricsTimeline(value,session,core,options.measureRange??null);companion.phraseSlots=clone(companion.timeline.slots)}
@@ -130,9 +157,10 @@
   }
   function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
+    if(bundle.kind==='continuation'){const source=continuationSource(bundle.value,session,core);if(JSON.stringify(source)!==JSON.stringify(bundle.companion?.sourcePreview))throw Error('stale-continuation-source-preview')}
     const subset=narrowed(bundle,session,core,measureRange),applied=core.applyPartialEditPreview(session,bundle.request,subset.result,subset.preview);
     if(applied?.applied!==true)throw Error(`candidate-apply-rejected:${applied?.reason||'protected'}`);
     return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId,selection:clone(subset.selection)};
   }
-  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
+  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,continuationSource,continuationSourceRows,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
 })(typeof window!=='undefined'?window:globalThis);
