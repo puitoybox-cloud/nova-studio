@@ -139,6 +139,34 @@
     if(timeline?.kind!=='lyrics-anchor-timeline-preview')return[];
     return[`Lyrics anchors: ${timeline.slots.length} / M${timeline.range.startMeasure}-${timeline.range.endMeasure} / tick ${timeline.range.startTick}-${timeline.range.endTick} / measure anchors only; note assignment unallocated; S=strong w=weak`,...timeline.slots.map(slot=>`Lyrics line ${slot.line}: anchor M${slot.measureSlot} / tick ${slot.startTick}-${slot.endTick} / ${slot.syllableCount} syllables / Melody ${timeline.linkedMelodyCandidate} phrase ${slot.melodySlot} / stress ${slot.stress.slice(0,16).map(item=>item==='strong'?'S':'w').join('')+(slot.stress.length>16?'…':'')}`)];
   }
+  function arrangementTimeline(value,session,core,selection=null){
+    if(value?.kind!=='arrangement')throw Error('arrangement-required');
+    const start=value.range?.startMeasure,end=value.range?.endMeasure;
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-arrangement-range');
+    const from=selection===null?start:selection?.startMeasure,to=selection===null?end:selection?.endMeasure;
+    if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<start||to>end||to<from)throw Error('invalid-arrangement-selection');
+    if(!Number.isSafeInteger(value.entry)||value.entry<start||value.entry>end)throw Error('invalid-arrangement-entry');
+    if(!Array.isArray(value.tracks)||!value.tracks.length||value.tracks.some(role=>typeof role!=='string'||!role.trim())||new Set(value.tracks).size!==value.tracks.length)throw Error('invalid-arrangement-tracks');
+    const variant=value.candidateFamily?.variant,familyId=value.candidateFamily?.id;
+    for(const ref of [value.sectionCandidateRef,value.chordCandidateRef])if(!variant||!familyId||ref?.candidateId!==variant||ref?.familyId!==familyId)throw Error('arrangement-reference-mismatch');
+    if(typeof core?.measureRangeToTicks!=='function')throw Error('arrangement-timeline-unavailable');
+    const resolve=(first,last)=>{
+      const ticks=core.measureRangeToTicks({startMeasure:first,endMeasure:last},session.midiData);
+      if(!Number.isSafeInteger(ticks.startTick)||!Number.isSafeInteger(ticks.endTick)||ticks.startTick<0||ticks.endTick<=ticks.startTick)throw Error('invalid-arrangement-ticks');
+      return{startMeasure:first,endMeasure:last,startTick:ticks.startTick,endTick:ticks.endTick};
+    };
+    // An entry is a measure anchor. Do not infer an instrument, sounding duration,
+    // MIDI notes or a sustain/entry policy when a partial window excludes it.
+    const source=resolve(start,end),entry=resolve(value.entry,value.entry),range=resolve(from,to);
+    if(entry.startTick<source.startTick||entry.endTick>source.endTick||range.startTick<source.startTick||range.endTick>source.endTick)throw Error('invalid-arrangement-ticks');
+    const selected=value.entry>=from&&value.entry<=to;
+    if(selected&&(entry.startTick<range.startTick||entry.endTick>range.endTick))throw Error('invalid-arrangement-ticks');
+    return{kind:'arrangement-entry-timeline-preview',range,entryAnchors:selected?[{measureSlot:value.entry,startTick:entry.startTick,endTick:entry.endTick,tracks:clone(value.tracks)}]:[],tracks:clone(value.tracks),sectionCandidateRef:clone(value.sectionCandidateRef),chordCandidateRef:clone(value.chordCandidateRef),alignmentPolicy:'measure-entry-anchor-only',mutates:false};
+  }
+  function arrangementTimelineRows(timeline){
+    if(timeline?.kind!=='arrangement-entry-timeline-preview')return[];
+    return[`Arrangement entry anchors: ${timeline.entryAnchors.length} / M${timeline.range.startMeasure}-${timeline.range.endMeasure} / tick ${timeline.range.startTick}-${timeline.range.endTick} / measure entry anchors only; instrument rendering unallocated`,...timeline.entryAnchors.map(anchor=>`Arrangement entry: M${anchor.measureSlot} / tick ${anchor.startTick}-${anchor.endTick} / roles ${anchor.tracks.join(', ')} / Section ${timeline.sectionCandidateRef.candidateId} / Chord ${timeline.chordCandidateRef.candidateId}`)];
+  }
   function arrangement(index,context){
     const roles=context.trackRoles,variants=[
       {density:'low',register:'mid',dynamics:'soft',entryOffsetBars:0,focus:['melody']},
@@ -184,5 +212,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,arrangementTimeline,arrangementTimelineRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

@@ -98,6 +98,7 @@
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
+    if(kind==='arrangement')companion.timeline=composition.arrangementTimeline(value,session,core,options.measureRange??null);
     if(kind==='section')companion.timeline=composition.sectionTimeline(value,session,core,options.measureRange??null);
     if(kind==='lyrics-structure'){companion.timeline=composition.lyricsTimeline(value,session,core,options.measureRange??null);companion.phraseSlots=clone(companion.timeline.slots)}
     if(!['melody','continuation','chord'].includes(kind)){

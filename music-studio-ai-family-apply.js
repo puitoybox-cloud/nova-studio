@@ -85,6 +85,7 @@
         const selection={startMeasure,endMeasure};
         selectedRange=core.measureRangeToTicks(selection,session.midiData);
         if(!Number.isFinite(selectedRange.startTick)||!Number.isFinite(selectedRange.endTick)||selectedRange.endTick<=selectedRange.startTick)throw Error('invalid-selection-ticks');
+        if(kind==='arrangement')bundle.companion.timeline=composition.arrangementTimeline(candidate.value,session,core,selection);
         if(kind==='section')bundle.companion.timeline=composition.sectionTimeline(candidate.value,session,core,selection);
         if(kind==='lyrics-structure'){bundle.companion.timeline=composition.lyricsTimeline(candidate.value,session,core,selection);bundle.companion.phraseSlots=clone(bundle.companion.timeline.slots)}
         if(bundle.type==='midi-preview'&&range){const subset=materializer.previewSelection(bundle,session,core,selection);selectedChanges=subset.result.changes}
@@ -171,7 +172,7 @@
       else rows.push(`${component.kind}: ${component.kind==='section'&&plan.applyProjectSections?'Project Sections（曲構成）':'metadata only'} / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'}`)
     }
     for(const component of plan.components)for(const part of component.bundle?.companion?.timeline?.segments||[])rows.push(`Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}${part.partial?' / partial':''}`);
-    for(const component of plan.components)rows.push(...root.MusicStudioAIComposition.lyricsTimelineRows(component.bundle?.companion?.timeline));
+    for(const component of plan.components)rows.push(...root.MusicStudioAIComposition.lyricsTimelineRows(component.bundle?.companion?.timeline),...root.MusicStudioAIComposition.arrangementTimelineRows(component.bundle?.companion?.timeline));
     if(plan.applyProjectSections)rows.push(`Project Sections: append ${plan.projectSections?.additions?.length||0} / existing retained`);
     if(plan.unchanged?.length)rows.push(`Unchanged: ${plan.unchanged.join(', ')}`);
     if(plan.issues.length)rows.push(`Blocked: ${plan.issues.join(', ')}`);
