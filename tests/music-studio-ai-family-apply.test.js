@@ -63,8 +63,8 @@ for(const [label,kinds,metadataOnly] of [['Section',['section'],false],['metadat
 test('Section timeline uses exact changing-meter ticks and clips partial selection without mutation',()=>{
  const w=load(),p=project();p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];p.midiData.editor.editRange={startMeasure:1,endMeasure:4};const core=w.MusicStudioEditor,s=core.createCoordinatedSession(p),ws=workspace(w,p,s),value=ws.candidateSets.find(set=>set.kind==='section').candidates[1].value,before=plain(value),sessionBefore=plain(s);
  const full=w.MusicStudioAIComposition.sectionTimeline(value,s,core),partial=w.MusicStudioAIComposition.sectionTimeline(value,s,core,{startMeasure:2,endMeasure:3});
- assert.deepEqual(plain(full.segments.map(x=>[x.label,x.startMeasure,x.endMeasure,x.startTick,x.endTick])),[['A',1,2,0,1720],['B',3,4,1720,3160]]);
- assert.deepEqual(plain(partial.segments.map(x=>[x.label,x.startMeasure,x.endMeasure,x.startTick,x.endTick,x.partial])),[['A',2,2,1000,1720,true],['B',3,3,1720,2440,true]]);assert.deepEqual(plain(value),before);assert.deepEqual(plain(s),sessionBefore);
+ assert.deepEqual(plain(full.segments.map(x=>[x.label,x.startMeasure,x.endMeasure,x.startTick,x.endTick])),[['A',1,2,0,1720],['B',3,3,1720,2440],['Lift',4,4,2440,3160]]);
+ assert.deepEqual(plain(partial.segments.map(x=>[x.label,x.startMeasure,x.endMeasure,x.startTick,x.endTick,x.partial])),[['A',2,2,1000,1720,true],['B',3,3,1720,2440,false]]);assert.deepEqual(plain(value),before);assert.deepEqual(plain(s),sessionBefore);
  const plan=w.MusicStudioAIFamilyApply.createPlan(ws,'B',p,s,core,{kinds:['section'],measureRange:{startMeasure:2,endMeasure:3}});assert.match(w.MusicStudioAIFamilyApply.planRows(plan).join('|'),/Section A: M2-2 \/ tick 1000-1720 \/ partial/);assert.equal(w.MusicStudioAIFamilyApply.applyPlan(plan,ws,p,s,core).applied,true);assert.deepEqual(plain(s.midiData),sessionBefore.midiData);const after=plain(ws);core.undo(s);core.redo(s);assert.deepEqual(plain(ws),after);assert.deepEqual(plain(ws.candidateSets.find(set=>set.kind==='section').candidates[1].value),before);
 });
 for(const [name,mutate] of [

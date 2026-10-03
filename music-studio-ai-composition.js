@@ -80,7 +80,7 @@
     if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-section-range');
     // Keep each named part inside the explicit candidate range, even for 1–2 bars.
     let remaining=length;
-    const bounded=plans.flatMap(item=>{const bars=Math.min(item.bars,remaining);remaining-=bars;return bars>0?[{...item,bars}]:[]});
+    const bounded=plans.flatMap((item,index)=>{const reserve=Math.min(plans.length-index-1,Math.max(0,remaining-1)),bars=Math.min(item.bars,remaining-reserve);remaining-=bars;return bars>0?[{...item,bars}]:[]});
     const family=base('section',index,context);
     return{...family,shape:names[index],plan:bounded,arrangementCandidateRef:{candidateId:family.variant,familyId:family.candidateFamily.id},summary:`${family.variant}: ${names[index]} / ${bounded.map(item=>item.label).join(' → ')}`,applyPolicy:'metadata-only'};
   }
