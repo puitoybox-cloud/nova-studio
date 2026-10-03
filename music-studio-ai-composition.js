@@ -171,7 +171,7 @@
   }
   function lyricsMelodyReferenceRows(preview){
     if(preview?.kind!=='lyrics-melody-reference-preview')return[];
-    return[`Melody reference verified: ${preview.candidateId} / ${preview.lines.length} Lyrics lines / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
+    return[`Melody reference verified: ${preview.candidateId} / ${preview.lines.length} Lyrics lines / M${preview.range.startMeasure}-${preview.range.endMeasure} / tick ${preview.range.startTick}-${preview.range.endTick} / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: anchor M${line.measureSlot} / tick ${line.startTick}-${line.endTick} / Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
   }
   function lyricsTimelineRows(timeline){
     if(timeline?.kind!=='lyrics-anchor-timeline-preview')return[];

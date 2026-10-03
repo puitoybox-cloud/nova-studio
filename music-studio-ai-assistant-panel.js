@@ -71,7 +71,8 @@
     record.lyricsMelodyPreview=null;
     try{
       const candidate=set?.candidates.find(item=>item.candidateId===candidateId);if(set?.kind!=='lyrics-structure'||!candidate)throw Error('lyrics-candidate-required');
-      const preview=composition().lyricsMelodyReferencePreview(candidate.value,record.state.workspace,session,core(),candidateSelection(candidateId));
+      const selection=candidateSelection(candidateId),preview=composition().lyricsMelodyReferencePreview(candidate.value,record.state.workspace,session,core(),selection);
+      (record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;
       record.lyricsMelodyPreview={candidateId,preview,workspaceSignature:JSON.stringify(record.state.workspace),midiSignature:JSON.stringify(session.midiData)};record.message='Melody参照を確認しました。音符割付は未実行です。';
     }catch(error){record.message=`Melody参照確認拒否: ${error.message}`}
     refresh(id);
