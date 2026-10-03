@@ -47,6 +47,7 @@
     rows.push(`Lyrics phrase slots: ${preview.summary.lyricsPhraseSlots}`);
     rows.push(...root.MusicStudioAIComposition.arrangementTimelineRows(preview.components.arrangement?.preview?.companion?.timeline));
     rows.push(...root.MusicStudioAIComposition.lyricsTimelineRows(preview.components['lyrics-structure']?.preview?.companion?.timeline));
+    rows.push(...root.MusicStudioAICandidatePreview.continuationSourceRows(preview.components.continuation?.preview?.companion?.sourcePreview));
     if(preview.missing.length)rows.push(`Missing: ${preview.missing.join(', ')}`);
     return rows;
   }
