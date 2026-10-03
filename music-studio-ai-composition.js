@@ -162,10 +162,11 @@
   // Inspect abstract events only; explicit choice does not rebind stored refs.
   function lyricsMelodyReferencePreview(value,workspace,session,core,selection=null,explicit=null){
     const timeline=lyricsTimeline(value,session,core,selection),ref=value.melodyCandidateRef;
-    let matches=lyricsMelodyMatches(value,workspace);
+    let matches=lyricsMelodyMatches(value,workspace),choiceNumber=null;
     if(explicit!==null){
       if(!Number.isSafeInteger(explicit?.setIndex)||explicit.setIndex<0||!Number.isSafeInteger(explicit?.candidateIndex)||explicit.candidateIndex<0||typeof explicit.workspaceSignature!=='string')throw Error('invalid-lyrics-melody-choice');
       if(explicit.workspaceSignature!==JSON.stringify(workspace))throw Error('stale-lyrics-melody-choice');
+      choiceNumber=matches.findIndex(item=>item.setIndex===explicit.setIndex&&item.candidateIndex===explicit.candidateIndex)+1;
       matches=matches.filter(item=>item.setIndex===explicit.setIndex&&item.candidateIndex===explicit.candidateIndex);
       if(matches.length!==1)throw Error('invalid-lyrics-melody-choice');
     }
@@ -190,11 +191,11 @@
     if(used.size!==events.size)throw Error('unreferenced-lyrics-melody-event');
     // Validate excluded lines too: partial inspection must not hide bad refs.
     for(const line of value.lines)if(!phrases.has(line.melodyPhraseSlot))throw Error('missing-lyrics-melody-phrase');
-    return{kind:'lyrics-melody-reference-preview',setId:set.setId,candidateId:ref.candidateId,familyId:ref.familyId,referenceChoice:explicit===null?null:{setIndex:explicit.setIndex,candidateIndex:explicit.candidateIndex},range:clone(timeline.range),lines:timeline.slots.map(line=>({...clone(line),eventSlots:clone(phrases.get(line.melodySlot).eventSlots),events:phrases.get(line.melodySlot).eventSlots.map(slot=>clone(events.get(slot)))})),mutates:false};
+    return{kind:'lyrics-melody-reference-preview',setId:set.setId,candidateId:ref.candidateId,familyId:ref.familyId,referenceChoiceNumber:choiceNumber,referenceChoice:explicit===null?null:{setIndex:explicit.setIndex,candidateIndex:explicit.candidateIndex},range:clone(timeline.range),lines:timeline.slots.map(line=>({...clone(line),eventSlots:clone(phrases.get(line.melodySlot).eventSlots),events:phrases.get(line.melodySlot).eventSlots.map(slot=>clone(events.get(slot)))})),mutates:false};
   }
   function lyricsMelodyReferenceRows(preview){
     if(preview?.kind!=='lyrics-melody-reference-preview')return[];
-    return[`Melody reference verified: ${preview.candidateId} / set ${preview.setId}${preview.referenceChoice?` / explicit occurrence ${preview.referenceChoice.setIndex+1}:${preview.referenceChoice.candidateIndex+1}`:''} / ${preview.lines.length} Lyrics lines / M${preview.range.startMeasure}-${preview.range.endMeasure} / tick ${preview.range.startTick}-${preview.range.endTick} / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: anchor M${line.measureSlot} / tick ${line.startTick}-${line.endTick} / Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
+    return[`Melody reference verified: ${preview.candidateId} / set ${preview.setId}${preview.referenceChoice?` / explicit choice ${preview.referenceChoiceNumber}`:''} / ${preview.lines.length} Lyrics lines / M${preview.range.startMeasure}-${preview.range.endMeasure} / tick ${preview.range.startTick}-${preview.range.endTick} / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: anchor M${line.measureSlot} / tick ${line.startTick}-${line.endTick} / Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
   }
   function lyricsTimelineRows(timeline){
     if(timeline?.kind!=='lyrics-anchor-timeline-preview')return[];
