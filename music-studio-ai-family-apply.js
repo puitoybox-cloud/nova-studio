@@ -167,7 +167,7 @@
     const rows=[`Family ${plan.variant} / ${plan.familyId||'family-id-missing'}`,`Project revision: ${plan.source.projectRevision??'none'}`];
     for(const component of plan.components){
       if(component.previewType==='midi-preview')rows.push(`${component.kind}: ${component.targetTrackId} / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'} / +${component.changes?.adds||0} ~${component.changes?.updates||0} -${component.changes?.deletes||0}`);
-      else rows.push(`${component.kind}: metadata only / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'}`)
+      else rows.push(`${component.kind}: ${component.kind==='section'&&plan.applyProjectSections?'Project Sections（曲構成）':'metadata only'} / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'}`)
     }
     for(const component of plan.components)for(const part of component.bundle?.companion?.timeline?.segments||[])rows.push(`Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}${part.partial?' / partial':''}`);
     if(plan.applyProjectSections)rows.push(`Project Sections: append ${plan.projectSections?.additions?.length||0} / existing retained`);

@@ -14,12 +14,12 @@ Save uses the explicit sidecar only after that operation. It retains the absence
 
 ## Validation
 
-- Fresh #280 baseline: node --test 1082/1082 PASS, fail/skipped 0.
-- Independent implementation: 1107/1107 PASS, fail/skipped 0. New core/integration tests exercise explicit Section-only, Melody+Section and full Family operations, exact tick 1000 under changing meter, partial M2-3, before/after ordinary MIDI history, rollback and absence of history binding on failed commit.
+- Fresh #280 baseline: node --test 1082/1082 PASS, fail/skipped 0. Its actual code ignored the applyProjectSections option and had no Project Section Plan/history API; this missing feature was reproduced before the implementation.
+- Independent implementation: 1109/1109 PASS, fail/skipped 0. New core/integration tests exercise explicit Section-only, Melody+Section and full Family operations, exact tick 1000 under changing meter, partial M2-3, before/after ordinary MIDI history, rollback and absence of history binding on failed commit.
 - Save -> Undo -> Save -> Redo -> Save -> Reopen -> JSON export/import -> Backup/Restore retains exact MIDI, workspace and Section rows. Legacy unknown/absent sections load/render write 0. In-flight Undo, repository failure/retry and concurrent source changes are covered using synthetic memory repositories only.
 - Default Family, partial/component selection, metadata-only, dependencies/conflicts, locks, exact bounds, rollback and persistence regressions are retained.
 - Browser smoke retains all prior cases at 1440/820/390 and adds explicit Section-only and mixed MIDI operations, Plan/Preflight/Cancel nonmutation, visible exact Project rows, one Undo/Redo, Save/Reopen, overlap/legacy-range/metadata-mode rejection. Browser routes capture external requests and console warning/error/pageerror.
-- Exact final HEAD, syntax/whitespace checks, CI and downloaded Chrome artifacts are recorded in the Draft PR after completion. This environment has no local Chrome executable; Actions uses real Google Chrome.
+- The initial product checkpoint 969c4cb passed all three workflows, including real Chrome 1440/820/390 run 37101270589 with 63 screenshots and empty console error/warning/pageerror and external-request arrays. Artifact 11266880852 was downloaded, actual HEAD checked and screenshots inspected. Final refinements add two successive-transaction/history regressions and clarify that an opted-in Section Plan writes Project Sections rather than adoption-only metadata. Final exact HEAD CI and artifacts are recorded in the Draft PR after completion. This environment has no local Chrome executable; Actions uses real Google Chrome.
 
 ## Remaining and physical acceptance
 
