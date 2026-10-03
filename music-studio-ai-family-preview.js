@@ -45,6 +45,7 @@
     if(preview.summary.chordProgression.length)rows.push(`Chord: ${preview.summary.chordProgression.join(' → ')}`);
     rows.push(`Melody alignment review: ${preview.summary.melodyAlignmentReviewCount}`);
     rows.push(`Lyrics phrase slots: ${preview.summary.lyricsPhraseSlots}`);
+    rows.push(...root.MusicStudioAIComposition.lyricsTimelineRows(preview.components['lyrics-structure']?.preview?.companion?.timeline));
     if(preview.missing.length)rows.push(`Missing: ${preview.missing.join(', ')}`);
     return rows;
   }

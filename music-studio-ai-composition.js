@@ -109,6 +109,36 @@
     if(cursor!==end+1)throw Error('section-plan-gap');
     return{kind:'section-timeline-preview',segments,mutates:false};
   }
+  function lyricsTimeline(value,session,core,selection=null){
+    if(value?.kind!=='lyrics-structure'||!Array.isArray(value.lines)||!value.lines.length)throw Error('lyrics-lines-required');
+    const source=value.range,start=source?.startMeasure,end=source?.endMeasure;
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-lyrics-range');
+    const from=selection===null?start:selection?.startMeasure,to=selection===null?end:selection?.endMeasure;
+    if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<start||to>end||to<from)throw Error('invalid-lyrics-selection');
+    if(value.lineCount!==value.lines.length||value.lines.length>256)throw Error('invalid-lyrics-line-count');
+    const variant=value.candidateFamily?.variant,ref=value.melodyCandidateRef;
+    if(!variant||value.linkedMelodyCandidate!==variant||ref?.candidateId!==variant||!ref.familyId||ref.familyId!==value.candidateFamily?.id)throw Error('lyrics-melody-reference-mismatch');
+    if(typeof core?.measureRangeToTicks!=='function')throw Error('lyrics-timeline-unavailable');
+    let lastLine=0,lastMeasure=start;
+    const slots=[];
+    // Existing measureSlot is an anchor, not an inferred sung duration or note assignment.
+    // Validate every source line before narrowing; malformed excluded lines also fail closed.
+    for(const line of value.lines){
+      if(!Number.isSafeInteger(line?.line)||line.line<=lastLine||!Number.isSafeInteger(line.measureSlot)||line.measureSlot<lastMeasure||line.measureSlot>end||!Number.isSafeInteger(line.melodyPhraseSlot)||line.melodyPhraseSlot<1)throw Error('invalid-lyrics-line');
+      if(!Number.isSafeInteger(line.syllableCount)||line.syllableCount<1||line.syllableCount>256||!Array.isArray(line.stress)||line.stress.length!==line.syllableCount||line.stress.some(item=>item!=='strong'&&item!=='weak'))throw Error('invalid-lyrics-stress');
+      lastLine=line.line;lastMeasure=line.measureSlot;
+      const ticks=core.measureRangeToTicks({startMeasure:line.measureSlot,endMeasure:line.measureSlot},session.midiData);
+      if(!Number.isSafeInteger(ticks.startTick)||!Number.isSafeInteger(ticks.endTick)||ticks.startTick<0||ticks.endTick<=ticks.startTick)throw Error('invalid-lyrics-ticks');
+      if(line.measureSlot>=from&&line.measureSlot<=to)slots.push({line:line.line,melodySlot:line.melodyPhraseSlot,measureSlot:line.measureSlot,startTick:ticks.startTick,endTick:ticks.endTick,syllableCount:line.syllableCount,stress:clone(line.stress),stressPolicy:value.stressPolicy});
+    }
+    const range=core.measureRangeToTicks({startMeasure:from,endMeasure:to},session.midiData);
+    if(!Number.isSafeInteger(range.startTick)||!Number.isSafeInteger(range.endTick)||range.startTick<0||range.endTick<=range.startTick||slots.some(slot=>slot.startTick<range.startTick||slot.endTick>range.endTick))throw Error('invalid-lyrics-ticks');
+    return{kind:'lyrics-anchor-timeline-preview',linkedMelodyCandidate:variant,range:clone(range),slots,alignmentPolicy:'measure-anchor-only',mutates:false};
+  }
+  function lyricsTimelineRows(timeline){
+    if(timeline?.kind!=='lyrics-anchor-timeline-preview')return[];
+    return[`Lyrics anchors: ${timeline.slots.length} / M${timeline.range.startMeasure}-${timeline.range.endMeasure} / tick ${timeline.range.startTick}-${timeline.range.endTick} / measure anchors only; note assignment unallocated; S=strong w=weak`,...timeline.slots.map(slot=>`Lyrics line ${slot.line}: anchor M${slot.measureSlot} / tick ${slot.startTick}-${slot.endTick} / ${slot.syllableCount} syllables / Melody ${timeline.linkedMelodyCandidate} phrase ${slot.melodySlot} / stress ${slot.stress.slice(0,16).map(item=>item==='strong'?'S':'w').join('')+(slot.stress.length>16?'…':'')}`)];
+  }
   function arrangement(index,context){
     const roles=context.trackRoles,variants=[
       {density:'low',register:'mid',dynamics:'soft',entryOffsetBars:0,focus:['melody']},
@@ -154,5 +184,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
