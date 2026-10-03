@@ -51,7 +51,20 @@
       if(options.metadataOnly===true&&bundle?.type==='midi-preview')bundle={version:bundle.version,type:'metadata-preview',candidateId:bundle.candidateId,kind:bundle.kind,value:clone(bundle.value),companion:clone(bundle.companion),mutates:false};
       const range=options.measureRange?clone(options.measureRange):null;
       let selectedRange=null,selectedChanges=null;
-      if(bundle?.type==='midi-preview'&&range){try{const selection=materializer.selectionForRange(bundle,range),subset=materializer.previewSelection(bundle,session,core,selection);selectedRange=core.measureRangeToTicks(selection,session.midiData);selectedChanges=subset.result.changes}catch(error){issues.push(`selection:${kind}:${error.message}`)}}
+      // The selected interval is an adoption contract even when no MIDI is written.
+      // Validate against each original candidate, before metadata-only conversion
+      // can bypass the MIDI selection guard. Never rewrite the source candidate.
+      if(bundle){try{
+        const sourceRange=candidate.value?.range;
+        const sourceStart=Number(sourceRange?.startMeasure),sourceEnd=Number(sourceRange?.endMeasure);
+        if(!Number.isInteger(sourceStart)||!Number.isInteger(sourceEnd)||sourceStart<1||sourceEnd<sourceStart)throw Error('invalid-candidate-range');
+        const startMeasure=Number(range?.startMeasure??sourceStart),endMeasure=Number(range?.endMeasure??sourceEnd);
+        if(!Number.isInteger(startMeasure)||!Number.isInteger(endMeasure)||startMeasure<sourceStart||endMeasure>sourceEnd||endMeasure<startMeasure)throw Error('invalid-preview-selection');
+        const selection={startMeasure,endMeasure};
+        selectedRange=core.measureRangeToTicks(selection,session.midiData);
+        if(!Number.isFinite(selectedRange.startTick)||!Number.isFinite(selectedRange.endTick)||selectedRange.endTick<=selectedRange.startTick)throw Error('invalid-selection-ticks');
+        if(bundle.type==='midi-preview'&&range){const subset=materializer.previewSelection(bundle,session,core,selection);selectedChanges=subset.result.changes}
+      }catch(error){issues.push(`selection:${kind}:${error.message}`)}}
       const displayedChanges=selectedChanges||bundle?.result?.changes;
       components.push({kind,setId:member.setId,candidateId:candidate.candidateId,candidateSignature:sig(candidate.value),familyId:candidate.value?.candidateFamily?.id||null,targetTrackId:bundle?.targetTrackId||null,targetTrackRole:bundle?.targetTrackId?core.resolveCoreTrackRole(core.getTrackById(session.midiData.tracks,bundle.targetTrackId)):null,range:selectedRange?clone(selectedRange):bundle?.request?.range?clone(bundle.request.range):clone(candidate.value?.range||null),selection:range,bundle:bundle?clone(bundle):null,previewType:bundle?.type||'unavailable',changes:displayedChanges?{updates:displayedChanges.updates.length,adds:displayedChanges.adds.length,deletes:displayedChanges.deleteNoteIds.length}:null,metadata:bundle?.type==='midi-preview'?null:clone(candidate.value)})
     }
@@ -81,7 +94,7 @@
   function stagedWorkspace(plan,workspace,workflow){
     const staged=clone(workspace);
     for(const component of plan.components){
-      const selection={mode:'family-apply',metadataOnly:plan.metadataOnly,familyId:plan.familyId,variant:plan.variant,components:clone(plan.kinds),targetTrackId:component.targetTrackId,measures:component.selection?[component.selection.startMeasure,component.selection.endMeasure]:null};
+      const selection={mode:'family-apply',metadataOnly:plan.metadataOnly,familyId:plan.familyId,variant:plan.variant,components:clone(plan.kinds),targetTrackId:component.targetTrackId,measures:component.selection?[component.selection.startMeasure,component.selection.endMeasure]:null,ticks:component.range&&Number.isFinite(component.range.startTick)&&Number.isFinite(component.range.endTick)?[component.range.startTick,component.range.endTick]:null};
       workflow.decideCandidate(staged,component.setId,component.candidateId,'adopt',selection)
     }
     return staged
@@ -119,7 +132,7 @@
     const rows=[`Family ${plan.variant} / ${plan.familyId||'family-id-missing'}`,`Project revision: ${plan.source.projectRevision??'none'}`];
     for(const component of plan.components){
       if(component.previewType==='midi-preview')rows.push(`${component.kind}: ${component.targetTrackId} / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'} / +${component.changes?.adds||0} ~${component.changes?.updates||0} -${component.changes?.deletes||0}`);
-      else rows.push(`${component.kind}: metadata only`)
+      else rows.push(`${component.kind}: metadata only / M${component.range?.startMeasure||'?'}-${component.range?.endMeasure||'?'} / tick ${component.range?.startTick??'?'}-${component.range?.endTick??'?'}`)
     }
     if(plan.unchanged?.length)rows.push(`Unchanged: ${plan.unchanged.join(', ')}`);
     if(plan.issues.length)rows.push(`Blocked: ${plan.issues.join(', ')}`);
