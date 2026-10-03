@@ -48,7 +48,7 @@ test('Partial Family respects legacy locks plus additive partial unlock at exact
 });
 
 for(const [label,kinds,metadataOnly] of [['Section',['section'],false],['metadata Melody',['melody'],true],['metadata Family',['melody','chord','section','arrangement','lyrics-structure'],true]]){
- for(const range of [{startMeasure:0,endMeasure:1},{startMeasure:1,endMeasure:3},{startMeasure:2,endMeasure:1},{startMeasure:1.5,endMeasure:2}])test(`${label} invalid/outside candidate range ${JSON.stringify(range)} fails closed`,()=>{
+ for(const range of [{},{startMeasure:1},{endMeasure:1},0,{startMeasure:0,endMeasure:1},{startMeasure:1,endMeasure:3},{startMeasure:2,endMeasure:1},{startMeasure:1.5,endMeasure:2}])test(`${label} invalid/outside candidate range ${JSON.stringify(range)} fails closed`,()=>{
   const w=load(),p=project(),core=w.MusicStudioEditor,s=core.createCoordinatedSession(p),ws=workspace(w,p,s),before=plain(s),beforeWs=plain(ws),api=w.MusicStudioAIFamilyApply,plan=api.createPlan(ws,'B',p,s,core,{kinds,metadataOnly,measureRange:range});
   assert.equal(api.simulate(plan,ws,p,s,core).ok,false);assert.equal(api.applyPlan(plan,ws,p,s,core).applied,false);assert.match(plan.issues.join('|'),/selection:/);assert.deepEqual(plain(s),before);assert.deepEqual(plain(ws),beforeWs);
  });

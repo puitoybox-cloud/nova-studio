@@ -49,7 +49,7 @@
       let bundle=null;
       try{bundle=materializer.createPreview(session,core,candidate,previewOptions)}catch(error){issues.push(`preview:${kind}:${error.message}`)}
       if(options.metadataOnly===true&&bundle?.type==='midi-preview')bundle={version:bundle.version,type:'metadata-preview',candidateId:bundle.candidateId,kind:bundle.kind,value:clone(bundle.value),companion:clone(bundle.companion),mutates:false};
-      const range=options.measureRange?clone(options.measureRange):null;
+      const range=options.measureRange==null?null:clone(options.measureRange);
       let selectedRange=null,selectedChanges=null;
       // The selected interval is an adoption contract even when no MIDI is written.
       // Validate against each original candidate, before metadata-only conversion
@@ -58,7 +58,7 @@
         const sourceRange=candidate.value?.range;
         const sourceStart=Number(sourceRange?.startMeasure),sourceEnd=Number(sourceRange?.endMeasure);
         if(!Number.isInteger(sourceStart)||!Number.isInteger(sourceEnd)||sourceStart<1||sourceEnd<sourceStart)throw Error('invalid-candidate-range');
-        const startMeasure=Number(range?.startMeasure??sourceStart),endMeasure=Number(range?.endMeasure??sourceEnd);
+        const startMeasure=Number(range===null?sourceStart:range.startMeasure),endMeasure=Number(range===null?sourceEnd:range.endMeasure);
         if(!Number.isInteger(startMeasure)||!Number.isInteger(endMeasure)||startMeasure<sourceStart||endMeasure>sourceEnd||endMeasure<startMeasure)throw Error('invalid-preview-selection');
         const selection={startMeasure,endMeasure};
         selectedRange=core.measureRangeToTicks(selection,session.midiData);
