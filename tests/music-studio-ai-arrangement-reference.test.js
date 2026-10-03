@@ -14,3 +14,19 @@ for(const kind of ['section','chord'])for(const [label,change,error] of [
  ['malformed collection',(f,set)=>set.candidates=null,/invalid-arrangement-reference-candidates/]
 ])test(`Arrangement ${kind} ${label} fails closed without mutations`,()=>{const f=fixture(),set=f.ws.candidateSets.find(x=>x.kind===kind);change(f,set);const before=plain({ws:f.ws,s:f.s});assert.throws(()=>inspect(f),error);assert.deepEqual(plain({ws:f.ws,s:f.s}),before)});
 test('Malformed excluded Section source and invalid Arrangement anchors cannot hide behind partial reference inspection',()=>{const f=fixture();f.ws.candidateSets[0].candidates[1].value.plan[0].bars=0;assert.throws(()=>inspect(f),/invalid-section-part/);const g=fixture();g.value.entry=99;assert.throws(()=>inspect(g),/invalid-arrangement-entry/);assert.throws(()=>inspect(fixture(),{startMeasure:0,endMeasure:1}),/invalid-arrangement-selection/)});
+
+test('Arrangement existing track inspection follows core roles and exact IDs, validates excluded entry and retains unknown fields',()=>{
+ const f=fixture();f.s.midiData.tracks[0].id='exact-Melody';f.s.midiData.tracks[0].future={opaque:true};const before=plain({ws:f.ws,s:f.s});const p=f.C.arrangementTrackPreview(f.value,f.ws,f.s,f.core,{startMeasure:3,endMeasure:4});assert.equal(p.timeline.entryAnchors.length,0);assert.deepEqual(plain(p.trackTargets),[{role:'melody',trackId:'exact-Melody'},{role:'bass',trackId:'bass'}]);assert.match(f.C.arrangementReferenceRows(p).join('|'),/no destination binding/);p.trackTargets[0].trackId='changed';assert.deepEqual(plain({ws:f.ws,s:f.s}),before);
+});
+for(const [label,change,error] of [
+ ['missing role',f=>f.s.midiData.tracks.splice(0,1),/missing-arrangement-track-role:melody/],
+ ['ambiguous role',f=>f.s.midiData.tracks.push({id:'other',part:'melody',notes:[]}),/ambiguous-arrangement-track-role:melody/],
+ ['duplicate ID',f=>f.s.midiData.tracks.push({id:'melody',part:'bass',notes:[]}),/duplicate-arrangement-track-id/],
+ ['invalid ID',f=>f.s.midiData.tracks[2].id=' ',/invalid-arrangement-track-id/],
+ ['null track',f=>f.s.midiData.tracks.push(null),/invalid-arrangement-track-id/],
+ ['malformed tracks',f=>f.s.midiData.tracks=null,/arrangement-tracks-unavailable/],
+ ['unknown role',f=>f.value.tracks=['unknown'],/missing-arrangement-track-role:unknown/],
+ ['no roleAssignment fallback',f=>{f.s.midiData.tracks[0].id='external';delete f.s.midiData.tracks[0].part;f.s.midiData.tracks[0].roleAssignment='melody'},/missing-arrangement-track-role:melody/],
+ ['invalid excluded source',f=>f.ws.candidateSets[0].candidates[1].value.plan[0].bars=0,/invalid-section-part/]
+])test(`Arrangement track ${label} refuses read-only inspection`,()=>{const f=fixture();change(f);const before=plain({ws:f.ws,s:f.s});assert.throws(()=>f.C.arrangementTrackPreview(f.value,f.ws,f.s,f.core,{startMeasure:3,endMeasure:4}),error);assert.deepEqual(plain({ws:f.ws,s:f.s}),before)});
+test('Arrangement core canonical ID roles remain supported without part metadata',()=>{const f=fixture();for(const t of f.s.midiData.tracks)delete t.part;assert.equal(f.C.arrangementTrackPreview(f.value,f.ws,f.s,f.core).trackTargets.length,2)});
