@@ -225,6 +225,32 @@
     if(selected&&(entry.startTick<range.startTick||entry.endTick>range.endTick))throw Error('invalid-arrangement-ticks');
     return{kind:'arrangement-entry-timeline-preview',range,entryAnchors:selected?[{measureSlot:value.entry,startTick:entry.startTick,endTick:entry.endTick,tracks:clone(value.tracks)}]:[],tracks:clone(value.tracks),sectionCandidateRef:clone(value.sectionCandidateRef),chordCandidateRef:clone(value.chordCandidateRef),alignmentPolicy:'measure-entry-anchor-only',mutates:false};
   }
+  // Resolve stored identities only. Do not render instruments or infer harmony.
+  function arrangementReferencePreview(value,workspace,session,core,selection=null){
+    const timeline=arrangementTimeline(value,session,core,selection);
+    if(!Array.isArray(workspace?.candidateSets))throw Error('invalid-arrangement-reference-workspace');
+    const references=[];
+    for(const kind of ['section','chord']){
+      const ref=value[kind+'CandidateRef'],matches=[];
+      for(const set of workspace.candidateSets){
+        if(set?.kind!==kind)continue;
+        if(!Array.isArray(set.candidates))throw Error('invalid-arrangement-reference-candidates');
+        for(const candidate of set.candidates)if(candidate?.candidateId===ref.candidateId&&candidate.value?.candidateFamily?.id===ref.familyId)matches.push({set,candidate});
+      }
+      if(matches.length!==1)throw Error((matches.length?'ambiguous':'missing')+'-arrangement-'+kind+'-reference');
+      const {set,candidate}=matches[0],target=candidate.value;
+      if(target.kind!==kind||target.variant!==ref.candidateId||target.candidateFamily?.variant!==ref.candidateId||target.key!==value.key||['startMeasure','endMeasure','startTick','endTick'].some(key=>target.range?.[key]!==value.range?.[key]))throw Error('incompatible-arrangement-'+kind+'-reference');
+      // Section already has an exact structural validator. Validate its whole
+      // source before a partial inspection can hide an invalid excluded part.
+      const section=kind==='section'?sectionTimeline(target,session,core,selection):null;
+      references.push({kind,setId:set.setId,candidateId:candidate.candidateId,familyId:ref.familyId,value:clone(target),section});
+    }
+    return{kind:'arrangement-reference-preview',timeline,references,mutates:false};
+  }
+  function arrangementReferenceRows(preview){
+    if(preview?.kind!=='arrangement-reference-preview')return[];
+    return['Arrangement reference identities verified / instrument rendering unallocated; harmony not assessed',...arrangementTimelineRows(preview.timeline),...preview.references.flatMap(ref=>[`${ref.kind} reference: ${ref.candidateId} / set ${ref.setId} / family ${ref.familyId}`,...(ref.section?.segments||[]).map(part=>`Referenced Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`)])];
+  }
   function arrangementTimelineRows(timeline){
     if(timeline?.kind!=='arrangement-entry-timeline-preview')return[];
     return[`Arrangement entry anchors: ${timeline.entryAnchors.length} / M${timeline.range.startMeasure}-${timeline.range.endMeasure} / tick ${timeline.range.startTick}-${timeline.range.endTick} / measure entry anchors only; instrument rendering unallocated`,...timeline.entryAnchors.map(anchor=>`Arrangement entry: M${anchor.measureSlot} / tick ${anchor.startTick}-${anchor.endTick} / roles ${anchor.tracks.join(', ')} / Section ${timeline.sectionCandidateRef.candidateId} / Chord ${timeline.chordCandidateRef.candidateId}`)];
@@ -274,5 +300,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
