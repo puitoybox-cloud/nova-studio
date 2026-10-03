@@ -77,8 +77,37 @@
       [{label:'A',bars:Math.max(1,Math.ceil(length/3))},{label:'B',bars:Math.max(1,Math.ceil(length/3))},{label:'Lift',bars:Math.max(1,length-2*Math.ceil(length/3))}],
       [{label:'A',bars:Math.max(1,Math.floor(length/3))},{label:'C',bars:Math.max(1,length-Math.floor(length/3))}]
     ][index];
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-section-range');
+    // Keep each named part inside the explicit candidate range, even for 1–2 bars.
+    let remaining=length;
+    const bounded=plans.flatMap(item=>{const bars=Math.min(item.bars,remaining);remaining-=bars;return bars>0?[{...item,bars}]:[]});
     const family=base('section',index,context);
-    return{...family,shape:names[index],plan:plans,arrangementCandidateRef:{candidateId:family.variant,familyId:family.candidateFamily.id},summary:`${family.variant}: ${names[index]} / ${plans.map(item=>item.label).join(' → ')}`,applyPolicy:'metadata-only'};
+    return{...family,shape:names[index],plan:bounded,arrangementCandidateRef:{candidateId:family.variant,familyId:family.candidateFamily.id},summary:`${family.variant}: ${names[index]} / ${bounded.map(item=>item.label).join(' → ')}`,applyPolicy:'metadata-only'};
+  }
+  function sectionTimeline(value,session,core,selection=null){
+    if(value?.kind!=='section'||!Array.isArray(value.plan)||!value.plan.length)throw Error('section-plan-required');
+    const source=value.range,start=source?.startMeasure,end=source?.endMeasure;
+    if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<1||end<start)throw Error('invalid-section-range');
+    const from=selection===null?start:selection?.startMeasure,to=selection===null?end:selection?.endMeasure;
+    if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<start||to>end||to<from)throw Error('invalid-section-selection');
+    if(typeof core?.measureRangeToTicks!=='function')throw Error('section-timeline-unavailable');
+    let cursor=start;
+    const segments=[];
+    for(const item of value.plan){
+      if(typeof item?.label!=='string'||!item.label.trim()||!Number.isSafeInteger(item.bars)||item.bars<1)throw Error('invalid-section-part');
+      const last=cursor+item.bars-1;
+      if(!Number.isSafeInteger(last)||last>end)throw Error('section-plan-boundary');
+      const firstSelected=Math.max(cursor,from),lastSelected=Math.min(last,to);
+      if(firstSelected<=lastSelected){
+        const ticks=core.measureRangeToTicks({startMeasure:firstSelected,endMeasure:lastSelected},session.midiData);
+        if(!Number.isSafeInteger(ticks.startTick)||!Number.isSafeInteger(ticks.endTick)||ticks.startTick<0||ticks.endTick<=ticks.startTick)throw Error('invalid-section-ticks');
+        if(segments.length&&segments.at(-1).endTick!==ticks.startTick)throw Error('section-timeline-gap');
+        segments.push({label:item.label,startMeasure:firstSelected,endMeasure:lastSelected,startTick:ticks.startTick,endTick:ticks.endTick,bars:lastSelected-firstSelected+1,partial:firstSelected!==cursor||lastSelected!==last});
+      }
+      cursor=last+1;
+    }
+    if(cursor!==end+1)throw Error('section-plan-gap');
+    return{kind:'section-timeline-preview',segments,mutates:false};
   }
   function arrangement(index,context){
     const roles=context.trackRoles,variants=[
@@ -125,5 +154,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

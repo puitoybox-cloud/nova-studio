@@ -40,6 +40,7 @@
     if(!preview||preview.kind!=='candidate-family-preview')return[];
     const rows=[];
     if(preview.summary.sectionShape)rows.push(`Section: ${preview.summary.sectionShape}`);
+    for(const part of preview.components.section?.preview?.companion?.timeline?.segments||[])rows.push(`Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`);
     if(preview.summary.arrangementTracks.length)rows.push(`Arrangement: ${preview.summary.arrangementTracks.join(', ')}`);
     if(preview.summary.chordProgression.length)rows.push(`Chord: ${preview.summary.chordProgression.join(' → ')}`);
     rows.push(`Melody alignment review: ${preview.summary.melodyAlignmentReviewCount}`);
