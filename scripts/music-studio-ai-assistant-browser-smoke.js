@@ -84,7 +84,7 @@ async function familyApplyCase(browser,base,width){
 
 async function partialFamilyCases(browser,base,width){
   const reports=[];
-  const cases=[{name:'melody',kinds:['melody']},{name:'bass',kinds:['chord']},{name:'section',kinds:['section']},{name:'melody-bass',kinds:['melody','chord']},{name:'metadata',kinds:['melody','chord','section','arrangement','lyrics-structure'],metadataOnly:true},{name:'arrangement-blocked',kinds:['arrangement'],blocked:true},{name:'lyrics-blocked',kinds:['lyrics-structure'],blocked:true}];
+  const cases=[{name:'melody',kinds:['melody']},{name:'bass',kinds:['chord']},{name:'section',kinds:['section']},{name:'metadata-melody',kinds:['melody'],metadataOnly:true},{name:'section-range-blocked',kinds:['section'],invalidRange:true,blocked:true},{name:'metadata-range-blocked',kinds:['melody','chord','section','arrangement','lyrics-structure'],metadataOnly:true,invalidRange:true,blocked:true},{name:'melody-bass',kinds:['melody','chord']},{name:'metadata',kinds:['melody','chord','section','arrangement','lyrics-structure'],metadataOnly:true},{name:'arrangement-blocked',kinds:['arrangement'],blocked:true},{name:'lyrics-blocked',kinds:['lyrics-structure'],blocked:true}];
   for(const item of cases){
     const page=await browser.newPage({viewport:{width,height:1000}}),messages=[],external=[];
     page.on('console',m=>{if(['warning','error'].includes(m.type()))messages.push({type:m.type(),text:m.text()})});page.on('pageerror',e=>messages.push({type:'pageerror',text:e.message}));
@@ -96,17 +96,17 @@ async function partialFamilyCases(browser,base,width){
     const before=await page.evaluate(()=>({midi:structuredClone(MusicStudio.state.midiEditor.midiData),workspace:structuredClone(MusicStudioAIAssistantPanel._states.get('partial-browser').state.workspace),undo:MusicStudio.state.midiEditor.undo.length}));
     for(const kind of ['melody','chord','section','arrangement','lyrics-structure','continuation'])await page.locator(`input[name="musicAIFamilyComponent"][value="${kind}"]`).setChecked(item.kinds.includes(kind));
     if(item.metadataOnly)await page.locator('#aiFamilyMetadataOnly').check();
-    await page.fill('#aiFamilyFrom','1');await page.locator('#aiFamilyFrom').blur();await page.fill('#aiFamilyTo','1');await page.locator('#aiFamilyTo').blur();
+    await page.fill('#aiFamilyFrom','1');await page.locator('#aiFamilyFrom').blur();await page.fill('#aiFamilyTo',item.invalidRange?'3':'1');await page.locator('#aiFamilyTo').blur();
     await page.getByRole('button',{name:'Apply Planを作成'}).click();await page.getByRole('button',{name:'Preflight',exact:true}).click();
     const pre=await page.evaluate(()=>structuredClone(MusicStudioAIAssistantPanel._states.get('partial-browser').familyApplyPreflight));
     const snapshot=()=>page.evaluate(()=>({midi:structuredClone(MusicStudio.state.midiEditor.midiData),workspace:structuredClone(MusicStudioAIAssistantPanel._states.get('partial-browser').state.workspace),undo:MusicStudio.state.midiEditor.undo.length}));
     assert.deepEqual(await snapshot(),before);assert.equal(await page.evaluate(()=>__partialWrites()),0);
-    if(item.blocked){assert.equal(pre.ok,false);assert.match(pre.errors.join('|'),/dependency-not-selected/);assert.equal(await page.getByRole('button',{name:'Confirm Family Apply'}).count(),0);await page.getByRole('button',{name:'Cancel Plan'}).click();assert.deepEqual(await snapshot(),before)}
+    if(item.blocked){assert.equal(pre.ok,false);assert.match(pre.errors.join('|'),item.invalidRange?/selection:.*invalid-preview-selection/:/dependency-not-selected/);assert.equal(await page.getByRole('button',{name:'Confirm Family Apply'}).count(),0);await page.getByRole('button',{name:'Cancel Plan'}).click();assert.deepEqual(await snapshot(),before)}
     else{
-      assert.equal(pre.ok,true,JSON.stringify(pre.errors));await page.getByRole('button',{name:'Cancel Plan'}).click();assert.deepEqual(await snapshot(),before);
+      assert.equal(pre.ok,true,JSON.stringify(pre.errors));const plan=await page.evaluate(()=>structuredClone(MusicStudioAIAssistantPanel._states.get('partial-browser').familyApplyPlan));for(const component of plan.components){assert.equal(component.range.startTick,0);assert.equal(component.range.endTick,1000);assert.equal(component.range.endMeasure,1)}if(item.metadataOnly||item.name==='section')assert.match(await page.locator('.music-ai-preview').last().textContent(),/metadata only.*M1-1.*tick 0-1000/);await page.getByRole('button',{name:'Cancel Plan'}).click();assert.deepEqual(await snapshot(),before);
       await page.getByRole('button',{name:'Apply Planを作成'}).click();await page.getByRole('button',{name:'Preflight',exact:true}).click();await page.getByRole('button',{name:'Confirm Family Apply'}).click();
       const after=await snapshot();assert.equal(after.undo,before.undo+1);assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.redo.length),0);
-      if(item.metadataOnly||item.name==='section')assert.deepEqual(after.midi,before.midi);
+      for(const kind of item.kinds){const selection=after.workspace.candidateSets.find(set=>set.kind===kind).adopted[0].selection;assert.deepEqual(selection.measures,[1,1]);assert.deepEqual(selection.ticks,[0,1000])}if(item.metadataOnly||item.name==='section')assert.deepEqual(after.midi,before.midi);
       else for(const id of item.kinds.includes('chord')?(item.kinds.includes('melody')?['melody','bass']:['bass']):['melody']){const notes=after.midi.tracks.find(t=>t.id===id).notes;assert.ok(notes.length);assert.ok(notes.every(n=>n.startTick+n.durationTicks<=1000))}
       assert.equal(after.midi.timeSignatureMap[0].tick,1000);assert.equal(after.midi.tempoMap.find(t=>t.tick===777).tick,777);
       const waitSaved=()=>page.waitForFunction(()=>!MusicStudio.state.midiEditorSaveInFlight&&!MusicStudio.state.midiEditorSavePromise);
