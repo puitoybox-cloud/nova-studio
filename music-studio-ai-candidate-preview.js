@@ -98,6 +98,7 @@
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
+    if(kind==='section')companion.timeline=composition.sectionTimeline(value,session,core,options.measureRange??null);
     if(!['melody','continuation','chord'].includes(kind)){
       return{version:VERSION,type:'metadata-preview',candidateId:candidate.candidateId||value.variant||null,kind,value,context:clone(context),companion,mutates:false};
     }
