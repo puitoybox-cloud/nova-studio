@@ -135,16 +135,39 @@
     if(!Number.isSafeInteger(range.startTick)||!Number.isSafeInteger(range.endTick)||range.startTick<0||range.endTick<=range.startTick||slots.some(slot=>slot.startTick<range.startTick||slot.endTick>range.endTick))throw Error('invalid-lyrics-ticks');
     return{kind:'lyrics-anchor-timeline-preview',linkedMelodyCandidate:variant,range:clone(range),slots,alignmentPolicy:'measure-anchor-only',mutates:false};
   }
-  // Inspect existing abstract phrase/event references only. This is not a
-  // note/syllable allocation and never materializes MIDI or persisted data.
-  function lyricsMelodyReferencePreview(value,workspace,session,core,selection=null){
+  function lyricsMelodyMatches(value,workspace){
+    const ref=value.melodyCandidateRef,matches=[];
+    if(!Array.isArray(workspace?.candidateSets))throw Error('invalid-lyrics-melody-workspace');
+    workspace.candidateSets.forEach((set,setIndex)=>{
+      if(set?.kind!=='melody')return;
+      if(!Array.isArray(set.candidates))throw Error('invalid-lyrics-melody-candidates');
+      set.candidates.forEach((candidate,candidateIndex)=>{
+        if(candidate?.candidateId===ref.candidateId&&candidate.value?.candidateFamily?.id===ref.familyId)matches.push({set,candidate,setIndex,candidateIndex});
+      });
+    });
+    return matches;
+  }
+  // Occurrence locators are runtime-only, bound to the complete workspace.
+  // They allow explicit inspection even when legacy deterministic IDs repeat.
+  function lyricsMelodyReferenceChoices(value,workspace,session,core,selection=null){
+    lyricsTimeline(value,session,core,selection);
+    const workspaceSignature=JSON.stringify(workspace),matches=lyricsMelodyMatches(value,workspace);
+    if(!matches.length)throw Error('missing-lyrics-melody-reference');
+    return{kind:'lyrics-melody-reference-choices',workspaceSignature,mutates:false,choices:matches.map(({set,candidate,setIndex,candidateIndex})=>{
+      const locator={setIndex,candidateIndex,workspaceSignature};let error='';
+      try{lyricsMelodyReferencePreview(value,workspace,session,core,selection,locator)}catch(e){error=e.message}
+      return{setIndex,candidateIndex,setId:set.setId,candidateId:candidate.candidateId,summary:String(candidate.value.summary||''),status:String(candidate.status||''),error};
+    })};
+  }
+  // Inspect abstract events only; explicit choice does not rebind stored refs.
+  function lyricsMelodyReferencePreview(value,workspace,session,core,selection=null,explicit=null){
     const timeline=lyricsTimeline(value,session,core,selection),ref=value.melodyCandidateRef;
-    const matches=[];
-    for(const set of workspace?.candidateSets||[]){
-      if(set?.kind!=='melody')continue;
-      for(const candidate of set.candidates||[]){
-        if(candidate?.candidateId===ref.candidateId&&candidate.value?.candidateFamily?.id===ref.familyId)matches.push({set,candidate});
-      }
+    let matches=lyricsMelodyMatches(value,workspace);
+    if(explicit!==null){
+      if(!Number.isSafeInteger(explicit?.setIndex)||explicit.setIndex<0||!Number.isSafeInteger(explicit?.candidateIndex)||explicit.candidateIndex<0||typeof explicit.workspaceSignature!=='string')throw Error('invalid-lyrics-melody-choice');
+      if(explicit.workspaceSignature!==JSON.stringify(workspace))throw Error('stale-lyrics-melody-choice');
+      matches=matches.filter(item=>item.setIndex===explicit.setIndex&&item.candidateIndex===explicit.candidateIndex);
+      if(matches.length!==1)throw Error('invalid-lyrics-melody-choice');
     }
     if(matches.length!==1)throw Error(matches.length?'ambiguous-lyrics-melody-reference':'missing-lyrics-melody-reference');
     const {set,candidate}=matches[0],melody=candidate.value;
@@ -167,11 +190,11 @@
     if(used.size!==events.size)throw Error('unreferenced-lyrics-melody-event');
     // Validate excluded lines too: partial inspection must not hide bad refs.
     for(const line of value.lines)if(!phrases.has(line.melodyPhraseSlot))throw Error('missing-lyrics-melody-phrase');
-    return{kind:'lyrics-melody-reference-preview',setId:set.setId,candidateId:ref.candidateId,familyId:ref.familyId,range:clone(timeline.range),lines:timeline.slots.map(line=>({...clone(line),eventSlots:clone(phrases.get(line.melodySlot).eventSlots),events:phrases.get(line.melodySlot).eventSlots.map(slot=>clone(events.get(slot)))})),mutates:false};
+    return{kind:'lyrics-melody-reference-preview',setId:set.setId,candidateId:ref.candidateId,familyId:ref.familyId,referenceChoice:explicit===null?null:{setIndex:explicit.setIndex,candidateIndex:explicit.candidateIndex},range:clone(timeline.range),lines:timeline.slots.map(line=>({...clone(line),eventSlots:clone(phrases.get(line.melodySlot).eventSlots),events:phrases.get(line.melodySlot).eventSlots.map(slot=>clone(events.get(slot)))})),mutates:false};
   }
   function lyricsMelodyReferenceRows(preview){
     if(preview?.kind!=='lyrics-melody-reference-preview')return[];
-    return[`Melody reference verified: ${preview.candidateId} / ${preview.lines.length} Lyrics lines / M${preview.range.startMeasure}-${preview.range.endMeasure} / tick ${preview.range.startTick}-${preview.range.endTick} / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: anchor M${line.measureSlot} / tick ${line.startTick}-${line.endTick} / Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
+    return[`Melody reference verified: ${preview.candidateId} / set ${preview.setId}${preview.referenceChoice?` / explicit occurrence ${preview.referenceChoice.setIndex+1}:${preview.referenceChoice.candidateIndex+1}`:''} / ${preview.lines.length} Lyrics lines / M${preview.range.startMeasure}-${preview.range.endMeasure} / tick ${preview.range.startTick}-${preview.range.endTick} / abstract events only; note-syllable allocation unallocated`,...preview.lines.map(line=>`Lyrics line ${line.line}: anchor M${line.measureSlot} / tick ${line.startTick}-${line.endTick} / Melody phrase ${line.melodySlot} / event slots ${line.eventSlots.join(', ')} / degrees ${line.events.map(event=>event.degree).join(', ')} / duration units ${line.events.map(event=>event.durationUnits).join(', ')}`)];
   }
   function lyricsTimelineRows(timeline){
     if(timeline?.kind!=='lyrics-anchor-timeline-preview')return[];
@@ -250,5 +273,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
