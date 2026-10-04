@@ -1,0 +1,28 @@
+# Observed byte / fault acceptance — 2026-10-04 JST
+
+## Implemented boundary
+
+`music-studio-observed-byte-verification.js` is explicitly called, Node-only offline verification. It is not loaded by production HTML/app, does not resolve URLs or access repositories, and adds no persistent schema. #294's source/package declared closure gate must pass before a supplied reader is called. Source and package Uint8Array bytes are independently read, immediately copied, measured and compared with SHA-256. The digest is verification-only: no logical asset identity, dedup, naming, hash storage policy, retention or GC decision. No expected hash claim is trusted. Acceptance covers only the supplied bytes at the observed instant and caller-declared closure, not all real project dependencies or subsequent file access. External-file recovery remains blocked by the existing contract.
+
+Each observation is tied to the Project/source/package snapshot and private attempt generation. Changes during awaits, Cancel, a newer observation, malformed byte values, missing/unreadable bytes and size/content mismatch fail closed. Errors are reduced to fixed codes without exposing resolver error messages/URLs. A failed new read invalidates older evidence. SHA-256 is a content comparison aid, not a declaration of absolute identity or persistent verification. Reader safety is the caller's responsibility; no arbitrary reader sandbox or filesystem permission proof is claimed. Current code calls no network/filesystem/storage APIs (crypto hashing only).
+
+`simulateRecovery` accepts only privately retained observations from the same session. It creates an isolated staging candidate and returns it only after all binary dependencies and precommit checks succeed. Failure returns an exact detached original. Caller inputs/production persistence are never changed. Returned reports/candidates and reader-owned buffers cannot replace captured bytes. Capacity is an explicit synthetic staged-binary byte budget, counts each graph binary ID once and never deduplicates matching content across IDs. It excludes metadata/original copy/JS overhead and is not device free space, quota or peak memory. No device quota is altered. Fault callbacks only exist in this verification harness.
+
+## Evidence and limits
+
+Deterministic cases exercise source/package quota, permission unavailable/lost/reselection, missing bytes, interruption, asynchronous stale Project/review, superseded attempt, Cancel, retry, forged evidence, mutable reader buffers, equal-length different content, unknown/incorrect sizes, multi-binary partial staging, precommit faults, shared Take/Version/Checkpoint edges/exclusion and capacity below/exact/above threshold. A temporary-file test reads actual created synthetic bytes and deletes only its own temporary candidate to exercise missing-byte evidence. Synthetic production memory-repository Save/Reopen/export JSON/Backup/legacy checks ensure zero writes and unknown-field retention; existing tests are retained.
+
+Synthetic atomic success means complete detached candidate publication. Synthetic failure means original retained, no partial candidate published. It does not prove crash-safe disk transactions, browser reload recovery, durable journal/commit markers, persisted retry/idempotency, original binary availability after reboot, production permission handling, exhaustive Backup, portable distribution or physical Mac/iPad operation. Interrupted reader cannot be forcibly stopped; its late result is rejected, not accepted.
+
+## Stage 2 exit gate
+
+1. Existing logical inventory/declared closure/source-package comparison: implemented; exhaustive real resolver remains pending.
+2. Independently observed source/package bytes and verification-only content equality, snapshot/Cancel: implemented for explicit supplied bytes, production resolver integration pending.
+3. Capacity/permission/interruption/partial/stale/retry/shared-reference failure evidence: deterministic harness implemented; device/storage backend behavior pending.
+4. Selected reviewed A/B/C persistence and binary/Take/Version/Checkpoint contracts, identity and compatibility rules: undecided. No selection in this change.
+5. Complete Backup and production atomic Restore: must demonstrate every required byte and reference survives, success durable or original durable on each write/commit/reload/crash fault, no shared-reference loss, stale refusal, Cancel/retry. Pending backend/policy and implementation; synthetic publication is insufficient.
+6. Standalone exhaustive runtime/package compatibility plus Intel Mac/iPad capacity/permissions/reselection/interruption/Recovery physical evidence: pending. Static direct-script inventory alone is insufficient.
+
+Stage 2 cannot close yet. A remains 0/30. Remaining blockers are policy selection, production resolver and durable transaction implementation, exhaustive runtime/package coverage and physical acceptance. No Stage 3 completion checkpoint is claimed. This independently tested Draft is a verification checkpoint for the next Stage 2 implementation. Next engineering action after reviewed storage contract: integrate byte resolver and transactional staging with a disposable backend first, inject each write/commit/reload failure, then consolidate device acceptance. Until policy is approved, only isolated verification work may proceed.
+
+Physical acceptance remains one consolidated batch: Intel Mac/iPad byte reads and permissions/reselection, safe disposable capacity/interruption/reload recovery, real Backup migration; Intel Audio-to-MIDI accuracy/signing and Japanese/touch checks remain separately pending. Do not alter real saved songs/Backups to test faults.
