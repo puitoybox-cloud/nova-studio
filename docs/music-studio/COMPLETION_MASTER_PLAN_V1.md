@@ -105,3 +105,9 @@ Standalone CLIはHTMLの直接script/style配布依存と既存Python requiremen
 ## 第2段階：Backup候補とRestore依存closureの比較（2026-10-04 JST）
 
 [比較証拠](PACKAGE_RESTORE_REVIEW_V1.md)：#293から独立branch。元reviewとpackage候補review間の必要node/root/edge欠落、申告identity/size/opaque claim変更、共有binary referrerの欠落、coverage/temporary/external/permission境界を比較する。申告closure保持と実byte/完全Backup/Restore/portabilityを分離。production loader/storage/schema未変更。A 0/30、未決定policyとphysical Batch A/B/Cを維持。次は実byte観測の受入設計・容量/権限/中断/atomic復旧fault evidence。
+
+## 第2段階：byte観測・故障注入・終了条件（2026-10-04 JST）
+
+[実装と終了gate](OBSERVED_BYTE_FAULT_EVIDENCE_V1.md)：#294の宣言closure gateに続けて、独立したsource/package byte読取・長さ・verification専用SHA-256比較、await間のstale/Cancel/世代拒否、隔離メモリ上の完全候補公開または元状態保持を実装した。容量不足・権限 unavailable/lost/reselection・中断・partial staging・retry・共有Take/Version/Checkpoint保護をdeterministic testで検証する。実保存方式A/B/C、loader/schema、曲/Backupは変更しない。
+
+第2段階終了には、レビュー済み保存契約、実依存resolver、全必要byteの完全Backup、production durable atomic Restoreのwrite/commit/reload故障証拠、Standalone推移依存/実配布、およびMac/iPad受入が必要。今回のsynthetic原子性はproduction crash耐性の証明ではない。これらが未確定/未実装/physical pendingのため第2段階継続、A 0/30維持。第3段階へ進んだとは扱わない。次は承認された保存契約に基づくdisposable backend byte resolver/staging/復旧試験。未決定policyを独断選択しない。
