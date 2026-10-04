@@ -51,6 +51,14 @@ test('ambiguous target never binds the first duplicate', () => {
   const g = review(); g.nodes.push({...g.nodes[2]}); const r = api.inspect(project(), g);
   assert.ok(codes(r).includes('ambiguous-dependency')); assert.equal(r.dependencies.filter(n => n.id === 'b' && n.reachable).length, 0);
 });
+test('file-reference identity never silently binds to the same logical asset ID', () => {
+  const p = project(), g = review(); p.fileReferences = [{id: 'voice', storage: {kind: 'external-file', reference: 'voice.wav'}}];
+  assert.ok(codes(api.inspect(p, g)).includes('unmodeled-asset-dependency'));
+  g.nodes.push({id: 'external', kind: 'external-file', fileReferenceId: 'voice'});
+  g.edges.push({from: 'p', to: 'external'}); const r = api.inspect(p, g);
+  assert.equal(r.valid, true); assert.equal(r.observedAssets[1].logicalAssetId, null);
+  assert.equal(r.observedAssets[1].fileReferenceId, 'voice');
+});
 test('external URL does not establish managed ownership, permission, moved/deleted/offline cause', () => {
   const g = review(); Object.assign(g.nodes[2], {kind: 'external-file', ownership: 'external', coverage: 'external', reference: 'https://example.invalid/secret'});
   const r = api.inspect(project(), g); assert.equal(r.dependencies[2].portability, 'external-unverified');

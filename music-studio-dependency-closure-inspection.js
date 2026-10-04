@@ -11,7 +11,9 @@ function inspect(project, review) {
   const existing = storage.inspect(project), issues = [], nodes = [], edges = [];
   const issue = (code, path) => issues.push({code, path});
   // Existing logical assets have no known binary mapping. URL and assetId prove no bytes.
-  const observedAssets = existing.dependencies.map(d => ({...d, logicalAssetId: d.identity,
+  const observedAssets = existing.dependencies.map(d => ({...d,
+    logicalAssetId: d.kind === 'fileReferences' ? null : d.identity,
+    fileReferenceId: d.kind === 'fileReferences' ? d.identity : null,
     binaryPresence: 'unverified', permission: 'unverified', contentIdentity: 'unverified'}));
   if (!object(review)) issue('unmodeled-dependency-closure', '$review');
   else {
@@ -40,6 +42,7 @@ function inspect(project, review) {
       if (n.coverage === 'missing') issue('declared-missing', path);
       nodes.push({id: n.id, kind: kinds.has(n.kind) ? n.kind : 'unsupported', path,
         logicalAssetId: n.kind === 'asset' && string(n.logicalAssetId) ? n.logicalAssetId : null,
+        fileReferenceId: n.kind === 'external-file' && string(n.fileReferenceId) ? n.fileReferenceId : null,
         ownershipClaim: ownerships.has(n.ownership) ? n.ownership : 'unknown', ownershipVerification: 'unverified',
         coverageClaim: coverages.has(n.coverage) ? n.coverage : 'unverified',
         permission: permissions.has(n.permission) ? n.permission : 'unverified',
@@ -77,9 +80,12 @@ function inspect(project, review) {
   const dependencies = nodes.map(n => ({...n, reachable: reachable.has(n.id) && byId.get(n.id).length === 1}));
   for (const n of dependencies) if (!n.reachable) issue('excluded-from-closure', n.path);
   for (const a of observedAssets) {
-    const matches = dependencies.filter(n => n.kind === 'asset' && n.logicalAssetId === a.logicalAssetId && n.reachable);
-    if (!a.logicalAssetId || matches.length !== 1) issue(matches.length > 1 ? 'ambiguous-asset-mapping' : 'unmodeled-asset-dependency', a.path);
-    else if (!(adjacency.get(matches[0].id) || []).some(id => ['binary', 'external-file'].includes(byId.get(id)?.[0]?.kind))) issue('unmodeled-binary-dependency', a.path);
+    const file = a.kind === 'fileReferences', identity = file ? a.fileReferenceId : a.logicalAssetId;
+    const matches = dependencies.filter(n => n.reachable && (file
+      ? n.kind === 'external-file' && n.fileReferenceId === identity
+      : n.kind === 'asset' && n.logicalAssetId === identity));
+    if (!identity || matches.length !== 1) issue(matches.length > 1 ? 'ambiguous-asset-mapping' : 'unmodeled-asset-dependency', a.path);
+    else if (!file && !(adjacency.get(matches[0].id) || []).some(id => ['binary', 'external-file'].includes(byId.get(id)?.[0]?.kind))) issue('unmodeled-binary-dependency', a.path);
   }
   const closure = dependencies.filter(n => n.reachable), declaredSizes = closure.filter(n => n.kind === 'binary').map(n => n.declaredByteLength);
   let declaredBytes = 0;
