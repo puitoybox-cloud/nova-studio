@@ -1,0 +1,1770 @@
+Warning: truncated output (original token count: 48091)
+Total output lines: 2603
+
+{
+  "date": "2026-10-04 JST",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "prs": [
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/290",
+      "number": 290,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "The real audio conversion verifier previously graded only the six pitch values; incorrect onsets or malformed note events could escape acceptance. Add an offline checker using the existing production MIDI parser, exact synthetic WAV identity, six-note pitch/count/onset checks, stem/Type1 identity and MIDI integrity validation. Connect actual model output to this checker and always retain physicalVerification=pending. No converter algorithm, production UI, persistence or musical policy changes.\n\nMaster specification (2026-09-30) read in full. Current 30-capability audit and unified dependency order: docs/music-studio/COMPLETION_MASTER_PLAN_V1.md. Evidence snapshot: verification/music-completion-start-20261004.json. Fresh 2026-10-04 JST inventory: main 552d56eafddfd192970c09f7d6278696cf8775c3; #289 418dc57429f91ffcef6b578a7edfda36012576fd; 36 existing Open PRs / 34 Drafts, all Drafts mergeable; returned HEAD Actions successful. No complete 30-feature A claim; weighted completion percentage cannot be established.\n\nIndependent branch based on #289. node --test 1314/1314 PASS (22 new), FAIL/skipped 0. All 134 JS syntax checks, Python verifier compilation and whitespace PASS. Baseline #289 with new tests fails because checker does not exist; final focused 22 PASS. Captured September erroneous MIDI is rejected without modification. Real Demucs/Basic Pitch conversion not run in this request. New offline CI includes existing comprehensive Chrome 1440/820/390 harness; final-head evidence below.\n\nFinal HEAD bd9fdd7bf777f4bbc34dd02481805572a0005169; local and remote tree 427dde97f4a35bf4314a311d3d8b015f3ed73771 match. Final-head Actions: offline audio acceptance run 37179982952 SUCCESS; Music Audio Helper macOS run 37179982912 SUCCESS (16 Python boundary/accuracy tests). Chrome 154.0.8037.57: 1440/820/390 functional PASS; artifact 11294997921 includes 225 captures and report HEAD exactly matching final HEAD. All nested messages/external arrays empty: Console error/warn/pageerror 0; external request 0. Screenshots at all three widths inspected. CI lacks Japanese glyph fonts; 390px top controls remain cramped, so these are not claims of flawless physical-device layout. No real model inference or physical accuracy acceptance in this request.\n\nCompletion re-fetch: main HEAD unchanged; all 36 pre-existing Open PR HEADs, base branch names and Draft states unchanged. Open now 37, Draft 35 solely due to #290.\n\nPhysical Intel Mac accuracy/signing, M1 iPad Safari and Keystation checks are consolidated in the plan. Deferred musical/save policies are explicit. Next: read-only audio asset/dependency compatibility and standalone dependency inspection before recording/render/persistence extensions.\n\nNo main or existing PR modifications, real project/backup writes, load-time writes/migrations, live/external AI API or credentials traffic, Ready/Merge/Auto Merge/force push. Verification: verification/music-audio-acceptance-foundation.md.",
+      "title": "Music Studio: 30-capability completion plan and offline Audio-to-MIDI acceptance",
+      "base": "feature/music-ai-arrangement-destination-inspection-v1",
+      "base_sha": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "head": "feature/music-completion-foundation-v1",
+      "head_sha": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "ccfe84487a40339bf569c6d156dbc52e53cc5b8c",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-04T05:28:19Z",
+      "updated_at": "2026-10-04T05:35:16Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 1,
+      "changed_files": 8,
+      "additions": 1265,
+      "deletions": 1,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/290",
+      "display_title": "Music Studio: 30-capability completion plan and offline Audio-to-MIDI acceptance"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/289",
+      "number": 289,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "A blank initial selector lists the existing core role/Track pairs validated by #288. Explicit Inspect revalidates source references, all roles, unique exact Track IDs and selected measure/tick range. Workspace/MIDI/set/range changes refuse inspection; choice/range edits immediately remove prior verified destination output and status. Cancel discards transient choice. Read-only identity inspection only: musical/write compatibility unassessed; no destination binding, instrument/note generation, Apply, persistence change or inferred policy.\n\nFresh 2026-10-04 JST GitHub inventory: main 552d56eafddfd192970c09f7d6278696cf8775c3; #288 c041822d9715622302478f40d3f74ada8f830ee2; 35 pre-existing Open PRs, 33 Drafts clean/mergeable, returned HEAD workflow runs successful. New independent branch based on #288. Issue #255 and code/role/range/storage/history/verification reviewed. Lyrics persisted rebinding and musical policies remain deferred.\n\nFinal HEAD 418dc57429f91ffcef6b578a7edfda36012576fd. Local and GitHub node --test 1292/1292 PASS, FAIL 0, skipped 0; all 132 JS node --check PASS; git diff --check PASS. All 25 new regressions fail on isolated #288 baseline; final focused 63/63 PASS (baseline 38 PASS / 25 FAIL). Normal/partial/invalid/duplicate/ambiguous/orphan/conflict/stale, nonmutation, Cancel, Save/Reopen, JSON and Backup exclusion covered. Existing full regression suite retained. Host/standalone asset URLs synchronized.\n\nFinal HEAD Actions: AI Assistant UI run 37178379044 SUCCESS; scoped MIDI repair run 37178379047 SUCCESS. Real Google Chrome 154.0.8037.57: 1440/820/390 PASS, 225 captures. Artifact 11294195602 report HEAD matches final HEAD; every report messages/external array empty (Console error/warn/pageerror 0, external request 0). Screenshots visually inspected at all three widths. Local/remote final trees match 967e1d867a17391d322d6c24e15be6d0b94bbdc6. Main and all 35 pre-existing Open PR HEADs freshly rechecked unchanged.\n\nRecord: verification/music-ai-arrangement-destination-inspection.md. Physical Mac/iPad Japanese/touch/layout and synthetic explicit select/Inspect/change choice or range/Cancel/Save-Reopen acceptance pending; CI runner lacks Japanese glyph fonts. Keystation recording/playback physical-only; Intel Mac Audio-to-MIDI accuracy separate. Deferred: destination binding/storage/write compatibility, instrument/content/note generation, Lyrics persisted duplicate occurrence/rebinding/conflict/history and text/note-syllable policy, Section replacement rules and Continuation composition/mapping/Family policy.\n\nNo main/existing PR/branch modifications, real song/backup writes, migration/load-time writes, external AI/provider/API-key traffic, Ready/Merge/Auto Merge or force push.",
+      "title": "Music Studio: explicit read-only Arrangement destination identity inspection",
+      "base": "feature/music-ai-arrangement-track-inspection-v1",
+      "base_sha": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "head": "feature/music-ai-arrangement-destination-inspection-v1",
+      "head_sha": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "69d74379c804aee4af6a6908755b8691cfcf22c5",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-04T04:53:17Z",
+      "updated_at": "2026-10-04T05:02:38Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 8,
+      "additions": 96,
+      "deletions": 10,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/289",
+      "display_title": "Music Studio: explicit read-only Arrangement destination identity inspection"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/288",
+      "number": 288,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Explicit Role / Track inspection now shows exact existing MIDI Track IDs using the current core role contract. Missing or ambiguous roles, malformed IDs/collections and duplicate IDs fail closed, including partial ranges excluding the entry. Existing Section/Chord inspection and full Section validation are reused. Cancel and stale workspace/MIDI guards retained. No instrument selection, note rendering, destination binding, persistence change or new music policy.\n\nFresh #287 base daadc79ab48772a420bf8720c1ef0f75afe10cbe. main and all 34 Open PR heads inventoried; all 32 Drafts mergeable with successful returned head workflow runs. Issue #255 and current code/storage/history/verification reviewed. Persisted Lyrics rebinding remains deferred: duplicate occurrence storage/conflict/history contract is not established.\n\nLocal node --test 1267/1267 PASS, FAIL 0, skipped 0; all 132 JS node --check PASS; git diff --check PASS. 13 additional regressions, original #287 regressions retained. Save/Reopen, JSON/Backup exclusion, unknown fields, read-only nonmutation, invalid/partial/stale/duplicate/orphan cases covered. Existing Family/Section/Lyrics/Continuation/atomic rollback/Undo/Redo remain in full suite. Final HEAD c041822d9715622302478f40d3f74ada8f830ee2: AI Assistant UI run 37129607156 SUCCESS and scoped MIDI repair run 37129607180 SUCCESS. Real Chrome 154: 1440/820/390 PASS, 216 captures. Artifact 11276855545 report HEAD matches final HEAD; all report Console error/warn/pageerror arrays and external requests are zero. Screenshots inspected at all widths. Local/remote final trees match 9e839275eca15b7f8072113e2699d2c0d1fdb093. New 11 service regressions fail on isolated #287 baseline and final focused 38/38 PASS. Missing/ambiguous roles tested in UI; duplicate Track IDs tested in browser service on cloned data because the existing full editor rejects duplicate IDs before panel rendering. Runner lacks Japanese glyph fonts; Mac/iPad glyph acceptance remains physical-only. Fresh final inventory confirms main and all 34 pre-existing Open PR HEADs unchanged.\n\nRecord: verification/music-ai-arrangement-track-inspection.md. Physical Mac/iPad Japanese/touch and synthetic inspection/Cancel/source-change/Save-Reopen checks pending; Keystation remains physical-only. Intel Mac Audio-to-MIDI accuracy separate. No main/existing PR/branch changes, real song/backup writes, migration/load-time write, provider/external AI/API-key traffic, Ready/Merge/Auto Merge or force push.",
+      "title": "Music Studio: read-only Arrangement existing role/track inspection",
+      "base": "feature/music-ai-arrangement-reference-inspection-v1",
+      "base_sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "head": "feature/music-ai-arrangement-track-inspection-v1",
+      "head_sha": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "0e01572632dc6cbbdf2416e7ad210e7e2dc1f869",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T14:16:09Z",
+      "updated_at": "2026-10-03T14:34:18Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 4,
+      "changed_files": 8,
+      "additions": 83,
+      "deletions": 20,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/288",
+      "display_title": "Music Studio: read-only Arrangement existing role/track inspection"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/287",
+      "number": 287,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Explicitly inspect existing Arrangement Section/Chord reference identities and exact Section segments, then Cancel. Missing, ambiguous, malformed, incompatible kind/variant/Key/range fail closed; no fallback/latest selection. Partial inspection validates the full Section source. Workspace/MIDI changes hide verified output until reinspection. No instrument rendering or harmonic assessment.\n\nBased on freshly fetched #286 512d039dfda432bfb65356d5162440ccf8ea1b4f. Stored Lyrics references cannot persist duplicate occurrence identity; no existing rebinding storage/conflict/history contract was found, so that scope remains deferred without inventing policy. Related #255. No main/existing PR/branch changes, real songs/backups, migrations, provider/external AI/API-key traffic, Ready/Merge/Auto Merge/force push.\n\nLocal: node --test 1254/1254 PASS, FAIL 0, skipped 0; all 132 JS syntax PASS; git diff --check PASS. 20 new regressions. Inspection/Cancel nonmutation, unknown fields, legacy render zero resolution/write, Save/Reopen/JSON/Backup exclusion verified. Existing Family/Section/Lyrics/Continuation/rollback/Undo/Redo tests retained. Final HEAD daadc79ab48772a420bf8720c1ef0f75afe10cbe: AI Assistant UI run 37128009527 SUCCESS and scoped MIDI repair run 37128009522 SUCCESS. Real Chrome: 1440/820/390 PASS, 180 captures; downloaded artifact 11276230319 report HEAD matches final HEAD. Every report has Console error/warn/pageerror 0 and external requests 0; screenshots inspected at all widths. Japanese glyph appearance remains physical-only because runner fonts are absent. Both remote/local trees b41d09d5158551710da95f6ae9f173ac09096651 match. The new 18 service regressions fail on isolated #286 baseline with missing capability; final focused tests PASS. Fresh final fetch confirms main and all 33 existing Open PR HEADs unchanged.\n\nRecord: verification/music-ai-arrangement-reference-inspection.md. Physical Mac/iPad text/touch, separate synthetic inspection/Cancel/source-change/Save-Reopen and Keystation recording/playback pending. Earlier Intel Mac Audio-to-MIDI accuracy remains separate. Draft only.",
+      "title": "Music Studio: read-only Arrangement Section/Chord reference inspection",
+      "base": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "base_sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "head": "feature/music-ai-arrangement-reference-inspection-v1",
+      "head_sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "29469a9051e171a90173fd7e9966144ccf867273",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T13:58:27Z",
+      "updated_at": "2026-10-03T14:05:01Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 1,
+      "changed_files": 8,
+      "additions": 137,
+      "deletions": 18,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/287",
+      "display_title": "Music Studio: read-only Arrangement Section/Chord reference inspection"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/286",
+      "number": 286,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Repeated deterministic candidate sets can make a Lyrics Melody reference ambiguous. Add explicit matching-reference List → Select → Inspect → Cancel, with no automatic choice. Runtime snapshot-bound occurrence locators distinguish repeated set/candidate IDs without changing stored identities. Invalid alternatives remain visible but disabled; selection still revalidates all excluded Lyrics lines and selected Melody phrase/event memberships. Stale workspace/MIDI refuses inspection until relisting; stale lists retain Cancel. Switching choice hides verified output until reconfirmation.\n\nThis is read-only Preview, not persisted reference rebinding, Lyrics text generation or note-syllable allocation. Listing/selecting/inspection/Cancel do not set pending or alter workspace/MIDI/history/storage. Derived choices, locators and Preview never enter Save/Reopen/JSON/Backup. Legacy render performs no enumeration/resolution/repair/write; unknown fields retained. Existing Family dependency/transaction, Section Apply, Arrangement/Continuation and MIDI behavior unchanged. Host and standalone asset URLs synchronized.\n\n2026-10-03 JST final HEAD 512d039dfda432bfb65356d5162440ccf8ea1b4f.\n- Fresh baseline #285: 1215/1215 PASS.\n- Updated node --test: 1234/1234 PASS, FAIL 0, skipped 0 (19 new regressions).\n- All 131 JS node --check PASS; git diff --check PASS; clean worktree; local/remote trees equal.\n- Existing Family/Section/Lyrics/Arrangement/Continuation/rollback/Undo/Redo regression suites retained.\n- Final-head Actions: AI Assistant UI https://github.com/puitoybox-cloud/nova-studio/actions/runs/37125944260 SUCCESS; scoped MIDI repair https://github.com/puitoybox-cloud/nova-studio/actions/runs/37125944258 SUCCESS.\n- Real Google Chrome 154.0.8037.57: 1440/820/390 PASS; 150 captures.\n- Artifact 11275097256 downloaded, report HEAD equals final HEAD; screenshots inspected at every width.\n- All normal/invalid/stale/legacy choice cases and existing regression cases: Console error 0, warn 0, pageerror 0; external requests 0.\n- Native disabled-option checks, tampered-choice rejection, partial range retention, no default selection, choice-change invalidation, Cancel and Save/Reopen PASS. Node additionally verifies JSON/Backup exclusion and legacy zero resolution/write.\n\nFresh main and all 32 pre-existing Open PR HEADs inventoried and re-fetched unchanged. All 30 existing Drafts initially mergeable with returned head CI success. Main 552d56eafddfd192970c09f7d6278696cf8775c3. Independent branch feature/music-ai-lyrics-reference-explicit-selection-v1 based on #285 58d4d358b4ba5844f1494844060fbf7239ef3815; two non-force checkpoints saved. Records: verification/music-ai-lyrics-reference-explicit-selection.md and audit JSON.\n\nRemaining: persisted reference rebinding needs a separate transaction scope. Lyrics text/note allocation, instrument rendering, Section replacement/edit, Continuation composition/source-destination/Family policy remain separate units. This read-only disambiguation responsibility is complete. No musical policy inferred.\n\nPhysical acceptance on a separate synthetic project: Intel Mac/Chrome and M1 iPad/Safari, repeat Family generation at the same context, open Lyrics, display matching references, verify blank initial selection, explicitly inspect each duplicate with partial range, switch choice (verified output hides), Cancel, alter source then verify stale refusal, Save/Reopen without retained choice. Check Japanese text and touch; Linux runner lacks Japanese fonts. Keystation Mini 32 MK3 recording/playback remains physical-only. Earlier Intel Mac Audio-to-MIDI accuracy is separate.\n\nSynthetic/local only. No main/existing PR/branch modifications, real songs/backups, schema/migration/load-time writes, deletions, external AI/provider/API-key traffic, Ready/Merge/Auto Merge or force push. Draft only.",
+      "title": "Music Studio: explicit read-only Lyrics Melody reference selection",
+      "base": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "base_sha": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "head": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "head_sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "b0ab31ccbf7186cb73230322a099dd035b461ca9",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T13:17:56Z",
+      "updated_at": "2026-10-03T13:28:17Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 10,
+      "additions": 1079,
+      "deletions": 35,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/286",
+      "display_title": "Music Studio: explicit read-only Lyrics Melody reference selection"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/285",
+      "number": 285,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Lyrics anchors previously displayed a phrase number without inspecting the referenced Melody candidate. The explicit Melody参照を確認 action now resolves exactly one existing family/candidate reference and displays exact Lyrics anchors, abstract phrase event slots, degrees and duration units. Missing/ambiguous/incompatible references, malformed excluded lines and invalid/duplicate/orphan event memberships fail closed. Selected ranges survive refresh. No note-syllable allocation, lyrics text generation or musical policy is introduced.\n\nRead-only runtime Preview/Cancel do not mark pending or alter workspace/MIDI/history. Stale workspace/MIDI hides verified output until reinspection. Derived Preview never enters Save/Reopen/JSON/Backup. Unknown fields preserved, legacy render performs no resolution/repair/write. Existing metadata adoption and Family transaction/dependency policy remain unchanged. Duplicate exact family/candidate references are ambiguous; no latest-set fallback or automatic disambiguation.\n\n2026-10-03 JST final HEAD 58d4d358b4ba5844f1494844060fbf7239ef3815. Baseline 1196/1196 PASS; updated node --test 1215/1215 PASS (19 new regressions), FAIL 0, skipped 0. All 131 JS node --check PASS; git diff --check PASS. Existing Family/Section/Lyrics/Arrangement/Continuation/rollback/Undo/Redo suites retained.\n\nFinal-head Actions https://github.com/puitoybox-cloud/nova-studio/actions/runs/37114273041 SUCCESS. Google Chrome 154.0.8037.57: 1440/820/390 PASS. Artifact 11270693336 downloaded; report HEAD matches final HEAD; 120 captures. Screenshots visually inspected at all widths, selected M1–1 retained. Normal reference Preview/Cancel and ambiguous rejection pass with unchanged workspace/MIDI. Console error 0, warn 0, pageerror 0; external requests 0. Linux Japanese font is unavailable: Japanese/touch physical acceptance remains.\n\nFresh main/Open PR inventory, all 29 Draft HEAD/mergeability/head Actions audited. Base #284 cf283a96c0bd25e3ca4ff467b63f687a17720ccb. Main and all 31 pre-existing Open PR HEADs unchanged. Independent branch feature/music-ai-lyrics-melody-reference-preview-v1. Records: verification/music-ai-lyrics-melody-reference-audit.json and verification/music-ai-lyrics-melody-reference-preview.md. Local and remote trees equal; clean worktree.\n\nRemaining: lyrics text and explicit note/syllable allocation, candidate-reference disambiguation, instrument rendering, Section replacement/edit, Continuation composition/source-destination/Family policy. None was guessed in this unit. Further implementation requires a separate scoped unit; this read-only responsibility is complete.\n\nPhysical checks on a separate synthetic project: Intel Mac/Chrome and M1 iPad/Safari, generate Family then Lyrics with same context; B Melody参照を確認 with partial range; verify anchors/events and retained range; Cancel; missing/duplicate refs refuse. Verify Japanese/touch display. Keystation recording/playback remains physical-only. Intel Mac Audio-to-MIDI accuracy is separate.\n\nSynthetic/local only. No real songs/backups, external AI/provider/API-key communication, migrations/load-time writes, Ready/Merge/Auto Merge/force push. Draft only.",
+      "title": "Music Studio: explicit Lyrics Melody phrase-reference Preview",
+      "base": "feature/music-ai-continuation-source-preview-v1",
+      "base_sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "head": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "head_sha": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "24e1ef27276f8aab102f256cb457907a0fdefc8f",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T09:45:33Z",
+      "updated_at": "2026-10-03T09:53:18Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 7,
+      "additions": 860,
+      "deletions": 14,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/285",
+      "display_title": "Music Studio: explicit Lyrics Melody phrase-reference Preview"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/284",
+      "number": 284,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Continuation materialization previously accepted its recorded source without checking the current phrase. Preview now validates the existing source track/range, observed count, fingerprint and intervals; Apply rechecks the runtime observed-note snapshot. Individual and Family previews expose the source window and existing 64-note observation limit. Invalid/missing/stale sources fail closed without repair or writes.\n\nNo new continuation composition, source/destination mapping, Family dependency policy, schema or migration. Existing generator fingerprint is not a full raw-note hash; Preview-generation validation is limited to recorded information, while runtime Preview-to-Apply guards detect ID/velocity/octave/unknown-field changes. Derived snapshots never enter saved projects/workspaces; unknown fields and legacy load/render write 0 are preserved.\n\n2026-10-03 JST: baseline 1165/1165 PASS; updated node --test 1196/1196 PASS, FAIL 0, skipped 0. All 129 JS node --check PASS; git diff --check PASS. 31 new regressions cover source/refusal/stale/partial/Undo/Redo/Save/Reopen/JSON/Backup and legacy zero writes. Existing Family/Section/Lyrics/Arrangement tests retained. Final-head Actions run 37110146001 SUCCESS: Google Chrome 154.0.8037.57, 1440/820/390 PASS. Downloaded artifact 11269821196 matches HEAD cf283a96c0bd25e3ca4ff467b63f687a17720ccb; 117 captures. New normal/stale-before/stale-after/legacy-invalid source cases and existing Family/Section/Lyrics/Arrangement flows all PASS. Console error 0, warn 0, pageerror 0, external requests 0. Screenshots inspected at all widths; Linux runner lacks Japanese fonts, so Japanese/touch rendering remains physical acceptance.\n\nFresh main/Open PRs/all 28 Draft HEADs, mergeability and head Actions audited; all clean with CI success. Main and all 30 existing Open PRs untouched. Base #283 2cef9c22c99cceb231263fa75f0091470309a103. Records: verification/music-ai-continuation-source-audit.json and verification/music-ai-continuation-source-preview.md.\n\nSynthetic/local only. No real song/backup edits, external AI/provider/API-key communication, Ready/Merge/Auto Merge/force push. Physical acceptance remains Intel Mac/Chrome and M1 iPad/Safari synthetic Continuation Preview/Cancel/partial Apply/Undo/Redo/Save/Reopen and stale refusals; Keystation recording/playback is physical-only. Audio-to-MIDI accuracy is separate.\n\nFinal re-fetch (2026-10-03 JST): main and all 30 pre-existing Open PR HEADs unchanged. #284 remains Draft/Open/mergeable. Local/remote commit trees equal; clean worktree. Final independent branch HEAD cf283a96c0bd25e3ca4ff467b63f687a17720ccb. Existing Family Continuation dependency/conflict rules remain fail-closed; this does not claim new positive Family Continuation Apply support.\n\nVerification source: https://github.com/puitoybox-cloud/nova-studio/actions/runs/37110146001",
+      "title": "Music Studio: verify recorded Continuation sources before Preview and Apply",
+      "base": "feature/music-ai-arrangement-entry-preview-v1",
+      "base_sha": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "head": "feature/music-ai-continuation-source-preview-v1",
+      "head_sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "745019c3d0433c4df6b5b5b23b301a232c4e753b",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T08:34:06Z",
+      "updated_at": "2026-10-03T08:40:03Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 1,
+      "changed_files": 9,
+      "additions": 968,
+      "deletions": 3,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/284",
+      "display_title": "Music Studio: verify recorded Continuation sources before Preview and Apply"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/283",
+      "number": 283,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Arrangement metadata previously exposed an entry measure without exact ticks or partial filtering. Individual Preview, Family Preview and selected Apply Plans now expose the existing entry as a measure anchor using the coordinated meter map; excluded entries remain excluded. No instrument rendering, sounding duration or MIDI allocation is inferred.\n\nInvalid range, entry, roles, references and tick conversion fail closed before explicit Preview/adoption/Family Apply. Source candidates, existing instruments and unknown fields remain intact; derived timelines never enter workspace storage. Legacy malformed data loads/renders without writes, migration or repair. The existing one-bar B entry lies outside its candidate; explicit Preview refuses it without inventing a generator policy.\n\n## Final verification — 2026-10-03 JST\nHEAD `2cef9c22c99cceb231263fa75f0091470309a103`.\n- node --test: 1165/1165 PASS; FAIL 0; skipped 0 (fresh baseline 1139/1139)\n- All 128 JavaScript node --check PASS; git diff --check PASS; clean worktree and local/remote trees equal\n- 26 new regressions: changing-meter entry, invalid/excluded source/ref/roles/ticks, partial empty selection, stale, atomic refusal/rollback, Undo/Redo, Save/Reopen, JSON, Backup/Restore, timeline reconstruction and legacy load/render write 0\n- Final-head CI SUCCESS: Music Studio AI Assistant UI run 37109206174; real Google Chrome 154, 1440/820/390 PASS; 99 captures\n- Downloaded artifact 11269331110 matched final HEAD; screenshots inspected. Console error 0, warn 0, pageerror 0, external requests 0 across all widths and normal/refusal cases\n- Existing Family/Project Section/Lyrics flows retained. Arrangement metadata Family Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen PASS\n- First product checkpoint a4a05b1fd090028ec976864563c0c44ea09a1014 also passed CI and all 99 captures. Second checkpoint adds audit and persistence reconstruction verification; product code unchanged.\n\n## Source and preservation\nFresh main/Open PRs/issues plus latest HEAD/mergeable/CI for all 27 existing Drafts: heads unchanged, mergeable clean and returned CI success. Final re-fetch confirms every one of the 29 pre-existing Open PR heads unchanged. Main 552d56eafddfd192970c09f7d6278696cf8775c3. Independent branch based on #282 b2075209428dedd91775de52ea45585ed9ba7bbd. Records: verification/music-ai-arrangement-entry-audit.json and verification/music-ai-arrangement-entry-preview.md.\n\nNo main/existing PR/branch changes, real song/backup edits, schema changes, migration/load-time writes, deletions, external AI/Live Provider/API-key calls, Ready/Merge/Auto Merge or force push. Draft only.\n\n## Remaining / physical acceptance\nInstrument rendering, lyric text/note allocation, Section replacement/edit and Continuation policy remain separate units.\nIntel Mac/Chrome and M1 iPad/Safari: separate synthetic changing-meter project; Arrangement B M2–3 Preview shows one M2/tick 1000–1720 entry, M3 alone shows zero, invalid outside range refuses. Section+Chord+Arrangement metadata-only Family Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen. Check Japanese rendering and touch (Linux Chrome runner lacks Japanese fonts). Keystation Mini 32 MK3 recording/playback remains a physical-device regression check. Earlier Intel Mac Audio-to-MIDI accuracy is separate.",
+      "title": "Music Studio: exact Arrangement entry previews and guarded partial selections",
+      "base": "feature/music-ai-lyrics-exact-preview-v1",
+      "base_sha": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "head": "feature/music-ai-arrangement-entry-preview-v1",
+      "head_sha": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "436e2c9f2125d70d800711f4cc5bf470f418118d",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T08:13:47Z",
+      "updated_at": "2026-10-03T08:21:57Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 10,
+      "additions": 994,
+      "deletions": 8,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/283",
+      "display_title": "Music Studio: exact Arrangement entry previews and guarded partial selections"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/282",
+      "number": 282,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Lyrics Structure previously returned all four phrase slots for partial Preview, without exact tick windows, and accepted malformed excluded stress. Individual Preview, Family Preview and selected Apply Plans now show only the selected measure anchors through the coordinated meter map, including line IDs, syllable/stress and existing Melody candidate/phrase references. UI explicitly distinguishes measure anchors from sung durations and unallocated note assignment.\n\nOriginal source lines, project Lyrics and syllableAssignments remain unchanged; derived timelines never enter stored workspace. All original lines are validated before filtering, and individual adoption validates too. Invalid source/range/ref/ticks fail closed. Distinct same-measure lines remain distinct and an empty-anchor selection shows zero. Candidate status/refusal is visible; the candidate-kind dropdown retains Lyrics after generation/Preview/reopen.\n\n## Final verification — 2026-10-03 JST\nHEAD `b2075209428dedd91775de52ea45585ed9ba7bbd`.\n- node --test: 1139/1139 PASS; FAIL 0; skipped 0\n- All 127 tracked JavaScript: node --check PASS\n- git diff --check PASS; local/remote trees matched; clean worktree\n- 30 new regressions: exact changing-meter partial/all/short/empty anchors, excluded malformed source, invalid/unavailable ticks, direct adoption rejection, Family metadata Plan/Preflight/Apply/atomic one Undo/Redo, Save/Reopen/JSON export/import/Backup Restore, existing Lyrics/assignments retained and legacy load/render write 0\n- Real Google Chrome 1440/820/390 PASS; 78 captures. Downloaded artifact 11266514183 matched final HEAD; screenshots inspected.\n- Every width and existing/new case: Console error 0, warn 0, pageerror 0, external requests 0\n- Existing Family and Project Section normal/refusal flows retained; Lyrics metadata flow Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen PASS\n- Final-head CI SUCCESS: AI Assistant UI run 37102960643; scoped MIDI repair run 37102960642\n- Initial product checkpoint 12532dd9b05e1e1b24be3a37293faef09c96958c also passed both CI workflows and all 78 captures; visual inspection led to the candidate-kind retention refinement. Two meaningful checkpoints saved on the independent branch.\n\n## Fresh-source audit and preservation\nFresh GitHub main/Open PRs/issues plus latest HEAD/mergeable/CI for all 26 existing Drafts #256–#281; all mergeable with returned CI SUCCESS. Main `552d56eafddfd192970c09f7d6278696cf8775c3`; #279 `c6a73c24706e31a95120201f1b552dbca43f6312`. Independent branch based on latest safe #281 `f0d13fc8c355f624210538ca0d7655b8b2abea57`; fresh baseline 1109/1109 PASS. Final re-fetch confirms main and all 28 pre-existing Open PR heads unchanged. Actual #281 source reproduced the missing timeline/partial filtering and malformed-source acceptance. Records: verification/music-ai-lyrics-exact-preview-audit.json and verification/music-ai-lyrics-exact-preview.md.\n\n## Remaining / physical acceptance\nActual lyric text/note-syllable allocation, Arrangement instrument rendering, Section replacement/edit and Continuation policies remain distinct units. No inferred note allocation or new dependency policy.\n\nIntel Mac/Chrome and M1 iPad/Safari: separate synthetic changing-meter project, Lyrics B M2–3 Preview exact line 2/3 windows; invalid range rejection; Lyrics+Melody metadata-only Family Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen. Recheck existing Project Section flow, Japanese rendering and touch. Linux runner lacks Japanese fonts, so physical text rendering remains unverified. Keystation Mini 32 MK3 recording/playback and earlier Intel Mac Audio-to-MIDI accuracy remain separate device checks.\n\nSynthetic deterministic local only. No main/existing PR/branch changes, real song/backup edits, data/feature deletion, schema change, migration/load-time write, external AI/Live Provider/API-key communication, Ready/Merge/Auto Merge or force push. Draft only.",
+      "title": "Music Studio: exact Lyrics anchor previews and guarded partial selections",
+      "base": "feature/music-ai-project-section-apply-v1",
+      "base_sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "head": "feature/music-ai-lyrics-exact-preview-v1",
+      "head_sha": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "6c67d0a3b3c2bae35258e052382b26e98e217176",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T06:18:21Z",
+      "updated_at": "2026-10-03T06:28:16Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 14,
+      "additions": 1171,
+      "deletions": 19,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/282",
+      "display_title": "Music Studio: exact Lyrics anchor previews and guarded partial selections"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/281",
+      "number": 281,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Section candidates had exact interval Previews but only adoption metadata. An unchecked-by-default Apply Section to Project option now appends exact selected Section rows after Plan, Preflight and explicit Confirm. Existing rows and unknown fields are retained. Overlap, unknown legacy tick ranges, ID/set ambiguity, conflicting mode, stale source and altered Section plans fail closed.\n\nMIDI, adoption metadata and Project Sections share the existing atomic Editor Undo/Redo unit. Save detects concurrent stored Section edits, retains newer Undo during in-flight saves, supports failure/retry and restores absence of a legacy sections field on Undo. No schema migration or load/render write. Default and metadata-only Family behavior remain adoption-only. Current Project Sections are visible in a compact details area.\n\n## Final checkpoint verification — 2026-10-03 JST\nHEAD `f0d13fc8c355f624210538ca0d7655b8b2abea57`.\n- node --test: 1109/1109 PASS, FAIL 0, skipped 0 (fresh #280 baseline 1082/1082)\n- All 127 tracked JavaScript: node --check PASS\n- git diff --check PASS; local and remote trees matched; clean worktree\n- 27 new regressions: Section-only, Melody+Section, full Family, exact changing-meter partial ticks, rollback before/after binding, successive disjoint operations, ordinary MIDI history, Save/Reopen/JSON/Backup, absent/opaque legacy fields, in-flight Undo, failed-save retry and concurrent-source rejection\n- Final-head real Google Chrome 1440/820/390 PASS; 63 screenshots. Downloaded artifact 11266227004 report HEAD matches final checkpoint; screenshots inspected.\n- All widths/cases: console error 0, warn 0, pageerror 0, external requests 0\n- Existing Family flows include Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Apply -> Undo -> Redo -> Save -> Reopen, exact boundaries, metadata-only, partial selection and blocked cases\n- SUCCESS: AI Assistant UI run 37101738269; scoped MIDI repair 37101738235; cache consistency 37101738234\n\nIndependent branch based on freshly fetched #280 `4faed5d1810c841d2e191984e9ff99cf33aa8db7`. Fresh GitHub audit covered main and 25 pre-existing Drafts #256–#280 (mergeable and returned CI success), plus Open PRs #10/#35. Final re-fetch confirms main `552d56eafddfd192970c09f7d6278696cf8775c3` and all pre-existing Open PR heads unchanged. Records: verification/music-ai-project-section-apply-audit.json and verification/music-ai-project-section-apply.md. Two meaningful checkpoints saved on this new branch.\n\n## Physical acceptance and remaining work\nIntel Mac/Chrome and M1 iPad/Safari: separate synthetic project, choose Section M2-3 plus Apply Section to Project; Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen. Verify visible rows, unchanged Section-only MIDI, overlap/unknown legacy range rejection, touch and Japanese text. Linux runner lacks Japanese fonts; device text rendering remains unverified. Keystation Mini 32 MK3 recording/playback and earlier Intel Mac Audio-to-MIDI accuracy remain separate physical checks.\n\nArrangement instrument rendering, Lyrics realization, automatic/replacement/edit Section and Continuation policy remain future work. No real song/backup writes, deleted functionality, Live Provider/External AI/API-key communication, Ready/Merge/Auto Merge or force push. Draft only.",
+      "title": "Music Studio: explicit Project Section Apply with atomic Undo/Redo",
+      "base": "feature/music-ai-section-exact-preview-v1",
+      "base_sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "head": "feature/music-ai-project-section-apply-v1",
+      "head_sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "4cec25e4bdf9f0a947729312ba8d501e792c6fb6",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T05:53:13Z",
+      "updated_at": "2026-10-03T06:06:06Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 15,
+      "additions": 1170,
+      "deletions": 43,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/281",
+      "display_title": "Music Studio: explicit Project Section Apply with atomic Undo/Redo"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/280",
+      "number": 280,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Section candidates could describe more bars than their own candidate range, and their Preview lacked exact Section intervals. New generated plans now fit the explicit range while retaining all named parts when space permits. Section Preview, Family Preview and Apply Plan show exact measure/tick intervals; partial selections clip individual Section labels. Invalid/overflow/gapped plans and resolver failures reject before MIDI, adoption or history changes.\n\nExisting Family Apply/atomic rollback/history/persistence is reused. Section remains adoption metadata. Timeline is derived rather than stored in a new schema. Saved candidates are not regenerated or migrated on load; malformed legacy plans reject only during explicit Preview/Apply. Regenerate a candidate instead of silently repairing old data.\n\n## Final verification — 2026-10-03 JST\nExact HEAD: `4faed5d1810c841d2e191984e9ff99cf33aa8db7`\n\n- [AI Assistant UI / exact-head real Chrome 37099461794](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37099461794): SUCCESS\n- [Scoped MIDI repair 37099461793](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37099461793): SUCCESS\n- node --test: 1082/1082 PASS, FAIL 0, skipped 0, locally on freshly fetched exact remote HEAD and in CI\n- all 127 tracked JavaScript node --check PASS\n- git diff --check against #279 base and working tree PASS\n- real Google Chrome: 1440 / 820 / 390 PASS; 45 screenshots total\n- console error 0, warn 0, pageerror 0, external request 0 at all widths; artifact report downloaded and exact HEAD verified\n- artifact music-ai-assistant-ui-verification ID 11265607928 includes exact checked-out HEAD report and screenshots\n- existing Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Apply -> Undo -> Redo -> Save -> Reopen flows PASS; new exact Section Plan rows and invalid Section rejection with zero mutations PASS\n- added tests cover offset 1/2/3/4/5/8-bar A/B/C totals, exact meter-change tick 1000 and clipped M2-3 intervals, malformed/empty/overflow/gapped parts, resolver failure, MIDI/workspace/history nonmutation, Save/Reopen/JSON/Backup timeline reconstruction, and legacy overflowing Section load/render write 0\n- #279 baseline reproduced incorrect Section totals: 1 selected bar -> A/B/C 2/3/2 bars; 2 -> 2/3/3; 4 -> 4/5/4\n- new total: 19 regression tests; no test disabled or guard weakened\n\n## Checkpoints and protected refs\nIndependent branch `feature/music-ai-section-exact-preview-v1`, based on fresh #279 `c6a73c24706e31a95120201f1b552dbca43f6312`. Checkpoints `9da640f` and `4faed5d` saved through non-force ref updates. Fresh final audit confirms main `552d56eafddfd192970c09f7d6278696cf8775c3` and all 24 pre-existing Draft HEADs unchanged. No existing PR or branch was modified. This PR remains Open / Draft / mergeable.\n\nSource audit and verification record: `verification/music-ai-section-exact-preview-audit.json`, `verification/music-ai-section-exact-preview.md`.\n\n## Remaining acceptance\nPhysical Intel Mac/Chrome and M1 iPad/Safari: separate synthetic project, generate Family B for four bars, view Section rows, select Section M2-3, Plan -> Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen; confirm MIDI unchanged. Check physical iPad touch/Japanese font rendering. Normal MIDI partial Apply playback and Keystation Mini 32 MK3 recording/playback remain physical checks. Previous Intel Mac Audio-to-MIDI accuracy remains pending separately; Linux Chrome does not establish these results.\n\nProject Section writing, Arrangement instrument rendering and Lyrics realization remain future work; Continuation dependency/conflict policy remains unchanged. No unrequested policy is inferred.\n\nSynthetic deterministic local only. No real songs/backups, migration/load-time writes, feature removal, Live Provider/External AI/API key communication, Ready/Merge/Auto Merge or force push.",
+      "title": "Music Studio: exact bounded Section timeline previews",
+      "base": "feature/music-ai-family-metadata-range-v1",
+      "base_sha": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "head": "feature/music-ai-section-exact-preview-v1",
+      "head_sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "7ae2c868c945fc967366f748a42ce9ca4368ad10",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T05:15:16Z",
+      "updated_at": "2026-10-03T05:23:07Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 2,
+      "changed_files": 13,
+      "additions": 860,
+      "deletions": 17,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/280",
+      "display_title": "Music Studio: exact bounded Section timeline previews"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/279",
+      "number": 279,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Metadata Family adoption could accept measures outside the original candidate range, and metadata-only Plans did not show exact selected ticks. Every selected component now validates its explicit range, including metadata-only mode. Incomplete/malformed, noninteger/reversed and outside ranges fail closed. Plan displays exact measure/tick intervals; adoption stores optional ticks in the existing selection field without rewriting source candidates or metadata-only MIDI.\n\n## Final verification — 2026-10-03 JST\nExact product HEAD: `c6a73c24706e31a95120201f1b552dbca43f6312`\n\n- [AI Assistant UI / exact-HEAD Chrome 37091731706](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37091731706): SUCCESS\n- [Scoped MIDI repair 37091731710](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37091731710): SUCCESS\n- `node --test`: 1063/1063 PASS, FAIL 0, skipped 0, both locally on freshly fetched exact remote HEAD and in CI\n- all 127 tracked JavaScript `node --check`: PASS\n- `git diff --check` against #278 base and working tree: PASS\n- Google Chrome 154.0.8037.57: 1440 / 820 / 390 PASS\n- 14 captures per width / 42 total: console error 0, console warn 0, pageerror 0, external request 0\n- browser regression retains full Family and partial normal/rejection flows; adds metadata Melody, Section outside-range rejection, metadata Family outside-range rejection, exact metadata measure/tick Plan display and adoption persistence\n- Plan -> Preflight -> Cancel -> Plan -> Preflight -> Confirm -> Apply -> Undo -> Redo -> Save -> Reopen PASS\n- Node integration additionally verifies JSON export/import, Backup/Restore and old-project load/render write 0\n- 27 new core regressions reproduced failures before their respective corrections; 2 new UI rejection regressions pass\n- artifact `music-ai-assistant-ui-verification` (11262584562) contains screenshots and actual checked-out HEAD report\n\n## Independent checkpoints and scope\nNew branch `feature/music-ai-family-metadata-range-v1`, based on freshly fetched Draft #278 `0777660e8871830b0d167fd00cbc13ced150d1c4`. Checkpoints `a408a89`, `cd5877d`, `c6a73c2` saved with non-force ref advances. Main `552d56eafddfd192970c09f7d6278696cf8775c3` and all existing Open PR HEADs were checked again and remain unchanged. All 23 existing Drafts were mergeable with successful returned CI runs at start. Main pages deployment 35718789435 was successful.\n\nFresh HEAD/mergeability/CI audit is saved in `verification/music-ai-family-metadata-range-audit.json`; implementation, failure reproduction, verification and remaining acceptance are documented in `verification/music-ai-family-metadata-range.md`. Existing Family transaction/history/persistence foundation is reused.\n\n## Remaining acceptance\nPhysical Intel Mac/Chrome and M1 iPad/Safari: separate synthetic project, Section or Metadata only M1-1, check Plan exact ticks, Preflight -> Confirm -> Undo -> Redo -> Save -> Reopen. Select outside the generated candidate range and verify BLOCKED with no mutation. Verify playback and Keystation Mini 32 MK3 recording/playback after an ordinary MIDI partial Apply. Linux Chrome does not establish physical-device acceptance.\n\nSection/Arrangement/Lyrics remain adoption metadata rather than project-section/instrumental rendering. Continuation remains subject to the existing dependency/conflict rule; no new policy is inferred here.\n\nSynthetic deterministic local only. No existing-PR/main changes, real songs/backups, automatic migration/load-time writes, deleted functionality, Live Provider/External AI/API Key communication, Ready/Merge/Auto Merge or force push. Draft only.",
+      "title": "Music Studio: exact range contract for metadata Family adoption",
+      "base": "feature/music-ai-partial-family-history-v1",
+      "base_sha": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "head": "feature/music-ai-family-metadata-range-v1",
+      "head_sha": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "fe3606bcc16b5e8b33833da9dba03058c3ab0b92",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-03T02:56:31Z",
+      "updated_at": "2026-10-03T03:04:16Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 3,
+      "changed_files": 8,
+      "additions": 582,
+      "deletions": 13,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/279",
+      "display_title": "Music Studio: exact range contract for metadata Family adoption"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/278",
+      "number": 278,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "Partial Family Apply now lets the user select components and an exact measure range before Plan, Preflight and explicit Confirm. Chord/Bass uses the existing Bass materializer; Section/Arrangement/Lyrics record adoption metadata. Metadata-only mode records the chosen components without changing MIDI. Empty or invalid selections fail closed. Changing a selection invalidates the previous Plan/Preflight.\n\nDeclared dependencies must be explicitly selected in the same candidate family. Arrangement-only and Lyrics-only selections show their missing-dependency reasons and cannot Apply. Nothing is added implicitly; metadata-only mode can explicitly include dependencies without writing MIDI. Melody/Continuation conflicts stay blocked.\n\nAdoption now shares the existing Editor snapshot history. Both MIDI and candidate status/adopted arrays/workspace history restore in one Undo/Redo unit, including metadata-only transactions. Save rebasing retains the runtime workspace binding. An Undo during an in-flight metadata-only save stays pending instead of being overwritten by completion of the older save. No saved MIDI field or separate Undo system is added. Exact partial ranges and counts in Plan reuse the existing narrowing bridge.\n\n## Final verification — 2026-10-03 JST\nExact product HEAD: `0777660e8871830b0d167fd00cbc13ced150d1c4`\n\n- [AI Assistant UI / exact-head Chrome verification 37037679357](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37037679357): SUCCESS\n- [Scoped MIDI repair 37037679365](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37037679365): SUCCESS\n- [Cache consistency 37037679319](https://github.com/puitoybox-cloud/nova-studio/actions/runs/37037679319): SUCCESS\n- `node --test`: 1034/1034 PASS, FAIL 0, skipped 0 (local and exact remote-head CI)\n- all 127 JavaScript `node --check`: PASS\n- `git diff --check`: PASS; CI checks the diff against this PR's #277 base\n- real Google Chrome 154.0.8037.57: 1440 / 820 / 390 PASS\n- each width: Melody-only, Bass-only, Section metadata-only, Melody+Bass and Family metadata-only -> Preview -> selection -> Plan -> Preflight -> Cancel with zero mutation -> Plan -> Preflight -> Confirm -> Apply -> one Undo -> Redo -> Save -> Reopen PASS\n- each width: Arrangement-only and Lyrics-only dependency rejection with zero MIDI/workspace/history mutation PASS\n- console error/warning/pageerror captures: empty; external-request captures: empty across all 33 browser captures\n- artifact `music-ai-assistant-ui-verification` includes screenshots and a report carrying the actual checked-out HEAD\n- Node regressions additionally cover JSON export/import, Backup/Restore, old-project load/render write 0, final Editor commit rollback, prior/later normal MIDI history, empty/invalid selection, family mismatch, stale Project/Track/range/workspace, protected ranges, exact meter-change tick 1000, legacy lock plus additive partial unlock, unchanged lock metadata, and Undo during an in-flight metadata-only save\n\n## Scope and remaining acceptance\nIndependent branch `feature/music-ai-partial-family-history-v1`, stacked on Draft #277 `f7383c988f9d98f0854a652edeb9171d949a8fd2`. Main `552d56eafddfd192970c09f7d6278696cf8775c3` and PR #271–#277 were freshly fetched and remain unchanged. Checkpoints are saved on GitHub.\n\nPhysical Intel Mac/Chrome, M1 i…18091 tokens truncated…cript files: `node --check` PASS\n- `git diff --check` PASS\n- synthetic save/reopen, JSON, Backup/Restore and Undo/Redo coverage PASS\n\nBrowser behavior remains the verified #269 implementation because this foundation is not loaded by either HTML entry point.",
+      "title": "Music Studio local-first AI workflow foundation",
+      "base": "feature/music-coordinated-a-browser-v1",
+      "base_sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "head": "feature/music-ai-workflow-foundation-v1",
+      "head_sha": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "11f26603b8784a88032b16aff63323462edea990",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-02T06:51:46Z",
+      "updated_at": "2026-10-02T06:51:46Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 1,
+      "changed_files": 4,
+      "additions": 90,
+      "deletions": 0,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/270",
+      "display_title": "Music Studio local-first AI workflow foundation"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/269",
+      "number": 269,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "A meter changes inside a measure previously left the browser and internal Editor closures on scalar timing, and browser recording did not share the existing Tempo Map service. This coordinated unit activates exact A timing throughout those paths, retains legacy tick protection and additive partial releases, and rejects protected edits atomically, including nested commands and corrupt Undo context. A real browser test found and fixed a save triggered by load-time scroll initialization.\n\nIndependent Draft combining the immutable GitHub sources of #262–#268 for coordinated browser review. Main and the existing PRs were not modified. It reconstructs current public sources; it does not assume the earlier unpublished local prototype exists on GitHub. #268's commit guard is explicitly coordinated with the A browser implementation, retaining its 33 original regression tests unchanged. No automatic merge is claimed.\n\nSource heads rechecked 2026-10-02 JST:\n- main: 552d56eafddfd192970c09f7d6278696cf8775c3\n- #262: a857c27674d6949488ff8884948499966f9bca40\n- #263: 9c877b267a181b560332e07071b7f86539eb1cbf\n- #264: c052f1614155f8ccd8e84235d6218e81ccc53758\n- #265: 7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c\n- #266: 0101b246e219e3307ef55836b372f36fa331fa48\n- #267: f06cf5ac29d2fa96857ce0dc623d6e1696f016a6\n- #268: 909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee\n\nInitial verification on b6834030ba386508f2d8023a367ed8c5cf6d35ec, before the final narrow-layout review:\n- [Checkpoint workflow 36969808601 SUCCESS](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36969808601): node --test 936/936 PASS, 0 FAIL/skipped; all 111 JS syntax and git diff --check PASS.\n- Real Google Chrome 154: 1440/820/390 PASS; console error/warn/pageerror 0, external requests 0, load-time writes 0. Screenshots inspected; final-run artifacts are byte-identical to the inspected images.\n- Actual standalone UI checks exact bar 2 [1000,1720), ruler position, protected DOM-dispatched move/resize, editable move, explicit save/reopen, mixed legacy/new/release protection and native IndexedDB roundtrip. Meter tick 1000 and tempo tick 777 retained.\n- Seven original immutable meter scenarios and seven coordinated-session invocations PASS: 4/4, 3/4, 6/8, boundary, mid-bar, multiple and denominator changes.\n- Synthetic/memory save/reopen, actual JSON export/import and Backup/Restore preserve mixed protection and input data. Fake IndexedDB cases also PASS.\n- Recording onset/release, held-note Stop, playhead/loop timing and the actual metronome closure tested against the existing Playback timing service.\n\nFresh unchanged main: 774 / 768 PASS / 6 FAIL. Unchanged #267: 806 / 800 PASS / identical 6 FAIL, new failures 0. Combined #262–#267: 874/874. #268 commit stage: 907/907. Final coordinated reconstruction: 936/936. Combined #262 already resolves the known cache/selection baseline failures; no tests were disabled. #267 CI 36880714212 remains SUCCESS and #267 remains Draft.\n\nCommit paths covered: move, resize, delete, add, recording add, paste, repair apply, candidate apply, timeline resize, measure/range lock, partial unlock, Undo/Redo. Exact A ruler/grid/snap/range/resize/candidates are coordinated internally. Dependency revision checks fail closed. Explicit note flags and legacy aliases are preserved. No saved-song migration, actual backup modification, Live Provider/External AI communication, Ready/Merge/Auto Merge or force push.\n\nFinal narrow-layout review resolves the previously crowded short-bar labels and compressed controls at 390px. Linux runner has no Japanese fonts. Physical Mac/iPad touch/pencil, real MIDI permissions/device recording, audible metronome and audio/MIDI latency still require hardware. PR262's Intel Mac Audio-to-MIDI helper checks remain separate. The browser harness dispatches DOM events; it does not claim physical gesture or audible verification.\n\nFull verification record: [verification/coordinated-resume-20261002.md](https://github.com/puitoybox-cloud/nova-studio/blob/feature/music-coordinated-a-browser-v1/verification/coordinated-resume-20261002.md). Machine-readable browser results: verification/coordinated-browser-report-20261002.json. Checkpoint branch retained for resuming work; this independent PR remains Draft.\n\nFinal follow-up verification: a fresh disposable worktree combined the exact #262–#268 source heads, including #268's original workflow and tests, with zero textual conflicts: node --test 907/907 PASS, 0 FAIL and git diff --check PASS. This verifies the source stage separately from the manually coordinated browser unit. All 10 PR-triggered workflows plus the exact-head checkpoint workflow completed SUCCESS (11/11), including Intel macOS Audio Helper and Swift/macOS/iPad-simulator builds. These CI builds do not replace physical-device verification.\n\n\nFinal review — 2026-10-02 JST\n\nFinal product HEAD: 98b7067bbdf0a967c6d4c69b9be8721d688e7e52. All 11 current PR-triggered workflows completed SUCCESS, including [exact-head full-suite + real Chrome verification 36973666369](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36973666369), Intel Mac Audio Helper packaging and Swift macOS/iPad-simulator builds. The browser workflow now explicitly checks out the PR head SHA rather than its synthetic merge SHA.\n\nA fresh clean checkout repeated node --test: 936/936 PASS, 0 FAIL/skipped. All 111 tracked JavaScript files pass node --check; main-to-final git diff --check PASS. Fresh exact #262–#268 disposable integration: zero textual conflicts, 907/907 PASS. The only cross-PR changed-file overlap is #262/#268 music-studio-editor.js; #269 coordinates that code with exact A timing. #263–#267 source files are byte-identical in #269, and #268's 33 original tests are unchanged. These are overlapping implementation stages, not eight PRs to merge independently.\n\n390px fix: keep core part names 92px and Mute/Solo 28px on a horizontally scrolling strip; preserve history controls. Short bars show their number first, keeping exact hit areas, aria labels, source ticks and full tooltip. Wider labels remain on one line. Final 1440/820/390 screenshots downloaded and visually reviewed. Browser assertions verify no control overlap, retained widths, narrow horizontal scrolling and label placement. All three widths PASS; console error/warn/pageerror 0, external requests 0, load-time writes 0. Native IndexedDB roundtrip, explicit save/reopen, lock/releases, protected DOM move/resize and editable move PASS. Browser artifacts: [11212229452](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36973666369/artifacts/11212229452).\n\nSeven immutable meter cases and seven createCoordinatedSession cases rerun PASS: 4/4, 3/4, 6/8, boundary, exact mid-bar, multiple and denominator changes. Legacy/new range locks, partial releases, JSON reopen and Undo/Redo preserve exact tick protection. Recording onset/release, held-note Stop, frozen Tempo Map and actual metronome closure timing regressions PASS. Main and #262–#268 heads were rechecked unchanged; all PRs remain Draft. No actual songs/backups or migration, external Provider/AI calls, Ready/Merge/Auto Merge or force push.\n\nRemaining limits are physical Mac/iPad input, Japanese glyph rendering, audible metronome and audio/MIDI latency, hardware MIDI permissions/connect/disconnect, and #262 Intel Mac real-model Audio-to-MIDI accuracy (previous device FAIL is not superseded). Work-side review and browser tests are complete. A #269-specific HTTPS iPad preview or signed device install target has not been established; published main must not be reported as testing this PR. Hardware checks should use an independently verified final-head environment and synthetic projects. No physical-device start request is made by this review.\n",
+      "title": "Music Studio: coordinate exact A browser timing and protected Editor commits",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "head": "feature/music-coordinated-a-browser-v1",
+      "head_sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "dd8be34432d264f2c9a12e70b1ce5268f5d3cafc",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-02T05:40:35Z",
+      "updated_at": "2026-10-02T06:31:35Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 75,
+      "changed_files": 66,
+      "additions": 2732,
+      "deletions": 148,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/269",
+      "display_title": "Music Studio: coordinate exact A browser timing and protected Editor commits"
+    },
+    {
+      "url": "https://github.com/puitoybox-cloud/nova-studio/pull/268",
+      "number": 268,
+      "state": "open",
+      "merged": false,
+      "mergeable": true,
+      "draft": true,
+      "body": "The Editor's internal change transaction bypassed #267 range protection when direct note, recording, candidate or repair APIs were called. Validate original/destination tick protection before every commit when the actual lock dependency is present; restore the entire rejected session, return explicit errors, and expose a non-persistent failure counter to prevent ignored nested rejections. Explicit note flags remain separate from range releases. Raw malformed locks and saved additive state without enforcing dependencies fail closed.\n\nIndependent main-based Draft for the next commit-boundary stage. This does NOT enable browser A numbering/ruler/snap/resize or change host loaders; internal scalar timing remains documented, so do not activate through asset loading alone. Depends on #265 (7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c) and #267 (f06cf5ac29d2fa96857ce0dc623d6e1696f016a6). Overlaps protected #262 only in Editor source; exact three-way synthetic integration applied without conflict and retains #262 APIs/versions. No protected PR changes.\n\nValidation: 33 focused PASS (original main reproduced 25 FAIL / 8 PASS). Seven actual meter scenarios preserve scalar legacy lock ticks and exact additive releases. Full node --test with immutable dependencies: 807 / 801 PASS / 6 FAIL; fresh main 774 / 768 PASS / identical six FAIL, zero new failures. All 96 JS node --check and git diff --check PASS. Local-only #262–#267 synthetic integration: 907/907 PASS, 105 JS syntax PASS, including #267's fake IndexedDB, actual save/JSON import and memory Backup/Restore tests. Final-head CI completed SUCCESS: dedicated Editor commit lock guard [run 36966130519](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36966130519), including focused 33/33, full/baseline identity comparison, synthetic 907/907 and all syntax/whitespace checks; existing scoped MIDI repair [run 36966130488](https://github.com/puitoybox-cloud/nova-studio/actions/runs/36966130488) also SUCCESS. This commit-boundary stage is verified; coordinated production browser integration remains unfinished.\n\nFiles: music-studio-editor.js; tests/music-studio-editor-commit-locks.test.js; tools/verify-node-baseline.js; verification/music-editor-commit-locks.md; dedicated workflow. No storage migration, real saved songs/backups, UI file changes, external Provider/AI calls, main/protected PR mutation or remote integration branch. UI 1440/820/390 and Console checks not performed. Remaining coordinated browser and physical Mac/iPad work are documented. Draft only: no Ready/Merge/Auto Merge/force push.",
+      "title": "Music Studio: guard internal Editor commits against exact lock ranges",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "head": "feature/music-editor-commit-lock-guard-v1",
+      "head_sha": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "head_repo_id": 1300097468,
+      "head_repo_full_name": "puitoybox-cloud/nova-studio",
+      "merge_commit_sha": "ba331d367350e4b77ed38dc5b1a4fdc163a4aaad",
+      "user": {
+        "login": "puitoybox-cloud",
+        "name": "puitoybox-cloud",
+        "email": null,
+        "avatar_url": "https://avatars.githubusercontent.com/u/301931252?v=4",
+        "id": 301931252
+      },
+      "requested_reviewers": null,
+      "requested_team_reviewers": null,
+      "diff": null,
+      "comments": null,
+      "created_at": "2026-10-02T04:48:03Z",
+      "updated_at": "2026-10-02T04:51:05Z",
+      "closed_at": null,
+      "merged_at": null,
+      "commits": 1,
+      "changed_files": 5,
+      "additions": 171,
+      "deletions": 2,
+      "display_url": "https://github.com/puitoybox-cloud/nova-studio/pull/268",
+      "display_title": "Music Studio: guard internal Editor commits against exact lock ranges"
+    }
+  ],
+  "ci": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 290,
+        "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37179982952,
+              "name": "Music Studio offline audio acceptance",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37179982952/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37179982952/logs",
+              "workflow_id": 374385847
+            },
+            {
+              "id": 37179982912,
+              "name": "Music Audio Helper macOS",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 80,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37179982912/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37179982912/logs",
+              "workflow_id": 357094842
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 289,
+        "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37178379044,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 43,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37178379044/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37178379044/logs",
+              "workflow_id": 373005862
+            },
+            {
+              "id": 37178379047,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 71,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37178379047/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37178379047/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 288,
+        "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37129607156,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 41,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37129607156/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37129607156/logs",
+              "workflow_id": 373005862
+            },
+            {
+              "id": 37129607180,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 69,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37129607180/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37129607180/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 287,
+        "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37128009522,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 65,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37128009522/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37128009522/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37128009527,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 37,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37128009527/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37128009527/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 286,
+        "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37125944258,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 64,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37125944258/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37125944258/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37125944260,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 36,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37125944260/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37125944260/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 285,
+        "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37114273041,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 34,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37114273041/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37114273041/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 284,
+        "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37110146001,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 32,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37110146001/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37110146001/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 283,
+        "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37109206174,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 31,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37109206174/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37109206174/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 282,
+        "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37102960642,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 62,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37102960642/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37102960642/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37102960643,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 29,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37102960643/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37102960643/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 281,
+        "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37101738235,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 60,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738235/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738235/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37101738234,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 44,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738234/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738234/logs",
+              "workflow_id": 365062326
+            },
+            {
+              "id": 37101738269,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 27,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738269/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738269/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 280,
+        "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37099461793,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 58,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461793/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461793/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37099461794,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 25,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461794/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461794/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 279,
+        "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37091731710,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 56,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731710/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731710/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37091731706,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 23,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731706/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731706/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 278,
+        "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37037679365,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 54,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679365/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679365/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37037679319,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 42,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679319/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679319/logs",
+              "workflow_id": 365062326
+            },
+            {
+              "id": 37037679357,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 21,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679357/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679357/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 277,
+        "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37025404027,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 18,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025404027/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025404027/logs",
+              "workflow_id": 373005862
+            },
+            {
+              "id": 37025403269,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 51,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025403269/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025403269/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 276,
+        "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37021075209,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 14,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021075209/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021075209/logs",
+              "workflow_id": 373005862
+            },
+            {
+              "id": 37021074841,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 47,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021074841/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021074841/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 275,
+        "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37019221774,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 43,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221774/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221774/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37019221478,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 10,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221478/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221478/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 274,
+        "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37002368391,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 6,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37002368391/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37002368391/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 273,
+        "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 37000339200,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 42,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339200/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339200/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 37000339178,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 5,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339178/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339178/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 272,
+        "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36999235875,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 40,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235875/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235875/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 36999235787,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 3,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235787/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235787/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 271,
+        "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36996087448,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 38,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087448/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087448/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 36996087511,
+              "name": "Music Studio AI Assistant UI",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087511/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087511/logs",
+              "workflow_id": 373005862
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 267,
+        "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36880714212,
+              "name": "Music Studio measure lock compatibility guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 5,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36880714212/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36880714212/logs",
+              "workflow_id": 372198725
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 266,
+        "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36857393673,
+              "name": "Music Studio structure descriptors guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857393673/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857393673/logs",
+              "workflow_id": 372105444
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 265,
+        "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36856792517,
+              "name": "Music Studio meter map guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36856792517/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36856792517/logs",
+              "workflow_id": 372100449
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 264,
+        "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36854131822,
+              "name": "Music Studio MIDI metadata export guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36854131822/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36854131822/logs",
+              "workflow_id": 372078552
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 263,
+        "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36857193454,
+              "name": "Music Studio structure metadata guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 4,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857193454/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857193454/logs",
+              "workflow_id": 372069755
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 262,
+        "head": "a857c27674d6949488ff8884948499966f9bca40",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36851340615,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 31,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340615/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340615/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 36851340507,
+              "name": "Music Audio Bridge Guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 92,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340507/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340507/logs",
+              "workflow_id": 364728764
+            },
+            {
+              "id": 36851340535,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 34,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340535/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340535/logs",
+              "workflow_id": 365062326
+            },
+            {
+              "id": 36851340641,
+              "name": "Music Audio Helper macOS",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 74,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340641/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340641/logs",
+              "workflow_id": 357094842
+            },
+            {
+              "id": 36851340513,
+              "name": "Music Native Wrapper Swift",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 46,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340513/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340513/logs",
+              "workflow_id": 357826330
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 261,
+        "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35857916359,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 10,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916359/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916359/logs",
+              "workflow_id": 365062326
+            },
+            {
+              "id": 35857916467,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 7,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916467/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916467/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 260,
+        "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35853060620,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 8,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35853060620/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35853060620/logs",
+              "workflow_id": 365062326
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 259,
+        "head": "8da76987e8c0a46df703d34643f432ab57730768",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35845980410,
+              "name": "Music Selected Track ID Guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 4,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980410/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980410/logs",
+              "workflow_id": 365011907
+            },
+            {
+              "id": 35845980281,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 6,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980281/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980281/logs",
+              "workflow_id": 363922058
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 258,
+        "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35932676423,
+              "name": "Music Audio Bridge Guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 61,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35932676423/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35932676423/logs",
+              "workflow_id": 364728764
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 257,
+        "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35859941419,
+              "name": "Music Audio Helper macOS",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 38,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35859941419/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35859941419/logs",
+              "workflow_id": 357094842
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 256,
+        "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 35726291578,
+              "name": "Music Audio Helper macOS",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 5,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291578/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291578/logs",
+              "workflow_id": 357094842
+            },
+            {
+              "id": 35726291819,
+              "name": "Music Native Wrapper Swift",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 20,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291819/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291819/logs",
+              "workflow_id": 357826330
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 35,
+        "head": "0066ce391b5f5dd54f04612edd1111d59ed5d763",
+        "draft": false,
+        "mergeable": false,
+        "runs": {
+          "workflow_runs": []
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 10,
+        "head": "060bf78b8cadf773209c441a332d420043c356f5",
+        "draft": false,
+        "mergeable": false,
+        "runs": {
+          "workflow_runs": []
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 270,
+        "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36975608931,
+              "name": "Music Studio AI workflow foundation",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36975608931/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36975608931/logs",
+              "workflow_id": 372864946
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 269,
+        "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36973666391,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 37,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666391/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666391/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 36973666351,
+              "name": "Music Audio Bridge Guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 97,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666351/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666351/logs",
+              "workflow_id": 364728764
+            },
+            {
+              "id": 36973666458,
+              "name": "Music Studio cache version consistency",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 39,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666458/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666458/logs",
+              "workflow_id": 365062326
+            },
+            {
+              "id": 36973666537,
+              "name": "Music Studio structure metadata guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 9,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666537/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666537/logs",
+              "workflow_id": 372069755
+            },
+            {
+              "id": 36973666482,
+              "name": "Music Studio measure lock compatibility guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 10,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666482/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666482/logs",
+              "workflow_id": 372198725
+            },
+            {
+              "id": 36973666347,
+              "name": "Music Studio MIDI metadata export guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 6,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666347/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666347/logs",
+              "workflow_id": 372078552
+            },
+            {
+              "id": 36973666652,
+              "name": "Music Studio meter map guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 6,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666652/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666652/logs",
+              "workflow_id": 372100449
+            },
+            {
+              "id": 36973666369,
+              "name": "Coordinated Music Studio checkpoint verification",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 10,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666369/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666369/logs",
+              "workflow_id": 372814992
+            },
+            {
+              "id": 36973666427,
+              "name": "Music Studio structure descriptors guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 6,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666427/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666427/logs",
+              "workflow_id": 372105444
+            },
+            {
+              "id": 36973666419,
+              "name": "Music Audio Helper macOS",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 79,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666419/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666419/logs",
+              "workflow_id": 357094842
+            },
+            {
+              "id": 36973666467,
+              "name": "Music Native Wrapper Swift",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 51,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666467/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666467/logs",
+              "workflow_id": 357826330
+            }
+          ]
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "number": 268,
+        "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+        "draft": true,
+        "mergeable": true,
+        "runs": {
+          "workflow_runs": [
+            {
+              "id": 36966130488,
+              "name": "Music Studio scoped MIDI repair",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 32,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130488/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130488/logs",
+              "workflow_id": 363922058
+            },
+            {
+              "id": 36966130519,
+              "name": "Music Studio Editor commit lock guard",
+              "status": "completed",
+              "conclusion": "success",
+              "run_number": 1,
+              "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130519/jobs",
+              "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130519/logs",
+              "workflow_id": 372802129
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
