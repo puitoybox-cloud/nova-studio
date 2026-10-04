@@ -45,7 +45,10 @@ test('stale during byte read and before commit cannot publish',async()=>{const p
 test('Standalone evidence is capability-specific and missing distribution blocks',()=>{
   assert.equal(api.portability({issues:[]}).portable,false);
   const caps=Object.fromEntries(['browserIndexedDB','scriptStyleClosure','binaryAssets','helperRuntime','nativeComponent','hostNavigation','distribution'].map(x=>[x,'verified']));
-  delete caps.distribution;assert.deepEqual(api.portability({issues:[]},caps).issues,['unverified-distribution']);
+  delete caps.distribution;assert.deepEqual(api.portability({valid:true,issues:[]},caps).issues,['unverified-distribution']);
 });
 test('missing Backup project and changed unknown fields reject preflight',()=>{const p=fixture();
   assert.equal(api.backupCompleteness(p,{format:'music-studio-backup',version:1,projects:[]}).metadataPreserved,false);});
+
+test('actual production validator rejects corrupt musical metadata without mutation',async()=>{const p=fixture();p.musicalSettings.bpm=0;const before=JSON.stringify(p);assert.equal((await api.session(p,bytes).preflight()).accepted,false);assert.equal(JSON.stringify(p),before);});
+test('derived production assets preserve dependency edges',()=>{const p=fixture();p.audioAssets=[{assetId:'a',storage:{kind:'external-file',reference:'a.wav'}},{assetId:'b',derivedFromAssetId:'a',storage:{kind:'external-file',reference:'b.wav'}}];const r=api.resolve(p);assert.equal(r.accepted,true);assert.ok(r.graph.edges.some(e=>e.from==='audioAssets[1]:asset'&&e.to==='audioAssets[0]:asset'));});

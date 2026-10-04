@@ -3,12 +3,25 @@
 const inventory = require('./music-studio-dependency-inspection');
 const observation = require('./music-studio-observed-byte-verification');
 const durable = require('./scripts/music-studio-disposable-durable-backend');
+const fs = require('node:fs'), vm = require('node:vm');
+let validator;
+function productionValidator() {
+  if (!validator) {
+    const isolated = {}; isolated.window = isolated; isolated.globalThis = isolated;
+    for (const module of ['./music-studio-ai-workflow', './music-studio'])
+      vm.runInNewContext(fs.readFileSync(require.resolve(module), 'utf8'), isolated);
+    validator = isolated.MusicStudio.validateProject;
+  }
+  return validator;
+}
 const copy = x => JSON.parse(JSON.stringify(x));
 const signature = x => JSON.stringify(x);
 function compatibility(project) {
   const issues = [];
   if (!project || typeof project !== 'object' || Array.isArray(project)) issues.push('malformed-project');
   else {
+    const checked = productionValidator()(project);
+    if (!checked.valid) issues.push('production-project-validation-failed');
     if (project.format !== 'music-studio-project') issues.push('unknown-or-legacy-format');
     if (typeof project.projectId !== 'string' || !project.projectId.trim()) issues.push('missing-project-id');
     if (!Number.isInteger(project.revision) || project.revision < 1) issues.push('invalid-revision');
@@ -33,6 +46,12 @@ function resolve(project) {
     }
     bindings.set(id, {path: asset.path, logicalIdentity: asset.identity, kind: asset.kind});
   }
+  for (const field of ['audioAssets', 'midiAssets']) for (const asset of Array.isArray(project?.[field]) ? project[field] : []) {
+    if (asset.derivedFromAssetId == null) continue;
+    const source = report.assets.find(a => a.kind === field && a.identity === asset.assetId);
+    const target = report.assets.filter(a => a.kind !== 'fileReferences' && a.identity === asset.derivedFromAssetId);
+    if (source && target.length === 1) edges.push({from: source.path + ':asset', to: target[0].path + ':asset'});
+  }
   return {accepted: !issues.length, issues, graph: {roots: ['project'], nodes, edges}, bindings,
     inlineMidi: Object.hasOwn(project || {}, 'midiData'), binaryResolver: 'explicit-offline-reader-required'};
 }
@@ -55,6 +74,7 @@ function backupCompleteness(project, backup) {
 }
 function portability(inventoryReport, capabilities = {}) {
   const issues = [...(inventoryReport?.issues || []).map(x => x.code)];
+  if (inventoryReport?.valid !== true) issues.push('missing-or-invalid-static-inventory');
   for (const field of ['browserIndexedDB', 'scriptStyleClosure', 'binaryAssets', 'helperRuntime', 'nativeComponent', 'hostNavigation', 'distribution'])
     if (capabilities[field] !== 'verified') issues.push(`unverified-${field}`);
   return {portable: !issues.length, issues, physicalAcceptance: 'pending'};
