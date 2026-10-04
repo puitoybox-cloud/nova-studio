@@ -4,6 +4,8 @@ on:
     paths:
       - 'music-studio-dependency-inspection.js'
       - 'music-studio-storage-contract-inspection.js'
+      - 'music-studio-dependency-closure-inspection.js'
+      - 'tests/music-studio-dependency-closure-inspection.test.js'
       - 'tests/music-studio-storage-contract-inspection.test.js'
       - 'scripts/music-studio-standalone-dependency-inspection.js'
       - 'tests/music-studio*dependency-inspection.test.js'
