@@ -101,3 +101,7 @@ Standalone CLIはHTMLの直接script/style配布依存と既存Python requiremen
 ## 第2段階：依存closureと容量・権限・復旧境界（2026-10-04 JST）
 
 [技術証拠](DEPENDENCY_CLOSURE_BOUNDARIES_V1.md)：#292から独立branchで、非永続・明示review graphのclosure、logical asset/content identity分離、coverage申告とbyte未検証、Standalone runtime依存、stale/Cancel/zero-writeを追加。現autoBackupの4×1024×1024計算値gate、DB v5の5store、MIDI Undoの100 snapshotを確認した。端末quota・音声容量・dedup/寿命は未確認。既存Backupはmetadata-onlyのまま、Restore ready/完全Backup/互換PASSは宣言しない。#22/#23/#25/#27判定変更なし、A 0/30。次は第2段階の実依存resolver・byte検証へ進む契約条件と容量/権限/atomic復旧の受入設計。未確定policyはF。Batch A/B/Cと#17物理精度pendingを維持。
+
+## 第2段階：Backup候補とRestore依存closureの比較（2026-10-04 JST）
+
+[比較証拠](PACKAGE_RESTORE_REVIEW_V1.md)：#293から独立branch。元reviewとpackage候補review間の必要node/root/edge欠落、申告identity/size/opaque claim変更、共有binary referrerの欠落、coverage/temporary/external/permission境界を比較する。申告closure保持と実byte/完全Backup/Restore/portabilityを分離。production loader/storage/schema未変更。A 0/30、未決定policyとphysical Batch A/B/Cを維持。次は実byte観測の受入設計・容量/権限/中断/atomic復旧fault evidence。
