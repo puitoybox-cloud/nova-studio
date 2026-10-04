@@ -164,3 +164,15 @@ test('Save Reopen JSON Backup legacy unknown fields stay unchanged with byte ver
   assert.equal((await app.exportProject(project.projectId)).text, json);
   const after = app.backupObject(); delete after.metadata.createdAt; assert.equal(JSON.stringify(after), before);
 });
+test('opaque binary IDs cannot alter staging map prototype or omit required bytes', async () => {
+  for (const id of ['__proto__', 'constructor', 'toString']) {
+    const f = fixture(); for (const graph of [f.source, f.packaged]) {
+      graph.nodes[5].id = id; for (const edge of graph.edges) if (edge.to === 'shared') edge.to = id;
+    }
+    const s = api.session(f.project, f.source, f.packaged), e = await s.observe(f, read);
+    const r = await s.simulateRecovery(f, e, original(), {capacityBytes: 4});
+    assert.equal(r.outcome, 'complete-synthetic-success');
+    assert.equal(Object.hasOwn(r.state.binaries, id), true); assert.deepEqual(r.state.binaries[id], [0, 1, 2, 255]);
+    assert.equal(Object.getPrototypeOf(r.state.binaries), null);
+  }
+});

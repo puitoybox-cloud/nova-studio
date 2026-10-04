@@ -75,7 +75,7 @@ function session(project, source, packaged) {
       const total = [...entry.captured.values()].reduce((sum, b) => sum + b.byteLength, 0);
       if (!Number.isSafeInteger(total) || total > options.capacityBytes) return reject('capacity-insufficient');
       const candidate = {project: clone(current.project), review: clone(current.packaged),
-        binaries: {}, unknownOriginalFields: clone(initial)};
+        binaries: Object.create(null), unknownOriginalFields: clone(initial)};
       try {
         for (const [id, value] of entry.captured) {
           candidate.binaries[id] = Array.from(value); events.push({phase: 'stage', id});
