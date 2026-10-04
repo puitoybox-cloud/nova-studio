@@ -1,0 +1,42 @@
+name: Music Studio read-only dependencies
+on:
+  pull_request:
+    paths:
+      - 'music-studio-dependency-inspection.js'
+      - 'scripts/music-studio-standalone-dependency-inspection.js'
+      - 'tests/music-studio*dependency-inspection.test.js'
+      - 'tools/music-audio-pipeline/verify_real_conversion.py'
+      - 'music-studio-midi-parser.js'
+      - '.github/workflows/music-studio-dependency-inspection.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full regression, syntax and whitespace
+        run: |
+          node --test
+          find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
+          python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py
+          git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"
+      - name: Real Chrome at 1440 / 820 / 390
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-completion-browser-verification
+          path: |
+            music-ai-*.png
+            verification/music-ai-assistant-browser-report-20261002.json

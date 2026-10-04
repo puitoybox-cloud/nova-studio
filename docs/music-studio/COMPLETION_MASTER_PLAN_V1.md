@@ -85,3 +85,11 @@ A＝全要件と保存・失敗・再開・対象実機を含めて完成。B＝
 最優先#17の **offline acceptance foundation** を追加。既存SMF parserを再利用し、fixture hash、音程/音数/開始秒、正の音長/終端/重なり、全6 stem identity、Type1/7 tracks、壊れたnote/EOT/tempo ambiguityを検査する。byte非変更。一般作品へ6音正解を押し付けず、指定公開synthetic WAV以外は拒否する。音楽policy、変換algorithm、曲保存を変更しない。`verify_real_conversion.py`の実モデル出力をこの検査へ接続。これ自体は精度改善の完了ではない。
 
 次工程は第2段階の **read-only audio asset/dependency compatibility inventoryとStandalone依存調査**。既存スキーマを基に、外部参照/欠損/一時URL/未知版の報告から進める。音声録音・Mix・完成WAV・完全Backupを後付けで壊さないための共通前提。実機精度FAILの証拠が届いた場合は#17原因修正が優先。
+
+## 第2段階：読み取り専用依存検査（2026-10-04 JST）
+
+`music-studio-dependency-inspection.js` は現在のaudioAssets/midiAssets/fileReferencesのメタデータとderivedFromAssetIdだけを検査する。missing/duplicate/unknown/temporary/reselection/malformedと依存identityを報告。外部ファイルの実在・checksum・権限・互換性は確認しない。参照があるだけでresolvedにしない。保存・取得・自動実行・修復・migration経路は持たない。明示snapshot sessionはstaleを拒否しCancelで破棄する。画面やloadには接続していない。
+
+Standalone CLIはHTMLの直接script/style配布依存と既存Python requirementsを静的検査する。Audio Helperのloopback、native MIDIのWKWebView/CoreMIDI、host navigationを分離。モデルweight、Python実install、推移依存、licenseと対象機器は未確認。CLIによるvalidは静的配布ファイルの検査であり単独版完成の証明ではない。
+
+#22/#23/#25/#27の大機能判定は変更しない。Aは引き続き0/30。次工程：このinventoryに基づく音声binary/Take/Version/Checkpointと完全Backupの保存契約をレビュー可能な比較案へ整理。未確定policyのwrite実装は行わない。物理受入Batch A/B/C、Intel精度はpendingを維持。
