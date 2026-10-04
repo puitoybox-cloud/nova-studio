@@ -274,13 +274,32 @@ async function arrangementReferenceCases(browser,base,width,inspectTracks=false)
    if(['missing','duplicate','invalid','missing-role','ambiguous-role','duplicate-track-id'].includes(mode)){assert.match(await page.locator('.music-ai-candidate-status').textContent(),/arrangement-(chord-reference|track-role|track-id)/,mode);assert.doesNotMatch(await card.textContent(),/Arrangement reference identities verified/)}
    else{
     assert.match(await card.textContent(),/Arrangement reference identities verified/);assert.match(await card.textContent(),/Arrangement entry anchors: 0/);if(inspectTracks)assert.match(await card.textContent(),/Existing role tracks verified/);assert.equal(await page.inputValue('#aiFromB'),'3');
+    if(inspectTracks){
+     assert.equal(await page.inputValue('#aiDestinationChoiceB'),'');
+     await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click();
+     assert.match(await page.locator('.music-ai-candidate-status').textContent(),/explicit-arrangement-destination-required/);
+     await card.getByRole('button',{name:'Role / Track対応を確認',exact:true}).click();
+     await page.selectOption('#aiDestinationChoiceB','1');
+     await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click();
+     assert.match(await card.textContent(),/Explicit destination identity verified: melody \/ Track ID melody/);
+     assert.equal(await page.evaluate(()=>__arrWrites()),0);
+     await page.screenshot({path:`music-ai-destination-${mode}-${width}.png`,fullPage:true});
+     await page.selectOption('#aiDestinationChoiceB','2');assert.doesNotMatch(await card.textContent(),/Explicit destination identity verified/);
+     await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click();assert.match(await card.textContent(),/Explicit destination identity verified: bass/);
+     if(mode==='normal'){
+      await page.fill('#aiFromB','2');assert.doesNotMatch(await card.textContent(),/Explicit destination identity verified/);
+      await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click();assert.match(await page.locator('.music-ai-candidate-status').textContent(),/stale-arrangement-destination/);
+      await page.fill('#aiFromB','3');await card.getByRole('button',{name:'Role / Track対応を確認',exact:true}).click();
+      await page.selectOption('#aiDestinationChoiceB','2');await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click();
+     }
+    }
     if(mode.startsWith('stale')){await page.evaluate(mode=>{if(mode==='stale-workspace')MusicStudioAIAssistantPanel._states.get('arrangement-reference').state.workspace.future=1;else MusicStudio.state.midiEditor.midiData.tracks[0].notes.push({id:'new',pitch:60,startTick:0,durationTicks:480,velocity:90});MusicStudio.repaintEditor()},mode);assert.doesNotMatch(await card.textContent(),/Arrangement reference identities verified/);assert.match(await card.textContent(),/再確認/)}
     await page.screenshot({path:`music-ai-arrangement-${inspectTracks?'track':'reference'}-${mode}-${width}.png`,fullPage:true});await card.getByRole('button',{name:'編成参照取消',exact:true}).click();assert.equal(await page.evaluate(()=>MusicStudioAIAssistantPanel._states.get('arrangement-reference').arrangementReferencePreview),null);
    }
   }
   assert.equal(await page.evaluate(()=>MusicStudioAIAssistantPanel._states.get('arrangement-reference').pending),false);assert.equal(await page.evaluate(()=>__arrWrites()),0);
   if(!mode.startsWith('stale'))assert.equal(await page.evaluate(()=>JSON.stringify({ws:MusicStudioAIAssistantPanel._states.get('arrangement-reference').state.workspace,midi:MusicStudio.state.midiEditor.midiData,undo:MusicStudio.state.midiEditor.undo})),before);
-  if(mode==='normal'){await card.getByRole('button',{name:inspectTracks?'Role / Track対応を確認':'Section / Chord参照を確認',exact:true}).click();await page.evaluate(()=>{MusicStudioAIAssistantPanel._states.get('arrangement-reference').pending=true});assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);const saved=await page.evaluate(()=>__arrRepo.get('arrangement-reference'));assert.doesNotMatch(JSON.stringify(saved),/arrangement-reference-preview|trackTargets|workspaceSignature|midiSignature/);await page.evaluate(saved=>{MusicStudio.state.midiEditor=MusicStudioEditor.createCoordinatedSession(saved);MusicStudio.repaintEditor()},saved);assert.doesNotMatch(await card.textContent(),/Arrangement reference identities verified/)}
+  if(mode==='normal'){await card.getByRole('button',{name:inspectTracks?'Role / Track対応を確認':'Section / Chord参照を確認',exact:true}).click();if(inspectTracks){await page.selectOption('#aiDestinationChoiceB','1');await card.getByRole('button',{name:'Destination identityを確認',exact:true}).click()}await page.evaluate(()=>{MusicStudioAIAssistantPanel._states.get('arrangement-reference').pending=true});assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);const saved=await page.evaluate(()=>__arrRepo.get('arrangement-reference'));assert.doesNotMatch(JSON.stringify(saved),/arrangement-reference-preview|trackTargets|workspaceSignature|midiSignature|destinationInspection|destinationChoice/);await page.evaluate(saved=>{MusicStudio.state.midiEditor=MusicStudioEditor.createCoordinatedSession(saved);MusicStudio.repaintEditor()},saved);assert.doesNotMatch(await card.textContent(),/Arrangement reference identities verified/)}
   assert.deepEqual(messages,[]);assert.deepEqual(external,[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:`music-ai-arrangement-${inspectTracks?'track':'reference'}-final-${mode}-${width}.png`,fullPage:true});reports.push({case:mode,messages,external});await page.close();
  }
  return reports;

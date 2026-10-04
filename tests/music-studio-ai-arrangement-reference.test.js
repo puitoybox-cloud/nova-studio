@@ -30,3 +30,16 @@ for(const [label,change,error] of [
  ['invalid excluded source',f=>f.ws.candidateSets[0].candidates[1].value.plan[0].bars=0,/invalid-section-part/]
 ])test(`Arrangement track ${label} refuses read-only inspection`,()=>{const f=fixture();change(f);const before=plain({ws:f.ws,s:f.s});assert.throws(()=>f.C.arrangementTrackPreview(f.value,f.ws,f.s,f.core,{startMeasure:3,endMeasure:4}),error);assert.deepEqual(plain({ws:f.ws,s:f.s}),before)});
 test('Arrangement core canonical ID roles remain supported without part metadata',()=>{const f=fixture();for(const t of f.s.midiData.tracks)delete t.part;assert.equal(f.C.arrangementTrackPreview(f.value,f.ws,f.s,f.core).trackTargets.length,2)});
+
+for(const range of [null,{startMeasure:2,endMeasure:2},{startMeasure:3,endMeasure:4}])test('Explicit Arrangement destination identity inspection preserves data with range '+JSON.stringify(range),()=>{
+ const f=fixture();f.s.midiData.tracks[0].id='exact-Melody';f.s.midiData.tracks[0].future={opaque:true};const before=plain({ws:f.ws,s:f.s});const p=f.C.arrangementDestinationPreview(f.value,f.ws,f.s,f.core,{role:'melody',trackId:'exact-Melody'},range);assert.equal(p.destinationInspection.trackId,'exact-Melody');assert.deepEqual(plain(p.destinationInspection.range),plain(p.timeline.range));assert.match(f.C.arrangementReferenceRows(p).join('|'),/write compatibility unassessed/);p.destinationInspection.range.startTick=99;assert.deepEqual(plain({ws:f.ws,s:f.s}),before);
+});
+for(const target of [null,{}, {role:'melody',trackId:''},{role:'bass',trackId:'melody'},{role:'melody',trackId:'missing'},{role:'drums',trackId:'drums'}])test('Explicit destination rejects '+JSON.stringify(target),()=>{const f=fixture(),before=plain({ws:f.ws,s:f.s});assert.throws(()=>f.C.arrangementDestinationPreview(f.value,f.ws,f.s,f.core,target),/arrangement-destination/);assert.deepEqual(plain({ws:f.ws,s:f.s}),before)});
+for(const [label,change,error] of [
+ ['duplicate ID',f=>f.s.midiData.tracks.push(plain(f.s.midiData.tracks[0])),/duplicate-arrangement-track-id/],
+ ['ambiguous role',f=>f.s.midiData.tracks.push({id:'other',part:'melody',notes:[]}),/ambiguous-arrangement-track-role/],
+ ['orphan',f=>f.s.midiData.tracks.shift(),/missing-arrangement-track-role/],
+ ['malformed',f=>f.s.midiData.tracks=null,/arrangement-tracks-unavailable/],
+ ['excluded source',f=>f.ws.candidateSets[0].candidates[1].value.plan[0].bars=0,/invalid-section-part/],
+ ['reference conflict',f=>f.ws.candidateSets[1].candidates[1].value.key='G',/incompatible-arrangement-chord-reference/]
+])test('Destination revalidates '+label+' before partial inspection',()=>{const f=fixture();change(f);const before=plain({ws:f.ws,s:f.s});assert.throws(()=>f.C.arrangementDestinationPreview(f.value,f.ws,f.s,f.core,{role:'melody',trackId:'melody'},{startMeasure:3,endMeasure:4}),error);assert.deepEqual(plain({ws:f.ws,s:f.s}),before)});

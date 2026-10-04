@@ -265,9 +265,17 @@
     });
     return{...preview,trackTargets};
   }
+  // Explicit inspection of one already verified role/Track pair. This is not a
+  // destination binding or an authorization to render/write notes.
+  function arrangementDestinationPreview(value,workspace,session,core,target,selection=null){
+    const preview=arrangementTrackPreview(value,workspace,session,core,selection);
+    if(typeof target?.role!=='string'||typeof target?.trackId!=='string'||!target.trackId.trim())throw Error('explicit-arrangement-destination-required');
+    if(!preview.trackTargets.some(item=>item.role===target.role&&item.trackId===target.trackId))throw Error('incompatible-arrangement-destination');
+    return{...preview,destinationInspection:{role:target.role,trackId:target.trackId,range:clone(preview.timeline.range),policy:'existing-role-identity-only',mutates:false}};
+  }
   function arrangementReferenceRows(preview){
     if(preview?.kind!=='arrangement-reference-preview')return[];
-    return['Arrangement reference identities verified / instrument rendering unallocated; harmony not assessed',...arrangementTimelineRows(preview.timeline),...(preview.trackTargets?["Existing role tracks verified / read-only; no destination binding",...preview.trackTargets.map(item=>`Role ${item.role}: existing Track ID ${item.trackId}`)]:[]),...preview.references.flatMap(ref=>[`${ref.kind} reference: ${ref.candidateId} / set ${ref.setId} / family ${ref.familyId}`,...(ref.section?.segments||[]).map(part=>`Referenced Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`)])];
+    return['Arrangement reference identities verified / instrument rendering unallocated; harmony not assessed',...arrangementTimelineRows(preview.timeline),...(preview.trackTargets?["Existing role tracks verified / read-only; no destination binding",...preview.trackTargets.map(item=>`Role ${item.role}: existing Track ID ${item.trackId}`)]:[]),...(preview.destinationInspection?[`Explicit destination identity verified: ${preview.destinationInspection.role} / Track ID ${preview.destinationInspection.trackId} / M${preview.destinationInspection.range.startMeasure}-${preview.destinationInspection.range.endMeasure} / tick ${preview.destinationInspection.range.startTick}-${preview.destinationInspection.range.endTick} / read-only; write compatibility unassessed; no destination binding`]:[]),...preview.references.flatMap(ref=>[`${ref.kind} reference: ${ref.candidateId} / set ${ref.setId} / family ${ref.familyId}`,...(ref.section?.segments||[]).map(part=>`Referenced Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`)])];
   }
   function arrangementTimelineRows(timeline){
     if(timeline?.kind!=='arrangement-entry-timeline-preview')return[];
@@ -318,5 +326,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
