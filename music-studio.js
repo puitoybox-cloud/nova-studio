@@ -187,7 +187,7 @@
           if(a.storage!==undefined&&!object(a.storage))errors.push(`${location}: malformed-storage`);
           const storage=object(a.storage)?a.storage:{},reference=storage.reference;
           if(reference!==undefined&&(typeof reference!=='string'||!reference.trim()))errors.push(`${location}: malformed-reference`);
-          const unsupported=storage.kind!==undefined&&!['external','external-file'].includes(storage.kind);
+          const unsupported=(storage.kind!==undefined&&!['external','external-file'].includes(storage.kind))||a.version!==undefined||a.schemaVersion!==undefined;
           const temporary=typeof reference==='string'&&/^(blob:|data:)/i.test(reference);
           const status=unsupported?'unsupported':a.missing===true?'missing':storage.requiresReselection===true||temporary||!reference?'reselection-required':'external';
           dependencies.push({path:location,status,present:'unverified',binaryIncluded:false});
@@ -195,7 +195,7 @@
           if(field!=='fileReferences')assets.push(a);
         }
       }
-      for(const a of assets)if(a.derivedFromAssetId!=null&&!identities.has(`asset:${a.derivedFromAssetId}`))errors.push(`${prefix}: missing-asset-dependency`);
+      for(const a of assets)if(a.derivedFromAssetId!=null&&(typeof a.derivedFromAssetId!=='string'||!a.derivedFromAssetId.trim()||!identities.has(`asset:${a.derivedFromAssetId}`)))errors.push(`${prefix}: missing-asset-dependency`);
     }
     if(settings&&value?.settings){const s=validateSettings(value.settings);errors.push(...s.errors);if(s.valid)errors.push(...settingsTemplateErrors(normalizeSettings(value.settings)))}
     return{ok:errors.length===0,errors,warnings,dependencies,scope:'metadata-only',completeBinaryBackup:false,binaryResolution:'not-performed'};

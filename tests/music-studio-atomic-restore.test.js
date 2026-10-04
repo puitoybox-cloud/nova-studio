@@ -10,6 +10,7 @@ for(const [name,change] of [
  ['MIDI ppq',p=>p.midiData.ppq=0],
  ['MIDI tracks',p=>p.midiData.tracks={}],
  ['MIDI tempo map',p=>p.midiData.tempoMap=[{tick:-1,bpm:120}]],
+ ['malformed dependency',p=>p.audioAssets=[{assetId:'[object Object]'},{assetId:'a',derivedFromAssetId:{}}]],
  ['dependency',p=>p.audioAssets=[{assetId:'a',derivedFromAssetId:'missing'}]],
  ['duplicate identity',p=>p.audioAssets=[{assetId:'a'},{assetId:'a'}]],
  ['asset shape',p=>p.midiAssets={}],
