@@ -28,6 +28,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,15 +44,25 @@ jobs:
           python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py
           git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"
       - name: Real Chrome at 1440 / 820 / 390
+        timeout-minutes: 12
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
-          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-transaction-regression.js
-          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
+          git show 031def44c194787f4e8e17552961d62e93b10df2:scripts/music-transaction-regression.js > "$RUNNER_TEMP/original-298.js"
+          set +e
+          timeout --kill-after=5s 40s env NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node "$RUNNER_TEMP/original-298.js" > verification/music-298-original-diagnostic.log 2>&1
+          diagnostic_status=$?
+          set -e
+          echo "Original #298 diagnostic exit: $diagnostic_status" | tee -a verification/music-298-original-diagnostic.log
+          cat verification/music-298-original-diagnostic.log
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-transaction-regression.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 600s node scripts/music-studio-ai-assistant-browser-smoke.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-completion-browser-verification
           path: |
+            verification/music-transaction-browser-report.json
+            verification/music-298-original-diagnostic.log
             music-ai-*.png
             verification/music-ai-assistant-browser-report-20261002.json
