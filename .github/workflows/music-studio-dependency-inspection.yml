@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'music-studio-dependency-inspection.js'
+      - 'music-studio-storage-contract-inspection.js'
+      - 'tests/music-studio-storage-contract-inspection.test.js'
       - 'scripts/music-studio-standalone-dependency-inspection.js'
       - 'tests/music-studio*dependency-inspection.test.js'
       - 'tools/music-audio-pipeline/verify_real_conversion.py'

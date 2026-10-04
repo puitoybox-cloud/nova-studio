@@ -93,3 +93,7 @@ A＝全要件と保存・失敗・再開・対象実機を含めて完成。B＝
 Standalone CLIはHTMLの直接script/style配布依存と既存Python requirementsを静的検査する。Audio Helperのloopback、native MIDIのWKWebView/CoreMIDI、host navigationを分離。モデルweight、Python実install、推移依存、licenseと対象機器は未確認。CLIによるvalidは静的配布ファイルの検査であり単独版完成の証明ではない。
 
 #22/#23/#25/#27の大機能判定は変更しない。Aは引き続き0/30。次工程：このinventoryに基づく音声binary/Take/Version/Checkpointと完全Backupの保存契約をレビュー可能な比較案へ整理。未確定policyのwrite実装は行わない。物理受入Batch A/B/C、Intel精度はpendingを維持。
+
+## 第2段階：保存契約候補と読み取り専用report（2026-10-04 JST）
+
+[保存契約候補](STORAGE_CONTRACT_ALTERNATIVES_V1.md)で現在のrepository/JSON/Backup/revision/履歴/Undo/audio pipelineの境界、将来の依存closure、3つの保存案、未決定policyを分離した。`music-studio-storage-contract-inspection.js`は既存inventoryを再利用する明示呼出し専用のreportで、完全Backup/Standalone portabilityを証明しない。production loader/schema/保存経路は変更しない。#22/#23/#25/#27状態変更なし、A 0/30。次は第2段階の契約review・容量/権限/復旧境界の調査。物理Batch A/B/Cは維持。
