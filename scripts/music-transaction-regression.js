@@ -11,7 +11,7 @@ for(const width of [1440,820,390]){
  page.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push({type:m.type(),text:m.text()})});page.on('pageerror',e=>messages.push({type:'pageerror',text:e.message}));
  try{
  await page.route('**/*',r=>{if(r.request().url()==='http://nova-isolated.test/')return r.fulfill({status:200,contentType:'text/html',body:'<!doctype html><html><body></body></html>'});external.push(r.request().url());return r.abort()});
- await page.goto('http://nova-isolated.test');await page.addScriptTag({path:path.resolve('music-studio.js')});
+ await page.goto('http://nova-isolated.test');await page.addScriptTag({path:path.resolve('music-studio.js')});await page.waitForFunction(()=>MusicStudio?.state.loaded===true,{},{timeout:15000});
  const result=await bounded(page.evaluate(async()=>{
  const app=MusicStudio;const db=await new Promise((resolve,reject)=>{const r=indexedDB.open(app.DB_NAME,5);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('fixture DB blocked'))});
  const native=IDBObjectStore.prototype.put;let mode='abort',successSeen=false,completeSeen=false,completeResolve;const observedComplete=new Promise(resolve=>{completeResolve=resolve});
