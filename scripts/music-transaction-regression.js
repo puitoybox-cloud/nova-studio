@@ -19,9 +19,57 @@ for(const width of [1440,820,390]){
  const repo=app.indexedDbRepository(),p=app.makeProject({projectName:'isolated',projectId:'late-abort'});p.unknown={keep:true};let rejected=false;try{
  try{await repo.put(p)}catch(e){rejected=true}if(!rejected||!successSeen||await repo.has(p.projectId))throw Error('late abort falsely succeeded');
  mode='error';rejected=false;try{await repo.put(p)}catch(e){rejected=true}if(!rejected||await repo.has(p.projectId))throw Error('transaction error falsely succeeded');
- mode='complete';await Promise.all([repo.put(p),observedComplete]);if(!completeSeen||(await repo.get(p.projectId)).unknown.keep!==true)throw Error('normal retry failed');
+ mode='complete';const completionTiming={};await Promise.all([repo.put(p).then(()=>{completionTiming.observerAtProductionResolution=completeSeen}),observedComplete]);completionTiming.observerAfterExplicitWait=completeSeen;if(!completeSeen||(await repo.get(p.projectId)).unknown.keep!==true)throw Error('normal retry failed');
  app.setRepository(repo);const bad={...p,projectId:'invalid',schemaVersion:999};const backup={format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[{...p,projectId:'must-not-publish'},bad]};const restored=await app.restoreBackup(backup,{settings:false});if(restored.ok||await repo.has('must-not-publish'))throw Error('preflight published partial state');
- return{requestSuccess:successSeen,lateAbort:true,error:true,complete:true,retry:true,preflight:true};
+  const atomicResults=[];
+ const originalAdd=IDBObjectStore.prototype.add,originalPut=IDBObjectStore.prototype.put;
+ try{
+   const oldSettings=app.defaultSettings();oldSettings.projectDefaults.bpm=89;oldSettings.unknown={old:true};await repo.putSettings(oldSettings);
+   for(const fault of ['abort','error','native-request-error','late-settings-error','Cancel','signal-Cancel','stale-input','superseded','synchronous-error']){
+     const first={...p,projectId:`${fault}-first`},second={...p,projectId:`${fault}-second`};
+     const value={format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[first,second],settings:{...app.defaultSettings(),unknown:{restored:true}}};
+     const before=JSON.stringify({projects:await repo.list(),settings:await repo.getSettings()}),controller=new AbortController();let writes=0,successes=0,newer;
+     function intercept(original){return function(...args){
+       writes++;const tx=this.transaction;
+       if(fault==='synchronous-error'&&writes===2)throw Error('injected-late-enqueue-failure');
+       if(fault==='native-request-error'&&writes===2)args[0]={...args[0],projectId:p.projectId};
+       const request=original.apply(this,args);
+       request.addEventListener('success',()=>{
+         successes++;
+         if(successes===(fault==='late-settings-error'?3:2)){
+           if(fault==='abort')tx.abort();
+           if(fault==='error'||fault==='late-settings-error')tx.dispatchEvent(new Event('error'));
+           if(fault==='Cancel')app.cancelBackupRestore();
+           if(fault==='signal-Cancel')controller.abort();
+           if(fault==='stale-input')value.projects[0].projectName='Changed during transaction';
+           if(fault==='superseded')newer=app.restoreBackup({format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[]},{settings:false});
+         }
+       });return request;
+     }}
+     IDBObjectStore.prototype.add=intercept(originalAdd);IDBObjectStore.prototype.put=intercept(originalPut);
+     const outcome=await app.restoreBackup(value,{signal:controller.signal});
+     IDBObjectStore.prototype.add=originalAdd;IDBObjectStore.prototype.put=originalPut;
+     if(outcome.ok||outcome.added!==0||outcome.committed!==false)throw Error('atomic fault falsely succeeded: '+fault);
+     if(newer&&!(await newer).ok)throw Error('superseding operation failed');
+     if(JSON.stringify({projects:await repo.list(),settings:await repo.getSettings()})!==before)throw Error('partial metadata publication: '+fault);
+     const retry=await app.restoreBackup(value);if(!retry.ok||!retry.atomicMetadata||retry.added!==2)throw Error('atomic retry failed: '+fault);
+     if((await repo.get(first.projectId)).unknown.keep!==true||(await repo.getSettings()).unknown.restored!==true)throw Error('atomic unknown fields lost');
+     atomicResults.push({fault,failedClosed:true,noPartialPublication:true,retry:true,successesBeforeFailure:successes});
+   }
+   const badMidi={...p,projectId:'invalid-midi',midiData:{ppq:480,tracks:[{muted:true,notes:[{pitch:128,startTick:0,durationTicks:480,velocity:90}]}]}};
+   const badDependency={...p,projectId:'invalid-dependency',audioAssets:[{assetId:'derived',derivedFromAssetId:'missing'}]};
+   for(const bad of [badMidi,badDependency]){
+     const before=JSON.stringify({projects:await repo.list(),settings:await repo.getSettings()});
+     const outcome=await app.restoreBackup({format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[{...p,projectId:'no-partial'},bad],settings:app.defaultSettings()});
+     if(outcome.ok||JSON.stringify({projects:await repo.list(),settings:await repo.getSettings()})!==before)throw Error('invalid second item partially published');
+   }
+   const externalProject={...p,projectId:'external-metadata',midiData:{editor:{view:{snapEnabled:false}}},audioAssets:[{assetId:'file',storage:{kind:'external',reference:'offline.wav'}},{assetId:'lost',missing:true},{assetId:'select',storage:{requiresReselection:true}},{assetId:'future',storage:{kind:'future'}}],legacy:{extensions:{keep:true}}};
+   const externalOutcome=await app.restoreBackup({format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[externalProject]},{settings:false});
+   if(!externalOutcome.ok||externalOutcome.preflight.completeBinaryBackup||externalOutcome.preflight.dependencies.some(d=>d.present!=='unverified'))throw Error('binary completeness falsely claimed');
+   if(JSON.stringify(externalOutcome.preflight.dependencies.map(d=>d.status))!==JSON.stringify(['external','missing','reselection-required','unsupported']))throw Error('binary states collapsed');
+   const loaded=await repo.get(externalProject.projectId);if(!loaded.legacy.extensions.keep||loaded.midiData.editor.view.snapEnabled!==false)throw Error('legacy lost');
+ }finally{IDBObjectStore.prototype.add=originalAdd;IDBObjectStore.prototype.put=originalPut;if(app.state.intervalTimer)clearInterval(app.state.intervalTimer)}
+ return{completionTiming,requestSuccess:successSeen,lateAbort:true,error:true,complete:true,retry:true,preflight:true,atomicResults,invalidSecondMidi:true,invalidSecondDependency:true,binaryStates:true,legacy:true};
  }finally{IDBObjectStore.prototype.put=native;db.close();await repo.close?.()}
  }), 'IndexedDB regression '+width);assert.deepEqual(messages,[]);assert.deepEqual(external,[]);const report={width,result,console:messages,external};reports.push(report);console.log(JSON.stringify(report));
  }finally{await bounded(page.close(),'page close',5000)}
