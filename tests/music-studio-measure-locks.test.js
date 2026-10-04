@@ -33,12 +33,12 @@ test('note-level locks remain protected and exceptions/async edits cannot partia
 
 function fakeIndexedDB(){
   const databases=new Map();
-  const request=operation=>{const result={};queueMicrotask(()=>{try{result.result=operation();result.onsuccess?.()}catch(error){result.error=error;result.onerror?.()}});return result};
+  const request=(operation,transaction)=>{const result={};queueMicrotask(()=>{try{result.result=operation();result.onsuccess?.();queueMicrotask(()=>transaction?.oncomplete?.())}catch(error){result.error=error;result.onerror?.()}});return result};
   return{open(name){
     const openRequest={};queueMicrotask(()=>{
       let db=databases.get(name),upgraded=false;
       if(!db){
-        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key){const records=stores.get(key);return{objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone)),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined),getKey:id=>request(()=>records.has(id)?id:undefined),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id}),delete:id=>request(()=>records.delete(id))}}}}};databases.set(name,db);upgraded=true
+        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key){const records=stores.get(key);const transaction={objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone),transaction),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined,transaction),getKey:id=>request(()=>records.has(id)?id:undefined,transaction),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id},transaction),delete:id=>request(()=>records.delete(id),transaction)}}};return transaction}};databases.set(name,db);upgraded=true
       }
       openRequest.result=db;if(upgraded)openRequest.onupgradeneeded?.();openRequest.onsuccess?.()
     });return openRequest

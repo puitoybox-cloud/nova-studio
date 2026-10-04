@@ -2,6 +2,8 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'music-studio.js'
+      - 'scripts/music-transaction-regression.js'
       - 'music-studio-production-verification-contract.js'
       - 'tests/music-studio-production-verification-contract.test.js'
       - 'music-studio-dependency-inspection.js'
@@ -44,6 +46,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-transaction-regression.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
       - uses: actions/upload-artifact@v4
         if: always()
