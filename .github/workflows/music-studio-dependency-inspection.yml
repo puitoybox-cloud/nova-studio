@@ -2,6 +2,8 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'music-studio-production-verification-contract.js'
+      - 'tests/music-studio-production-verification-contract.test.js'
       - 'music-studio-dependency-inspection.js'
       - 'music-studio-storage-contract-inspection.js'
       - 'music-studio-dependency-closure-inspection.js'
