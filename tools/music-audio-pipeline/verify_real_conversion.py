@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import sys
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -46,7 +47,14 @@ def main(output_dir: Path):
         actual = [note["pitch"] for note in report["tracks"].get("Vocals", [])]
         report["expectedVocals"] = [60, 64, 67, 72, 67, 60]
         report["actualVocals"] = actual
-        report["passed"] = actual == report["expectedVocals"]
+        # Validate actual bytes with the same existing SMF parser used by the app.
+        # Pitch-only success is insufficient; this remains CI evidence, not device acceptance.
+        checker = Path(__file__).resolve().parents[2] / "scripts" / "music-audio-acceptance.js"
+        checked = subprocess.run(["node", str(checker), str(source), str(midi_path)],
+                                 capture_output=True, text=True, check=False)
+        report["acceptance"] = json.loads(checked.stdout)
+        report["passed"] = checked.returncode == 0 and report["acceptance"]["passed"]
+        report["physicalVerification"] = "pending"
     except Exception as error:
         report["passed"] = False
         report["error"] = f"{type(error).__name__}: {error}"
