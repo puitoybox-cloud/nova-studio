@@ -14,12 +14,12 @@ for(const width of [1440,820,390]){
  await page.goto('http://nova-isolated.test');await page.addScriptTag({path:path.resolve('music-studio.js')});
  const result=await bounded(page.evaluate(async()=>{
  const app=MusicStudio;const db=await new Promise((resolve,reject)=>{const r=indexedDB.open(app.DB_NAME,5);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('fixture DB blocked'))});
- const native=IDBObjectStore.prototype.put;let mode='abort',successSeen=false,completeSeen=false;
- IDBObjectStore.prototype.put=function(...args){const r=native.apply(this,args),tx=this.transaction;r.addEventListener('success',()=>{successSeen=true;if(mode==='abort')tx.abort();if(mode==='error'){tx.dispatchEvent(new Event('error'))} });tx.addEventListener('complete',()=>completeSeen=true);return r};
+ const native=IDBObjectStore.prototype.put;let mode='abort',successSeen=false,completeSeen=false,completeResolve;const observedComplete=new Promise(resolve=>{completeResolve=resolve});
+ IDBObjectStore.prototype.put=function(...args){const r=native.apply(this,args),tx=this.transaction;r.addEventListener('success',()=>{successSeen=true;if(mode==='abort')tx.abort();if(mode==='error'){tx.dispatchEvent(new Event('error'))} });tx.addEventListener('complete',()=>{completeSeen=true;completeResolve()});return r};
  const repo=app.indexedDbRepository(),p=app.makeProject({projectName:'isolated',projectId:'late-abort'});p.unknown={keep:true};let rejected=false;try{
  try{await repo.put(p)}catch(e){rejected=true}if(!rejected||!successSeen||await repo.has(p.projectId))throw Error('late abort falsely succeeded');
  mode='error';rejected=false;try{await repo.put(p)}catch(e){rejected=true}if(!rejected||await repo.has(p.projectId))throw Error('transaction error falsely succeeded');
- mode='complete';await repo.put(p);if(!completeSeen||(await repo.get(p.projectId)).unknown.keep!==true)throw Error('normal retry failed');
+ mode='complete';await Promise.all([repo.put(p),observedComplete]);if(!completeSeen||(await repo.get(p.projectId)).unknown.keep!==true)throw Error('normal retry failed');
  app.setRepository(repo);const bad={...p,projectId:'invalid',schemaVersion:999};const backup={format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[{...p,projectId:'must-not-publish'},bad]};const restored=await app.restoreBackup(backup,{settings:false});if(restored.ok||await repo.has('must-not-publish'))throw Error('preflight published partial state');
  return{requestSuccess:successSeen,lateAbort:true,error:true,complete:true,retry:true,preflight:true};
  }finally{IDBObjectStore.prototype.put=native;db.close();await repo.close?.()}
