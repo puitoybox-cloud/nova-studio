@@ -10,12 +10,12 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 
 function fakeIndexedDB(){
   const databases=new Map();
-  const request=operation=>{const result={};queueMicrotask(()=>{try{result.result=operation();result.onsuccess?.()}catch(error){result.error=error;result.onerror?.()}});return result};
+  const request=(operation,transaction)=>{const result={};queueMicrotask(()=>{try{result.result=operation();result.onsuccess?.();queueMicrotask(()=>transaction?.oncomplete?.())}catch(error){result.error=error;result.onerror?.()}});return result};
   return{open(name){
     const openRequest={};queueMicrotask(()=>{
       let db=databases.get(name),upgraded=false;
       if(!db){
-        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key){const records=stores.get(key);return{objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone)),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined),getKey:id=>request(()=>records.has(id)?id:undefined),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id}),delete:id=>request(()=>records.delete(id))}}}}};databases.set(name,db);upgraded=true
+        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key){const records=stores.get(key);const transaction={objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone),transaction),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined,transaction),getKey:id=>request(()=>records.has(id)?id:undefined,transaction),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id},transaction),delete:id=>request(()=>records.delete(id),transaction)}}};return transaction}};databases.set(name,db);upgraded=true
       }
       openRequest.result=db;if(upgraded)openRequest.onupgradeneeded?.();openRequest.onsuccess?.()
     });return openRequest
@@ -105,4 +105,16 @@ test('automatic backup snapshots whole project after Melody Drums and Bass saves
   for(const [index,part] of ['melody','drums','bass'].entries()){
     app.state.midiEditor=core.createSession(await repo.get(project.projectId));core.selectPart(app.state.midiEditor,part);core.addNote(app.state.midiEditor,{pitch:part==='melody'?69:part==='drums'?42:35,startTick:8000+index*480,durationTicks:240,velocity:90+index});await app.saveMidiEditor({silent:true});const saved=await repo.get(project.projectId);assert.equal(saved.midiData.tracks.find(track=>track.part===part).notes.some(note=>note.startTick===8000+index*480),true);const result=await app.runAutoBackupCheck(`2026-08-24T0${index*2}:00:00.000Z`);assert.equal(result.created,true);const snapshot=result.backup.snapshot.projects.find(item=>item.projectId===project.projectId);assert.deepEqual(snapshot.midiData,saved.midiData);assert.ok(snapshot.midiData.tracks.find(track=>track.id==='strings'))
   }
+});
+
+test('Restore validates every project before any publication and retains existing unknown fields',async()=>{
+ const {app}=load(),existing=richProject(app,'existing'),repo=app.memoryRepository([existing]);app.setRepository(repo);
+ const valid=richProject(app,'unpublished'),bad={...richProject(app,'bad'),schemaVersion:'future'};
+ const result=await app.restoreBackup({format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[valid,bad]},{settings:false});
+ assert.equal(result.ok,false);assert.equal(result.added,0);assert.equal(await repo.has(valid.projectId),false);assert.deepEqual(plain(await repo.get(existing.projectId)),plain(existing));
+});
+test('Restore rejects selected invalid settings before publishing projects',async()=>{
+ const {app}=load(),repo=app.memoryRepository();app.setRepository(repo);const p=richProject(app,'unpublished');
+ const result=await app.restoreBackup({format:app.BACKUP_FORMAT,version:app.BACKUP_VERSION,projects:[p],settings:{format:'future'}});
+ assert.equal(result.ok,false);assert.equal((await repo.list()).length,0);
 });
