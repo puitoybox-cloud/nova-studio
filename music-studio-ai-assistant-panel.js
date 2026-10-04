@@ -67,10 +67,12 @@
     return`<section class="music-ai-status"><p>${current?'Arrangement references（編成参照）':'参照が変更されました。再確認してください。'}</p>${current?`<ul>${composition().arrangementReferenceRows(saved.preview).map(row=>`<li>${esc(row)}</li>`).join('')}</ul>${saved.preview.trackTargets?`<label>Destination候補（既存Role / Track）<select id="aiDestinationChoice${candidate.candidateId}" onchange="MusicStudioAIAssistantPanel.clearArrangementDestination('${esc(record.state.workspace.projectId)}')"><option value="">明示選択してください</option>${saved.preview.trackTargets.map((item,index)=>`<option value="${index+1}"${saved.destinationChoice===index+1?' selected':''}>${esc(item.role)} / ${esc(item.trackId)}</option>`).join('')}</select></label><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectArrangementDestination('${esc(record.state.workspace.projectId)}','${candidate.candidateId}')">Destination identityを確認</button>`:''}`:''}<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelArrangementReference('${esc(record.state.workspace.projectId)}')">編成参照取消</button></section>`;
   }
   function clearArrangementDestination(id){
-    const saved=stateFor(project(id)).arrangementReferencePreview;
+    const record=stateFor(project(id)),saved=record.arrangementReferencePreview,verified=!!saved?.preview.destinationInspection;
     if(saved){delete saved.preview.destinationInspection;delete saved.destinationChoice}
+    if(verified)record.message='Destination選択・範囲が変更されました。再確認してください。';
     // Keep the DOM choice, but immediately remove the previously verified output.
     const panel=root.document?.querySelector?.('.music-ai-panel');
+    if(verified&&panel?.querySelector){const status=panel.querySelector('.music-ai-candidate-status');if(status)status.textContent=record.message}
     if(panel?.querySelectorAll)for(const row of panel.querySelectorAll('li'))if(row.textContent.startsWith('Explicit destination identity verified:'))row.remove();
   }
   function inspectArrangementDestination(id,candidateId){
