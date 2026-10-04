@@ -4,7 +4,7 @@ Checked 2026-10-05 JST (work began 2026-10-04 JST). Stage 2 software/contract **
 
 ## GitHub source and CI diagnosis
 
-Fresh audit: main `552d56eafddfd192970c09f7d6278696cf8775c3`, 44 Open / 42 Draft PRs. Drafts mergeable; #35 and #10 have conflicts. Latest #298 `031def44c194787f4e8e17552961d62e93b10df2`, base #297 `f4402bc7d4dee5470b454f0f8058c57c96b3c601`. No #299+ existed. Existing HEAD/base/state values and retrieved HEAD Actions are in `verification/music-atomic-restore-start.json`.
+Fresh audit: main `552d56eafddfd192970c09f7d6278696cf8775c3`, 45 Open / 43 Draft PRs. Drafts mergeable; #35 and #10 have conflicts. Latest #298 `031def44c194787f4e8e17552961d62e93b10df2`, base #297 `f4402bc7d4dee5470b454f0f8058c57c96b3c601`. No #299+ existed. Existing HEAD/base/state values and retrieved HEAD Actions are in `verification/music-atomic-restore-start.json`.
 
 #298 run 37207106392 stalled in Real Chrome. Unchanged #298 regression was executed in new Draft #299 under a 40-second diagnostic bound. It printed `normal retry failed`, then remained alive until exit 124. Its catch only set exitCode; page/browser resources were not closed. The completion listener was checked before its own event callback was guaranteed observed. The fixture also passed unknown metadata to makeProject, which does not retain arbitrary top-level fields; a source-executed Node check confirmed `unknown` absent.
 
