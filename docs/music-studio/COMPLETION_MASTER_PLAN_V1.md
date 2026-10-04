@@ -97,3 +97,7 @@ Standalone CLIはHTMLの直接script/style配布依存と既存Python requiremen
 ## 第2段階：保存契約候補と読み取り専用report（2026-10-04 JST）
 
 [保存契約候補](STORAGE_CONTRACT_ALTERNATIVES_V1.md)で現在のrepository/JSON/Backup/revision/履歴/Undo/audio pipelineの境界、将来の依存closure、3つの保存案、未決定policyを分離した。`music-studio-storage-contract-inspection.js`は既存inventoryを再利用する明示呼出し専用のreportで、完全Backup/Standalone portabilityを証明しない。production loader/schema/保存経路は変更しない。#22/#23/#25/#27状態変更なし、A 0/30。次は第2段階の契約review・容量/権限/復旧境界の調査。物理Batch A/B/Cは維持。
+
+## 第2段階：依存closureと容量・権限・復旧境界（2026-10-04 JST）
+
+[技術証拠](DEPENDENCY_CLOSURE_BOUNDARIES_V1.md)：#292から独立branchで、非永続・明示review graphのclosure、logical asset/content identity分離、coverage申告とbyte未検証、Standalone runtime依存、stale/Cancel/zero-writeを追加。現autoBackupの4×1024×1024計算値gate、DB v5の5store、MIDI Undoの100 snapshotを確認した。端末quota・音声容量・dedup/寿命は未確認。既存Backupはmetadata-onlyのまま、Restore ready/完全Backup/互換PASSは宣言しない。#22/#23/#25/#27判定変更なし、A 0/30。次は第2段階の実依存resolver・byte検証へ進む契約条件と容量/権限/atomic復旧の受入設計。未確定policyはF。Batch A/B/Cと#17物理精度pendingを維持。
