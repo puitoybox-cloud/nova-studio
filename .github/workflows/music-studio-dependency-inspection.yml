@@ -7,6 +7,8 @@ on:
       - 'music-studio-dependency-closure-inspection.js'
       - 'music-studio-package-restore-review.js'
       - 'music-studio-observed-byte-verification.js'
+      - 'scripts/music-studio-disposable-durable-backend.js'
+      - 'tests/music-studio-disposable-durable-recovery.test.js'
       - 'tests/music-studio-observed-byte-verification.test.js'
       - 'tests/music-studio-package-restore-review.test.js'
       - 'tests/music-studio-dependency-closure-inspection.test.js'
