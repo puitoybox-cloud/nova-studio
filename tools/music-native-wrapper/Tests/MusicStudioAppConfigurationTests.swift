@@ -2,6 +2,26 @@ import XCTest
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioAppConfigurationTests: XCTestCase {
+    func testExplicitLoopbackHostedOriginContainsNavigation() throws {
+        let start = try XCTUnwrap(URL(string: "http://127.0.0.1:18766/music-studio.html"))
+        let configuration = try XCTUnwrap(MusicStudioAppConfiguration.localHosted(startURL: start))
+        XCTAssertTrue(configuration.allows(start))
+        XCTAssertTrue(configuration.allows(try XCTUnwrap(URL(string: "http://127.0.0.1:18766/asset.js"))))
+        for value in ["http://127.0.0.1:18767/", "http://localhost:18766/",
+                      "http://0.0.0.0:18766/", "https://127.0.0.1:18766/",
+                      "https://example.com/", "http://user@127.0.0.1:18766/"] {
+            XCTAssertFalse(configuration.allows(try XCTUnwrap(URL(string: value))))
+        }
+        XCTAssertFalse(MusicStudioAppConfiguration(startURL: start).allows(start))
+    }
+
+    func testLoopbackHostedRejectsMissingPortAndRemoteStart() throws {
+        for value in ["http://127.0.0.1/", "http://127.0.0.1:0/", "http://localhost:18766/",
+                      "http://0.0.0.0:18766/", "https://example.com/",
+                      "http://127.0.0.1:18766/?token=x", "http://user@127.0.0.1:18766/"] {
+            XCTAssertNil(MusicStudioAppConfiguration.localHosted(startURL: try XCTUnwrap(URL(string: value))))
+        }
+    }
     func testAllowsConfiguredHTTPSHost() throws {
         let start = try XCTUnwrap(URL(string: "https://example.com/music-studio.html"))
         let configuration = MusicStudioAppConfiguration(startURL: start)

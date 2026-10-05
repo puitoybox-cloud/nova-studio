@@ -246,9 +246,17 @@ class OfflineRuntimeGuard:
     def __init__(self):
         import contextlib
         self.state = threading.local()
+        self.observed = {}
+        self.observation_lock = threading.Lock()
         sys.addaudithook(self.audit)
 
     def audit(self, event, args):
+        # Logical event counts only: no hosts, URLs, paths, PIDs or socket inventory.
+        if event in ('socket.__new__', 'socket.connect', 'socket.getaddrinfo',
+                     'socket.sendto', 'subprocess.Popen', 'os.system', 'os.exec',
+                     'os.posix_spawn', 'os.fork'):
+            with self.observation_lock:
+                self.observed[event] = min(1000000, self.observed.get(event, 0) + 1)
         if event == 'subprocess.Popen':
             permitted = getattr(self.state, 'command', None)
             if permitted is not None and tuple(args[1]) == permitted and args[0] == permitted[0]:
@@ -256,6 +264,13 @@ class OfflineRuntimeGuard:
                 return
         if event in ('socket.connect', 'socket.getaddrinfo', 'socket.sendto', 'subprocess.Popen', 'os.system', 'os.exec', 'os.posix_spawn', 'os.fork'):
             raise PermissionError('strict-offline-runtime-operation-blocked')
+
+    def snapshot(self):
+        with self.observation_lock:
+            events = dict(self.observed)
+        return {'python': 'AUDIT_GUARDED', 'native': 'UNVERIFIED',
+                'scope': 'THIS_PROCESS_PYTHON_AUDIT_EVENTS_ONLY',
+                'events': events, 'nativeNetworkVerified': False}
 
     def permit(self, command):
         import contextlib

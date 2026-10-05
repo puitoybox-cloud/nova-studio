@@ -17,7 +17,86 @@ from artifact_verification import VERIFIER, resolve
 MAX_CONTRACT_BYTES = 1024 * 1024
 NATIVE_KINDS = {'EXTENSION', 'SHARED_LIBRARY', 'FRAMEWORK', 'EXECUTABLE'}
 LEVELS = {'VERIFIED_ARTIFACT', 'VERIFIED_ENTRY', 'OBSERVED_LOADED',
-          'OBSERVED_METADATA_ONLY', 'EXPECTED_ONLY', 'MISSING', 'UNVERIFIED'}
+          'OBSERVED_METADATA_ONLY', 'OBSERVED_RUNTIME_ONLY', 'EXPECTED_ONLY',
+          'MISSING', 'UNVERIFIED', 'UNSUPPORTED'}
+
+
+def scoped_loaded_library(root, entry, *, system=None):
+    """Probe exactly one declared path using RTLD_NOLOAD; never enumerate images.
+
+    A successful loader lookup establishes presence only. It does not establish
+    the integrity of mapped pages, architecture, or its transitive dependencies.
+    No ordinary dlopen fallback is allowed on unsupported systems.
+    """
+    import ctypes
+    import os
+    import _ctypes
+    system = system or platform.system()
+    path = resolve(root, entry['path'])
+    result = {'id': entry['id'], 'parentModule': entry['module'],
+              'origin': 'DECLARED_LOCAL_ARTIFACT', 'version': entry['version'],
+              'versionEvidence': 'MANIFEST_BOUND_ONLY',
+              'architectureEvidence': 'UNVERIFIED', 'actualLoaded': False,
+              'status': 'UNSUPPORTED', 'observation': 'RTLD_NOLOAD_EXACT_PATH',
+              'mappedIntegrity': 'UNVERIFIED', 'transitiveComplete': False}
+    if system not in ('Darwin', 'Linux') or not hasattr(os, 'RTLD_NOLOAD'):
+        return result
+    try:
+        # Balance the loader reference explicitly; CDLL does not close it for us.
+        handle = ctypes.CDLL(str(path), mode=os.RTLD_NOLOAD | os.RTLD_NOW)
+        try:
+            result.update(actualLoaded=bool(handle._handle), status='OBSERVED_LOADED')
+        finally:
+            if handle._handle:
+                _ctypes.dlclose(handle._handle)
+    except OSError:
+        result['status'] = 'EXPECTED_ONLY' if path.is_file() else 'MISSING'
+    return result
+
+
+def shared_library_receipts(root, contract, *, verifier=VERIFIER):
+    """Separate exact disk artifact integrity from actual loader presence."""
+    entries = []
+    for entry in contract['native']:
+        if entry['kind'] not in ('SHARED_LIBRARY', 'FRAMEWORK'):
+            continue
+        receipt = scoped_loaded_library(root, entry)
+        receipt['artifactStatus'] = 'UNVERIFIED'
+        try:
+            proof = verifier.verify(root, entry['path'], entry, identity=entry['id'],
+                                    version=entry['version'], build=contract['buildRevision'])
+            receipt.update(artifactStatus=proof['status'], digest=proof['digest'])
+        except FileNotFoundError:
+            receipt['artifactStatus'] = 'MISSING'
+        except (OSError, ValueError):
+            pass
+        entries.append(receipt)
+    return {'entries': entries, 'complete': False,
+            'reason': 'transitive-loader-edges-and-mapped-integrity-unverified'}
+
+
+def native_dependency_graph(contract, imports, native, shared):
+    """Logical expected edges with independently observed child identities.
+
+    Parent association is declared, not a claim that a loader edge was observed.
+    Absence of runtime loader-edge evidence can never complete this graph.
+    """
+    actual = {e['id']: e for e in native + shared['entries']}
+    modules = {e['module']: e for e in imports}
+    edges = []
+    for entry in contract['native']:
+        child = actual.get(entry['id'], {})
+        parent = modules.get(entry['module'])
+        edges.append({'parent': parent['id'] if parent else 'declared-runtime',
+            'child': entry['id'], 'evidenceLevel': 'EXPECTED_ONLY',
+            'runtimeObserved': False, 'childRuntimeObserved': child.get('actualLoaded',
+                child.get('status') == 'OBSERVED_LOADED'),
+            'expectedIdentity': {'digest': entry['digest'], 'version': entry['version']},
+            'actualIdentity': {'digest': child.get('digest'),
+                'artifactStatus': child.get('artifactStatus', 'UNVERIFIED')},
+            'status': 'UNVERIFIED'})
+    return {'version': 1, 'edges': edges, 'complete': False,
+            'reason': 'native-loader-transitive-edges-not-observed'}
 
 
 def load(runtime):
@@ -155,6 +234,7 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
     codec_complete = (getattr(sf, '__version__', None) == codec['version'] and
                       'soundfile' in allowed and dynamic_complete and
                       all(e['status'] == 'OBSERVED_LOADED' for e in native if e['id'] in codec['nativeIds']))
+    shared = shared_library_receipts(root, contract, verifier=verifier)
     return {'version': 1, 'scope': 'DECLARED_RUNTIME_NAMESPACES_ONLY',
             'contractDigest': hashlib.sha256(json.dumps(contract, sort_keys=True,
                 separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()).hexdigest(),
@@ -164,6 +244,8 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
                       'versionEvidence': 'OBSERVED_MODULE_VERSION' if codec_complete else 'UNVERIFIED'},
             'largeArtifacts': {'complete': len(proofs) == len(imports)+len(native), 'entries': proofs},
             'network': {'python': 'UNVERIFIED', 'native': 'UNVERIFIED'},
+            'sharedLibraries': shared,
+            'dynamicNativeGraph': native_dependency_graph(contract, imports, native, shared),
             'complete': False, 'publicationEligible': False}
 
 
@@ -171,6 +253,7 @@ def upgrade(inventory, evidence=None):
     result = copy.deepcopy(inventory)
     result['identityComplete'] = result.get('complete') is True
     result['runtimeClosureVersion'] = 1
+    result['offlineRuntimeComplete'] = False
     result['runtimeEvidence'] = copy.deepcopy(evidence) if evidence else {
         'complete': False, 'reason': 'missing-authenticated-runtime-evidence',
         'network': {'native': 'UNVERIFIED'}}
@@ -187,7 +270,12 @@ def receipt_evidence(evidence):
     independent signature or a substitute for missing native network containment.
     """
     result = copy.deepcopy(evidence)
-    for key in ('nativeClosure', 'dynamicImports', 'largeArtifacts'):
+    graph = result.get('dynamicNativeGraph')
+    if graph is not None:
+        edges = graph.pop('edges')
+        graph.update(edgeCount=len(edges), edgesDigest=hashlib.sha256(json.dumps(
+            edges, sort_keys=True, separators=(',', ':')).encode()).hexdigest())
+    for key in ('nativeClosure', 'dynamicImports', 'largeArtifacts', 'sharedLibraries'):
         value = result[key]
         entries = value.pop('entries')
         statuses = {}

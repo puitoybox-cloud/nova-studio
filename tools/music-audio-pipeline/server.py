@@ -146,6 +146,8 @@ def runtime_snapshot():
     try:
         evidence = RUNTIME_EVIDENCE_MODULE.observe(RUNTIME_INVENTORY.root,
             RUNTIME_EVIDENCE_CONTRACT, build=RUNTIME_INVENTORY.manifest['buildRevision'])
+        if OFFLINE_GUARD is not None:
+            evidence['network'] = OFFLINE_GUARD.snapshot()
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual, evidence)
     except (ValueError, OSError):
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual)
