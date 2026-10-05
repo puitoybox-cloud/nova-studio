@@ -98,7 +98,7 @@ def main():
     root,manifest_path,anchor,build=sys.argv[1:5]
     runtime=bootstrap(manifest_path,anchor,build,root)
     contract=load_contract(root,runtime.manifest)
-    from runtime_evidence import load as load_evidence, install_import_guard, observe
+    from runtime_evidence import load as load_evidence, install_import_guard, observe, receipt_evidence
     evidence_contract=load_evidence(runtime)
     install_import_guard(root,evidence_contract)
     expected_asset=next(e for e in runtime.manifest['assets'] if e['id']=='demucs-child-config')
@@ -112,7 +112,7 @@ def main():
     if not isinstance(nonce,str) or len(nonce)!=32:raise ValueError('invalid-child-nonce')
     try:
         with contextlib.redirect_stdout(sys.stderr):model,receipt=load(runtime,contract,expected,nonce)
-        receipt["runtimeEvidence"]=observe(root,evidence_contract,build=build)
+        receipt["runtimeEvidence"]=receipt_evidence(observe(root,evidence_contract,build=build))
         write(receipt)
         binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
         while True:

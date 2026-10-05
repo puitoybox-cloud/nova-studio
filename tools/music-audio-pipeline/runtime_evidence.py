@@ -38,6 +38,9 @@ def load(runtime):
         return result
     contract = json.loads(raw, object_pairs_hook=unique)
     validate(contract)
+    canonical = json.dumps(contract, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()
+    if raw != canonical:
+        raise ValueError('noncanonical-runtime-evidence')
     return contract
 
 
@@ -141,6 +144,7 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
             except (OSError, ValueError):
                 status = 'UNVERIFIED'
             target.append({'id': entry['id'], 'module': entry['module'], 'version': entry['version'],
+                           'versionEvidence': 'MANIFEST_BOUND_ONLY',
                            'digest': entry['digest'], 'status': status,
                            'artifactStatus': 'VERIFIED_ENTRY' if proof else 'UNVERIFIED'})
     dynamic_complete = not errors and bool(imports) and all(e['status'] == 'OBSERVED_LOADED' for e in imports)
@@ -156,9 +160,10 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
                 separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()).hexdigest(),
             'nativeClosure': {'complete': native_complete, 'entries': native},
             'dynamicImports': {'complete': dynamic_complete, 'entries': imports, 'errors': errors},
-            'codec': {**codec, 'complete': codec_complete, 'status': 'VERIFIED_ENTRY' if codec_complete else 'UNVERIFIED'},
+            'codec': {**codec, 'complete': codec_complete, 'status': 'VERIFIED_ENTRY' if codec_complete else 'UNVERIFIED',
+                      'versionEvidence': 'OBSERVED_MODULE_VERSION' if codec_complete else 'UNVERIFIED'},
             'largeArtifacts': {'complete': len(proofs) == len(imports)+len(native), 'entries': proofs},
-            'network': {'python': 'ENFORCED_BY_RUNTIME_GUARD', 'native': 'UNVERIFIED'},
+            'network': {'python': 'UNVERIFIED', 'native': 'UNVERIFIED'},
             'complete': False, 'publicationEligible': False}
 
 
@@ -172,6 +177,26 @@ def upgrade(inventory, evidence=None):
     result.update(complete=False, processingEligible=False, publicationEligible=False)
     if result.get('status') == 'VERIFIED':
         result['status'] = 'PARTIAL'
+    return result
+
+
+def receipt_evidence(evidence):
+    """Bind all scoped entry receipts by digest without exceeding child wire budget.
+
+    Summary digest is observation evidence from the authenticated child, not an
+    independent signature or a substitute for missing native network containment.
+    """
+    result = copy.deepcopy(evidence)
+    for key in ('nativeClosure', 'dynamicImports', 'largeArtifacts'):
+        value = result[key]
+        entries = value.pop('entries')
+        statuses = {}
+        for entry in entries:
+            status = entry['status']
+            statuses[status] = statuses.get(status, 0) + 1
+        value.update(entryCount=len(entries), statusCounts=statuses,
+                     entriesDigest=hashlib.sha256(json.dumps(entries, sort_keys=True,
+                         separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()).hexdigest())
     return result
 
 
@@ -251,9 +276,11 @@ def assembly_evidence(runtime):
     try:
         contract = load(runtime)
         evidence = observe(runtime.root, contract, build=runtime.manifest['buildRevision'])
+        binding = next(e for e in runtime.bindings['native'] if e.get('id') == 'python-runtime')
+        runtime.resolve_executable('python-runtime', resolve(runtime.root, binding['path']))
         return {'complete': False, 'runtimeEvidence': evidence, 'requiredLocalExecutable':
-                any(e.get('id') == 'python-runtime' for e in runtime.bindings['native']),
+                copy.deepcopy(runtime.native['python-runtime']),
                 'reason': 'native-network-and-observed-runtime-acceptance-open'}
-    except (ValueError, OSError, KeyError, TypeError, AttributeError):
+    except (ValueError, OSError, KeyError, TypeError, AttributeError, StopIteration):
         return {'complete': False, 'reason': 'missing-or-invalid-runtime-evidence',
                 'network': {'native': 'UNVERIFIED'}}

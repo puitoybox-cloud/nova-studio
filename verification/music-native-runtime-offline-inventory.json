@@ -173,8 +173,8 @@
     },
     {
       "id": "music-studio-audio-pipeline.js",
-      "byteLength": 16043,
-      "digest": "6083c74c1ca6c4821f2741156fc385f55e35817676b86623c3d2c7aa485cf6c3",
+      "byteLength": 16849,
+      "digest": "3a5799a582e2e36e4b2aa5209fb8e8ac2ef77dcc5cc6bb9a67ea42dd3b29b9ba",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -229,8 +229,8 @@
     },
     {
       "id": "music-studio-distribution-identity.js",
-      "byteLength": 6477,
-      "digest": "555650870f5a1f50efba9eba2a4e741e9d6dfef0fc05aea144ad487e65a50b4c",
+      "byteLength": 6623,
+      "digest": "2a8f3af353085e0c0799725d62817405f1ebd9e4d71c81c1700a44f31624c5c8",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -565,8 +565,8 @@
     },
     {
       "id": "scripts/music-generation-package-browser.js",
-      "byteLength": 19281,
-      "digest": "7baf1307226b45e6111442370e8157b52369bdd9341907b28edf12d636e34a1b",
+      "byteLength": 21402,
+      "digest": "5d7c7f609dd8ae01d3fdd61096ce40c6f77089faa7081c4beec9fb841a0ccd99",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"
@@ -1453,8 +1453,8 @@
     },
     {
       "id": "tests/music-studio-runtime-bootstrap.test.js",
-      "byteLength": 8880,
-      "digest": "b05da68bb2e53eeb0e31d8ad500f46c9409ef964ec5965664797c65b9ed63705",
+      "byteLength": 11292,
+      "digest": "a8ba973a53e0d9138853402fb99354e9408c9404ecb983ebdf9fd7495543520d",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"
@@ -1621,8 +1621,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/demucs_child.py",
-      "byteLength": 8327,
-      "digest": "e4d52bd3756ab5c969ab88fc75b180e21bcc26607d7a87ee71d97fe78c7610cc",
+      "byteLength": 8363,
+      "digest": "b3bae0f3cc1c636c72875ba1271f45b92e9df7f6c3cfd802f5ea065678ed5c4d",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1701,8 +1701,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/runtime_evidence.py",
-      "byteLength": 13747,
-      "digest": "1ae543ade2168301fd895174c718089aec891afb44678b6f3616dd384819e313",
+      "byteLength": 15183,
+      "digest": "426820203121be522fcabbe735018683b20403af7bf4a19ac891731a272b5ec5",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1773,8 +1773,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/test_native_verification.py",
-      "byteLength": 18985,
-      "digest": "bde1094ce2f736533f175112a915049baa7b8a0fe54bb738b26c9d9b95820b2c",
+      "byteLength": 20655,
+      "digest": "bc91aeb51f7666f9db21c221d990ac6e0d591bd32ff51882c4fbc439f5765e25",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"

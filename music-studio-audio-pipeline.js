@@ -149,6 +149,13 @@
     if(expected.actualInventory){
       const inventory=actual.actualInventory, required=expected.actualInventory;
       if(inventory?.inventoryVersion!==2||inventory.mode!=='STRICT'||inventory.status!=='VERIFIED'||inventory.artifactClosure!=='VERIFIED'||inventory.complete!==true||inventory.processingEligible!==true)throw Error('actual-runtime-inventory-unverified');
+      if(required.runtimeEvidenceDigest||inventory.runtimeClosureVersion!==undefined||inventory.runtimeEvidence!==undefined){
+        const evidence=inventory.runtimeEvidence;
+        if(inventory.runtimeClosureVersion!==1||!evidence||evidence.contractDigest!==required.runtimeEvidenceDigest||evidence.complete!==true||evidence.network?.native!=='ENFORCED'||evidence.nativeClosure?.complete!==true||evidence.dynamicImports?.complete!==true||evidence.codec?.complete!==true||evidence.largeArtifacts?.complete!==true)throw Error('actual-native-runtime-evidence-unverified');
+        // This version has no authenticated native-network containment receipt adapter.
+        // Claimed booleans/strings cannot unlock strict processing.
+        throw Error('native-network-receipt-adapter-unavailable');
+      }
       if(!expected.architectures.includes(inventory.architecture))throw Error('unsupported-runtime');
       for(const kind of ['models','dependencies']){
         const entries=inventory[kind];

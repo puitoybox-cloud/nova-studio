@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from artifact_verification import ArtifactVerifier, ALGORITHM, Cancelled, CHUNK_BYTES
 from runtime_evidence import observe, validate, upgrade, decode_soundfile, ScopedImportGuard, assembly_evidence
-from runtime_evidence import VerifiedSourceLoader
+from runtime_evidence import VerifiedSourceLoader, load as load_evidence, receipt_evidence
 
 
 def entry(root, name, raw=b'fixture', module=None):
@@ -203,8 +203,31 @@ class NativeDynamicTests(unittest.TestCase):
         self.assertFalse(e['nativeClosure']['complete'])
     def test_report_no_absolute_install_path(self):
         self.assertNotIn(str(self.root),json.dumps(self.observe()))
+    def test_bounded_child_summary_binds_every_observed_entry(self):
+        e=self.observe();e['dynamicImports']['entries']*=4096
+        first=receipt_evidence(e)
+        self.assertEqual(first['dynamicImports']['entryCount'],8192)
+        self.assertLess(len(json.dumps(first)),4096)
+        e['dynamicImports']['entries'][-1]['digest']='0'*64
+        self.assertNotEqual(receipt_evidence(e)['dynamicImports']['entriesDigest'],first['dynamicImports']['entriesDigest'])
+        self.assertFalse(first['complete']);self.assertFalse(first['publicationEligible'])
     def test_assembly_requires_runtime_evidence(self):
         e=assembly_evidence(SimpleNamespace()); self.assertFalse(e['complete'])
+    def test_authenticated_evidence_canonical_duplicate_size_digest_and_retry(self):
+        path=self.root/'runtime-evidence.json'
+        raw=json.dumps(self.c,sort_keys=True,separators=(',',':')).encode()
+        def runtime(data,digest=None):
+            path.write_bytes(data)
+            expected={'id':'runtime-evidence','digest':digest or hashlib.sha256(data).hexdigest(),'byteLength':len(data)}
+            return SimpleNamespace(root=self.root,manifest={'buildRevision':'build'},expected=lambda kind,id:expected)
+        self.assertEqual(load_evidence(runtime(raw)),self.c)
+        with self.assertRaises(ValueError):load_evidence(runtime(raw,'0'*64))
+        pretty=json.dumps(self.c,indent=2).encode()
+        with self.assertRaises(ValueError):load_evidence(runtime(pretty))
+        duplicate=raw[:-1]+b',"version":1}'
+        with self.assertRaises(ValueError):load_evidence(runtime(duplicate))
+        with self.assertRaises(ValueError):load_evidence(runtime(b'x'*(1024*1024+1)))
+        self.assertEqual(load_evidence(runtime(raw)),self.c)
     def test_allowed_local_codec_and_remote_input(self):
         path=self.root/'input.wav'; path.write_bytes(b'fixture')
         sf=SimpleNamespace(__version__='1',read=lambda *a,**k:('fixture',22050))
@@ -230,7 +253,7 @@ class NetworkLauncherTests(unittest.TestCase):
                  patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
                  patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
                 result=launcher.prepare(root,root/'manifest','a'*64,'build',pipeline=root)
-                self.assertEqual(result['command'],[sys.executable,'-I',str(root/'server.py')])
+                self.assertEqual(result['command'],[sys.executable,'-I',str(root.resolve()/'server.py')])
                 self.assertEqual(result['browserEnvelope']['trust'],{'manifestDigest':'a'*64,'buildRevision':'build'})
                 self.assertEqual(json.loads(result['browserEnvelope']['runtimeConfigText']),runtime.bindings)
                 self.assertFalse(result['publicationEligible'])

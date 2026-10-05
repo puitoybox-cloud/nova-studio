@@ -40,7 +40,8 @@ async function bootstrap(input,trust,control={}){
  if(canonical([...assetIds].sort())!==canonical(manifest.assets.filter(e=>e.id!=='runtime-config').map(e=>e.id).sort()))fail('missing-or-unexpected-local-asset');
  const native=config.native.map(e=>{const asset=manifest.assets.find(a=>a.id===e.id);if(!asset)fail('missing-native-asset');return {identity:asset,source:e.path,architecture:e.architecture,version:e.version,status:'VERIFIED_EXECUTABLE_FILE',versionEvidence:'MANIFEST_BOUND_ONLY'}});
  const freeze=x=>{if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x)}return x};
- const expected=freeze({...bound.expected,actualInventory:{inventoryVersion:2,models:bound.expected.models,dependencies:bound.expected.dependencies,assets:JSON.parse(canonical(manifest.assets)),native:JSON.parse(canonical(native))}});check();
+ const runtimeEvidence=manifest.assets.find(e=>e.id==='runtime-evidence');
+ const expected=freeze({...bound.expected,actualInventory:{inventoryVersion:2,models:bound.expected.models,dependencies:bound.expected.dependencies,assets:JSON.parse(canonical(manifest.assets)),native:JSON.parse(canonical(native)),...(runtimeEvidence?{runtimeEvidenceDigest:runtimeEvidence.digest}:{})}});check();
  return Object.freeze({mode:'STRICT',trust:'EXTERNALLY_ANCHORED',expected,
  configure(pipeline){check();pipeline.configureIdentity(expected);return {mode:'STRICT',status:'PENDING_RUNTIME_INVENTORY'}},
  async verify(pipeline,control={}){check();await pipeline.connectIdentity({...control,expected,signal:options.signal,reason:options.reason});check();return {mode:'STRICT',status:'VERIFIED',identityEligible:true,publicationEligible:false,publicationBlocker:'BACKEND_ACKNOWLEDGEMENT_REQUIRED'}}});
