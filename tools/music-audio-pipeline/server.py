@@ -37,19 +37,38 @@ _runtime_spec = importlib.util.spec_from_file_location("nova_runtime_inventory",
 _pipeline_directory = str(Path(__file__).parent.resolve())
 if _pipeline_directory not in sys.path:
     sys.path.insert(0, _pipeline_directory)
-_runtime_module = importlib.util.module_from_spec(_runtime_spec)
-_runtime_spec.loader.exec_module(_runtime_module)
 STRICT_BOOTSTRAP = bool(os.environ.get("NOVA_TRUSTED_MANIFEST_PATH"))
+_runtime_module = None
+if not STRICT_BOOTSTRAP:
+    _runtime_module = importlib.util.module_from_spec(_runtime_spec)
+    _runtime_spec.loader.exec_module(_runtime_module)
 RUNTIME_INVENTORY = None
 BOOTSTRAP_ERROR = None
 
 def initialize_runtime():
-    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR
+    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module
     if not STRICT_BOOTSTRAP:
         return
     # A strict Helper may never download models or contact external services.
-    _runtime_module.install_offline_guard()
+    def offline_audit(event, args):
+        if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system'):
+            raise PermissionError('strict-offline-runtime-operation-blocked')
+    sys.addaudithook(offline_audit)
     try:
+        from distribution_binding import load_manifest
+        from dependency_identity import verify_local_asset
+        manifest = load_manifest(os.environ['NOVA_TRUSTED_MANIFEST_PATH'],
+            os.environ.get('NOVA_TRUSTED_MANIFEST_DIGEST'), os.environ.get('NOVA_EXPECTED_BUILD_REVISION'))
+        artifact = next((e for e in manifest['assets'] if e['id'] == 'runtime-inventory-source'), None)
+        if artifact is None:
+            raise ValueError('missing-authenticated-runtime-module')
+        verify_local_asset(_pipeline_directory, 'runtime_inventory.py', artifact, 1024 * 1024)
+        # Execute the same authenticated bytes, avoiding reopen between check and exec.
+        source = Path(_pipeline_directory, 'runtime_inventory.py').read_bytes()
+        if len(source) != artifact['byteLength'] or hashlib.sha256(source).hexdigest() != artifact['digest']:
+            raise ValueError('stale-authenticated-runtime-module')
+        _runtime_module = importlib.util.module_from_spec(_runtime_spec)
+        exec(compile(source, _runtime_spec.origin, 'exec'), _runtime_module.__dict__)
         RUNTIME_INVENTORY = _runtime_module.bootstrap(
             os.environ["NOVA_TRUSTED_MANIFEST_PATH"],
             os.environ.get("NOVA_TRUSTED_MANIFEST_DIGEST"),

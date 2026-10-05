@@ -1628,8 +1628,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/server.py",
-      "byteLength": 21283,
-      "digest": "7989af0b56df3edfd7fb2632cda899c1d7ac9960b76baf4ddc416d28f8ea7340",
+      "byteLength": 22655,
+      "digest": "7706026a2754626acd28c1aed7ae212dbb4da916824afbcbb92f5cdf6e3ab06e",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1668,8 +1668,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/test_runtime_inventory.py",
-      "byteLength": 9400,
-      "digest": "515f5e6a78dddd32a4ba230a67acefe80328a517ab9aeebef5ab813639c58a83",
+      "byteLength": 11208,
+      "digest": "1b744f149e3084626c21fe8620b6eb9933593bb4df4f25a3e3e905db80706d6d",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"

@@ -148,3 +148,33 @@ for call in (lambda: socket.socket().connect(('127.0.0.1', 1)), lambda: subproce
 assert blocked==2
 """
         subprocess.run([sys.executable,'-c',code],cwd=Path(__file__).parent,check=True,capture_output=True,timeout=5)
+
+    def test_strict_startup_never_executes_missing_or_wrong_runtime_source(self):
+        import shutil
+        import subprocess
+        import sys
+        from test_distribution_binding import DistributionBindingTests
+        original=Path(__file__).parent
+        pipeline=self.root/'pipeline';pipeline.mkdir()
+        for name in ['server.py','helper_identity.py','dependency_identity.py','distribution_binding.py','requirements.txt']:
+            shutil.copyfile(original/name,pipeline/name)
+        source=(original/'runtime_inventory.py').read_bytes()
+        (pipeline/'runtime_inventory.py').write_text('raise AssertionError("must never execute unverified code")')
+        code="""
+import importlib.util
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('fixture_server',Path('server.py'))
+s=importlib.util.module_from_spec(spec);spec.loader.exec_module(s)
+assert s._runtime_module is None
+s.initialize_runtime()
+assert s._runtime_module is None
+assert s.BOOTSTRAP_ERROR=='authenticated-runtime-bootstrap-incomplete'
+assert s.runtime_snapshot()['status']=='BLOCKED'
+"""
+        for include in [False,True]:
+            manifest,_=DistributionBindingTests().fixture()
+            manifest['assets']=([{'id':'runtime-inventory-source','revision':'1','digest':hashlib.sha256(source).hexdigest(),'byteLength':len(source)}] if include else [])
+            raw=json.dumps(manifest,sort_keys=True,separators=(',',':')).encode()
+            path=pipeline/'manifest.json';path.write_bytes(raw)
+            env={'NOVA_TRUSTED_MANIFEST_PATH':str(path),'NOVA_TRUSTED_MANIFEST_DIGEST':hashlib.sha256(raw).hexdigest(),'NOVA_EXPECTED_BUILD_REVISION':manifest['buildRevision']}
+            subprocess.run([sys.executable,'-c',code],cwd=pipeline,env=env,check=True,capture_output=True,timeout=5)
