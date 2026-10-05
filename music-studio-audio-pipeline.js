@@ -125,6 +125,53 @@
       configureIdentity(binding.expected);bootstrapState='VERIFIED';return result;
     }catch(error){if(epoch===bootstrapEpoch){expectedHelperIdentity=null;bootstrapState='BLOCKED'}throw error}
   }
+  const usedLocalSessions=new Set();
+  let localController=null,localHeartbeat=null;
+  async function bootstrapLocal(handoff,controls={}){
+    bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;
+    const fail=code=>{throw Error(code)};
+    let notify=async()=>{};
+    try{
+      const h=JSON.parse(JSON.stringify(handoff));
+      const origin=root.location?.origin;
+      if(h?.format!=='NOVA_LOCAL_BROWSER_HANDOFF'||h.version!==1||h.origin!==origin||
+          !/^http:\/\/127\.0\.0\.1:[1-9][0-9]*$/.test(origin||'')||
+          !['nonce','session','manifestDigest','runtimeConfigDigest','helperIdentityDigest'].every(k=>/^[a-f0-9]{64}$/.test(h[k]))||
+          typeof h.buildRevision!=='string'||!h.buildRevision||!Number.isSafeInteger(h.expiresAt)||
+          h.expiresAt<=Date.now()||h.expiresAt>Date.now()+300000||usedLocalSessions.has(h.session))fail('invalid-stale-or-replayed-local-handoff');
+      usedLocalSessions.add(h.session);
+      localController=new AbortController();
+      const signal=controls.signal||localController.signal;
+      const sha256=controls.sha256||async function(bytes){return Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('')};
+      const canonical=root.MusicStudioDistributionIdentity?.canonical;if(!canonical)fail('missing-distribution-bootstrap');
+      const check=()=>{if(signal.aborted||h.expiresAt<=Date.now())fail('expired-or-cancelled-local-bootstrap')};
+      notify=async state=>{await root.fetch(origin+'/lifecycle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state,session:h.session,nonce:h.nonce}),keepalive:true}).then(response=>{if(!response.ok)fail('lifecycle-acknowledgement-failed')})};
+      check();
+      const response=await root.fetch(origin+'/bootstrap-envelope',{method:'POST',headers:{'X-Nova-Session':h.session,'X-Nova-Nonce':h.nonce},body:'',signal,cache:'no-store'});
+      if(!response.ok)fail('local-envelope-unavailable');
+      const text=await response.text();if(new TextEncoder().encode(text).length>1024*1024)fail('local-envelope-budget');
+      const value=JSON.parse(text);check();
+      if(value.format!=='NOVA_LOCAL_BROWSER_ENVELOPE'||value.version!==1||value.origin!==origin||value.session!==h.session||value.nonce!==h.nonce||value.expiresAt!==h.expiresAt)fail('local-envelope-session-mismatch');
+      const binding={buildRevision:h.buildRevision,manifestDigest:h.manifestDigest,runtimeConfigDigest:h.runtimeConfigDigest,helperIdentityDigest:h.helperIdentityDigest};
+      if(canonical(value.binding)!==canonical(binding))fail('local-envelope-anchor-mismatch');
+      const envelope=value.envelope;
+      for(const [key,bytes] of [['manifestDigest',canonical(envelope.manifest)],['runtimeConfigDigest',envelope.runtimeConfigText],['helperIdentityDigest',canonical(envelope.manifest.helper)]]){
+        if(await sha256(new TextEncoder().encode(bytes))!==h[key])fail('local-envelope-digest-mismatch:'+key);check();
+      }
+      if(envelope.manifest.buildRevision!==h.buildRevision||canonical(envelope.trust)!==canonical({buildRevision:h.buildRevision,manifestDigest:h.manifestDigest}))fail('local-envelope-build-mismatch');
+      await notify('BROWSER_READY');check();
+      const result=await bootstrapIdentity(envelope,{...controls,signal,sha256,lifecycleSession:h.session});check();
+      await notify('IDENTITY_VERIFIED');
+      if(root.setInterval)localHeartbeat=root.setInterval(()=>notify('BROWSER_READY').catch(()=>stopLocal()),10000);
+      root.addEventListener?.('pagehide',()=>stopLocal(h),{once:true});
+      return {...result,processingEligible:true,publicationEligible:false};
+    }catch(error){bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;localController?.abort();await notify('FAILED').catch(()=>{});throw error}
+  }
+  function stopLocal(h){
+    localController?.abort();if(localHeartbeat)root.clearInterval?.(localHeartbeat);localHeartbeat=null;
+    bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;
+    if(h)root.navigator?.sendBeacon?.(h.origin+'/lifecycle',new Blob([JSON.stringify({state:'STOPPED',session:h.session,nonce:h.nonce})],{type:'application/json'}));
+  }
   function bootstrapStatus(){return {status:bootstrapState,mode:bootstrapState==='LEGACY_UNVERIFIED'?'LEGACY':'STRICT'}}
 
   function configureIdentity(expected){
@@ -168,19 +215,21 @@
     }
     return true;
   }
-  async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT}={}){
+  async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT,lifecycleSession}={}){
     if(endpoint!==ENDPOINT)throw Error('non-local-endpoint');
     if(!expected)throw Error('helper-identity-unconfigured');
     const check=()=>{const why=signal?.aborted?'Abort':reason();if(why)throw Error(why)};check();
     const response=await root.fetch(`${ENDPOINT}/health`,{signal,cache:'no-store'});check();if(!response.ok)throw Error('health-unavailable');
     const payload=await response.json();check();
     if(payload.host!=='127.0.0.1'||payload.port!==8766)throw Error('non-local-endpoint');
+    if(lifecycleSession&&payload.lifecycleSession!==lifecycleSession)throw Error('stale-helper-session');
     validateIdentity(payload,expected);return payload;
   }
   async function processAudioLocally(file,options={}){
     if(['PENDING','BLOCKED'].includes(bootstrapState))throw Error('strict-bootstrap-incomplete');
+    const localEpoch=bootstrapEpoch,localSignal=localController?.signal;
     const expected=options.expected||expectedHelperIdentity;
-    const check=()=>{const why=options.signal?.aborted?'Abort':options.reason?.();if(why)throw Error(why)};check();
+    const check=()=>{const why=options.signal?.aborted||localSignal?.aborted?'Abort':localSignal&&bootstrapEpoch!==localEpoch?'stale':options.reason?.();if(why)throw Error(why)};check();
     if(expected)await connectIdentity({...options,expected});
     check();
     if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
@@ -249,7 +298,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -264,6 +313,14 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
+  if(root.__NOVA_LOCAL_HANDOFF||root.location?.hash?.startsWith('#nova-local=')){
+    bootstrapState='BLOCKED';
+    try{
+      const handoff=root.__NOVA_LOCAL_HANDOFF||JSON.parse(new URLSearchParams(root.location.hash.slice('#nova-local='.length)).get('handoff'));
+      root.history?.replaceState(null,'',root.location.pathname);
+      bootstrapLocal(handoff).catch(()=>{});
+    }catch(_){bootstrapState='BLOCKED'}
+  }
   installWhenReady();
 })(typeof window!=='undefined'?window:globalThis);

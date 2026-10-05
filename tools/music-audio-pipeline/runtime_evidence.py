@@ -244,7 +244,10 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
             'codec': {**codec, 'complete': codec_complete, 'status': 'VERIFIED_ENTRY' if codec_complete else 'UNVERIFIED',
                       'versionEvidence': 'OBSERVED_MODULE_VERSION' if codec_complete else 'UNVERIFIED'},
             'largeArtifacts': {'complete': len(proofs) == len(imports)+len(native), 'entries': proofs},
-            'network': {'python': 'UNVERIFIED', 'native': 'UNVERIFIED'},
+            'network': {'python': 'UNVERIFIED', 'native': 'UNVERIFIED',
+                'components': {'helper':'PYTHON_GUARDED_NATIVE_UNVERIFIED','demucs-child':'NETWORK_CAPABLE_NATIVE_UNVERIFIED','codec':'NETWORK_CAPABILITY_UNVERIFIED'}, 'nativeNetworkVerified':False},
+            'processingChain': processing_backend_inventory(contract, modules),
+            'transitiveNativeObservation': scoped_macho_dependencies(root, contract),
             'sharedLibraries': shared,
             'dynamicNativeGraph': native_dependency_graph(contract, imports, native, shared),
             'complete': False, 'publicationEligible': False}
@@ -271,6 +274,10 @@ def receipt_evidence(evidence):
     independent signature or a substitute for missing native network containment.
     """
     result = copy.deepcopy(evidence)
+    transitive = result.get('transitiveNativeObservation')
+    if transitive is not None:
+        entries = transitive.pop('edges')
+        transitive.update(edgeCount=len(entries), edgesDigest=hashlib.sha256(json.dumps(entries,sort_keys=True,separators=(',',':')).encode()).hexdigest())
     graph = result.get('dynamicNativeGraph')
     if graph is not None:
         edges = graph.pop('edges')
@@ -289,6 +296,122 @@ def receipt_evidence(evidence):
     return result
 
 
+
+class ProcessingReceipt:
+    """Runtime-scoped call receipts, not predictions of unexecuted backend stages."""
+    def __init__(self, root, contract):
+        self.root = root; self.contract = contract; self.entries = []
+
+    def call(self, stage, logical, function, *args, native_ids=(), fallback=False, **kwargs):
+        if len(self.entries) >= 256: raise ValueError('processing-receipt-budget')
+        import inspect
+        import importlib.metadata
+        module = sys.modules.get(function.__module__)
+        source = inspect.getsourcefile(function)
+        entry = next((e for e in self.contract['imports'] if e['module'] == function.__module__), None)
+        status = 'OBSERVED_UNVERIFIED'; artifact = None
+        if source and entry and Path(source).resolve() == resolve(self.root, entry['path']).resolve():
+            try:
+                artifact = VERIFIER.verify(self.root, entry['path'], entry,
+                    identity=entry['id'], version=entry['version'], build=self.contract['buildRevision'])['digest']
+                status = 'VERIFIED_ENTRY'
+            except (ValueError, OSError): pass
+        version = getattr(module, '__version__', None)
+        if version is None:
+            try: version = importlib.metadata.version(function.__module__.split('.')[0])
+            except importlib.metadata.PackageNotFoundError: version = None
+        value = {'stage': stage, 'logicalId': logical, 'actualImplementation': function.__module__+'.'+function.__name__,
+            'version': version, 'artifactDigest': artifact, 'architecture': platform.machine(),
+            'nativeIds': list(native_ids), 'nativeIdentity': 'UNVERIFIED', 'fallback': fallback,
+            'externalExecutable': False, 'status': status, 'completed': False}
+        if fallback or status != 'VERIFIED_ENTRY' or (version is not None and version != entry['version']):
+            raise ValueError('unverified-or-fallback-processing-backend')
+        self.entries.append(value)
+        result = function(*args, **kwargs)
+        value['completed'] = True
+        return result
+
+    def snapshot(self):
+        # Actual mapped native and Basic Pitch internal decode paths are still open.
+        return {'version': 1, 'entries': copy.deepcopy(self.entries), 'complete': False,
+            'status': 'PARTIAL' if self.entries else 'NOT_OBSERVED',
+            'reason': 'mapped-native-and-all-processing-stages-unverified'}
+
+
+def processing_backend_inventory(contract, modules=None):
+    modules = sys.modules if modules is None else modules
+    codec = contract['codec']; sf = modules.get('soundfile')
+    return {'version': 1, 'complete': False, 'entries': [
+        {'stage': 'decoder', 'logicalId': 'audio-input', 'actualBackend': 'soundfile' if sf else None,
+         'version': getattr(sf, '__version__', None), 'expectedVersion': codec['version'],
+         'nativeIds': codec['nativeIds'], 'architecture': platform.machine(),
+         'status': 'OBSERVED_ONLY' if sf else 'NOT_OBSERVED', 'fallback': False,
+         'nativeBackendVersion': getattr(sf, '__libsndfile_version__', None)},
+        {'stage': 'basic-pitch-input', 'status': 'UNVERIFIED', 'reason': 'internal-decoder-resample-not-intercepted'},
+        {'stage': 'demucs-resample', 'status': 'NOT_OBSERVED', 'reason': 'only-receipted-when-rate-conversion-called'},
+        {'stage': 'stem-writer', 'status': 'NOT_OBSERVED', 'reason': 'selected-writer-call-not-yet-receipted'}]}
+
+
+def scoped_macho_dependencies(root, contract):
+    """Read only declared native images' bounded Mach-O load commands.
+
+    Disk commands identify static dependencies, not actual mapped edges. No OS
+    image inventory, system path probing or subprocess/tool invocation occurs.
+    Fat/ELF/unknown files remain unverified. @rpath ambiguity stays unresolved.
+    """
+    import struct
+    edges = []; entries = contract['native']
+    for entry in entries:
+        if entry['kind'] not in ('EXTENSION', 'SHARED_LIBRARY', 'FRAMEWORK'): continue
+        try:
+            path = resolve(root, entry['path'])
+            VERIFIER.verify(root,entry['path'],entry,identity=entry['id'],version=entry['version'],build=contract['buildRevision'])
+            with path.open('rb') as stream:
+                header = stream.read(32)
+                if len(header) != 32 or header[:4] != b'\xcf\xfa\xed\xfe':
+                    edges.append({'parent':entry['id'], 'status':'OBSERVED_UNVERIFIED', 'reason':'unsupported-native-image'}); continue
+                _, cpu, _, _, count, size, _, _ = struct.unpack('<8I', header)
+                if count > 4096 or size > 1024*1024: raise ValueError('native-load-command-budget')
+                raw = stream.read(size)
+                if len(raw) != size: raise ValueError('truncated-native-load-commands')
+            VERIFIER.verify(root,entry['path'],entry,identity=entry['id'],version=entry['version'],build=contract['buildRevision'])
+            offset = 0
+            for _ in range(count):
+                if offset+8 > len(raw): raise ValueError('truncated-native-command')
+                command, length = struct.unpack_from('<II', raw, offset)
+                if length < 8 or offset+length > len(raw): raise ValueError('invalid-native-command-size')
+                if command in (0xc, 0x80000018, 0x8000001f, 0x80000023):
+                    if length < 24: raise ValueError('invalid-dylib-command')
+                    name_offset = struct.unpack_from('<I',raw,offset+8)[0]
+                    if not 24 <= name_offset < length: raise ValueError('invalid-dylib-name')
+                    encoded = raw[offset+name_offset:offset+length]
+                    if b'\0' not in encoded: raise ValueError('unterminated-dylib-name')
+                    name = encoded.split(b'\0',1)[0].decode('utf8')
+                    # Exact loader-relative binding only; never guess @rpath or system resolution.
+                    relative = (Path(entry['path']).parent/name[len('@loader_path/'):]) if name.startswith('@loader_path/') else None
+                    matches = [e for e in entries if relative is not None and Path(e['path']) == relative]
+                    child = matches[0] if len(matches) == 1 else None
+                    status = 'UNEXPECTED_OBSERVED' if child is None else 'EXPECTED_NOT_OBSERVED'
+                    proof = None; observed = False
+                    if child is not None:
+                        loaded = scoped_loaded_library(root, child); observed = loaded['actualLoaded']
+                        try:
+                            proof = VERIFIER.verify(root,child['path'],child,identity=child['id'],version=child['version'],build=contract['buildRevision'])
+                            status = 'OBSERVED_UNVERIFIED' if observed else 'EXPECTED_NOT_OBSERVED'
+                        except FileNotFoundError: status = 'MISSING'
+                        except (OSError, ValueError): status = 'OBSERVED_UNVERIFIED'
+                    edges.append({'parent':entry['id'],'child':child['id'] if child else None,
+                        'status':status,'evidence':'DISK_LOAD_COMMAND','actualLoaded':observed,
+                        'artifactDigest':proof['digest'] if proof else None,
+                        'architecture':{0x1000007:'x86_64',0x100000c:'arm64'}.get(cpu,'UNVERIFIED'),
+                        'mappedIntegrity':'UNVERIFIED','runtimeEdgeVerified':False})
+                offset += length
+            if offset != size: raise ValueError('native-command-size-mismatch')
+        except (ValueError,OSError,UnicodeError,struct.error):
+            edges.append({'parent':entry['id'],'status':'OBSERVED_UNVERIFIED','reason':'invalid-or-missing-native-image'})
+    return {'version':1,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_ONLY',
+        'reason':'disk-commands-and-exact-loaded-presence-do-not-prove-mapped-transitive-closure'}
+
 def local_audio_path(path):
     value = str(path)
     if '://' in value or value.startswith(('http:', 'https:', 'ftp:', 'pipe:', 'tcp:', 'udp:')):
@@ -299,11 +422,14 @@ def local_audio_path(path):
     return path
 
 
-def decode_soundfile(module, path, expected_version):
+def decode_soundfile(module, path, expected_version, receipt=None):
     """Explicit single backend, never system executable/torchaudio dispatch fallback."""
     path = local_audio_path(path)
     if module.__version__ != expected_version:
         raise ValueError('wrong-codec-version')
+    if receipt is not None:
+        return receipt.call('decoder','audio-input',module.read,str(path),
+            native_ids=receipt.contract['codec']['nativeIds'],dtype='float32',always_2d=True)
     return module.read(str(path), dtype='float32', always_2d=True)
 
 

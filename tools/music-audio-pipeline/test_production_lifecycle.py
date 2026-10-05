@@ -1,0 +1,139 @@
+import copy
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+from local_distribution_entry import LocalProductionLifecycle, strict_eligibility
+from runtime_evidence import scoped_macho_dependencies, ProcessingReceipt
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+class Child:
+    pid=987654
+    def __init__(self): self.exited=False
+    def poll(self): return 0 if self.exited else None
+    def wait(self,timeout=None): self.exited=True
+
+class LifecycleTests(unittest.TestCase):
+    def make(self, health=None, browser=None):
+        config='{}';manifest={'buildRevision':'fixture','helper':{'version':1,'pipelineRevision':2,'sourceDigest':'a'*64},'assets':[{'id':'runtime-config','digest':hashlib.sha256(config.encode()).hexdigest()}]}
+        prepared={'command':['/fixture/python','server.py'],'environment':{},'browserEnvelope':{'manifest':manifest,'trust':{'buildRevision':'fixture','manifestDigest':digest(manifest)},'runtimeConfigText':config}}
+        self.child=Child()
+        lifecycle=LocalProductionLifecycle(prepared,{'/music-studio.html':b'<html></html>'},{'/music-studio.html':hashlib.sha256(b'<html></html>').hexdigest()},popen=lambda *a,**k:self.child, browser=browser or (lambda url: True), timeout=.1)
+        def valid():return {'version':1,'pipelineRevision':2,'sourceDigest':'a'*64,'host':'127.0.0.1','port':8766,'localOnly':True,'lifecycleSession':lifecycle.server.session,'runtimeIdentity':{'actualInventory':{'mode':'STRICT','identityComplete':True}}}
+        lifecycle.health=health or valid
+        return lifecycle
+    def cleanup(self,l):
+        with patch('local_distribution_entry.os.killpg') as kill:
+            l.close();self.assertEqual(l.state,'STOPPED')
+            self.assertFalse(l.eligibility['processingEligible']);self.assertEqual(l.server.nonce,'')
+            self.assertEqual(l.server.server.socket.fileno(),-1)
+        l.close()
+    def test_normal_start_inventory_partial_blocks_processing(self):
+        l=self.make()
+        try:
+            r=l.start();self.assertEqual(r['state'],'SERVER_READY');self.assertTrue(r['startURL'].startswith(l.server.origin))
+            l.browser_event('BROWSER_READY');l.browser_event('IDENTITY_VERIFIED')
+            self.assertEqual(l.state,'IDENTITY_VERIFIED');self.assertFalse(l.eligibility['processingEligible'])
+            self.assertFalse(l.eligibility['publicationEligible'])
+        finally:self.cleanup(l)
+    def test_stale_helper_identity_incomplete_and_wrong_identity(self):
+        for key,value in [('lifecycleSession','old'),('sourceDigest','b'*64),('runtimeIdentity',{'actualInventory':{'mode':'STRICT'}})]:
+            l=self.make();valid=l.health
+            l.health=lambda key=key,value=value:{**valid(),key:value}
+            with patch('local_distribution_entry.os.killpg'):
+                with self.assertRaises(ValueError):l.start()
+            self.assertEqual(l.state,'FAILED');self.assertTrue(l.server.closed)
+    def test_helper_failure(self):
+        l=self.make();self.child.exited=True
+        with self.assertRaisesRegex(ValueError,'helper-startup'):l.start()
+        self.assertTrue(l.server.closed)
+    def test_server_failure(self):
+        l=self.make()
+        with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):
+            with self.assertRaises(OSError):l.start()
+        self.assertEqual(l.state,'FAILED')
+    def test_browser_failure_and_retry(self):
+        l=self.make(browser=lambda url:False);old=l.server.session
+        with patch('local_distribution_entry.os.killpg'):
+            with self.assertRaisesRegex(ValueError,'browser-startup'):l.start()
+        with self.assertRaisesRegex(ValueError,'stale-lifecycle'):l.start()
+        fresh=self.make()
+        try:self.assertNotEqual(old,fresh.server.session);fresh.start()
+        finally:self.cleanup(fresh)
+    def test_browser_failure_invalidation(self):
+        l=self.make()
+        try:
+            l.start();l.browser_event('FAILED');self.assertTrue(l.done.is_set())
+            with self.assertRaises(ValueError):l.browser_event('IDENTITY_VERIFIED')
+            self.assertFalse(l.eligibility['processingEligible'])
+        finally:self.cleanup(l)
+    def test_out_of_order_rejected(self):
+        l=self.make()
+        try:
+            l.start()
+            with self.assertRaises(ValueError):l.browser_event('IDENTITY_VERIFIED')
+        finally:self.cleanup(l)
+    def test_eligibility_complete_partial_legacy_absent_backend(self):
+        inv={'mode':'STRICT','status':'VERIFIED','complete':True,'identityComplete':True,'runtimeEvidence':{'processingChain':{'complete':True},'dynamicNativeGraph':{'complete':True},'network':{'nativeNetworkVerified':True,'native':'CONTAINED'}}}
+        self.assertTrue(strict_eligibility(inv,trusted_bootstrap=True,browser_verified=True)['processingEligible'])
+        self.assertFalse(strict_eligibility(inv,trusted_bootstrap=True,browser_verified=True)['publicationEligible'])
+        for key,value in [('complete',False),('mode','LEGACY'),('identityComplete',False)]:
+            partial=copy.deepcopy(inv);partial[key]=value
+            self.assertFalse(strict_eligibility(partial,trusted_bootstrap=True,browser_verified=True)['processingEligible'])
+        for field in ['processingChain','dynamicNativeGraph','network']:
+            partial=copy.deepcopy(inv);partial['runtimeEvidence'][field]={}
+            self.assertFalse(strict_eligibility(partial,trusted_bootstrap=True,browser_verified=True)['processingEligible'])
+
+class NativeTests(unittest.TestCase):
+    def image(self,name):
+        import struct
+        encoded=name.encode()+b'\0';length=24+len(encoded)
+        command=struct.pack('<6I',0xc,length,24,0,0,0)+encoded
+        return struct.pack('<8I',0xfeedfacf,0x1000007,0,6,1,len(command),0,0)+command
+    def test_declared_transitive_missing_unexpected_and_wrong_artifact(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);parent={'id':'entry','kind':'EXTENSION','path':'entry.so'}
+            child={'id':'lib','kind':'SHARED_LIBRARY','path':'lib.dylib','version':'1','module':None,'digest':hashlib.sha256(b'fixture').hexdigest(),'byteLength':7}
+            (root/'entry.so').write_bytes(self.image('@loader_path/lib.dylib'))
+            parent.update(version='1',digest=hashlib.sha256((root/'entry.so').read_bytes()).hexdigest(),byteLength=(root/'entry.so').stat().st_size)
+            (root/'lib.dylib').write_bytes(b'fixture')
+            c={'native':[parent,child],'buildRevision':'fixture'}
+            with patch('runtime_evidence.scoped_loaded_library',return_value={'actualLoaded':True}):
+                r=scoped_macho_dependencies(root,c);self.assertFalse(r['complete']);self.assertEqual(r['edges'][0]['status'],'OBSERVED_UNVERIFIED');self.assertIsNotNone(r['edges'][0]['artifactDigest'])
+                child['digest']='0'*64;r=scoped_macho_dependencies(root,c);self.assertIsNone(r['edges'][0]['artifactDigest'])
+                (root/'lib.dylib').unlink();r=scoped_macho_dependencies(root,c);self.assertEqual(r['edges'][0]['status'],'MISSING')
+            (root/'entry.so').write_bytes(self.image('@rpath/unknown.dylib'))
+            parent.update(digest=hashlib.sha256((root/'entry.so').read_bytes()).hexdigest(),byteLength=(root/'entry.so').stat().st_size)
+            r=scoped_macho_dependencies(root,c);self.assertEqual(r['edges'][0]['status'],'UNEXPECTED_OBSERVED');self.assertNotIn(folder,json.dumps(r))
+    def test_unverified_codec_and_fallback_never_called(self):
+        def unexpected():raise AssertionError('must not execute')
+        receipt=ProcessingReceipt(Path('.'),{'imports':[]})
+        for stage in ['decoder','resample','encoder','stem']:
+            with self.assertRaisesRegex(ValueError,'unverified-or-fallback'):receipt.call(stage,stage,unexpected)
+        with self.assertRaises(ValueError):receipt.call('decoder','decoder',unexpected,fallback=True)
+        self.assertFalse(receipt.snapshot()['complete'])
+
+if __name__=='__main__':unittest.main()
+
+class CodecReceiptTests(unittest.TestCase):
+    def make(self):
+        def actual_backend(): return 'fixture'
+        path=Path(__file__).resolve();raw=path.read_bytes()
+        entry={'id':'fixture-backend','module':__name__,'path':path.name,'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw),'version':'1'}
+        return actual_backend,ProcessingReceipt(path.parent,{'imports':[entry],'buildRevision':'fixture'}),entry
+    def test_actual_decoder_resample_encoder_stem_calls_identity_bound(self):
+        for stage in ['decoder','resample','encoder','stem']:
+            fn,receipt,entry=self.make();self.assertEqual(receipt.call(stage,stage,fn),'fixture')
+            value=receipt.snapshot();self.assertEqual(value['entries'][0]['artifactDigest'],entry['digest'])
+            self.assertTrue(value['entries'][0]['completed']);self.assertFalse(value['complete'])
+            self.assertEqual(value['entries'][0]['nativeIdentity'],'UNVERIFIED')
+    def test_wrong_artifact_and_external_fallback_blocked(self):
+        fn,receipt,entry=self.make();entry['digest']='0'*64
+        with self.assertRaises(ValueError):receipt.call('encoder','writer',fn)
+        fn,receipt,_=self.make()
+        with self.assertRaises(ValueError):receipt.call('decoder','ffmpeg',fn,fallback=True)

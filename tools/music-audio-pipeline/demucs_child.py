@@ -71,7 +71,7 @@ def load(runtime,contract,expected,nonce):
     return model,receipt
 
 
-def process(model,binding,source,output,codec=None):
+def process(model,binding,source,output,codec=None,receipt=None):
     from demucs import separate
     import torchaudio
     from demucs.audio import convert_audio
@@ -85,12 +85,27 @@ def process(model,binding,source,output,codec=None):
             import soundfile
             import torch
             from runtime_evidence import decode_soundfile
-            samples,sr=decode_soundfile(soundfile,track,codec['version'])
+            samples,sr=decode_soundfile(soundfile,track,codec['version'],receipt=receipt)
             audio=torch.from_numpy(samples.T)
-        return convert_audio(audio,sr,samplerate,audio_channels)
+        if receipt is None: return convert_audio(audio,sr,samplerate,audio_channels)
+        import julius
+        original_resample = julius.resample_frac
+        def observed_resample(*args, **kwargs):
+            return receipt.call('resample','demucs-sample-rate',original_resample,*args,**kwargs)
+        julius.resample_frac = observed_resample
+        try: return convert_audio(audio,sr,samplerate,audio_channels)
+        finally: julius.resample_frac = original_resample
     separate.load_track=local_track
+    original_writer = getattr(separate, "save_audio", None)
+    if receipt is not None:
+        def observed_writer(*args, **kwargs):
+            return receipt.call('encoder','demucs-stem-writer',original_writer,*args,**kwargs)
+        separate.save_audio = observed_writer
     try:separate.main(['-n',binding['modelName'],'--repo',str(binding['repository']),'-o',str(output),str(source)])
-    finally:separate.get_model_from_args=original_loader;separate.load_track=original_track
+    finally:
+        separate.get_model_from_args=original_loader;separate.load_track=original_track
+        if receipt is not None: separate.save_audio=original_writer
+    return receipt.snapshot() if receipt is not None else None
 
 
 def main():
@@ -126,7 +141,9 @@ def main():
             if not source.is_absolute() or not output.is_absolute() or source.is_symlink() or not source.is_file() or source.stat().st_size>500*1024*1024:raise ValueError('unsafe-child-audio-input')
             if not receipt["runtimeEvidence"].get("complete"):
                 raise ValueError("strict-child-native-network-incomplete")
-            with contextlib.redirect_stdout(sys.stderr):process(model,binding,source,output,evidence_contract["codec"])
+            with contextlib.redirect_stdout(sys.stderr):
+                from runtime_evidence import ProcessingReceipt
+                processing_receipt=process(model,binding,source,output,evidence_contract["codec"],ProcessingReceipt(root,evidence_contract))
             runtime.recheck();write({'version':1,'nonce':nonce,'status':'PROCESSED'})
     except Exception:
         write({'format':FORMAT,'version':1,'nonce':nonce,'status':'LOAD_OR_PROCESS_FAILED'})
