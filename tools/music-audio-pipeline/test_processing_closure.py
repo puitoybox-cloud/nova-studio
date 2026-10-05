@@ -282,7 +282,9 @@ class RetainedModelTests(unittest.TestCase):
             self.assertEqual(len(calls),1)
             fixture.runtime.loaded['m']=object()
             with self.assertRaises(ValueError):fixture.runtime.retained_model('m')
-            fixture.runtime.loaded['m']=obj;fixture.runtime.models['m']['identity']['digest']='f'*64
+            self.assertEqual(fixture.runtime.loaded,{})
+            fixture.runtime.load_model('m',lambda path:obj)
+            fixture.runtime.models['m']['identity']['digest']='f'*64
             with self.assertRaises(ValueError):fixture.runtime.retained_model('m')
         finally:fixture.doCleanups()
 

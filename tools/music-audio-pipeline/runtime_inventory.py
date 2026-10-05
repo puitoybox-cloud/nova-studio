@@ -195,6 +195,10 @@ class RuntimeInventory:
 
     def recheck(self):
         try:
+            if (set(self.loaded) != set(self._retained_models) or set(self.models) != set(self.loaded) or
+                    any(self.loaded[key] is not self._retained_models[key] or
+                        self.models[key].get('identity') != self.expected('models', key) for key in self.loaded)):
+                raise ValueError('replaced-runtime-model-object-or-identity')
             for relative, stamp in self.stamps.values():
                 if stable(local(self.root, relative)) != stamp:
                     raise ValueError('stale-runtime-artifact')
