@@ -49,5 +49,21 @@ async function write(snapshot,{generationId,bindings=new Map(),scope='complete',
  const p={...copy(extensions),format:'music-studio-portable-package',version:1,generationId,scope,snapshot:snap,manifest:inventory.dependencies.map(d=>({key:d.key,projectId:d.projectId,logicalId:d.logicalId,collection:d.collection})),entries};
  await read(p,{validateMetadata,limits,reason:()=>reason()||(JSON.stringify(snapshot)!==baseline?'stale':null)});check();return JSON.stringify(p);
 }
-const api={read,write,digest};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MusicStudioPortablePackage=api;
+// Optional offline File ingress. No permission prompt or URL dereference.
+async function readFile(file,options={}){
+ const limits=resources.configure(options.limits),reason=options.reason??(()=>null),check=()=>{const why=reason();if(why)fail(why)};
+ check();resources.integer(file?.size);if(file.size>limits.maxPackageBytes)fail('over-limit:package-bytes');const declared=file.size;
+ let text='',observed=0,reader;
+ try{
+  if(typeof file.stream==='function'&&typeof root.TextDecoder==='function'){
+   reader=file.stream().getReader();const decoder=new root.TextDecoder('utf-8',{fatal:true});
+   while(true){check();const result=await reader.read();check();if(result.done)break;if(!(result.value instanceof Uint8Array))fail('invalid-chunk');observed=resources.add(observed,result.value.byteLength);if(observed>limits.maxPackageBytes)fail('over-limit:package-bytes');if(observed>declared)fail('size-mismatch');text+=decoder.decode(result.value,{stream:true})}
+   text+=decoder.decode();if(observed!==declared)fail('size-mismatch');
+  }else if(typeof file.text==='function'){text=await file.text();check();if(typeof text!=='string')fail('invalid-file-text');observed=resources.textBytes(text,limits.maxPackageBytes,reason);if(observed!==declared)fail('size-mismatch')}
+  else fail('unsupported-file-reader');
+  check();if(file.size!==declared)fail('stale');return await read(text,{...options,limits});
+ }catch(error){if(reader){try{await reader.cancel()}catch{}}if(['NotAllowedError','SecurityError'].includes(error?.name))fail('permission-unavailable');throw error}
+ finally{reader?.releaseLock()}
+}
+const api={read,write,digest,readFile};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MusicStudioPortablePackage=api;
 })(typeof window!=='undefined'?window:globalThis);
