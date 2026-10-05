@@ -234,12 +234,36 @@ def bootstrap(manifest_path, anchor, build, root, config_relative='runtime-confi
     return runtime
 
 
-def install_offline_guard():
-    # Process-wide and irreversible: install only in explicitly configured strict Helper.
-    def audit(event, args):
-        if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system'):
+class OfflineRuntimeGuard:
+    """Python audit boundary, not an OS/native networking sandbox."""
+    def __init__(self):
+        import contextlib
+        self.state = threading.local()
+        sys.addaudithook(self.audit)
+
+    def audit(self, event, args):
+        if event == 'subprocess.Popen':
+            permitted = getattr(self.state, 'command', None)
+            if permitted is not None and tuple(args[1]) == permitted and args[0] == permitted[0]:
+                self.state.command = None  # Single launch; no nested/reused permission.
+                return
+        if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system', 'os.exec', 'os.posix_spawn', 'os.fork'):
             raise PermissionError('strict-offline-runtime-operation-blocked')
-    sys.addaudithook(audit)
+
+    def permit(self, command):
+        import contextlib
+        @contextlib.contextmanager
+        def once():
+            if getattr(self.state, 'command', None) is not None:
+                raise ValueError('nested-child-permission')
+            self.state.command = tuple(command)
+            try: yield
+            finally: self.state.command = None
+        return once()
+
+
+def install_offline_guard():
+    return OfflineRuntimeGuard()
 
 
 def legacy_snapshot():

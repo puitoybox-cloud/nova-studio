@@ -44,16 +44,15 @@ if not STRICT_BOOTSTRAP:
     _runtime_spec.loader.exec_module(_runtime_module)
 RUNTIME_INVENTORY = None
 BOOTSTRAP_ERROR = None
+DEMUCS_SESSION = None
+SCOPED_CLOSURE = {}
+INVENTORY_AGGREGATOR = None
+OFFLINE_GUARD = None
 
 def initialize_runtime():
-    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module
+    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD
     if not STRICT_BOOTSTRAP:
         return
-    # A strict Helper may never download models or contact external services.
-    def offline_audit(event, args):
-        if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system'):
-            raise PermissionError('strict-offline-runtime-operation-blocked')
-    sys.addaudithook(offline_audit)
     try:
         from distribution_binding import load_manifest
         from dependency_identity import verify_local_asset
@@ -74,6 +73,7 @@ def initialize_runtime():
             os.environ.get("NOVA_TRUSTED_MANIFEST_DIGEST"),
             os.environ.get("NOVA_EXPECTED_BUILD_REVISION"),
             os.environ.get("NOVA_RUNTIME_ASSET_ROOT", _pipeline_directory))
+        OFFLINE_GUARD = _runtime_module.install_offline_guard()
         manifest = RUNTIME_INVENTORY.manifest
         for key, expected in manifest['helper'].items():
             actual = {'version': 1, 'pipelineRevision': PIPELINE_REVISION, 'sourceDigest': SOURCE_DIGEST}.get(key, RUNTIME_IDENTITY.get(key))
@@ -82,6 +82,21 @@ def initialize_runtime():
         if RUNTIME_IDENTITY['architecture'] not in manifest['architectures']:
             raise ValueError('runtime-bootstrap-architecture-mismatch')
         RUNTIME_INVENTORY.verify_assets()
+        # Verify companion source bytes before importing any new production adapter.
+        for identity, relative in [('demucs-parent-source','demucs_parent.py'),
+                ('demucs-receipt-source','demucs_receipt.py'), ('demucs-child-source','demucs_child.py'),
+                ('scoped-closure-source','scoped_closure.py'), ('inventory-aggregation-source','inventory_aggregation.py')]:
+            verify_local_asset(_pipeline_directory, relative, RUNTIME_INVENTORY.expected('assets',identity), 1024*1024)
+        import demucs_parent
+        import inventory_aggregation
+        INVENTORY_AGGREGATOR = inventory_aggregation
+        # Authenticate the complete scoped file footprint before importing ML/native code.
+        from scoped_closure import load_contract, verify_closure
+        SCOPED_CLOSURE = verify_closure(RUNTIME_INVENTORY.root,
+            load_contract(RUNTIME_INVENTORY.root, manifest),
+            stamp_sink=lambda relative,stamp:RUNTIME_INVENTORY.stamps.__setitem__(('closure',relative),(relative,stamp)))
+        if not SCOPED_CLOSURE['complete']:
+            raise ValueError('partial-startup-scoped-closure')
         for binding in RUNTIME_INVENTORY.bindings['dependencies']:
             RUNTIME_INVENTORY.observe_dependency(binding)
         for binding in RUNTIME_INVENTORY.bindings['native']:
@@ -89,13 +104,20 @@ def initialize_runtime():
                 raise ValueError('native-loader-not-integrated')
             RUNTIME_INVENTORY.resolve_executable('python-runtime', sys.executable)
         for binding in RUNTIME_INVENTORY.bindings['models']:
-            if binding['runtimeIdentifier'] != 'basic-pitch':
+            if binding['runtimeIdentifier'] == 'basic-pitch':
+                from basic_pitch.inference import Model
+                RUNTIME_INVENTORY.load_model(binding['id'], Model)
+            elif binding['runtimeIdentifier'] != 'demucs':
                 raise ValueError('model-loader-not-integrated')
-            from basic_pitch.inference import Model
-            RUNTIME_INVENTORY.load_model(binding['id'], Model)
+        DEMUCS_SESSION, SCOPED_CLOSURE = demucs_parent.start(RUNTIME_INVENTORY,
+            os.environ['NOVA_TRUSTED_MANIFEST_PATH'], os.environ['NOVA_TRUSTED_MANIFEST_DIGEST'],
+            os.environ['NOVA_EXPECTED_BUILD_REVISION'], OFFLINE_GUARD)
     except Exception:
         # Do not expose exception text containing installation or home paths.
         BOOTSTRAP_ERROR = 'authenticated-runtime-bootstrap-incomplete'
+        if DEMUCS_SESSION is not None:
+            DEMUCS_SESSION.close()
+            DEMUCS_SESSION = None
 
 def runtime_snapshot():
     if not STRICT_BOOTSTRAP:
@@ -103,13 +125,15 @@ def runtime_snapshot():
     if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
         return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'BLOCKED',
                 'reason': BOOTSTRAP_ERROR or 'missing-trusted-runtime-inventory'}
-    return RUNTIME_INVENTORY.snapshot()
+    return INVENTORY_AGGREGATOR.snapshot(RUNTIME_INVENTORY, DEMUCS_SESSION, SCOPED_CLOSURE) if INVENTORY_AGGREGATOR else RUNTIME_INVENTORY.snapshot()
 
 def require_runtime_processing():
     if STRICT_BOOTSTRAP:
         if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
             raise ValueError('strict-runtime-bootstrap-incomplete')
-        RUNTIME_INVENTORY.require_processing()
+        actual = runtime_snapshot()
+        if actual.get('status') != 'VERIFIED' or actual.get('complete') is not True or actual.get('processingEligible') is not True:
+            raise ValueError('strict-runtime-inventory-or-native-enforcement-incomplete')
 
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
@@ -169,7 +193,11 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
         str(output_dir),
         str(source),
     ]
-    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
+    if STRICT_BOOTSTRAP:
+        if DEMUCS_SESSION is None: raise ValueError('missing-live-demucs-child')
+        DEMUCS_SESSION.process_audio(source, output_dir)
+    else:
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
     candidates = [path.parent for path in output_dir.rglob("vocals.wav")]
     if not candidates:
         raise RuntimeError("Stem分離結果を確認できませんでした。Demucs htdemucs_6sの出力がありません。")
@@ -533,6 +561,7 @@ def main():
         pass
     finally:
         server.server_close()
+        if DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
 
 
 if __name__ == "__main__":

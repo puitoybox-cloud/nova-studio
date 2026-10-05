@@ -32,15 +32,23 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
      manifest.assets=[{id:'runtime-config',revision:'1',digest:await hash(new TextEncoder().encode(config)),byteLength:new TextEncoder().encode(config).length}];
      trust.manifestDigest=await hash(new TextEncoder().encode(distribution.canonical(manifest)));
      const bootstrap=await distribution.bootstrap(manifest,trust,{sha256:hash,runtimeConfigText:config});
-     health.runtimeIdentity.actualInventory={inventoryVersion:2,mode:'STRICT',status:'VERIFIED',artifactClosure:'VERIFIED',architecture:'x86_64',models:manifest.models.map(identity=>({identity,status:'LOADED_VERIFIED_FILE'})),dependencies:manifest.dependencies.map(identity=>({identity,status:'VERIFIED_ARTIFACT'})),native:[],assets:manifest.assets};
+     health.runtimeIdentity.actualInventory={inventoryVersion:2,mode:'STRICT',status:'VERIFIED',artifactClosure:'VERIFIED',complete:true,processingEligible:true,architecture:'x86_64',models:manifest.models.map(identity=>({identity,status:'LOADED_VERIFIED_FILE'})),dependencies:manifest.dependencies.map(identity=>({identity,status:'VERIFIED_ARTIFACT'})),native:[],assets:manifest.assets};
      const verified=await bootstrap.verify(MusicStudioAudioPipeline);
      if(!verified.identityEligible||verified.publicationEligible)throw Error('bootstrap eligibility conflation');cases.push('bootstrap authenticated inventory match');
-     for(const [key,value] of [['status','PARTIAL'],['mode','LEGACY'],['artifactClosure','UNVERIFIED'],['architecture','wrong'],['models',[]],['native',[{status:'RESOLVED_ONLY'}]]]){
+     for(const [key,value] of [['status','PARTIAL'],['mode','LEGACY'],['artifactClosure','UNVERIFIED'],['complete',false],['processingEligible',false],['architecture','wrong'],['models',[]],['native',[{status:'RESOLVED_ONLY'}]]]){
       const saved=health.runtimeIdentity.actualInventory[key];health.runtimeIdentity.actualInventory[key]=value;
       let rejected=false;try{await bootstrap.verify(MusicStudioAudioPipeline)}catch{rejected=true}
       if(!rejected)throw Error('bootstrap accepted '+key);health.runtimeIdentity.actualInventory[key]=saved;cases.push('bootstrap rejected '+key);
      }
      await bootstrap.verify(MusicStudioAudioPipeline);cases.push('bootstrap retry');
+     const envelope={manifest,trust,runtimeConfigText:config};
+     if(!(await MusicStudioAudioPipeline.bootstrapIdentity(envelope,{sha256:hash})).identityEligible)throw Error('production caller');cases.push('production bootstrap caller verified');
+     for(const reason of ['Abort','Cancel','stale']){
+      let rejected=false;try{await MusicStudioAudioPipeline.bootstrapIdentity(envelope,{sha256:hash,reason:()=>reason})}catch{rejected=true}
+      if(!rejected||MusicStudioAudioPipeline.bootstrapStatus().status!=='BLOCKED')throw Error('production caller '+reason);cases.push('production caller '+reason);
+     }
+     await MusicStudioAudioPipeline.bootstrapIdentity(envelope,{sha256:hash});cases.push('production caller retry');
+
 
     }finally{window.fetch=distributionSavedFetch;MusicStudioAudioPipeline.configureIdentity(null)}
 
