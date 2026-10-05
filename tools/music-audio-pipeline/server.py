@@ -26,6 +26,11 @@ HOST = "127.0.0.1"
 PORT = 8766
 PIPELINE_REVISION = 2
 SOURCE_DIGEST = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+# Capture identity at startup; never hash a replaced source file as the running code.
+_identity_spec = importlib.util.spec_from_file_location("nova_helper_identity", Path(__file__).with_name("helper_identity.py"))
+_identity_module = importlib.util.module_from_spec(_identity_spec)
+_identity_spec.loader.exec_module(_identity_module)
+RUNTIME_IDENTITY = _identity_module.identity(Path(__file__).parent)
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
 ALLOWED_ORIGINS = {
@@ -309,6 +314,7 @@ def process_audio(source: Path, work_dir: Path):
         "version": 1,
         "pipelineRevision": PIPELINE_REVISION,
         "sourceDigest": SOURCE_DIGEST,
+        "runtimeIdentity": RUNTIME_IDENTITY,
         "localOnly": True,
         "bpm": bpm,
         "stems": stems,
@@ -358,6 +364,7 @@ class Handler(BaseHTTPRequestHandler):
             "version": 1,
             "pipelineRevision": PIPELINE_REVISION,
             "sourceDigest": SOURCE_DIGEST,
+        "runtimeIdentity": RUNTIME_IDENTITY,
             "localOnly": True,
             "host": HOST,
             "port": PORT,

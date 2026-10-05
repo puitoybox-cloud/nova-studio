@@ -12,7 +12,7 @@ EXPECTED_SOURCE_DIGEST="$(/usr/bin/shasum -a 256 server.py | /usr/bin/awk '{prin
 check_running_source(){
   local health
   health="$(curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null)" || return 1
-  printf '%s' "$health" | "$PYTHON_BIN" -c 'import json,sys; expected=sys.argv[1]; actual=json.load(sys.stdin); sys.exit(0 if actual.get("sourceDigest")==expected and actual.get("pipelineRevision")==2 else 1)' "$EXPECTED_SOURCE_DIGEST"
+  printf '%s' "$health" | "$PYTHON_BIN" helper_identity.py "$PWD"
 }
 
 stale_helper_error(){
@@ -87,7 +87,7 @@ echo "$PID" > "$PID_FILE"
 
 STARTED=0
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 "$HEALTH_URL" >/dev/null 2>&1; then
+  if check_running_source; then
     STARTED=1
     break
   fi
