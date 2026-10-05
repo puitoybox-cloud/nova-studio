@@ -198,7 +198,8 @@
       for(const a of assets)if(a.derivedFromAssetId!=null&&(typeof a.derivedFromAssetId!=='string'||!a.derivedFromAssetId.trim()||!identities.has(`asset:${a.derivedFromAssetId}`)))errors.push(`${prefix}: missing-asset-dependency`);
     }
     if(settings&&value?.settings){const s=validateSettings(value.settings);errors.push(...s.errors);if(s.valid)errors.push(...settingsTemplateErrors(normalizeSettings(value.settings)))}
-    return{ok:errors.length===0,errors,warnings,dependencies,scope:'metadata-only',completeBinaryBackup:false,binaryResolution:'not-performed'};
+    const binaryInventory=root.MusicStudioBinaryBoundary?.inventory(value,{projects});
+    return{ok:errors.length===0,errors,warnings,dependencies,binaryDependencies:binaryInventory?.dependencies||[],binaryContractIssues:binaryInventory?.issues||[],scope:'metadata-only',completeBinaryBackup:false,binaryResolution:'not-performed'};
   }
   function preserveRestoreSettings(input){
     // Retain opaque extensions while applying the existing safety normalization to known fields.

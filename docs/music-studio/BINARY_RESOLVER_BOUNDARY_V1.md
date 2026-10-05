@@ -1,6 +1,6 @@
 # Offline binary resolver and generation boundary
 
-Checked 2026-10-05 JST. Base #299 `269c29a74004e9e883de0fee2e59ac3e71b57d73`; main `552d56eafddfd192970c09f7d6278696cf8775c3`. Start audit contains all 46 known Open PRs / 44 Drafts and exact-head Actions. #299 is the safe checkpoint with 4 successful workflows. #298 original run is separately still in progress. No #300 existed at start; remote pull refs also checked before publication. Existing branches and main are untouched.
+Checked 2026-10-05 JST. Base #299 `269c29a74004e9e883de0fee2e59ac3e71b57d73`; main `552d56eafddfd192970c09f7d6278696cf8775c3`. Start audit contains all 46 known Open PRs / 44 Drafts and exact-head Actions. #299 is the safe checkpoint with 4 successful workflows. #298 original run 37207106392 is now completed/cancelled; it was not rerun or changed by this work. No #300 existed at start; remote pull refs also checked before publication. Existing branches and main are untouched.
 
 ## Implemented runtime
 
