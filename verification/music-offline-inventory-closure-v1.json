@@ -1701,8 +1701,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/server.py",
-      "byteLength": 24685,
-      "digest": "4d824a9abdf99f3a8059172e8d37ad18c39918ac4905936b84fb2249b2a4dae8",
+      "byteLength": 25578,
+      "digest": "0937923d4ca9e57c6f641154d7d50db79b30fc83268dbb52794e56ce45fc064c",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1717,8 +1717,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/test_demucs_closure.py",
-      "byteLength": 17570,
-      "digest": "fe97784ebcc091145d61dbf58a940284a5e74d15e54bb87d3ba7546401680e4d",
+      "byteLength": 18701,
+      "digest": "2a42d44c020684003f83b6840a6fab79d7fa8eeb8b42423d6e9d0e9a31a6e19d",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"

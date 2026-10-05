@@ -235,3 +235,15 @@ class AssemblyCallerTests(unittest.TestCase):
                 module,graph,runtime=self.fixture(root);runtime.manifest['models'][0][key]=value
                 with patch.object(module,'bootstrap',return_value=runtime),patch.object(module,'load_contract',return_value=graph),patch.object(module,'verify_assembly',return_value={'complete':True,'status':'COMPLETE'}):
                     self.assertFalse(module.inspect(root,'manifest','anchor','build')['complete'])
+
+class HealthCompatibilityTests(unittest.TestCase):
+    def test_complete_actual_v2_projects_v1_from_loaded_artifact_evidence(self):
+        import server
+        actual={'complete':True,'status':'VERIFIED','models':[{'identity':{'id':'loaded'},'status':'LOADED_VERIFIED_FILE'}],
+            'dependencies':[{'identity':{'id':'package'},'status':'VERIFIED_ARTIFACT'}],'processingEligible':False}
+        with patch.object(server,'STRICT_BOOTSTRAP',True),patch.object(server,'runtime_snapshot',return_value=actual):
+            identity=server.runtime_health_identity();self.assertEqual(identity['modelInventory']['entries'],[{'id':'loaded'}]);self.assertEqual(identity['dependencyInventory']['status'],'VERIFIED');self.assertFalse(identity['actualInventory']['processingEligible'])
+    def test_partial_never_projects_loaded_or_artifact_verified(self):
+        import server
+        with patch.object(server,'STRICT_BOOTSTRAP',True),patch.object(server,'runtime_snapshot',return_value={'complete':False,'status':'PARTIAL'}):
+            self.assertEqual(server.runtime_health_identity()['modelInventory']['status'],'UNCONFIGURED')

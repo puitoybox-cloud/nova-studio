@@ -127,6 +127,22 @@ def runtime_snapshot():
                 'reason': BOOTSTRAP_ERROR or 'missing-trusted-runtime-inventory'}
     return INVENTORY_AGGREGATOR.snapshot(RUNTIME_INVENTORY, DEMUCS_SESSION, SCOPED_CLOSURE) if INVENTORY_AGGREGATOR else RUNTIME_INVENTORY.snapshot()
 
+def runtime_health_identity():
+    actual = runtime_snapshot()
+    result = {**RUNTIME_IDENTITY, 'actualInventory': actual}
+    # Additive v1 projection is derived only from complete actual v2 evidence.
+    # Never project disk existence/metadata/partial receipts as verified inventories.
+    if STRICT_BOOTSTRAP and actual.get('complete') is True and actual.get('status') == 'VERIFIED':
+        def ordered(kind):
+            entries = {e['identity']['id']:e['identity'] for e in actual[kind]}
+            expected = RUNTIME_INVENTORY.manifest[kind] if RUNTIME_INVENTORY is not None else list(entries.values())
+            return [entries[e['id']] for e in expected]
+        result['modelInventory'] = {'status':'VERIFIED','entries':ordered('models')}
+        if all(e.get('status') == 'VERIFIED_ARTIFACT' for e in actual['dependencies']):
+            result['dependencyInventory'] = {'status':'VERIFIED','entries':ordered('dependencies')}
+    return result
+
+
 def require_runtime_processing():
     if STRICT_BOOTSTRAP:
         if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
@@ -433,7 +449,7 @@ def process_audio(source: Path, work_dir: Path):
         "version": 1,
         "pipelineRevision": PIPELINE_REVISION,
         "sourceDigest": SOURCE_DIGEST,
-        "runtimeIdentity": {**RUNTIME_IDENTITY, "actualInventory": runtime_snapshot()},
+        "runtimeIdentity": runtime_health_identity(),
         "localOnly": True,
         "bpm": bpm,
         "stems": stems,
@@ -483,7 +499,7 @@ class Handler(BaseHTTPRequestHandler):
             "version": 1,
             "pipelineRevision": PIPELINE_REVISION,
             "sourceDigest": SOURCE_DIGEST,
-        "runtimeIdentity": {**RUNTIME_IDENTITY, "actualInventory": runtime_snapshot()},
+        "runtimeIdentity": runtime_health_identity(),
             "localOnly": True,
             "host": HOST,
             "port": PORT,
