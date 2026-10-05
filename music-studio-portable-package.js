@@ -2,6 +2,7 @@
 (function(root){
 'use strict';
 const boundary=typeof module!=='undefined'&&module.exports?require('./music-studio-binary-boundary'):root.MusicStudioBinaryBoundary;
+const resources=typeof module!=='undefined'&&module.exports?require('./music-studio-package-resources'):root.MusicStudioPackageResources;
 const copy=x=>JSON.parse(JSON.stringify(x));
 const fail=x=>{throw Error(x)};
 const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
@@ -16,13 +17,15 @@ function metadata(snapshot,validateMetadata){
  const result=validateMetadata(copy(snapshot));if(result!==true)fail('invalid-metadata');
  const ids=new Set();for(const p of snapshot.projects){if(typeof p.projectId!=='string'||ids.has(p.projectId))fail('duplicate-project-identity');ids.add(p.projectId)}
 }
-async function read(input,{validateMetadata,reason=()=>null}={}){
+async function read(input,{validateMetadata,reason=()=>null,limits}={}){
  const check=()=>{const r=reason();if(r)fail(r)};check();
- const p=typeof input==='string'?JSON.parse(input):copy(input);
+ if(limits){resources.configure(limits);if(typeof input==='string')resources.textBytes(input,limits.maxPackageBytes,reason);else resources.inspect(input,limits,reason)}
+ const source=typeof input==='string'?JSON.parse(input):input;if(limits)resources.inspect(source,limits,reason);const p=typeof input==='string'?source:copy(source);
  if(!object(p)||p.format!=='music-studio-portable-package'||p.version!==1)fail('unsupported-format');
  if(typeof p.generationId!=='string'||!p.generationId.trim()||!object(p.snapshot)||!Array.isArray(p.entries)||!Array.isArray(p.manifest)||!['complete','metadata-only'].includes(p.scope))fail('required-fields');
  metadata(p.snapshot,validateMetadata);
  const inventory=boundary.inventory(p.snapshot),expected=new Map(inventory.dependencies.map(d=>[d.key,d]));
+ if(limits)for(const d of inventory.dependencies)if(d.declaredSize!==null){resources.integer(d.declaredSize);if(d.declaredSize>limits.maxSingleBinaryBytes)fail('over-limit:single-binary')}
  const manifests=new Map(),entries=new Map();
  for(const m of p.manifest){if(!object(m)||typeof m.key!=='string'||manifests.has(m.key))fail('duplicate-identity');manifests.set(m.key,m);if(!expected.has(m.key))fail('unexpected-dependency');const d=expected.get(m.key);if(m.logicalId!==d.logicalId||m.collection!==d.collection||m.projectId!==d.projectId)fail('dependency-identity-mismatch');}
  if(manifests.size!==expected.size)fail('missing-manifest');
@@ -31,12 +34,20 @@ async function read(input,{validateMetadata,reason=()=>null}={}){
  if(p.scope==='complete'&&!complete)fail('incomplete-package');
  check();return{package:p,complete,generation:{packageText:JSON.stringify(p),id:p.generationId,snapshot:copy(p.snapshot),settings:copy(p.snapshot.settings??null),binaries:[...entries].map(([key,bytes])=>({key,bytes}))}};
 }
-async function write(snapshot,{generationId,bindings=new Map(),scope='complete',validateMetadata,reason=()=>null,extensions={}}={}){
+async function write(snapshot,{generationId,bindings=new Map(),scope='complete',validateMetadata,reason=()=>null,extensions={},limits}={}){
+ if(limits){
+  resources.configure(limits);resources.jsonBytes(snapshot,limits.maxMetadataBytes,reason);
+  const inventory=boundary.inventory(snapshot),entries=[];
+  if(inventory.dependencies.length>limits.maxManifestEntries)fail('over-limit:manifest-entries');
+  for(const [key,value] of bindings){const why=reason();if(why)fail(why);if(entries.length>=limits.maxEntryCount)fail('over-limit:entry-count');const size=value.byteLength??value.length;resources.integer(size);if(size>limits.maxSingleBinaryBytes)fail('over-limit:single-binary');const bytes=Array.isArray(value)?value:new Uint8Array(value.buffer??value,value.byteOffset??0,size);entries.push({key,contract:'raw-bytes-v1',byteLength:size,digest:'0'.repeat(64),bytes})}
+  resources.inspect({...extensions,format:'music-studio-portable-package',version:1,generationId,scope,snapshot,manifest:inventory.dependencies.map(d=>({key:d.key,projectId:d.projectId,logicalId:d.logicalId,collection:d.collection})),entries},limits,reason);
+ }
+
  const baseline=JSON.stringify(snapshot),snap=copy(snapshot),check=()=>{const why=reason()||(JSON.stringify(snapshot)!==baseline?'stale':null);if(why)fail(why)};check();metadata(snap,validateMetadata);
  const inventory=boundary.inventory(snap),entries=[];
  for(const [key,value] of bindings){check();if(!inventory.dependencies.some(d=>d.key===key))fail('unexpected-entry');const bytes=ArrayBuffer.isView(value)?new Uint8Array(value.buffer.slice(value.byteOffset,value.byteOffset+value.byteLength)):value instanceof ArrayBuffer?new Uint8Array(value.slice(0)):byteArray(value);entries.push({key,contract:'raw-bytes-v1',byteLength:bytes.length,digest:await digest(bytes),bytes:Array.from(bytes)});check();}
  const p={...copy(extensions),format:'music-studio-portable-package',version:1,generationId,scope,snapshot:snap,manifest:inventory.dependencies.map(d=>({key:d.key,projectId:d.projectId,logicalId:d.logicalId,collection:d.collection})),entries};
- await read(p,{validateMetadata,reason:()=>reason()||(JSON.stringify(snapshot)!==baseline?'stale':null)});check();return JSON.stringify(p);
+ await read(p,{validateMetadata,limits,reason:()=>reason()||(JSON.stringify(snapshot)!==baseline?'stale':null)});check();return JSON.stringify(p);
 }
 const api={read,write,digest};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MusicStudioPortablePackage=api;
 })(typeof window!=='undefined'?window:globalThis);
