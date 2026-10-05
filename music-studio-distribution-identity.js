@@ -1,0 +1,26 @@
+/* External trust anchor required. This module never authenticates its own input. */
+(function(root){
+'use strict';
+const fail=code=>{throw Error(code)};
+const digest=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+function exact(x,keys){if(!x||typeof x!=='object'||Array.isArray(x)||Object.keys(x).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(x,k)))fail('invalid-manifest-field')}
+function canonical(x){if(Array.isArray(x))return '['+x.map(canonical).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';return JSON.stringify(x)}
+function inventory(entries,kind){if(!Array.isArray(entries)||entries.length>128)fail('invalid-inventory');const ids=new Set();for(const e of entries){exact(e,kind==='model'?['id','revision','digest','byteLength']:['id','version','digest']);if(typeof e.id!=='string'||!e.id||ids.has(e.id))fail('duplicate-or-invalid-identity');ids.add(e.id);if(!digest(e.digest))fail('invalid-artifact-digest');if(kind==='model'){if(typeof e.revision!=='string'||!e.revision||!Number.isSafeInteger(e.byteLength)||e.byteLength<1)fail('invalid-model-identity')}else if(typeof e.version!=='string'||!e.version)fail('invalid-dependency-identity')}}
+async function bind(manifest,trust,{sha256,signal,reason=()=>null}={}){
+ const check=()=>{const why=signal?.aborted?'Abort':reason();if(why)fail(why)};check();
+ exact(manifest,['version','buildRevision','helper','models','dependencies','architectures','assets']);
+ if(manifest.version!==1)fail('invalid-manifest-version');
+ if(!trust||!digest(trust.manifestDigest)||typeof trust.buildRevision!=='string'||typeof sha256!=='function')fail('missing-external-trust-anchor');
+ if(manifest.buildRevision!==trust.buildRevision)fail('stale-manifest');
+ const h=manifest.helper;exact(h,['version','pipelineRevision','protocolVersion','runtimeVersion','sourceDigest','requirementsDigest','identityModuleDigest','dependencyObserverDigest']);
+ if(h.version!==1||h.pipelineRevision!==2||h.protocolVersion!==1||typeof h.runtimeVersion!=='string'||!h.runtimeVersion||!['sourceDigest','requirementsDigest','identityModuleDigest','dependencyObserverDigest'].every(k=>digest(h[k])))fail('invalid-helper-identity');
+ inventory(manifest.models,'model');inventory(manifest.dependencies,'dependency');inventory(manifest.assets,'model');
+ if(!Array.isArray(manifest.architectures)||!manifest.architectures.length||manifest.architectures.some(x=>typeof x!=='string'||!x)||new Set(manifest.architectures).size!==manifest.architectures.length)fail('unsupported-runtime');
+ const snapshot=JSON.parse(canonical(manifest));
+ const hash=await sha256(new TextEncoder().encode(canonical(snapshot)));check();if(hash!==trust.manifestDigest)fail('manifest-digest-mismatch');
+ const freeze=x=>{if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x)}return x};
+ const expected=freeze({...snapshot.helper,models:snapshot.models,dependencies:snapshot.dependencies,architectures:snapshot.architectures,distributionDigest:hash});
+ return Object.freeze({mode:'STRICT',trust:'EXTERNALLY_ANCHORED',expected,configure(pipeline){check();pipeline.configureIdentity(expected);return {mode:'STRICT',status:'PENDING_HEALTH'}},async verify(pipeline,options={}){check();await pipeline.connectIdentity({...options,expected,signal,reason});check();return {mode:'STRICT',status:'VERIFIED'}}});
+}
+const api={canonical,bind,legacy:()=>({mode:'LEGACY',status:'UNVERIFIED'})};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MusicStudioDistributionIdentity=api;
+})(typeof window!=='undefined'?window:globalThis);

@@ -2,6 +2,12 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'tools/music-audio-pipeline/distribution_binding.py'
+      - 'tools/music-audio-pipeline/test_distribution_binding.py'
+      - 'music-studio-distribution-identity.js'
+      - 'tests/music-studio-distribution-identity.test.js'
+      - 'tools/music-audio-pipeline/dependency_identity.py'
+      - 'tools/music-audio-pipeline/test_dependency_identity.py'
       - 'music-studio-ingress.js'
       - 'music-studio-publication-prebinding.js'
       - 'music-studio-audio-pipeline.js'
@@ -61,6 +67,8 @@ jobs:
           node --test
           find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
           python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py tools/music-audio-pipeline/helper_identity.py tools/music-audio-pipeline/server.py
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_distribution_binding.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_dependency_identity.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_helper_identity.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_server_boundary.py -v
           git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"

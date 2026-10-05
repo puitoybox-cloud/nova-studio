@@ -2,6 +2,9 @@
 import hashlib
 import json
 import sys
+import importlib.util
+import platform
+import os
 from pathlib import Path
 
 PROTOCOL_VERSION = 1
@@ -19,7 +22,12 @@ def digest(path):
 
 def identity(directory):
     directory = Path(directory)
-    return {"version": 1, "protocolVersion": PROTOCOL_VERSION,
+    spec = importlib.util.spec_from_file_location("nova_dependency_identity", directory / "dependency_identity.py")
+    observer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(observer)
+    return {"version": 1, "architecture": platform.machine(),
+            "dependencyInventory": observer.observe_packages(),
+            "dependencyObserverDigest": digest(directory / "dependency_identity.py"), "protocolVersion": PROTOCOL_VERSION,
             "runtimeVersion": RUNTIME_VERSION,
             "requirementsDigest": digest(directory / "requirements.txt"),
             "identityModuleDigest": digest(directory / "helper_identity.py"),
@@ -39,7 +47,7 @@ def validate(health, directory, expected_models=None):
     actual = health.get("runtimeIdentity")
     if not isinstance(actual, dict):
         raise ValueError("missing-runtime-identity")
-    for key in ["version", "protocolVersion", "runtimeVersion", "requirementsDigest", "identityModuleDigest"]:
+    for key in ["version", "protocolVersion", "runtimeVersion", "requirementsDigest", "identityModuleDigest", "dependencyObserverDigest"]:
         if type(actual.get(key)) is not type(expected[key]) or actual.get(key) != expected[key]:
             raise ValueError("helper-identity-mismatch:" + key)
     # No current model loading boundary exposes installed/loaded model bytes.
@@ -53,6 +61,12 @@ def validate(health, directory, expected_models=None):
 
 if __name__ == "__main__":
     try:
-        validate(json.load(sys.stdin), Path(sys.argv[1]))
+        health = json.load(sys.stdin)
+        validate(health, Path(sys.argv[1]))
+        manifest_path = os.environ.get("NOVA_TRUSTED_MANIFEST_PATH")
+        if manifest_path:
+            from distribution_binding import load_manifest, validate_health
+            manifest = load_manifest(manifest_path, os.environ.get("NOVA_TRUSTED_MANIFEST_DIGEST"), os.environ.get("NOVA_EXPECTED_BUILD_REVISION"))
+            validate_health(manifest, health)
     except (ValueError, OSError, TypeError):
         sys.exit(1)

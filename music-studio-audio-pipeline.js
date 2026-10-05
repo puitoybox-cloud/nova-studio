@@ -122,6 +122,9 @@
     if(payload?.ok!==true||payload.localOnly!==true||payload.pipelineRevision!==expected.pipelineRevision||payload.sourceDigest!==expected.sourceDigest||payload.version!==1||actual?.version!==1)throw Error('helper-identity-mismatch');
     for(const key of ['protocolVersion','runtimeVersion','requirementsDigest','identityModuleDigest'])if(actual[key]!==expected[key])throw Error('helper-identity-mismatch:'+key);
     if(expected.models!==undefined&&(actual.modelInventory?.status!=='VERIFIED'||JSON.stringify(actual.modelInventory.entries)!==JSON.stringify(expected.models)))throw Error('model-inventory-mismatch');
+    if(expected.dependencyObserverDigest!==undefined&&actual.dependencyObserverDigest!==expected.dependencyObserverDigest)throw Error('helper-identity-mismatch:dependencyObserverDigest');
+    if(expected.dependencies!==undefined&&(actual.dependencyInventory?.status!=='VERIFIED'||JSON.stringify(actual.dependencyInventory.entries)!==JSON.stringify(expected.dependencies)))throw Error('dependency-inventory-mismatch');
+    if(expected.architectures!==undefined&&!expected.architectures.includes(actual.architecture))throw Error('unsupported-runtime');
     return true;
   }
   async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT}={}){
