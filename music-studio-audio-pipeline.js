@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.2';
+  const VERSION='1.0.3';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
