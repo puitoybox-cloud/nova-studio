@@ -30,8 +30,8 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
      if(distribution.legacy().status!=='UNVERIFIED')throw Error('legacy verified');cases.push('distribution legacy unverified');
     }finally{window.fetch=distributionSavedFetch;MusicStudioAudioPipeline.configureIdentity(null)}
 
-    const check=(v,msg)=>{if(!v)throw Error(msg)};
     }
+    const check=(v,msg)=>{if(!v)throw Error(msg)};
     const p=app.makeProject({projectId:'p',projectName:'synthetic'});p.audioAssets=[{assetId:'a',size:3,storage:{kind:'external',reference:'offline.wav'}}];p.unknown={future:true};
     const snapshot={format:app.BACKUP_FORMAT,version:1,projects:[p],settings:app.defaultSettings(),unknown:{keep:true}},key='projects[0].audioAssets[0]';
     const validateMetadata=b=>app.restorePreflight(b).ok;
