@@ -9,7 +9,7 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
   const page=await browser.newPage({viewport:{width,height:1000}}),messages=[],external=[];
   page.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push({type:m.type(),text:m.text()})});page.on('pageerror',e=>messages.push({type:'pageerror',text:e.message}));
   try{
-   await page.route('**/*',r=>{if(r.request().url()==='http://nova-generation-isolated.test/')return r.fulfill({status:200,contentType:'text/html',body:'<!doctype html><body>Isolated binary contract</body>'});external.push(r.request().url());return r.abort()});await page.goto('http://nova-generation-isolated.test/');
+   await page.route('**/*',r=>{if(r.request().url()==='https://nova-generation-isolated.test/')return r.fulfill({status:200,contentType:'text/html',body:'<!doctype html><body>Isolated binary contract</body>'});external.push(r.request().url());return r.abort()});await page.goto('https://nova-generation-isolated.test/');
    await page.addScriptTag({path:'music-studio-binary-boundary.js'});await page.addScriptTag({path:'music-studio.js'});await page.addScriptTag({path:'music-studio-portable-package.js'});await page.addScriptTag({path:'music-studio-generation-adapter.js'});await page.waitForFunction(()=>MusicStudio.state.loaded,{},{timeout:15000});
    const result=await bound(page.evaluate(async()=>{
     const app=MusicStudio,codec=MusicStudioPortablePackage,adapter=MusicStudioGenerationAdapter,cases=[];
