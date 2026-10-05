@@ -51,6 +51,7 @@ class RuntimeInventory:
         self.max_bytes = min(max_bytes, MAX_ARTIFACT_BYTES)
         self.lock = threading.RLock()
         self.loaded = {}
+        self._retained_models = {}
         self.models = {}
         self.dependencies = {}
         self.native = {}
@@ -108,6 +109,7 @@ class RuntimeInventory:
     def load_model(self, identity, loader):
         with self.lock:
             self.loaded.pop(identity, None)
+            self._retained_models.pop(identity, None)
             self.models.pop(identity, None)
             binding = next((e for e in self.bindings['models'] if e['id'] == identity), None)
             if binding is None:
@@ -121,6 +123,7 @@ class RuntimeInventory:
                     raise ValueError('model-load-failed')
                 self.recheck()
                 self.loaded[identity] = value
+                self._retained_models[identity] = value
                 self.models[identity] = {'identity': entry, 'status': 'LOADED_VERIFIED_FILE',
                     'source': binding['path'], 'runtimeIdentifier': binding['runtimeIdentifier'],
                     'runtimeVisibleIdentifier': type(value).__module__ + '.' + type(value).__qualname__,
@@ -129,8 +132,20 @@ class RuntimeInventory:
                 return value
             except Exception:
                 self.loaded.pop(identity, None)
+                self._retained_models.pop(identity, None)
                 self.models.pop(identity, None)
                 raise ValueError('model-load-or-identity-failed') from None
+
+    def retained_model(self, identity):
+        with self.lock:
+            self.recheck()
+            value = self.loaded.get(identity)
+            if value is None or self._retained_models.get(identity) is not value:
+                raise ValueError('missing-or-replaced-loaded-model')
+            receipt = self.models.get(identity, {})
+            if receipt.get('status') != 'LOADED_VERIFIED_FILE' or receipt.get('identity') != self.expected('models', identity):
+                raise ValueError('changed-loaded-model-identity')
+            return value, copy.deepcopy(receipt)
 
     def observe_dependency(self, binding, importer=importlib.import_module, version=importlib.metadata.version):
         identity = binding['id']
@@ -180,11 +195,15 @@ class RuntimeInventory:
 
     def recheck(self):
         try:
+            if (set(self.loaded) != set(self._retained_models) or set(self.models) != set(self.loaded) or
+                    any(self.loaded[key] is not self._retained_models[key] or
+                        self.models[key].get('identity') != self.expected('models', key) for key in self.loaded)):
+                raise ValueError('replaced-runtime-model-object-or-identity')
             for relative, stamp in self.stamps.values():
                 if stable(local(self.root, relative)) != stamp:
                     raise ValueError('stale-runtime-artifact')
         except (OSError, ValueError):
-            self.loaded.clear(); self.models.clear(); self.dependencies.clear(); self.native.clear(); self.assets.clear()
+            self.loaded.clear(); self._retained_models.clear(); self.models.clear(); self.dependencies.clear(); self.native.clear(); self.assets.clear()
             raise ValueError('stale-runtime-artifact') from None
 
     def verify_assets(self):
@@ -247,6 +266,7 @@ class OfflineRuntimeGuard:
         import contextlib
         self.state = threading.local()
         self.observed = {}
+        self.network_classes = {}
         self.observation_lock = threading.Lock()
         sys.addaudithook(self.audit)
 
@@ -257,6 +277,16 @@ class OfflineRuntimeGuard:
                      'os.posix_spawn', 'os.fork'):
             with self.observation_lock:
                 self.observed[event] = min(1000000, self.observed.get(event, 0) + 1)
+        if event in ('socket.connect', 'socket.sendto', 'socket.getaddrinfo'):
+            import ipaddress
+            category = 'DNS_ATTEMPT' if event == 'socket.getaddrinfo' else 'UNKNOWN'
+            if event != 'socket.getaddrinfo':
+                address = args[1] if event == 'socket.connect' and len(args) > 1 else args[-1] if args else None
+                if isinstance(address, tuple) and address and isinstance(address[0], str):
+                    try: category = 'LOOPBACK' if ipaddress.ip_address(address[0]).is_loopback else 'EXTERNAL_ATTEMPT'
+                    except ValueError: category = 'EXTERNAL_ATTEMPT'
+            with self.observation_lock:
+                self.network_classes[category] = min(1000000, self.network_classes.get(category, 0)+1)
         if event == 'subprocess.Popen':
             permitted = getattr(self.state, 'command', None)
             if permitted is not None and tuple(args[1]) == permitted and args[0] == permitted[0]:
@@ -268,9 +298,13 @@ class OfflineRuntimeGuard:
     def snapshot(self):
         with self.observation_lock:
             events = dict(self.observed)
+            categories = dict(self.network_classes)
         return {'python': 'AUDIT_GUARDED', 'native': 'UNVERIFIED',
                 'scope': 'THIS_PROCESS_PYTHON_AUDIT_EVENTS_ONLY',
-                'events': events, 'nativeNetworkVerified': False}
+                'events': events, 'classifications': categories, 'nativeNetworkVerified': False,
+                'nativeObservation': 'UNVERIFIED', 'nativeNetworkContainment': 'PARTIAL',
+                'nativeBlockedBy': 'NATIVE_SYSCALL_BOUNDARY_NOT_INSTALLED',
+                'components': {key: 'UNVERIFIED' for key in ('helper', 'demucs-child', 'basic-pitch', 'codec', 'approved-companion')}}
 
     def permit(self, command):
         import contextlib

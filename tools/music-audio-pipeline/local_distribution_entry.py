@@ -223,7 +223,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
             'publicationEligible': False}
 
 
-def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backend_bound=False):
+def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backend_bound=False, fresh_session=None):
     evidence = inventory.get('runtimeEvidence', {})
     checks = {
         'trustedBootstrap': trusted_bootstrap is True,
@@ -234,6 +234,10 @@ def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backen
         'nativeClosureComplete': evidence.get('dynamicNativeGraph', {}).get('complete') is True,
         'offlineComplete': evidence.get('network', {}).get('nativeNetworkVerified') is True and evidence.get('network', {}).get('native') == 'CONTAINED',
     }
+    if fresh_session is not None or inventory.get('processingReceiptVersion') == 1:
+        checks['freshOwnedSession'] = fresh_session is True
+        checks['mappedNativeIdentity'] = evidence.get('mappedNative', {}).get('complete') is True
+        checks['processingChainComplete'] = inventory.get('processingChainComplete') is True
     eligible = all(checks.values())
     return {'processingEligible': eligible, 'publicationEligible': eligible and backend_bound is True,
             'blockedBy': [key for key, value in checks.items() if not value]}
@@ -294,7 +298,8 @@ class LocalProductionLifecycle:
         self.started = True
         try:
             environment = dict(self.prepared['environment'])
-            environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin)
+            environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin,
+                NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline))
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             deadline = time.monotonic()+self.timeout
@@ -331,7 +336,8 @@ class LocalProductionLifecycle:
             if state == 'IDENTITY_VERIFIED':
                 if self.state == 'SERVER_READY': raise ValueError('missing-browser-ready')
                 self.verify_health(self.health()); self.browser_verified = True
-                self.eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True, browser_verified=True)
+                self.eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True, browser_verified=True,
+                    fresh_session=self.child is not None and self.child.poll() is None and time.monotonic() < self.server.deadline)
                 self.state = 'PROCESSING_ELIGIBLE' if self.eligibility['processingEligible'] else 'IDENTITY_VERIFIED'
             elif self.state == 'SERVER_READY': self.state = 'BROWSER_READY'
 

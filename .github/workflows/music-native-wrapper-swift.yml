@@ -8,10 +8,14 @@ on:
       - verification/music-studio-all-drafts-255
     paths:
       - 'tools/music-native-wrapper/**'
+      - 'tools/music-audio-pipeline/*.py'
+      - 'music-studio-audio-pipeline.js'
       - '.github/workflows/music-native-wrapper-swift.yml'
   pull_request:
     paths:
       - 'tools/music-native-wrapper/**'
+      - 'tools/music-audio-pipeline/*.py'
+      - 'music-studio-audio-pipeline.js'
       - '.github/workflows/music-native-wrapper-swift.yml'
   workflow_dispatch:
 
@@ -21,6 +25,7 @@ permissions:
 jobs:
   swift-test:
     runs-on: macos-15-intel
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:

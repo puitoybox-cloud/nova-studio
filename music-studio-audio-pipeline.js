@@ -225,15 +225,47 @@
     if(lifecycleSession&&payload.lifecycleSession!==lifecycleSession)throw Error('stale-helper-session');
     validateIdentity(payload,expected);return payload;
   }
+  async function validateProcessingReceipt(payload,{session,request,input,inventory,sha256}={}){
+    const receipt=payload?.processingReceipt,binding=receipt?.binding;
+    const digest=sha256||async function(bytes){return Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('')};
+    const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([key])=>!['cache','processingCalls'].includes(key)).map(([key,item])=>[key,stable(item)])):value;
+    const hash=value=>digest(new TextEncoder().encode(identityText(value)));
+    if(!/^[a-f0-9]{64}$/.test(session||'')||!/^[a-f0-9]{64}$/.test(request||'')||
+      receipt?.format!=='NOVA_PROCESSING_RECEIPT'||receipt.version!==1||receipt.complete!==true||
+      receipt.status!=='VERIFIED'||receipt.processingEligible!==true||receipt.publicationEligible!==false||
+      binding?.session!==session||binding.request!==request||identityText(binding.input)!==identityText(input))throw Error('invalid-processing-receipt-binding');
+    const evidence=inventory?.runtimeEvidence||{};
+    const identities={inventoryRevision:stable(inventory),modelIdentity:inventory?.models||[],codecIdentity:evidence.codec||{},
+      nativeIdentity:Object.fromEntries(['mappedNative','dynamicNativeGraph','transitiveNativeObservation','nativeClosure'].map(key=>[key,evidence[key]??null])),networkIdentity:evidence.network||{}};
+    for(const [key,value] of Object.entries(identities))if(binding[key]!==await hash(value))throw Error('stale-processing-receipt:'+key);
+    const required=['decoder','resample','model','inference','stem','encoder','result'];
+    if(!Array.isArray(receipt.stages)||receipt.stages.length!==required.length||required.some(stage=>{
+      const entries=receipt.stages.filter(entry=>entry.stage===stage);
+      return entries.length!==1||!(entries[0].status==='VERIFIED'||stage==='resample'&&entries[0].status==='NOT_APPLICABLE');
+    })||receipt.nativeClosureComplete!==true||receipt.networkContainment!=='CONTAINED'||
+      !Array.isArray(receipt.blockedBy)||receipt.blockedBy.length)throw Error('partial-processing-receipt');
+    const output=decodeBase64(payload.midiBase64);
+    if(receipt.output?.byteLength!==output.length||receipt.output?.digest!==await digest(output))throw Error('processing-output-identity-mismatch');
+    return true;
+  }
+
   async function processAudioLocally(file,options={}){
     if(['PENDING','BLOCKED'].includes(bootstrapState))throw Error('strict-bootstrap-incomplete');
     const localEpoch=bootstrapEpoch,localSignal=localController?.signal;
     const expected=options.expected||expectedHelperIdentity;
     const check=()=>{const why=localSession&&localExpiresAt<=Date.now()?'expired-local-session':options.signal?.aborted||localSignal?.aborted?'Abort':localSignal&&bootstrapEpoch!==localEpoch?'stale':options.reason?.();if(why)throw Error(why)};check();
-    if(expected)await connectIdentity({...options,expected,...(localSession?{lifecycleSession:localSession}:{})});
+    const health=expected?await connectIdentity({...options,expected,...(localSession?{lifecycleSession:localSession}:{})}):null;
     check();
     if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
       throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');
+    }
+    let request=null,input=null;
+    if(localSession){
+      if(file.size>MAX_MIDI_BYTES)throw Error('strict-browser-input-hash-budget');
+      if(!root.crypto?.getRandomValues||!root.crypto?.subtle||typeof file.arrayBuffer!=='function')throw Error('processing-identity-unavailable');
+      request=Array.from(root.crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
+      input={digest:Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',await file.arrayBuffer())),x=>x.toString(16).padStart(2,'0')).join(''),byteLength:file.size};
+      check();
     }
     let response;
     try{response=await root.fetch(`${ENDPOINT}/process`,{
@@ -242,7 +274,8 @@
       headers:{
         'Content-Type':String(file.type||'application/octet-stream'),
         'X-Nova-Audio-Pipeline':'1',
-        'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input'))
+        'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input')),
+        ...(localSession?{'X-Nova-Session':localSession,'X-Nova-Request':request}:{})
       },
       body:file
     })}catch(error){
@@ -251,6 +284,7 @@
     check();if(!response.ok)throw Error(await parseError(response));
     const payload=await response.json();check();
     if(expected)validateIdentity(payload,expected);
+    if(localSession){await validateProcessingReceipt(payload,{session:localSession,request,input,inventory:health.runtimeIdentity.actualInventory});check()}
     if(payload?.pipelineRevision!==REQUIRED_PIPELINE_REVISION){
       throw Error('別の版のAudio Helperが応答しています。以前のHelperをその配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、今回の製品HEADと一致するHelperソースを起動してください。');
     }
@@ -298,7 +332,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -313,7 +347,7 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader,install});
   if(root.__NOVA_LOCAL_HANDOFF||root.location?.hash?.startsWith('#nova-local=')){
     bootstrapState='BLOCKED';
     try{

@@ -51,9 +51,11 @@ OFFLINE_GUARD = None
 RUNTIME_EVIDENCE_MODULE = None
 RUNTIME_EVIDENCE_CONTRACT = None
 PROCESSING_RECEIPT = None
+PROCESSING_ATTEMPTS = None
+REQUEST_RECEIPTS = threading.local()
 
 def initialize_runtime():
-    global PROCESSING_RECEIPT, RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
+    global PROCESSING_ATTEMPTS, PROCESSING_RECEIPT, RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
     if not STRICT_BOOTSTRAP:
         return
     try:
@@ -100,7 +102,8 @@ def initialize_runtime():
         import runtime_evidence
         RUNTIME_EVIDENCE_MODULE = runtime_evidence
         RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
-        PROCESSING_RECEIPT = runtime_evidence.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
+        PROCESSING_ATTEMPTS = runtime_evidence.SessionRequestRegistry(require_owned_session())
+        # Processing call receipts are created for each request, never shared across requests.
         runtime_evidence.install_import_guard(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
         import demucs_parent
         import inventory_aggregation
@@ -150,8 +153,6 @@ def runtime_snapshot():
             RUNTIME_EVIDENCE_CONTRACT, build=RUNTIME_INVENTORY.manifest['buildRevision'])
         if OFFLINE_GUARD is not None:
             evidence['network'] = OFFLINE_GUARD.snapshot()
-        if PROCESSING_RECEIPT is not None:
-            evidence['processingCalls'] = PROCESSING_RECEIPT.snapshot()
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual, evidence)
     except (ValueError, OSError):
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual)
@@ -179,6 +180,32 @@ def require_runtime_processing():
         actual = runtime_snapshot()
         if actual.get('status') != 'VERIFIED' or actual.get('complete') is not True or actual.get('processingEligible') is not True:
             raise ValueError('strict-runtime-inventory-or-native-enforcement-incomplete')
+        require_owned_session()
+
+
+def require_owned_session(session=None):
+    import time
+    expected = os.environ.get('NOVA_LIFECYCLE_SESSION', '')
+    try: deadline = float(os.environ.get('NOVA_LIFECYCLE_DEADLINE', '0'))
+    except ValueError: raise ValueError('invalid-owned-session') from None
+    if (len(expected) != 64 or any(c not in '0123456789abcdef' for c in expected) or
+            not math.isfinite(deadline) or not time.monotonic() < deadline <= time.monotonic()+300 or
+            session is not None and session != expected):
+        raise ValueError('stale-owned-session')
+    return expected
+
+
+def current_processing_calls():
+    value = getattr(REQUEST_RECEIPTS, 'calls', None)
+    if STRICT_BOOTSTRAP and value is None: raise ValueError('missing-request-processing-receipt')
+    return value
+
+
+def clear_processing_request():
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    if bound is not None and bound.state != 'CONSUMED': bound.abort()
+    REQUEST_RECEIPTS.calls = None; REQUEST_RECEIPTS.bound = None
+
 
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
@@ -250,7 +277,8 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
     ]
     if STRICT_BOOTSTRAP:
         if DEMUCS_SESSION is None: raise ValueError('missing-live-demucs-child')
-        DEMUCS_SESSION.process_audio(source, output_dir)
+        child = DEMUCS_SESSION.process_audio(source, output_dir, binding=REQUEST_RECEIPTS.bound.binding)
+        REQUEST_RECEIPTS.bound.add_child(child)
     else:
         subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
     candidates = [path.parent for path in output_dir.rglob("vocals.wav")]
@@ -267,10 +295,28 @@ def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
         bindings = [e for e in RUNTIME_INVENTORY.bindings['models'] if e['runtimeIdentifier'] == 'basic-pitch']
         if len(bindings) != 1:
             raise ValueError('missing-or-unexpected-loaded-model')
-        model = RUNTIME_INVENTORY.loaded.get(bindings[0]['id'])
+        model, model_receipt = RUNTIME_INVENTORY.retained_model(bindings[0]['id'])
         if model is None:
             raise ValueError('missing-loaded-model')
-        _, midi_data, _ = PROCESSING_RECEIPT.call('inference','basic-pitch',predict,str(stem_path),model_or_model_path=model)
+        import librosa
+        calls = current_processing_calls()
+        calls.entries.append({'stage':'model','logicalId':'basic-pitch-retained-model','identity':model_receipt['identity'],
+            'status':'VERIFIED','nativeIdentity':'NOT_APPLICABLE','completed':True,'fallback':False,
+            'evidence':'ACTUAL_RETAINED_OBJECT_AND_VERIFIED_SERIALIZED_BYTES'})
+        original_load = librosa.load; original_resample = librosa.resample
+        def observed_load(path, *args, **kwargs):
+            RUNTIME_EVIDENCE_MODULE.local_audio_path(path)
+            return calls.call('decoder', 'basic-pitch-input', original_load, path, *args, **kwargs)
+        def observed_resample(*args, **kwargs):
+            return calls.call('resample', 'basic-pitch-preprocess', original_resample, *args, **kwargs)
+        librosa.load = observed_load; librosa.resample = observed_resample
+        try:
+            _, midi_data, _ = calls.call('inference','basic-pitch',predict,str(stem_path),model_or_model_path=model)
+        finally:
+            librosa.load = original_load; librosa.resample = original_resample
+        # The existing actual model instance above is reused; no receipt-only reload.
+        calls.call('result', 'basic-pitch-midi', midi_data.write, str(midi_path))
+        return
     else:
         _, midi_data, _ = predict(str(stem_path))
     midi_data.write(str(midi_path))
@@ -517,7 +563,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Cache-Control", "no-store")
 
@@ -567,6 +613,12 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             require_runtime_processing()
+            if STRICT_BOOTSTRAP:
+                require_owned_session(self.headers.get('X-Nova-Session'))
+                request = self.headers.get('X-Nova-Request', '')
+                if len(request) != 64 or any(c not in '0123456789abcdef' for c in request): raise ValueError('invalid-processing-request')
+                if PROCESSING_ATTEMPTS is None: raise ValueError('missing-owned-request-registry')
+                PROCESSING_ATTEMPTS.claim(require_owned_session(), request)
         except ValueError:
             self._json(503, {"ok": False, "code": "STRICT_RUNTIME_INVENTORY_INCOMPLETE"})
             return
@@ -596,15 +648,37 @@ class Handler(BaseHTTPRequestHandler):
                             raise RuntimeError("音声ファイルの受信が途中で終了しました。")
                         handle.write(chunk)
                         remaining -= len(chunk)
+                if STRICT_BOOTSTRAP:
+                    session = require_owned_session(self.headers.get('X-Nova-Session'))
+                    inventory = runtime_snapshot()
+                    binding = RUNTIME_EVIDENCE_MODULE.processing_binding(session,
+                        self.headers.get('X-Nova-Request'), RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+                    REQUEST_RECEIPTS.bound = RUNTIME_EVIDENCE_MODULE.BoundProcessingReceipt(binding)
+                    REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
                 payload = process_audio(source, work_dir)
                 require_runtime_processing()
+                if STRICT_BOOTSTRAP:
+                    inventory = runtime_snapshot()
+                    current = RUNTIME_EVIDENCE_MODULE.processing_binding(require_owned_session(self.headers.get('X-Nova-Session')),
+                        self.headers.get('X-Nova-Request'), RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+                    REQUEST_RECEIPTS.bound.add_calls(current_processing_calls().snapshot())
+                    if len(payload['midiBase64']) > 89478488: raise ValueError('processing-output-budget')
+                    raw_output = base64.b64decode(payload['midiBase64'], validate=True)
+                    if len(raw_output) > 64*1024*1024: raise ValueError('processing-output-budget')
+                    output = {'digest': hashlib.sha256(raw_output).hexdigest(), 'byteLength': len(raw_output)}
+                    receipt = REQUEST_RECEIPTS.bound.finish(current, inventory, output)
+                    payload['processingReceipt'] = REQUEST_RECEIPTS.bound.consume(receipt, current)
                 self._json(200, payload)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "message": "Stem分離が60分以内に完了しませんでした。"})
         except Exception as error:
-            traceback.print_exc()
-            self._json(500, {"ok": False, "message": str(error)})
+            if STRICT_BOOTSTRAP:
+                self._json(503, {"ok": False, "code": "STRICT_PROCESSING_RECEIPT_INCOMPLETE"})
+            else:
+                traceback.print_exc()
+                self._json(500, {"ok": False, "message": str(error)})
         finally:
+            clear_processing_request()
             PROCESS_LOCK.release()
 
     def log_message(self, format, *args):
@@ -626,6 +700,7 @@ def main():
         pass
     finally:
         server.server_close()
+        if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
         if DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
 
 
