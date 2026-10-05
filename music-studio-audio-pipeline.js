@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.1';
+  const VERSION='1.0.2';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -111,13 +111,40 @@
     try{const data=await response.json();return String(data?.message||data?.error||`Local audio pipeline error (${response.status})`)}catch(_){return`Local audio pipeline error (${response.status})`}
   }
 
-  async function processAudioLocally(file){
+  let expectedHelperIdentity=null;
+  function configureIdentity(expected){
+    if(expected===null){expectedHelperIdentity=null;return}
+    if(expected?.version!==1||expected.pipelineRevision!==2||expected.protocolVersion!==1||typeof expected.runtimeVersion!=='string'||!['sourceDigest','requirementsDigest','identityModuleDigest'].every(k=>/^[a-f0-9]{64}$/.test(expected[k])))throw Error('invalid-helper-identity-contract');
+    expectedHelperIdentity=JSON.parse(JSON.stringify(expected));
+  }
+  function validateIdentity(payload,expected){
+    const actual=payload?.runtimeIdentity;
+    if(payload?.ok!==true||payload.localOnly!==true||payload.pipelineRevision!==expected.pipelineRevision||payload.sourceDigest!==expected.sourceDigest||payload.version!==1||actual?.version!==1)throw Error('helper-identity-mismatch');
+    for(const key of ['protocolVersion','runtimeVersion','requirementsDigest','identityModuleDigest'])if(actual[key]!==expected[key])throw Error('helper-identity-mismatch:'+key);
+    if(expected.models!==undefined&&(actual.modelInventory?.status!=='VERIFIED'||JSON.stringify(actual.modelInventory.entries)!==JSON.stringify(expected.models)))throw Error('model-inventory-mismatch');
+    return true;
+  }
+  async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT}={}){
+    if(endpoint!==ENDPOINT)throw Error('non-local-endpoint');
+    if(!expected)throw Error('helper-identity-unconfigured');
+    const check=()=>{const why=signal?.aborted?'Abort':reason();if(why)throw Error(why)};check();
+    const response=await root.fetch(`${ENDPOINT}/health`,{signal,cache:'no-store'});check();if(!response.ok)throw Error('health-unavailable');
+    const payload=await response.json();check();
+    if(payload.host!=='127.0.0.1'||payload.port!==8766)throw Error('non-local-endpoint');
+    validateIdentity(payload,expected);return payload;
+  }
+  async function processAudioLocally(file,options={}){
+    const expected=options.expected||expectedHelperIdentity;
+    const check=()=>{const why=options.signal?.aborted?'Abort':options.reason?.();if(why)throw Error(why)};check();
+    if(expected)await connectIdentity({...options,expected});
+    check();
     if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
       throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');
     }
     let response;
     try{response=await root.fetch(`${ENDPOINT}/process`,{
       method:'POST',
+      signal:options.signal,
       headers:{
         'Content-Type':String(file.type||'application/octet-stream'),
         'X-Nova-Audio-Pipeline':'1',
@@ -127,8 +154,9 @@
     })}catch(error){
       throw Error('MacのローカルAudio Helperに接続できません。START_AUDIO_PIPELINE.commandを起動し、127.0.0.1:8766の接続を確認してください。',{cause:error});
     }
-    if(!response.ok)throw Error(await parseError(response));
-    const payload=await response.json();
+    check();if(!response.ok)throw Error(await parseError(response));
+    const payload=await response.json();check();
+    if(expected)validateIdentity(payload,expected);
     if(payload?.pipelineRevision!==REQUIRED_PIPELINE_REVISION){
       throw Error('別の版のAudio Helperが応答しています。以前のHelperをその配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、今回の製品HEADと一致するHelperソースを起動してください。');
     }
@@ -176,7 +204,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -191,6 +219,6 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
   installWhenReady();
 })(typeof window!=='undefined'?window:globalThis);

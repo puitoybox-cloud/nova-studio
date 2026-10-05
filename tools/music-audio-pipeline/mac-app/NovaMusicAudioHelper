@@ -19,7 +19,13 @@ show_notification(){
 }
 
 is_nova_pipeline(){
-  /usr/bin/curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null | /usr/bin/grep -q '"localOnly"[[:space:]]*:[[:space:]]*true'
+  # Exact pipelineRevision/sourceDigest/protocol/runtime identity, not localOnly alone.
+  local health identity_python
+  identity_python="${VENV_DIR}/bin/python"
+  [ -x "$identity_python" ] || identity_python="python3"
+  command -v "$identity_python" >/dev/null 2>&1 || return 1
+  health="$(/usr/bin/curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null)" || return 1
+  printf '%s' "$health" | "$identity_python" "$PIPELINE_DIR/helper_identity.py" "$PIPELINE_DIR"
 }
 
 mkdir -p "$PIPELINE_DIR"

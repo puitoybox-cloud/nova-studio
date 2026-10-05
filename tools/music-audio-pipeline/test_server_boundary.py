@@ -159,7 +159,11 @@ class AudioHelperBoundaryTests(unittest.TestCase):
     def test_start_command_rejects_another_running_source(self):
         start = Path(__file__).with_name("START_AUDIO_PIPELINE.command").read_text()
         self.assertIn('EXPECTED_SOURCE_DIGEST=', start)
-        self.assertIn('actual.get("sourceDigest")==expected', start)
+        self.assertIn('helper_identity.py "$PWD"', start)
+        identity = server_module._identity_module
+        health = {"ok": True, "localOnly": True, "host": "127.0.0.1", "port": 8766, "version": 1, "pipelineRevision": 2, "sourceDigest": "0" * 64, "runtimeIdentity": identity.identity(SERVER_PATH.parent)}
+        with self.assertRaisesRegex(ValueError, "sourceDigest"):
+            identity.validate(health, SERVER_PATH.parent)
         self.assertIn('check_running_source || stale_helper_error', start)
 
     def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
