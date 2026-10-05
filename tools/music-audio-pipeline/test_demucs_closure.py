@@ -215,3 +215,23 @@ for event,args in [('subprocess.Popen',('unexpected',['unexpected'],None,None)),
             verify_closure(root,contract,dist,stamp_sink=lambda path,stamp:stamps.__setitem__(path,stamp))
             self.assertEqual(len(stamps),7);Path(root,'3.bin').write_bytes(b'changed')
             self.assertNotEqual(stamps['3.bin'],stable(Path(root,'3.bin')))
+
+class AssemblyCallerTests(unittest.TestCase):
+    def fixture(self,root):
+        import importlib.util
+        path=Path(__file__).resolve().parents[2]/'scripts'/'music-offline-assembly-verifier.py'
+        spec=importlib.util.spec_from_file_location('assembly_cli_fixture',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        graph=contract_fixture(root);f=graph['nodes'][4]['files'][0]
+        runtime=SimpleNamespace(manifest={'models':[{'id':'model','revision':'1','digest':f['digest'],'byteLength':f['byteLength']}],'dependencies':[],'assets':[]},bindings={'models':[{'id':'model','path':f['path']}],'dependencies':[],'assets':[],'native':[]})
+        return module,graph,runtime
+    def test_manifest_file_identity_is_linked(self):
+        with tempfile.TemporaryDirectory() as root:
+            module,graph,runtime=self.fixture(root)
+            with patch.object(module,'bootstrap',return_value=runtime),patch.object(module,'load_contract',return_value=graph),patch.object(module,'verify_assembly',return_value={'complete':True,'status':'COMPLETE'}):
+                self.assertTrue(module.inspect(root,'manifest','anchor','build')['complete'])
+    def test_wrong_model_digest_revision_and_missing_identity(self):
+        for key,value in [('digest','0'*64),('revision','wrong'),('id','absent')]:
+            with tempfile.TemporaryDirectory() as root:
+                module,graph,runtime=self.fixture(root);runtime.manifest['models'][0][key]=value
+                with patch.object(module,'bootstrap',return_value=runtime),patch.object(module,'load_contract',return_value=graph),patch.object(module,'verify_assembly',return_value={'complete':True,'status':'COMPLETE'}):
+                    self.assertFalse(module.inspect(root,'manifest','anchor','build')['complete'])

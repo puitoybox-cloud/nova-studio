@@ -36,20 +36,23 @@ def validate_receipt(value,expected,nonce):
 class ChildSession:
     def __init__(self,command,expected,launch=subprocess.Popen,timeout=30,permit=None):
         self.command=tuple(command);self.expected=copy.deepcopy(expected);self.timeout=timeout
-        self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue();self.lock=threading.Lock()
+        self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue(maxsize=2);self.protocol_error=None;self.lock=threading.Lock()
         try:
             if permit:
                 with permit(self.command):self.process=launch(list(self.command),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={'PYTHONDONTWRITEBYTECODE':'1'})
             else:self.process=launch(list(self.command),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={'PYTHONDONTWRITEBYTECODE':'1'})
+            def enqueue(value):
+                try:self.messages.put_nowait(value)
+                except queue.Full:raise ValueError('unexpected-child-message-flood')
             def read():
                 try:
                     while True:
                         line=self.process.stdout.readline(MAX_RECEIPT+1)
-                        if not line:self.messages.put(ValueError('child-crash-or-missing-receipt'));break
-                        if len(line.encode())>MAX_RECEIPT or not line.endswith('\n'):self.messages.put(ValueError('child-receipt-budget'));break
-                        try:self.messages.put(json.loads(line, object_pairs_hook=unique))
-                        except (ValueError,TypeError):self.messages.put(ValueError('invalid-child-json'));break
-                except Exception:self.messages.put(ValueError('child-pipe-failed'))
+                        if not line:enqueue(ValueError('child-crash-or-missing-receipt'));break
+                        if len(line.encode())>MAX_RECEIPT or not line.endswith('\n'):enqueue(ValueError('child-receipt-budget'));break
+                        try:enqueue(json.loads(line, object_pairs_hook=unique))
+                        except (ValueError,TypeError):enqueue(ValueError('invalid-child-json'));break
+                except Exception:self.protocol_error=ValueError('child-pipe-or-message-budget-failed')
             self.reader=threading.Thread(target=read,daemon=True);self.reader.start()
             self._send({'type':'load','nonce':self.nonce})
             self.receipt=validate_receipt(self._receive(),self.expected,self.nonce)
@@ -62,12 +65,14 @@ class ChildSession:
         self.process.stdin.write(json.dumps(value,separators=(',',':'))+'\n');self.process.stdin.flush()
 
     def _receive(self):
+        if self.protocol_error:raise self.protocol_error
         try:value=self.messages.get(timeout=self.timeout)
         except queue.Empty:raise TimeoutError('child-timeout') from None
         if isinstance(value,Exception):raise value
         return value
 
     def current(self):
+        if self.protocol_error:raise self.protocol_error
         if self.process is None or self.process.poll() is not None:raise ValueError('child-not-live')
         return validate_receipt(self.receipt,self.expected,self.nonce)
 

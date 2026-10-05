@@ -572,6 +572,14 @@
       "scope": "TEST_OR_TOOL"
     },
     {
+      "id": "scripts/music-offline-assembly-verifier.py",
+      "byteLength": 3156,
+      "digest": "2c1ce22fdc4afbaab494b636da2b614b673d407af36bf5f53915ee0e3beca826",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
       "id": "scripts/music-offline-asset-inventory.py",
       "byteLength": 5677,
       "digest": "e887b296e9f60983e52c4530fa95e295ec67621e0d912b40d31876144eaf51de",
@@ -1605,24 +1613,24 @@
     },
     {
       "id": "tools/music-audio-pipeline/demucs_child.py",
-      "byteLength": 7548,
-      "digest": "0cfa4d6d164589368ec45fc417cd040c571010e45b25d157485845be40a7d40b",
+      "byteLength": 7576,
+      "digest": "14f7b587402e630b9fce9d57a918ef36133be8fd1614858a213e9e7f39cd6a7f",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
     },
     {
       "id": "tools/music-audio-pipeline/demucs_parent.py",
-      "byteLength": 3180,
-      "digest": "645fb06ed9ce9d4a319721fd852b22d9c9eaacc432a2bcbae4e1e0383ece250e",
+      "byteLength": 3276,
+      "digest": "fc11e4be72339d18a08abc80326f7ef741bac95c88cc7fe420b39287a9e8d609",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
     },
     {
       "id": "tools/music-audio-pipeline/demucs_receipt.py",
-      "byteLength": 5164,
-      "digest": "180c120be0b52ce1b3ec1eacb8ded8adb6b8316eff8181047eff5530b1188a12",
+      "byteLength": 5460,
+      "digest": "3363625bb35272c6ec0759632f7ed42e7f5e64d3c7f8ab5932c0994c4353f086",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1709,8 +1717,8 @@
     },
     {
       "id": "tools/music-audio-pipeline/test_demucs_closure.py",
-      "byteLength": 15750,
-      "digest": "010c801075284b43c62d4c3383471b36959a50c78127cea51ca580c0a7213698",
+      "byteLength": 17570,
+      "digest": "fe97784ebcc091145d61dbf58a940284a5e74d15e54bb87d3ba7546401680e4d",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"

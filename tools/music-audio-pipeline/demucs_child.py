@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 SOURCE=Path(__file__).resolve()
+SOURCE_DIGEST=hashlib.sha256(SOURCE.read_bytes()).hexdigest()
 sys.path.insert(0,str(SOURCE.parent))
 from runtime_inventory import bootstrap, install_offline_guard, local, stable
 from scoped_closure import load_contract,verify_closure
@@ -58,7 +59,7 @@ def load(runtime,contract,expected,nonce):
     # Model bytes/revision are manifest-bound; no fabricated independent embedded revision.
     actual_model={'identity':primary,'status':'LOADED_VERIFIED_FILE','source':binding['path'],'runtimeIdentifier':'demucs','companions':companions}
     receipt={'format':FORMAT,'version':1,'nonce':nonce,'status':'LOADED','lifetime':'LIVE_CHILD',
-        'child':{'sourceDigest':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'runtimeVersion':'1','buildRevision':runtime.manifest['buildRevision'],'pythonVersion':sys.version.split()[0],'architecture':platform.machine()},
+        'child':{'sourceDigest':SOURCE_DIGEST,'runtimeVersion':'1','buildRevision':runtime.manifest['buildRevision'],'pythonVersion':sys.version.split()[0],'architecture':platform.machine()},
         'loader':{'id':'demucs','version':importlib.metadata.version('demucs'),'source':expected['loader']['source']},
         'model':actual_model,'companions':companions,'native':expected['native'],'closure':closure}
     # Native receipts must be observed in this child, never copied as proof from its parent.
