@@ -2,6 +2,8 @@
 
 2026-10-05 JST追記：[本番metadata一括RestoreとChrome停止修復](ATOMIC_METADATA_RESTORE_V1.md)。#298のChrome停止を新Draftで再現・修復し、productionの複数Project/設定を既存IndexedDB v5の一つのtransactionで追加復元する。全入力MIDI/依存metadata事前検査、legacy/unknown保持、Cancel/stale/retryと途中失敗のrollbackを検証。完全binary Backup/実resolver/配布契約は残るためStage 2 software/contract OPEN、physical PENDING、A 0/30を維持。
 
+2026-10-05 JST追記：[offline binary resolver / generation境界](BINARY_RESOLVER_BOUNDARY_V1.md)。明示的なbyte解決・完全Restoreのfail closed・候補Backup完全性・generation recovery validatorをproduction入口へ接続。実binary永続adapter/package codecは未実装のためStage 2 software OPEN／physical PENDING／policy REQUIRED。A 0/30。
+
 確認日：2026-10-04 JST。マスター：『Music Studio 最終機能仕様書 v1』確定日2026-09-30、5ページ。仕様書の「既存」「新規」は完成証明ではない。
 
 コード確認基準：#289 HEAD `418dc57429f91ffcef6b578a7edfda36012576fd`。main `552d56eafddfd192970c09f7d6278696cf8775c3` はこれらDraftの統合版ではない。main・Open PRを再取得した記録は [開始時点JSON](../../verification/music-completion-start-20261004.json)。Open 36件／Draft 34件。34 Draftのmergeableは全件true。各HEADで取得できたActionsはsuccess。#10/#35はDraftではなく、HEAD Actionsは0件。mergeableは検証済みや承認済みという意味ではない。
