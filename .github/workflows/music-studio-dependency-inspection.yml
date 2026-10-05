@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/music-audio-pipeline/*.py'
+      - 'scripts/music-local-lifecycle*'
       - 'tests/music-studio-runtime-bootstrap.test.js'
       - 'tools/music-audio-pipeline/runtime_inventory.py'
       - 'tools/music-audio-pipeline/test_runtime_inventory.py'
@@ -73,6 +74,7 @@ jobs:
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_demucs_closure.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_runtime_inventory.py -v
           python3 scripts/music-offline-asset-inventory.py > /tmp/music-offline-inventory.json
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_production_lifecycle.py -v
           node --test
           find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
           python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py tools/music-audio-pipeline/helper_identity.py tools/music-audio-pipeline/server.py
@@ -86,6 +88,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-local-lifecycle-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-generation-package-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-binary-boundary-browser.js
           git show 031def44c194787f4e8e17552961d62e93b10df2:scripts/music-transaction-regression.js > "$RUNNER_TEMP/original-298.js"
@@ -102,6 +105,8 @@ jobs:
         with:
           name: music-completion-browser-verification
           path: |
+            verification/music-local-lifecycle-browser-report.json
+            verification/music-local-lifecycle-*.png
             verification/music-generation-browser-report.json
             verification/music-generation-*.png
             verification/music-binary-browser-report.json

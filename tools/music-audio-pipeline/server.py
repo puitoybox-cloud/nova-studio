@@ -50,9 +50,10 @@ INVENTORY_AGGREGATOR = None
 OFFLINE_GUARD = None
 RUNTIME_EVIDENCE_MODULE = None
 RUNTIME_EVIDENCE_CONTRACT = None
+PROCESSING_RECEIPT = None
 
 def initialize_runtime():
-    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
+    global PROCESSING_RECEIPT, RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
     if not STRICT_BOOTSTRAP:
         return
     try:
@@ -99,6 +100,7 @@ def initialize_runtime():
         import runtime_evidence
         RUNTIME_EVIDENCE_MODULE = runtime_evidence
         RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
+        PROCESSING_RECEIPT = runtime_evidence.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
         runtime_evidence.install_import_guard(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
         import demucs_parent
         import inventory_aggregation
@@ -148,6 +150,8 @@ def runtime_snapshot():
             RUNTIME_EVIDENCE_CONTRACT, build=RUNTIME_INVENTORY.manifest['buildRevision'])
         if OFFLINE_GUARD is not None:
             evidence['network'] = OFFLINE_GUARD.snapshot()
+        if PROCESSING_RECEIPT is not None:
+            evidence['processingCalls'] = PROCESSING_RECEIPT.snapshot()
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual, evidence)
     except (ValueError, OSError):
         return RUNTIME_EVIDENCE_MODULE.upgrade(actual)
@@ -183,6 +187,16 @@ ALLOWED_ORIGINS = {
     "http://localhost:8765",
     "https://puitoybox-cloud.github.io",
 }
+if STRICT_BOOTSTRAP:
+    from urllib.parse import urlsplit
+    local_origin = os.environ.get('NOVA_LOCAL_BROWSER_ORIGIN', '')
+    parsed = urlsplit(local_origin)
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
+            parsed.netloc != '127.0.0.1:'+str(parsed.port) or parsed.path or parsed.query or parsed.fragment):
+        ALLOWED_ORIGINS = set()
+    else:
+        ALLOWED_ORIGINS = {local_origin}
+
 PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.
 STEM_PROGRAMS = {
     "Vocals": 53,
@@ -256,7 +270,7 @@ def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
         model = RUNTIME_INVENTORY.loaded.get(bindings[0]['id'])
         if model is None:
             raise ValueError('missing-loaded-model')
-        _, midi_data, _ = predict(str(stem_path), model_or_model_path=model)
+        _, midi_data, _ = PROCESSING_RECEIPT.call('inference','basic-pitch',predict,str(stem_path),model_or_model_path=model)
     else:
         _, midi_data, _ = predict(str(stem_path))
     midi_data.write(str(midi_path))
@@ -292,7 +306,7 @@ def refine_clear_melody(events, source_path: Path):
         if STRICT_BOOTSTRAP:
             if RUNTIME_EVIDENCE_CONTRACT is None:
                 raise ValueError('missing-strict-codec-contract')
-            channels, sr = RUNTIME_EVIDENCE_MODULE.decode_soundfile(sf, source_path, RUNTIME_EVIDENCE_CONTRACT['codec']['version'])
+            channels, sr = RUNTIME_EVIDENCE_MODULE.decode_soundfile(sf, source_path, RUNTIME_EVIDENCE_CONTRACT['codec']['version'], receipt=PROCESSING_RECEIPT)
         else:
             channels, sr = sf.read(str(source_path), dtype="float32", always_2d=True)
         audio = np.mean(channels, axis=1)
@@ -533,6 +547,7 @@ class Handler(BaseHTTPRequestHandler):
             "sourceDigest": SOURCE_DIGEST,
         "runtimeIdentity": runtime_health_identity(),
             "localOnly": True,
+            "lifecycleSession": os.environ.get("NOVA_LIFECYCLE_SESSION") if STRICT_BOOTSTRAP else None,
             "host": HOST,
             "port": PORT,
             "python": sys.version.split()[0],
@@ -597,6 +612,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     initialize_runtime()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print("Nova Music Studio Audio Pipeline")

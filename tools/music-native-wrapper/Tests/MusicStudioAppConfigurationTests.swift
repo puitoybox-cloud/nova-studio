@@ -2,6 +2,31 @@ import XCTest
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioAppConfigurationTests: XCTestCase {
+    func testStrictStartupRequiresFreshAnchoredHandoff() throws {
+        let now = Date(timeIntervalSince1970: 1000)
+        var value: [String: Any] = ["format": "NOVA_LOCAL_BROWSER_HANDOFF", "version": 1,
+            "origin": "http://127.0.0.1:18766", "expiresAt": 1060000,
+            "buildRevision": "fixture"]
+        for key in ["nonce", "session", "manifestDigest", "runtimeConfigDigest", "helperIdentityDigest"] {
+            value[key] = String(repeating: "a", count: 64)
+        }
+        func configuration(_ value: [String: Any]) throws -> MusicStudioAppConfiguration? {
+            let data = try JSONSerialization.data(withJSONObject: value)
+            return MusicStudioAppConfiguration.startup(environment: ["NOVA_STRICT_OFFLINE": "1", "NOVA_LOCAL_HANDOFF": String(decoding: data, as: UTF8.self)], now: now)
+        }
+        let valid = try XCTUnwrap(configuration(value))
+        XCTAssertNotNil(valid.localHandoffJSON)
+        XCTAssertFalse(valid.allows(try XCTUnwrap(URL(string: "https://example.com/"))))
+        XCTAssertNil(MusicStudioAppConfiguration.startup(environment: ["NOVA_STRICT_OFFLINE": "1"]))
+        for origin in ["https://example.com", "http://127.0.0.1", "http://localhost:18766", "http://127.0.0.1:18766/escape"] {
+            var wrong = value; wrong["origin"] = origin; XCTAssertNil(try configuration(wrong))
+        }
+        for key in ["nonce", "manifestDigest", "runtimeConfigDigest", "helperIdentityDigest"] {
+            var wrong = value; wrong[key] = "wrong"; XCTAssertNil(try configuration(wrong))
+        }
+        value["expiresAt"] = 999000; XCTAssertNil(try configuration(value))
+    }
+
     func testExplicitLoopbackHostedOriginContainsNavigation() throws {
         let start = try XCTUnwrap(URL(string: "http://127.0.0.1:18766/music-studio.html"))
         let configuration = try XCTUnwrap(MusicStudioAppConfiguration.localHosted(startURL: start))

@@ -73,3 +73,48 @@ test('self asserted native enforcement booleans cannot replace a receipt adapter
  inventory.runtimeClosureVersion=1;inventory.runtimeEvidence={contractDigest:'1'.repeat(64),complete:true,network:{native:'ENFORCED'},nativeClosure:{complete:true},dynamicImports:{complete:true},codec:{complete:true},largeArtifacts:{complete:true}};
  await assert.rejects(b.verify(f.pipeline),/native-network-receipt-adapter-unavailable/);
 });
+
+async function localFixture(){
+ const f=fixture();await bind(f);f.context.location={origin:'http://127.0.0.1:18766'};
+ const envelope={manifest:f.manifest,trust:{buildRevision:'fixture',manifestDigest:await hash(new TextEncoder().encode(distribution.canonical(f.manifest)))},runtimeConfigText:distribution.canonical({version:1,models:[{id:'m'}],dependencies:[{id:'p'}],native:[],assets:[]})};
+ const binding={buildRevision:'fixture',manifestDigest:envelope.trust.manifestDigest,runtimeConfigDigest:await hash(new TextEncoder().encode(envelope.runtimeConfigText)),helperIdentityDigest:await hash(new TextEncoder().encode(distribution.canonical(f.manifest.helper)))};
+ const h={format:'NOVA_LOCAL_BROWSER_HANDOFF',version:1,origin:f.context.location.origin,nonce:'1'.repeat(64),session:'2'.repeat(64),expiresAt:Date.now()+60000,...binding};
+ const wire={format:'NOVA_LOCAL_BROWSER_ENVELOPE',version:1,origin:h.origin,nonce:h.nonce,session:h.session,expiresAt:h.expiresAt,binding,envelope};
+ f.health.lifecycleSession=h.session;const events=[];
+ f.context.fetch=async(url,options)=>{
+  if(url.endsWith('/health'))return {ok:true,json:async()=>f.health};
+  if(url.endsWith('/lifecycle')){events.push(JSON.parse(options.body).state);return {ok:true}};
+  return {ok:true,text:async()=>JSON.stringify(wire)};
+ };
+ return {...f,h,wire,events};
+}
+test('local browser handoff uses production bootstrap, strict health and one-shot replay guard',async()=>{
+ const f=await localFixture();const r=await f.pipeline.bootstrapLocal(f.h,{sha256:hash});
+ assert.equal(r.processingEligible,true);assert.equal(r.publicationEligible,false);
+ assert.deepEqual(f.events,['BROWSER_READY','IDENTITY_VERIFIED']);
+ await assert.rejects(f.pipeline.bootstrapLocal(f.h,{sha256:hash}),/replayed/);
+ assert.equal(f.pipeline.bootstrapStatus().status,'BLOCKED');
+});
+for(const key of ['origin','buildRevision','manifestDigest','runtimeConfigDigest','helperIdentityDigest','nonce','session']){
+ test('local browser rejects wrong '+key,async()=>{
+  const f=await localFixture();f.h[key]=key==='origin'?'https://example.invalid':'0'.repeat(64);
+  await assert.rejects(f.pipeline.bootstrapLocal(f.h,{sha256:hash}));
+  assert.equal(f.pipeline.bootstrapStatus().status,'BLOCKED');
+ });
+}
+test('expired session, wrong Helper session and incomplete evidence fail closed',async()=>{
+ for(const mutate of [f=>f.h.expiresAt=Date.now()-1,f=>f.health.lifecycleSession='old',f=>f.health.runtimeIdentity.actualInventory.processingEligible=false,f=>f.health.runtimeIdentity.actualInventory.complete=false]){
+  const f=await localFixture();mutate(f);await assert.rejects(f.pipeline.bootstrapLocal(f.h,{sha256:hash}));
+  assert.equal(f.pipeline.bootstrapStatus().status,'BLOCKED');
+  await assert.rejects(f.pipeline.processAudioLocally({size:1}),/strict-bootstrap/);
+ }
+});
+test('bootstrap failure retries only with fresh session, cancel invalidates receipts',async()=>{
+ const f=await localFixture();f.wire.binding.buildRevision='wrong';await assert.rejects(f.pipeline.bootstrapLocal(f.h,{sha256:hash}));
+ const fresh=await localFixture();assert.equal((await fresh.pipeline.bootstrapLocal(fresh.h,{sha256:hash})).processingEligible,true);
+ fresh.pipeline.stopLocal();assert.equal(fresh.pipeline.bootstrapStatus().status,'BLOCKED');
+});
+test('local processing rechecks fresh Helper session after successful bootstrap',async()=>{
+ const f=await localFixture();await f.pipeline.bootstrapLocal(f.h,{sha256:hash});f.health.lifecycleSession='old';
+ await assert.rejects(f.pipeline.processAudioLocally({size:1}),/stale-helper-session/);
+});

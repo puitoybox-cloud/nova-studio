@@ -27,7 +27,8 @@ struct MusicStudioWebViewContainer: NSViewRepresentable {
         private var host: MusicStudioWebViewHost?
 
         func makeWebView() -> WKWebView {
-            let host = MusicStudioWebViewHost(configuration: .production, platform: "mac")
+            guard let configuration = MusicStudioAppConfiguration.startup(environment: ProcessInfo.processInfo.environment) else { return WKWebView() }
+            let host = MusicStudioWebViewHost(configuration: configuration, platform: "mac")
             self.host = host
             host.start()
             return host.webView
@@ -54,7 +55,8 @@ struct MusicStudioWebViewContainer: UIViewRepresentable {
         private var host: MusicStudioWebViewHost?
 
         func makeWebView() -> WKWebView {
-            let host = MusicStudioWebViewHost(configuration: .production, platform: "ipad")
+            guard let configuration = MusicStudioAppConfiguration.startup(environment: ProcessInfo.processInfo.environment) else { return WKWebView() }
+            let host = MusicStudioWebViewHost(configuration: configuration, platform: "ipad")
             self.host = host
             host.start()
             return host.webView

@@ -4,6 +4,7 @@ public struct MusicStudioAppConfiguration: Equatable {
     public let startURL: URL
     public let allowedHosts: Set<String>
     private var isLoopbackHosted = false
+    public private(set) var localHandoffJSON: String? = nil
 
     /// Explicit adapter for a launcher-supplied loopback origin. Caller must
     /// validate its anchored envelope; this is navigation containment only.
@@ -15,6 +16,30 @@ public struct MusicStudioAppConfiguration: Equatable {
         var result = MusicStudioAppConfiguration(startURL: startURL)
         result.isLoopbackHosted = true
         return result
+    }
+
+    /// Explicit launcher channel. Invalid/missing strict startup never chooses HTTPS.
+    public static func startup(environment: [String: String], now: Date = Date()) -> MusicStudioAppConfiguration? {
+        guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return .production }
+        guard let text = environment["NOVA_LOCAL_HANDOFF"], text.utf8.count <= 4096,
+              let data = text.data(using: .utf8),
+              let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              value["format"] as? String == "NOVA_LOCAL_BROWSER_HANDOFF",
+              (value["version"] as? Int) == 1,
+              let origin = value["origin"] as? String,
+              let url = URL(string: origin + "/music-studio.html"),
+              var configuration = localHosted(startURL: url),
+              origin == "http://127.0.0.1:\(url.port!)",
+              let expiry = value["expiresAt"] as? Double,
+              expiry > now.timeIntervalSince1970 * 1000,
+              expiry <= now.timeIntervalSince1970 * 1000 + 300000,
+              let build = value["buildRevision"] as? String, !build.isEmpty else { return nil }
+        for key in ["nonce", "session", "manifestDigest", "runtimeConfigDigest", "helperIdentityDigest"] {
+            guard let digest = value[key] as? String, digest.count == 64,
+                  digest.allSatisfy({ "0123456789abcdef".contains($0) }) else { return nil }
+        }
+        configuration.localHandoffJSON = text
+        return configuration
     }
 
     public static let production = MusicStudioAppConfiguration(

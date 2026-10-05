@@ -4,6 +4,7 @@ import WebKit
 public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     public let webView: WKWebView
     public let configuration: MusicStudioAppConfiguration
+    public private(set) var lifecycleState = "PREPARING"
     private var midiCoordinator: NativeMidiCoordinator?
     private let platform: String
 
@@ -21,6 +22,12 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
                 forMainFrameOnly: true
             )
         )
+        if let handoff = configuration.localHandoffJSON {
+            webConfiguration.websiteDataStore = .nonPersistent()
+            webConfiguration.userContentController.addUserScript(WKUserScript(
+                source: "window.__NOVA_LOCAL_HANDOFF = " + handoff + ";",
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
         self.webView = WKWebView(frame: .zero, configuration: webConfiguration)
 
         super.init()
@@ -28,7 +35,8 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     }
 
     public func start() {
-        guard configuration.allows(configuration.startURL) else { return }
+        guard lifecycleState == "PREPARING", configuration.allows(configuration.startURL) else { lifecycleState = "FAILED"; return }
+        lifecycleState = "SERVER_READY"
 
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
         midiCoordinator = coordinator
@@ -37,6 +45,8 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     }
 
     public func stop() {
+        webView.evaluateJavaScript("window.MusicStudioAudioPipeline?.stopLocal(window.__NOVA_LOCAL_HANDOFF)", completionHandler: nil)
+        lifecycleState = "STOPPED"
         midiCoordinator?.stop()
         midiCoordinator = nil
         webView.stopLoading()
@@ -54,8 +64,16 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         decisionHandler(configuration.allows(url) ? .allow : .cancel)
     }
 
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        stop(); lifecycleState = "FAILED"
+    }
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        stop(); lifecycleState = "FAILED"
+    }
+
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard let url = webView.url, configuration.allows(url) else { return }
+        guard let url = webView.url, configuration.allows(url) else { lifecycleState = "FAILED"; stop(); return }
+        lifecycleState = "BROWSER_READY"
         #if os(iOS)
         let platformName = "ipad"
         #else
