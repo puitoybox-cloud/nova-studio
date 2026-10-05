@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.2';
+  const VERSION='1.0.3';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -117,11 +117,19 @@
     if(expected?.version!==1||expected.pipelineRevision!==2||expected.protocolVersion!==1||typeof expected.runtimeVersion!=='string'||!['sourceDigest','requirementsDigest','identityModuleDigest'].every(k=>/^[a-f0-9]{64}$/.test(expected[k])))throw Error('invalid-helper-identity-contract');
     expectedHelperIdentity=JSON.parse(JSON.stringify(expected));
   }
+  function identityText(value){
+    if(Array.isArray(value))return '['+value.map(identityText).join(',')+']';
+    if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+identityText(value[key])).join(',')+'}';
+    return JSON.stringify(value);
+  }
   function validateIdentity(payload,expected){
     const actual=payload?.runtimeIdentity;
     if(payload?.ok!==true||payload.localOnly!==true||payload.pipelineRevision!==expected.pipelineRevision||payload.sourceDigest!==expected.sourceDigest||payload.version!==1||actual?.version!==1)throw Error('helper-identity-mismatch');
     for(const key of ['protocolVersion','runtimeVersion','requirementsDigest','identityModuleDigest'])if(actual[key]!==expected[key])throw Error('helper-identity-mismatch:'+key);
-    if(expected.models!==undefined&&(actual.modelInventory?.status!=='VERIFIED'||JSON.stringify(actual.modelInventory.entries)!==JSON.stringify(expected.models)))throw Error('model-inventory-mismatch');
+    if(expected.models!==undefined&&(actual.modelInventory?.status!=='VERIFIED'||identityText(actual.modelInventory.entries)!==identityText(expected.models)))throw Error('model-inventory-mismatch');
+    if(expected.dependencyObserverDigest!==undefined&&actual.dependencyObserverDigest!==expected.dependencyObserverDigest)throw Error('helper-identity-mismatch:dependencyObserverDigest');
+    if(expected.dependencies!==undefined&&(actual.dependencyInventory?.status!=='VERIFIED'||identityText(actual.dependencyInventory.entries)!==identityText(expected.dependencies)))throw Error('dependency-inventory-mismatch');
+    if(expected.architectures!==undefined&&!expected.architectures.includes(actual.architecture))throw Error('unsupported-runtime');
     return true;
   }
   async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT}={}){

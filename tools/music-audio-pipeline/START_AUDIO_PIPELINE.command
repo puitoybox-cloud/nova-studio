@@ -45,6 +45,11 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   pause_and_exit 1
 fi
 
+if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ] && [ ! -x "$VENV_DIR/bin/python" ]; then
+  echo "Strict distribution requires a preinstalled local runtime; setup is blocked."
+  exit 1
+fi
+
 if [ ! -x "$VENV_DIR/bin/python" ]; then
   echo "初回セットアップを開始します。"
   "$PYTHON_BIN" -m venv "$VENV_DIR"
@@ -54,6 +59,7 @@ if [ ! -x "$VENV_DIR/bin/python" ]; then
 fi
 
 if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
+  if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then exit 1; fi
   echo "Audio Pipelineの互換部品を修復します。"
   "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
 fi

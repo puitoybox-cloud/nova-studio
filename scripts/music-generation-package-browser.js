@@ -10,9 +10,27 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
   page.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push({type:m.type(),text:m.text()})});page.on('pageerror',e=>messages.push({type:'pageerror',text:e.message}));
   try{
    await page.route('**/*',r=>{if(r.request().url()==='https://nova-generation-isolated.test/')return r.fulfill({status:200,contentType:'text/html',body:'<!doctype html><body>Isolated binary contract</body>'});external.push(r.request().url());return r.abort()});await page.goto('https://nova-generation-isolated.test/');
-   await page.addScriptTag({path:'music-studio-ingress.js'});await page.addScriptTag({path:'music-studio-binary-boundary.js'});await page.addScriptTag({path:'music-studio.js'});await page.addScriptTag({path:'music-studio-package-resources.js'});await page.addScriptTag({path:'music-studio-runtime-capabilities.js'});await page.addScriptTag({path:'music-studio-distribution-capabilities.js'});await page.addScriptTag({path:'music-studio-portable-package.js'});await page.addScriptTag({path:'music-studio-generation-adapter.js'});await page.addScriptTag({path:'music-studio-binding-prerequisites.js'});await page.addScriptTag({path:'music-studio-publication-prebinding.js'});await page.addScriptTag({path:'music-studio-audio-pipeline.js'});await page.waitForFunction(()=>MusicStudio.state.loaded,{},{timeout:15000});
+   await page.addScriptTag({path:'music-studio-ingress.js'});await page.addScriptTag({path:'music-studio-binary-boundary.js'});await page.addScriptTag({path:'music-studio.js'});await page.addScriptTag({path:'music-studio-package-resources.js'});await page.addScriptTag({path:'music-studio-runtime-capabilities.js'});await page.addScriptTag({path:'music-studio-distribution-capabilities.js'});await page.addScriptTag({path:'music-studio-portable-package.js'});await page.addScriptTag({path:'music-studio-generation-adapter.js'});await page.addScriptTag({path:'music-studio-binding-prerequisites.js'});await page.addScriptTag({path:'music-studio-publication-prebinding.js'});await page.addScriptTag({path:'music-studio-distribution-identity.js'});await page.addScriptTag({path:'music-studio-audio-pipeline.js'});await page.waitForFunction(()=>MusicStudio.state.loaded,{},{timeout:15000});
    const result=await bound(page.evaluate(async()=>{
     const app=MusicStudio,codec=MusicStudioPortablePackage,adapter=MusicStudioGenerationAdapter,cases=[];
+    {
+    const distribution=MusicStudioDistributionIdentity;
+    const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+    const manifest={version:1,buildRevision:'offline-fixture',helper:{version:1,pipelineRevision:2,protocolVersion:1,runtimeVersion:'1',sourceDigest:'a'.repeat(64),requirementsDigest:'b'.repeat(64),identityModuleDigest:'c'.repeat(64),dependencyObserverDigest:'f'.repeat(64)},models:[{id:'fixture',revision:'1',digest:'d'.repeat(64),byteLength:3}],dependencies:[{id:'python',version:'3',digest:'e'.repeat(64)}],architectures:['x86_64'],assets:[]};
+    const trust={buildRevision:'offline-fixture',manifestDigest:await hash(new TextEncoder().encode(distribution.canonical(manifest)))};
+    const boundDistribution=await distribution.bind(manifest,trust,{sha256:hash});
+    const health={ok:true,localOnly:true,host:'127.0.0.1',port:8766,version:1,pipelineRevision:2,sourceDigest:manifest.helper.sourceDigest,runtimeIdentity:{...manifest.helper,architecture:'x86_64',modelInventory:{status:'VERIFIED',entries:manifest.models},dependencyInventory:{status:'VERIFIED',entries:manifest.dependencies}}};
+    const distributionSavedFetch=window.fetch;
+    try{
+     window.fetch=async()=>({ok:true,json:async()=>structuredClone(health)});
+     boundDistribution.configure(MusicStudioAudioPipeline);
+     if((await boundDistribution.verify(MusicStudioAudioPipeline)).status!=='VERIFIED')throw Error('strict distribution');cases.push('distribution strict verified');
+     for(const key of ['modelInventory','dependencyInventory']){const previous=health.runtimeIdentity[key].status;health.runtimeIdentity[key].status='UNCONFIGURED';let rejected=false;try{await boundDistribution.verify(MusicStudioAudioPipeline)}catch{rejected=true}if(!rejected)throw Error(key+' accepted');health.runtimeIdentity[key].status=previous;cases.push(key+' rejected')}
+     await boundDistribution.verify(MusicStudioAudioPipeline);cases.push('distribution retry');
+     if(distribution.legacy().status!=='UNVERIFIED')throw Error('legacy verified');cases.push('distribution legacy unverified');
+    }finally{window.fetch=distributionSavedFetch;MusicStudioAudioPipeline.configureIdentity(null)}
+
+    }
     const check=(v,msg)=>{if(!v)throw Error(msg)};
     const p=app.makeProject({projectId:'p',projectName:'synthetic'});p.audioAssets=[{assetId:'a',size:3,storage:{kind:'external',reference:'offline.wav'}}];p.unknown={future:true};
     const snapshot={format:app.BACKUP_FORMAT,version:1,projects:[p],settings:app.defaultSettings(),unknown:{keep:true}},key='projects[0].audioAssets[0]';
