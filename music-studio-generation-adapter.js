@@ -26,7 +26,12 @@ function create({backend,validateMetadata,metadataRepository=null}){
    check();if(typeof id!=='string'||!id.trim())throw Error('generation-id-required');
    if(JSON.stringify(g.settings??null)!==JSON.stringify(g.snapshot.settings??null))throw Error('settings-mismatch');
    if(new Set(g.binaries.map(b=>b.key)).size!==g.binaries.length)throw Error('duplicate-binary');
-   const text=await call(()=>codec.write(g.snapshot,{generationId:id,validateMetadata,scope:g.scope??'complete',bindings:new Map(g.binaries.map(b=>[b.key,b.bytes])),reason:()=>control.reason?.()||(mine!==epoch?'superseded':null)}));
+   let text;
+   if(g.packageText!==undefined){
+    const original=await call(()=>codec.read(g.packageText,{validateMetadata}));
+    if(original.package.generationId!==id||JSON.stringify(original.generation.snapshot)!==JSON.stringify(g.snapshot)||JSON.stringify(original.generation.settings)!==JSON.stringify(g.settings??null))throw Error('package-generation-mismatch');
+    text=JSON.stringify(original.package);
+   }else text=await call(()=>codec.write(g.snapshot,{generationId:id,validateMetadata,scope:g.scope??'complete',bindings:new Map(g.binaries.map(b=>[b.key,b.bytes])),reason:()=>control.reason?.()||(mine!==epoch?'superseded':null)}));
    // prepare must reserve a fresh immutable slot; never overwrite a committed generation.
    await call(()=>backend.prepare(id));prepared=true;
    await call(()=>backend.stageMetadata(id,text));

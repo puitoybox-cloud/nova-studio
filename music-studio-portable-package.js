@@ -29,7 +29,7 @@ async function read(input,{validateMetadata,reason=()=>null}={}){
  for(const e of p.entries){if(!object(e)||typeof e.key!=='string'||entries.has(e.key))fail('duplicate-entry');if(!expected.has(e.key))fail('unexpected-entry');if(e.contract!=='raw-bytes-v1')fail('unsupported-binary-contract');if(!Number.isSafeInteger(e.byteLength)||e.byteLength<0||!/^[a-f0-9]{64}$/.test(e.digest))fail('invalid-entry-metadata');const bytes=byteArray(e.bytes);if(bytes.length!==e.byteLength)fail('size-mismatch');if(await digest(bytes)!==e.digest)fail('digest-mismatch');const d=expected.get(e.key);if(d.declaredSize!==null&&d.declaredSize!==bytes.length)fail('size-mismatch');entries.set(e.key,bytes);check();}
  const complete=inventory.issues.length===0&&inventory.dependencies.every(d=>!['unsupported','ambiguous'].includes(d.status)&&entries.has(d.key));
  if(p.scope==='complete'&&!complete)fail('incomplete-package');
- check();return{package:p,complete,generation:{id:p.generationId,snapshot:copy(p.snapshot),settings:copy(p.snapshot.settings??null),binaries:[...entries].map(([key,bytes])=>({key,bytes}))}};
+ check();return{package:p,complete,generation:{packageText:JSON.stringify(p),id:p.generationId,snapshot:copy(p.snapshot),settings:copy(p.snapshot.settings??null),binaries:[...entries].map(([key,bytes])=>({key,bytes}))}};
 }
 async function write(snapshot,{generationId,bindings=new Map(),scope='complete',validateMetadata,reason=()=>null,extensions={}}={}){
  const baseline=JSON.stringify(snapshot),snap=copy(snapshot),check=()=>{const why=reason()||(JSON.stringify(snapshot)!==baseline?'stale':null);if(why)fail(why)};check();metadata(snap,validateMetadata);
