@@ -40,6 +40,13 @@ def inspect(root,manifest,anchor,build):
     report['missingManifestIdentities']=missing
     report['trustedManifest']='EXTERNALLY_ANCHORED'
     if missing or mismatches:report.update(status='OPEN',complete=False)
+    from runtime_evidence import assembly_evidence
+    report['artifactAssemblyComplete'] = report['complete']
+    report['runtimeAssembly'] = assembly_evidence(runtime)
+    report['assemblyReady'] = report['artifactAssemblyComplete'] and report['runtimeAssembly']['complete']
+    report['complete'] = report['assemblyReady']
+    report['status'] = 'COMPLETE' if report['assemblyReady'] else 'OPEN'
+    report['publicationEligible'] = False
     return report
 
 if __name__=='__main__':
@@ -47,9 +54,16 @@ if __name__=='__main__':
     for name in ('root','manifest','anchor','build'):parser.add_argument('--'+name,required=True)
     args=parser.parse_args()
     try:
+        # Validate verifier source with the primitive trust-root verifier before cached bootstrap.
+        from distribution_binding import load_manifest
+        from dependency_identity import verify_local_asset
+        manifest=load_manifest(args.manifest,args.anchor,args.build)
+        expected=next(e for e in manifest['assets'] if e['id']=='artifact-verification-source')
+        verify_local_asset(Path(__file__).resolve().parent.parent/'tools/music-audio-pipeline',
+                           'artifact_verification.py',expected,1024*1024)
         result=inspect(args.root,args.manifest,args.anchor,args.build)
         print(json.dumps(result,ensure_ascii=False,indent=2))
-        raise SystemExit(0 if result['complete'] else 2)
-    except (ValueError,OSError,KeyError):
+        raise SystemExit(0 if result.get('assemblyReady') else 2)
+    except (ValueError,OSError,KeyError,StopIteration):
         print(json.dumps({'version':1,'status':'OPEN','complete':False,'reason':'assembly-authentication-or-closure-failed','externalRequests':0}))
         raise SystemExit(2)

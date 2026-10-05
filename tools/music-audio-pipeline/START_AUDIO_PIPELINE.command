@@ -45,6 +45,12 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   pause_and_exit 1
 fi
 
+# Strict entry executes before legacy setup, health reuse, or network-capable tools.
+if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then
+  [ -x "$VENV_DIR/bin/python" ] || { echo "Preinstalled strict runtime required."; exit 2; }
+  exec "$VENV_DIR/bin/python" -I local_distribution_entry.py
+fi
+
 if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ] && [ ! -x "$VENV_DIR/bin/python" ]; then
   echo "Strict distribution requires a preinstalled local runtime; setup is blocked."
   exit 1

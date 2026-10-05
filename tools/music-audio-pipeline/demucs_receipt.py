@@ -20,7 +20,7 @@ def unique(pairs):
 
 
 def validate_receipt(value,expected,nonce):
-    if not isinstance(value,dict) or set(value)!={'format','version','nonce','status','child','loader','model','companions','native','closure','lifetime'}:
+    if not isinstance(value,dict) or set(value)-{'runtimeEvidence'}!={'format','version','nonce','status','child','loader','model','companions','native','closure','lifetime'}:
         raise ValueError('missing-or-invalid-child-receipt')
     if value['format']!=FORMAT or type(value['version']) is not int or value['version']!=1 or value['nonce']!=nonce:
         raise ValueError('stale-child-receipt')
@@ -30,6 +30,12 @@ def validate_receipt(value,expected,nonce):
     closure=value['closure']
     if not isinstance(closure,dict) or closure.get('complete') is not True or closure.get('status')!='COMPLETE':raise ValueError('partial-child-closure')
     if closure.get('entries')!=expected['closureEntries']:raise ValueError('child-closure-mismatch')
+    if 'runtimeEvidenceDigest' in expected:
+        evidence=value.get('runtimeEvidence')
+        if (not isinstance(evidence,dict) or evidence.get('contractDigest')!=expected['runtimeEvidenceDigest'] or
+                evidence.get('complete') is not False or evidence.get('publicationEligible') is not False or
+                evidence.get('network',{}).get('native')!='UNVERIFIED'):
+            raise ValueError('missing-wrong-or-overstated-child-runtime-evidence')
     return copy.deepcopy(value)
 
 

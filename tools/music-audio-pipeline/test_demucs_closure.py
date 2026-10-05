@@ -228,7 +228,11 @@ class AssemblyCallerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             module,graph,runtime=self.fixture(root)
             with patch.object(module,'bootstrap',return_value=runtime),patch.object(module,'load_contract',return_value=graph),patch.object(module,'verify_assembly',return_value={'complete':True,'status':'COMPLETE'}):
-                self.assertTrue(module.inspect(root,'manifest','anchor','build')['complete'])
+                report=module.inspect(root,'manifest','anchor','build')
+                self.assertTrue(report['artifactAssemblyComplete'])
+                self.assertFalse(report['complete'])
+                self.assertFalse(report['assemblyReady'])
+                self.assertEqual(report['status'],'OPEN')
     def test_wrong_model_digest_revision_and_missing_identity(self):
         for key,value in [('digest','0'*64),('revision','wrong'),('id','absent')]:
             with tempfile.TemporaryDirectory() as root:

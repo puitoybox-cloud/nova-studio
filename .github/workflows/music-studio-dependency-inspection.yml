@@ -69,6 +69,7 @@ jobs:
           node-version: '22'
       - name: Full regression, syntax and whitespace
         run: |
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_verification.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_demucs_closure.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_runtime_inventory.py -v
           python3 scripts/music-offline-asset-inventory.py > /tmp/music-offline-inventory.json

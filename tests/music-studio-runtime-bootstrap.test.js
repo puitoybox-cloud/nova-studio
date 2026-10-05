@@ -49,3 +49,27 @@ test('cleared or replaced expected identity invalidates verified bootstrap and p
  f.pipeline.configureIdentity(null);release();await assert.rejects(pending,/stale/);
  assert.equal(f.pipeline.bootstrapStatus().mode,'LEGACY');
 });
+
+async function nativeBoundFixture(){
+ const f=fixture(),config=distribution.canonical({version:1,models:[{id:'m'}],dependencies:[{id:'p'}],native:[],assets:[{id:'runtime-evidence',path:'runtime-evidence.json'}]});
+ f.manifest.assets=[{id:'runtime-config',revision:'1',digest:await hash(new TextEncoder().encode(config)),byteLength:new TextEncoder().encode(config).length},{id:'runtime-evidence',revision:'1',digest:'1'.repeat(64),byteLength:1}];
+ f.health.runtimeIdentity.actualInventory.assets=structuredClone(f.manifest.assets);
+ const b=await distribution.bootstrap(f.manifest,{buildRevision:'fixture',manifestDigest:await hash(new TextEncoder().encode(distribution.canonical(f.manifest)))},{sha256:hash,runtimeConfigText:config});
+ return {f,b};
+}
+test('authenticated native evidence cannot be omitted by a complete identity response',async()=>{
+ const {f,b}=await nativeBoundFixture();assert.equal(b.expected.actualInventory.runtimeEvidenceDigest,'1'.repeat(64));
+ await assert.rejects(b.verify(f.pipeline),/actual-native-runtime-evidence-unverified/);
+});
+test('unknown native networking and incomplete dynamic codec evidence reject claimed processing success',async()=>{
+ for(const mutate of [e=>e.network.native='UNVERIFIED',e=>e.contractDigest='0'.repeat(64),e=>e.nativeClosure.complete=false,e=>e.dynamicImports.complete=false,e=>e.codec.complete=false,e=>e.largeArtifacts.complete=false]){
+  const {f,b}=await nativeBoundFixture();const inventory=f.health.runtimeIdentity.actualInventory;
+  inventory.runtimeClosureVersion=1;inventory.runtimeEvidence={contractDigest:'1'.repeat(64),complete:true,network:{native:'ENFORCED'},nativeClosure:{complete:true},dynamicImports:{complete:true},codec:{complete:true},largeArtifacts:{complete:true}};
+  mutate(inventory.runtimeEvidence);await assert.rejects(b.verify(f.pipeline),/actual-native-runtime-evidence-unverified/);
+ }
+});
+test('self asserted native enforcement booleans cannot replace a receipt adapter',async()=>{
+ const {f,b}=await nativeBoundFixture(),inventory=f.health.runtimeIdentity.actualInventory;
+ inventory.runtimeClosureVersion=1;inventory.runtimeEvidence={contractDigest:'1'.repeat(64),complete:true,network:{native:'ENFORCED'},nativeClosure:{complete:true},dynamicImports:{complete:true},codec:{complete:true},largeArtifacts:{complete:true}};
+ await assert.rejects(b.verify(f.pipeline),/native-network-receipt-adapter-unavailable/);
+});

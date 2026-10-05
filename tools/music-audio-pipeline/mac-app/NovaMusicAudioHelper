@@ -28,6 +28,12 @@ is_nova_pipeline(){
   printf '%s' "$health" | "$identity_python" "$PIPELINE_DIR/helper_identity.py" "$PIPELINE_DIR"
 }
 
+# Strict branch precedes rsync, installation, process reuse and hosted browser open.
+if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then
+  [ -n "${NOVA_LOCAL_PYTHON:-}" ] && [ -x "$NOVA_LOCAL_PYTHON" ] || exit 2
+  exec "$NOVA_LOCAL_PYTHON" -I "$APP_RESOURCES/pipeline/local_distribution_entry.py"
+fi
+
 mkdir -p "$PIPELINE_DIR"
 /usr/bin/rsync -a --delete --exclude '.venv' --exclude 'audio-pipeline.log' --exclude '.pipeline.pid' "$APP_RESOURCES/pipeline/" "$PIPELINE_DIR/"
 cd "$PIPELINE_DIR"

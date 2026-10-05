@@ -48,6 +48,22 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
       if(!rejected||MusicStudioAudioPipeline.bootstrapStatus().status!=='BLOCKED')throw Error('production caller '+reason);cases.push('production caller '+reason);
      }
      await MusicStudioAudioPipeline.bootstrapIdentity(envelope,{sha256:hash});cases.push('production caller retry');
+     const nativeManifest=structuredClone(manifest),nativeConfig=distribution.canonical({version:1,models:[{id:'fixture'}],dependencies:[{id:'python'}],native:[],assets:[{id:'runtime-evidence',path:'runtime-evidence.json'}]});
+     nativeManifest.assets=[{id:'runtime-config',revision:'1',digest:await hash(new TextEncoder().encode(nativeConfig)),byteLength:new TextEncoder().encode(nativeConfig).length},{id:'runtime-evidence',revision:'1',digest:'1'.repeat(64),byteLength:1}];
+     const nativeBootstrap=await distribution.bootstrap(nativeManifest,{buildRevision:'offline-fixture',manifestDigest:await hash(new TextEncoder().encode(distribution.canonical(nativeManifest)))},{sha256:hash,runtimeConfigText:nativeConfig});
+     health.runtimeIdentity.actualInventory.assets=nativeManifest.assets;
+     for(const mode of ['missing','unknown-network','wrong-digest','native','dynamic','codec','large','asserted-enforced']){
+      const i=health.runtimeIdentity.actualInventory;i.runtimeClosureVersion=1;i.runtimeEvidence={contractDigest:'1'.repeat(64),complete:true,network:{native:'ENFORCED'},nativeClosure:{complete:true},dynamicImports:{complete:true},codec:{complete:true},largeArtifacts:{complete:true}};
+      if(mode==='missing'){delete i.runtimeClosureVersion;delete i.runtimeEvidence}
+      else if(mode==='unknown-network')i.runtimeEvidence.network.native='UNVERIFIED';
+      else if(mode==='wrong-digest')i.runtimeEvidence.contractDigest='0'.repeat(64);
+      else if(mode==='native')i.runtimeEvidence.nativeClosure.complete=false;
+      else if(mode==='dynamic')i.runtimeEvidence.dynamicImports.complete=false;
+      else if(mode==='codec')i.runtimeEvidence.codec.complete=false;
+      else if(mode==='large')i.runtimeEvidence.largeArtifacts.complete=false;
+      let rejected=false;try{await nativeBootstrap.verify(MusicStudioAudioPipeline)}catch(e){rejected=e.message===(mode==='asserted-enforced'?'native-network-receipt-adapter-unavailable':'actual-native-runtime-evidence-unverified')}
+      if(!rejected)throw Error('native bootstrap accepted '+mode);cases.push('native bootstrap rejected '+mode);
+     }
 
 
     }finally{window.fetch=distributionSavedFetch;MusicStudioAudioPipeline.configureIdentity(null)}
