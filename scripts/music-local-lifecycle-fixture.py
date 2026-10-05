@@ -13,7 +13,7 @@ config=json.dumps({'version':1,'models':[],'dependencies':[],'native':[],'assets
 manifest={'version':1,'buildRevision':'browser-fixture','helper':helper,'models':[],'dependencies':[],'architectures':['x86_64'],'assets':[{'id':'runtime-config','revision':'1','digest':hashlib.sha256(config.encode()).hexdigest(),'byteLength':len(config.encode())}]}
 envelope={'manifest':manifest,'trust':{'buildRevision':manifest['buildRevision'],'manifestDigest':digest(manifest)},'runtimeConfigText':config}
 binding={'buildRevision':manifest['buildRevision'],'manifestDigest':digest(manifest),'runtimeConfigDigest':hashlib.sha256(config.encode()).hexdigest(),'helperIdentityDigest':digest(helper)}
-assets={'/music-studio.html':b'<!doctype html><meta charset="utf-8"><title>Disposable local lifecycle</title><script src="/music-studio-distribution-identity.js"></script><script src="/music-studio-audio-pipeline.js"></script>',**{'/'+name:(root/name).read_bytes() for name in ['music-studio-distribution-identity.js','music-studio-audio-pipeline.js']}}
+assets={'/music-studio.html':b'<!doctype html><meta charset="utf-8"><title>Disposable local lifecycle</title><link rel="icon" href="data:,"><script src="/music-studio-distribution-identity.js"></script><script src="/music-studio-audio-pipeline.js"></script>',**{'/'+name:(root/name).read_bytes() for name in ['music-studio-distribution-identity.js','music-studio-audio-pipeline.js']}}
 server=LocalEnvelopeServer(assets,envelope,expected_assets={key:hashlib.sha256(value).hexdigest() for key,value in assets.items()},expected_binding=binding)
 events=[];server.on_lifecycle=lambda state:events.append(state)
 try:

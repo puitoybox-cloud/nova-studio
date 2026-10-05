@@ -126,9 +126,9 @@
     }catch(error){if(epoch===bootstrapEpoch){expectedHelperIdentity=null;bootstrapState='BLOCKED'}throw error}
   }
   const usedLocalSessions=new Set();
-  let localController=null,localHeartbeat=null;
+  let localController=null,localHeartbeat=null,localSession=null,localExpiresAt=0;
   async function bootstrapLocal(handoff,controls={}){
-    bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;
+    bootstrapState='BLOCKED';expectedHelperIdentity=null;localSession=null;++bootstrapEpoch;
     const fail=code=>{throw Error(code)};
     let notify=async()=>{};
     try{
@@ -161,15 +161,15 @@
       if(envelope.manifest.buildRevision!==h.buildRevision||canonical(envelope.trust)!==canonical({buildRevision:h.buildRevision,manifestDigest:h.manifestDigest}))fail('local-envelope-build-mismatch');
       await notify('BROWSER_READY');check();
       const result=await bootstrapIdentity(envelope,{...controls,signal,sha256,lifecycleSession:h.session});check();
-      await notify('IDENTITY_VERIFIED');
+      await notify('IDENTITY_VERIFIED');localSession=h.session;localExpiresAt=h.expiresAt;
       if(root.setInterval)localHeartbeat=root.setInterval(()=>notify('BROWSER_READY').catch(()=>stopLocal()),10000);
       root.addEventListener?.('pagehide',()=>stopLocal(h),{once:true});
       return {...result,processingEligible:true,publicationEligible:false};
-    }catch(error){bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;localController?.abort();await notify('FAILED').catch(()=>{});throw error}
+    }catch(error){bootstrapState='BLOCKED';expectedHelperIdentity=null;localSession=null;++bootstrapEpoch;localController?.abort();await notify('FAILED').catch(()=>{});throw error}
   }
   function stopLocal(h){
     localController?.abort();if(localHeartbeat)root.clearInterval?.(localHeartbeat);localHeartbeat=null;
-    bootstrapState='BLOCKED';expectedHelperIdentity=null;++bootstrapEpoch;
+    bootstrapState='BLOCKED';expectedHelperIdentity=null;localSession=null;++bootstrapEpoch;
     if(h)root.navigator?.sendBeacon?.(h.origin+'/lifecycle',new Blob([JSON.stringify({state:'STOPPED',session:h.session,nonce:h.nonce})],{type:'application/json'}));
   }
   function bootstrapStatus(){return {status:bootstrapState,mode:bootstrapState==='LEGACY_UNVERIFIED'?'LEGACY':'STRICT'}}
@@ -229,8 +229,8 @@
     if(['PENDING','BLOCKED'].includes(bootstrapState))throw Error('strict-bootstrap-incomplete');
     const localEpoch=bootstrapEpoch,localSignal=localController?.signal;
     const expected=options.expected||expectedHelperIdentity;
-    const check=()=>{const why=options.signal?.aborted||localSignal?.aborted?'Abort':localSignal&&bootstrapEpoch!==localEpoch?'stale':options.reason?.();if(why)throw Error(why)};check();
-    if(expected)await connectIdentity({...options,expected});
+    const check=()=>{const why=localSession&&localExpiresAt<=Date.now()?'expired-local-session':options.signal?.aborted||localSignal?.aborted?'Abort':localSignal&&bootstrapEpoch!==localEpoch?'stale':options.reason?.();if(why)throw Error(why)};check();
+    if(expected)await connectIdentity({...options,expected,...(localSession?{lifecycleSession:localSession}:{})});
     check();
     if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
       throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');

@@ -114,3 +114,7 @@ test('bootstrap failure retries only with fresh session, cancel invalidates rece
  const fresh=await localFixture();assert.equal((await fresh.pipeline.bootstrapLocal(fresh.h,{sha256:hash})).processingEligible,true);
  fresh.pipeline.stopLocal();assert.equal(fresh.pipeline.bootstrapStatus().status,'BLOCKED');
 });
+test('local processing rechecks fresh Helper session after successful bootstrap',async()=>{
+ const f=await localFixture();await f.pipeline.bootstrapLocal(f.h,{sha256:hash});f.health.lifecycleSession='old';
+ await assert.rejects(f.pipeline.processAudioLocally({size:1}),/stale-helper-session/);
+});

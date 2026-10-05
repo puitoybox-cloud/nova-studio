@@ -50,7 +50,8 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(l.state,'FAILED');self.assertTrue(l.server.closed)
     def test_helper_failure(self):
         l=self.make();self.child.exited=True
-        with self.assertRaisesRegex(ValueError,'helper-startup'):l.start()
+        with patch('local_distribution_entry.os.killpg'):
+            with self.assertRaisesRegex(ValueError,'helper-startup'):l.start()
         self.assertTrue(l.server.closed)
     def test_server_failure(self):
         l=self.make()

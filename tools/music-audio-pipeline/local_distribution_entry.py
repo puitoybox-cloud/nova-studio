@@ -146,7 +146,7 @@ class LocalEnvelopeServer:
                 try:
                     length = int(self.headers.get('Content-Length', '-1'))
                     if (not 0 < length <= 4096 or self.headers.get('Host') != owner.origin[7:] or
-                            self.headers.get('Origin') != owner.origin or owner.closed or not owner.consumed):
+                            self.headers.get('Origin') != owner.origin or owner.closed or not owner.consumed or time.monotonic() >= owner.deadline):
                         raise ValueError('wrong-lifecycle-transport')
                     value = json.loads(self.rfile.read(length))
                     if (value.get('session') != owner.session or value.get('nonce') != owner.nonce or
@@ -339,7 +339,7 @@ class LocalProductionLifecycle:
         try:
             while not self.done.wait(0.25):
                 if (self.child.poll() is not None or time.monotonic()-self.last_seen > 30 or
-                        (not self.server.consumed and time.monotonic() >= self.server.deadline)):
+                        time.monotonic() >= self.server.deadline):
                     self.state = 'FAILED'; break
         finally: self.close(failed=self.state == 'FAILED')
 
@@ -348,13 +348,16 @@ class LocalProductionLifecycle:
         self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
         self.server.close()
         if self.child is not None:
-            # Own start_new_session group only; never search/kill unrelated processes.
-            if self.child.poll() is None:
-                try:
-                    os.killpg(self.child.pid, signal.SIGTERM); self.child.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    os.killpg(self.child.pid, signal.SIGKILL); self.child.wait(timeout=3)
+            # Own start_new_session group only, including descendants after leader exit.
+            try:
+                os.killpg(self.child.pid, signal.SIGTERM)
+                self.child.wait(timeout=3)
+                # A leader may have exited before its descendants; invalidate that group too.
+                try: os.killpg(self.child.pid, signal.SIGKILL)
                 except ProcessLookupError: pass
+            except subprocess.TimeoutExpired:
+                os.killpg(self.child.pid, signal.SIGKILL); self.child.wait(timeout=3)
+            except ProcessLookupError: pass
             self.child = None
         self.state = 'FAILED' if failed else 'STOPPED'
 
