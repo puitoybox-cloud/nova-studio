@@ -2,6 +2,11 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'music-studio-package-resources.js'
+      - 'music-studio-runtime-capabilities.js'
+      - 'music-studio-distribution-capabilities.js'
+      - 'music-studio-binding-prerequisites.js'
+      - 'tests/music-studio-resource-runtime.test.js'
       - 'music-studio-generation-adapter.js'
       - 'music-studio-portable-package.js'
       - 'tests/music-studio-generation-package.test.js'
