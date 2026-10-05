@@ -30,6 +30,15 @@ class LoadedTests(unittest.TestCase):
         self.assertFalse(r['complete'])
         self.assertEqual(r['entries'][0]['mappedIntegrity'],'UNVERIFIED')
 
+    def test_native_graph_missing_edges_never_complete(self):
+        from runtime_evidence import native_dependency_graph
+        e={'id':'codec','module':'codec.frontend','digest':'a'*64,'version':'1'}
+        for entries in [[],[{'id':'codec','status':'OBSERVED_LOADED','digest':'a'*64,'artifactStatus':'VERIFIED_ARTIFACT'}]]:
+            r=native_dependency_graph({'native':[e]},[],entries,{'entries':[]})
+            self.assertFalse(r['complete']);self.assertFalse(r['edges'][0]['runtimeObserved'])
+            self.assertEqual(r['edges'][0]['evidenceLevel'],'EXPECTED_ONLY')
+            self.assertEqual(r['edges'][0]['status'],'UNVERIFIED')
+
     def test_disk_and_loaded_evidence_separate(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);(root/'codec.so').write_bytes(b'fixture')
@@ -98,6 +107,14 @@ class TransportTests(unittest.TestCase):
             self.assertFalse(s.consumed)
             s.deadline=0;self.assertEqual(self.request(s,headers=self.headers(s))[0],403)
         finally:s.close()
+    def test_startup_failure_closes_socket_and_rejects_stale_retry(self):
+        s=self.make()
+        with patch('threading.Thread.start',side_effect=RuntimeError('fixture startup failure')):
+            with self.assertRaises(RuntimeError):s.start()
+        self.assertTrue(s.closed);self.assertEqual(s.server.socket.fileno(),-1)
+        s.close()
+        with self.assertRaises(ValueError):s.start()
+
     def test_external_bind_collision(self):
         for host in ['0.0.0.0','localhost','example.invalid','::']:
             with self.assertRaises(ValueError):self.make(host=host)

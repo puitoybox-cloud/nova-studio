@@ -14,7 +14,7 @@ No actual approved Basic Pitch/Demucs/native runtime assembled here. Decoder/res
 
 ## Validation
 
-Local node --test 1764 PASS, fail/skipped 0. All 172 JavaScript syntax PASS. Python 116 total: 111 PASS, five **preexisting** accuracy tests unavailable in this dependency-free runtime; no existing tests deleted/skipped/weakened. New tests: eight. Native test uses a separately loaded stdlib _ssl entry only when available; statically linked local Python proves built-in origin and supplies no actual shared-artifact observation. Mac CI is needed for the dynamic extension path. Existing streaming/cache, native/import/codec/launcher and HTTP regressions retained. Bash syntax and git diff --check PASS. Swift compiler and Chrome are absent locally: exact-head CI results must be checked separately; do not substitute #307 evidence. Test source has no external AI/provider/model/package download.
+Local node --test 1764 PASS, fail/skipped 0. All 172 JavaScript syntax PASS. Python 118 total: 113 PASS, five **preexisting** accuracy tests unavailable in this dependency-free runtime; no existing tests deleted/skipped/weakened. New tests: ten. Native test uses a separately loaded stdlib _ssl entry only when available; statically linked local Python proves built-in origin and supplies no actual shared-artifact observation. Mac CI is needed for the dynamic extension path. Existing streaming/cache, native/import/codec/launcher and HTTP regressions retained. Bash syntax and git diff --check PASS. Swift compiler and Chrome are absent locally: exact-head CI results must be checked separately; do not substitute #307 evidence. Test source has no external AI/provider/model/package download.
 
 ## Production Binding Matrix
 
