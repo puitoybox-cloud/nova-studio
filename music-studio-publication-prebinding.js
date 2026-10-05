@@ -15,12 +15,13 @@ function create(options){
   checkRepository();const pointer=await backend.readSelectedPointer({limits:options.limits});checkRepository();if(control.reason?.())throw Error(control.reason());
   identity(pointer,repositoryId,generationId);const record=await backend.read(generationId,{limits:options.limits});
   if(pointer.digest!==record?.marker?.digest)throw Error('selected-pointer-marker-mismatch');
-  const generation=await adapter.reloadGeneration(generationId);identity(generation.identity,repositoryId,generationId);checkRepository();if(control.reason?.())throw Error(control.reason());return generation;
+  const generation=await adapter.reloadGeneration(generationId);identity(generation.identity,repositoryId,generationId);checkRepository();if(control.reason?.())throw Error(control.reason());
+  const acknowledged=await backend.readSelectedPointer({limits:options.limits});identity(acknowledged,repositoryId,generationId);if(acknowledged.digest!==pointer.digest)throw Error('selected-pointer-stale');checkRepository();if(control.reason?.())throw Error(control.reason());return generation;
  }
  return{binding:'INJECTED ONLY',productionBinding:'BLOCKED BY BACKEND',async importPackage(file,control={}){
   const mine=++epoch;active?.abort();const controller=new AbortController();active=controller;const stop=()=>controller.abort();control.signal?.addEventListener?.('abort',stop,{once:true});
-  const reason=()=>mine!==epoch?'superseded':control.signal?.aborted||controller.signal.aborted?'Abort':control.reason?.()||null;checkRepository();
-  try{
+  const reason=()=>mine!==epoch?'superseded':control.signal?.aborted||controller.signal.aborted?'Abort':control.reason?.()||null;
+  try{checkRepository();
   const parsed=await codec.readFile(file,{limits:options.limits,validateMetadata:options.validateMetadata,reason,signal:controller.signal});
   identity(parsed.generation.identity,repositoryId,parsed.generation.id);checkRepository();if(reason())throw Error(reason());
   const result=await adapter.restoreGeneration(parsed.generation,{reason:()=>{checkRepository();return reason()}});

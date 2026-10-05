@@ -6,7 +6,7 @@ function create(){let epoch=0,active=null;return{cancel(){epoch++;active?.abort(
  const mine=++epoch;active?.abort();const controller=new AbortController();active=controller;let reader,listener;
  const check=()=>{const why=signal?.aborted||controller.signal.aborted?'Abort':mine!==epoch?'superseded':reason();if(why)throw Error(why)};
  const integer=n=>{if(!Number.isSafeInteger(n)||n<0)throw Error('unsafe-size')};integer(maxBytes);integer(file?.size);const declared=file.size;if(declared>maxBytes)throw Error('over-limit:file-bytes');check();
- const wait=promise=>new Promise((resolve,reject)=>{const stop=()=>reject(Error('Abort'));controller.signal.addEventListener('abort',stop,{once:true});Promise.resolve(promise).then(resolve,reject).finally(()=>controller.signal.removeEventListener('abort',stop))});
+ const wait=promise=>new Promise((resolve,reject)=>{const stop=()=>reject(Error('Abort'));controller.signal.addEventListener('abort',stop,{once:true});if(controller.signal.aborted)stop();Promise.resolve(promise).then(resolve,reject).finally(()=>controller.signal.removeEventListener('abort',stop))});
  listener=()=>controller.abort();signal?.addEventListener?.('abort',listener,{once:true});let text='',observed=0;
  try{
   if(typeof file.stream==='function'&&typeof TextDecoder==='function'){
