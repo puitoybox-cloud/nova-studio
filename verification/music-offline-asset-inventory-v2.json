@@ -212,8 +212,8 @@
     },
     {
       "id": "music-studio-distribution-identity.js",
-      "byteLength": 6331,
-      "digest": "24eb5eac80ce1bc8029f484517a9e0fdbedc1a652f2aef834063b00c64774673",
+      "byteLength": 6477,
+      "digest": "555650870f5a1f50efba9eba2a4e741e9d6dfef0fc05aea144ad487e65a50b4c",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1428,8 +1428,8 @@
     },
     {
       "id": "tests/music-studio-runtime-bootstrap.test.js",
-      "byteLength": 4449,
-      "digest": "dee19298f66f1b47df369992ca5c5685887394f09ad9b53836559821204b2807",
+      "byteLength": 5650,
+      "digest": "b0397e7074405ec18b8b07d2b77dab79616829fab73b4e2523e686ff790b8c20",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"
