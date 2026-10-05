@@ -82,12 +82,25 @@ class ChildSession:
         if self.process is None or self.process.poll() is not None:raise ValueError('child-not-live')
         return validate_receipt(self.receipt,self.expected,self.nonce)
 
-    def process_audio(self,source,output):
+    def process_audio(self,source,output,*,binding=None):
         with self.lock:
-            self.current();self._send({'type':'process','nonce':self.nonce,'source':str(Path(source).resolve()),'output':str(Path(output).resolve())})
+            if 'runtimeEvidenceDigest' in self.expected and binding is None: raise ValueError('missing-strict-processing-binding')
+            self.current()
+            request = {'type':'process','nonce':self.nonce,'source':str(Path(source).resolve()),'output':str(Path(output).resolve())}
+            if binding is not None: request['binding'] = copy.deepcopy(binding)
+            self._send(request)
             try:
                 result=self._receive()
-                if set(result)!={'version','nonce','status'} or result['version']!=1 or result['nonce']!=self.nonce or result['status']!='PROCESSED':raise ValueError('child-processing-failed')
+                keys = {'version','nonce','status'} | ({'processingReceipt'} if binding is not None else set())
+                if set(result)!=keys or result['version']!=1 or result['nonce']!=self.nonce or result['status']!='PROCESSED':raise ValueError('child-processing-failed')
+                if binding is not None:
+                    receipt = result['processingReceipt']
+                    if (not isinstance(receipt, dict) or receipt.get('format') != 'NOVA_PROCESSING_RECEIPT' or
+                            receipt.get('parentBinding') != binding or
+                            any(receipt.get('binding', {}).get(key) != binding[key] for key in ('session', 'request', 'input')) or receipt.get('complete') is not True or
+                            receipt.get('processingEligible') is not True or receipt.get('publicationEligible') is not False):
+                        raise ValueError('invalid-or-partial-child-processing-receipt')
+                    self.current(); return copy.deepcopy(receipt)
                 self.current();return True
             except Exception:self.close();raise
 

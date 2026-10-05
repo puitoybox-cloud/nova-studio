@@ -76,6 +76,13 @@ def process(model,binding,source,output,codec=None,receipt=None):
     import torchaudio
     from demucs.audio import convert_audio
     original_loader=separate.get_model_from_args;original_track=separate.load_track
+    original_writer = getattr(separate, 'save_audio', None)
+    original_apply = getattr(separate, 'apply_model', None)
+    original_sf_write = None
+    if receipt is not None:
+        if codec is None or original_apply is None or original_writer is None: raise ValueError('missing-demucs-processing-backend')
+        import soundfile
+        original_sf_write = soundfile.write
     separate.get_model_from_args=lambda args:model
     def local_track(track,audio_channels,samplerate):
         # No FFmpeg/PATH fallback. All subprocesses in this child are forbidden.
@@ -88,6 +95,7 @@ def process(model,binding,source,output,codec=None,receipt=None):
             samples,sr=decode_soundfile(soundfile,track,codec['version'],receipt=receipt)
             audio=torch.from_numpy(samples.T)
         if receipt is None: return convert_audio(audio,sr,samplerate,audio_channels)
+        if sr == samplerate: receipt.not_applicable('resample', 'INPUT_RATE_EQUALS_TARGET_RATE')
         import julius
         original_resample = julius.resample_frac
         def observed_resample(*args, **kwargs):
@@ -96,20 +104,32 @@ def process(model,binding,source,output,codec=None,receipt=None):
         try: return convert_audio(audio,sr,samplerate,audio_channels)
         finally: julius.resample_frac = original_resample
     separate.load_track=local_track
-    original_writer = getattr(separate, "save_audio", None)
     if receipt is not None:
         def observed_writer(*args, **kwargs):
+            # Receipt of dispatch wrapper is separate from the concrete soundfile encoder below.
             return receipt.call('encoder','demucs-stem-writer',original_writer,*args,**kwargs)
         separate.save_audio = observed_writer
+    if receipt is not None:
+        def observed_apply(actual_model, *args, **kwargs):
+            if actual_model is not model: raise ValueError('demucs-stem-model-replaced')
+            return receipt.call('stem', 'demucs-retained-model', original_apply, actual_model, *args, **kwargs)
+        separate.apply_model = observed_apply
+        def observed_sf_write(path, *args, **kwargs):
+            if '://' in str(path): raise ValueError('remote-codec-output')
+            return receipt.call('encoder', 'soundfile-output', original_sf_write, path, *args,
+                native_ids=codec['nativeIds'], **kwargs)
+        soundfile.write = observed_sf_write
     try:separate.main(['-n',binding['modelName'],'--repo',str(binding['repository']),'-o',str(output),str(source)])
     finally:
         separate.get_model_from_args=original_loader;separate.load_track=original_track
-        if receipt is not None: separate.save_audio=original_writer
+        if receipt is not None:
+            separate.save_audio=original_writer; separate.apply_model=original_apply
+            if original_sf_write is not None: soundfile.write=original_sf_write
     return receipt.snapshot() if receipt is not None else None
 
 
 def main():
-    install_offline_guard()
+    guard = install_offline_guard()
     root,manifest_path,anchor,build=sys.argv[1:5]
     runtime=bootstrap(manifest_path,anchor,build,root)
     contract=load_contract(root,runtime.manifest)
@@ -135,16 +155,40 @@ def main():
             if not line:return
             if len(line)>MAX_RECEIPT:raise ValueError('child-request-budget')
             request=json.loads(line,object_pairs_hook=unique)
-            if set(request)!={'type','nonce','source','output'} or request['type']!='process' or request['nonce']!=nonce:raise ValueError('stale-child-request')
+            if set(request)!={'type','nonce','source','output','binding'} or request['type']!='process' or request['nonce']!=nonce:raise ValueError('stale-child-request')
             runtime.recheck()
             source=Path(request['source']);output=Path(request['output'])
             if not source.is_absolute() or not output.is_absolute() or source.is_symlink() or not source.is_file() or source.stat().st_size>500*1024*1024:raise ValueError('unsafe-child-audio-input')
             if not receipt["runtimeEvidence"].get("complete"):
                 raise ValueError("strict-child-native-network-incomplete")
-            with contextlib.redirect_stdout(sys.stderr):
-                from runtime_evidence import ProcessingReceipt
-                processing_receipt=process(model,binding,source,output,evidence_contract["codec"],ProcessingReceipt(root,evidence_contract))
-            runtime.recheck();write({'version':1,'nonce':nonce,'status':'PROCESSED'})
+            from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, audio_identity, evidence_digest, processing_binding
+            if request['binding'].get('input') != audio_identity(source): raise ValueError('wrong-child-input-identity')
+            child_evidence = observe(root,evidence_contract,build=build); child_evidence['network'] = guard.snapshot()
+            child_inventory = {'identityComplete':True, 'models':[receipt['model']], 'runtimeEvidence':child_evidence}
+            child_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
+            bound = BoundProcessingReceipt(child_binding)
+            try:
+                with contextlib.redirect_stdout(sys.stderr):
+                    processing_receipt=process(model,binding,source,output,evidence_contract["codec"],ProcessingReceipt(root,evidence_contract))
+                runtime.recheck()
+                processing_receipt['entries'].append({'stage':'model','logicalId':'demucs-retained-model',
+                    'identity':receipt['model']['identity'],'status':'VERIFIED','nativeIdentity':'NOT_APPLICABLE',
+                    'completed':True,'fallback':False,'evidence':'ACTUAL_RETAINED_OBJECT_AND_VERIFIED_SERIALIZED_BYTES'})
+                bound.add_calls(processing_receipt)
+                evidence = observe(root,evidence_contract,build=build); evidence['network'] = guard.snapshot()
+                # Identity set of request-owned WAV outputs only, never an output directory inventory.
+                files = sorted(output.glob('*/*/*.wav'))
+                if not files or len(files) > 16: raise ValueError('missing-or-excess-child-outputs')
+                identities = [audio_identity(path) for path in files]
+                identity = {'digest': evidence_digest(identities), 'byteLength': sum(e['byteLength'] for e in identities)}
+                child_inventory = {'identityComplete':True, 'models':[receipt['model']], 'runtimeEvidence':evidence}
+                current_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
+                processed = bound.finish(current_binding, child_inventory, identity)
+                bound.consume(processed, current_binding)
+                processed['parentBinding'] = request['binding']
+                write({'version':1,'nonce':nonce,'status':'PROCESSED','processingReceipt':processed})
+            finally:
+                if bound.state != 'CONSUMED': bound.abort()
     except Exception:
         write({'format':FORMAT,'version':1,'nonce':nonce,'status':'LOAD_OR_PROCESS_FAILED'})
         raise SystemExit(1)
