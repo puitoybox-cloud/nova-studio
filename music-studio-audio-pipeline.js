@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.5';
+  const VERSION='1.0.6';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -128,9 +128,10 @@
   function bootstrapStatus(){return {status:bootstrapState,mode:bootstrapState==='LEGACY_UNVERIFIED'?'LEGACY':'STRICT'}}
 
   function configureIdentity(expected){
-    if(expected===null){expectedHelperIdentity=null;return}
+    if(expected===null){expectedHelperIdentity=null;++bootstrapEpoch;bootstrapState='LEGACY_UNVERIFIED';return}
     if(expected?.version!==1||expected.pipelineRevision!==2||expected.protocolVersion!==1||typeof expected.runtimeVersion!=='string'||!['sourceDigest','requirementsDigest','identityModuleDigest'].every(k=>/^[a-f0-9]{64}$/.test(expected[k])))throw Error('invalid-helper-identity-contract');
     expectedHelperIdentity=JSON.parse(JSON.stringify(expected));
+    ++bootstrapEpoch;bootstrapState='PENDING_HEALTH';
   }
   function identityText(value){
     if(Array.isArray(value))return '['+value.map(identityText).join(',')+']';

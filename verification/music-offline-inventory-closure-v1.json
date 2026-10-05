@@ -102,7 +102,7 @@
     {
       "id": "index.html",
       "byteLength": 7352,
-      "digest": "8159081ba8c124de8e3b557a66ff9eec1fbfd342415a9e28e3a2e2a912ac3909",
+      "digest": "fd5acf581fde3290232e06387fdb71edb2d39ccc114e8e1f748bbc56abc7f156",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -173,8 +173,8 @@
     },
     {
       "id": "music-studio-audio-pipeline.js",
-      "byteLength": 15937,
-      "digest": "3013d506846eac60f237d690790ea24f6b0733c037ce91d302d83afcd05ce3a1",
+      "byteLength": 16043,
+      "digest": "6083c74c1ca6c4821f2741156fc385f55e35817676b86623c3d2c7aa485cf6c3",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -470,7 +470,7 @@
     {
       "id": "music-studio.html",
       "byteLength": 4689,
-      "digest": "828e3ea6866d83aec62dd7f76b649c43eff748a709b16ecc983b9d4c0b4a4964",
+      "digest": "e3eb9cfcc9e22c7e39b5e971d2921542793ae73ced458792162da0ea6d70b2e2",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "PRODUCT_SOURCE"
@@ -1102,7 +1102,7 @@
     {
       "id": "tests/music-studio-audio-pipeline.test.js",
       "byteLength": 15743,
-      "digest": "4f07daf7975897acd9a7d5af0a9f72194143aff9e52af1110a1ef45b59e766c3",
+      "digest": "e8851cc00807431cb23d19bc35fb7bff770ea1e1c6b9449d3567a18afdb5a8bf",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"
@@ -1453,8 +1453,8 @@
     },
     {
       "id": "tests/music-studio-runtime-bootstrap.test.js",
-      "byteLength": 7741,
-      "digest": "22c6ad6ca6ab2db6bbbe2d05f13bb30040ec99adaa2d8a1b2116e8fad4f53d30",
+      "byteLength": 8880,
+      "digest": "b05da68bb2e53eeb0e31d8ad500f46c9409ef964ec5965664797c65b9ed63705",
       "status": "LOCAL_SOURCE",
       "distributionStatus": "UNVERIFIED",
       "scope": "TEST_OR_TOOL"

@@ -36,3 +36,16 @@ test('production caller Abort Cancel stale and retry cannot fall through legacy'
  }
  assert.equal((await f.pipeline.bootstrapIdentity(envelope,{sha256:hash})).identityEligible,true);
 });
+
+test('cleared or replaced expected identity invalidates verified bootstrap and pending epoch',async()=>{
+ const f=fixture();const b=await bind(f);
+ const envelope={manifest:f.manifest,trust:{buildRevision:'fixture',manifestDigest:await hash(new TextEncoder().encode(distribution.canonical(f.manifest)))},runtimeConfigText:distribution.canonical({version:1,models:[{id:'m'}],dependencies:[{id:'p'}],native:[],assets:[]})};
+ await f.pipeline.bootstrapIdentity(envelope,{sha256:hash});f.pipeline.configureIdentity(null);
+ assert.equal(f.pipeline.bootstrapStatus().status,'LEGACY_UNVERIFIED');assert.equal(f.pipeline.bootstrapStatus().mode,'LEGACY');
+ await f.pipeline.bootstrapIdentity(envelope,{sha256:hash});f.pipeline.configureIdentity(b.expected);
+ assert.equal(f.pipeline.bootstrapStatus().status,'PENDING_HEALTH');
+ let release;const wait=new Promise(resolve=>release=resolve);
+ const pending=f.pipeline.bootstrapIdentity(envelope,{sha256:async bytes=>{await wait;return hash(bytes)}});
+ f.pipeline.configureIdentity(null);release();await assert.rejects(pending,/stale/);
+ assert.equal(f.pipeline.bootstrapStatus().mode,'LEGACY');
+});
