@@ -29,7 +29,7 @@ def write(value):
 def load(runtime,contract,expected,nonce):
     binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
     if binding['loaderVersion']!='4.0.1' or importlib.metadata.version('demucs')!=binding['loaderVersion']:raise ValueError('unsupported-or-wrong-loader-version')
-    closure=verify_closure(runtime.root,contract,stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
+    closure=verify_closure(runtime.root,contract,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
     if not closure['complete']:raise ValueError('partial-runtime-closure')
     primary=runtime.verify('models',binding['id'],binding['path'])
     companions=[runtime.verify('assets',e['id'],e['path']) for e in binding['companions']]
@@ -71,7 +71,7 @@ def load(runtime,contract,expected,nonce):
     return model,receipt
 
 
-def process(model,binding,source,output):
+def process(model,binding,source,output,codec=None):
     from demucs import separate
     import torchaudio
     from demucs.audio import convert_audio
@@ -79,7 +79,14 @@ def process(model,binding,source,output):
     separate.get_model_from_args=lambda args:model
     def local_track(track,audio_channels,samplerate):
         # No FFmpeg/PATH fallback. All subprocesses in this child are forbidden.
-        audio,sr=torchaudio.load(str(track))
+        if codec is None:
+            audio,sr=torchaudio.load(str(track))
+        else:
+            import soundfile
+            import torch
+            from runtime_evidence import decode_soundfile
+            samples,sr=decode_soundfile(soundfile,track,codec['version'])
+            audio=torch.from_numpy(samples.T)
         return convert_audio(audio,sr,samplerate,audio_channels)
     separate.load_track=local_track
     try:separate.main(['-n',binding['modelName'],'--repo',str(binding['repository']),'-o',str(output),str(source)])
@@ -91,6 +98,9 @@ def main():
     root,manifest_path,anchor,build=sys.argv[1:5]
     runtime=bootstrap(manifest_path,anchor,build,root)
     contract=load_contract(root,runtime.manifest)
+    from runtime_evidence import load as load_evidence, install_import_guard, observe
+    evidence_contract=load_evidence(runtime)
+    install_import_guard(root,evidence_contract)
     expected_asset=next(e for e in runtime.manifest['assets'] if e['id']=='demucs-child-config')
     runtime.verify('assets','demucs-child-config','demucs-child-config.json')
     raw=local(root,'demucs-child-config.json').read_bytes()
@@ -102,6 +112,7 @@ def main():
     if not isinstance(nonce,str) or len(nonce)!=32:raise ValueError('invalid-child-nonce')
     try:
         with contextlib.redirect_stdout(sys.stderr):model,receipt=load(runtime,contract,expected,nonce)
+        receipt["runtimeEvidence"]=observe(root,evidence_contract,build=build)
         write(receipt)
         binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
         while True:
@@ -113,7 +124,9 @@ def main():
             runtime.recheck()
             source=Path(request['source']);output=Path(request['output'])
             if not source.is_absolute() or not output.is_absolute() or source.is_symlink() or not source.is_file() or source.stat().st_size>500*1024*1024:raise ValueError('unsafe-child-audio-input')
-            with contextlib.redirect_stdout(sys.stderr):process(model,binding,source,output)
+            if not receipt["runtimeEvidence"].get("complete"):
+                raise ValueError("strict-child-native-network-incomplete")
+            with contextlib.redirect_stdout(sys.stderr):process(model,binding,source,output,evidence_contract["codec"])
             runtime.recheck();write({'version':1,'nonce':nonce,'status':'PROCESSED'})
     except Exception:
         write({'format':FORMAT,'version':1,'nonce':nonce,'status':'LOAD_OR_PROCESS_FAILED'})

@@ -9,7 +9,7 @@ from runtime_inventory import local
 from scoped_closure import load_contract, verify_closure
 from demucs_receipt import ChildSession, unique
 
-SOURCES = {'demucs-child-source':'demucs_child.py','demucs-receipt-source':'demucs_receipt.py',
+SOURCES = {'artifact-verification-source':'artifact_verification.py','runtime-evidence-source':'runtime_evidence.py','demucs-child-source':'demucs_child.py','demucs-receipt-source':'demucs_receipt.py',
     'scoped-closure-source':'scoped_closure.py','runtime-inventory-source':'runtime_inventory.py',
     'dependency-identity-source':'dependency_identity.py','distribution-binding-source':'distribution_binding.py'}
 
@@ -19,7 +19,7 @@ def start(runtime, manifest_path, anchor, build, guard):
         expected = runtime.expected('assets', identity)
         verify_local_asset(Path(__file__).parent, relative, expected, 1024*1024)
     contract = load_contract(runtime.root, runtime.manifest)
-    closure = verify_closure(runtime.root, contract,stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
+    closure = verify_closure(runtime.root, contract,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
     if not closure['complete']: raise ValueError('partial-parent-closure')
     runtime.verify('assets','demucs-child-config','demucs-child-config.json')
     config_asset = runtime.expected('assets','demucs-child-config')
@@ -40,6 +40,10 @@ def start(runtime, manifest_path, anchor, build, guard):
     if expected!=derived:raise ValueError('child-config-manifest-mismatch')
     # Receipt closure is computed, never embedded in its own config/graph digest.
     expected['closureEntries']=closure['entries']
+    from runtime_evidence import load as load_evidence
+    evidence_contract=load_evidence(runtime)
+    expected['runtimeEvidenceDigest']=hashlib.sha256(json.dumps(evidence_contract,sort_keys=True,
+        separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
     executable = runtime.resolve_executable('python-runtime',sys.executable)
     worker = str(Path(__file__).with_name('demucs_child.py').resolve())
     command = [executable,'-I',worker,str(runtime.root),str(Path(manifest_path).resolve()),anchor,build]

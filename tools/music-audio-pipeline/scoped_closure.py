@@ -10,7 +10,8 @@ from dependency_identity import verify_local_asset
 KINDS = {'PYTHON_DISTRIBUTION','NATIVE_EXTENSION','EXECUTABLE','MODEL','CONFIG','SOURCE','WEB_ASSET','PYTHON_RUNTIME'}
 LEVELS = {'VERIFIED_ARTIFACT','VERIFIED_ENTRY_FILE','OBSERVED_METADATA_ONLY','EXPECTED_ONLY','MISSING','UNSUPPORTED','UNVERIFIED'}
 MAX_FILES = 4096
-MAX_TOTAL = 256 * 1024 * 1024
+MAX_CONTRACT_BYTES = 1024 * 1024
+MAX_TOTAL = 16 * 1024**3
 
 
 def canonical(value):
@@ -22,9 +23,10 @@ def load_contract(root, manifest, asset_id='runtime-closure'):
     if binding is None:raise ValueError('missing-authenticated-closure')
     # The logical contract path is fixed; no recursive directory search or external URL.
     relative='runtime-closure.json'
-    verify_local_asset(root,relative,binding,65536)
-    raw=local(root,relative).read_bytes()
-    if len(raw)>65536 or hashlib.sha256(raw).hexdigest()!=binding['digest']:raise ValueError('stale-closure-contract')
+    verify_local_asset(root,relative,binding,MAX_CONTRACT_BYTES)
+    with local(root,relative).open('rb') as stream:
+        raw=stream.read(MAX_CONTRACT_BYTES+1)
+    if len(raw)>MAX_CONTRACT_BYTES or hashlib.sha256(raw).hexdigest()!=binding['digest']:raise ValueError('stale-closure-contract')
     def unique(pairs):
         result={}
         for k,v in pairs:
@@ -55,7 +57,7 @@ def validate_graph(contract):
         file_count+=len(files)
         if file_count>MAX_FILES:raise ValueError('global-closure-file-budget')
         for f in files:
-            if not isinstance(f,dict) or set(f)!={'path','digest','byteLength'} or not isinstance(f['path'],str) or type(f['byteLength']) is not int or not 0<f['byteLength']<=64*1024*1024 or not isinstance(f['digest'],str) or len(f['digest'])!=64 or any(c not in '0123456789abcdef' for c in f['digest']):raise ValueError('invalid-closure-file')
+            if not isinstance(f,dict) or set(f)!={'path','digest','byteLength'} or not isinstance(f['path'],str) or type(f['byteLength']) is not int or not 0<f['byteLength']<=8*1024**3 or not isinstance(f['digest'],str) or len(f['digest'])!=64 or any(c not in '0123456789abcdef' for c in f['digest']):raise ValueError('invalid-closure-file')
             if Path(f['path']).is_absolute() or '..' in Path(f['path']).parts or not Path(f['path']).parts:raise ValueError('unsafe-closure-path')
         expected_digest=hashlib.sha256(canonical(sorted(files,key=lambda f:f['path']))).hexdigest()
         if node['artifactDigest']!=expected_digest:raise ValueError('closure-artifact-digest-mismatch')
@@ -73,7 +75,7 @@ def validate_graph(contract):
     return by_id
 
 
-def verify_closure(root,contract,distribution=importlib.metadata.distribution,stamp_sink=None):
+def verify_closure(root,contract,distribution=importlib.metadata.distribution,stamp_sink=None,build="UNSPECIFIED"):
     contract=copy.deepcopy(contract);nodes=validate_graph(contract);results=[];total=0;stamps=[]
     for identity,node in nodes.items():
         level=node['evidence'];reason=None
@@ -88,7 +90,9 @@ def verify_closure(root,contract,distribution=importlib.metadata.distribution,st
                     total+=f['byteLength']
                     if total>MAX_TOTAL:raise ValueError('scoped-closure-byte-budget')
                     before=stable(local(root,f['path']))
-                    verify_local_asset(root,f['path'],f,64*1024*1024)
+                    from artifact_verification import VERIFIER
+                    VERIFIER.verify(root,f['path'],f,8*1024**3,identity=identity+':'+f['path'],
+                                    version=node['version'],build=build)
                     if stable(local(root,f['path']))!=before:raise ValueError('stale-closure-file')
                     stamps.append((f['path'],before))
                 if node['kind']=='PYTHON_DISTRIBUTION':

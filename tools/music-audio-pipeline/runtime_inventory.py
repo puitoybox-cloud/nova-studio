@@ -14,7 +14,7 @@ import threading
 from pathlib import Path
 from dependency_identity import verify_local_asset
 
-MAX_ARTIFACT_BYTES = 64 * 1024 * 1024
+MAX_ARTIFACT_BYTES = 8 * 1024**3
 MAX_ENTRIES = 128
 
 
@@ -57,6 +57,7 @@ class RuntimeInventory:
         self.assets = {}
         self.stamps = {}
         self.errors = []
+        self.verification_evidence = {}
         self._validate_bindings()
 
     def _validate_bindings(self):
@@ -92,7 +93,11 @@ class RuntimeInventory:
         path = local(self.root, relative)
         before = stable(path)
         expected = self.expected(kind, identity)
-        verify_local_asset(self.root, relative, expected, self.max_bytes)
+        from artifact_verification import VERIFIER
+        proof = VERIFIER.verify(self.root, relative, expected, self.max_bytes, identity=identity,
+                                version=expected.get('revision', expected.get('version', '1')),
+                                build=self.manifest.get('buildRevision', 'UNSPECIFIED'))
+        self.verification_evidence[(kind, identity)] = proof
         if stable(path) != before:
             raise ValueError('runtime-artifact-changed')
         self.stamps[(kind, identity)] = (relative, before)
@@ -200,7 +205,9 @@ class RuntimeInventory:
                 'missing': missing, 'artifactClosure': 'UNVERIFIED',
                 'architecture': platform.machine(), 'models': list(self.models.values()),
                 'dependencies': list(self.dependencies.values()), 'native': list(self.native.values()),
-                'assets': list(self.assets.values())}
+                'assets': list(self.assets.values()), 'largeArtifactVerification':
+                {'complete': not missing, 'entries': list(self.verification_evidence.values()),
+                 'cacheScope': 'PROCESS_LOCAL_DIGEST_RECEIPT'}}
 
     def require_processing(self):
         result = self.snapshot()
@@ -247,7 +254,7 @@ class OfflineRuntimeGuard:
             if permitted is not None and tuple(args[1]) == permitted and args[0] == permitted[0]:
                 self.state.command = None  # Single launch; no nested/reused permission.
                 return
-        if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system', 'os.exec', 'os.posix_spawn', 'os.fork'):
+        if event in ('socket.connect', 'socket.getaddrinfo', 'socket.sendto', 'subprocess.Popen', 'os.system', 'os.exec', 'os.posix_spawn', 'os.fork'):
             raise PermissionError('strict-offline-runtime-operation-blocked')
 
     def permit(self, command):

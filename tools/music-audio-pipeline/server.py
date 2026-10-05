@@ -48,9 +48,11 @@ DEMUCS_SESSION = None
 SCOPED_CLOSURE = {}
 INVENTORY_AGGREGATOR = None
 OFFLINE_GUARD = None
+RUNTIME_EVIDENCE_MODULE = None
+RUNTIME_EVIDENCE_CONTRACT = None
 
 def initialize_runtime():
-    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD
+    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
     if not STRICT_BOOTSTRAP:
         return
     try:
@@ -58,6 +60,11 @@ def initialize_runtime():
         from dependency_identity import verify_local_asset
         manifest = load_manifest(os.environ['NOVA_TRUSTED_MANIFEST_PATH'],
             os.environ.get('NOVA_TRUSTED_MANIFEST_DIGEST'), os.environ.get('NOVA_EXPECTED_BUILD_REVISION'))
+        # Authenticate the cache implementation with the uncached trust-root verifier before import.
+        verifier_source = next((e for e in manifest['assets'] if e['id'] == 'artifact-verification-source'), None)
+        if verifier_source is None:
+            raise ValueError('missing-authenticated-verifier-source')
+        verify_local_asset(_pipeline_directory, 'artifact_verification.py', verifier_source, 1024*1024)
         artifact = next((e for e in manifest['assets'] if e['id'] == 'runtime-inventory-source'), None)
         if artifact is None:
             raise ValueError('missing-authenticated-runtime-module')
@@ -85,8 +92,14 @@ def initialize_runtime():
         # Verify companion source bytes before importing any new production adapter.
         for identity, relative in [('demucs-parent-source','demucs_parent.py'),
                 ('demucs-receipt-source','demucs_receipt.py'), ('demucs-child-source','demucs_child.py'),
+                ('artifact-verification-source','artifact_verification.py'),
+                ('runtime-evidence-source','runtime_evidence.py'),
                 ('scoped-closure-source','scoped_closure.py'), ('inventory-aggregation-source','inventory_aggregation.py')]:
             verify_local_asset(_pipeline_directory, relative, RUNTIME_INVENTORY.expected('assets',identity), 1024*1024)
+        import runtime_evidence
+        RUNTIME_EVIDENCE_MODULE = runtime_evidence
+        RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
+        runtime_evidence.install_import_guard(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
         import demucs_parent
         import inventory_aggregation
         INVENTORY_AGGREGATOR = inventory_aggregation
@@ -94,6 +107,7 @@ def initialize_runtime():
         from scoped_closure import load_contract, verify_closure
         SCOPED_CLOSURE = verify_closure(RUNTIME_INVENTORY.root,
             load_contract(RUNTIME_INVENTORY.root, manifest),
+            build=RUNTIME_INVENTORY.manifest['buildRevision'],
             stamp_sink=lambda relative,stamp:RUNTIME_INVENTORY.stamps.__setitem__(('closure',relative),(relative,stamp)))
         if not SCOPED_CLOSURE['complete']:
             raise ValueError('partial-startup-scoped-closure')
@@ -125,7 +139,16 @@ def runtime_snapshot():
     if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
         return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'BLOCKED',
                 'reason': BOOTSTRAP_ERROR or 'missing-trusted-runtime-inventory'}
-    return INVENTORY_AGGREGATOR.snapshot(RUNTIME_INVENTORY, DEMUCS_SESSION, SCOPED_CLOSURE) if INVENTORY_AGGREGATOR else RUNTIME_INVENTORY.snapshot()
+    actual = INVENTORY_AGGREGATOR.snapshot(RUNTIME_INVENTORY, DEMUCS_SESSION, SCOPED_CLOSURE) if INVENTORY_AGGREGATOR else RUNTIME_INVENTORY.snapshot()
+    if RUNTIME_EVIDENCE_MODULE is None or RUNTIME_EVIDENCE_CONTRACT is None:
+        actual.update(complete=False, processingEligible=False, publicationEligible=False)
+        return actual
+    try:
+        evidence = RUNTIME_EVIDENCE_MODULE.observe(RUNTIME_INVENTORY.root,
+            RUNTIME_EVIDENCE_CONTRACT, build=RUNTIME_INVENTORY.manifest['buildRevision'])
+        return RUNTIME_EVIDENCE_MODULE.upgrade(actual, evidence)
+    except (ValueError, OSError):
+        return RUNTIME_EVIDENCE_MODULE.upgrade(actual)
 
 def runtime_health_identity():
     actual = runtime_snapshot()
@@ -264,9 +287,16 @@ def refine_clear_melody(events, source_path: Path):
     import soundfile as sf
 
     try:
-        channels, sr = sf.read(str(source_path), dtype="float32", always_2d=True)
+        if STRICT_BOOTSTRAP:
+            if RUNTIME_EVIDENCE_CONTRACT is None:
+                raise ValueError('missing-strict-codec-contract')
+            channels, sr = RUNTIME_EVIDENCE_MODULE.decode_soundfile(sf, source_path, RUNTIME_EVIDENCE_CONTRACT['codec']['version'])
+        else:
+            channels, sr = sf.read(str(source_path), dtype="float32", always_2d=True)
         audio = np.mean(channels, axis=1)
     except (RuntimeError, ValueError):
+        if STRICT_BOOTSTRAP:
+            raise ValueError("strict-codec-fallback-blocked") from None
         # Some supported containers require the runtime's librosa decoder.
         import librosa
         audio, sr = librosa.load(str(source_path), sr=22050, mono=True)
