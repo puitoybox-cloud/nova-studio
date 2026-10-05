@@ -1,0 +1,2173 @@
+{
+  "version": 1,
+  "liveRequests": 0,
+  "assets": [
+    {
+      "id": "app.js",
+      "byteLength": 469570,
+      "digest": "1a05ada5ea9cc39ea83597a6c7f2840c679d94b58b381f367f44de8007f94642",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "chatgpt-bridge.js",
+      "byteLength": 12276,
+      "digest": "2d0d11326614b440da45a084e2c25ad09ade912f864a949d96d4bfae5f3d442b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "data.js",
+      "byteLength": 7811,
+      "digest": "fe881eaf27c38fcf0ba989360ca686d49f857e260792a446277b5a14c9c00f65",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "dream-architect-link.js",
+      "byteLength": 16948,
+      "digest": "d496a51ded87afaf0eb44ddb9f2e1d37816e2751fa4494a49abe8bed8aafbbd3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "dream-architect-transfer-core.js",
+      "byteLength": 8043,
+      "digest": "d3ede74669f20d9c93dc23f1d261756cf462d03113bc96f7d3dbae148c9fb353",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "gemini-bridge-enhancement.css",
+      "byteLength": 589,
+      "digest": "fda00064deb33bda083b6237d18b2c9d168bb1be4e50cb3cc31866ac8e42ffce",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "gemini-bridge-enhancement.js",
+      "byteLength": 7720,
+      "digest": "495bb3621377a4cc47ce43260e4be97ddbe338211e114b6ecf7c7f77fd37b140",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "gemini-bridge.css",
+      "byteLength": 1932,
+      "digest": "9806b69b7094487a9b39fd207e725b7b8707332bdbfc24398a64223057cd9054",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "gemini-bridge.js",
+      "byteLength": 13446,
+      "digest": "91f59fce8382bae32c90b34013f847bad1d25743ecb5f95a1e7bc512fffebbe7",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "import-export.js",
+      "byteLength": 13973,
+      "digest": "2291dbcc1c2c72b9e20802f6c5716a1e7f3e9c13a7200a70d3e970511c3b9b8b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "index.html",
+      "byteLength": 7352,
+      "digest": "d904137ea46e16590a37071464947fc2df10a4b7c92c56c1cf8bf1534781e8eb",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-assistant-panel.css",
+      "byteLength": 2326,
+      "digest": "07e9589905aaaafd700c6ae1d1b4f1d97dcbcc32de01c9f4aea6abcc241dc3ee",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-assistant-panel.js",
+      "byteLength": 45083,
+      "digest": "46314e157010f37803f30b8fec5aa667f30f6fcc00c03bc47a1d7f26ab67c9fa",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-assistant-ui.js",
+      "byteLength": 4912,
+      "digest": "66a675f287512c2fa0d7938bb392f6c847fffb89b45698a176d2501eea4f1394",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-candidate-preview.js",
+      "byteLength": 17429,
+      "digest": "fb6cf3a98139c45e7ced1bb3b229f93603d85a120263370f2864e7383994f5b5",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-composition.js",
+      "byteLength": 35771,
+      "digest": "985121f09532e40c127d9403907ba51ee6f073ede08ca6715119a743ca872ab8",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-family-apply.js",
+      "byteLength": 18419,
+      "digest": "0c76e3815275552a91e36f4a3e54670390e17755dc038364da4c935289e13a4f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-family-preview.js",
+      "byteLength": 5334,
+      "digest": "3d906e1408c733a070839d509f7a1cbadf7da87b06e049336096969016584db3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ai-workflow.js",
+      "byteLength": 13724,
+      "digest": "43255f280f10281de92005dd002c63a2b1a94481a4504bef38dda5da64019425",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-audio-pipeline.js",
+      "byteLength": 14550,
+      "digest": "bedbe8eb37c0c9a3fe2df86dcb51221adf99bf09ec2bf4a5240bf5ba9392a3e8",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-audio.js",
+      "byteLength": 14199,
+      "digest": "c751e982b71834c56bd68241c093589036068fa6ec0dcc700731e8e4708e35b0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-binary-boundary.js",
+      "byteLength": 10627,
+      "digest": "58fd95fb95084d236782ff700a9d7b249ccc4e82554230c9410fdb556f1069d3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-binding-prerequisites.js",
+      "byteLength": 3510,
+      "digest": "68d3ea4fa59f9a8b7f69cba522e84ccb3e4e02a60099ae4cc951b4cf321c58c2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dependency-closure-inspection.js",
+      "byteLength": 10436,
+      "digest": "526d275d8ac11fb0e0e202a5bf061f957ad312faa892ecee17f1c589dad56825",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dependency-inspection.js",
+      "byteLength": 4456,
+      "digest": "a5ec746b0b5b7b9f023f81e76df0447ea861b591bafc19f5d5ccef736a796f4e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-distribution-capabilities.js",
+      "byteLength": 4610,
+      "digest": "5881e9881e4ca06563f52121ac840d475de1c5b72da76494474b9d0153b55442",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-distribution-identity.js",
+      "byteLength": 6477,
+      "digest": "555650870f5a1f50efba9eba2a4e741e9d6dfef0fc05aea144ad487e65a50b4c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dynamic-track-playback.js",
+      "byteLength": 12163,
+      "digest": "ae0a69728f6bcfd4a22dea39adb274a336290ea97a3ac56b56e7faeaeac19434",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dynamic-track-recording.js",
+      "byteLength": 7043,
+      "digest": "71502b93f6d2c0d2d97e9b971bff3c6c9e933de85ab0380a79d89952e66bf565",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dynamic-track-selection.css",
+      "byteLength": 4856,
+      "digest": "d9316d2803471d108fa4f33523aab67f036774b3eee129ba67802f47e06860f7",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-dynamic-track-selection.js",
+      "byteLength": 29233,
+      "digest": "483fa2a51fcc238e8c5116f0e9ef79900b6b5ebe80c381bd33c99008bc216591",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-editor.js",
+      "byteLength": 140547,
+      "digest": "d6a5d370809f8bf6a1552ab0cc276e5873cb701674833128cd2b2d131ec17e6d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-external-review-popover.js",
+      "byteLength": 2556,
+      "digest": "ffc6267727731d31be16de33f2fbe2df32e3b848cf1ebd02022858c1c67c2a33",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-external-song-import.js",
+      "byteLength": 3770,
+      "digest": "8edf354165cdd9df3d9e12644c91e20dc481dde7e04ea465baaf6f026d727b25",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-generation-adapter.js",
+      "byteLength": 8533,
+      "digest": "365e45786d24d5eeb0f79fca81984976015c76e32f541e9ff09bc53ffabceea1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ingress.js",
+      "byteLength": 2966,
+      "digest": "8297ceeb5a280ed778c77a0b4bcd06f144967ff6c1e044c3cf8eef3357499c4e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ipad-pr250-layout.css",
+      "byteLength": 8258,
+      "digest": "0f5f961964903da8cebc54cd425071a121a3517fb70a2cf4a41119c25dcdcd93",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ipad-touch.js",
+      "byteLength": 7013,
+      "digest": "a512245986e655102846ffda97908f4edcf1bf26940c58268624c5b23914e05c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-ipad.css",
+      "byteLength": 12085,
+      "digest": "a0857ced246774c09fcafbfec765578c042f209701196763a78795b2aeb184d8",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-measure-locks.js",
+      "byteLength": 10547,
+      "digest": "74b73c4b5c1da13e93669708d95025ea22ac657cb5a177869dde3212fef3b118",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-meter-map.js",
+      "byteLength": 3319,
+      "digest": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-midi-input.js",
+      "byteLength": 5702,
+      "digest": "5f45ae058e601e67637047685296da9f1d7f8c123c6753000ff1f60201836127",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-midi-parser.js",
+      "byteLength": 24909,
+      "digest": "e4c7977b49ebeff790f2f291a7d792451d1b3b104772b123dc42795561f91349",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-midi.js",
+      "byteLength": 17514,
+      "digest": "752ba37518bb2893ffd0b5bc85f9774e8743618c2c7738f8ac7c92df90a2301c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-observed-byte-verification.js",
+      "byteLength": 6391,
+      "digest": "19bf52ed5985774e7bb98fa943d9a642ccea4c04b17a7f0b730833170cf1bc1f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-package-resources.js",
+      "byteLength": 5172,
+      "digest": "6c5098aec1b56ed45ab8fb20e9327859b687af2e50eaee4c6e145c92b62c9d1a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-package-restore-review.js",
+      "byteLength": 6239,
+      "digest": "4f9c310be6eccc898d9d7743f18ac06a01b44416250cf05d10d26b03e7dc1a03",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-playback.js",
+      "byteLength": 6147,
+      "digest": "5aaf7e632f8da3e1059f27cc3dac0b67e6140d694bd580d1e697dc008b3db9ad",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-portable-package.js",
+      "byteLength": 7450,
+      "digest": "3f3b04aa37704edeab86f465e7d775c50d77c851e6bd38568ab2d678762cb262",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-production-verification-contract.js",
+      "byteLength": 7185,
+      "digest": "80ab995a0a00977ea34796c6ad7db68e17ec5873b78bc97ed1b68cb12cf4c77c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-publication-prebinding.js",
+      "byteLength": 3327,
+      "digest": "e14df7385137f35573bdba985b0f39885ac6beea80e0a99660add7a4a3a4b3f9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-runtime-capabilities.js",
+      "byteLength": 4057,
+      "digest": "4b83852b39077127d5609519f5b13429fbae806b31494cdad8d115c299bc06b6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-scoped-midi-repair.js",
+      "byteLength": 6066,
+      "digest": "9b5315aa09af59f310931985f1436022bd30080443bb530a395b306dc6af2761",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-storage-contract-inspection.js",
+      "byteLength": 2384,
+      "digest": "bf3557ea908a47340b9ef4228443a2ba70aef3eecb65e34b0c211e9a4dc2e80b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio-structure-info.js",
+      "byteLength": 3097,
+      "digest": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio.css",
+      "byteLength": 157034,
+      "digest": "43db794a84ac56188f23ae906d983e3d8112eb4a6614ea857d657df547d7483d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio.html",
+      "byteLength": 4689,
+      "digest": "fd0ee04ea41df5cab413b08aed7589f6efa1e538c6fce663ed24af24aaaa7c37",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "music-studio.js",
+      "byteLength": 350224,
+      "digest": "eacb6b46619f81871ad1b9aed9f671f9c0f6685272bff9a708796daaf9b93dbd",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "navigation.js",
+      "byteLength": 4604,
+      "digest": "6dfa3a35d4e75a8c9569a5d9629ca63e9daa9f258d5f15db295c750d9c915f97",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "nova-menu.css",
+      "byteLength": 8566,
+      "digest": "e2efc6de5efc490946b5c136ffde13bef0829cfe0d8e5fdd8050e81b8fdc2f8a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "nova-menu.js",
+      "byteLength": 5128,
+      "digest": "cc352a41a3eb73c6dd1f4f73c241dd09ac1cbc0aed036f58ac1241c680350eb3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "nova-studio-sections.css",
+      "byteLength": 9671,
+      "digest": "4ee0b14953bddee3a3a068a84a0c6711842e971d1af3370317ecc9f603a8b37e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "nova-studio-sections.js",
+      "byteLength": 22489,
+      "digest": "c9aad40fea4ffec0da6cb2ed14fd015efffd80aff20b4be6192cebae6d45eae5",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "nova-unified-ui.css",
+      "byteLength": 11399,
+      "digest": "4d4c4218964a7c4d191045841309c80711d655e822930ff67198590ece7beae8",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "route-render-fix.js",
+      "byteLength": 463,
+      "digest": "7dd0fc8f08316647e33e7fd1528c40446331d5c0f829a90fe6f4a55f422b350b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "scripts/music-audio-acceptance.js",
+      "byteLength": 4990,
+      "digest": "c6b5c785767acf6632ec2b98ce713b9e8bbb1dc7e0e6e3aaf82c9695440ef790",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-binary-boundary-browser.js",
+      "byteLength": 6454,
+      "digest": "827a1dd89a2faffe713472fcf50e968293e79e0ec2bf157576e569326fa36e7f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-generation-fixture-backend.js",
+      "byteLength": 2099,
+      "digest": "4285ed77b9be66e502280ff656fc4d021c78ba94421699638964311e3b549d1d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-generation-package-browser.js",
+      "byteLength": 18462,
+      "digest": "af867bf09e04d4baaf4f63049691f8542b5fe261ab80f6551b0c6197b47ac7e9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-offline-asset-inventory.py",
+      "byteLength": 3215,
+      "digest": "61efc1b1934e82ac928734320da82e4ee1b7f783d58eef3c81892b2be561d279",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-ai-assistant-browser-smoke.js",
+      "byteLength": 73591,
+      "digest": "10e6dcd6f1e6be3f443ed7b61f83b85a5a08486f272285b33039ff5880d67e44",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-coordinated-browser-smoke.js",
+      "byteLength": 7795,
+      "digest": "8fdce5b3f94297bd520435097b02d7c0703cc2af8dd91817c1a6314adcce4333",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-disposable-durable-backend.js",
+      "byteLength": 6180,
+      "digest": "3f96a5a5dce09130982c66c87d91559fd4d08677bd8f52dd77c18cd97dd90c0d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-dynamic-track-playback-browser-smoke.js",
+      "byteLength": 10441,
+      "digest": "5b017ebe7557ef7e0fbe69798c857c694015cc229cec459834ec442b7aba2aa2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-dynamic-track-recording-browser-smoke.js",
+      "byteLength": 12381,
+      "digest": "b3148aa56075a1b00cdf137544d90ac2a1225116eba276cfb63a89a075d6ebdb",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-external-partial-edit-browser-smoke.js",
+      "byteLength": 7251,
+      "digest": "6bee0ed89dd11dd60bb95f79543feef6a76bc39b9324f369580a29894dbdb37e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-external-pointer-editing-browser-smoke.js",
+      "byteLength": 8867,
+      "digest": "2f859636d2f0d9ab6b9ee0e9400e4ab91e30299f57e46ebc515f3b8c63180a77",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-external-quantize-browser-smoke.js",
+      "byteLength": 7681,
+      "digest": "b056cb3bcb62dadc7fbe745e1fe9a95e47ff5a2018b60376b9989fed6a0fee1f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-external-track-editing-browser-smoke.js",
+      "byteLength": 13878,
+      "digest": "4286e12c635cf4f92ddf669e51bffa63dceeb16655e3693498666f698219111a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-generated-midi-cleanup-browser-smoke.js",
+      "byteLength": 13683,
+      "digest": "bda363ed0abcb87fcb319e0cfdb448c064c4c9de52afc27514f70cb59d0b695e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-live-api-smoke.js",
+      "byteLength": 1044,
+      "digest": "981a9c614e046cda886dfc23ff642f09e7439b2848914c8c7ca0029642e3dbb1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-studio-standalone-dependency-inspection.js",
+      "byteLength": 2694,
+      "digest": "48b00e7ffcbfc6123419bd97b8070541861f391a1bc8c52a1e695b4640400953",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/music-transaction-regression.js",
+      "byteLength": 9195,
+      "digest": "2131d101109698cfe54023b020f084e26f6d21d8e7d44a413786a7b8f66aedad",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "scripts/security-browser-smoke.js",
+      "byteLength": 4277,
+      "digest": "8b972b8a402627684ea9ac5b4ccb152c3de2e6a8fbc38fc5dd0fb199c9761e98",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "security.js",
+      "byteLength": 4702,
+      "digest": "29a46716d8f7efb17455c2b526a30073fce5432e30c4f6f5d959c7af21f4b6a4",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "storage.js",
+      "byteLength": 6249,
+      "digest": "982531f532668de1e942f1823823799828c7ece4a6f0fc3c5f302ad3a9395ce3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-basic-status.css",
+      "byteLength": 1559,
+      "digest": "e546309d040f2fc387b10fdde0b2665adce85da13a537a3b6547c98f672ac67a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-basic-status.js",
+      "byteLength": 7115,
+      "digest": "4929cb259a8258eb82ecec94d3ac3d1b6e6a7fd04db6abe4da74f46888070a72",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-detail-polish.css",
+      "byteLength": 7703,
+      "digest": "0c9f39cbdd6072b1cf460680cc0483604e44e6afe7a9769665a9e5aa21d31afe",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-direct-render.js",
+      "byteLength": 1040,
+      "digest": "d15307523ddc2182ce9d6cc4c29b07e81171a3b164704582a82cc75a86a8ee71",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-empty-gallery.js",
+      "byteLength": 903,
+      "digest": "a1af68e17efdb7474979ba267bf888bcf29cc0256c7cb1c74032f1affc4ecf09",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-form-fix.js",
+      "byteLength": 760,
+      "digest": "789b478ac65cf70d26759f09a62b33a78204abbb73d949b54082dd198770b719",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-home-unified.css",
+      "byteLength": 6219,
+      "digest": "e664ce46fdd7198ff47bdbc1d608dab33f77014a7b0cdbf5b37efd2a0842a237",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-home-unified.js",
+      "byteLength": 7101,
+      "digest": "90c1c2621a1f2934b5c390d1d342035b2f3ae2dad782d3d9b3a3154ca4dd1920",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-image-management.css",
+      "byteLength": 1853,
+      "digest": "03efff6fbdae590ac9f94d0b32a302ed5b17e2f893835b2342391ac3bb1bbb1d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-image-management.js",
+      "byteLength": 7178,
+      "digest": "19a5f1398d7e2ab2513447892a836f7e788bfeaf7c9dbf3e9ddc8f8e4e1cd30b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-image-placeholder.css",
+      "byteLength": 1275,
+      "digest": "4e8a35b6e6cf46c38e33d2195424bf4fdf85bca218173436b7825f3e22527406",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-image-placeholder.js",
+      "byteLength": 1195,
+      "digest": "0bd453740e3453e4687cc0b90fb088817d653a5d20496a8c8455de9a0ff93d1b",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-large-representative-image.css",
+      "byteLength": 1217,
+      "digest": "181107dc131d40fa2e09bfe0a71ffcdfa9d0cb5f7e3d00e379b9a3ee0eac1247",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-mobile-final.css",
+      "byteLength": 3738,
+      "digest": "74390f27f455fbfa000d1b19766491d6888e7c93003571fcf17a4fe47a7ae1e6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-overview.css",
+      "byteLength": 2260,
+      "digest": "b4bbc582e0de7ea757eb21bf7eb163eef2c751266e66381fddcf50960bd69f76",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-overview.js",
+      "byteLength": 5243,
+      "digest": "2cb88b94207f9415972b6d1c10bf7d7b9b86c12d07c68781cdd2a3278d71dc5c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-recovery.js",
+      "byteLength": 4559,
+      "digest": "8fa2c3a7fef92dd35d3645615405fa271ce4208c9e5b1e1735b35a03ba49c6da",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-related-cards.css",
+      "byteLength": 1372,
+      "digest": "e43ec2437f225f09b4cbedceaa2100080e1590b08c06c6a365de5a1c41dddbe0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-related-cards.js",
+      "byteLength": 7377,
+      "digest": "f2fcc4747b44c64dfe0330db3296269bee559ddb1a9d846823f6f9d69d0121c1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-search-enhancement.css",
+      "byteLength": 2205,
+      "digest": "54bff36b5505839d2e070e5e5f068e7d861f92a030ffa3e760aa2819de9ecee3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-search-enhancement.js",
+      "byteLength": 10658,
+      "digest": "f8ca360e4d717e0a8c1ea80e76ea1b1f11625a2fffafced5c3abab1ebb9eb50e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-search-mobile-fix.js",
+      "byteLength": 4118,
+      "digest": "02f97f4cea0454dfabda10273e98f04d808e4e063e821bc61a426e1a9ec2da34",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-single-image-entry.js",
+      "byteLength": 991,
+      "digest": "da121c73df4366acfe0ef982e9f2719ab779f079fb223677e5600ddefc2115a6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-story-materials.css",
+      "byteLength": 982,
+      "digest": "e4601bcd4254d7bebefdd515d72605bc1266591d769c68f7fa3da203ce99d1d9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-story-materials.js",
+      "byteLength": 4811,
+      "digest": "ac5ac5dd1c4e51167eb5d38b3fda5d534b8c805d9f29e8c5fcf993017bf84464",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-timeline.css",
+      "byteLength": 1245,
+      "digest": "5e6c4b6a15f974b28e59a047d0a62d9ff85e531dfa645a91e8ea15573feb7273",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "story-archive-timeline.js",
+      "byteLength": 5634,
+      "digest": "244dcd19948c06781cfda1de27c038c19fdcf45bb8e3fa3c448155de1897880a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "style.css",
+      "byteLength": 121212,
+      "digest": "8416287397f54955e91b507bbce7b1784e7c90c809169bbdec81dca00036c750",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tests/dream-architect-studio-shell.test.js",
+      "byteLength": 4351,
+      "digest": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/dream-architect-transfer.test.js",
+      "byteLength": 3008,
+      "digest": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-arrangement-entry.test.js",
+      "byteLength": 6417,
+      "digest": "4f49129db5d63d207597771e3b8ccc1065abdf1510b935b06f97fe5b8a89bfeb",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-arrangement-reference.test.js",
+      "byteLength": 8310,
+      "digest": "080f363e6cf2cb02d20aa85eac57f3e287ef24587b25cf0fb546766a09a470e1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-assistant-integration.test.js",
+      "byteLength": 48506,
+      "digest": "87911584bb9796ea4eabdf715fb105cf42dd68f64d7ec28e989efb9d69291eda",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-assistant-ui.test.js",
+      "byteLength": 2307,
+      "digest": "b70fbf8c6b28ffcbdb29017895fd2c26a53fba6dc6b18ecb50f4bba8852c28a2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-candidate-preview.test.js",
+      "byteLength": 19952,
+      "digest": "c20d545472ed305c4f6bce13c2af335048f51d758edcea2a50cebb148ba616d0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-composition-integration.test.js",
+      "byteLength": 1990,
+      "digest": "ba2af78b2c31cab5c42cf6b5aa7369ae3ee34330accdf64de351f68e1647f481",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-composition.test.js",
+      "byteLength": 6723,
+      "digest": "f47b0c3b560ddb9f15be8f19cd9b8988700ee25728330242311dcb7bce488261",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-continuation-source.test.js",
+      "byteLength": 7988,
+      "digest": "c2875fabe5c7507499f1187e99465317298195cf3112b2b627b54ea24e833752",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-family-apply.test.js",
+      "byteLength": 34125,
+      "digest": "5feb60356dd2310fea481ad378d6f3d8432e38a0074118c68db74639bbae7276",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-family-preview.test.js",
+      "byteLength": 4841,
+      "digest": "a830c9e101d835f92e0f1eabfe0ddb9974abfaa018c6172ee7dc5f82a6bfa833",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-lyrics-melody-reference.test.js",
+      "byteLength": 9045,
+      "digest": "eb3b1d9941e0e1aa8eb80f2d9e7d78773e0ba4424ba930f7c643464052f68712",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-lyrics-reference-integration.test.js",
+      "byteLength": 23083,
+      "digest": "7d4295467f897c9f94af69ae3031f792dc96029e6a31e27bfb968b1f220c406f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ai-workflow.test.js",
+      "byteLength": 9124,
+      "digest": "236adcff6411a4a35ef549c595125cac3954a875492d6aac773d9010822241e5",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-atomic-restore.test.js",
+      "byteLength": 7473,
+      "digest": "1f3ac8ef9a1e84fd3a35720a067e19ddeecb632a25253b75b482baefde0374aa",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio-acceptance.test.js",
+      "byteLength": 6421,
+      "digest": "cfd7a408583b083a076bc4b796595f66a5f395d49295d3d090fc4feb8f027324",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio-e2e.test.js",
+      "byteLength": 6450,
+      "digest": "76d4c5c8fcf654a5e541c3b333418ba44428f70868d137228b575b9ab22e0b55",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio-helper-macos.test.js",
+      "byteLength": 1478,
+      "digest": "ed8c313160de5ea7c8856f2c0323b2fb1b7d9fe891bdc5b8bfb79d32c366755f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio-pipeline-startup.test.js",
+      "byteLength": 1324,
+      "digest": "cbeac85a47ba8ed16c86fde9c1d20bcfbdb881eedca06f5b814dfedbb63107e1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio-pipeline.test.js",
+      "byteLength": 15743,
+      "digest": "8d692a2a6b704ae8d2f7ef6a1387af14e7fcb93451b3511f9fdec6295a09e6b1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-audio.test.js",
+      "byteLength": 20182,
+      "digest": "5c7be21bb4bc1f803a741a085253335efddbb197b9963177851eb0ed48316cbc",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-binary-boundary.test.js",
+      "byteLength": 12508,
+      "digest": "3ceb821a8be51432fb148dfb32a2f99e624f8f224cc7f24ed36a9f291177f297",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-chrome-cleanup.test.js",
+      "byteLength": 1513,
+      "digest": "421f030fd9bfc7b075da3699ae3c170e0b11e97eb0ce78ab18849208a24a80f0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-coordinated-editor.test.js",
+      "byteLength": 6687,
+      "digest": "27712140c50a01a9562baa8217af8336c5aebba99dbe8b7156c09685c573c49d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-coordinated-persistence.test.js",
+      "byteLength": 3567,
+      "digest": "4f8235e87511e8c24b2cabd763743a51fe84adae7433ca161c5fb5b733992a12",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-coordinated-timing.test.js",
+      "byteLength": 3494,
+      "digest": "2d536f3f22742cda615c16569672abf87b973234e84cbc8d117c4cc9fb5505b3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-dependency-closure-inspection.test.js",
+      "byteLength": 10743,
+      "digest": "07417319cf16ac252e415115fbfaaa54978b1ecdb14b84caa0be6f328ad07904",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-dependency-inspection.test.js",
+      "byteLength": 4267,
+      "digest": "b047dd7be4f0d09d80cefe5a5249650e39679a26df3ad82c90b9eacc889fa824",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-disposable-durable-recovery.test.js",
+      "byteLength": 7631,
+      "digest": "62c9ef630f62f23fbe0f2fcb504a6f45e3ff4fee2b5eda7b0b1d441eaca330ba",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-distribution-identity.test.js",
+      "byteLength": 4231,
+      "digest": "729ff4960e622b379ab6c1f79f3bccb0a79c0a1b7b93670d31f31937b266f247",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-dynamic-track-playback.test.js",
+      "byteLength": 11020,
+      "digest": "3d9aedb2eecc872613b2af2370c70c8dcfc4fcfe9bc5b91e8f07d0db9e5b5ef3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-dynamic-track-recording.test.js",
+      "byteLength": 7358,
+      "digest": "a6c324e1165dd0aaaf294d9c0d15dd020f5fec8384adba22e98a3c9bb6ddb9c9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-dynamic-track-selection.test.js",
+      "byteLength": 31248,
+      "digest": "0e21ebb106f608c0403b323c41d2b3b85a4596ab818d2adff6eb88e36933ae68",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-editor-commit-locks.test.js",
+      "byteLength": 9898,
+      "digest": "66707244e7939168161a02f53b9d8e94ff96571741164c2fc277e60dd37c17d8",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-editor.test.js",
+      "byteLength": 177706,
+      "digest": "6906b26212b54d13da0f776178965256bc8f626236ac08772f6f83dce5bbbf1e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-partial-edit.test.js",
+      "byteLength": 8965,
+      "digest": "20659b43a96d3f0524852309182ebf02b8cb2bbc271e4fe41f9cf8bf24ac9331",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-pointer-editing.test.js",
+      "byteLength": 7929,
+      "digest": "6b1dfee8e6a3e433735e2d36a6739ee481e8c32d0ee791d651b81c9457502507",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-song-import.test.js",
+      "byteLength": 23535,
+      "digest": "282d663a773bb8e20c1361f88c7c484aeb0d10556f092328966c03180c327757",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-track-mute-solo.test.js",
+      "byteLength": 4473,
+      "digest": "7690dbba471218190cbd3375a987f54ba290291423a73fbc1a4084082edd5034",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-track-note-length.test.js",
+      "byteLength": 7029,
+      "digest": "09f49cfbf23195a5dee32bd2e6cda69631f8ef154a5f285670db808da9f2a7f0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-track-quantize.test.js",
+      "byteLength": 6605,
+      "digest": "e4db2320db470fee8265bac643cf266d5155478d53a65a7e79de6cbcebaf6210",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-external-track-transpose.test.js",
+      "byteLength": 7225,
+      "digest": "1d23b614c7eabee80c83d51d5040468ceaa3cfcf94f6341de4f364c2f7e53384",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-generated-midi-cleanup.test.js",
+      "byteLength": 7994,
+      "digest": "75030e7d304e18cac3ffc6ff0b4f8219d71a541e0690aa76e403b8d68f2d67b0",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-generation-package.test.js",
+      "byteLength": 8524,
+      "digest": "72e3af4deb0326a45380e347b0cb213d014472263211292983e30e3751a96d5e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-home.test.js",
+      "byteLength": 22982,
+      "digest": "ea2459b585559deeec697bc6fa33db4b9a83bce8724cecffd047957448643250",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ipad-touch.test.js",
+      "byteLength": 3227,
+      "digest": "902e3384033008365c99f4da44f51cbbc60427818385de058ae6e04f7b41cfac",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-ipad-width.test.js",
+      "byteLength": 6096,
+      "digest": "ebc45b62cbc1f0ecf9eb7825cc111f51fe9bee5a3a0b183af83af4b055b74037",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-logic-pro.test.js",
+      "byteLength": 267850,
+      "digest": "3301bc003c61eacf7cda3ac26e3f8feedac78beaf0184ab965559d8f1752de52",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-measure-locks.test.js",
+      "byteLength": 20802,
+      "digest": "bb2caaf57dd2d8d0802c9ddba91af612e9dd8bbd3123860d2d1c06be53c92ccb",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-meter-map.test.js",
+      "byteLength": 4205,
+      "digest": "e52568e413364b3583570ca8353cc780634696ad87ecec2a23303b45b000b286",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-midi-input.test.js",
+      "byteLength": 5559,
+      "digest": "e64deb5626f5c2a0589f96b4aed675b388c5eed66769ee51ccddaa58f5ed5522",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-midi-metadata-roundtrip.test.js",
+      "byteLength": 3734,
+      "digest": "15b7864de3288f867a9dd93f3fb150cd5cd00fcebf531d55e8a0e1543029d0a2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-midi-parser.test.js",
+      "byteLength": 15374,
+      "digest": "883b2a6edd51878a9b8296b02a21809afe9410d7129eed270a5237b3a177d231",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-midi.test.js",
+      "byteLength": 8420,
+      "digest": "2b35aa58884538b600bbce11207c8a25e8a82e2e24e9956dcc8e3cf22421eb95",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-native-midi-bridge.test.js",
+      "byteLength": 2921,
+      "digest": "ea392b5442c3121f0b6235188bed842bcd436546ee13a55995edd5d18c5e3577",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-night.test.js",
+      "byteLength": 13038,
+      "digest": "0b2a7151dcee7146f45aab119c7613af08d2b36bbc22b5399115dbbc40f16ba2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-observed-byte-verification.test.js",
+      "byteLength": 14364,
+      "digest": "8916b282c548584d5ce07c5cd5680122727896df7df999863c4da2643e0693ca",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-package-restore-review.test.js",
+      "byteLength": 8891,
+      "digest": "d0a576c0ca4ff52db9d59a77d1f11aa0b7f5439794221074cca9d479f295e9cb",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-playback.test.js",
+      "byteLength": 6702,
+      "digest": "bed8a0ca5c914229ef6e614bb6af53e5dac6ad09d3071f92d62f218ddb2288d1",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-production-verification-contract.test.js",
+      "byteLength": 5560,
+      "digest": "c8ab88910e6363c5b53a03d18ad74a5aef294a08c07807295ff6fe047a2aa1b9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-projects.test.js",
+      "byteLength": 5109,
+      "digest": "2d6ef26ed4264722d5bbb8e09f9ed1bbecec53b8b02f1aac16b08751ef0061c6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-recording-tempo-map.test.js",
+      "byteLength": 2023,
+      "digest": "df8c67fdbf75f08ed7b7803cd83b53b27c0b179248c9adad75eacfdd9cb63607",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-resource-runtime.test.js",
+      "byteLength": 15277,
+      "digest": "59bfb31c257e246a98a44579a373d06c7402a8999b92de95fa2b13a6b87b5667",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-runtime-bootstrap.test.js",
+      "byteLength": 5650,
+      "digest": "b0397e7074405ec18b8b07d2b77dab79616829fab73b4e2523e686ff790b8c20",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-runtime-ingress-identity.test.js",
+      "byteLength": 11045,
+      "digest": "3495a2afdcb49cda65648eabb74155facff09180d35f20d87fc2814824dfcb2f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-scoped-midi-repair.test.js",
+      "byteLength": 15870,
+      "digest": "41aa05d1ad0753d3a13d77bb6264d5205ee070e8d658811e5b5cc11393def280",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-selected-track-id.test.js",
+      "byteLength": 7821,
+      "digest": "1275d9b3942ea4cc69cea5dabf450d7ddbd437c8d215cda6938e89d75526983d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-settings.test.js",
+      "byteLength": 7475,
+      "digest": "e050739a8ef00a058d1355c2e9b5a33b8c44d2a2be874149252bfedd49ca5b2e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-standalone-dependency-inspection.test.js",
+      "byteLength": 1286,
+      "digest": "5a49a92ef43cbbb91778f6c57e0929affed6e3ec6b13877a2814e7f37508a9fe",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-storage-contract-inspection.test.js",
+      "byteLength": 5731,
+      "digest": "f535f649e32e55010aa5b697000ed3ef2c67b4706e831e1227b3842af248857c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-storage.test.js",
+      "byteLength": 25421,
+      "digest": "afc5191dcae203add94273939caa33faf89bd926a06d8cb2258f05b9b4d22c18",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-structure-info.test.js",
+      "byteLength": 3667,
+      "digest": "3ac5a7806af3de3b87a2229c7c3667c652901f9207c3d1fa64fda73cce5d136e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-track-id-editor-context.test.js",
+      "byteLength": 7085,
+      "digest": "db4bc308266a2c09be9af7553cc324357576fea3ecb2b730da869e39d1e78ee7",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-track-registry.test.js",
+      "byteLength": 11327,
+      "digest": "6b8d484101a56f6e7da47084a6090e7e00321cb69a0eb226bed6be743ff662af",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/music-studio-whole-song-transpose.test.js",
+      "byteLength": 3801,
+      "digest": "48b972b79e01783a9991443cb17a5145790a8b15569b25357f8a88864ed8a56f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/nova-menu.test.js",
+      "byteLength": 10337,
+      "digest": "0d09a3ac4476e9e252d4b033a12f3ea53d9718948121350b194fc474f07c2e05",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/nova-studio-hero.test.js",
+      "byteLength": 4537,
+      "digest": "b9bc05f63dd8f2cdb7ddf4607a2827ef592e712bc1b928bce212d61c3cd59eba",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/nova-studio-home-cards.test.js",
+      "byteLength": 7142,
+      "digest": "2ef65ae339d68e2cf43912041614ca705e2a5393239bde1d85b400984fe0a28a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/nova-unified-routes.test.js",
+      "byteLength": 9478,
+      "digest": "498d9ac31c0bb7a6e9188219fb76481201fc385d1d1e668538c611f0c2d40e07",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "tests/security-hardening.test.js",
+      "byteLength": 5019,
+      "digest": "256d025dce1e0cf4609f3ed10082c5b5b56674526a20240cc512b6a0ad90b62c",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "thread-importer.js",
+      "byteLength": 23592,
+      "digest": "d7fa149bfda789b91e8d3f67549b2900d3a81a18f1e4fff791e3bef512ebc000",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+      "byteLength": 3912,
+      "digest": "e1f0ce0c797eca4b482d97846dd60735be70c14542f6a56052a70f124c81d5e2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command",
+      "byteLength": 1317,
+      "digest": "0085b21af1f8d3b3a2d267fddaaead333cfce234442539bb9cc4424a5d0cf771",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/dependency_identity.py",
+      "byteLength": 2988,
+      "digest": "cf6d8f201b3ed63473635109faddc4ea13eaf7bc0787a6d4fc92725316172295",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/distribution_binding.py",
+      "byteLength": 4757,
+      "digest": "5edecc83089af3161c162622a7be50b9a90b08881af6e29f754db078750d4ce6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/helper_identity.py",
+      "byteLength": 3327,
+      "digest": "0703a7f4a324385f223f9da169016097cd811172dacf01b0277908e2ef4c794a",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/mac-app/Info.plist",
+      "byteLength": 762,
+      "digest": "216d7db132b30e55787b23c31eb19df0f65abc91a543677ca579292bce3c6217",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/runtime_inventory.py",
+      "byteLength": 12025,
+      "digest": "84b44484827345f2824839aa8fbe3db8d2d1274fb81919963dd2f4f9447bd140",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/server.py",
+      "byteLength": 22655,
+      "digest": "7706026a2754626acd28c1aed7ae212dbb4da916824afbcbb92f5cdf6e3ab06e",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_audio_accuracy.py",
+      "byteLength": 7488,
+      "digest": "9f0f9420d7e87a9bd1cf908ce3579d42713d3406d4508837618bea49f11e5f50",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_dependency_identity.py",
+      "byteLength": 1894,
+      "digest": "a8458de929f3f62cbad408adacdd397115f963d9ecbbeb6d5de65d9a6d825ad6",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_distribution_binding.py",
+      "byteLength": 2554,
+      "digest": "fc557d3d6e1726e9637a85050391c77b61385f37c9729bf2f20c43ef6f028436",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_helper_identity.py",
+      "byteLength": 2776,
+      "digest": "6a3b6e66e7da083c7eb3a595c3feaf75235cc5db2fe99d59cc3fb36f9feab687",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_runtime_inventory.py",
+      "byteLength": 11208,
+      "digest": "1b744f149e3084626c21fe8620b6eb9933593bb4df4f25a3e3e905db80706d6d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/test_server_boundary.py",
+      "byteLength": 11508,
+      "digest": "1b6db37bd6725b60ba7b4f7087890ec3cebaa9ed92462ceb19ea9d241b0a6e3d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-audio-pipeline/verify_real_conversion.py",
+      "byteLength": 3241,
+      "digest": "ddd4ff877a17e45ef57ee833ce287a9cddd2257b8d219afcdb3c88e25458f717",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/CoreMidiInputBridge.swift",
+      "byteLength": 4975,
+      "digest": "d9f1341028f6088665eebb379032f4ca989b97850334458196b10752a94a9686",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/MusicStudioApp.swift",
+      "byteLength": 152,
+      "digest": "12b204d5a7a3ee05e8e054bcbbb812c415c0fa8e59b926bea2ff40889bd8fdc2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+      "byteLength": 1268,
+      "digest": "e54c3e59d89b40ce2009540e5b76461db2df1e1a2b177133fc17d0f3c9d2c81f",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/MusicStudioRootView.swift",
+      "byteLength": 1741,
+      "digest": "04002391ce6dcb4cce2d09daa3cdb69df2107889aeb1275ba806c1236ec4a7bd",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+      "byteLength": 4799,
+      "digest": "d92cc5662ad9a5484c45bf47521828f8b0ce1435a91725e6379a20c59403ac27",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+      "byteLength": 2304,
+      "digest": "1eb42dce13f48b65bef51336fd36e42acd37c1e7f36d365689cbfc95cde88049",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/NativeMidiCoordinator.swift",
+      "byteLength": 660,
+      "digest": "d443530e705a6f93486071e841c4364296f536fd1605b61b66afbb532f0e04e3",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Package.swift",
+      "byteLength": 1553,
+      "digest": "fc4c81bc593ff83cb7ff278e89c9a8c2bdd637ba695f0807f1798c9ae56fb2e9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Tests/CoreMidiInputBridgeTests.swift",
+      "byteLength": 2294,
+      "digest": "f8aea6867b86466e5e25713d516974f0503dfde5cc0cd2a52f7c2c3a4d0a0291",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+      "byteLength": 3161,
+      "digest": "7b129c37ca8ed2eb5c61868664414416f1cb9caef5cae3ea0c22d39c103afc44",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift",
+      "byteLength": 7434,
+      "digest": "ec36c512f13dc8fd430f1653622e9ee827bcea820a5033f70ce98c17e20c2a6d",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Xcode/MusicStudioXcodeApp.swift",
+      "byteLength": 162,
+      "digest": "ef16232a7a20513d430c622eb0b1da2800494f501c49aacd9a71bd112529af60",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/music-native-wrapper/Xcode/MusicStudioXcodeRootView.swift",
+      "byteLength": 1771,
+      "digest": "c1b5842a113b5886258a06a5626a3a0391534c6bb33e35aee1d2bf0e985593c9",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/verify-music-measure-locks.js",
+      "byteLength": 4297,
+      "digest": "51fe3207f5d6f7957dcb752e1dd7d7b24fef1c2f75dcba5a2c68300f489258f2",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "tools/verify-node-baseline.js",
+      "byteLength": 1156,
+      "digest": "0d8b8bd1e6e3fce8ba91cfd58ab88df9da1d9b057c576141425585231ceb7f56",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "PRODUCT_SOURCE"
+    },
+    {
+      "id": "verification/pr262/START_PR262_PREVIEW.command",
+      "byteLength": 1616,
+      "digest": "9ead0272a772b77b7f868891d43132c87537b2a09207da226dc1de5bcff49e96",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    },
+    {
+      "id": "verification/pr262/STOP_PR262_PREVIEW.command",
+      "byteLength": 802,
+      "digest": "828dae46ac0421f12b49a7e3544623ad4cfc4294a3a6d88b150aaeeeca1e1d04",
+      "status": "LOCAL_SOURCE",
+      "distributionStatus": "UNVERIFIED",
+      "scope": "TEST_OR_TOOL"
+    }
+  ],
+  "externalReferences": [
+    {
+      "source": "app.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "gemini-bridge-enhancement.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "gemini.google.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "gemini-bridge.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "gemini.google.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "music-studio-editor.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "api.openai.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "music-studio-editor.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "generativelanguage.googleapis.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "music-studio-editor.js",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "type.googleapis.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-binary-boundary-browser.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "must-never-fetch.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-binary-boundary-browser.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "nova-binary-isolated.test",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-generation-package-browser.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "invalid.test",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-generation-package-browser.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "nova-generation-isolated.test",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-offline-asset-inventory.py",
+      "scope": "TEST_OR_TOOL",
+      "kind": "MODEL_LOADER_REQUIRES_RUNTIME_PROOF",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-offline-asset-inventory.py",
+      "scope": "TEST_OR_TOOL",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/music-transaction-regression.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "nova-isolated.test",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "scripts/security-browser-smoke.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/dream-architect-transfer.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "local",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-ai-workflow.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-audio-acceptance.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-audio-pipeline-startup.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "PACKAGE_REGISTRY_INSTALL",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-dependency-closure-inspection.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-dependency-inspection.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-editor.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "api.openai.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-editor.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "generativelanguage.googleapis.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-editor.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "secret.example",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-runtime-ingress-identity.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-standalone-dependency-inspection.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/music-studio-storage-contract-inspection.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/security-hardening.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tests/security-hardening.test.js",
+      "scope": "TEST_OR_TOOL",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "nova.example",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "PACKAGE_REGISTRY_INSTALL",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/mac-app/Info.plist",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "www.apple.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/runtime_inventory.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/server.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "puitoybox-cloud.github.io",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/server.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "{host}",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/server.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_runtime_inventory.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "cdn.example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_runtime_inventory.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "MODEL_LOADER_REQUIRES_RUNTIME_PROOF",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_runtime_inventory.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_runtime_inventory.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "PACKAGE_REGISTRY_INSTALL",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_server_boundary.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_server_boundary.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "puitoybox-cloud.github.io",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/test_server_boundary.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-audio-pipeline/verify_real_conversion.py",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "NATIVE_OR_SUBPROCESS_REQUIREMENT",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "puitoybox-cloud.github.io",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "evil.example",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    },
+    {
+      "source": "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+      "scope": "PRODUCT_SOURCE",
+      "kind": "REMOTE_URL_REFERENCE",
+      "host": "example.com.evil.invalid",
+      "evidence": "STATIC_REFERENCE_ONLY"
+    }
+  ],
+  "actualOfflineDistribution": "OPEN",
+  "assembly": [
+    {
+      "component": "repository JS/CSS/HTML/Helper Python/local configuration",
+      "status": "UNVERIFIED",
+      "reason": "source bytes inventoried; approved assembled distribution not supplied"
+    },
+    {
+      "component": "Python/ML packages and native runtime",
+      "status": "LICENSE REVIEW REQUIRED",
+      "reason": "installed entry evidence is not redistribution permission or transitive closure"
+    },
+    {
+      "component": "Demucs/Basic Pitch model bytes and companion assets",
+      "status": "LICENSE REVIEW REQUIRED",
+      "reason": "no approved local model bundle or model license evidence"
+    },
+    {
+      "component": "registry/model-download/hosted references",
+      "status": "EXTERNAL REQUIRED",
+      "reason": "legacy installers/loaders retain external prerequisites; strict path blocks them"
+    },
+    {
+      "component": "trust provisioning/distribution/storage/retention/GC",
+      "status": "POLICY REQUIRED"
+    },
+    {
+      "component": "Gatekeeper/notarization/Intel/Apple Silicon/real accuracy",
+      "status": "PHYSICAL ONLY"
+    }
+  ]
+}

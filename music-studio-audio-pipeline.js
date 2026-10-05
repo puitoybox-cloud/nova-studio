@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.3';
+  const VERSION='1.0.4';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -130,6 +130,19 @@
     if(expected.dependencyObserverDigest!==undefined&&actual.dependencyObserverDigest!==expected.dependencyObserverDigest)throw Error('helper-identity-mismatch:dependencyObserverDigest');
     if(expected.dependencies!==undefined&&(actual.dependencyInventory?.status!=='VERIFIED'||identityText(actual.dependencyInventory.entries)!==identityText(expected.dependencies)))throw Error('dependency-inventory-mismatch');
     if(expected.architectures!==undefined&&!expected.architectures.includes(actual.architecture))throw Error('unsupported-runtime');
+    if(expected.actualInventory){
+      const inventory=actual.actualInventory, required=expected.actualInventory;
+      if(inventory?.inventoryVersion!==2||inventory.mode!=='STRICT'||inventory.status!=='VERIFIED'||inventory.artifactClosure!=='VERIFIED')throw Error('actual-runtime-inventory-unverified');
+      if(!expected.architectures.includes(inventory.architecture))throw Error('unsupported-runtime');
+      for(const kind of ['models','dependencies']){
+        const entries=inventory[kind];
+        if(!Array.isArray(entries)||entries.some(e=>e.status!==(kind==='models'?'LOADED_VERIFIED_FILE':'VERIFIED_ARTIFACT')))throw Error('actual-runtime-inventory-unverified:'+kind);
+        const ordered=list=>[...list].sort((a,b)=>a.id.localeCompare(b.id));
+        if(identityText(ordered(entries.map(e=>e.identity)))!==identityText(ordered(required[kind])))throw Error('actual-runtime-inventory-mismatch:'+kind);
+      }
+      if(identityText(inventory.assets)!==identityText(required.assets))throw Error('offline-asset-inventory-mismatch');
+      if(!Array.isArray(inventory.native)||identityText(inventory.native)!==identityText(required.native))throw Error('native-inventory-unverified');
+    }
     return true;
   }
   async function connectIdentity({expected=expectedHelperIdentity,signal,reason=()=>null,endpoint=ENDPOINT}={}){

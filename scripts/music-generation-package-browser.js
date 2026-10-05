@@ -28,6 +28,20 @@ async function bound(p,ms=15000){let t;try{return await Promise.race([p,new Prom
      for(const key of ['modelInventory','dependencyInventory']){const previous=health.runtimeIdentity[key].status;health.runtimeIdentity[key].status='UNCONFIGURED';let rejected=false;try{await boundDistribution.verify(MusicStudioAudioPipeline)}catch{rejected=true}if(!rejected)throw Error(key+' accepted');health.runtimeIdentity[key].status=previous;cases.push(key+' rejected')}
      await boundDistribution.verify(MusicStudioAudioPipeline);cases.push('distribution retry');
      if(distribution.legacy().status!=='UNVERIFIED')throw Error('legacy verified');cases.push('distribution legacy unverified');
+     const config=distribution.canonical({version:1,models:[{id:'fixture'}],dependencies:[{id:'python'}],native:[],assets:[]});
+     manifest.assets=[{id:'runtime-config',revision:'1',digest:await hash(new TextEncoder().encode(config)),byteLength:new TextEncoder().encode(config).length}];
+     trust.manifestDigest=await hash(new TextEncoder().encode(distribution.canonical(manifest)));
+     const bootstrap=await distribution.bootstrap(manifest,trust,{sha256:hash,runtimeConfigText:config});
+     health.runtimeIdentity.actualInventory={inventoryVersion:2,mode:'STRICT',status:'VERIFIED',artifactClosure:'VERIFIED',architecture:'x86_64',models:manifest.models.map(identity=>({identity,status:'LOADED_VERIFIED_FILE'})),dependencies:manifest.dependencies.map(identity=>({identity,status:'VERIFIED_ARTIFACT'})),native:[],assets:manifest.assets};
+     const verified=await bootstrap.verify(MusicStudioAudioPipeline);
+     if(!verified.identityEligible||verified.publicationEligible)throw Error('bootstrap eligibility conflation');cases.push('bootstrap authenticated inventory match');
+     for(const [key,value] of [['status','PARTIAL'],['mode','LEGACY'],['artifactClosure','UNVERIFIED'],['architecture','wrong'],['models',[]],['native',[{status:'RESOLVED_ONLY'}]]]){
+      const saved=health.runtimeIdentity.actualInventory[key];health.runtimeIdentity.actualInventory[key]=value;
+      let rejected=false;try{await bootstrap.verify(MusicStudioAudioPipeline)}catch{rejected=true}
+      if(!rejected)throw Error('bootstrap accepted '+key);health.runtimeIdentity.actualInventory[key]=saved;cases.push('bootstrap rejected '+key);
+     }
+     await bootstrap.verify(MusicStudioAudioPipeline);cases.push('bootstrap retry');
+
     }finally{window.fetch=distributionSavedFetch;MusicStudioAudioPipeline.configureIdentity(null)}
 
     }

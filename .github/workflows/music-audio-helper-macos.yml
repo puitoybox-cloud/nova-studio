@@ -55,6 +55,7 @@ jobs:
           cp tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper "$MACOS/NovaMusicAudioHelper"
           chmod +x "$MACOS/NovaMusicAudioHelper"
           cp tools/music-audio-pipeline/server.py "$RESOURCES/pipeline/server.py"
+          cp tools/music-audio-pipeline/runtime_inventory.py "$RESOURCES/pipeline/runtime_inventory.py"
           cp tools/music-audio-pipeline/distribution_binding.py "$RESOURCES/pipeline/distribution_binding.py"
           cp tools/music-audio-pipeline/dependency_identity.py "$RESOURCES/pipeline/dependency_identity.py"
           cp tools/music-audio-pipeline/helper_identity.py "$RESOURCES/pipeline/helper_identity.py"
@@ -81,7 +82,7 @@ jobs:
           set -euo pipefail
           ROOT="$RUNNER_TEMP/PR262-Local-Audio-Helper-Source"
           mkdir -p "$ROOT"
-          cp tools/music-audio-pipeline/{START_AUDIO_PIPELINE.command,STOP_AUDIO_PIPELINE.command,server.py,requirements.txt,helper_identity.py,dependency_identity.py,distribution_binding.py} "$ROOT/"
+          cp tools/music-audio-pipeline/{START_AUDIO_PIPELINE.command,STOP_AUDIO_PIPELINE.command,server.py,requirements.txt,helper_identity.py,dependency_identity.py,distribution_binding.py,runtime_inventory.py} "$ROOT/"
           cp verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md "$ROOT/README.md"
           printf '%s\n' '${{ github.event.pull_request.head.sha || github.sha }}' > "$ROOT/PRODUCT_HEAD.txt"
           chmod +x "$ROOT/"*.command
