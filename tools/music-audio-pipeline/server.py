@@ -31,6 +31,67 @@ _identity_spec = importlib.util.spec_from_file_location("nova_helper_identity", 
 _identity_module = importlib.util.module_from_spec(_identity_spec)
 _identity_spec.loader.exec_module(_identity_module)
 RUNTIME_IDENTITY = _identity_module.identity(Path(__file__).parent)
+# Explicit authenticated bootstrap only. Legacy remains usable and UNVERIFIED.
+_runtime_spec = importlib.util.spec_from_file_location("nova_runtime_inventory", Path(__file__).with_name("runtime_inventory.py"))
+# Local imports are scoped to the Helper's source directory, not PATH/site guesses.
+_pipeline_directory = str(Path(__file__).parent.resolve())
+if _pipeline_directory not in sys.path:
+    sys.path.insert(0, _pipeline_directory)
+_runtime_module = importlib.util.module_from_spec(_runtime_spec)
+_runtime_spec.loader.exec_module(_runtime_module)
+STRICT_BOOTSTRAP = bool(os.environ.get("NOVA_TRUSTED_MANIFEST_PATH"))
+RUNTIME_INVENTORY = None
+BOOTSTRAP_ERROR = None
+
+def initialize_runtime():
+    global RUNTIME_INVENTORY, BOOTSTRAP_ERROR
+    if not STRICT_BOOTSTRAP:
+        return
+    # A strict Helper may never download models or contact external services.
+    _runtime_module.install_offline_guard()
+    try:
+        RUNTIME_INVENTORY = _runtime_module.bootstrap(
+            os.environ["NOVA_TRUSTED_MANIFEST_PATH"],
+            os.environ.get("NOVA_TRUSTED_MANIFEST_DIGEST"),
+            os.environ.get("NOVA_EXPECTED_BUILD_REVISION"),
+            os.environ.get("NOVA_RUNTIME_ASSET_ROOT", _pipeline_directory))
+        manifest = RUNTIME_INVENTORY.manifest
+        for key, expected in manifest['helper'].items():
+            actual = {'version': 1, 'pipelineRevision': PIPELINE_REVISION, 'sourceDigest': SOURCE_DIGEST}.get(key, RUNTIME_IDENTITY.get(key))
+            if type(actual) is not type(expected) or actual != expected:
+                raise ValueError('runtime-bootstrap-helper-mismatch')
+        if RUNTIME_IDENTITY['architecture'] not in manifest['architectures']:
+            raise ValueError('runtime-bootstrap-architecture-mismatch')
+        RUNTIME_INVENTORY.verify_assets()
+        for binding in RUNTIME_INVENTORY.bindings['dependencies']:
+            RUNTIME_INVENTORY.observe_dependency(binding)
+        for binding in RUNTIME_INVENTORY.bindings['native']:
+            if binding['id'] != 'python-runtime':
+                raise ValueError('native-loader-not-integrated')
+            RUNTIME_INVENTORY.resolve_executable('python-runtime', sys.executable)
+        for binding in RUNTIME_INVENTORY.bindings['models']:
+            if binding['runtimeIdentifier'] != 'basic-pitch':
+                raise ValueError('model-loader-not-integrated')
+            from basic_pitch.inference import Model
+            RUNTIME_INVENTORY.load_model(binding['id'], Model)
+    except Exception:
+        # Do not expose exception text containing installation or home paths.
+        BOOTSTRAP_ERROR = 'authenticated-runtime-bootstrap-incomplete'
+
+def runtime_snapshot():
+    if not STRICT_BOOTSTRAP:
+        return _runtime_module.legacy_snapshot()
+    if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
+        return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'BLOCKED',
+                'reason': BOOTSTRAP_ERROR or 'missing-trusted-runtime-inventory'}
+    return RUNTIME_INVENTORY.snapshot()
+
+def require_runtime_processing():
+    if STRICT_BOOTSTRAP:
+        if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
+            raise ValueError('strict-runtime-bootstrap-incomplete')
+        RUNTIME_INVENTORY.require_processing()
+
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
 ALLOWED_ORIGINS = {
@@ -78,6 +139,7 @@ def estimate_bpm(path: Path) -> float:
 
 
 def run_demucs(source: Path, output_dir: Path) -> Path:
+    require_runtime_processing()
     command = [
         sys.executable,
         "-m",
@@ -98,7 +160,17 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
 def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
     from basic_pitch.inference import predict
 
-    _, midi_data, _ = predict(str(stem_path))
+    require_runtime_processing()
+    if STRICT_BOOTSTRAP:
+        bindings = [e for e in RUNTIME_INVENTORY.bindings['models'] if e['runtimeIdentifier'] == 'basic-pitch']
+        if len(bindings) != 1:
+            raise ValueError('missing-or-unexpected-loaded-model')
+        model = RUNTIME_INVENTORY.loaded.get(bindings[0]['id'])
+        if model is None:
+            raise ValueError('missing-loaded-model')
+        _, midi_data, _ = predict(str(stem_path), model_or_model_path=model)
+    else:
+        _, midi_data, _ = predict(str(stem_path))
     midi_data.write(str(midi_path))
 
 
@@ -314,7 +386,7 @@ def process_audio(source: Path, work_dir: Path):
         "version": 1,
         "pipelineRevision": PIPELINE_REVISION,
         "sourceDigest": SOURCE_DIGEST,
-        "runtimeIdentity": RUNTIME_IDENTITY,
+        "runtimeIdentity": {**RUNTIME_IDENTITY, "actualInventory": runtime_snapshot()},
         "localOnly": True,
         "bpm": bpm,
         "stems": stems,
@@ -364,7 +436,7 @@ class Handler(BaseHTTPRequestHandler):
             "version": 1,
             "pipelineRevision": PIPELINE_REVISION,
             "sourceDigest": SOURCE_DIGEST,
-        "runtimeIdentity": RUNTIME_IDENTITY,
+        "runtimeIdentity": {**RUNTIME_IDENTITY, "actualInventory": runtime_snapshot()},
             "localOnly": True,
             "host": HOST,
             "port": PORT,
@@ -382,6 +454,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.headers.get("X-Nova-Audio-Pipeline") != "1":
             self._json(403, {"ok": False, "message": "Music Studioのローカル処理要求ではありません。"})
+            return
+        try:
+            require_runtime_processing()
+        except ValueError:
+            self._json(503, {"ok": False, "code": "STRICT_RUNTIME_INVENTORY_INCOMPLETE"})
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -410,6 +487,7 @@ class Handler(BaseHTTPRequestHandler):
                         handle.write(chunk)
                         remaining -= len(chunk)
                 payload = process_audio(source, work_dir)
+                require_runtime_processing()
                 self._json(200, payload)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "message": "Stem分離が60分以内に完了しませんでした。"})
@@ -424,6 +502,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    initialize_runtime()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print("Nova Music Studio Audio Pipeline")
     print(f"Local endpoint: http://{HOST}:{PORT}")

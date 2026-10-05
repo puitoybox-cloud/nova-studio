@@ -35,6 +35,24 @@ class AudioHelperBoundaryTests(unittest.TestCase):
         finally:
             connection.close()
 
+    def test_strict_missing_bootstrap_rejects_before_body_storage_processing(self):
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', True), patch.object(server_module, 'RUNTIME_INVENTORY', None), patch.object(server_module, 'BOOTSTRAP_ERROR', 'fixture'), patch.object(server_module.tempfile, 'TemporaryDirectory') as storage, patch.object(server_module, 'process_audio') as processor:
+            status, _, payload = self.request('POST', '/process', body=b'fixture', headers={'X-Nova-Audio-Pipeline': '1', 'X-Nova-File-Name': 'fixture.wav'})
+            self.assertEqual(status, 503)
+            self.assertEqual(payload['code'], 'STRICT_RUNTIME_INVENTORY_INCOMPLETE')
+            storage.assert_not_called(); processor.assert_not_called()
+            status, _, health = self.request('GET', '/health')
+            self.assertEqual(health['runtimeIdentity']['actualInventory']['status'], 'BLOCKED')
+
+    def test_health_version2_is_additive_legacy_is_never_verified(self):
+        status, _, health = self.request('GET', '/health')
+        self.assertEqual(status, 200)
+        self.assertEqual(health['runtimeIdentity']['version'], 1)
+        inventory = health['runtimeIdentity']['actualInventory']
+        self.assertEqual(inventory['inventoryVersion'], 2)
+        self.assertEqual(inventory['status'], 'UNVERIFIED')
+        self.assertEqual(inventory['models'], [])
+
     def test_health_is_local_and_does_not_claim_dependencies_are_installed(self):
         status, headers, payload = self.request("GET", "/health")
         self.assertEqual(status, 200)
