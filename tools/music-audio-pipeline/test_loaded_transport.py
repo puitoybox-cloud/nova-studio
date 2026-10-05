@@ -40,7 +40,7 @@ class LoadedTests(unittest.TestCase):
                 close.assert_called_once_with(1)
                 self.assertFalse(r['complete']);self.assertTrue(r['entries'][0]['actualLoaded'])
                 self.assertEqual(r['entries'][0]['artifactStatus'],'VERIFIED_ARTIFACT')
-                self.assertNotIn(folder,json.dumps(r));self.assertEqual(loader.call_args.args,(str(root/'codec.so'),))
+                self.assertNotIn(folder,json.dumps(r));self.assertEqual(loader.call_args.args,(str((root/'codec.so').resolve()),))
                 e['digest']='0'*64
                 r=shared_library_receipts(root,{'native':[e],'buildRevision':'build'})
                 self.assertEqual(r['entries'][0]['artifactStatus'],'UNVERIFIED')
