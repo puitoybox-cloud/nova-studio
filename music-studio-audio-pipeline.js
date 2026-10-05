@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.4';
+  const VERSION='1.0.6';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -112,10 +112,26 @@
   }
 
   let expectedHelperIdentity=null;
+  let bootstrapEpoch=0,bootstrapState='LEGACY_UNVERIFIED';
+  async function bootstrapIdentity(envelope,controls={}){
+    const epoch=++bootstrapEpoch;
+    bootstrapState='PENDING'; expectedHelperIdentity=null;
+    const check=()=>{const why=controls.signal?.aborted?'Abort':controls.reason?.();if(why)throw Error(why);if(epoch!==bootstrapEpoch)throw Error('stale')};
+    try{
+      check();
+      if(!root.MusicStudioDistributionIdentity?.bootstrap||!envelope?.manifest||!envelope?.trust||typeof envelope.runtimeConfigText!=='string')throw Error('missing-trusted-bootstrap-envelope');
+      const binding=await root.MusicStudioDistributionIdentity.bootstrap(envelope.manifest,envelope.trust,{...controls,runtimeConfigText:envelope.runtimeConfigText});check();
+      const result=await binding.verify({connectIdentity},controls);check();
+      configureIdentity(binding.expected);bootstrapState='VERIFIED';return result;
+    }catch(error){if(epoch===bootstrapEpoch){expectedHelperIdentity=null;bootstrapState='BLOCKED'}throw error}
+  }
+  function bootstrapStatus(){return {status:bootstrapState,mode:bootstrapState==='LEGACY_UNVERIFIED'?'LEGACY':'STRICT'}}
+
   function configureIdentity(expected){
-    if(expected===null){expectedHelperIdentity=null;return}
+    if(expected===null){expectedHelperIdentity=null;++bootstrapEpoch;bootstrapState='LEGACY_UNVERIFIED';return}
     if(expected?.version!==1||expected.pipelineRevision!==2||expected.protocolVersion!==1||typeof expected.runtimeVersion!=='string'||!['sourceDigest','requirementsDigest','identityModuleDigest'].every(k=>/^[a-f0-9]{64}$/.test(expected[k])))throw Error('invalid-helper-identity-contract');
     expectedHelperIdentity=JSON.parse(JSON.stringify(expected));
+    ++bootstrapEpoch;bootstrapState='PENDING_HEALTH';
   }
   function identityText(value){
     if(Array.isArray(value))return '['+value.map(identityText).join(',')+']';
@@ -132,7 +148,7 @@
     if(expected.architectures!==undefined&&!expected.architectures.includes(actual.architecture))throw Error('unsupported-runtime');
     if(expected.actualInventory){
       const inventory=actual.actualInventory, required=expected.actualInventory;
-      if(inventory?.inventoryVersion!==2||inventory.mode!=='STRICT'||inventory.status!=='VERIFIED'||inventory.artifactClosure!=='VERIFIED')throw Error('actual-runtime-inventory-unverified');
+      if(inventory?.inventoryVersion!==2||inventory.mode!=='STRICT'||inventory.status!=='VERIFIED'||inventory.artifactClosure!=='VERIFIED'||inventory.complete!==true||inventory.processingEligible!==true)throw Error('actual-runtime-inventory-unverified');
       if(!expected.architectures.includes(inventory.architecture))throw Error('unsupported-runtime');
       for(const kind of ['models','dependencies']){
         const entries=inventory[kind];
@@ -155,6 +171,7 @@
     validateIdentity(payload,expected);return payload;
   }
   async function processAudioLocally(file,options={}){
+    if(['PENDING','BLOCKED'].includes(bootstrapState))throw Error('strict-bootstrap-incomplete');
     const expected=options.expected||expectedHelperIdentity;
     const check=()=>{const why=options.signal?.aborted?'Abort':options.reason?.();if(why)throw Error(why)};check();
     if(expected)await connectIdentity({...options,expected});
@@ -225,7 +242,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -240,6 +257,6 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,enhanceExternalInput,assertMidiHeader,install});
   installWhenReady();
 })(typeof window!=='undefined'?window:globalThis);

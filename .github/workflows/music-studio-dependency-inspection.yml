@@ -2,6 +2,8 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'tools/music-audio-pipeline/*.py'
+      - 'tests/music-studio-runtime-bootstrap.test.js'
       - 'tools/music-audio-pipeline/runtime_inventory.py'
       - 'tools/music-audio-pipeline/test_runtime_inventory.py'
       - 'scripts/music-offline-asset-inventory.py'
@@ -67,6 +69,7 @@ jobs:
           node-version: '22'
       - name: Full regression, syntax and whitespace
         run: |
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_demucs_closure.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_runtime_inventory.py -v
           python3 scripts/music-offline-asset-inventory.py > /tmp/music-offline-inventory.json
           node --test
