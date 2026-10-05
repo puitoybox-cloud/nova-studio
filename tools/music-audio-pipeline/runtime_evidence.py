@@ -92,7 +92,8 @@ def native_dependency_graph(contract, imports, native, shared):
             'runtimeObserved': False, 'childRuntimeObserved': child.get('actualLoaded',
                 child.get('status') == 'OBSERVED_LOADED'),
             'expectedIdentity': {'digest': entry['digest'], 'version': entry['version']},
-            'actualIdentity': {'digest': child.get('digest'),
+            'actualIdentity': {'digest': child.get('digest') if child.get('artifactStatus') in
+                ('VERIFIED_ARTIFACT', 'VERIFIED_ENTRY') else None,
                 'artifactStatus': child.get('artifactStatus', 'UNVERIFIED')},
             'status': 'UNVERIFIED'})
     return {'version': 1, 'edges': edges, 'complete': False,

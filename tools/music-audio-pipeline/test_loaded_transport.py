@@ -33,11 +33,14 @@ class LoadedTests(unittest.TestCase):
     def test_native_graph_missing_edges_never_complete(self):
         from runtime_evidence import native_dependency_graph
         e={'id':'codec','module':'codec.frontend','digest':'a'*64,'version':'1'}
-        for entries in [[],[{'id':'codec','status':'OBSERVED_LOADED','digest':'a'*64,'artifactStatus':'VERIFIED_ARTIFACT'}]]:
+        for entries in [[],[{'id':'codec','status':'OBSERVED_LOADED','digest':'a'*64,'artifactStatus':'VERIFIED_ARTIFACT'}],
+                        [{'id':'codec','status':'OBSERVED_LOADED','digest':'a'*64,'artifactStatus':'UNVERIFIED'}]]:
             r=native_dependency_graph({'native':[e]},[],entries,{'entries':[]})
             self.assertFalse(r['complete']);self.assertFalse(r['edges'][0]['runtimeObserved'])
             self.assertEqual(r['edges'][0]['evidenceLevel'],'EXPECTED_ONLY')
             self.assertEqual(r['edges'][0]['status'],'UNVERIFIED')
+            if not entries or entries[0]['artifactStatus']=='UNVERIFIED':
+                self.assertIsNone(r['edges'][0]['actualIdentity']['digest'])
 
     def test_disk_and_loaded_evidence_separate(self):
         with tempfile.TemporaryDirectory() as folder:
