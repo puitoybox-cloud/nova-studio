@@ -5,6 +5,8 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     public let webView: WKWebView
     public let configuration: MusicStudioAppConfiguration
     public private(set) var lifecycleState = "PREPARING"
+    public private(set) var ownedLifecycle: MusicStudioOwnedLifecycle?
+    private let ownedTransport = MusicStudioOwnedControlTransport()
     private var midiCoordinator: NativeMidiCoordinator?
     private let platform: String
 
@@ -31,11 +33,16 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         self.webView = WKWebView(frame: .zero, configuration: webConfiguration)
 
         super.init()
+        if let credential = configuration.ownedCredential, let session = configuration.ownedSession,
+           let port = configuration.startURL.port, let origin = URL(string: "http://127.0.0.1:\(port)") {
+            ownedLifecycle = try? MusicStudioOwnedLifecycle(origin: origin, session: session, credential: credential)
+        }
         webView.navigationDelegate = self
     }
 
     public func start() {
-        guard lifecycleState == "PREPARING", configuration.allows(configuration.startURL) else { lifecycleState = "FAILED"; return }
+        guard lifecycleState == "PREPARING", configuration.allows(configuration.startURL),
+              configuration.ownedCredential == nil || ownedLifecycle != nil else { lifecycleState = "FAILED"; return }
         lifecycleState = "SERVER_READY"
 
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
@@ -44,9 +51,40 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
         webView.load(URLRequest(url: configuration.startURL))
     }
 
+    /// Explicit Swift owner API; page messages cannot choose request/result authority.
+    public func ownedCommand(_ action: String, request: String? = nil,
+                             input: MusicStudioOutputIdentity? = nil, outputBytes: Data? = nil,
+                             completion: @escaping (Bool) -> Void) {
+        guard let owner = ownedLifecycle else { completion(false); return }
+        do {
+            let message = try owner.command(action, request: request, input: input, outputBytes: outputBytes)
+            ownedTransport.send(message) { [weak self] result in
+                DispatchQueue.main.async {
+                    do { try owner.receive(result.get()); self?.lifecycleState = owner.state; completion(true) }
+                    catch { owner.fail(); self?.lifecycleState = "FAILED"; completion(false) }
+                }
+            }
+        } catch { completion(false) }
+    }
+
     public func stop() {
-        webView.evaluateJavaScript("window.MusicStudioAudioPipeline?.stopLocal(window.__NOVA_LOCAL_HANDOFF)", completionHandler: nil)
-        lifecycleState = "STOPPED"
+        if let owner = ownedLifecycle {
+            do {
+                let request = try owner.command("stop")
+                lifecycleState = "STOPPING"
+                ownedTransport.send(request) { [weak self] result in
+                    DispatchQueue.main.async {
+                        do { try owner.receive(result.get()); self?.lifecycleState = owner.state }
+                        catch { owner.fail(); self?.lifecycleState = "FAILED" }
+                    }
+                }
+            } catch { owner.fail(); lifecycleState = "FAILED" }
+        } else if configuration.ownedCredential != nil {
+            lifecycleState = "FAILED"
+        } else {
+            webView.evaluateJavaScript("window.MusicStudioAudioPipeline?.stopLocal(window.__NOVA_LOCAL_HANDOFF)", completionHandler: nil)
+            lifecycleState = "STOPPED"
+        }
         midiCoordinator?.stop()
         midiCoordinator = nil
         webView.stopLoading()

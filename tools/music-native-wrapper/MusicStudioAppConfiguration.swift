@@ -5,6 +5,8 @@ public struct MusicStudioAppConfiguration: Equatable {
     public let allowedHosts: Set<String>
     private var isLoopbackHosted = false
     public private(set) var localHandoffJSON: String? = nil
+    public private(set) var ownedCredential: MusicStudioOwnedCredential? = nil
+    public private(set) var ownedSession: String? = nil
 
     /// Explicit adapter for a launcher-supplied loopback origin. Caller must
     /// validate its anchored envelope; this is navigation containment only.
@@ -23,7 +25,7 @@ public struct MusicStudioAppConfiguration: Equatable {
         guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return .production }
         guard let text = environment["NOVA_LOCAL_HANDOFF"], text.utf8.count <= 4096,
               let data = text.data(using: .utf8),
-              let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              var value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               value["format"] as? String == "NOVA_LOCAL_BROWSER_HANDOFF",
               (value["version"] as? Int) == 1,
               let origin = value["origin"] as? String,
@@ -38,7 +40,17 @@ public struct MusicStudioAppConfiguration: Equatable {
             guard let digest = value[key] as? String, digest.count == 64,
                   digest.allSatisfy({ "0123456789abcdef".contains($0) }) else { return nil }
         }
-        configuration.localHandoffJSON = text
+        if let control = value.removeValue(forKey: "ownedControl") {
+            guard let raw = try? JSONSerialization.data(withJSONObject: control),
+                  let credential = try? JSONDecoder().decode(MusicStudioOwnedCredential.self, from: raw),
+                  let session = value["session"] as? String,
+                  let controlOrigin = URL(string: origin),
+                  (try? MusicStudioOwnedLifecycle(origin: controlOrigin, session: session, credential: credential, now: now)) != nil else { return nil }
+            configuration.ownedCredential = credential; configuration.ownedSession = session
+        }
+        guard let sanitized = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+              let sanitizedText = String(data: sanitized, encoding: .utf8) else { return nil }
+        configuration.localHandoffJSON = sanitizedText
         return configuration
     }
 

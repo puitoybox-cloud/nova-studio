@@ -310,6 +310,11 @@ class OfflineRuntimeGuard:
                     except ValueError: category = 'EXTERNAL_ATTEMPT'
             with self.observation_lock:
                 self.network_classes[category] = min(1000000, self.network_classes.get(category, 0)+1)
+        if event == 'socket.connect':
+            permitted = getattr(self.state, 'owned_socket', None)
+            if permitted is not None and len(args) == 2 and args[0] is permitted[0] and args[1] == permitted[1]:
+                self.state.owned_socket = None
+                return
         if event == 'subprocess.Popen':
             permitted = getattr(self.state, 'command', None)
             if permitted is not None and tuple(args[1]) == permitted and args[0] == permitted[0]:
@@ -340,6 +345,22 @@ class OfflineRuntimeGuard:
             self.state.command = tuple(command)
             try: yield
             finally: self.state.command = None
+        return once()
+
+    def permit_owned_socket(self, handle, address):
+        """One exact numeric loopback connect; never DNS or a general network bypass."""
+        import contextlib
+        import socket
+        if (not isinstance(handle, socket.socket) or handle.family != socket.AF_INET or
+                not isinstance(address, tuple) or len(address) != 2 or address[0] != '127.0.0.1' or
+                type(address[1]) is not int or not 0 < address[1] <= 65535):
+            raise ValueError('invalid-owned-loopback-socket')
+        @contextlib.contextmanager
+        def once():
+            if getattr(self.state,'owned_socket',None) is not None: raise ValueError('nested-owned-socket')
+            self.state.owned_socket = (handle,address)
+            try: yield
+            finally: self.state.owned_socket = None
         return once()
 
 

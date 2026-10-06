@@ -188,7 +188,7 @@ def require_owned_session(session=None):
     expected = os.environ.get('NOVA_LIFECYCLE_SESSION', '')
     try: deadline = float(os.environ.get('NOVA_LIFECYCLE_DEADLINE', '0'))
     except ValueError: raise ValueError('invalid-owned-session') from None
-    if (len(expected) != 64 or any(c not in '0123456789abcdef' for c in expected) or
+    if (OWNED_STOP_REQUESTED.is_set() or len(expected) != 64 or any(c not in '0123456789abcdef' for c in expected) or
             not math.isfinite(deadline) or not time.monotonic() < deadline <= time.monotonic()+300 or
             session is not None and session != expected):
         raise ValueError('stale-owned-session')
@@ -224,6 +224,7 @@ if STRICT_BOOTSTRAP:
     else:
         ALLOWED_ORIGINS = {local_origin}
 
+OWNED_STOP_REQUESTED = threading.Event()
 PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.
 STEM_PROGRAMS = {
     "Vocals": 53,
@@ -602,6 +603,24 @@ class Handler(BaseHTTPRequestHandler):
         })
 
     def do_POST(self):
+        if self.path == '/owned-stop':
+            try:
+                import secrets
+                session = require_owned_session()
+                token = os.environ.get('NOVA_OWNED_RESULT_CAPABILITY','')
+                if (not STRICT_BOOTSTRAP or len(token) != 64 or self.headers.get('Origin') is not None or
+                        self.headers.get('Host') != '127.0.0.1:8766' or
+                        self.headers.get('Transfer-Encoding') is not None or
+                        self.headers.get('X-Nova-Session') != session or
+                        not secrets.compare_digest(self.headers.get('X-Nova-Owned-Capability',''),token) or
+                        self.headers.get('Content-Length') != '0'):
+                    raise ValueError('foreign-owned-stop')
+                OWNED_STOP_REQUESTED.set()
+                if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
+                self._json(200,{'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':session,'state':'STOPPING'})
+                threading.Thread(target=self.server.shutdown,daemon=True).start()
+            except (ValueError,TypeError): self._json(403,{'ok':False,'code':'INVALID_OWNED_STOP'})
+            return
         if self.path != "/process":
             self._json(404, {"ok": False, "message": "Not found"})
             return
@@ -668,6 +687,7 @@ class Handler(BaseHTTPRequestHandler):
                     output = {'digest': hashlib.sha256(raw_output).hexdigest(), 'byteLength': len(raw_output)}
                     receipt = REQUEST_RECEIPTS.bound.finish(current, inventory, output)
                     payload['processingReceipt'] = REQUEST_RECEIPTS.bound.consume(receipt, current)
+                    publish_owned_result(payload['processingReceipt'])
                 self._json(200, payload)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "message": "Stem分離が60分以内に完了しませんでした。"})
@@ -683,6 +703,38 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")
+
+
+def publish_owned_result(receipt):
+    """Strict consumed receipts only, via an exact owned numeric loopback socket.
+
+    Current inventory/receipt must still match at the launcher; transport is never
+    permission to promote partial native evidence or accept changed audit evidence.
+    """
+    import http.client
+    import socket
+    parsed = urllib.parse.urlsplit(os.environ.get('NOVA_OWNED_RESULT_ORIGIN',''))
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
+            parsed.netloc != '127.0.0.1:'+str(parsed.port) or parsed.path or parsed.query or parsed.fragment):
+        raise ValueError('missing-private-result-origin')
+    session = require_owned_session()
+    capability = os.environ.get('NOVA_OWNED_RESULT_CAPABILITY','')
+    if len(capability) != 64 or receipt.get('complete') is not True: raise ValueError('partial-owned-result')
+    raw = json.dumps({'session':session,'capability':capability,'receipt':receipt},
+        sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+    if len(raw) > 1024*1024: raise ValueError('owned-result-budget')
+    connection = http.client.HTTPConnection('127.0.0.1',parsed.port,timeout=2)
+    handle = socket.socket(socket.AF_INET,socket.SOCK_STREAM); handle.settimeout(2)
+    try:
+        if OFFLINE_GUARD is None: raise ValueError('missing-owned-network-guard')
+        with OFFLINE_GUARD.permit_owned_socket(handle,('127.0.0.1',parsed.port)):
+            handle.connect(('127.0.0.1',parsed.port))
+        connection.sock = handle
+        connection.request('POST','/owned-helper-result',body=raw,headers={'Content-Type':'application/json'})
+        response = connection.getresponse(); body = response.read(4097)
+        if response.status != 200 or len(body)>4096 or json.loads(body) != {'ok':True}:
+            raise ValueError('owned-result-not-accepted')
+    finally: connection.close(); handle.close()
 
 
 def main():

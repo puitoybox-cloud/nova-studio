@@ -292,6 +292,13 @@ class ProcessingHTTPTests(unittest.TestCase):
         from http.client import HTTPConnection
         from types import SimpleNamespace
         module=self.server_module;inventory=fixture_inventory();captured={}
+        from local_distribution_entry import OwnedResultChannel
+        channel=OwnedResultChannel('a'*64,time.monotonic()+20)
+        channel.command({'session':'a'*64,'capability':channel.capability,'sequence':0,'action':'begin',
+            'request':'b'*64,'input':{'digest':hashlib.sha256(b'fixture').hexdigest(),'byteLength':7}},
+            inventory=inventory,eligible=True,helper_alive=True)
+        def publish(receipt):
+            channel.publish({'session':'a'*64,'capability':channel.helper_capability,'receipt':receipt},inventory)
         def processor(source,work_dir):
             captured['work']=work_dir;captured['bound']=module.REQUEST_RECEIPTS.bound
             module.current_processing_calls().entries=complete_calls()['entries']
@@ -308,7 +315,8 @@ class ProcessingHTTPTests(unittest.TestCase):
                  patch.object(module,'RUNTIME_EVIDENCE_MODULE',evidence),patch.object(module,'RUNTIME_INVENTORY',SimpleNamespace(root=Path('.'))),\
                  patch.object(module,'RUNTIME_EVIDENCE_CONTRACT',{'imports':[]}),\
                  patch.object(module,'PROCESSING_ATTEMPTS',evidence.SessionRequestRegistry('a'*64)),\
-                 patch.object(module,'runtime_snapshot',return_value=inventory),patch.object(module,'process_audio',side_effect=processor):
+                 patch.object(module,'runtime_snapshot',return_value=inventory),patch.object(module,'publish_owned_result',side_effect=publish),\
+                 patch.object(module,'process_audio',side_effect=processor):
                 connection=HTTPConnection('127.0.0.1',server.server_port,timeout=5)
                 connection.request('POST','/process',body=b'fixture',headers={'X-Nova-Audio-Pipeline':'1','X-Nova-File-Name':'fixture.wav',
                     'X-Nova-Session':'a'*64,'X-Nova-Request':'b'*64})
@@ -317,6 +325,7 @@ class ProcessingHTTPTests(unittest.TestCase):
         self.assertFalse(captured['work'].exists());self.assertFalse(module.PROCESS_LOCK.locked())
         self.assertNotIn('private-home',json.dumps(payload))
         self.assertEqual(captured['bound'].state,'CONSUMED' if mode=='success' else 'ABORTED')
+        self.assertEqual(channel.state,'RESULT_READY' if mode=='success' else 'PROCESSING')
         return status,payload
     def test_complete_software_chain_success_and_cleanup(self):
         status,payload=self.run_request('success');self.assertEqual(status,200)
