@@ -216,7 +216,9 @@ class OwnedResultChannel:
                 'bindingDigest':_digest(self.binding) if self.binding else None}
             if action == 'authorize': response['authorization'] = json.loads(json.dumps(self.authorization))
             if action == 'result': response['result'] = json.loads(json.dumps(self.result))
-            self.audit_event(action,{key:item for key,item in response.items() if key not in ('capability','authorization')})
+            audit_evidence = {key:item for key,item in response.items() if key not in ('capability','authorization')}
+            if action == 'authorize': audit_evidence['authorizationDigest'] = _digest(self.authorization)
+            self.audit_event(action,audit_evidence)
             response['audit'] = self.audit.suffix()
             return response
 

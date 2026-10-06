@@ -136,11 +136,12 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
     }
     func testOwnedAuditRejectsMissingForeignReplayGapGenerationAndContract() throws {
         let input = MusicStudioOwnedLifecycle.identity(Data("input".utf8))
-        for mutation in ["missing","session","request","generation","processingContract","previousDigest","index","digest","authentication","order"] {
+        for mutation in ["missing","session","request","generation","processingContract","previousDigest","index","digest","authentication","order","ticket"] {
             let owner = try owner();_ = try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token)
             var value = try XCTUnwrap(JSONSerialization.jsonObject(with:authorizationResponse(owner,input:input)) as? [String:Any])
             var entries = try XCTUnwrap(value["audit"] as? [[String:Any]])
             if mutation == "missing" { value.removeValue(forKey:"audit") }
+            else if mutation == "ticket" { var auth=try XCTUnwrap(value["authorization"] as? [String:Any]);auth["ticket"]=String(repeating:"f",count:64);value["authorization"]=auth }
             else {
                 if mutation == "index" || mutation == "generation" { entries[0][mutation]=2 }
                 else if mutation == "order" { entries[0]["event"]="result" }
@@ -197,6 +198,7 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         if let mutation { auth[mutation] = String(repeating:"f",count:64) }
         value["authorization"] = auth
         var evidence = value; evidence.removeValue(forKey:"authorization"); evidence.removeValue(forKey:"capability")
+        evidence["authorizationDigest"] = MusicStudioOwnedLifecycle.identity(try JSONSerialization.data(withJSONObject:auth,options:[.sortedKeys,.withoutEscapingSlashes])).digest
         value["audit"] = [try auditEntry(event:"authorize",evidence:evidence,index:1,previous:String(repeating:"0",count:64),request:requestID,binding:binding,contract:token)]
         return try JSONSerialization.data(withJSONObject:value)
     }

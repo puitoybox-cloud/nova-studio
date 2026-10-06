@@ -229,6 +229,7 @@ public final class MusicStudioOwnedLifecycle {
             } else if response.result != nil { throw Failure.foreign }
             if auditRequired || value["audit"] != nil {
                 var evidence = value; evidence.removeValue(forKey:"audit"); evidence.removeValue(forKey:"capability"); evidence.removeValue(forKey:"authorization")
+                if let auth = value["authorization"] { evidence["authorizationDigest"] = Self.identity(try Self.canonical(auth)).digest }
                 try validateAudit(value["audit"],ending:pending.0,evidence:evidence,generation:response.renewals)
                 auditRequired = true
             }

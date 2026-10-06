@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),crypto=require('node:crypto');
-function api(){const root={Blob,crypto:crypto.webcrypto,TextEncoder,DataView,setTimeout(callback,delay){if(delay===0)setTimeout(callback,0)},console};vm.runInNewContext(fs.readFileSync('music-studio-audio-pipeline.js','utf8'),root);return root.MusicStudioAudioPipeline}
+function api(BlobType=Blob){const root={Blob:BlobType,crypto:crypto.webcrypto,TextEncoder,DataView,setTimeout(callback,delay){if(delay===0)setTimeout(callback,0)},console};vm.runInNewContext(fs.readFileSync('music-studio-audio-pipeline.js','utf8'),root);return root.MusicStudioAudioPipeline}
 const digest=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 for(const size of [0,1,55,56,63,64,65,65535,65536,65537,64*1024*1024-1,64*1024*1024,64*1024*1024+1,96*1024*1024+19])test('bounded SHA-256 matches independent Node: '+size,async()=>{
  const a=api(),unit=Buffer.alloc(65536);for(let i=0;i<unit.length;i++)unit[i]=i%251;
@@ -39,4 +39,12 @@ test('receipt binds session request contract, replacement and duplicate consumpt
 test('single active hash admission bounds memory and rejects concurrent work',async()=>{
  const a=api(),b=new Blob([Buffer.alloc(65537)]);let other;
  await a.hashBrowserArtifact(b,{onChunk(){other??=a.hashBrowserArtifact(b);other.catch(()=>{})}});await assert.rejects(other,/occupied/);
+});
+
+for(const kind of ['read-failure','short-read'])test('actual bounded read boundary '+kind+' invalidates receipt/cache',async()=>{
+ let reads=0;class Reader extends Blob {async arrayBuffer(){reads++;if(reads===2){if(kind==='read-failure')throw Error('disposable-read-failure');return new ArrayBuffer(1)}return Blob.prototype.arrayBuffer.call(this)}}
+ Object.defineProperty(Reader.prototype,'size',Object.getOwnPropertyDescriptor(Blob.prototype,'size'));
+ const a=api(Reader),b=new Blob([Buffer.alloc(131073)]);
+ await assert.rejects(a.hashBrowserArtifact(b),kind==='read-failure'?/read-failure/:/size-mismatch/);assert.equal(reads,2);
+ const r=await a.hashBrowserArtifact(b);assert.equal(r.chunks,3);assert.equal(r.digest,digest(Buffer.alloc(131073)));
 });
