@@ -274,6 +274,18 @@ print(json.dumps({'blocked': blocked, 'snapshot': guard.snapshot()}))
              patch.object(Path, 'resolve', side_effect=AssertionError('undeclared-path-probe')):
             self.assertEqual(evidence._select_declared_elf(self.root, [declared], self.path, 'child.so', ['$ORIGIN'], None)[0], declared)
             self.assertEqual(evidence._select_declared_native(self.root, [declared], self.path, '@loader_path/child.so', [])[0], declared)
+    def test_known_root_alias_joins_only_declared_artifact_spelling(self):
+        actual = self.root/'actual'; actual.mkdir()
+        alias = self.root/'alias'; alias.symlink_to(actual, target_is_directory=True)
+        raw = b'child'; (actual/'child.so').write_bytes(raw)
+        entry = {'id': 'child', 'path': 'child.so', 'digest': hashlib.sha256(raw).hexdigest(), 'byteLength': len(raw)}
+        for parent in (alias/'parent.so', actual/'parent.so'):
+            child, _, _ = evidence._select_declared_native(alias, [entry], parent, '@loader_path/child.so', [])
+            self.assertEqual(child, entry)
+            child, _, _ = evidence._select_declared_elf(alias, [entry], parent, 'child.so', ['$ORIGIN'], None)
+            self.assertEqual(child, entry)
+        outside = self.root/'outside'; outside.symlink_to(actual, target_is_directory=True)
+        self.assertIsNone(evidence._select_declared_elf(alias, [entry], self.path, str(outside/'child.so'), [], None)[0])
 
 
 if __name__ == '__main__': unittest.main()

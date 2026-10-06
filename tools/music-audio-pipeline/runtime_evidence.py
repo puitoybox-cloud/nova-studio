@@ -500,7 +500,12 @@ def _declared_native_path_index(root, entries):
             absolute = resolve(root, entry['path']).resolve()
         except (ValueError, OSError):
             continue
-        result.setdefault(str(absolute), []).append(entry)
+        # A trusted root may itself be an OS alias (macOS /var -> /private/var).
+        # Index both known root spellings for this declared relative path only.
+        # Do not resolve arbitrary dependency/search candidates to find aliases.
+        lexical = _lexical_native_path(Path(root).absolute() / entry['path'])
+        for spelling in {str(absolute), str(lexical)}:
+            result.setdefault(spelling, []).append(entry)
     return result
 
 

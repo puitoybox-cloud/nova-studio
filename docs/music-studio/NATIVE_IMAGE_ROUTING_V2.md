@@ -80,7 +80,7 @@ bounded ownership/authentication of runtime loader and processing dispatch proof
 
 ## Verification
 
-33 new routing/observation/processing/network regressions. Existing tests are not
+34 new routing/observation/processing/network regressions. Existing tests are not
 deleted, skipped or weakened. The old Mach-O fixture is corrected to 8-byte
 command alignment with an explicit x86_64 architecture; all assertions remain.
 Local Node: 1804/1804 PASS; all 174 tracked JS syntax PASS; whitespace PASS.
@@ -88,3 +88,9 @@ Local Python: missing soundfile/mido causes the existing five accuracy tests to
 skip; the macOS Helper CI with its existing dependencies must run all tests.
 Exact-head CI is authoritative for Swift/macOS/iPad Simulator and Chrome. CI
 and Simulator do not replace physical acceptance.
+
+The first macOS CI exposed /var versus /private/var spelling differences for
+temporary trusted roots. The index now binds both known root spellings for each
+declared artifact, never resolving arbitrary candidate paths or outside aliases.
+An added real symlink-root regression verifies accepted owned-root aliases and
+rejects an unrelated alias; no existing assertion was weakened.
