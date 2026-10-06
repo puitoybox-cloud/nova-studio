@@ -158,8 +158,8 @@ class NativeRoutingTests(unittest.TestCase):
             with self.assertRaises(ValueError): evidence._native_read(stream, offset, size, limit)
             self.assertEqual(stream.tell(), 0)
     def test_graph_budget_has_one_terminal_failure_no_partial_success(self):
-        parent = self.entry('parent.so', macho(names=('@executable_path/undeclared',)*4097), 'parent')
-        second = self.entry('second.so', macho(names=()), 'second')
+        parent = self.entry('parent.so', macho(names=('@executable_path/undeclared',)*2049), 'parent')
+        second = self.entry('second.so', macho(names=('@executable_path/undeclared',)*2049), 'second')
         contract = {'native': [parent, second], 'architecture': 'x86_64', 'buildRevision': 'fixture'}
         result = evidence.scoped_macho_dependencies(self.root, contract)
         self.assertEqual(len(result['edges']), 4097)
