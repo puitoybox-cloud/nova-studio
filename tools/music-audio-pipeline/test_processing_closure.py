@@ -164,6 +164,32 @@ class MappedTests(unittest.TestCase):
             self.assertEqual(result['edges'][0]['status'],expected);self.assertFalse(result['complete'])
         result=evidence.runtime_native_closure({'entries':[]},graph)
         self.assertEqual(result['edges'][0]['status'],'MISSING')
+    def test_declared_loader_and_rpath_resolution_never_probes_system(self):
+        child_dir=self.root/'Frameworks';child_dir.mkdir()
+        child_path=child_dir/'codec.dylib';child_path.write_bytes(b'codec')
+        child={'id':'codec-child','module':None,'version':'1','path':'Frameworks/codec.dylib',
+            'digest':hashlib.sha256(b'codec').hexdigest(),'byteLength':5,'kind':'SHARED_LIBRARY'}
+        entries=[self.entry,child]
+        selected,mode,matches=evidence._select_declared_native(
+            self.root,entries,self.path,'@loader_path/Frameworks/codec.dylib',[])
+        self.assertEqual(selected['id'],'codec-child');self.assertEqual(mode,'LOADER_PATH');self.assertEqual(matches,['codec-child'])
+        selected,mode,matches=evidence._select_declared_native(
+            self.root,entries,self.path,'@rpath/codec.dylib',['@loader_path/Frameworks'])
+        self.assertEqual(selected['id'],'codec-child');self.assertEqual(mode,'RPATH_DECLARED_ONLY');self.assertEqual(matches,['codec-child'])
+        selected,mode,matches=evidence._select_declared_native(
+            self.root,entries,self.path,'/usr/lib/libSystem.B.dylib',[])
+        self.assertIsNone(selected);self.assertEqual(mode,'ABSOLUTE_DECLARED_ONLY');self.assertEqual(matches,[])
+
+    def test_declared_rpath_ambiguity_fails_closed(self):
+        first=self.root/'A';second=self.root/'B';first.mkdir();second.mkdir()
+        (first/'same.dylib').write_bytes(b'a');(second/'same.dylib').write_bytes(b'b')
+        entries=[self.entry,
+            {'id':'a','module':None,'version':'1','path':'A/same.dylib','digest':hashlib.sha256(b'a').hexdigest(),'byteLength':1,'kind':'SHARED_LIBRARY'},
+            {'id':'b','module':None,'version':'1','path':'B/same.dylib','digest':hashlib.sha256(b'b').hexdigest(),'byteLength':1,'kind':'SHARED_LIBRARY'}]
+        selected,mode,matches=evidence._select_declared_native(
+            self.root,entries,self.path,'@rpath/same.dylib',['@loader_path/A','@loader_path/B'])
+        self.assertIsNone(selected);self.assertEqual(mode,'RPATH_DECLARED_ONLY');self.assertEqual(matches,['a','b'])
+
     def test_real_disposable_library_exact_handle_no_enumeration(self):
         source=self.root/'fixture.c';source.write_text('int nova_fixture_identity(void) { return 1; }\n')
         subprocess.run(['cc','-dynamiclib' if platform.system()=='Darwin' else '-shared','-fPIC',str(source),'-o',str(self.path)],check=True,capture_output=True)
