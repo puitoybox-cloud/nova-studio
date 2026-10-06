@@ -52,7 +52,7 @@ class ProcessingBindingTests(unittest.TestCase):
                 self.assertIn('stage:'+stage,result['blockedBy'])
                 with self.assertRaises(ValueError):receipt.consume(result,identity)
     def test_actual_dispatch_missing_partial_foreign_and_tampered_fail_closed(self):
-        for change in ('missing','partial','foreign','tampered'):
+        for change in ('missing','partial','foreign','tampered','label-promotion'):
             with self.subTest(change=change):
                 inventory,identity,receipt=self.make()
                 call=receipt.calls[0];call['callIdentity']='e'*64
@@ -61,12 +61,14 @@ class ProcessingBindingTests(unittest.TestCase):
                         'completed':True,'actualNativeDispatch':'UNVERIFIED',
                         'observerChanged':False,'overflow':False}
                     if change=='foreign':value['callIdentity']='f'*64
+                    if change=='label-promotion':value['actualNativeDispatch']='VERIFIED'
                     call['dispatchEvidence']=value
                     call['dispatchEvidenceDigest']=evidence.evidence_digest(value)
                     if change=='tampered':value['entryCount']=99
                 result=receipt.finish(identity,inventory,{'digest':'d'*64,'byteLength':10})
                 self.assertFalse(result['complete'])
                 self.assertIn('missing-actual-dispatch-evidence' if change=='missing' else
+                    'actual-native-dispatch-adapter-unavailable' if change=='label-promotion' else
                     'partial-or-invalid-actual-dispatch-evidence',result['blockedBy'])
     def test_wrong_codec_fallback_stem_writer_and_native(self):
         for stage in ('decoder','resample','encoder','stem'):

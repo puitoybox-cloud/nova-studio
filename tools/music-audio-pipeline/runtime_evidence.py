@@ -1239,6 +1239,10 @@ class BoundProcessingReceipt:
             dispatch = call.get('dispatchEvidence')
             if call.get('callIdentity') is not None and dispatch is None:
                 reasons.append('missing-actual-dispatch-evidence')
+            # This adapter emits only cooperative Python observations. Even a
+            # recomputed digest and VERIFIED label cannot manufacture native proof.
+            if dispatch is not None:
+                reasons.append('actual-native-dispatch-adapter-unavailable')
             if dispatch is not None and (dispatch.get('callIdentity') != call.get('callIdentity') or
                     call.get('dispatchEvidenceDigest') != evidence_digest(dispatch) or
                     dispatch.get('pythonDispatch') != 'OBSERVED' or dispatch.get('completed') is not True or
