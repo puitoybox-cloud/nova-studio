@@ -75,6 +75,13 @@ class ChannelTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.publish(base)
         self.command('stop')
         with self.assertRaises(ValueError):self.publish(base)
+    def test_changed_inventory_after_publication_blocks_delivery_and_acceptance(self):
+        self.begin();self.publish();self.inventory['changed']=True
+        with self.assertRaises(ValueError):self.command('result')
+        del self.inventory['changed'];result=self.command('result')
+        self.inventory['changed']=True
+        with self.assertRaises(ValueError):self.command('accept',resultId=result['result']['resultId'],output=self.output)
+        self.assertEqual(self.channel.state,'DELIVERED')
     def test_tampered_stages_and_native_digest_rejected_without_label_promotion(self):
         self.begin();base=self.receipt()
         for field in ['stages','nativeStages','entries','children','nativeClosureComplete','networkContainment']:
@@ -178,6 +185,7 @@ class PrivateTransportTests(unittest.TestCase):
         channel=lifecycle.control
         server.on_control=lambda route,value:channel.command(value,inventory={},eligible=True,helper_alive=True)
         server.start()
+        self.assertTrue(server.server.daemon_threads);self.assertFalse(server.server.block_on_close)
         def post(value,origin=None):
             c=http.client.HTTPConnection('127.0.0.1',server.server.server_port,timeout=3)
             headers={'Content-Type':'application/json'}
@@ -226,4 +234,32 @@ class ProductionOwnershipTests(unittest.TestCase):
                 c.request('POST','/owned-stop',body=b'',headers={'Host':'127.0.0.1:8766','X-Nova-Session':'a'*64,'X-Nova-Owned-Capability':'c'*64})
                 r=c.getresponse();self.assertEqual(r.status,403);r.read();c.close()
                 self.assertFalse(module.OWNED_STOP_REQUESTED.is_set())
+        finally:server.shutdown();server.server_close();thread.join(timeout=3)
+
+class AuthenticatedStopTests(unittest.TestCase):
+    def test_authenticated_stop_cancels_owned_admission_and_only_acknowledges_stopping(self):
+        from test_processing_closure import ProcessingHTTPTests
+        import os
+        import threading
+        ProcessingHTTPTests.setUpClass();module=ProcessingHTTPTests.server_module
+        server=module.ThreadingHTTPServer(('127.0.0.1',0),module.Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        event=threading.Event()
+        from runtime_evidence import SessionRequestRegistry
+        registry=SessionRequestRegistry('a'*64)
+        try:
+            with patch.dict(os.environ,{'NOVA_LIFECYCLE_SESSION':'a'*64,'NOVA_LIFECYCLE_DEADLINE':str(time.monotonic()+20),
+                    'NOVA_OWNED_RESULT_CAPABILITY':'b'*64}),patch.object(module,'STRICT_BOOTSTRAP',True),\
+                    patch.object(module,'OWNED_STOP_REQUESTED',event),patch.object(module,'PROCESSING_ATTEMPTS',registry):
+                def stop(origin=None):
+                    c=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=3)
+                    headers={'Host':'127.0.0.1:8766','X-Nova-Session':'a'*64,'X-Nova-Owned-Capability':'b'*64}
+                    if origin:headers['Origin']=origin
+                    c.request('POST','/owned-stop',body=b'',headers=headers);r=c.getresponse();status=r.status;body=json.loads(r.read());c.close();return status,body
+                status,_=stop('http://127.0.0.1:18766');self.assertEqual(status,403);self.assertFalse(event.is_set())
+                status,body=stop();self.assertEqual(status,200)
+                self.assertEqual(body,{'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':'a'*64,'state':'STOPPING'})
+                self.assertTrue(event.is_set());self.assertTrue(registry.closed)
+                with self.assertRaises(ValueError):module.require_owned_session('a'*64)
+                self.assertNotIn('complete',body)
         finally:server.shutdown();server.server_close();thread.join(timeout=3)

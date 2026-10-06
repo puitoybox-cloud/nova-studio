@@ -144,6 +144,10 @@ public final class MusicStudioOwnedLifecycle {
             credential = MusicStudioOwnedCredential(capability: response.capability, sequence: response.sequence,
                 expiresAt: response.expiresAt, deadlineAt: response.deadlineAt)
             state = response.state; self.pending = nil
+            if ["ACCEPTED","STOPPING"].contains(state) {
+                credential = MusicStudioOwnedCredential(capability: "", sequence: response.sequence,
+                    expiresAt: response.expiresAt, deadlineAt: response.deadlineAt)
+            }
         } catch { state = "FAILED"; self.pending = nil; result = nil; throw error }
     }
     public func fail() { lock.lock(); defer { lock.unlock() }; state = "FAILED"; pending = nil; result = nil }

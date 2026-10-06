@@ -42,7 +42,7 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
             let owner = try owner(); try begin(owner); _ = try owner.command("renew")
             var value = try XCTUnwrap(JSONSerialization.jsonObject(with:response(action:"renew",state:"PROCESSING",sequence:2,
                 binding:binding,capability:String(repeating:"d",count:64),expiry:1040000,renewals:1)) as? [String:Any])
-            value[field] = field == "sequence" ? 0 : String(repeating:"f",count:64)
+            if field == "sequence" { value[field] = 0 } else { value[field] = String(repeating:"f",count:64) }
             XCTAssertThrowsError(try owner.receive(JSONSerialization.data(withJSONObject:value),now:now))
             XCTAssertEqual(owner.state,"FAILED");XCTAssertThrowsError(try owner.command("stop"))
         }

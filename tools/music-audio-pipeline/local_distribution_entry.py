@@ -96,6 +96,9 @@ class OwnedResultChannel:
                     self.clock() >= self.expires or not helper_alive):
                 raise ValueError('stale-foreign-or-dead-owner')
             action = value.get('action')
+            if self.binding is not None and action != 'stop':
+                current = processing_binding(self.session,self.binding['request'],self.binding['input'],inventory)
+                if current != self.binding: raise ValueError('changed-owned-processing-inventory')
             base = {'session','capability','sequence','action'}
             if action == 'begin':
                 if set(value) != base|{'request','input'} or self.state != 'READY' or eligible is not True:
@@ -216,7 +219,7 @@ class LocalEnvelopeServer:
         for path, value in assets.items():
             if (not isinstance(path, str) or not path.startswith('/') or
                     any(c in path for c in ('..', '?', '#', '%', '\\')) or
-                    path == '/bootstrap-envelope' or not isinstance(value, bytes) or
+                    path in ('/bootstrap-envelope','/owned-control','/owned-helper-result','/lifecycle') or not isinstance(value, bytes) or
                     len(value) > 4*1024*1024):
                 raise ValueError('unsafe-web-asset')
             if hashlib.sha256(value).hexdigest() != expected_assets[path]:
@@ -320,6 +323,9 @@ class LocalEnvelopeServer:
                     self.send_response(204); self.send_header('Content-Length', '0'); self.end_headers()
                 except (ValueError, TypeError, OSError): self.send_error(403)
         self.server = ThreadingHTTPServer((host, port), Handler)
+        # Slow/in-flight handlers cannot make transport shutdown wait forever.
+        self.server.daemon_threads = True
+        self.server.block_on_close = False
         self.origin = 'http://127.0.0.1:' + str(self.server.server_port)
         self.thread = None
 
@@ -534,6 +540,7 @@ class LocalProductionLifecycle:
                 browser_verified=self.browser_verified,fresh_session=time.monotonic() < self.server.deadline)
             response = self.control.command(value,inventory=self.inventory,
                 eligible=eligibility['processingEligible'],helper_alive=True)
+            self.last_seen = time.monotonic()
             if response['state'] in ('ACCEPTED','STOPPING'):
                 self.eligibility = strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
                 self.done.set()

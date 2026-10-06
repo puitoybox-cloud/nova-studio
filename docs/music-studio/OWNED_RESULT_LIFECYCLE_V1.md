@@ -21,7 +21,8 @@ live Helper/session identity and strict eligibility, recomputes the processing
 aggregator, and rejects changed, missing, partial or mismatched chains. Result
 retrieval is one-shot; acceptance binds result ID and the actual Swift-supplied
 output bytes hashed in 64 KiB chunks. Acceptance closes processing authority and
-requests teardown. Duplicate/replay/foreign/expired/cancelled results fail closed.
+requests teardown. Duplicate/replay/foreign/expired/cancelled results fail closed. Inventory is also
+rechecked at result delivery and output acceptance, after Helper publication.
 No uncertain transport operation is automatically retried.
 
 Capabilities initially last at most 20 seconds. Two renewals at most rotate only
@@ -47,7 +48,8 @@ current live handle and owned descendants and return a matching receipt. No OS s
 implementation is installed; even a fixture adapter is OBSERVED, not VERIFIED.
 Leader reaping does not release descendant ownership. Incomplete teardown remains
 UNVERIFIED with `ownershipReleased=false`, and an unresponsive Helper yields FAILED.
-The listening transport may be STOPPED while descendant shutdown is UNVERIFIED.
+The listening transport uses daemon handlers and does not join in-flight handler
+threads at close. It may be STOPPED while descendant shutdown is UNVERIFIED.
 
 ## Native dispatch, loader, network
 
