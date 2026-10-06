@@ -4,6 +4,8 @@ import hashlib
 import json
 import threading
 import time
+import tempfile
+from types import SimpleNamespace
 import unittest
 from http.client import HTTPConnection
 from pathlib import Path
@@ -13,6 +15,44 @@ SERVER_PATH = Path(__file__).with_name("server.py")
 spec = importlib.util.spec_from_file_location("nova_audio_server", SERVER_PATH)
 server_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(server_module)
+
+
+class FinalWriterBindingTests(unittest.TestCase):
+    def test_actual_final_writer_passes_through_strict_receipt_and_denial_blocks_write(self):
+        class Output:
+            def __init__(self): self.tracks=[]
+            def save(self, path): Path(path).write_bytes(b'disposable-writer-bytes')
+        class Calls:
+            def __init__(self, denied=False): self.denied=denied; self.observed=[]
+            def call(self, stage, logical, function, path):
+                self.observed.append((stage,logical,function.__self__,path))
+                if self.denied: raise ValueError('unverified-or-fallback-processing-backend')
+                return function(path)
+        for denied in (False,True):
+            with self.subTest(denied=denied), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);(root/'vocals.wav').write_bytes(b'x'*45)
+                output=Output();calls=Calls(denied)
+                mido=SimpleNamespace(MidiFile=lambda **kw:output,MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                events=[(0,'note_on',60,90)]
+                with patch.dict('sys.modules',{'mido':mido}),\
+                     patch.object(server_module,'STRICT_BOOTSTRAP',True),\
+                     patch.object(server_module,'current_processing_calls',return_value=calls),\
+                     patch.object(server_module,'transcribe_pitched_stem'),\
+                     patch.object(server_module,'extract_note_events',return_value=events),\
+                     patch.object(server_module,'refine_clear_melody',return_value=events),\
+                     patch.object(server_module,'write_track'):
+                    if denied:
+                        with self.assertRaisesRegex(ValueError,'unverified-or-fallback'):
+                            server_module.build_merged_midi(root,root,root/'input.wav',120)
+                        self.assertFalse((root/'input_stems.mid').exists())
+                    else:
+                        path,labels,counts=server_module.build_merged_midi(root,root,root/'input.wav',120)
+                        self.assertEqual(path.read_bytes(),b'disposable-writer-bytes')
+                        self.assertEqual((labels,counts),(['Vocals'],{'Vocals':1}))
+                self.assertEqual(len(calls.observed),1)
+                self.assertEqual(calls.observed[0][:2],('result','merged-midi-writer'))
+                self.assertIs(calls.observed[0][2],output)
 
 
 class AudioHelperBoundaryTests(unittest.TestCase):

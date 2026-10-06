@@ -24,6 +24,14 @@ from dependency_identity import verify_local_asset
 from distribution_binding import load_manifest
 
 SOURCES = {'helper-source': 'server.py',
+           'runtime-inventory-source': 'runtime_inventory.py',
+           'dependency-identity-source': 'dependency_identity.py',
+           'distribution-binding-source': 'distribution_binding.py',
+           'demucs-parent-source': 'demucs_parent.py',
+           'demucs-child-source': 'demucs_child.py',
+           'demucs-receipt-source': 'demucs_receipt.py',
+           'scoped-closure-source': 'scoped_closure.py',
+           'inventory-aggregation-source': 'inventory_aggregation.py',
            'artifact-verification-source': 'artifact_verification.py',
            'runtime-evidence-source': 'runtime_evidence.py',
            'local-distribution-entry-source': 'local_distribution_entry.py'}
@@ -594,10 +602,19 @@ def prepare(root, manifest, anchor, build, pipeline=None):
     verify_local_asset(pipeline, 'artifact_verification.py', verifier_source, 1024*1024)
     from artifact_verification import VERIFIER
     runtime = bootstrap(manifest, anchor, build, root)
+    from runtime_inventory import stable, local
+    source_stamps = {}
+    source_assets = {}
     for identity, relative in SOURCES.items():
-        expected = runtime.expected('assets', identity)
+        expected = dict(runtime.expected('assets', identity))
+        path = local(pipeline, relative)
+        before = stable(path)
         VERIFIER.verify(pipeline, relative, expected, 1024*1024,
                         identity=identity, version=expected['revision'], build=build)
+        if stable(path) != before:
+            raise ValueError('launcher-source-changed')
+        source_stamps[relative] = before
+        source_assets[identity] = expected
     if runtime.manifest['helper']['sourceDigest'] != runtime.expected('assets', 'helper-source')['digest']:
         raise ValueError('launcher-helper-source-mismatch')
     graph = load_contract(runtime.root, runtime.manifest)
@@ -610,6 +627,21 @@ def prepare(root, manifest, anchor, build, pipeline=None):
         raise ValueError('launcher-evidence-build-mismatch')
     executable = runtime.resolve_executable('python-runtime', sys.executable)
     runtime.recheck()
+    def source_preflight():
+        # Reuse existing authenticated asset identities at the actual spawn boundary.
+        # This proves disk-file continuity only, never installed trust or mapped memory.
+        for identity, relative in SOURCES.items():
+            path = local(pipeline, relative)
+            if stable(path) != source_stamps[relative]:
+                raise ValueError('launcher-source-changed')
+            expected = source_assets[identity]
+            VERIFIER.verify(pipeline, relative, expected, 1024*1024,
+                            identity=identity, version=expected['revision'], build=build)
+            if stable(path) != source_stamps[relative]:
+                raise ValueError('launcher-source-changed')
+        if runtime.resolve_executable('python-runtime', sys.executable) != executable:
+            raise ValueError('launcher-runtime-changed')
+        runtime.recheck()
     # Strict Helper boot will independently authenticate and refuse incomplete runtime evidence.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_'))}
     environment.update(NOVA_TRUSTED_MANIFEST_PATH=str(Path(manifest).resolve()),
@@ -617,6 +649,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                        NOVA_EXPECTED_BUILD_REVISION=build,
                        NOVA_RUNTIME_ASSET_ROOT=str(runtime.root), PYTHONUNBUFFERED='1')
     return {'command': [executable, '-I', str(pipeline/'server.py')],
+            '_source_preflight': source_preflight,
             'environment': environment,
             'browserEnvelope': {'manifest': runtime.manifest, 'trust': {'manifestDigest': anchor, 'buildRevision': build},
                                 'runtimeConfigText': json.dumps(runtime.bindings, sort_keys=True, separators=(',', ':'), ensure_ascii=False)},
@@ -709,6 +742,8 @@ class LocalProductionLifecycle:
             environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin,
                 NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline),
                 NOVA_OWNED_RESULT_ORIGIN=self.server.origin, NOVA_OWNED_RESULT_CAPABILITY=self.control.helper_capability)
+            if '_source_preflight' in self.prepared:
+                self.prepared['_source_preflight']()
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             deadline = time.monotonic()+self.timeout
