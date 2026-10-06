@@ -247,6 +247,15 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         try owner.receiveShutdown(data);XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
         XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"FAILED")
     }
+    func testDelayedFinalSummaryIsRejectedWithoutRenewingProcessingAuthority() throws {
+        var clock: TimeInterval = 100
+        let owner = try owner(clock:{clock});_ = try owner.command("stop")
+        try owner.receive(response(action:"stop",state:"STOPPING",sequence:1),now:now)
+        clock=110
+        XCTAssertThrowsError(try owner.receiveShutdown(shutdownEnvelope(shutdownPayload())))
+        XCTAssertEqual(owner.state,"FAILED");XCTAssertThrowsError(try owner.command("renew"))
+    }
+
     func testForeignTamperedPrematureAndFalseCompleteShutdownRejected() throws {
         for kind in ["foreign","tamper","complete","transport","boolean-count"] {
             let owner = try stoppedOwner();var payload = shutdownPayload()

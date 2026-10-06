@@ -41,6 +41,7 @@ public final class MusicStudioOwnedLifecycle {
     private var acceptedResultID: String?
     private var acceptedResultDigest: String?
     private var shutdownReceived = false
+    private var shutdownReceiptDeadline: TimeInterval?
     public private(set) var acceptedOutput: MusicStudioOutputIdentity?
     private let origin: URL
     private let session: String
@@ -245,6 +246,7 @@ public final class MusicStudioOwnedLifecycle {
                 expiresAt: response.expiresAt, deadlineAt: response.deadlineAt)
             state = response.state; self.pending = nil
             if state == "STOPPING" {
+                shutdownReceiptDeadline = uptime() + 10
                 credential = MusicStudioOwnedCredential(capability: "", sequence: response.sequence,
                     expiresAt: response.expiresAt, deadlineAt: response.deadlineAt)
             }
@@ -255,7 +257,7 @@ public final class MusicStudioOwnedLifecycle {
     @discardableResult public func receiveShutdown(_ data: Data) throws -> Data {
         lock.lock(); defer { lock.unlock() }
         do {
-            guard state == "STOPPING", !shutdownReceived, data.count <= 16384,
+            guard state == "STOPPING", !shutdownReceived, let finalDeadline = shutdownReceiptDeadline, uptime() < finalDeadline, data.count <= 16384,
                   let envelope = try JSONSerialization.jsonObject(with: data) as? [String:Any],
                   (Set(envelope.keys) == Set(["payload","authentication"]) || Set(envelope.keys) == Set(["payload","authentication","audit"])),
                   let payload = envelope["payload"] as? [String:Any], let authentication = envelope["authentication"] as? String,
@@ -300,7 +302,7 @@ public final class MusicStudioOwnedLifecycle {
             return acknowledgement
         } catch { fail(); finalKey = Data(); throw error }
     }
-    public func fail() { lock.lock(); defer { lock.unlock() }; state = "FAILED"; pending = nil; result = nil; authorization = nil }
+    public func fail() { lock.lock(); defer { lock.unlock() }; state = "FAILED"; pending = nil; result = nil; authorization = nil; finalKey = Data(); shutdownReceiptDeadline = nil }
 }
 
 /// Exact-origin, redirect-denying, ephemeral transport with a response byte budget.
