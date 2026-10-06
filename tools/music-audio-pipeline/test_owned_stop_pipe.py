@@ -174,6 +174,40 @@ class StopPipeTests(unittest.TestCase):
         self.assertTrue(session.shutdown_receipt['ownedExitObservation']['leaderReaped'])
         self.assertEqual(session.shutdown_receipt['hardInterruption'],'UNVERIFIED')
 
+    def test_authenticated_owned_source_loader_failure_prevents_actual_spawn(self):
+        fixture=lifecycle_fixtures.LifecycleTests();l=fixture.make();self.addCleanup(l.close)
+        l.prepared['_owned_process_loader']=lambda:(_ for _ in ()).throw(ValueError('launcher-owned-source-changed'))
+        with patch.object(l,'popen') as spawn:
+            with self.assertRaisesRegex(ValueError,'launcher-owned-source-changed'):l.start()
+            spawn.assert_not_called()
+        self.assertEqual(l.state,'FAILED');self.assertTrue(l.server.closed)
+
+    def test_production_loader_executes_exact_anchored_source_and_rejects_tamper(self):
+        import tempfile
+        from types import SimpleNamespace
+        import local_distribution_entry as launcher
+        from test_native_verification import entry
+        original=Path(__file__).with_name('demucs_receipt.py').read_bytes()
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);assets={}
+            for identity,relative in launcher.SOURCES.items():
+                artifact=entry(root,relative,original if identity=='demucs-receipt-source' else b'fixture')
+                artifact.update(id=identity,revision='1');assets[identity]=artifact
+            runtime=SimpleNamespace(root=root,manifest={'helper':{'sourceDigest':assets['helper-source']['digest']}},
+                bindings={'version':1,'models':[],'dependencies':[],'native':[],'assets':[]},
+                expected=lambda kind,identity:assets[identity],recheck=lambda:None,
+                resolve_executable=lambda identity,path:str(path))
+            with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),patch.object(launcher,'bootstrap',return_value=runtime),patch.object(launcher,'load_contract',return_value={}),patch.object(launcher,'verify_assembly',return_value={'complete':True}),patch('runtime_evidence.load',return_value={'buildRevision':'build'}),patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
+                prepared=launcher.prepare(root,'manifest','a'*64,'build',pipeline=root)
+                pipe_type,observer_type=prepared['_owned_process_loader']()
+                self.assertEqual(pipe_type.__module__,'nova_authenticated_owned_process')
+                self.assertEqual(observer_type.__module__,'nova_authenticated_owned_process')
+                marker=root/'must-not-execute'
+                (root/'demucs_receipt.py').write_text('from pathlib import Path;Path('+repr(str(marker))+').write_text("unsafe")')
+                with self.assertRaisesRegex(ValueError,'launcher-owned-source-changed'):
+                    prepared['_owned_process_loader']()
+                self.assertFalse(marker.exists())
+
     def test_timeout_retains_actual_observer_without_signal(self):
         fixture=lifecycle_fixtures.LifecycleTests();l=fixture.make();self.addCleanup(l.close)
         l.start()

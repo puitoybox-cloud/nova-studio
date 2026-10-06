@@ -16,6 +16,12 @@ The child makes its endpoint non-inheritable again. No listener, filesystem sock
 new HTTP endpoint, browser credential, persistent credential or external network
 is introduced. Existing result/admission HTTP and Swift APIs are unchanged.
 
+Production prepare now supplies an owned-process source loader that reads bounded
+bytes, checks the existing anchored digest/size and source stamps, and executes
+that exact snapshot. It does not trust a mutable import cache when constructing
+the new adapter; the whole assembly still rechecks immediately before Popen.
+Loader failure rejects startup before any process creation.
+
 The actual launcher stop now uses this retained endpoint, rather than retrying an
 HTTP stop. It uses the existing Helper capability, not a parallel authority.
 HMAC covers session, owner, assembly generation, original monotonic deadline,
@@ -54,7 +60,7 @@ handoff and final-summary/ack delivery remain SOURCE_ONLY/PARTIAL.
 
 ## Verification boundaries
 
-Fourteen new tests use disposable fixtures. They cover the real launcher Popen
+Sixteen new tests use disposable fixtures. They cover the real launcher Popen
 inherited-descriptor STOP/STOPPING and final PARTIAL summary, actual Helper receiver
 admission closure, total fragmented-read deadline, channel rejection and descriptor
 closure, request pinning, and Demucs timeout retention followed by actual owned
@@ -62,7 +68,7 @@ child exit. The existing macOS-only behavior test conditionally observes actual
 kqueue NOTE_EXIT on macOS, without skip addition. Fixture ML assets are never
 production assets. Native/network isolation and descendant closure are not proven.
 
-Local Node 1831/1831, no skips; Python 324 total / 319 pass, five unchanged existing
+Local Node 1831/1831, no skips; Python 326 total / 321 pass, five unchanged existing
 missing-test-dependency skips. Full JS syntax, Python compile, shell syntax and
 whitespace checked. Exact-head CI results must be verified after publishing; local
 Linux is not macOS/Swift/iPad build or physical evidence. No test deletion, skip
@@ -103,9 +109,9 @@ UNVERIFIED, with no signal implementation. This does not claim no such API exist
 A: scoped source work implemented and tested. B: approved private assets/models/
 anchors and full installed Swift private delivery open. C: actionable user decisions
 0. D: all physical acceptance pending. E: exact interruption/descendant handles,
-full native isolation/dispatch/network proof unverified. Three scoped repository
+full native isolation/dispatch/network proof unverified. Four scoped repository
 work items addressed (sealed ownership binding, timeout retention, actual inherited
-Helper stop delivery); no known unresolved blocker in those repaired behaviors.
+Helper stop delivery, authenticated adapter source snapshot); no known unresolved blocker in those repaired behaviors.
 This is not an exhaustive repository or product blocker count. Full delivery
 closure remains unfinished. Formal A 0/30; Stage 2 OPEN; Stage 3 NOT_PASSED.
 

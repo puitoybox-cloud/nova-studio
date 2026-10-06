@@ -645,6 +645,20 @@ def prepare(root, manifest, anchor, build, pipeline=None):
         if not verify_assembly(runtime.root, graph, runtime=runtime)['complete']:
             raise ValueError('launcher-artifact-assembly-changed')
         runtime.recheck()
+    def owned_process_loader():
+        # Execute only the authenticated source snapshot, not import-cache/PATH content.
+        expected=source_assets['demucs-receipt-source']
+        path=local(pipeline,'demucs_receipt.py')
+        if stable(path)!=source_stamps['demucs_receipt.py']:
+            raise ValueError('launcher-owned-source-changed')
+        with path.open('rb') as handle:raw=handle.read(1024*1024+1)
+        if (len(raw)>1024*1024 or len(raw)!=expected['byteLength'] or
+                hashlib.sha256(raw).hexdigest()!=expected['digest'] or
+                stable(path)!=source_stamps['demucs_receipt.py']):
+            raise ValueError('launcher-owned-source-changed')
+        namespace={'__name__':'nova_authenticated_owned_process','__file__':str(path)}
+        exec(compile(raw,str(path),'exec'),namespace)
+        return namespace['OwnedStopPipe'],namespace['OwnedExitObservation']
     # Strict Helper boot will independently authenticate and refuse incomplete runtime evidence.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_'))}
     environment.update(NOVA_TRUSTED_MANIFEST_PATH=str(Path(manifest).resolve()),
@@ -652,7 +666,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                        NOVA_EXPECTED_BUILD_REVISION=build,
                        NOVA_RUNTIME_ASSET_ROOT=str(runtime.root), PYTHONUNBUFFERED='1')
     return {'command': [executable, '-I', str(pipeline/'server.py')],
-            '_source_preflight': source_preflight,
+            '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
             'environment': environment,
             'browserEnvelope': {'manifest': runtime.manifest, 'trust': {'manifestDigest': anchor, 'buildRevision': build},
                                 'runtimeConfigText': json.dumps(runtime.bindings, sort_keys=True, separators=(',', ':'), ensure_ascii=False)},
@@ -746,7 +760,12 @@ class LocalProductionLifecycle:
             environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin,
                 NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline),
                 NOVA_OWNED_RESULT_ORIGIN=self.server.origin, NOVA_OWNED_RESULT_CAPABILITY=self.control.helper_capability)
-            from demucs_receipt import OwnedStopPipe
+            loader=self.prepared.get('_owned_process_loader')
+            if loader is not None:
+                OwnedStopPipe,OwnedExitObservation=loader()
+            else:
+                # Injected disposable lifecycle fixtures have no production prepare/anchor.
+                from demucs_receipt import OwnedStopPipe,OwnedExitObservation
             parent_socket,self.child_stop_socket=socket.socketpair(socket.AF_UNIX,socket.SOCK_STREAM)
             identity={'session':self.control.session,'owner':self.control.owner,
                 'generation':_digest(self.server.binding),'deadline':self.server.deadline}
@@ -760,7 +779,6 @@ class LocalProductionLifecycle:
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                     pass_fds=(self.child_stop_socket.fileno(),))
             self.child_stop_socket.close();self.child_stop_socket=None
-            from demucs_receipt import OwnedExitObservation
             self.exit_observer = OwnedExitObservation(self.child,self.server.session,self.server.binding,owned_channel=self.stop_pipe.handle)
             deadline = time.monotonic()+self.timeout
             while True:

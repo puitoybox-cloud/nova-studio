@@ -3,18 +3,18 @@
   "basePR": 323,
   "baseHead": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
   "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
-  "scopedWorkItemsAddressed": 3,
+  "scopedWorkItemsAddressed": 4,
   "knownRemainingInRepairedBehaviors": 0,
   "exhaustiveRepositoryBlockerCount": null,
-  "newTests": 14,
+  "newTests": 16,
   "localNode": {
     "total": 1831,
     "pass": 1831,
     "skip": 0
   },
   "localPython": {
-    "total": 324,
-    "pass": 319,
+    "total": 326,
+    "pass": 321,
     "preexistingDependencySkip": 5
   },
   "installedHelperStopDelivery": "ACTUAL_POPEN_INHERITED_DESCRIPTOR_SOURCE_PATH_TESTED",
