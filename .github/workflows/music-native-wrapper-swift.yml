@@ -55,7 +55,40 @@ jobs:
 
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build
+
+      - name: Record actual native package architecture and linkage
+        working-directory: tools/music-native-wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAC_APP="build/DerivedData/Build/Products/Debug/Music Studio.app"
+          IPAD_APP="build/iPadDerivedData/Build/Products/Debug-iphonesimulator/Music Studio.app"
+          python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$MAC_APP" --scope PACKAGE_OBSERVATION > macos-package-evidence.json
+          python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$IPAD_APP" --scope PACKAGE_OBSERVATION > ipad-simulator-package-evidence.json
+          MAC_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$MAC_APP/Contents/Info.plist")
+          IPAD_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$IPAD_APP/Info.plist")
+          {
+            printf 'macOS actual binary architectures:\n'
+            /usr/bin/lipo -archs "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            /usr/bin/file "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            /usr/bin/otool -L "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            printf 'iPad Simulator actual binary architectures (not physical iPad evidence):\n'
+            /usr/bin/lipo -archs "$IPAD_APP/$IPAD_EXEC"
+            /usr/bin/file "$IPAD_APP/$IPAD_EXEC"
+            /usr/bin/otool -L "$IPAD_APP/$IPAD_EXEC"
+          } > native-architecture-linkage-evidence.txt
+          cat native-architecture-linkage-evidence.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Native-package-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            tools/music-native-wrapper/macos-package-evidence.json
+            tools/music-native-wrapper/ipad-simulator-package-evidence.json
+            tools/music-native-wrapper/native-architecture-linkage-evidence.txt
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper

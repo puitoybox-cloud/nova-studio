@@ -94,6 +94,29 @@ jobs:
           /usr/bin/codesign --verify --deep --strict "$APP_ROOT"
           ditto -c -k --sequesterRsrc --keepParent "$APP_ROOT" "$RUNNER_TEMP/Nova-Music-Audio-Helper-macOS.zip"
 
+      - name: Record actual package and test-runtime evidence without approval
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/audio-test-venv/bin/python" tools/music-audio-pipeline/bundle_evidence.py --package-root "$RUNNER_TEMP/Nova Music Audio Helper.app" --scope PACKAGE_OBSERVATION > "$RUNNER_TEMP/helper-backend-evidence.json"
+          python3 - "$RUNNER_TEMP/helper-backend-evidence.json" <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print('Helper package evidence; interpreter/dependencies are CI TEST_ONLY, not bundled runtime')
+          print(json.dumps({'publicationEligible': r['publicationEligible'], 'packageFiles': len(r['packageFiles']),
+                           'dependencies': [{'name': d['name'], 'version': d.get('version'), 'status': d['status'], 'license': d['license']} for d in r['distributions']]}))
+          PY
+          /usr/bin/file "$RUNNER_TEMP/Nova Music Audio Helper.app/Contents/MacOS/NovaMusicAudioHelper" > "$RUNNER_TEMP/helper-architecture-evidence.txt"
+          cat "$RUNNER_TEMP/helper-architecture-evidence.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Helper-backend-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/helper-backend-evidence.json
+            ${{ runner.temp }}/helper-architecture-evidence.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload app artifact
         uses: actions/upload-artifact@v4
         with:
