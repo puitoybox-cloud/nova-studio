@@ -5,10 +5,64 @@ import queue
 import subprocess
 import threading
 import uuid
+import os
+import hashlib
+import select
 from pathlib import Path
 
 FORMAT='nova-demucs-child-receipt'
 MAX_RECEIPT=65536
+
+
+class OwnedExitObservation:
+    """One creator-owned child exit subscription; never a signaling handle.
+
+    Register before reader/supervisor threads can reap this Popen child. Its
+    unreaped child identity cannot be reassigned while registering NOTE_EXIT.
+    No NOTE_TRACK, PID search, process-group operation or capability promotion.
+    """
+    def __init__(self, process, session, generation):
+        self.process=process;self.creator=os.getpid();self.session=session
+        self.generation=hashlib.sha256(json.dumps(generation,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.queue=None;self.status='UNVERIFIED';self.exited=False;self.closed=False
+        self.identifier=None
+        if not isinstance(process,subprocess.Popen) or process.poll() is not None:
+            return
+        if not hasattr(select,'kqueue'):
+            self.status='UNSUPPORTED';return
+        try:
+            self.identifier=process.pid
+            self.queue=select.kqueue()
+            event=select.kevent(self.identifier,filter=select.KQ_FILTER_PROC,
+                flags=select.KQ_EV_ADD|select.KQ_EV_ENABLE|select.KQ_EV_ONESHOT,
+                fflags=select.KQ_NOTE_EXIT)
+            self.queue.control([event],0,0)
+            self.status='REGISTERED_OWNED_CHILD_EXIT_ONLY'
+        except (OSError,ValueError):
+            if self.queue is not None:self.queue.close()
+            self.queue=None;self.status='UNVERIFIED'
+
+    def observe(self, process, binding=None):
+        if process is not self.process or os.getpid()!=self.creator:
+            raise ValueError('foreign-owned-exit-observation')
+        if self.queue is not None and not self.closed and not self.exited:
+            try:
+                for event in self.queue.control(None,1,0):
+                    if (event.ident!=self.identifier or event.filter!=select.KQ_FILTER_PROC or
+                            event.flags & select.KQ_EV_ERROR or not event.fflags & select.KQ_NOTE_EXIT):
+                        self.status='UNVERIFIED'
+                    else:self.exited=True
+            except (OSError,ValueError):self.status='UNVERIFIED'
+        return {'childSession':self.session,'generationIdentity':self.generation,
+            'requestBindingDigest':hashlib.sha256(json.dumps(binding,sort_keys=True,separators=(',',':')).encode()).hexdigest() if binding is not None else None,
+            'creatorOwnership':'RETAINED_POPEN_OBJECT' if isinstance(process,subprocess.Popen) else 'UNVERIFIED',
+            'kernelExitSubscription':self.status,'kernelExitObserved':self.exited,
+            'leaderReaped':process.poll() is not None,'descriptorClosed':self.closed,
+            'liveInterruptionHandle':'UNVERIFIED','ownedDescendantsComplete':False}
+
+    def close(self):
+        if self.queue is not None and not self.closed:self.queue.close()
+        self.closed=True
 
 
 def unique(pairs):
@@ -42,11 +96,12 @@ def validate_receipt(value,expected,nonce):
 class ChildSession:
     def __init__(self,command,expected,launch=subprocess.Popen,timeout=30,permit=None):
         self.command=tuple(command);self.expected=copy.deepcopy(expected);self.timeout=timeout
-        self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue(maxsize=2);self.protocol_error=None;self.lock=threading.Lock()
+        self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue(maxsize=2);self.protocol_error=None;self.lock=threading.Lock();self.processing_binding=None
         try:
             if permit:
                 with permit(self.command):self.process=launch(list(self.command),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={'PYTHONDONTWRITEBYTECODE':'1'})
             else:self.process=launch(list(self.command),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={'PYTHONDONTWRITEBYTECODE':'1'})
+            self.exit_observer=OwnedExitObservation(self.process,self.nonce,self.expected)
             def enqueue(value):
                 try:self.messages.put_nowait(value)
                 except queue.Full:raise ValueError('unexpected-child-message-flood')
@@ -63,6 +118,7 @@ class ChildSession:
             self._send({'type':'load','nonce':self.nonce})
             self.receipt=validate_receipt(self._receive(),self.expected,self.nonce)
             if self.process.poll() is not None:raise ValueError('child-exited-after-load')
+            self.exit_evidence=self.exit_observer.observe(self.process)
         except Exception:
             self.close();raise
 
@@ -80,6 +136,7 @@ class ChildSession:
     def current(self):
         if self.protocol_error:raise self.protocol_error
         if self.process is None or self.process.poll() is not None:raise ValueError('child-not-live')
+        self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
         return validate_receipt(self.receipt,self.expected,self.nonce)
 
     def process_audio(self,source,output,*,binding=None):
@@ -88,6 +145,8 @@ class ChildSession:
             self.current()
             request = {'type':'process','nonce':self.nonce,'source':str(Path(source).resolve()),'output':str(Path(output).resolve())}
             if binding is not None: request['binding'] = copy.deepcopy(binding)
+            self.processing_binding=copy.deepcopy(binding)
+            self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
             self._send(request)
             try:
                 result=self._receive()
@@ -118,6 +177,11 @@ class ChildSession:
             except subprocess.TimeoutExpired: pass
         except (OSError,ValueError): pass
         receipt['leaderExited']=process.poll() is not None
+        observer=getattr(self,'exit_observer',None)
+        if observer is not None:
+            receipt['ownedExitObservation']=observer.observe(process,self.processing_binding)
+            observer.close()
+            receipt['ownedExitObservation']['descriptorClosed']=True
         self.shutdown_receipt=receipt
         if receipt['leaderExited']:
             if process.stdout:

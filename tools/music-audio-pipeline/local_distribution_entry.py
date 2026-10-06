@@ -746,6 +746,8 @@ class LocalProductionLifecycle:
                 self.prepared['_source_preflight']()
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            from demucs_receipt import OwnedExitObservation
+            self.exit_observer = OwnedExitObservation(self.child,self.server.session,self.server.binding)
             deadline = time.monotonic()+self.timeout
             while True:
                 if self.child.poll() is not None: raise ValueError('helper-startup-failed')
@@ -852,6 +854,11 @@ class LocalProductionLifecycle:
                 stop = self.request_helper_stop()
             self.graceful_stop_receipt = stop
             self.shutdown_receipt = bounded_owned_shutdown(self.child)
+            observer=getattr(self,'exit_observer',None)
+            if observer is not None and self.child is not None:
+                self.shutdown_receipt['ownedExitObservation']=observer.observe(self.child,self.control.binding)
+                observer.close()
+                self.shutdown_receipt['ownedExitObservation']['descriptorClosed']=True
             self.server.close()
             transport_closed = (self.server.server.socket.fileno() == -1 and
                 (self.server.thread is None or not self.server.thread.is_alive()))

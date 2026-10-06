@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import platform
+import struct
 import tempfile
 import types
 import unittest
@@ -17,14 +18,15 @@ class RuntimeTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.root.joinpath('model').write_bytes(b'model')
         self.root.joinpath('module.py').write_bytes(b'package')
-        self.root.joinpath('python').write_bytes(b'native')
+        self.root.joinpath('python').write_bytes(struct.pack('<8I', 0xfeedfacf,
+            0x100000c if platform.machine() == 'arm64' else 0x1000007, 0, 2, 0, 0, 0, 0))
         self.root.joinpath('python').chmod(0o700)
         def entry(identity, path, **fields):
             data=self.root.joinpath(path).read_bytes()
             return {'id':identity,'digest':hashlib.sha256(data).hexdigest(),**fields}
         self.manifest={'models':[entry('m','model',revision='r1',byteLength=5)],
             'dependencies':[entry('numpy','module.py',version='1')],
-            'assets':[entry('python-runtime','python',revision='1',byteLength=6)]}
+            'assets':[entry('python-runtime','python',revision='1',byteLength=32)]}
         self.bindings={'version':1,'models':[{'id':'m','path':'model','runtimeIdentifier':'basic-pitch','companions':[]}],
             'dependencies':[{'id':'numpy','module':'numpy','path':'module.py','native':[]}],
             'native':[{'id':'python-runtime','path':'python','architecture':platform.machine(),'version':'1'}], 'assets':[]}
@@ -79,6 +81,33 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.runtime.resolve_executable('ffmpeg',self.root/'python')
         self.runtime.bindings['native'][0]['architecture']='wrong'
         with self.assertRaises(ValueError):self.runtime.resolve_executable('python-runtime',self.root/'python')
+
+    def test_executable_architecture_label_cannot_override_actual_image(self):
+        for raw in (b'native', struct.pack('<8I', 0xfeedfacf,
+                0x1000007 if platform.machine() == 'arm64' else 0x100000c,
+                0, 2, 0, 0, 0, 0)):
+            self.root.joinpath('python').write_bytes(raw)
+            entry = self.runtime.manifest['assets'][0]
+            entry.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+            with self.assertRaises(ValueError):
+                self.runtime.resolve_executable('python-runtime',self.root/'python')
+            self.assertNotIn('python-runtime',self.runtime.native)
+
+    def test_private_runtime_fat_cpu_selection_is_unique_and_disk_only(self):
+        from test_native_routing import macho, fat
+        raw=fat([(0x1000007,macho()),(0x100000c,macho(0x100000c))])
+        self.root.joinpath('python').write_bytes(raw)
+        self.runtime.manifest['assets'][0].update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        self.runtime.resolve_executable('python-runtime',self.root/'python')
+        evidence=self.runtime.native['python-runtime']
+        self.assertEqual(evidence['architectureEvidence'],'VERIFIED_DISK_IMAGE_HEADER')
+        self.assertFalse(evidence['loaderSelectionVerified'])
+        raw=fat([(0x1000007,macho()),(0x1000007,macho())])
+        self.root.joinpath('python').write_bytes(raw)
+        self.runtime.manifest['assets'][0].update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        with self.assertRaises(ValueError):
+            self.runtime.resolve_executable('python-runtime',self.root/'python')
+        self.assertNotIn('python-runtime',self.runtime.native)
 
     def test_no_complete_claim_or_processing_on_metadata_partial_missing(self):
         with self.assertRaisesRegex(ValueError,'strict-runtime-inventory-incomplete'):self.runtime.require_processing()
