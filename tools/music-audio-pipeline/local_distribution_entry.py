@@ -117,7 +117,7 @@ class OwnedResultChannel:
                 self.state = 'DELIVERED'
             elif action == 'accept':
                 if (set(value) != base|{'resultId','output'} or self.state != 'DELIVERED' or
-                        value['resultId'] != self.result['resultId'] or value['output'] != self.result['output']):
+                        value['resultId'] != self.result['resultId'] or _digest(value['output']) != _digest(self.result['output'])):
                     raise ValueError('foreign-replayed-or-output-mismatch')
                 self.state = 'ACCEPTED'
             elif action == 'stop':
@@ -157,7 +157,7 @@ class OwnedResultChannel:
             if not isinstance(children,list): raise ValueError('missing-child-evidence')
             for child in children: check.add_child(child)
             reproduced = check.finish(self.binding,inventory,output)
-            if reproduced != receipt or reproduced['complete'] is not True:
+            if _digest(reproduced) != _digest(receipt) or reproduced['complete'] is not True:
                 raise ValueError('tampered-or-partial-processing-chain')
             self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
                 'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}

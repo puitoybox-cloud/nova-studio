@@ -619,7 +619,7 @@ class Handler(BaseHTTPRequestHandler):
                 if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
                 self._json(200,{'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':session,'state':'STOPPING'})
                 threading.Thread(target=self.server.shutdown,daemon=True).start()
-            except ValueError: self._json(403,{'ok':False,'code':'INVALID_OWNED_STOP'})
+            except (ValueError,TypeError): self._json(403,{'ok':False,'code':'INVALID_OWNED_STOP'})
             return
         if self.path != "/process":
             self._json(404, {"ok": False, "message": "Not found"})

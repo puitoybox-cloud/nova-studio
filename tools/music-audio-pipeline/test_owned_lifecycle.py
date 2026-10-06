@@ -90,6 +90,12 @@ class ChannelTests(unittest.TestCase):
                 with self.assertRaises(ValueError):self.publish(altered)
         call=base['entries'][0];call.update(callIdentity='e'*64,dispatchEvidence={'actualNativeDispatch':'VERIFIED'})
         with self.assertRaises(ValueError):self.publish(base)
+    def test_numeric_type_tampering_does_not_compare_equal_to_authentic_receipt(self):
+        self.begin();base=self.receipt()
+        for field,value in [('version',True),('publicationEligible',0),('output',{**self.output,'byteLength':12.0})]:
+            with self.assertRaises(ValueError):self.publish({**base,field:value})
+        self.publish(base);result=self.command('result')
+        with self.assertRaises(ValueError):self.command('accept',resultId=result['result']['resultId'],output={**self.output,'byteLength':12.0})
     def test_ineligible_or_duplicate_begin(self):
         c=self.channel;value={'session':c.session,'capability':c.capability,'sequence':0,'action':'begin','request':'d'*64,'input':self.input}
         with self.assertRaises(ValueError):c.command(value,inventory=self.inventory,eligible=False,helper_alive=True)
