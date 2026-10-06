@@ -21,6 +21,7 @@ let package = Package(
                 "MusicStudioWebMidiBridge.swift",
                 "NativeMidiCoordinator.swift",
                 "MusicStudioAppConfiguration.swift",
+                "MusicStudioOwnedLifecycle.swift",
                 "MusicStudioWebViewHost.swift"
             ]
         ),
@@ -34,6 +35,7 @@ let package = Package(
                 "MusicStudioWebMidiBridge.swift",
                 "NativeMidiCoordinator.swift",
                 "MusicStudioAppConfiguration.swift",
+                "MusicStudioOwnedLifecycle.swift",
                 "MusicStudioWebViewHost.swift"
             ],
             sources: ["MusicStudioApp.swift", "MusicStudioRootView.swift"]

@@ -443,9 +443,27 @@ class ScopedPythonDispatch:
         self.call_id = call_id
         self.entries = 0; self.returns = 0; self.active = 0
         self.overflow = False; self.changed = False
+        self.native_events = []; self.native_stack = []; self.native_partial = False
         self.hook = self.observe
 
     def observe(self, frame, event, arg):
+        if self.active > 0 and event in ('c_call','c_return','c_exception'):
+            if len(self.native_events) >= 256:
+                self.overflow = True
+                raise PermissionError('native-boundary-observation-budget')
+            if event == 'c_call':
+                operation = len(self.native_events)
+                self.native_stack.append((arg, operation))
+            elif self.native_stack and self.native_stack[-1][0] is arg:
+                operation = self.native_stack.pop()[1]
+                if event == 'c_exception': self.native_partial = True
+            else:
+                operation = None; self.native_partial = True
+            # Names are bounded diagnostics, never authenticated symbol/image identity.
+            self.native_events.append({'operation':operation,'event':event,
+                'module':str(getattr(arg,'__module__',''))[:128],
+                'name':str(getattr(arg,'__name__',''))[:128],
+                'nativeArtifactIdentity':'UNVERIFIED'})
         if frame.f_code is not self.code: return
         if event == 'call':
             if self.entries >= 256:
@@ -473,6 +491,11 @@ class ScopedPythonDispatch:
             'scope': 'OWNED_CALL_THREAD_EXACT_PYTHON_CODE', 'entryCount': self.entries,
             'returnCount': self.returns, 'completed': completed, 'overflow': self.overflow,
             'observerChanged': self.changed, 'pythonDispatch': 'OBSERVED' if observed else 'UNVERIFIED',
+            'nativeBoundary': {'scope':'OWNED_CALL_THREAD_CPROFILE_BOUNDARIES',
+                'entries':list(self.native_events),'eventsDigest':evidence_digest(self.native_events),
+                'status':'OBSERVED_UNVERIFIED' if self.native_events else 'UNVERIFIED',
+                'partial':self.native_partial or bool(self.native_stack) or self.overflow or self.changed or not completed,
+                'complete':False,'artifactIdentity':'UNVERIFIED','mappedIntegrity':'UNVERIFIED'},
             'status': 'OBSERVED_UNVERIFIED', 'actualNativeDispatch': 'UNVERIFIED',
             'excluded': ['internal-c-cpp-dispatch', 'torch-kernels', 'worker-threads',
                 'cached-native-symbols', 'mapped-memory-integrity']}

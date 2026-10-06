@@ -51,6 +51,150 @@ def envelope_binding(envelope, expected):
         raise ValueError('invalid-anchored-envelope') from None
 
 
+def _token(value):
+    return isinstance(value, str) and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
+
+
+def _digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+class OwnedResultChannel:
+    """Private launcher -> Swift and launcher -> Helper capabilities, never browser tokens.
+
+    One request/result per owner. Renewal only rotates the Swift capability within
+    the original Helper/session deadline; it cannot extend processing authority.
+    This is process-local bearer authentication, not PKI or native containment.
+    """
+    def __init__(self, session, deadline, *, clock=time.monotonic, wall=time.time):
+        if not _token(session) or not clock() < deadline <= clock()+300:
+            raise ValueError('invalid-owned-channel')
+        self.session = session; self.deadline = deadline; self.clock = clock; self.wall = wall
+        self.capability = secrets.token_hex(32); self.helper_capability = secrets.token_hex(32)
+        self.expires = min(clock()+20, deadline)
+        self.expires_at = int((wall()+self.expires-clock())*1000)
+        self.deadline_at = int((wall()+deadline-clock())*1000)
+        self.sequence = 0; self.renewals = 0
+        self.state = 'READY'; self.binding = None; self.result = None
+        self.lock = threading.RLock()
+
+    def handoff(self):
+        return {'capability': self.capability, 'sequence': self.sequence,
+            'expiresAt': self.expires_at, 'deadlineAt': self.deadline_at}
+
+    def alive(self):
+        if self.clock() >= self.deadline or self.state in ('STOPPING', 'STOPPED', 'FAILED'):
+            raise ValueError('expired-or-terminal-owned-channel')
+
+    def command(self, value, *, inventory, eligible, helper_alive):
+        from runtime_evidence import processing_binding
+        with self.lock:
+            self.alive()
+            if (not isinstance(value, dict) or value.get('session') != self.session or
+                    not _token(value.get('capability')) or not secrets.compare_digest(value['capability'], self.capability) or
+                    type(value.get('sequence')) is not int or value['sequence'] != self.sequence or
+                    self.clock() >= self.expires or not helper_alive):
+                raise ValueError('stale-foreign-or-dead-owner')
+            action = value.get('action')
+            base = {'session','capability','sequence','action'}
+            if action == 'begin':
+                if set(value) != base|{'request','input'} or self.state != 'READY' or eligible is not True:
+                    raise ValueError('ineligible-or-replayed-request')
+                self.binding = processing_binding(self.session, value['request'], value['input'], inventory)
+                self.state = 'PROCESSING'
+            elif action == 'renew':
+                if set(value) != base or self.state not in ('READY','PROCESSING') or self.renewals >= 2:
+                    raise ValueError('renewal-budget-or-state')
+                self.renewals += 1; self.capability = secrets.token_hex(32)
+                self.expires = min(self.expires+20, self.deadline)
+                self.expires_at = min(self.expires_at+20000, self.deadline_at)
+            elif action == 'result':
+                if set(value) != base or self.state != 'RESULT_READY': raise ValueError('missing-or-replayed-result')
+                # Delivery consumes its sequence; only explicit output acceptance releases it.
+                self.state = 'DELIVERED'
+            elif action == 'accept':
+                if (set(value) != base|{'resultId','output'} or self.state != 'DELIVERED' or
+                        value['resultId'] != self.result['resultId'] or value['output'] != self.result['output']):
+                    raise ValueError('foreign-replayed-or-output-mismatch')
+                self.state = 'ACCEPTED'
+            elif action == 'stop':
+                if set(value) != base: raise ValueError('invalid-stop')
+                self.state = 'STOPPING'
+            else: raise ValueError('unknown-owned-action')
+            self.sequence += 1
+            response = {'format':'NOVA_OWNED_CONTROL_RECEIPT','version':1,'session':self.session,
+                'action':action,'state':self.state, **self.handoff(), 'renewals':self.renewals,
+                'bindingDigest':_digest(self.binding) if self.binding else None}
+            if action == 'result': response['result'] = json.loads(json.dumps(self.result))
+            return response
+
+    def publish(self, value, inventory):
+        from runtime_evidence import processing_binding, BoundProcessingReceipt
+        with self.lock:
+            self.alive()
+            if (self.state != 'PROCESSING' or not isinstance(value, dict) or
+                    set(value) != {'session','capability','receipt'} or value['session'] != self.session or
+                    not _token(value['capability']) or not secrets.compare_digest(value['capability'], self.helper_capability)):
+                raise ValueError('foreign-or-replayed-helper-result')
+            receipt = value['receipt']
+            current = processing_binding(self.session,self.binding['request'],self.binding['input'],inventory)
+            if (not isinstance(receipt,dict) or receipt.get('format') != 'NOVA_PROCESSING_RECEIPT' or
+                    receipt.get('version') != 1 or receipt.get('binding') != self.binding or current != self.binding or
+                    receipt.get('complete') is not True or receipt.get('status') != 'VERIFIED' or
+                    receipt.get('processingEligible') is not True or receipt.get('blockedBy') != []):
+                raise ValueError('partial-or-changed-helper-result')
+            output = receipt.get('output')
+            if (not isinstance(output,dict) or set(output) != {'digest','byteLength'} or not _token(output['digest']) or
+                    type(output['byteLength']) is not int or not 0 < output['byteLength'] <= 64*1024*1024):
+                raise ValueError('invalid-owned-output')
+            # Recompute the processing aggregator instead of trusting status labels.
+            check = BoundProcessingReceipt(self.binding,timeout=min(3,self.deadline-self.clock()))
+            check.add_calls({'entries':receipt.get('entries',[])})
+            children = receipt.get('children')
+            if not isinstance(children,list): raise ValueError('missing-child-evidence')
+            for child in children: check.add_child(child)
+            reproduced = check.finish(self.binding,inventory,output)
+            if reproduced != receipt or reproduced['complete'] is not True:
+                raise ValueError('tampered-or-partial-processing-chain')
+            self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
+                'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}
+            self.state = 'RESULT_READY'
+
+    def close(self, *, failed=False):
+        with self.lock:
+            self.state = 'FAILED' if failed else 'STOPPED'
+            self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
+
+
+def bounded_owned_shutdown(child, *, timeout=3, interruption=None, owner=None):
+    """Never send a PID/group signal without a separately proven live-handle adapter.
+
+    Default is bounded wait only. A PID, Popen instance, group ID or past health
+    does not prove safe termination of descendants after leader exit/PID reuse.
+    An external adapter must validate opaque ownership at operation time and return
+    the matching owner receipt. No OS signal implementation is supplied here.
+    """
+    if not 0 < timeout <= 3: raise ValueError('shutdown-budget')
+    receipt = {'scope':'EXPLICIT_OWNED_HANDLE_ONLY','graceful':'UNVERIFIED',
+        'hardInterruption':'UNVERIFIED','ownershipReleased':False,'complete':False}
+    if child is None: return {**receipt,'ownershipReleased':True,'complete':True}
+    if child.poll() is None:
+        try: child.wait(timeout=timeout)
+        except subprocess.TimeoutExpired: pass
+    if child.poll() is None and interruption is not None:
+        if not _token(owner): raise ValueError('missing-interruption-owner')
+        # The adapter, not this contract, owns live-handle verification and signaling.
+        proof = interruption(child, owner, timeout)
+        if (not isinstance(proof,dict) or proof.get('owner') != owner or proof.get('liveHandleVerified') is not True or
+                proof.get('ownedChildrenComplete') is not True or proof.get('stopped') is not True):
+            raise ValueError('unverified-hard-interruption')
+        receipt['hardInterruption'] = 'OBSERVED'
+    # Leader reaping alone cannot establish descendant shutdown.
+    receipt['leaderExited'] = child.poll() is not None
+    receipt['reason'] = 'owned-descendant-live-handle-adapter-unavailable'
+    return receipt
+
+
 class LocalEnvelopeServer:
     """Explicit loopback transport adapter; never starts from legacy/strict main.
 
@@ -90,6 +234,7 @@ class LocalEnvelopeServer:
         self.deadline = time.monotonic() + ttl
         self.expires_at = int(time.time()*1000) + ttl*1000
         self.on_lifecycle = None
+        self.on_control = None
         self.consumed = False
         self.closed = False
         self.lock = threading.Lock()
@@ -120,6 +265,8 @@ class LocalEnvelopeServer:
                 self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' http://127.0.0.1:8766; object-src 'none'; base-uri 'none'; frame-src 'none'")
                 self.end_headers(); self.wfile.write(data)
             def do_POST(self):
+                if self.path in ('/owned-control', '/owned-helper-result'):
+                    self.control(); return
                 if self.path == '/lifecycle':
                     self.lifecycle(); return
                 if (self.path != '/bootstrap-envelope' or
@@ -142,6 +289,22 @@ class LocalEnvelopeServer:
                 self.send_response(200); self.send_header('Content-Type', 'application/json')
                 self.send_header('Cache-Control', 'no-store')
                 self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
+            def control(self):
+                try:
+                    if (self.headers.get('Host') != owner.origin[7:] or self.headers.get('Origin') is not None or
+                            self.headers.get('Transfer-Encoding') is not None or owner.closed or owner.on_control is None):
+                        raise ValueError('invalid-private-control-transport')
+                    length = int(self.headers.get('Content-Length','-1'))
+                    if not 0 < length <= 1024*1024: raise ValueError('control-budget')
+                    raw = self.rfile.read(length)
+                    if len(raw) != length: raise ValueError('truncated-control')
+                    value = json.loads(raw)
+                    result = owner.on_control(self.path, value)
+                    data = json.dumps(result,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+                    self.send_response(200); self.send_header('Content-Type','application/json')
+                    self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(data)))
+                    self.end_headers(); self.wfile.write(data)
+                except (ValueError, TypeError, KeyError, OSError): self.send_error(403)
             def lifecycle(self):
                 try:
                     length = int(self.headers.get('Content-Length', '-1'))
@@ -163,8 +326,7 @@ class LocalEnvelopeServer:
     def start(self):
         if self.closed or self.thread is not None:
             raise ValueError('stale-or-started-local-server')
-        self.deadline = time.monotonic() + self.ttl
-        self.expires_at = int(time.time()*1000) + self.ttl*1000
+        if time.monotonic() >= self.deadline: raise ValueError('expired-local-server')
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         try:
             self.thread.start()
@@ -255,7 +417,7 @@ class LocalProductionLifecycle:
     A retry must instantiate a new lifecycle, never resurrect this instance.
     """
     def __init__(self, prepared, assets, expected_assets, *, popen=subprocess.Popen,
-                 health=None, browser=None, timeout=30):
+                 health=None, browser=None, native_host=None, timeout=30):
         self.prepared = prepared
         envelope = prepared['browserEnvelope']
         manifest = envelope['manifest']
@@ -266,8 +428,11 @@ class LocalProductionLifecycle:
                 separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()}
         self.server = LocalEnvelopeServer(assets, envelope, expected_assets=expected_assets, expected_binding=binding)
         self.server.on_lifecycle = self.browser_event
+        self.server.on_control = self.control_event
+        self.control = OwnedResultChannel(self.server.session, self.server.deadline)
+        self.shutdown_receipt = None
         self.state = 'PREPARING'; self.child = None; self.popen = popen
-        self.health = health or self.read_health; self.browser = browser
+        self.health = health or self.read_health; self.browser = browser; self.native_host = native_host
         self.timeout = timeout; self.inventory = {}; self.browser_verified = False
         self.last_seen = time.monotonic(); self.done = threading.Event()
         self.lock = threading.RLock(); self.started = False
@@ -303,7 +468,8 @@ class LocalProductionLifecycle:
         try:
             environment = dict(self.prepared['environment'])
             environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin,
-                NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline))
+                NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline),
+                NOVA_OWNED_RESULT_ORIGIN=self.server.origin, NOVA_OWNED_RESULT_CAPABILITY=self.control.helper_capability)
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             deadline = time.monotonic()+self.timeout
@@ -320,8 +486,13 @@ class LocalProductionLifecycle:
                 'origin': self.server.origin, 'nonce': self.server.nonce, 'session': self.server.session,
                 'expiresAt': self.server.expires_at}
             self.handoff = handoff
+            # Explicit private launcher adapter only: never put this token in a URL or JS envelope.
+            self.swift_handoff = {**handoff, 'ownedControl': self.control.handoff()}
             url = self.server.origin+'/music-studio.html#nova-local='+urlencode({'handoff':json.dumps(handoff,separators=(',',':'))})
-            if self.browser is None or self.browser(url) is False: raise ValueError('browser-startup-failed')
+            if self.native_host is not None:
+                if self.native_host(json.loads(json.dumps(self.swift_handoff))) is False:
+                    raise ValueError('native-host-startup-failed')
+            elif self.browser is None or self.browser(url) is False: raise ValueError('browser-startup-failed')
             self.last_seen = time.monotonic()
             return {'state': self.state, 'handoff': handoff, 'startURL': url, **self.eligibility}
         except BaseException:
@@ -345,6 +516,29 @@ class LocalProductionLifecycle:
                 self.state = 'PROCESSING_ELIGIBLE' if self.eligibility['processingEligible'] else 'IDENTITY_VERIFIED'
             elif self.state == 'SERVER_READY': self.state = 'BROWSER_READY'
 
+    def control_event(self, route, value):
+        with self.lock:
+            if self.child is None or self.child.poll() is not None:
+                self.state = 'FAILED'; self.control.close(failed=True); self.done.set()
+                raise ValueError('unexpected-helper-termination')
+            if route == '/owned-helper-result':
+                self.verify_health(self.health())
+                eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True,
+                    browser_verified=self.browser_verified, fresh_session=time.monotonic() < self.server.deadline)
+                if not eligibility['processingEligible']: raise ValueError('ineligible-helper-result')
+                self.control.publish(value,self.inventory)
+                return {'ok':True}
+            if route != '/owned-control': raise ValueError('wrong-owned-control-route')
+            self.verify_health(self.health())
+            eligibility = strict_eligibility(self.inventory,trusted_bootstrap=True,
+                browser_verified=self.browser_verified,fresh_session=time.monotonic() < self.server.deadline)
+            response = self.control.command(value,inventory=self.inventory,
+                eligible=eligibility['processingEligible'],helper_alive=True)
+            if response['state'] in ('ACCEPTED','STOPPING'):
+                self.eligibility = strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
+                self.done.set()
+            return response
+
     def supervise(self):
         try:
             while not self.done.wait(0.25):
@@ -353,22 +547,32 @@ class LocalProductionLifecycle:
                     self.state = 'FAILED'; break
         finally: self.close(failed=self.state == 'FAILED')
 
+    def request_helper_stop(self):
+        connection = http.client.HTTPConnection('127.0.0.1',8766,timeout=1)
+        try:
+            connection.request('POST','/owned-stop',body=b'',headers={
+                'X-Nova-Session':self.control.session,'X-Nova-Owned-Capability':self.control.helper_capability})
+            response = connection.getresponse(); raw = response.read(4097)
+            value = json.loads(raw)
+            if (response.status != 200 or len(raw)>4096 or value != {
+                    'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':self.control.session,'state':'STOPPING'}):
+                raise ValueError('invalid-graceful-stop-receipt')
+            return {'status':'OBSERVED','scope':'OWNED_AUTHENTICATED_HELPER','state':'STOPPING'}
+        except (OSError,ValueError,http.client.HTTPException):
+            return {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
+        finally: connection.close()
+
     def close(self, *, failed=False):
         self.done.set(); self.browser_verified = False; self.inventory = {}
         self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
         self.server.close()
-        if self.child is not None:
-            # Own start_new_session group only, including descendants after leader exit.
-            try:
-                os.killpg(self.child.pid, signal.SIGTERM)
-                self.child.wait(timeout=3)
-                # A leader may have exited before its descendants; invalidate that group too.
-                try: os.killpg(self.child.pid, signal.SIGKILL)
-                except ProcessLookupError: pass
-            except subprocess.TimeoutExpired:
-                os.killpg(self.child.pid, signal.SIGKILL); self.child.wait(timeout=3)
-            except ProcessLookupError: pass
-            self.child = None
+        if self.child is not None and self.child.poll() is None:
+            self.graceful_stop_receipt = self.request_helper_stop()
+        self.control.close(failed=failed)
+        if self.shutdown_receipt is None:
+            self.shutdown_receipt = bounded_owned_shutdown(self.child)
+        if self.child is not None and self.child.poll() is not None: self.child = None
+        if self.child is not None: failed = True
         self.state = 'FAILED' if failed else 'STOPPED'
 
 
