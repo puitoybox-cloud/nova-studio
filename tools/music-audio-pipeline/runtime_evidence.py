@@ -334,9 +334,109 @@ def receipt_evidence(evidence):
 
 
 
+
+class ScopedLoaderWindow:
+    """Bounded ctypes audit attempts inside one owned processing thread.
+
+    Python's pre-operation audit is not a successful dlopen, loader parent edge,
+    native dispatch, unload observer or native isolation proof. Direct C loads,
+    worker threads and cached symbols remain explicitly outside coverage.
+    """
+    _state = None
+    _lock = None
+
+    @classmethod
+    def install(cls):
+        import threading
+        # Installation is serialized; the hook is inert outside an active window.
+        if cls._lock is None:
+            cls._lock = threading.RLock()
+        with cls._lock:
+            if cls._state is None:
+                cls._state = threading.local()
+                sys.addaudithook(cls.audit)
+
+    @classmethod
+    def audit(cls, event, args):
+        window = getattr(cls._state, 'window', None) if cls._state else None
+        if window is None or event not in ('ctypes.dlopen', 'ctypes.dlsym', 'ctypes.dlsym/handle'):
+            return
+        if len(window.events) >= 256:
+            window.overflow = True
+            raise PermissionError('scoped-loader-event-budget')
+        target = args[0] if args else None
+        if event != 'ctypes.dlopen': target = getattr(target, '_name', None)
+        # Only lexical matching against authenticated declared artifacts. Never
+        # resolve or probe the caller's undeclared path or load a fallback library.
+        candidates = window.paths.get(str(_lexical_native_path(target)), []) if isinstance(target, str) else []
+        identity = candidates[0]['id'] if len(candidates) == 1 else None
+        allowed = identity in window.requested if identity is not None else False
+        record = {'sequence': len(window.events), 'event': event, 'child': identity,
+            'parentCall': window.call_id, 'classification': 'EXPECTED_ATTEMPT' if allowed else
+                'AMBIGUOUS_ATTEMPT' if len(candidates) > 1 else 'UNEXPECTED_ATTEMPT',
+            'status': 'PRE_OPERATION_ONLY', 'runtimeEdgeVerified': False,
+            'actualDispatchVerified': False}
+        window.events.append(record)
+        if allowed:
+            entry = candidates[0]
+            try:
+                proof = VERIFIER.verify(window.root, entry['path'], entry, identity=identity,
+                    version=entry['version'], build=window.build)
+                record['artifactDigest'] = proof['digest']
+            except (OSError, ValueError):
+                allowed = False
+                record['classification'] = 'INVALID_ARTIFACT_ATTEMPT'
+        if not allowed:
+            window.blocked = True
+            raise PermissionError('undeclared-or-unrequested-scoped-loader-operation')
+
+    def __init__(self, root, contract, requested, call_id):
+        self.install()
+        self.root = root; self.build = contract['buildRevision']
+        self.paths = _declared_native_path_index(root, copy.deepcopy(contract.get('native', [])))
+        self.requested = set(requested); self.call_id = call_id
+        self.events = []; self.blocked = False; self.overflow = False
+
+    def __enter__(self):
+        if getattr(self._state, 'window', None) is not None:
+            raise ValueError('nested-scoped-loader-window')
+        self._state.window = self
+        return self
+
+    def __exit__(self, *_):
+        self._state.window = None
+
+    def snapshot(self):
+        return {'version': 1, 'callIdentity': self.call_id, 'entries': copy.deepcopy(self.events),
+            'eventsDigest': evidence_digest(self.events), 'blocked': self.blocked,
+            'overflow': self.overflow, 'complete': False, 'status': 'OBSERVED_UNVERIFIED',
+            'scope': 'OWNED_CALL_THREAD_CTYPES_PRE_OPERATION_EVENTS',
+            'runtimeParentChildEdges': 'UNVERIFIED', 'actualNativeDispatch': 'UNVERIFIED',
+            'hiddenTransientCoverage': 'UNVERIFIED',
+            'excluded': ['direct-native-loads', 'worker-thread-loads', 'cached-symbol-dispatch',
+                         'native-unload-events', 'mapped-memory-integrity', 'native-network-syscalls']}
+
+
+def scoped_load_transition(before, after):
+    if before.get('contractRevision') != after.get('contractRevision'):
+        raise ValueError('changed-native-observation-contract')
+    old = set(before['observed']); new = set(after['observed'])
+    return {'version': 1, 'contractRevision': before.get('contractRevision'),
+        'beforeDigest': evidence_digest(before), 'afterDigest': evidence_digest(after),
+        'expected': copy.deepcopy(after['expected']), 'newlyObserved': sorted(new-old),
+        'stillObserved': sorted(new & old), 'disappeared': sorted(old-new),
+        'unexpected': sorted(set(before['unexpected']) | set(after['unexpected'])),
+        'unresolved': copy.deepcopy(after['unresolved']),
+        'ambiguous': sorted(set(before['ambiguous']) | set(after['ambiguous'])),
+        'complete': False, 'transient': 'UNVERIFIED_BETWEEN_SNAPSHOTS',
+        'hiddenLoads': 'UNVERIFIED', 'runtimeEdges': 'UNVERIFIED'}
+
+
 class ProcessingReceipt:
     """Runtime-scoped call receipts, not predictions of unexecuted backend stages."""
     def __init__(self, root, contract):
+        import secrets
+        self.call_scope = secrets.token_hex(32)
         self.root = root; self.contract = contract; self.contract_revision = evidence_digest(contract); self.entries = []
 
     def not_applicable(self, stage, reason):
@@ -384,17 +484,27 @@ class ProcessingReceipt:
             'externalExecutable': False, 'status': status, 'completed': False}
         if fallback or status != 'VERIFIED_ENTRY' or (version is not None and version != entry['version']):
             raise ValueError('unverified-or-fallback-processing-backend')
+        value['callIdentity'] = evidence_digest({'scope': self.call_scope, 'contract': self.contract_revision,
+            'sequence': len(self.entries), 'stage': stage, 'logical': logical,
+            'implementation': value['actualImplementation'], 'artifact': artifact})
         self.entries.append(value)
+        window = ScopedLoaderWindow(self.root, self.contract, requested_ids, value['callIdentity'])
         try:
-            result = function(*args, **kwargs)
+            with window:
+                result = function(*args, **kwargs)
+            if window.blocked or window.overflow:
+                raise ValueError('blocked-scoped-loader-operation')
         except BaseException:
             value['status'] = 'FAILED'
             raise
+        finally:
+            value['loaderCallEvidence'] = window.snapshot()
         mapped = mapped_native_receipts(self.root, self.contract) if self.contract.get('native') else {'complete': False, 'entries': []}
         if evidence_digest(self.contract) != self.contract_revision:
             value['status'] = 'FAILED'
             raise ValueError('changed-processing-contract')
         after = scoped_native_load_observation(self.root, self.contract, mapped=mapped)
+        value['nativeLoadTransition'] = scoped_load_transition(before, after)
         value['scopedLoadEvidence'] = {'beforeDigest': evidence_digest(before), 'afterDigest': evidence_digest(after),
             'observedCount': len(after['observed']), 'unexpectedCount': len(after['unexpected']),
             'unresolvedCount': len(after['unresolved']), 'ambiguousCount': len(after['ambiguous']),
@@ -1072,12 +1182,28 @@ class BoundProcessingReceipt:
             if loads.get('ambiguous'): reasons.append('ambiguous-scoped-native-load')
             if loads.get('unresolved'): reasons.append('unresolved-scoped-native-load')
             if loads.get('complete') is not True: reasons.append('scoped-native-load-coverage-incomplete')
+        for call in all_calls:
+            loader = call.get('loaderCallEvidence')
+            transition = call.get('nativeLoadTransition')
+            if loader is not None and (loader.get('blocked') or loader.get('overflow') or
+                    loader.get('complete') is not True or loader.get('callIdentity') != call.get('callIdentity') or
+                    loader.get('runtimeParentChildEdges') != 'VERIFIED' or
+                    loader.get('actualNativeDispatch') != 'VERIFIED' or
+                    not isinstance(loader.get('entries'), list) or
+                    loader.get('eventsDigest') != evidence_digest(loader.get('entries'))):
+                reasons.append('partial-or-invalid-loader-call-evidence')
+            if transition is not None and (transition.get('unexpected') or transition.get('ambiguous') or
+                    transition.get('disappeared') or transition.get('unresolved') or transition.get('complete') is not True):
+                reasons.append('partial-or-changing-native-load-transition')
         network = evidence.get('network', {})
         if network.get('native') != 'CONTAINED' or network.get('nativeNetworkVerified') is not True: reasons.append('native-network-unverified')
         if inventory.get('identityComplete') is not True: reasons.append('model-helper-identity-incomplete')
         complete = not reasons
         self.result = {'format': 'NOVA_PROCESSING_RECEIPT', 'version': 1, 'binding': copy.deepcopy(self.binding),
             'entries': copy.deepcopy(self.calls), 'children': copy.deepcopy(self.children), 'stages': stages,
+            'nativeStages': [{'stage': stage, 'callCount': len([c for c in all_calls if c.get('stage') == stage]),
+                'evidenceDigest': evidence_digest([c for c in all_calls if c.get('stage') == stage])}
+                for stage in required],
             'output': copy.deepcopy(output_identity), 'complete': complete, 'status': 'VERIFIED' if complete else 'UNVERIFIED',
             'nativeClosureComplete': evidence.get('dynamicNativeGraph', {}).get('complete') is True,
             'networkContainment': network.get('native', 'UNVERIFIED'), 'blockedBy': reasons,
