@@ -1,0 +1,375 @@
+{
+  "observedAt": "2026-10-06",
+  "baseline": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+  "scope": "TRACKED_REPOSITORY_AND_EXACT_HEAD_HELPER_PACKAGE",
+  "publicationEligible": false,
+  "formalA": 0,
+  "stage2": "OPEN",
+  "stage3": "NOT_PASSED",
+  "helperArtifact": {
+    "id": 11401107783,
+    "run": 37441260657,
+    "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+    "outerZipSha256": "03a333c77a05ea774a527b449c08ca1534f5dd2a252a90cf041ee793f610c6b2",
+    "resources": [
+      {
+        "path": "Resources/pipeline/STOP_AUDIO_PIPELINE.command",
+        "byteLength": 1317,
+        "digest": "0085b21af1f8d3b3a2d267fddaaead333cfce234442539bb9cc4424a5d0cf771",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/artifact_verification.py",
+        "byteLength": 5267,
+        "digest": "7fa062f4a493515a3ad1e931a37e8e8d423043546efdbe4a41a1238ffe54d8a8",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/demucs_child.py",
+        "byteLength": 12918,
+        "digest": "477c40d3f9fe1cb657d75c901de96535bb1d4418f4124f0ed991ebbd19532f17",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/demucs_parent.py",
+        "byteLength": 3707,
+        "digest": "9d815446279fbc35876ed0825350bbb3eda8772c6cd440e376f0ebb03d8eaad0",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/demucs_receipt.py",
+        "byteLength": 7514,
+        "digest": "8121870620c7f26b07ac34c645d3e7aa66ffbcf2df8be29f2e8adf4f97c413d7",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/dependency_identity.py",
+        "byteLength": 2988,
+        "digest": "cf6d8f201b3ed63473635109faddc4ea13eaf7bc0787a6d4fc92725316172295",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/distribution_binding.py",
+        "byteLength": 4757,
+        "digest": "5edecc83089af3161c162622a7be50b9a90b08881af6e29f754db078750d4ce6",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/helper_identity.py",
+        "byteLength": 3327,
+        "digest": "0703a7f4a324385f223f9da169016097cd811172dacf01b0277908e2ef4c794a",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/inventory_aggregation.py",
+        "byteLength": 3919,
+        "digest": "2d4ea387f68b975b356dbd3c94102b444ffbc3b6bda6b91f392e261dbc37fd37",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/local_distribution_entry.py",
+        "byteLength": 57954,
+        "digest": "10145a1027c656a698e4db7e2bdcdefd98169a9d2575e1c8d544461aaf379c80",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/requirements.txt",
+        "byteLength": 104,
+        "digest": "a6513f696889aedb65a337e7f221abcc18c68f00ffa863bbfecb090d2d4ae8f9",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/runtime_evidence.py",
+        "byteLength": 80550,
+        "digest": "e55096ff842ba573160520a0f7609b5aeac712ef785f56b603c935b0d71b761e",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/runtime_inventory.py",
+        "byteLength": 20141,
+        "digest": "b8d12730bec7ba8b368a96a83e2c83c3204d04191cdee03634b6323f5a5605c8",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/scoped_closure.py",
+        "byteLength": 9011,
+        "digest": "96150d643a477e9f2b7f511cb700076148523f163a706899ad440be6f9ec8a44",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Resources/pipeline/server.py",
+        "byteLength": 38404,
+        "digest": "95ef2824679dffc74fce255e802857fb9cdf57996f9f61294d294de0a497a95e",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "Info.plist",
+        "byteLength": 762,
+        "digest": "216d7db132b30e55787b23c31eb19df0f65abc91a543677ca579292bce3c6217",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      },
+      {
+        "path": "MacOS/NovaMusicAudioHelper",
+        "byteLength": 3442,
+        "digest": "65f5ec22e3ed59032f0ac6df2a1fa0f4274507b84530bafbe2b7016969b523d5",
+        "status": "OBSERVED_PACKAGE_BYTES"
+      }
+    ],
+    "resourceMatches": 17,
+    "architecture": "BASH_SCRIPT_NOT_MACH_O",
+    "models": [],
+    "pythonRuntime": [],
+    "nativeLibraries": [],
+    "licenseNotices": [],
+    "approvedAnchor": false,
+    "launchPerformed": false
+  },
+  "backendInventory": [
+    {
+      "component": "Basic Pitch",
+      "productionStatus": "MISSING",
+      "evidence": "server.py: basic_pitch.inference.predict / Model",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Basic Pitch model",
+      "productionStatus": "MISSING",
+      "evidence": "authenticated runtime.bindings.models",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Demucs",
+      "productionStatus": "MISSING",
+      "evidence": "demucs_child.py: pretrained/repo/separate",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Demucs htdemucs model + companions",
+      "productionStatus": "MISSING",
+      "evidence": "demucs_child.py: local repository .th + .yaml",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Python executable/runtime",
+      "productionStatus": "MISSING",
+      "evidence": "local_distribution_entry.py: approved executable + runtime stamps",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "torch",
+      "productionStatus": "MISSING",
+      "evidence": "declared dependency/native closure required",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "torchaudio",
+      "productionStatus": "MISSING",
+      "evidence": "declared dependency/native closure required",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "numpy",
+      "productionStatus": "MISSING",
+      "evidence": "requirements.txt declaration; CI TEST_ONLY",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "mido",
+      "productionStatus": "MISSING",
+      "evidence": "server.py: final mido.MidiFile.save; CI TEST_ONLY",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "soundfile/libsndfile decoder/encoder",
+      "productionStatus": "MISSING",
+      "evidence": "runtime_evidence.py adapters; CI soundfile TEST_ONLY",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "librosa/scipy/soxr resampler closure",
+      "productionStatus": "MISSING",
+      "evidence": "server.py: librosa.load/resample",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "julius resampler",
+      "productionStatus": "MISSING",
+      "evidence": "demucs_child.py: julius.resample_frac",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Basic Pitch inference engine/pretty_midi writer closure",
+      "productionStatus": "MISSING",
+      "evidence": "no exact installed Basic Pitch metadata/model format supplied",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Demucs stem writer",
+      "productionStatus": "SOURCE_ONLY",
+      "evidence": "demucs_child.py: separate.save_audio / soundfile.write adapter",
+      "architecture": "SOURCE_OR_SCRIPT_ONLY",
+      "license": "SEE_LICENSE_REGISTER_NO_NEW_APPROVAL",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "native/shared dependency closure",
+      "productionStatus": "MISSING",
+      "evidence": "runtime_evidence.py routing is source, not installed backend",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Helper executable/resources",
+      "productionStatus": "PACKAGE_AVAILABLE",
+      "evidence": "17 resource byte identities verified; no bundled runtime",
+      "architecture": "SOURCE_OR_SCRIPT_ONLY",
+      "license": "SEE_LICENSE_REGISTER_NO_NEW_APPROVAL",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "Swift/native wrapper",
+      "productionStatus": "SOURCE_ONLY",
+      "evidence": "existing build recipe; exact native packaging evidence produced by new CI",
+      "architecture": "SOURCE_OR_SCRIPT_ONLY",
+      "license": "SEE_LICENSE_REGISTER_NO_NEW_APPROVAL",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "production manifest/runtime config/closure/child config",
+      "productionStatus": "MISSING",
+      "evidence": "tests construct disposable configurations; no approved assembled production payload",
+      "architecture": "UNKNOWN",
+      "license": "LICENSE_UNCONFIRMED",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "private native delivery",
+      "productionStatus": "SOURCE_ONLY",
+      "evidence": "native_host/final_sink hooks; main selects system browser",
+      "architecture": "SOURCE_OR_SCRIPT_ONLY",
+      "license": "SEE_LICENSE_REGISTER_NO_NEW_APPROVAL",
+      "runtimeAvailable": false
+    },
+    {
+      "component": "browser SMF writer",
+      "productionStatus": "SOURCE_ONLY",
+      "evidence": "music-studio-midi.js; own source license register MS-LIC-006",
+      "architecture": "SOURCE_OR_SCRIPT_ONLY",
+      "license": "SEE_LICENSE_REGISTER_NO_NEW_APPROVAL",
+      "runtimeAvailable": false
+    }
+  ],
+  "models": [
+    {
+      "name": "Basic Pitch",
+      "status": "MISSING",
+      "exactPath": null,
+      "byteLength": null,
+      "sha256": null,
+      "format": "UNKNOWN",
+      "identity": "UNKNOWN",
+      "referencedByRuntimeSource": true,
+      "includedInHelperPackage": false
+    },
+    {
+      "name": "Demucs htdemucs",
+      "status": "MISSING",
+      "exactPath": null,
+      "byteLength": null,
+      "sha256": null,
+      "format": "UNKNOWN",
+      "identity": "UNKNOWN",
+      "referencedByRuntimeSource": true,
+      "includedInHelperPackage": false
+    }
+  ],
+  "licenseRegister": {
+    "path": "docs/music-studio/MS-00C_LICENSE_REGISTER.md",
+    "sha256": "48e0c7a59c0674eb8b609735f186eb827398d64e5e7a2116855c6fe27c9d3860",
+    "updatedAt": "2026-07-20",
+    "thirdPartyRedistributionApproval": "NOT_FOUND",
+    "nextAction": "EXTERNAL_LICENSE_VERIFICATION_REQUIRED_AFTER_EXACT_ASSET_IDENTIFICATION"
+  },
+  "anchorCandidates": [
+    {
+      "candidate": "Git #318 exact source HEAD/tree",
+      "status": "TECHNICALLY_USABLE",
+      "scope": "source byte membership only",
+      "adoption": "APPROVAL_REQUIRED",
+      "productionAnchor": false
+    },
+    {
+      "candidate": "Helper artifact 11401107783 digest + 17 resource digests",
+      "status": "TECHNICALLY_USABLE",
+      "scope": "observed partial package bytes only",
+      "adoption": "APPROVAL_REQUIRED",
+      "productionAnchor": false
+    },
+    {
+      "candidate": "fixture manifest/model/audit evidence",
+      "status": "NOT_USABLE",
+      "reason": "TEST_ONLY/FIXTURE_ONLY",
+      "productionAnchor": false
+    },
+    {
+      "candidate": "complete backend manifest/build/architecture anchor",
+      "status": "NOT_USABLE",
+      "reason": "MISSING",
+      "productionAnchor": false
+    }
+  ],
+  "userDecisionsNow": [],
+  "blockers": {
+    "A": {
+      "scopedRepositoryOnlyChecklist": 0,
+      "scope": "#317 reviewed checklist; not exhaustive integration completion"
+    },
+    "B": [
+      "Basic Pitch package + actual model + inference engine closure",
+      "Demucs package + htdemucs .th weights + .yaml companions",
+      "macOS x86_64/arm64 Python runtime + stdlib",
+      "torch/torchaudio/numpy and transitive native libraries",
+      "soundfile/libsndfile/librosa/scipy/soxr/julius codec/resampler closure",
+      "mido/pretty_midi/stem writer exact package closure",
+      "production manifest/runtime-config/runtime-closure/evidence/child config",
+      "externally approved full bundle anchor",
+      "installed private native delivery + durable storage adapter"
+    ],
+    "C": {
+      "pendingFutureDecisions": [
+        "storage/distribution/signing/notarization/trust ownership/retention/GC"
+      ],
+      "userDecisionReady": false,
+      "reason": "exact viable assets and delivery options not yet established; licenses need evidence verification, not guessed user approval"
+    },
+    "D": "all requested physical acceptance PENDING/UNVERIFIED",
+    "E": "live-handle/internal kernels/authenticated loader success/mapped-memory/hidden-transient coverage/native-network containment UNVERIFIED"
+  }
+}
