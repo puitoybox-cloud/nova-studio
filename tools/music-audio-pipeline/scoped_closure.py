@@ -6,7 +6,7 @@ import json
 import re
 from email.parser import BytesParser
 from email import policy
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from runtime_inventory import local, stable
 from dependency_identity import verify_local_asset
 
@@ -16,6 +16,43 @@ MAX_FILES = 4096
 MAX_CONTRACT_BYTES = 1024 * 1024
 MAX_TOTAL = 16 * 1024**3
 MAX_METADATA_BYTES = 1024 * 1024
+MAX_LICENSE_BYTES = 1024 * 1024
+
+
+def verified_license_materials(root, node, message, metadata_path):
+    """Preserve installed declarations; never infer a weights/native license grant."""
+    declarations = [str(v) for v in message.get_all('License-File', [])]
+    if len(declarations) > 128 or len(set(declarations)) != len(declarations):
+        raise ValueError('duplicate-or-overbudget-license-declarations')
+    metadata_version = str(message.get('Metadata-Version', ''))
+    if declarations and not re.fullmatch(r'2\.[0-9]+', metadata_version):
+        raise ValueError('unsupported-license-metadata-version')
+    # PEP 639 uses dist-info/licenses. Older setuptools wheels put the same
+    # extension header beside METADATA; retain that explicitly legacy scope.
+    base = PurePosixPath(metadata_path).parent
+    modern = bool(declarations) and int(metadata_version.split('.')[1]) >= 4
+    if modern:
+        base = base / 'licenses'
+    files = {f['path']: f for f in node['files']}
+    selected = []
+    for declared in declarations:
+        path = PurePosixPath(declared)
+        if (not declared or path.is_absolute() or '\\' in declared or ':' in declared or
+                any(p in ('', '.', '..') for p in declared.split('/'))):
+            raise ValueError('unsafe-declared-license-path')
+        relative = str(base / path)
+        binding = files.get(relative)
+        if binding is None:
+            raise ValueError('missing-authenticated-license-file')
+        if binding['byteLength'] > MAX_LICENSE_BYTES:
+            raise ValueError('license-material-budget')
+        verify_local_asset(root, relative, binding, MAX_LICENSE_BYTES)
+        selected.append(dict(binding))
+    return {'metadataVersion': metadata_version, 'licenseExpression': message.get('License-Expression'),
+            'licenseField': message.get('License'), 'declaredFiles': declarations,
+            'files': selected, 'layout': 'PEP639' if modern else 'LEGACY_METADATA_EXTENSION',
+            'status': 'VERIFIED_DECLARED_BYTES' if declarations else 'NO_LICENSE_FILE_DECLARATION',
+            'redistributionApproved': False, 'nativeAndWeightsScopeVerified': False}
 
 
 def verify_distribution_metadata(root, node):
@@ -46,10 +83,11 @@ def verify_distribution_metadata(root, node):
         return re.sub(r'[-_.]+', '-', name).lower()
     if normalized(str(names[0])) != normalized(node['id']) or str(versions[0]) != node['version']:
         raise ValueError('wrong-installed-metadata-identity')
+    materials = verified_license_materials(root, node, message, binding['path'])
     return {'path': binding['path'], 'digest': binding['digest'],
             'name': str(names[0]), 'version': str(versions[0]),
             'requiresDist': [str(value) for value in message.get_all('Requires-Dist', [])],
-            'dependencyConstraintsVerified': False}
+            'dependencyConstraintsVerified': False, 'licenseMaterials': materials}
 
 
 def canonical(value):
@@ -161,7 +199,7 @@ def verify_closure(root,contract,distribution=importlib.metadata.distribution,st
 
 
 def verify_assembly(root,contract,distribution=importlib.metadata.distribution):
-    observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[]
+    observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[];materials=[]
     for entry in observed['entries']:
         status=entry['status'];license_status=entry['licenseStatus']
         if status=='MISSING':value='MISSING'
@@ -171,8 +209,16 @@ def verify_assembly(root,contract,distribution=importlib.metadata.distribution):
         elif status=='EXPECTED_ONLY':value='EXTERNAL_REQUIRED'
         else:value='PRESENT_VERIFIED' if status=='VERIFIED_ARTIFACT' else 'PRESENT_UNVERIFIED'
         classified.append({'id':entry['id'],'classification':value,'evidence':status})
+        if entry['kind']=='PYTHON_DISTRIBUTION':
+            item={'id':entry['id'],'version':entry['version'],'artifactDigest':entry['digest'],
+                  'approvalStatus':license_status,'status':'ARTIFACT_NOT_VERIFIED','files':[]}
+            if status=='VERIFIED_ARTIFACT':
+                item.update(verify_distribution_metadata(root,nodes[entry['id']])['licenseMaterials'])
+            materials.append(item)
     roles={node['kind'] for node in nodes.values()}
     required={'SOURCE','PYTHON_RUNTIME','PYTHON_DISTRIBUTION','NATIVE_EXTENSION','MODEL','CONFIG','WEB_ASSET'}
     missing_roles=sorted(required-roles)
     complete=not missing_roles and all(e['classification']=='PRESENT_VERIFIED' for e in classified)
-    return {'version':1,'status':'COMPLETE' if complete else 'OPEN','complete':complete,'artifacts':classified,'missingRoles':missing_roles,'externalRequests':0,'bundledByVerifier':False}
+    return {'version':1,'status':'COMPLETE' if complete else 'OPEN','complete':complete,'artifacts':classified,'missingRoles':missing_roles,'externalRequests':0,'bundledByVerifier':False,
+            'noticeMaterialInventory':materials,'noticeRedistributionApproved':False,
+            'noticeScope':'AUTHENTICATED_INSTALLED_DECLARATIONS_ONLY'}

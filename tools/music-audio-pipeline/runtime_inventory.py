@@ -188,9 +188,20 @@ class RuntimeInventory:
         if Path(executable).resolve() != path.resolve() or not os.access(path, os.X_OK):
             raise ValueError('wrong-executable')
         entry = self.verify('assets', identity, binding['path'])
+        # Reuse the bounded actual-image parser, not the architecture label alone.
+        # Disk syntax does not establish a live handle or native isolation.
+        from runtime_evidence import native_image_routes
+        before = stable(path)
+        image = native_image_routes(path, binding['architecture'])
+        if platform.system() == 'Darwin' and image['format'] != 'MACHO64':
+            raise ValueError('wrong-private-runtime-image-format')
+        if stable(path) != before:
+            raise ValueError('changed-private-runtime-image')
         self.native[identity] = {'identity': entry, 'status': 'VERIFIED_EXECUTABLE_FILE',
             'source': binding['path'], 'architecture': platform.machine(),
-            'version': binding['version'], 'versionEvidence': 'MANIFEST_BOUND_ONLY'}
+            'version': binding['version'], 'versionEvidence': 'MANIFEST_BOUND_ONLY',
+            'architectureEvidence': 'VERIFIED_DISK_IMAGE_HEADER', 'imageFormat': image['format'],
+            'loaderSelectionVerified': False}
         return str(path)
 
     def recheck(self):
