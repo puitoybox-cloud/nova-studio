@@ -51,6 +51,25 @@ class ProcessingBindingTests(unittest.TestCase):
                 result=receipt.finish(identity,inventory,{'digest':'d'*64,'byteLength':10})
                 self.assertIn('stage:'+stage,result['blockedBy'])
                 with self.assertRaises(ValueError):receipt.consume(result,identity)
+    def test_actual_dispatch_missing_partial_foreign_and_tampered_fail_closed(self):
+        for change in ('missing','partial','foreign','tampered','label-promotion'):
+            with self.subTest(change=change):
+                inventory,identity,receipt=self.make()
+                call=receipt.calls[0];call['callIdentity']='e'*64
+                if change!='missing':
+                    value={'callIdentity':call['callIdentity'],'pythonDispatch':'OBSERVED',
+                        'completed':True,'actualNativeDispatch':'UNVERIFIED',
+                        'observerChanged':False,'overflow':False}
+                    if change=='foreign':value['callIdentity']='f'*64
+                    if change=='label-promotion':value['actualNativeDispatch']='VERIFIED'
+                    call['dispatchEvidence']=value
+                    call['dispatchEvidenceDigest']=evidence.evidence_digest(value)
+                    if change=='tampered':value['entryCount']=99
+                result=receipt.finish(identity,inventory,{'digest':'d'*64,'byteLength':10})
+                self.assertFalse(result['complete'])
+                self.assertIn('missing-actual-dispatch-evidence' if change=='missing' else
+                    'actual-native-dispatch-adapter-unavailable' if change=='label-promotion' else
+                    'partial-or-invalid-actual-dispatch-evidence',result['blockedBy'])
     def test_wrong_codec_fallback_stem_writer_and_native(self):
         for stage in ('decoder','resample','encoder','stem'):
             for field,value in [('status','UNVERIFIED'),('fallback',True),('nativeIdentity','UNVERIFIED'),('completed',False)]:
@@ -208,6 +227,19 @@ class MappedTests(unittest.TestCase):
 
 
 class NetworkEligibilityTests(unittest.TestCase):
+    def test_tls_dns_fetch_and_apple_network_gateways_blocked(self):
+        names=['SSL_read','SSL_do_handshake','SSL_write_ex','SSL_read_ex',
+            'BIO_new_ssl_connect','BIO_new_dgram','curl_easy_send','curl_easy_recv',
+            'curl_multi_socket_action','res_nquery','res_nsearch','gethostbyaddr',
+            'CFHostStartInfoResolution','CFReadStreamOpen','CFWriteStreamOpen',
+            'nw_connection_start','nw_connection_send','nw_connection_receive']
+        guard=self.guard()
+        for name in names:
+            for spelling in (name,name.encode('ascii'),name+'$NOCANCEL',name+'$UNIX2003'):
+                with self.subTest(symbol=spelling),self.assertRaises(PermissionError):
+                    guard.audit('ctypes.dlsym',(None,spelling))
+        self.assertEqual(guard.snapshot()['native'],'UNVERIFIED')
+
     def guard(self):
         with patch('sys.addaudithook'):return OfflineRuntimeGuard()
     def test_private_loopback_external_dns_child_and_model_fetch(self):
