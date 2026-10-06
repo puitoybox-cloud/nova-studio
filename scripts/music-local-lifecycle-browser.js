@@ -39,8 +39,31 @@ const readline=require('node:readline');const fs=require('node:fs');const assert
         try{await api.validateProcessingReceipt(wrong,options)}catch(_){rejected++}
       }
       if(rejected!==5)throw Error('partial/stale fixture accepted');
-      return {completeFixture:1,rejectedFixtures:rejected,acceptance:'SOFTWARE_CONTRACT_ONLY'};
+      const hashRows=[];
+      const unit=new Uint8Array(65536).fill(7);
+      for(const size of [0,65537,64*1024*1024,64*1024*1024+1,96*1024*1024+19]){
+        const pieces=Array(Math.floor(size/65536)).fill(unit);if(size%65536)pieces.push(unit.slice(0,size%65536));
+        const blob=new Blob(pieces);blob.arrayBuffer=()=>{throw Error('whole-file-read-forbidden')};let max=0,count=0;
+        const r=await api.hashBrowserArtifact(blob,{onChunk:c=>{max=Math.max(max,c.byteLength);count++}});
+        if(max>65536||count!==Math.ceil(size/65536)||r.byteLength!==size)throw Error('unbounded-browser-hash');
+        hashRows.push({size,digest:r.digest,chunks:count,maxChunk:max});api.consumeBrowserArtifact(blob,r);
+        let replay=false;try{api.consumeBrowserArtifact(blob,r)}catch(_){replay=true}if(!replay)throw Error('artifact-replay');
+      }
+      let failures=0;
+      for(const kind of ['cancel','failure','digest','size','replace']){
+        const b=new Blob([unit,unit]),c=new AbortController();let current=b;
+        try{await api.hashBrowserArtifact(b,{signal:c.signal,currentArtifact:()=>current,
+          ...(kind==='digest'||kind==='size'?{expectedIdentity:{digest:'f'.repeat(64),byteLength:kind==='size'?1:b.size}}:{}),
+          onChunk(){if(kind==='cancel')c.abort();if(kind==='failure')throw Error('disposable-read-failure');if(kind==='replace')current=new Blob(['replacement'])}})}catch(_){failures++}
+      }
+      if(failures!==5)throw Error('missing-stream-failure');
+      return {browserHashRows:hashRows,streamRejected:failures,completeFixture:1,rejectedFixtures:rejected,acceptance:'SOFTWARE_CONTRACT_ONLY'};
     });
+    for(const row of receipts.browserHashRows){
+      const expected=require('node:crypto').createHash('sha256'),unit=Buffer.alloc(65536,7);
+      for(let i=0;i<row.size;i+=65536)expected.update(unit.subarray(0,Math.min(65536,row.size-i)));
+      assert.equal(row.digest,expected.digest('hex'));
+    }
     await page.evaluate(()=>window.MusicStudioAudioPipeline.stopLocal());
     assert.equal(await page.evaluate(()=>window.MusicStudioAudioPipeline.bootstrapStatus().status),'BLOCKED');
     await page.screenshot({path:`verification/music-local-lifecycle-${width}.png`});

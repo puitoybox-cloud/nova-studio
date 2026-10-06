@@ -133,9 +133,10 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
         } else { replyHandler(nil,"unknown-owned-processing-action") }
     }
 
-    public func receiveOwnedShutdown(_ data: Data) throws {
+    @discardableResult public func receiveOwnedShutdown(_ data: Data) throws -> Data {
         guard let owner = ownedLifecycle else { throw MusicStudioOwnedLifecycle.Failure.invalid }
-        try owner.receiveShutdown(data); lifecycleState = owner.state
+        let acknowledgement = try owner.receiveShutdown(data); lifecycleState = owner.state
+        return acknowledgement
     }
 
     public func stop() {

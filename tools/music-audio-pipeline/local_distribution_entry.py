@@ -60,6 +60,63 @@ def _digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+class OwnedAuditChain:
+    """16-event process-local chain; only digests and public bindings, no secrets.
+
+    Authenticity derives from the initial private owner capability. This is not
+    durable storage/retention policy or native evidence. Full suffixes are sent
+    over the existing private channel; no browser audit endpoint is added.
+    """
+    def __init__(self, owner, session, key):
+        self.owner = owner; self.session = session; self.key = key
+        self.entries = []; self.cursor = 0; self.phase = 'READY'; self.generation = 0
+        self.request = None; self.binding = None; self.contract = None
+
+    def verify(self):
+        previous = '0'*64
+        for index, entry in enumerate(self.entries,1):
+            unsigned = {k:v for k,v in entry.items() if k != 'authentication'}
+            payload = {k:v for k,v in unsigned.items() if k != 'digest'}
+            if (entry.get('index') != index or entry.get('owner') != self.owner or entry.get('session') != self.session or
+                    entry.get('previousDigest') != previous or entry.get('digest') != _digest(payload) or
+                    not hmac.compare_digest(entry.get('authentication',''),hmac.new(self.key.encode(),
+                        json.dumps(unsigned,sort_keys=True,separators=(',',':')).encode(),hashlib.sha256).hexdigest())):
+                raise ValueError('owned-audit-chain-break')
+            previous = entry['digest']
+        if self.cursor > len(self.entries): raise ValueError('owned-audit-missing-receipt')
+
+    def append(self, event, evidence, *, request=None, binding=None, contract=None, generation=0):
+        if len(self.entries) >= 16 or not _token(self.key): raise ValueError('owned-audit-budget-or-closed')
+        self.verify()
+        allowed = {'READY':{'renew','begin','authorize','stop','summary'},
+            'AUTHORIZED':{'renew','admission','stop','summary'},'ADMITTED':{'renew','publication','stop','summary'},
+            'LEGACY':{'renew','publication','stop','summary'},'PUBLISHED':{'result','stop','summary'},
+            'DELIVERED':{'accept','stop','summary'},'ACCEPTED':{'stop','summary'},
+            'STOPPING':{'summary'},'SUMMARY':set()}
+        if event not in allowed[self.phase] or type(generation) is not int or generation != self.generation + (event == 'renew'):
+            raise ValueError('owned-audit-order-or-generation')
+        if self.request is not None and (request,binding,contract) != (self.request,self.binding,self.contract):
+            raise ValueError('owned-audit-changed-binding')
+        if event in ('begin','authorize'):
+            if not _token(request) or not _token(binding) or event == 'authorize' and not _token(contract):
+                raise ValueError('owned-audit-missing-binding')
+            self.request,self.binding,self.contract = request,binding,contract
+        payload = {'format':'NOVA_OWNED_AUDIT','version':1,'owner':self.owner,'session':self.session,
+            'index':len(self.entries)+1,'event':event,'request':request,'bindingDigest':binding,
+            'processingContract':contract,'generation':generation,
+            'previousDigest':self.entries[-1]['digest'] if self.entries else '0'*64,'evidenceDigest':_digest(evidence)}
+        payload['digest'] = _digest(payload)
+        payload['authentication'] = hmac.new(self.key.encode(),json.dumps(payload,sort_keys=True,separators=(',',':')).encode(),hashlib.sha256).hexdigest()
+        self.entries.append(payload); self.generation = generation
+        self.phase = {'begin':'LEGACY','authorize':'AUTHORIZED','admission':'ADMITTED','publication':'PUBLISHED',
+            'result':'DELIVERED','accept':'ACCEPTED','stop':'STOPPING','summary':'SUMMARY'}.get(event,self.phase)
+        return dict(payload)
+
+    def suffix(self):
+        value = json.loads(json.dumps(self.entries[self.cursor:])); self.cursor = len(self.entries)
+        return value
+
+
 class OwnedResultChannel:
     """Private launcher -> Swift and launcher -> Helper capabilities, never browser tokens.
 
@@ -80,7 +137,18 @@ class OwnedResultChannel:
         self.owner = hashlib.sha256(self.capability.encode()).hexdigest()
         self.final_key = self.capability; self.final_receipt = None
         self.authorization = None; self.admitted = False; self.accepted_result = None
+        self.audit = OwnedAuditChain(self.owner,self.session,self.final_key)
+        self.final_acknowledgement = None
         self.lock = threading.RLock()
+
+    def audit_event(self, event, evidence):
+        try:
+            return self.audit.append(event,evidence,request=self.binding["request"] if self.binding else self.audit.request,
+                binding=_digest(self.binding) if self.binding else self.audit.binding,
+                contract=self.authorization["processingContract"] if self.authorization else self.audit.contract,generation=self.renewals)
+        except (ValueError,TypeError,KeyError):
+            self.close(failed=True)
+            raise
 
     def handoff(self):
         return {'capability': self.capability, 'sequence': self.sequence,
@@ -148,6 +216,10 @@ class OwnedResultChannel:
                 'bindingDigest':_digest(self.binding) if self.binding else None}
             if action == 'authorize': response['authorization'] = json.loads(json.dumps(self.authorization))
             if action == 'result': response['result'] = json.loads(json.dumps(self.result))
+            audit_evidence = {key:item for key,item in response.items() if key not in ('capability','authorization')}
+            if action == 'authorize': audit_evidence['authorizationDigest'] = _digest(self.authorization)
+            self.audit_event(action,audit_evidence)
+            response['audit'] = self.audit.suffix()
             return response
 
     def admit(self, value, inventory):
@@ -168,6 +240,7 @@ class OwnedResultChannel:
                     processing_binding(self.session,self.binding['request'],self.binding['input'],inventory) != self.binding):
                 raise ValueError('missing-stale-foreign-or-replayed-authorization')
             self.admitted = True
+            self.audit_event('admission',{'authorizationDigest':_digest(auth),'bindingDigest':_digest(self.binding)})
             return {'format':'NOVA_PROCESSING_ADMISSION','version':1,'session':self.session,
                 'request':self.binding['request'],'bindingDigest':_digest(self.binding),
                 'authorizationDigest':_digest(auth),'deadlineAt':self.deadline_at,'state':'ADMITTED'}
@@ -204,6 +277,7 @@ class OwnedResultChannel:
             self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
                 'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}
             self.state = 'RESULT_READY'
+            self.audit_event('publication',self.result)
 
     def close(self, *, failed=False):
         with self.lock:
@@ -234,11 +308,42 @@ def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed
             'status':'OBSERVED' if complete else 'PARTIAL','complete':complete}
         key = channel.final_key
         if not _token(key): raise ValueError('missing-final-receipt-owner')
+        channel.audit_event('summary',payload)
+        audit = channel.audit.suffix()
         channel.close(failed=failed)
         channel.final_receipt = {'payload':payload,'authentication':hmac.new(key.encode(),
             json.dumps(payload,sort_keys=True,separators=(',',':'),allow_nan=False).encode(),hashlib.sha256).hexdigest()}
-        channel.final_key = ''
+        channel.final_receipt['audit'] = audit
+        channel.ack_key = hmac.new(key.encode(),b'NOVA_FINAL_ACK_KEY_V1',hashlib.sha256).hexdigest()
+        channel.ack_deadline = channel.clock()+3
+        channel.final_key = ''; channel.audit.key = ''
         return json.loads(json.dumps(channel.final_receipt))
+
+
+def acknowledge_final_lifecycle(channel, envelope):
+    """Explicit private adapter return path; no reopened HTTP server or browser route."""
+    with channel.lock:
+        if getattr(channel,'ack_deadline',float('inf')) <= channel.clock(): channel.ack_key = ''
+        if channel.final_receipt is None or channel.final_acknowledgement is not None or not _token(getattr(channel,"ack_key",None)) or channel.clock() >= channel.ack_deadline:
+            raise ValueError('missing-or-replayed-final-acknowledgement')
+        if not isinstance(envelope,dict) or set(envelope) != {'payload','authentication'}:
+            raise ValueError('invalid-final-acknowledgement')
+        value = envelope['payload']; signature = envelope['authentication']
+        if not isinstance(value,dict):
+            channel.ack_key = ''; raise ValueError('invalid-final-acknowledgement-payload')
+        expected = {'format':'NOVA_FINAL_ACKNOWLEDGEMENT','version':1,'owner':channel.owner,
+            'session':channel.session,'request':channel.audit.request,'bindingDigest':channel.audit.binding,
+            'processingContract':channel.audit.contract,'generation':channel.renewals,
+            'summaryDigest':_digest(channel.final_receipt['payload']),
+            'auditDigest':channel.audit.entries[-1]['digest'],
+            'completionState':channel.final_receipt['payload']['completionState'],'accepted':True}
+        if _digest(value) != _digest(expected) or not _token(signature) or not hmac.compare_digest(signature,
+                hmac.new(channel.ack_key.encode(),json.dumps(value,sort_keys=True,separators=(',',':')).encode(),hashlib.sha256).hexdigest()):
+            channel.ack_key = ''
+            raise ValueError('foreign-or-changed-final-acknowledgement')
+        channel.final_acknowledgement = json.loads(json.dumps(value)); channel.ack_key = ''
+        return {'status':'OBSERVED','state':'ACKNOWLEDGED','completionState':value['completionState'],
+            'complete':value['completionState']=='COMPLETE'}
 
 
 class OwnedChildInterruptionAdapter:
@@ -277,8 +382,9 @@ def stage2_software_closure(evidence):
     """Explicit categories, never a substitute for strict runtime eligibility/formal A."""
     categories={
         'A':('swiftAuthorizationBinding','oneShotHelperAdmission','outputBytesAcceptance',
-             'authenticatedFinalSummary','partialShutdownRejection','ownedInterruptionContract','scopedEvidenceAggregation'),
-        'B':('approvedRuntimeAssets','approvedMLModels','realBackendLinkage','durableBackendAdapters'),
+             'authenticatedFinalSummary','partialShutdownRejection','ownedInterruptionContract','scopedEvidenceAggregation',
+             'browserBoundedStreamingHash','largeArtifactLifecycle','ownedBoundedAuditChain','privateFinalAcknowledgementContract'),
+        'B':('approvedRuntimeAssets','approvedMLModels','realBackendLinkage','durableBackendAdapters','approvedPrivateFinalDeliveryAdapter','approvedTrustAnchors'),
         'C':('storagePolicy','distributionPolicy','signingNotarizationPKI','licenses','retentionGC'),
         'D':('intelMac','appleSilicon','iPadSafari','gatekeeper','realMLPerformance','sixNoteAccuracy','logicKeystation'),
         'E':('internalNativeKernelIdentity','authenticatedRuntimeLoaderEdges','hiddenTransientNativeLoads',
@@ -430,6 +536,7 @@ class LocalEnvelopeServer:
                     value = json.loads(raw)
                     result = owner.on_control(self.path, value)
                     data = json.dumps(result,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+                    if len(data)>16384: raise ValueError('owned-response-budget')
                     self.send_response(200); self.send_header('Content-Type','application/json')
                     self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(data)))
                     self.end_headers(); self.wfile.write(data)
@@ -562,7 +669,7 @@ class LocalProductionLifecycle:
         self.server.on_lifecycle = self.browser_event
         self.server.on_control = self.control_event
         self.control = OwnedResultChannel(self.server.session, self.server.deadline)
-        self.shutdown_receipt = None; self.final_receipt = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
+        self.shutdown_receipt = None; self.final_receipt = None; self.final_acknowledgement = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
         self.state = 'PREPARING'; self.child = None; self.popen = popen
         self.health = health or self.read_health; self.browser = browser; self.native_host = native_host
         self.timeout = timeout; self.inventory = {}; self.browser_verified = False
@@ -719,7 +826,13 @@ class LocalProductionLifecycle:
             self.shutdown_state = self.final_receipt['payload']['completionState']
             self.state = 'FAILED' if failed else 'STOPPED'
             # Explicit private owner sink, never a browser route or a reopened transport.
-            if self.final_sink is not None: self.final_sink(json.loads(json.dumps(self.final_receipt)))
+            try:
+                if self.final_sink is not None:
+                    acknowledgement = self.final_sink(json.loads(json.dumps(self.final_receipt)))
+                    if acknowledgement is not None:
+                        self.final_acknowledgement = acknowledge_final_lifecycle(self.control,acknowledgement)
+            finally:
+                self.control.ack_key = ''
 
 
 def main():
