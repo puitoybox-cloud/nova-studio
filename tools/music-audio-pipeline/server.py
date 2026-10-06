@@ -763,11 +763,48 @@ def publish_owned_result(receipt):
         raise ValueError('owned-result-not-accepted')
 
 
+def start_owned_stop_pipe(server):
+    """Authenticate the inherited, anonymous creator channel after source preflight."""
+    descriptor=os.environ.pop('NOVA_OWNED_STOP_FD',None)
+    identity_text=os.environ.pop('NOVA_OWNED_STOP_IDENTITY',None)
+    if descriptor is None and identity_text is None:return None
+    if not STRICT_BOOTSTRAP or BOOTSTRAP_ERROR or descriptor is None or identity_text is None:
+        raise ValueError('unverified-owned-stop-source')
+    import socket
+    import select
+    import time
+    from demucs_receipt import OwnedStopPipe,unique
+    identity=json.loads(identity_text,object_pairs_hook=unique)
+    if identity.get('session')!=require_owned_session() or identity.get('deadline')!=float(os.environ['NOVA_LIFECYCLE_DEADLINE']):
+        raise ValueError('foreign-inherited-stop-session')
+    handle=socket.socket(fileno=int(descriptor))
+    try:pipe=OwnedStopPipe(handle,identity,os.environ.get('NOVA_OWNED_RESULT_CAPABILITY',''))
+    except BaseException:handle.close();raise
+    def close_admission(payload):
+        OWNED_STOP_REQUESTED.set()
+        if PROCESSING_ATTEMPTS is not None:PROCESSING_ATTEMPTS.close()
+    def monitor():
+        try:
+            while not OWNED_STOP_REQUESTED.is_set() and time.monotonic()<identity['deadline']+10:
+                if select.select([handle],[],[],0.25)[0]:
+                    pipe.accept(close_admission);break
+        except (OSError,ValueError,TypeError):
+            # EOF/invalid delivery removes admission, but never fabricates an authenticated receipt.
+            close_admission(None)
+        finally:
+            pipe.close()
+            server.shutdown()
+    threading.Thread(target=monitor,daemon=True).start()
+    return pipe
+
+
 def main():
     import signal
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     initialize_runtime()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    try:stop_pipe = start_owned_stop_pipe(server)
+    except BaseException:server.server_close();raise
     print("Nova Music Studio Audio Pipeline")
     print(f"Local endpoint: http://{HOST}:{PORT}")
     print("Audio never leaves this Mac through this helper.")
@@ -778,6 +815,7 @@ def main():
         pass
     finally:
         server.server_close()
+        if stop_pipe is not None:stop_pipe.close()
         if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
         if DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
 
