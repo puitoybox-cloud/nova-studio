@@ -276,9 +276,16 @@ class OfflineRuntimeGuard:
             # Only this owned Helper/child's Python-to-native lookup boundary.
             # Direct calls from ML/codec C code remain entirely unobserved.
             name = args[1] if len(args) > 1 else None
-            if name in {'socket', 'connect', 'send', 'sendto', 'sendmsg', 'getaddrinfo',
+            if isinstance(name, bytes):
+                try: name = name.decode('ascii')
+                except UnicodeDecodeError: name = None
+            if isinstance(name, str): name = name.removesuffix('$NOCANCEL').removesuffix('$UNIX2003')
+            if type(name) is int or name in {'socket', 'connect', 'send', 'sendto', 'sendmsg', 'getaddrinfo',
                         'gethostbyname', 'gethostbyname2', 'getnameinfo', 'curl_easy_perform',
-                        'curl_multi_perform', 'CFReadStreamCreateForHTTPRequest'}:
+                        'curl_multi_perform', 'CFReadStreamCreateForHTTPRequest', 'socketpair',
+                        'connectx', 'sendmmsg', 'res_query', 'res_search', 'getaddrinfo_a',
+                        'recv', 'recvfrom', 'recvmsg', 'accept', 'accept4', 'listen', 'bind',
+                        'SSL_connect', 'SSL_write', 'BIO_new_connect', 'syscall'}:
                 with self.observation_lock:
                     self.observed['ctypes.network_symbol_lookup'] = min(1000000,
                         self.observed.get('ctypes.network_symbol_lookup', 0)+1)
