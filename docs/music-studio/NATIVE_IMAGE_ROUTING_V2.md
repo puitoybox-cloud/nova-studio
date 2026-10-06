@@ -80,7 +80,7 @@ bounded ownership/authentication of runtime loader and processing dispatch proof
 
 ## Verification
 
-32 new routing/observation/processing/network regressions. Existing tests are not
+33 new routing/observation/processing/network regressions. Existing tests are not
 deleted, skipped or weakened. The old Mach-O fixture is corrected to 8-byte
 command alignment with an explicit x86_64 architecture; all assertions remain.
 Local Node: 1804/1804 PASS; all 174 tracked JS syntax PASS; whitespace PASS.

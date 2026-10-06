@@ -5,6 +5,7 @@ import importlib.machinery
 import io
 import json
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -191,6 +192,23 @@ class NativeRoutingTests(unittest.TestCase):
         value = guard.snapshot(); self.assertEqual(value['events']['ctypes.network_symbol_lookup'], 8)
         self.assertFalse(value['nativeNetworkVerified']); self.assertEqual(value['native'], 'UNVERIFIED')
         self.assertEqual(value['nativeDispatchGuard']['directNativeCalls'], 'UNVERIFIED')
+    def test_owned_child_actual_ctypes_lookup_is_denied_before_native_call(self):
+        script = '''import ctypes, json
+from runtime_inventory import OfflineRuntimeGuard
+guard = OfflineRuntimeGuard()
+api = ctypes.CDLL(None)
+blocked = []
+for name in ('socket', 'connect', 'getaddrinfo'):
+    try: getattr(api, name)
+    except PermissionError: blocked.append(name)
+print(json.dumps({'blocked': blocked, 'snapshot': guard.snapshot()}))
+'''
+        result = subprocess.run([sys.executable, '-c', script], cwd=Path(__file__).parent,
+            capture_output=True, text=True, timeout=10, check=True)
+        value = json.loads(result.stdout)
+        self.assertEqual(value['blocked'], ['socket', 'connect', 'getaddrinfo'])
+        self.assertEqual(value['snapshot']['events']['ctypes.network_symbol_lookup'], 3)
+        self.assertFalse(value['snapshot']['nativeNetworkVerified'])
     def test_scoped_load_gate_cannot_treat_no_unexpected_as_safe(self):
         inventory = {'runtimeEvidence': {'scopedNativeLoads': {'complete': False, 'unexpected': [], 'unresolved': [], 'ambiguous': []}}}
         result = strict_eligibility(inventory, trusted_bootstrap=True, browser_verified=True)
