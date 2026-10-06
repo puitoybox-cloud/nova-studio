@@ -1,5 +1,8 @@
 """Offline, explicitly scoped artifact graph. Never scans all installed packages."""
 import copy
+import base64
+import csv
+import io
 import hashlib
 import importlib.metadata
 import json
@@ -17,6 +20,89 @@ MAX_CONTRACT_BYTES = 1024 * 1024
 MAX_TOTAL = 16 * 1024**3
 MAX_METADATA_BYTES = 1024 * 1024
 MAX_LICENSE_BYTES = 1024 * 1024
+MAX_RECORD_BYTES = 1024 * 1024
+
+
+def verify_distribution_record(root, node, metadata):
+    """Authenticate RECORD itself, then bind each CSV row to approved file bytes.
+
+    Blank installed hashes/sizes are legal metadata, never integrity evidence.
+    The externally anchored graph still authenticates every file independently.
+    No path scan, package installation, import or approval inference occurs.
+    """
+    metadata_path = PurePosixPath(metadata['path'])
+    record_path = str(metadata_path.parent / 'RECORD')
+    files = {f['path']: f for f in node['files']}
+    records = [f['path'] for f in node['files'] if PurePosixPath(f['path']).name == 'RECORD'
+               and PurePosixPath(f['path']).parent.name.endswith('.dist-info')]
+    if records != [record_path]:
+        raise ValueError('missing-or-ambiguous-installed-record')
+    if sum(f['byteLength'] for f in node['files']) > MAX_TOTAL:
+        raise ValueError('installed-record-total-byte-budget')
+    binding = files.get(record_path)
+    if binding is None:
+        raise ValueError('missing-authenticated-installed-record')
+    verify_local_asset(root, record_path, binding, MAX_RECORD_BYTES)
+    with local(root, record_path).open('rb') as stream:
+        raw = stream.read(MAX_RECORD_BYTES + 1)
+    if len(raw) != binding['byteLength'] or hashlib.sha256(raw).hexdigest() != binding['digest']:
+        raise ValueError('stale-installed-record')
+    base = metadata_path.parent.parent
+    seen = set(); hashed = 0; omitted_hash = 0; omitted_size = 0
+    try:
+        rows = csv.reader(io.StringIO(raw.decode('utf-8'), newline=''), strict=True)
+        for row in rows:
+            if len(seen) >= MAX_FILES or len(row) != 3:
+                raise ValueError('installed-record-row-budget-or-shape')
+            name, encoded, size = row
+            if (not name or '\\' in name or ':' in name or '\x00' in name or
+                    PurePosixPath(name).is_absolute() or any(p in ('', '.') for p in name.split('/'))):
+                raise ValueError('unsafe-installed-record-path')
+            # Standard script rows can traverse above site-packages, but never
+            # above this approved private generation. Normalize lexically first.
+            parts = list(base.parts)
+            for part in name.split('/'):
+                if part == '..':
+                    if not parts: raise ValueError('installed-record-generation-escape')
+                    parts.pop()
+                else: parts.append(part)
+            relative = '/'.join(parts)
+            if relative in seen or relative not in files:
+                raise ValueError('duplicate-or-unapproved-installed-record-file')
+            seen.add(relative); expected = files[relative]
+            path = local(root, relative); before = stable(path)
+            from artifact_verification import VERIFIER
+            VERIFIER.verify(root, relative, expected, 8*1024**3,
+                            identity=node['id']+':'+relative, version=node['version'])
+            if size:
+                if not re.fullmatch(r'0|[1-9][0-9]*', size) or size != str(expected['byteLength']):
+                    raise ValueError('installed-record-size-mismatch')
+            else: omitted_size += 1
+            if encoded:
+                algorithm, separator, value = encoded.partition('=')
+                if not separator or algorithm not in {'sha256', 'sha384', 'sha512'}:
+                    raise ValueError('unsupported-installed-record-hash')
+                digest = hashlib.new(algorithm)
+                total = 0
+                with path.open('rb') as stream:
+                    while True:
+                        chunk = stream.read(65536)
+                        if not chunk: break
+                        total += len(chunk)
+                        if total > expected['byteLength']: raise ValueError('changed-installed-record-file')
+                        digest.update(chunk)
+                if total != expected['byteLength'] or value != base64.urlsafe_b64encode(digest.digest()).rstrip(b'=').decode('ascii'):
+                    raise ValueError('installed-record-hash-mismatch')
+                hashed += 1
+            else: omitted_hash += 1
+            if stable(path) != before: raise ValueError('changed-installed-record-file')
+    except (UnicodeError, csv.Error):
+        raise ValueError('invalid-installed-record-csv') from None
+    if seen != set(files): raise ValueError('incomplete-authenticated-installed-record')
+    return {'path': record_path, 'digest': binding['digest'], 'byteLength': binding['byteLength'],
+            'status': 'VERIFIED_AUTHENTICATED_RECORD', 'fileCount': len(seen),
+            'verifiedDeclaredHashes': hashed, 'omittedHashes': omitted_hash, 'omittedSizes': omitted_size,
+            'integrityAuthority': 'EXTERNALLY_ANCHORED_FILE_GRAPH', 'redistributionApproved': False}
 
 
 def verified_license_materials(root, node, message, metadata_path):
@@ -180,7 +266,8 @@ def verify_closure(root,contract,distribution=importlib.metadata.distribution,st
                     actual={str(Path(installed.locate_file(p)).resolve()) for p in recorded}
                     expected={str(local(root,f['path']).resolve()) for f in node['files']}
                     if actual!=expected:raise ValueError('incomplete-installed-artifact-footprint')
-                    verify_distribution_metadata(root,node)
+                    metadata = verify_distribution_metadata(root,node)
+                    verify_distribution_record(root,node,metadata)
             except FileNotFoundError:level='MISSING';reason='missing-artifact'
             except importlib.metadata.PackageNotFoundError:level='MISSING';reason='missing-installed-distribution'
             except (ValueError,OSError):level='UNVERIFIED';reason='artifact-version-footprint-or-budget-mismatch'
@@ -198,8 +285,36 @@ def verify_closure(root,contract,distribution=importlib.metadata.distribution,st
     return {'version':1,'status':'COMPLETE' if complete else 'PARTIAL','complete':complete,'entries':results,'externalRequests':0}
 
 
-def verify_assembly(root,contract,distribution=importlib.metadata.distribution):
-    observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[];materials=[]
+def manifest_assembly_binding(runtime, nodes):
+    """Same exact anchored identity gate for offline inspection and actual spawn."""
+    required={e['id'] for kind in ('models','dependencies','assets') for e in runtime.manifest[kind]}-{'runtime-closure'}
+    missing=sorted(required-set(nodes)); mismatches=[]
+    for kind in ('models','dependencies','assets'):
+        bindings={e['id']:e for e in runtime.bindings[kind]}
+        for expected in runtime.manifest[kind]:
+            identity=expected['id']
+            if identity=='runtime-closure':continue
+            node=nodes.get(identity); binding=bindings.get(identity)
+            if identity=='runtime-config':binding={'path':'runtime-config.json'}
+            if binding is None:
+                for model in runtime.bindings['models']:
+                    binding=next((e for e in model.get('companions',[]) if e['id']==identity),binding)
+                binding=next((e for e in runtime.bindings['native'] if e['id']==identity),binding)
+                for dependency in runtime.bindings['dependencies']:
+                    binding=next((e for e in dependency.get('native',[]) if e['id']==identity),binding)
+            if node is None:continue
+            if binding is None:
+                mismatches.append(identity);continue
+            file=next((f for f in node['files'] if f['path']==binding['path']),None)
+            if file is None or file['digest']!=expected['digest'] or ('byteLength' in expected and file['byteLength']!=expected['byteLength']):mismatches.append(identity)
+            if kind=='dependencies' and (node['kind']!='PYTHON_DISTRIBUTION' or node['version']!=expected['version']):mismatches.append(identity)
+            if kind=='models' and (node['kind']!='MODEL' or node['version']!=expected['revision']):mismatches.append(identity)
+    return {'manifestIdentityMismatches':sorted(set(mismatches)), 'missingManifestIdentities':missing,
+            'trustedManifest':'EXTERNALLY_ANCHORED'}
+
+
+def verify_assembly(root,contract,distribution=importlib.metadata.distribution, *, runtime=None):
+    observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[];materials=[];records=[]
     for entry in observed['entries']:
         status=entry['status'];license_status=entry['licenseStatus']
         if status=='MISSING':value='MISSING'
@@ -213,12 +328,18 @@ def verify_assembly(root,contract,distribution=importlib.metadata.distribution):
             item={'id':entry['id'],'version':entry['version'],'artifactDigest':entry['digest'],
                   'approvalStatus':license_status,'status':'ARTIFACT_NOT_VERIFIED','files':[]}
             if status=='VERIFIED_ARTIFACT':
-                item.update(verify_distribution_metadata(root,nodes[entry['id']])['licenseMaterials'])
+                metadata=verify_distribution_metadata(root,nodes[entry['id']])
+                item.update(metadata['licenseMaterials'])
+                records.append({'id':entry['id'],'version':entry['version'],'artifactDigest':entry['digest'],
+                                **verify_distribution_record(root,nodes[entry['id']],metadata)})
             materials.append(item)
     roles={node['kind'] for node in nodes.values()}
     required={'SOURCE','PYTHON_RUNTIME','PYTHON_DISTRIBUTION','NATIVE_EXTENSION','MODEL','CONFIG','WEB_ASSET'}
     missing_roles=sorted(required-roles)
     complete=not missing_roles and all(e['classification']=='PRESENT_VERIFIED' for e in classified)
+    manifest_binding=manifest_assembly_binding(runtime,nodes) if runtime is not None else {}
+    if manifest_binding.get('manifestIdentityMismatches') or manifest_binding.get('missingManifestIdentities'):complete=False
     return {'version':1,'status':'COMPLETE' if complete else 'OPEN','complete':complete,'artifacts':classified,'missingRoles':missing_roles,'externalRequests':0,'bundledByVerifier':False,
+            **manifest_binding, 'installedRecordInventory':records,
             'noticeMaterialInventory':materials,'noticeRedistributionApproved':False,
             'noticeScope':'AUTHENTICATED_INSTALLED_DECLARATIONS_ONLY'}

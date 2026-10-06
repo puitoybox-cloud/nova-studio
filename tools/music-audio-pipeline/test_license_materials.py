@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from scoped_closure import canonical, verify_distribution_metadata, verify_closure, verify_assembly
-from test_demucs_closure import contract_fixture
+from test_demucs_closure import contract_fixture, refresh_fixture_record
 
 
 class LicenseMaterialsTests(unittest.TestCase):
@@ -19,6 +19,7 @@ class LicenseMaterialsTests(unittest.TestCase):
         self.node['files']=[f for f in self.node['files'] if f['path']!=relative]
         self.node['files'].append({'path':relative,'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)})
         self.node['artifactDigest']=hashlib.sha256(canonical(sorted(self.node['files'],key=lambda f:f['path']))).hexdigest()
+        refresh_fixture_record(self.root,self.node)
 
     def metadata(self, headers, version='2.4'):
         self.bind('package-1.dist-info/METADATA',
@@ -96,7 +97,7 @@ class LicenseMaterialsTests(unittest.TestCase):
         self.bind(relative,b'fixture');path=self.root/relative
         path.unlink();path.symlink_to(self.root/'2.bin')
         with self.assertRaises(ValueError):verify_distribution_metadata(self.root,self.node)
-        self.node['files'][-1]['byteLength']=1024*1024+1
+        next(f for f in self.node['files'] if f['path']==relative)['byteLength']=1024*1024+1
         with self.assertRaisesRegex(ValueError,'license-material-budget'):
             verify_distribution_metadata(self.root,self.node)
 

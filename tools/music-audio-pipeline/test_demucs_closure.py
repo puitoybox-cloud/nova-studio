@@ -66,6 +66,20 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(PermissionError):ChildSession(['unexpected'],e,permit=lambda command:Reject())
 
 
+def refresh_fixture_record(root, node):
+    import base64, csv, io
+    record_path='package-1.dist-info/RECORD'
+    files=[f for f in node['files'] if f['path']!=record_path]
+    output=io.StringIO(newline='');writer=csv.writer(output,lineterminator='\n')
+    for f in files:
+        writer.writerow([f['path'],'sha256='+base64.urlsafe_b64encode(bytes.fromhex(f['digest'])).rstrip(b'=').decode(),str(f['byteLength'])])
+    writer.writerow([record_path,'',''])
+    raw=output.getvalue().encode();Path(root,record_path).write_bytes(raw)
+    files.append({'path':record_path,'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)})
+    node['files']=files
+    node['artifactDigest']=hashlib.sha256(canonical(sorted(files,key=lambda f:f['path']))).hexdigest()
+
+
 def contract_fixture(root):
     kinds=['SOURCE','PYTHON_RUNTIME','PYTHON_DISTRIBUTION','NATIVE_EXTENSION','MODEL','CONFIG','WEB_ASSET']
     nodes=[]
@@ -81,6 +95,7 @@ def contract_fixture(root):
         nodes.append({'id':'package' if kind=='PYTHON_DISTRIBUTION' else kind.lower(),'kind':kind,'version':'1',
             'requires':[],'files':files,'artifactDigest':hashlib.sha256(canonical(files)).hexdigest(),
             'evidence':'VERIFIED_ARTIFACT','licenseStatus':'APPROVED'})
+    refresh_fixture_record(root,nodes[2])
     nodes[0]['requires']=[e['id'] for e in nodes[1:]]
     return {'version':1,'roots':['source'],'nodes':nodes}
 
@@ -88,7 +103,7 @@ def contract_fixture(root):
 class ClosureTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name);self.c=contract_fixture(self.root)
-        self.dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA'],locate_file=lambda p:self.root/p)
+        self.dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA','package-1.dist-info/RECORD'],locate_file=lambda p:self.root/p)
     def tearDown(self):self.tmp.cleanup()
     def test_complete_scoped_closure_and_assembly(self):
         r=verify_closure(self.root,self.c,self.dist);self.assertTrue(r['complete']);a=verify_assembly(self.root,self.c,self.dist);self.assertTrue(a['complete']);self.assertFalse(a['bundledByVerifier']);self.assertEqual(a['externalRequests'],0)
@@ -217,9 +232,9 @@ for event,args in [('subprocess.Popen',('unexpected',['unexpected'],None,None)),
     def test_full_closure_stamps_invalidate_exact_changes(self):
         from runtime_inventory import stable
         with tempfile.TemporaryDirectory() as root:
-            contract=contract_fixture(root);stamps={};dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA'],locate_file=lambda p:Path(root,p))
+            contract=contract_fixture(root);stamps={};dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA','package-1.dist-info/RECORD'],locate_file=lambda p:Path(root,p))
             verify_closure(root,contract,dist,stamp_sink=lambda path,stamp:stamps.__setitem__(path,stamp))
-            self.assertEqual(set(stamps),{f['path'] for node in contract['nodes'] for f in node['files']});self.assertEqual(len(stamps),8);Path(root,'3.bin').write_bytes(b'changed')
+            self.assertEqual(set(stamps),{f['path'] for node in contract['nodes'] for f in node['files']});self.assertEqual(len(stamps),9);Path(root,'3.bin').write_bytes(b'changed')
             self.assertNotEqual(stamps['3.bin'],stable(Path(root,'3.bin')))
 
 class InstalledMetadataTests(unittest.TestCase):
@@ -233,6 +248,7 @@ class InstalledMetadataTests(unittest.TestCase):
         f=self.node['files'][1];(self.root/f['path']).write_bytes(raw)
         f.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
         self.node['artifactDigest']=hashlib.sha256(canonical(sorted(self.node['files'],key=lambda f:f['path']))).hexdigest()
+        refresh_fixture_record(self.root,self.node)
     def test_wrong_authenticated_name_or_version_blocks_real_assembly(self):
         for raw in [b'Name: different\nVersion: 1\n\n',b'Name: package\nVersion: 2\n\n']:
             with self.subTest(raw=raw):
