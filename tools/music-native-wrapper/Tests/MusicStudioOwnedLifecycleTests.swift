@@ -122,6 +122,71 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         XCTAssertTrue(rejected)
     }
 
+    func auditEntry(event: String, evidence: [String:Any], index: Int, previous: String,
+                    request: String? = nil, binding: String? = nil, contract: String? = nil, generation: Int = 0) throws -> [String:Any] {
+        func raw(_ value: Any) throws -> Data { try JSONSerialization.data(withJSONObject:value,options:[.sortedKeys,.withoutEscapingSlashes]) }
+        var entry: [String:Any] = ["format":"NOVA_OWNED_AUDIT","version":1,
+            "owner":MusicStudioOwnedLifecycle.identity(Data(token.utf8)).digest,"session":token,
+            "index":index,"event":event,"request":request as Any? ?? NSNull(),"bindingDigest":binding as Any? ?? NSNull(),
+            "processingContract":contract as Any? ?? NSNull(),"generation":generation,"previousDigest":previous,
+            "evidenceDigest":MusicStudioOwnedLifecycle.identity(try raw(evidence)).digest]
+        entry["digest"] = MusicStudioOwnedLifecycle.identity(try raw(entry)).digest
+        entry["authentication"] = HMAC<SHA256>.authenticationCode(for:try raw(entry),using:SymmetricKey(data:Data(token.utf8))).map { String(format:"%02x",$0) }.joined()
+        return entry
+    }
+    func testOwnedAuditRejectsMissingForeignReplayGapGenerationAndContract() throws {
+        let input = MusicStudioOwnedLifecycle.identity(Data("input".utf8))
+        for mutation in ["missing","session","request","generation","processingContract","previousDigest","index","digest","authentication","order"] {
+            let owner = try owner();_ = try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token)
+            var value = try XCTUnwrap(JSONSerialization.jsonObject(with:authorizationResponse(owner,input:input)) as? [String:Any])
+            var entries = try XCTUnwrap(value["audit"] as? [[String:Any]])
+            if mutation == "missing" { value.removeValue(forKey:"audit") }
+            else {
+                if mutation == "index" || mutation == "generation" { entries[0][mutation]=2 }
+                else if mutation == "order" { entries[0]["event"]="result" }
+                else { entries[0][mutation]=String(repeating:"f",count:64) }
+                value["audit"]=entries
+            }
+            XCTAssertThrowsError(try owner.receive(JSONSerialization.data(withJSONObject:value),now:now));XCTAssertEqual(owner.state,"FAILED")
+        }
+    }
+    func testAuthenticatedAuditStopSummaryReturnsBoundedPrivateAcknowledgement() throws {
+        let owner = try owner();_ = try owner.command("stop")
+        var value = try XCTUnwrap(JSONSerialization.jsonObject(with:response(action:"stop",state:"STOPPING",sequence:1)) as? [String:Any])
+        var evidence=value;evidence.removeValue(forKey:"capability")
+        let stop = try auditEntry(event:"stop",evidence:evidence,index:1,previous:String(repeating:"0",count:64))
+        value["audit"]=[stop];try owner.receive(JSONSerialization.data(withJSONObject:value),now:now)
+        let payload=shutdownPayload()
+        var envelope=try XCTUnwrap(JSONSerialization.jsonObject(with:shutdownEnvelope(payload)) as? [String:Any])
+        let summary=try auditEntry(event:"summary",evidence:payload,index:2,previous:try XCTUnwrap(stop["digest"] as? String))
+        envelope["audit"]=[summary]
+        let data=try owner.receiveShutdown(JSONSerialization.data(withJSONObject:envelope))
+        XCTAssertLessThan(data.count,4096);XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
+        let ack=try XCTUnwrap(JSONSerialization.jsonObject(with:data) as? [String:Any])
+        let body=try XCTUnwrap(ack["payload"] as? [String:Any]);XCTAssertEqual(body["auditDigest"] as? String,summary["digest"] as? String)
+        XCTAssertEqual(body["completionState"] as? String,"PARTIAL");XCTAssertNil(body["capability"])
+        XCTAssertThrowsError(try owner.receiveShutdown(JSONSerialization.data(withJSONObject:envelope)))
+    }
+
+    func testPythonOwnedTranscriptAuthorizeAdmissionRenewalResultAcceptStopAndFinalAck() throws {
+        let path = URL(fileURLWithPath:#filePath).deletingLastPathComponent().appendingPathComponent("OwnedAuditTranscript.json")
+        let value = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:path)) as? [String:Any])
+        let responses = try XCTUnwrap(value["responses"] as? [[String:Any]])
+        let owner = try owner()
+        let input=MusicStudioOwnedLifecycle.identity(Data("input".utf8))
+        _ = try owner.command("authorize",request:requestID,input:input,expectedInventory:try XCTUnwrap(value["inventory"] as? String),processingContract:try XCTUnwrap(value["contract"] as? String))
+        try owner.receive(JSONSerialization.data(withJSONObject:responses[0]),now:now)
+        for (index,action) in ["renew","result","accept","stop"].enumerated() {
+            _ = try owner.command(action,outputBytes:action == "accept" ? Data("output".utf8) : nil)
+            try owner.receive(JSONSerialization.data(withJSONObject:responses[index+1]),now:now)
+        }
+        let summary=try XCTUnwrap(value["summary"] as? [String:Any])
+        let ack=try owner.receiveShutdown(JSONSerialization.data(withJSONObject:summary))
+        XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL");XCTAssertEqual(owner.acceptedOutput,MusicStudioOwnedLifecycle.identity(Data("output".utf8)))
+        let envelope=try XCTUnwrap(JSONSerialization.jsonObject(with:ack) as? [String:Any]);let body=try XCTUnwrap(envelope["payload"] as? [String:Any])
+        XCTAssertEqual(body["generation"] as? Int,1);XCTAssertEqual(body["completionState"] as? String,"PARTIAL")
+    }
+
     func authorizationResponse(_ owner: MusicStudioOwnedLifecycle, input: MusicStudioOutputIdentity, mutation: String? = nil) throws -> Data {
         var value = try XCTUnwrap(JSONSerialization.jsonObject(with:response(action:"authorize",state:"PROCESSING",sequence:1,binding:binding)) as? [String:Any])
         var auth: [String:Any] = ["format":"NOVA_PROCESSING_AUTHORIZATION","version":1,
@@ -131,6 +196,8 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
             "expiresAt":1020000,"deadlineAt":1060000,"ticket":token]
         if let mutation { auth[mutation] = String(repeating:"f",count:64) }
         value["authorization"] = auth
+        var evidence = value; evidence.removeValue(forKey:"authorization"); evidence.removeValue(forKey:"capability")
+        value["audit"] = [try auditEntry(event:"authorize",evidence:evidence,index:1,previous:String(repeating:"0",count:64),request:requestID,binding:binding,contract:token)]
         return try JSONSerialization.data(withJSONObject:value)
     }
     func testExplicitAuthorizationBindsInputInventoryContractOwnerAndTicket() throws {

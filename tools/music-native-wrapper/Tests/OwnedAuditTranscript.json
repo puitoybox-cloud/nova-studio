@@ -1,0 +1,270 @@
+{
+  "contract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "input": {
+    "byteLength": 5,
+    "digest": "c96c6d5be8d08a12e7b5cdc1b207fa6b2430974c86803d8891675e76fd992c20"
+  },
+  "inventory": "535349054610cb25dcf65c3bb43cd8483384fdc3b78a631face2a7af42c6cf8d",
+  "output": {
+    "byteLength": 6,
+    "digest": "e0ee8bb50685e05fa0f47ed04203ae953fdfd055f5bd2892ea186504254f8c3a"
+  },
+  "responses": [
+    {
+      "action": "authorize",
+      "audit": [
+        {
+          "authentication": "6623593361c0864f1c95526a5d604e832c7f3c410f83244921ff55d4e19a75b7",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "4238c8d8c82c33bcbf4526ec7339c2ff41872914846b492d0c52f9f08e87a896",
+          "event": "authorize",
+          "evidenceDigest": "993be7c5f0e2f99b416902408a4d3d2792ed900d3447ce9a86032979e6871303",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 0,
+          "index": 1,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        }
+      ],
+      "authorization": {
+        "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+        "capabilityGeneration": 0,
+        "deadlineAt": 1060000,
+        "expectedInventory": "535349054610cb25dcf65c3bb43cd8483384fdc3b78a631face2a7af42c6cf8d",
+        "expiresAt": 1020000,
+        "format": "NOVA_PROCESSING_AUTHORIZATION",
+        "input": {
+          "byteLength": 5,
+          "digest": "c96c6d5be8d08a12e7b5cdc1b207fa6b2430974c86803d8891675e76fd992c20"
+        },
+        "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+        "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ticket": "1111111111111111111111111111111111111111111111111111111111111111",
+        "version": 1
+      },
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capability": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "deadlineAt": 1060000,
+      "expiresAt": 1020000,
+      "format": "NOVA_OWNED_CONTROL_RECEIPT",
+      "renewals": 0,
+      "sequence": 1,
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "PROCESSING",
+      "version": 1
+    },
+    {
+      "action": "renew",
+      "audit": [
+        {
+          "authentication": "7f7d9eafff1c0a8b340becb22938f02a39387d35a2cc29c387f863bb902cbced",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "9efe6ad364a0860e8570a92f1ffd02e4ecc5509e821d3799f4f99cce285417a9",
+          "event": "admission",
+          "evidenceDigest": "8023aa1f4491353933d83e61657b362be648a105d10ba34ab154904cd1792721",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 0,
+          "index": 2,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "4238c8d8c82c33bcbf4526ec7339c2ff41872914846b492d0c52f9f08e87a896",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        },
+        {
+          "authentication": "b77352e3b8e97856d0e3f02984f7af5275dfb3b894243968674042eef1d7d5f4",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "429a226b60e5cdd35443cab6d154a68875601b8a2aa2201992813fb7e8372eef",
+          "event": "renew",
+          "evidenceDigest": "b66ba3eb7c5ed6902c51c421ce6881a291320d76d4b8abd00460ef4b7a448c59",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 1,
+          "index": 3,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "9efe6ad364a0860e8570a92f1ffd02e4ecc5509e821d3799f4f99cce285417a9",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        }
+      ],
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capability": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "deadlineAt": 1060000,
+      "expiresAt": 1040000,
+      "format": "NOVA_OWNED_CONTROL_RECEIPT",
+      "renewals": 1,
+      "sequence": 2,
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "PROCESSING",
+      "version": 1
+    },
+    {
+      "action": "result",
+      "audit": [
+        {
+          "authentication": "f94b7291adb2c60da29a625cdcd10f5b6aa44849bd739806b3f100adc966dec9",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "62f1520b28e5cdeb5537e3b48dd5e9790d3225edcf2991def999fca6ce76cdab",
+          "event": "publication",
+          "evidenceDigest": "559e4c339939dca59885c7ed9860fce8bb17e911b7d5cfe09542e6bc3eb84ff8",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 1,
+          "index": 4,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "429a226b60e5cdd35443cab6d154a68875601b8a2aa2201992813fb7e8372eef",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        },
+        {
+          "authentication": "44952bbcfafd3ef65590b33cb87653fe26ead0afd615b8bbf4c8bd18b3213112",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "36427466379108e12049c71f6cb9d521440ffd75027aad02dea20b7da74a220c",
+          "event": "result",
+          "evidenceDigest": "66c03775eddbc9a0d5cad983e3564cdc1845c9acbe44d95a3f9d06df59be7623",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 1,
+          "index": 5,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "62f1520b28e5cdeb5537e3b48dd5e9790d3225edcf2991def999fca6ce76cdab",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        }
+      ],
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capability": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "deadlineAt": 1060000,
+      "expiresAt": 1040000,
+      "format": "NOVA_OWNED_CONTROL_RECEIPT",
+      "renewals": 1,
+      "result": {
+        "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+        "output": {
+          "byteLength": 6,
+          "digest": "e0ee8bb50685e05fa0f47ed04203ae953fdfd055f5bd2892ea186504254f8c3a"
+        },
+        "receiptDigest": "cf9eab03be0cca8ef74e46da1f0b1372558c8be285779852eebc93e332fbbf6a",
+        "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resultId": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "sequence": 3,
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "DELIVERED",
+      "version": 1
+    },
+    {
+      "action": "accept",
+      "audit": [
+        {
+          "authentication": "65e719beca2fa9557c22da8bb4bbb6b13ab514ca46db4ee5613a8b50356faed9",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "4294c0e02694ad435c475c51b77cd2011c536b4e3fccefb4007b09b3325b6783",
+          "event": "accept",
+          "evidenceDigest": "082d6d30efaa99ae4ae05d25faa7f795ed06885b4636bdd79d3c195895bc3403",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 1,
+          "index": 6,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "36427466379108e12049c71f6cb9d521440ffd75027aad02dea20b7da74a220c",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        }
+      ],
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capability": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "deadlineAt": 1060000,
+      "expiresAt": 1040000,
+      "format": "NOVA_OWNED_CONTROL_RECEIPT",
+      "renewals": 1,
+      "sequence": 4,
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "ACCEPTED",
+      "version": 1
+    },
+    {
+      "action": "stop",
+      "audit": [
+        {
+          "authentication": "97d325ec5fab8c0eff950b7e62bea592a1350ee24de4f3f6acd9d2940bc89466",
+          "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+          "digest": "71e6a63ee1bdae80615e17b58242843c88141902903cd8268e794396ad03d172",
+          "event": "stop",
+          "evidenceDigest": "462b1d9c4e6cb9ba5bed289e5b78cd3f235523222ff8f8cfe0a5a8986a3e8a28",
+          "format": "NOVA_OWNED_AUDIT",
+          "generation": 1,
+          "index": 7,
+          "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+          "previousDigest": "4294c0e02694ad435c475c51b77cd2011c536b4e3fccefb4007b09b3325b6783",
+          "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": 1
+        }
+      ],
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capability": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "deadlineAt": 1060000,
+      "expiresAt": 1040000,
+      "format": "NOVA_OWNED_CONTROL_RECEIPT",
+      "renewals": 1,
+      "sequence": 5,
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "state": "STOPPING",
+      "version": 1
+    }
+  ],
+  "summary": {
+    "audit": [
+      {
+        "authentication": "fad2a6414d69ec0c54db275bd01d6b740f864245da14c55551cf7ca11ea4103d",
+        "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+        "digest": "403b0c62c6ccd1cd370881e54f9977b9d659fc3a1f9590065ae543ac28fab16d",
+        "event": "summary",
+        "evidenceDigest": "0479c7b144f39861c4858dcdee7f393de0204ad85a1eb144df99c2b7bcefdfe8",
+        "format": "NOVA_OWNED_AUDIT",
+        "generation": 1,
+        "index": 8,
+        "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+        "previousDigest": "71e6a63ee1bdae80615e17b58242843c88141902903cd8268e794396ad03d172",
+        "processingContract": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "version": 1
+      }
+    ],
+    "authentication": "a77cea548d587d2c125f931200662495244d1b1a01f639cf9c9a010f249b66ef",
+    "payload": {
+      "admissionClosed": true,
+      "bindingDigest": "b6c923a3ffae610b73ea77c35733dc2c53525f41b2e479ba7854272203510e20",
+      "capabilityInvalidated": true,
+      "complete": false,
+      "completionState": "PARTIAL",
+      "format": "NOVA_FINAL_LIFECYCLE_RECEIPT",
+      "ownedDescendantsComplete": false,
+      "owner": "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb",
+      "remainingOwnedDescendants": null,
+      "request": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "resultDigest": "559e4c339939dca59885c7ed9860fce8bb17e911b7d5cfe09542e6bc3eb84ff8",
+      "resultId": "2222222222222222222222222222222222222222222222222222222222222222",
+      "session": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "shutdownDigest": "1b3a7d5b566b8bfa77a2d63db1f116b246584c649b3f540d046d56cec77e3f08",
+      "status": "PARTIAL",
+      "stopDigest": "865de926e642d6d444fc6885d82535daa9698d5bea832f62009c2639a2003e18",
+      "transportClosed": true,
+      "version": 1
+    }
+  }
+}

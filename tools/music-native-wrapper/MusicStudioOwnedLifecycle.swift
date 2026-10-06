@@ -55,6 +55,53 @@ public final class MusicStudioOwnedLifecycle {
     private let uptime: () -> TimeInterval
     private let lock = NSRecursiveLock()
 
+    private var auditIndex = 0
+    private var auditDigest = String(repeating: "0", count: 64)
+    private var auditPhase = "READY"
+    private var auditGeneration = 0
+    private var auditRequired = false
+    private static func canonical(_ value: Any) throws -> Data {
+        try JSONSerialization.data(withJSONObject:value,options:[.sortedKeys,.withoutEscapingSlashes])
+    }
+    private static func authentication(_ value: Any, key: Data) throws -> String {
+        HMAC<SHA256>.authenticationCode(for:try canonical(value),using:SymmetricKey(data:key)).map { String(format:"%02x",$0) }.joined()
+    }
+    private func validateAudit(_ value: Any?, ending: String, evidence: [String:Any], generation: Int) throws {
+        guard let entries = value as? [[String:Any]], !entries.isEmpty, entries.count <= 16,
+              auditIndex + entries.count <= 16 else { throw Failure.partial }
+        let allowed: [String:Set<String>] = ["READY":["renew","begin","authorize","stop","summary"],
+            "AUTHORIZED":["renew","admission","stop","summary"],"ADMITTED":["renew","publication","stop","summary"],
+            "LEGACY":["renew","publication","stop","summary"],"PUBLISHED":["result","stop","summary"],
+            "DELIVERED":["accept","stop","summary"],"ACCEPTED":["stop","summary"],"STOPPING":["summary"],"SUMMARY":[]]
+        struct Entry: Decodable {
+            let format: String; let version: Int; let owner: String; let session: String
+            let index: Int; let event: String; let request: String?; let bindingDigest: String?
+            let processingContract: String?; let generation: Int; let previousDigest: String
+            let evidenceDigest: String; let digest: String; let authentication: String
+        }
+        for entry in entries {
+            guard Set(entry.keys) == Set(["format","version","owner","session","index","event","request","bindingDigest",
+                "processingContract","generation","previousDigest","evidenceDigest","digest","authentication"]) else { throw Failure.invalid }
+            let e = try JSONDecoder().decode(Entry.self,from:Self.canonical(entry))
+            var unsigned = entry; unsigned.removeValue(forKey:"authentication")
+            guard e.format == "NOVA_OWNED_AUDIT", e.version == 1, e.owner == ownerIdentity, e.session == session,
+                  e.index == auditIndex + 1, e.previousDigest == auditDigest, Self.token(e.evidenceDigest),
+                  allowed[auditPhase]?.contains(e.event) == true,
+                  e.generation == auditGeneration + (e.event == "renew" ? 1 : 0),
+                  e.authentication == (try Self.authentication(unsigned,key:finalKey)) else { throw Failure.foreign }
+            unsigned.removeValue(forKey:"digest")
+            guard e.digest == Self.identity(try Self.canonical(unsigned)).digest else { throw Failure.foreign }
+            guard e.request == requestID, e.bindingDigest == bindingDigest,
+                  e.processingContract == authorization?.processingContract else { throw Failure.foreign }
+            auditPhase = ["begin":"LEGACY","authorize":"AUTHORIZED","admission":"ADMITTED","publication":"PUBLISHED",
+                "result":"DELIVERED","accept":"ACCEPTED","stop":"STOPPING","summary":"SUMMARY"][e.event] ?? auditPhase
+            auditGeneration = e.generation; auditIndex = e.index; auditDigest = e.digest
+        }
+        guard entries.last?["event"] as? String == ending,
+              entries.last?["evidenceDigest"] as? String == Self.identity(try Self.canonical(evidence)).digest,
+              auditGeneration == generation else { throw Failure.foreign }
+    }
+
     private struct ResultReceipt: Codable {
         let resultId: String
         let request: String
@@ -122,6 +169,7 @@ public final class MusicStudioOwnedLifecycle {
                 guard let expectedInventory, let processingContract, Self.token(expectedInventory), Self.token(processingContract) else { throw Failure.invalid }
                 body["owner"] = ownerIdentity; body["expectedInventory"] = expectedInventory; body["processingContract"] = processingContract
                 expectedAuthorization = (input, expectedInventory, processingContract)
+                auditRequired = true
             }
             requestID = request
         case "renew":
@@ -145,9 +193,9 @@ public final class MusicStudioOwnedLifecycle {
     public func receive(_ data: Data, now: Date = Date()) throws {
         lock.lock(); defer { lock.unlock() }
         do {
-            guard data.count <= 4096, let pending, uptime() < expiry, uptime() < deadline,
+            guard data.count <= 16384, let pending, uptime() < expiry, uptime() < deadline,
                   let value = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  Set(value.keys).isSubset(of: ["format","version","session","action","state","capability","sequence","expiresAt","deadlineAt","renewals","bindingDigest","result","authorization"]) else { throw Failure.invalid }
+                  Set(value.keys).isSubset(of: ["format","version","session","action","state","capability","sequence","expiresAt","deadlineAt","renewals","bindingDigest","result","authorization","audit"]) else { throw Failure.invalid }
             let response = try JSONDecoder().decode(Response.self, from: data)
             let expectedState = ["begin":"PROCESSING","authorize":"PROCESSING","renew":state,"result":"DELIVERED","accept":"ACCEPTED","stop":"STOPPING"][pending.0]
             guard response.format == "NOVA_OWNED_CONTROL_RECEIPT", response.version == 1,
@@ -179,6 +227,11 @@ public final class MusicStudioOwnedLifecycle {
                       Self.token(received.output.digest), (1...64*1024*1024).contains(received.output.byteLength) else { throw Failure.foreign }
                 result = received
             } else if response.result != nil { throw Failure.foreign }
+            if auditRequired || value["audit"] != nil {
+                var evidence = value; evidence.removeValue(forKey:"audit"); evidence.removeValue(forKey:"capability"); evidence.removeValue(forKey:"authorization")
+                try validateAudit(value["audit"],ending:pending.0,evidence:evidence,generation:response.renewals)
+                auditRequired = true
+            }
             if pending.0 == "accept" {
                 acceptedOutput = result?.output; acceptedResultID = result?.resultId
                 let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys,.withoutEscapingSlashes]
@@ -198,12 +251,12 @@ public final class MusicStudioOwnedLifecycle {
     }
     /// Called only by an explicit private launcher sink after transports close.
     /// Authentication proves the owner summary; unknown descendants remain PARTIAL.
-    public func receiveShutdown(_ data: Data) throws {
+    @discardableResult public func receiveShutdown(_ data: Data) throws -> Data {
         lock.lock(); defer { lock.unlock() }
         do {
-            guard state == "STOPPING", !shutdownReceived, data.count <= 4096,
+            guard state == "STOPPING", !shutdownReceived, data.count <= 16384,
                   let envelope = try JSONSerialization.jsonObject(with: data) as? [String:Any],
-                  Set(envelope.keys) == Set(["payload","authentication"]),
+                  (Set(envelope.keys) == Set(["payload","authentication"]) || Set(envelope.keys) == Set(["payload","authentication","audit"])),
                   let payload = envelope["payload"] as? [String:Any], let authentication = envelope["authentication"] as? String,
                   Self.token(authentication), Set(payload.keys) == Set(["format","version","owner","session","request","bindingDigest","resultId","resultDigest","stopDigest","shutdownDigest","admissionClosed","remainingOwnedDescendants","ownedDescendantsComplete","transportClosed","capabilityInvalidated","completionState","status","complete"]) else { throw Failure.invalid }
             let raw = try JSONSerialization.data(withJSONObject:payload,options:[.sortedKeys,.withoutEscapingSlashes])
@@ -231,8 +284,19 @@ public final class MusicStudioOwnedLifecycle {
             let proven = summary.admissionClosed && summary.ownedDescendantsComplete && summary.remainingOwnedDescendants == 0
             guard summary.complete ? proven && summary.completionState == "COMPLETE" && summary.status == "OBSERVED" :
                 ["PARTIAL","FAILED"].contains(summary.completionState) && summary.status == "PARTIAL" else { throw Failure.partial }
+            if auditRequired || envelope["audit"] != nil {
+                try validateAudit(envelope["audit"],ending:"summary",evidence:payload,generation:renewals)
+            }
+            let ack: [String:Any] = ["format":"NOVA_FINAL_ACKNOWLEDGEMENT","version":1,"owner":ownerIdentity,
+                "session":session,"request":requestID as Any? ?? NSNull(),"bindingDigest":bindingDigest as Any? ?? NSNull(),
+                "processingContract":authorization?.processingContract as Any? ?? NSNull(),"generation":renewals,
+                "summaryDigest":Self.identity(raw).digest,"auditDigest":auditDigest,
+                "completionState":summary.completionState,"accepted":true]
+            let ackKey = HMAC<SHA256>.authenticationCode(for:Data("NOVA_FINAL_ACK_KEY_V1".utf8),using:SymmetricKey(data:finalKey)).map { String(format:"%02x",$0) }.joined()
+            let acknowledgement = try Self.canonical(["payload":ack,"authentication":try Self.authentication(ack,key:Data(ackKey.utf8))])
             state = summary.complete ? "SHUTDOWN_OBSERVED" : "SHUTDOWN_" + summary.completionState
             shutdownReceived = true; finalKey = Data(); authorization = nil
+            return acknowledgement
         } catch { fail(); finalKey = Data(); throw error }
     }
     public func fail() { lock.lock(); defer { lock.unlock() }; state = "FAILED"; pending = nil; result = nil; authorization = nil }
@@ -267,12 +331,12 @@ public final class MusicStudioOwnedControlTransport: NSObject, URLSessionDataDel
                            completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         lock.lock(); defer { lock.unlock() }
         guard response.url == expectedURL, let http = response as? HTTPURLResponse, http.statusCode == 200,
-              response.expectedContentLength >= 0, response.expectedContentLength <= 4096 else { completionHandler(.cancel); return }
+              response.expectedContentLength >= 0, response.expectedContentLength <= 16384 else { completionHandler(.cancel); return }
         completionHandler(.allow)
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         lock.lock(); defer { lock.unlock() }
-        guard bytes.count + data.count <= 4096 else { dataTask.cancel(); return }
+        guard bytes.count + data.count <= 16384 else { dataTask.cancel(); return }
         bytes.append(data)
     }
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
