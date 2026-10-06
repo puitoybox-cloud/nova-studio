@@ -1,0 +1,1825 @@
+{
+  "checkedAt": "2026-10-06",
+  "baselinePR": 320,
+  "baselineHead": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+  "purpose": "SOURCE_DECLARATION_AND_INSTALLED_METADATA_BINDING_EVIDENCE",
+  "approved": false,
+  "publicationEligible": false,
+  "modelDownloads": 0,
+  "remoteBinaryDownloads": 0,
+  "userDecisionsReady": 0,
+  "supplements": "verification/music-exact-backend-candidates-20261006.json",
+  "declarations": [
+    {
+      "name": "julius",
+      "version": "0.2.7",
+      "revision": "486c0329158ad6c137d18bcddc5461d493005c65",
+      "requiresDist": [
+        "torch>=1.7.0"
+      ],
+      "setupSource": {
+        "url": "https://github.com/adefossez/julius/blob/486c0329158ad6c137d18bcddc5461d493005c65/setup.py",
+        "sha256": "2f73a7cc97b0afd6930a8bffca920846076d95e94577f140c6f5145d2287d5bd",
+        "byteLength": 1401,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "licenseSource": {
+        "url": "https://github.com/adefossez/julius/blob/486c0329158ad6c137d18bcddc5461d493005c65/LICENSE",
+        "sha256": "60f83da40026e37e259b69158852384ff2ee20615d9103a3f86b6cff48784661",
+        "byteLength": 1059,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "sourceLicense": "MIT",
+      "redistributionEvidence": "RETAIN_COPYRIGHT_AND_PERMISSION_NOTICE"
+    },
+    {
+      "name": "treetable",
+      "version": "0.2.5",
+      "revision": "2ebd741048f9dadd80487369095acf5c366a74dc",
+      "requiresDist": [],
+      "setupSource": {
+        "url": "https://github.com/adefossez/treetable/blob/2ebd741048f9dadd80487369095acf5c366a74dc/setup.py",
+        "sha256": "d28d146c6a2b324d9e82f72253498da784381d56d86afa8bbd58d64bc7dcc86b",
+        "byteLength": 1177,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "licenseSource": {
+        "url": "https://github.com/adefossez/treetable/blob/2ebd741048f9dadd80487369095acf5c366a74dc/LICENSE",
+        "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c",
+        "byteLength": 1211,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "sourceLicense": "Unlicense",
+      "redistributionEvidence": "UPSTREAM_PUBLIC_DOMAIN_DEDICATION_AND_PERMISSION_TEXT"
+    },
+    {
+      "name": "antlr4-python3-runtime",
+      "version": "4.9.3",
+      "revision": "e4c1a74c66bd5290364ea2b36c97cd724b247357",
+      "requiresDist": [
+        "typing ; python_version < \"3.5\""
+      ],
+      "setupSource": {
+        "url": "https://github.com/antlr/antlr4/blob/4.9.3/runtime/Python3/setup.py",
+        "sha256": "00ce3bb1670e8e4961d9ef2414dfa6ac467b52465382841b432578f91733ec67",
+        "byteLength": 527,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "licenseSource": {
+        "url": "https://github.com/antlr/antlr4/blob/4.9.3/LICENSE.txt",
+        "sha256": "b1b379fcaf3219593a4c433feb1b35c780bed23fafaae440b1ae2771a9521e3a",
+        "byteLength": 2699,
+        "evidence": "PRIMARY_UPSTREAM_UTF8_TEXT",
+        "productionAsset": false
+      },
+      "sourceLicense": "BSD-3-Clause",
+      "redistributionEvidence": "RETAIN_COPYRIGHT_CONDITIONS_DISCLAIMER_NO_ENDORSEMENT"
+    }
+  ],
+  "profiles": {
+    "x86_64": {
+      "runtime": "CPython 3.11.17 SOURCE_BUILD_CANDIDATE",
+      "pythonABI": "cp311",
+      "basicPitchExtra": "onnx",
+      "rosettaAssumed": false,
+      "nodes": [
+        "antlr4-python3-runtime",
+        "attrs",
+        "audioread",
+        "basic-pitch",
+        "cattrs",
+        "certifi",
+        "cffi",
+        "charset-normalizer",
+        "cloudpickle",
+        "coloredlogs",
+        "coremltools",
+        "decorator",
+        "demucs",
+        "dora-search",
+        "einops",
+        "filelock",
+        "flatbuffers",
+        "fsspec",
+        "future",
+        "humanfriendly",
+        "idna",
+        "jinja2",
+        "joblib",
+        "julius",
+        "lameenc",
+        "lazy-loader",
+        "librosa",
+        "llvmlite",
+        "markupsafe",
+        "mido",
+        "mir-eval",
+        "mpmath",
+        "msgpack",
+        "networkx",
+        "numba",
+        "numpy",
+        "omegaconf",
+        "onnxruntime",
+        "openunmix",
+        "packaging",
+        "platformdirs",
+        "pooch",
+        "pretty-midi",
+        "protobuf",
+        "pyaml",
+        "pycparser",
+        "pyyaml",
+        "requests",
+        "resampy",
+        "retrying",
+        "scikit-learn",
+        "scipy",
+        "setuptools",
+        "six",
+        "soundfile",
+        "soxr",
+        "submitit",
+        "sympy",
+        "threadpoolctl",
+        "torch",
+        "torchaudio",
+        "tqdm",
+        "treetable",
+        "typing-extensions",
+        "urllib3"
+      ],
+      "edges": [
+        {
+          "from": "basic-pitch",
+          "to": "librosa",
+          "requirement": "librosa>=0.8.0",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "mir-eval",
+          "requirement": "mir-eval>=0.6",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "numpy",
+          "requirement": "numpy>=1.18",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "pretty-midi",
+          "requirement": "pretty-midi>=0.2.9",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "resampy",
+          "requirement": "resampy<0.4.3,>=0.2.2",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scipy",
+          "requirement": "scipy>=1.4.1",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "coremltools",
+          "requirement": "coremltools; platform_system == \"Darwin\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "onnxruntime",
+          "requirement": "onnxruntime; extra == \"onnx\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "onnxruntime",
+          "to": "coloredlogs",
+          "requirement": "coloredlogs",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "flatbuffers",
+          "requirement": "flatbuffers",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "numpy",
+          "requirement": "numpy>=1.21.6",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "protobuf",
+          "requirement": "protobuf",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "sympy",
+          "to": "mpmath",
+          "requirement": "mpmath (>=0.19)",
+          "source": "https://pypi.org/pypi/sympy/1.12/json",
+          "extra": ""
+        },
+        {
+          "from": "coloredlogs",
+          "to": "humanfriendly",
+          "requirement": "humanfriendly (>=9.1)",
+          "source": "https://pypi.org/pypi/coloredlogs/15.0.1/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "numpy",
+          "requirement": "numpy>=1.14.5",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "protobuf",
+          "requirement": "protobuf<=4.0.0,>=3.1.0",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "attrs",
+          "requirement": "attrs>=21.3.0",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "cattrs",
+          "requirement": "cattrs",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "pyaml",
+          "requirement": "pyaml",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "pyaml",
+          "to": "pyyaml",
+          "requirement": "PyYAML",
+          "source": "https://pypi.org/pypi/pyaml/24.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "cattrs",
+          "to": "attrs",
+          "requirement": "attrs>=23.1.0",
+          "source": "https://pypi.org/pypi/cattrs/23.2.3/json",
+          "extra": ""
+        },
+        {
+          "from": "scipy",
+          "to": "numpy",
+          "requirement": "numpy<1.29.0,>=1.22.4",
+          "source": "https://pypi.org/pypi/scipy/1.12.0/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "numpy",
+          "requirement": "numpy>=1.19.5",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "scipy",
+          "requirement": "scipy>=1.6.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "joblib",
+          "requirement": "joblib>=1.2.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "threadpoolctl",
+          "requirement": "threadpoolctl>=2.0.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "resampy",
+          "to": "numpy",
+          "requirement": "numpy (>=1.17)",
+          "source": "https://pypi.org/pypi/resampy/0.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "resampy",
+          "to": "numba",
+          "requirement": "numba (>=0.53)",
+          "source": "https://pypi.org/pypi/resampy/0.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "numba",
+          "to": "llvmlite",
+          "requirement": "llvmlite <0.43,>=0.42.0dev0",
+          "source": "https://pypi.org/pypi/numba/0.59.1/json",
+          "extra": ""
+        },
+        {
+          "from": "numba",
+          "to": "numpy",
+          "requirement": "numpy <1.27,>=1.22",
+          "source": "https://pypi.org/pypi/numba/0.59.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "numpy",
+          "requirement": "numpy>=1.7.0",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "mido",
+          "requirement": "mido>=1.1.16",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "six",
+          "requirement": "six",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mido",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/mido/1.3.3/json",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "numpy",
+          "requirement": "numpy>=1.7.0",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "scipy",
+          "requirement": "scipy>=1.0.0",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "future",
+          "requirement": "future",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "six",
+          "requirement": "six",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "audioread",
+          "requirement": "audioread>=2.1.9",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "numpy",
+          "requirement": "numpy!=1.22.0,!=1.22.1,!=1.22.2,>=1.20.3",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "scipy",
+          "requirement": "scipy>=1.2.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn>=0.20.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "joblib",
+          "requirement": "joblib>=0.14",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "decorator",
+          "requirement": "decorator>=4.3.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "numba",
+          "requirement": "numba>=0.51.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "soundfile",
+          "requirement": "soundfile>=0.12.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "pooch",
+          "requirement": "pooch>=1.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "soxr",
+          "requirement": "soxr>=0.3.2",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions>=4.1.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "lazy-loader",
+          "requirement": "lazy-loader>=0.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "msgpack",
+          "requirement": "msgpack>=1.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "lazy-loader",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/lazy-loader/0.4/json",
+          "extra": ""
+        },
+        {
+          "from": "soxr",
+          "to": "numpy",
+          "requirement": "numpy",
+          "source": "https://pypi.org/pypi/soxr/0.3.7/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "platformdirs",
+          "requirement": "platformdirs >=2.5.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "packaging",
+          "requirement": "packaging >=20.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "requests",
+          "requirement": "requests >=2.19.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "charset-normalizer",
+          "requirement": "charset-normalizer (<4,>=2)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "idna",
+          "requirement": "idna (<4,>=2.5)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "urllib3",
+          "requirement": "urllib3 (<3,>=1.21.1)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "certifi",
+          "requirement": "certifi (>=2017.4.17)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "soundfile",
+          "to": "cffi",
+          "requirement": "cffi (>=1.0)",
+          "source": "https://pypi.org/pypi/soundfile/0.12.1/json",
+          "extra": ""
+        },
+        {
+          "from": "cffi",
+          "to": "pycparser",
+          "requirement": "pycparser",
+          "source": "https://pypi.org/pypi/cffi/1.16.0/json",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "dora-search",
+          "requirement": "dora-search",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "einops",
+          "requirement": "einops",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "julius",
+          "requirement": "julius>=0.2.3",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "lameenc",
+          "requirement": "lameenc>=1.2",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "openunmix",
+          "requirement": "openunmix",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "pyyaml",
+          "requirement": "pyyaml",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "torch",
+          "requirement": "torch>=1.8.1",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "torchaudio",
+          "requirement": "torchaudio>=0.8",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "torchaudio",
+          "to": "torch",
+          "requirement": "torch==2.2.2",
+          "source": "https://pypi.org/pypi/torchaudio/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "filelock",
+          "requirement": "filelock",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions>=4.8.0",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "networkx",
+          "requirement": "networkx",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "jinja2",
+          "requirement": "jinja2",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "fsspec",
+          "requirement": "fsspec",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "jinja2",
+          "to": "markupsafe",
+          "requirement": "MarkupSafe >=2.0",
+          "source": "https://pypi.org/pypi/jinja2/3.1.3/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "numpy",
+          "requirement": "numpy",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "torchaudio",
+          "requirement": "torchaudio>=0.9.0",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "torch",
+          "requirement": "torch>=1.9.0",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "omegaconf",
+          "requirement": "omegaconf",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "retrying",
+          "requirement": "retrying",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "submitit",
+          "requirement": "submitit",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "treetable",
+          "requirement": "treetable",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "torch",
+          "requirement": "torch",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "submitit",
+          "to": "cloudpickle",
+          "requirement": "cloudpickle>=1.2.1",
+          "source": "https://pypi.org/pypi/submitit/1.5.1/json",
+          "extra": ""
+        },
+        {
+          "from": "submitit",
+          "to": "typing-extensions",
+          "requirement": "typing_extensions>=3.7.4.2",
+          "source": "https://pypi.org/pypi/submitit/1.5.1/json",
+          "extra": ""
+        },
+        {
+          "from": "retrying",
+          "to": "six",
+          "requirement": "six (>=1.7.0)",
+          "source": "https://pypi.org/pypi/retrying/1.3.4/json",
+          "extra": ""
+        },
+        {
+          "from": "omegaconf",
+          "to": "antlr4-python3-runtime",
+          "requirement": "antlr4-python3-runtime (==4.9.*)",
+          "source": "https://pypi.org/pypi/omegaconf/2.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "omegaconf",
+          "to": "pyyaml",
+          "requirement": "PyYAML (>=5.1.0)",
+          "source": "https://pypi.org/pypi/omegaconf/2.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "librosa",
+          "requirement": "librosa>=0.8.0",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "mir-eval",
+          "requirement": "mir-eval>=0.6",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "numpy",
+          "requirement": "numpy>=1.18",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "pretty-midi",
+          "requirement": "pretty-midi>=0.2.9",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "resampy",
+          "requirement": "resampy<0.4.3,>=0.2.2",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scipy",
+          "requirement": "scipy>=1.4.1",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "coremltools",
+          "requirement": "coremltools; platform_system == \"Darwin\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "julius",
+          "to": "torch",
+          "requirement": "torch>=1.7.0",
+          "source": "https://github.com/adefossez/julius/blob/486c0329158ad6c137d18bcddc5461d493005c65/setup.py",
+          "extra": ""
+        }
+      ],
+      "unknown": [],
+      "constraintConflicts": [],
+      "complete": false,
+      "status": "DECLARATIONS_RESOLVED_NOT_INSTALLED_CLOSURE",
+      "physical": "UNVERIFIED",
+      "dependencyDeclarationsComplete": true,
+      "unverified": [
+        "sdist build dependencies and exact installed RECORD",
+        "selected runtime/model assets",
+        "native bytes/slices/linker graph",
+        "native notices and exact weight grants",
+        "security and real numerical compatibility"
+      ]
+    },
+    "arm64": {
+      "runtime": "CPython 3.11.17 SOURCE_BUILD_CANDIDATE",
+      "pythonABI": "cp311",
+      "basicPitchExtra": "onnx",
+      "rosettaAssumed": false,
+      "nodes": [
+        "antlr4-python3-runtime",
+        "attrs",
+        "audioread",
+        "basic-pitch",
+        "cattrs",
+        "certifi",
+        "cffi",
+        "charset-normalizer",
+        "cloudpickle",
+        "coloredlogs",
+        "coremltools",
+        "decorator",
+        "demucs",
+        "dora-search",
+        "einops",
+        "filelock",
+        "flatbuffers",
+        "fsspec",
+        "future",
+        "humanfriendly",
+        "idna",
+        "jinja2",
+        "joblib",
+        "julius",
+        "lameenc",
+        "lazy-loader",
+        "librosa",
+        "llvmlite",
+        "markupsafe",
+        "mido",
+        "mir-eval",
+        "mpmath",
+        "msgpack",
+        "networkx",
+        "numba",
+        "numpy",
+        "omegaconf",
+        "onnxruntime",
+        "openunmix",
+        "packaging",
+        "platformdirs",
+        "pooch",
+        "pretty-midi",
+        "protobuf",
+        "pyaml",
+        "pycparser",
+        "pyyaml",
+        "requests",
+        "resampy",
+        "retrying",
+        "scikit-learn",
+        "scipy",
+        "setuptools",
+        "six",
+        "soundfile",
+        "soxr",
+        "submitit",
+        "sympy",
+        "threadpoolctl",
+        "torch",
+        "torchaudio",
+        "tqdm",
+        "treetable",
+        "typing-extensions",
+        "urllib3"
+      ],
+      "edges": [
+        {
+          "from": "basic-pitch",
+          "to": "librosa",
+          "requirement": "librosa>=0.8.0",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "mir-eval",
+          "requirement": "mir-eval>=0.6",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "numpy",
+          "requirement": "numpy>=1.18",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "pretty-midi",
+          "requirement": "pretty-midi>=0.2.9",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "resampy",
+          "requirement": "resampy<0.4.3,>=0.2.2",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scipy",
+          "requirement": "scipy>=1.4.1",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "coremltools",
+          "requirement": "coremltools; platform_system == \"Darwin\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "basic-pitch",
+          "to": "onnxruntime",
+          "requirement": "onnxruntime; extra == \"onnx\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": "onnx"
+        },
+        {
+          "from": "onnxruntime",
+          "to": "coloredlogs",
+          "requirement": "coloredlogs",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "flatbuffers",
+          "requirement": "flatbuffers",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "numpy",
+          "requirement": "numpy>=1.21.6",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "protobuf",
+          "requirement": "protobuf",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "onnxruntime",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/onnxruntime/1.17.3/json",
+          "extra": ""
+        },
+        {
+          "from": "sympy",
+          "to": "mpmath",
+          "requirement": "mpmath (>=0.19)",
+          "source": "https://pypi.org/pypi/sympy/1.12/json",
+          "extra": ""
+        },
+        {
+          "from": "coloredlogs",
+          "to": "humanfriendly",
+          "requirement": "humanfriendly (>=9.1)",
+          "source": "https://pypi.org/pypi/coloredlogs/15.0.1/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "numpy",
+          "requirement": "numpy>=1.14.5",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "protobuf",
+          "requirement": "protobuf<=4.0.0,>=3.1.0",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "attrs",
+          "requirement": "attrs>=21.3.0",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "cattrs",
+          "requirement": "cattrs",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "coremltools",
+          "to": "pyaml",
+          "requirement": "pyaml",
+          "source": "https://pypi.org/pypi/coremltools/7.2/json",
+          "extra": ""
+        },
+        {
+          "from": "pyaml",
+          "to": "pyyaml",
+          "requirement": "PyYAML",
+          "source": "https://pypi.org/pypi/pyaml/24.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "cattrs",
+          "to": "attrs",
+          "requirement": "attrs>=23.1.0",
+          "source": "https://pypi.org/pypi/cattrs/23.2.3/json",
+          "extra": ""
+        },
+        {
+          "from": "scipy",
+          "to": "numpy",
+          "requirement": "numpy<1.29.0,>=1.22.4",
+          "source": "https://pypi.org/pypi/scipy/1.12.0/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "numpy",
+          "requirement": "numpy>=1.19.5",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "scipy",
+          "requirement": "scipy>=1.6.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "joblib",
+          "requirement": "joblib>=1.2.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "scikit-learn",
+          "to": "threadpoolctl",
+          "requirement": "threadpoolctl>=2.0.0",
+          "source": "https://pypi.org/pypi/scikit-learn/1.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "resampy",
+          "to": "numpy",
+          "requirement": "numpy (>=1.17)",
+          "source": "https://pypi.org/pypi/resampy/0.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "resampy",
+          "to": "numba",
+          "requirement": "numba (>=0.53)",
+          "source": "https://pypi.org/pypi/resampy/0.4.2/json",
+          "extra": ""
+        },
+        {
+          "from": "numba",
+          "to": "llvmlite",
+          "requirement": "llvmlite <0.43,>=0.42.0dev0",
+          "source": "https://pypi.org/pypi/numba/0.59.1/json",
+          "extra": ""
+        },
+        {
+          "from": "numba",
+          "to": "numpy",
+          "requirement": "numpy <1.27,>=1.22",
+          "source": "https://pypi.org/pypi/numba/0.59.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "numpy",
+          "requirement": "numpy>=1.7.0",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "mido",
+          "requirement": "mido>=1.1.16",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "pretty-midi",
+          "to": "six",
+          "requirement": "six",
+          "source": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mido",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/mido/1.3.3/json",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "numpy",
+          "requirement": "numpy>=1.7.0",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "scipy",
+          "requirement": "scipy>=1.0.0",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "future",
+          "requirement": "future",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "mir-eval",
+          "to": "six",
+          "requirement": "six",
+          "source": "https://raw.githubusercontent.com/craffel/mir_eval/0.7/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "audioread",
+          "requirement": "audioread>=2.1.9",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "numpy",
+          "requirement": "numpy!=1.22.0,!=1.22.1,!=1.22.2,>=1.20.3",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "scipy",
+          "requirement": "scipy>=1.2.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn>=0.20.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "joblib",
+          "requirement": "joblib>=0.14",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "decorator",
+          "requirement": "decorator>=4.3.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "numba",
+          "requirement": "numba>=0.51.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "soundfile",
+          "requirement": "soundfile>=0.12.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "pooch",
+          "requirement": "pooch>=1.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "soxr",
+          "requirement": "soxr>=0.3.2",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions>=4.1.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "lazy-loader",
+          "requirement": "lazy-loader>=0.1",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "librosa",
+          "to": "msgpack",
+          "requirement": "msgpack>=1.0",
+          "source": "https://pypi.org/pypi/librosa/0.10.2.post1/json",
+          "extra": ""
+        },
+        {
+          "from": "lazy-loader",
+          "to": "packaging",
+          "requirement": "packaging",
+          "source": "https://pypi.org/pypi/lazy-loader/0.4/json",
+          "extra": ""
+        },
+        {
+          "from": "soxr",
+          "to": "numpy",
+          "requirement": "numpy",
+          "source": "https://pypi.org/pypi/soxr/0.3.7/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "platformdirs",
+          "requirement": "platformdirs >=2.5.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "packaging",
+          "requirement": "packaging >=20.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "pooch",
+          "to": "requests",
+          "requirement": "requests >=2.19.0",
+          "source": "https://pypi.org/pypi/pooch/1.8.1/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "charset-normalizer",
+          "requirement": "charset-normalizer (<4,>=2)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "idna",
+          "requirement": "idna (<4,>=2.5)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "urllib3",
+          "requirement": "urllib3 (<3,>=1.21.1)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "requests",
+          "to": "certifi",
+          "requirement": "certifi (>=2017.4.17)",
+          "source": "https://pypi.org/pypi/requests/2.31.0/json",
+          "extra": ""
+        },
+        {
+          "from": "soundfile",
+          "to": "cffi",
+          "requirement": "cffi (>=1.0)",
+          "source": "https://pypi.org/pypi/soundfile/0.12.1/json",
+          "extra": ""
+        },
+        {
+          "from": "cffi",
+          "to": "pycparser",
+          "requirement": "pycparser",
+          "source": "https://pypi.org/pypi/cffi/1.16.0/json",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "dora-search",
+          "requirement": "dora-search",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "einops",
+          "requirement": "einops",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "julius",
+          "requirement": "julius>=0.2.3",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "lameenc",
+          "requirement": "lameenc>=1.2",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "openunmix",
+          "requirement": "openunmix",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "pyyaml",
+          "requirement": "pyyaml",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "torch",
+          "requirement": "torch>=1.8.1",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "torchaudio",
+          "requirement": "torchaudio>=0.8",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "demucs",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/requirements_minimal.txt",
+          "extra": ""
+        },
+        {
+          "from": "torchaudio",
+          "to": "torch",
+          "requirement": "torch==2.2.2",
+          "source": "https://pypi.org/pypi/torchaudio/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "filelock",
+          "requirement": "filelock",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions>=4.8.0",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "sympy",
+          "requirement": "sympy",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "networkx",
+          "requirement": "networkx",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "jinja2",
+          "requirement": "jinja2",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "torch",
+          "to": "fsspec",
+          "requirement": "fsspec",
+          "source": "https://pypi.org/pypi/torch/2.2.2/json",
+          "extra": ""
+        },
+        {
+          "from": "jinja2",
+          "to": "markupsafe",
+          "requirement": "MarkupSafe >=2.0",
+          "source": "https://pypi.org/pypi/jinja2/3.1.3/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "numpy",
+          "requirement": "numpy",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "torchaudio",
+          "requirement": "torchaudio>=0.9.0",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "torch",
+          "requirement": "torch>=1.9.0",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "openunmix",
+          "to": "tqdm",
+          "requirement": "tqdm",
+          "source": "https://pypi.org/pypi/openunmix/1.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "omegaconf",
+          "requirement": "omegaconf",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "retrying",
+          "requirement": "retrying",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "submitit",
+          "requirement": "submitit",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "treetable",
+          "requirement": "treetable",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "dora-search",
+          "to": "torch",
+          "requirement": "torch",
+          "source": "https://raw.githubusercontent.com/facebookresearch/dora/v0.1.12/setup.py",
+          "extra": ""
+        },
+        {
+          "from": "submitit",
+          "to": "cloudpickle",
+          "requirement": "cloudpickle>=1.2.1",
+          "source": "https://pypi.org/pypi/submitit/1.5.1/json",
+          "extra": ""
+        },
+        {
+          "from": "submitit",
+          "to": "typing-extensions",
+          "requirement": "typing_extensions>=3.7.4.2",
+          "source": "https://pypi.org/pypi/submitit/1.5.1/json",
+          "extra": ""
+        },
+        {
+          "from": "retrying",
+          "to": "six",
+          "requirement": "six (>=1.7.0)",
+          "source": "https://pypi.org/pypi/retrying/1.3.4/json",
+          "extra": ""
+        },
+        {
+          "from": "omegaconf",
+          "to": "antlr4-python3-runtime",
+          "requirement": "antlr4-python3-runtime (==4.9.*)",
+          "source": "https://pypi.org/pypi/omegaconf/2.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "omegaconf",
+          "to": "pyyaml",
+          "requirement": "PyYAML (>=5.1.0)",
+          "source": "https://pypi.org/pypi/omegaconf/2.3.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "librosa",
+          "requirement": "librosa>=0.8.0",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "mir-eval",
+          "requirement": "mir-eval>=0.6",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "numpy",
+          "requirement": "numpy>=1.18",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "pretty-midi",
+          "requirement": "pretty-midi>=0.2.9",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "resampy",
+          "requirement": "resampy<0.4.3,>=0.2.2",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scikit-learn",
+          "requirement": "scikit-learn",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "scipy",
+          "requirement": "scipy>=1.4.1",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "typing-extensions",
+          "requirement": "typing-extensions",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "basic-pitch",
+          "to": "coremltools",
+          "requirement": "coremltools; platform_system == \"Darwin\"",
+          "source": "https://pypi.org/pypi/basic-pitch/0.4.0/json",
+          "extra": ""
+        },
+        {
+          "from": "julius",
+          "to": "torch",
+          "requirement": "torch>=1.7.0",
+          "source": "https://github.com/adefossez/julius/blob/486c0329158ad6c137d18bcddc5461d493005c65/setup.py",
+          "extra": ""
+        }
+      ],
+      "unknown": [],
+      "constraintConflicts": [],
+      "complete": false,
+      "status": "DECLARATIONS_RESOLVED_NOT_INSTALLED_CLOSURE",
+      "physical": "UNVERIFIED",
+      "dependencyDeclarationsComplete": true,
+      "unverified": [
+        "sdist build dependencies and exact installed RECORD",
+        "selected runtime/model assets",
+        "native bytes/slices/linker graph",
+        "native notices and exact weight grants",
+        "security and real numerical compatibility"
+      ]
+    }
+  },
+  "installedMetadataBinding": {
+    "productionPath": "scoped_closure.verify_closure -> verify_distribution_metadata",
+    "checks": [
+      "approved record footprint",
+      "exactly one authenticated .dist-info/METADATA",
+      "bounded read and digest/length recheck",
+      "unique Name and Version",
+      "normalized distribution name and exact version",
+      "final stable file stamps"
+    ],
+    "constraintSolver": false,
+    "fixtureIsProductionAsset": false
+  },
+  "stage2": {
+    "A": "0 identified scoped repository-only blockers after metadata identity repair",
+    "B": "OPEN real runtime/packages/models/native closure/notices and installed delivery absent",
+    "C": "0 user decisions ready; future policy unchanged",
+    "D": "UNVERIFIED physical acceptance",
+    "E": "OPEN owned live handle and actual kernel/native-loader evidence",
+    "formalA": "0/30",
+    "stage2": "OPEN",
+    "stage3": "NOT_PASSED"
+  }
+}

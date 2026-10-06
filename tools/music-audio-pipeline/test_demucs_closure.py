@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 from demucs_receipt import FORMAT, ChildSession, validate_receipt
-from scoped_closure import canonical, validate_graph, verify_closure, verify_assembly
+from scoped_closure import canonical, validate_graph, verify_closure, verify_assembly, verify_distribution_metadata, MAX_METADATA_BYTES
 from inventory_aggregation import aggregate
 
 
@@ -72,6 +72,12 @@ def contract_fixture(root):
     for i,kind in enumerate(kinds):
         relative=str(i)+'.bin';raw=('fixture'+str(i)).encode();Path(root,relative).write_bytes(raw)
         files=[{'path':relative,'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)}]
+        if kind == 'PYTHON_DISTRIBUTION':
+            metadata = Path(root, 'package-1.dist-info/METADATA')
+            metadata.parent.mkdir()
+            raw = b'Metadata-Version: 2.1\nName: package\nVersion: 1\n\nDisposable fixture.\n'
+            metadata.write_bytes(raw)
+            files.append({'path':'package-1.dist-info/METADATA','digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)})
         nodes.append({'id':'package' if kind=='PYTHON_DISTRIBUTION' else kind.lower(),'kind':kind,'version':'1',
             'requires':[],'files':files,'artifactDigest':hashlib.sha256(canonical(files)).hexdigest(),
             'evidence':'VERIFIED_ARTIFACT','licenseStatus':'APPROVED'})
@@ -82,7 +88,7 @@ def contract_fixture(root):
 class ClosureTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name);self.c=contract_fixture(self.root)
-        self.dist=lambda name:SimpleNamespace(version='1',files=['2.bin'],locate_file=lambda p:self.root/p)
+        self.dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA'],locate_file=lambda p:self.root/p)
     def tearDown(self):self.tmp.cleanup()
     def test_complete_scoped_closure_and_assembly(self):
         r=verify_closure(self.root,self.c,self.dist);self.assertTrue(r['complete']);a=verify_assembly(self.root,self.c,self.dist);self.assertTrue(a['complete']);self.assertFalse(a['bundledByVerifier']);self.assertEqual(a['externalRequests'],0)
@@ -211,10 +217,55 @@ for event,args in [('subprocess.Popen',('unexpected',['unexpected'],None,None)),
     def test_full_closure_stamps_invalidate_exact_changes(self):
         from runtime_inventory import stable
         with tempfile.TemporaryDirectory() as root:
-            contract=contract_fixture(root);stamps={};dist=lambda name:SimpleNamespace(version='1',files=['2.bin'],locate_file=lambda p:Path(root,p))
+            contract=contract_fixture(root);stamps={};dist=lambda name:SimpleNamespace(version='1',files=['2.bin','package-1.dist-info/METADATA'],locate_file=lambda p:Path(root,p))
             verify_closure(root,contract,dist,stamp_sink=lambda path,stamp:stamps.__setitem__(path,stamp))
-            self.assertEqual(len(stamps),7);Path(root,'3.bin').write_bytes(b'changed')
+            self.assertEqual(set(stamps),{f['path'] for node in contract['nodes'] for f in node['files']});self.assertEqual(len(stamps),8);Path(root,'3.bin').write_bytes(b'changed')
             self.assertNotEqual(stamps['3.bin'],stable(Path(root,'3.bin')))
+
+class InstalledMetadataTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
+        self.c=contract_fixture(self.root);self.node=self.c['nodes'][2]
+        self.dist=lambda name:SimpleNamespace(version='1',files=[f['path'] for f in self.node['files']],
+            locate_file=lambda p:self.root/p,metadata={'Name':'package','Version':'1'})
+    def tearDown(self):self.tmp.cleanup()
+    def metadata(self,raw):
+        f=self.node['files'][1];(self.root/f['path']).write_bytes(raw)
+        f.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        self.node['artifactDigest']=hashlib.sha256(canonical(sorted(self.node['files'],key=lambda f:f['path']))).hexdigest()
+    def test_wrong_authenticated_name_or_version_blocks_real_assembly(self):
+        for raw in [b'Name: different\nVersion: 1\n\n',b'Name: package\nVersion: 2\n\n']:
+            with self.subTest(raw=raw):
+                self.metadata(raw)
+                self.assertFalse(verify_closure(self.root,self.c,self.dist)['complete'])
+                self.assertFalse(verify_assembly(self.root,self.c,self.dist)['complete'])
+    def test_missing_duplicate_and_malformed_headers_are_rejected(self):
+        for raw in [b'Version: 1\n\n',b'Name: package\n\n',b'Name: package\nName: package\nVersion: 1\n\n',
+                    b'Name: package\nVersion: 1\nVersion: 1\n\n',b'broken header\nName: package\nVersion: 1\n\n']:
+            with self.subTest(raw=raw):
+                self.metadata(raw)
+                with self.assertRaises(ValueError):verify_distribution_metadata(self.root,self.node)
+    def test_missing_or_ambiguous_authenticated_metadata_is_rejected(self):
+        for files in [self.node['files'][:1],self.node['files']+[dict(self.node['files'][1],path='other.dist-info/METADATA')]]:
+            with self.subTest(files=files):
+                with self.assertRaises(ValueError):verify_distribution_metadata(self.root,dict(self.node,files=files))
+    def test_normalized_identity_and_declarations_do_not_certify_constraints(self):
+        self.node['id']='Some_Package'
+        self.c['nodes'][0]['requires']=[self.node['id'] if value=='package' else value for value in self.c['nodes'][0]['requires']]
+        self.metadata(b'Name: some.package\nVersion: 1\nRequires-Dist: torch>=1.7.0\nRequires-Dist: typing; python_version < "3.5"\n\n')
+        result=verify_distribution_metadata(self.root,self.node)
+        self.assertEqual(result['requiresDist'],['torch>=1.7.0','typing; python_version < "3.5"'])
+        self.assertFalse(result['dependencyConstraintsVerified'])
+        self.assertTrue(verify_closure(self.root,self.c,self.dist)['complete'])
+    def test_tampered_metadata_and_oversized_binding_are_rejected(self):
+        (self.root/self.node['files'][1]['path']).write_bytes(b'Name: package\nVersion: 1\n\n')
+        with self.assertRaises(ValueError):verify_distribution_metadata(self.root,self.node)
+        self.node['files'][1]['byteLength']=MAX_METADATA_BYTES+1
+        with self.assertRaises(ValueError):verify_distribution_metadata(self.root,self.node)
+    def test_detached_resolver_metadata_cannot_override_installed_bytes(self):
+        self.metadata(b'Name: impostor\nVersion: 1\n\n')
+        self.assertFalse(verify_closure(self.root,self.c,self.dist)['complete'])
+
 
 class AssemblyCallerTests(unittest.TestCase):
     def fixture(self,root):

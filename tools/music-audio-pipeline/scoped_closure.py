@@ -3,6 +3,9 @@ import copy
 import hashlib
 import importlib.metadata
 import json
+import re
+from email.parser import BytesParser
+from email import policy
 from pathlib import Path
 from runtime_inventory import local, stable
 from dependency_identity import verify_local_asset
@@ -12,6 +15,41 @@ LEVELS = {'VERIFIED_ARTIFACT','VERIFIED_ENTRY_FILE','OBSERVED_METADATA_ONLY','EX
 MAX_FILES = 4096
 MAX_CONTRACT_BYTES = 1024 * 1024
 MAX_TOTAL = 16 * 1024**3
+MAX_METADATA_BYTES = 1024 * 1024
+
+
+def verify_distribution_metadata(root, node):
+    """Bind identity to authenticated installed bytes, never detached resolver metadata.
+
+    Requires-Dist is retained as declarations only. This does not evaluate markers,
+    selected extras, version constraints, licenses, or the complete runtime closure.
+    """
+    candidates = [f for f in node['files'] if Path(f['path']).name == 'METADATA'
+                  and Path(f['path']).parent.name.endswith('.dist-info')]
+    if len(candidates) != 1:
+        raise ValueError('missing-or-ambiguous-installed-metadata')
+    binding = candidates[0]
+    if binding['byteLength'] > MAX_METADATA_BYTES:
+        raise ValueError('installed-metadata-budget')
+    with local(root, binding['path']).open('rb') as stream:
+        raw = stream.read(MAX_METADATA_BYTES + 1)
+    if len(raw) != binding['byteLength'] or hashlib.sha256(raw).hexdigest() != binding['digest']:
+        raise ValueError('stale-installed-metadata')
+    message = BytesParser(policy=policy.default).parsebytes(raw)
+    names = message.get_all('Name', [])
+    versions = message.get_all('Version', [])
+    if message.defects or len(names) != 1 or len(versions) != 1:
+        raise ValueError('invalid-installed-metadata-identity')
+    def normalized(name):
+        if not re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?', name):
+            raise ValueError('invalid-distribution-name')
+        return re.sub(r'[-_.]+', '-', name).lower()
+    if normalized(str(names[0])) != normalized(node['id']) or str(versions[0]) != node['version']:
+        raise ValueError('wrong-installed-metadata-identity')
+    return {'path': binding['path'], 'digest': binding['digest'],
+            'name': str(names[0]), 'version': str(versions[0]),
+            'requiresDist': [str(value) for value in message.get_all('Requires-Dist', [])],
+            'dependencyConstraintsVerified': False}
 
 
 def canonical(value):
@@ -104,6 +142,7 @@ def verify_closure(root,contract,distribution=importlib.metadata.distribution,st
                     actual={str(Path(installed.locate_file(p)).resolve()) for p in recorded}
                     expected={str(local(root,f['path']).resolve()) for f in node['files']}
                     if actual!=expected:raise ValueError('incomplete-installed-artifact-footprint')
+                    verify_distribution_metadata(root,node)
             except FileNotFoundError:level='MISSING';reason='missing-artifact'
             except importlib.metadata.PackageNotFoundError:level='MISSING';reason='missing-installed-distribution'
             except (ValueError,OSError):level='UNVERIFIED';reason='artifact-version-footprint-or-budget-mismatch'
