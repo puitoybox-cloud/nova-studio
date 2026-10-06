@@ -25,9 +25,9 @@ const readline=require('node:readline');const fs=require('node:fs');const assert
       const api=window.MusicStudioAudioPipeline;
       const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
       const canonical=value=>Array.isArray(value)?'['+value.map(canonical).join(',')+']':value&&typeof value==='object'?'{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonical(value[key])).join(',')+'}':JSON.stringify(value);
-      const inventory={models:[],runtimeEvidence:{codec:{},network:{},mappedNative:{},dynamicNativeGraph:{},transitiveNativeObservation:{},nativeClosure:{}}};
+      const inventory={models:[],runtimeEvidence:{codec:{},network:{},mappedNative:{},dynamicNativeGraph:{},transitiveNativeObservation:{},nativeClosure:{},scopedNativeLoads:{}}};
       const input={digest:'c'.repeat(64),byteLength:1},binding={session:'a'.repeat(64),request:'b'.repeat(64),input};
-      const values={inventoryRevision:inventory,modelIdentity:[],codecIdentity:{},networkIdentity:{},nativeIdentity:{mappedNative:{},dynamicNativeGraph:{},transitiveNativeObservation:{},nativeClosure:{}}};
+      const values={inventoryRevision:inventory,modelIdentity:[],codecIdentity:{},networkIdentity:{},nativeIdentity:{mappedNative:{},dynamicNativeGraph:{},transitiveNativeObservation:{},nativeClosure:{},scopedNativeLoads:{}}};
       for(const [key,value]of Object.entries(values))binding[key]=await hash(new TextEncoder().encode(canonical(value)));
       const bytes=new TextEncoder().encode('fixture-midi');
       const payload={midiBase64:btoa('fixture-midi'),processingReceipt:{format:'NOVA_PROCESSING_RECEIPT',version:1,binding,complete:true,status:'VERIFIED',processingEligible:true,publicationEligible:false,nativeClosureComplete:true,networkContainment:'CONTAINED',blockedBy:[],output:{digest:await hash(bytes),byteLength:bytes.length},stages:['decoder','resample','model','inference','stem','encoder','result'].map(stage=>({stage,status:'VERIFIED'}))}};

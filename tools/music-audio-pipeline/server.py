@@ -635,6 +635,9 @@ class Handler(BaseHTTPRequestHandler):
             if STRICT_BOOTSTRAP:
                 require_owned_session(self.headers.get('X-Nova-Session'))
                 request = self.headers.get('X-Nova-Request', '')
+                ticket = self.headers.get('X-Nova-Authorization','')
+                if len(ticket) != 64 or any(c not in '0123456789abcdef' for c in ticket):
+                    raise ValueError('missing-processing-authorization')
                 if len(request) != 64 or any(c not in '0123456789abcdef' for c in request): raise ValueError('invalid-processing-request')
                 if PROCESSING_ATTEMPTS is None: raise ValueError('missing-owned-request-registry')
                 PROCESSING_ATTEMPTS.claim(require_owned_session(), request)
@@ -672,7 +675,9 @@ class Handler(BaseHTTPRequestHandler):
                     inventory = runtime_snapshot()
                     binding = RUNTIME_EVIDENCE_MODULE.processing_binding(session,
                         self.headers.get('X-Nova-Request'), RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
-                    REQUEST_RECEIPTS.bound = RUNTIME_EVIDENCE_MODULE.BoundProcessingReceipt(binding)
+                    admit_owned_processing(binding, ticket)
+                    REQUEST_RECEIPTS.bound = RUNTIME_EVIDENCE_MODULE.BoundProcessingReceipt(binding,
+                        timeout=min(300,float(os.environ['NOVA_LIFECYCLE_DEADLINE'])-__import__('time').monotonic()))
                     REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
                 payload = process_audio(source, work_dir)
                 require_runtime_processing()
@@ -705,22 +710,19 @@ class Handler(BaseHTTPRequestHandler):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")
 
 
-def publish_owned_result(receipt):
-    """Strict consumed receipts only, via an exact owned numeric loopback socket.
-
-    Current inventory/receipt must still match at the launcher; transport is never
-    permission to promote partial native evidence or accept changed audit evidence.
-    """
+def owned_helper_exchange(route, value):
+    """One numeric loopback socket, one private request, bounded response; no DNS."""
     import http.client
     import socket
     parsed = urllib.parse.urlsplit(os.environ.get('NOVA_OWNED_RESULT_ORIGIN',''))
-    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
+    if (route not in ('/owned-helper-result','/owned-helper-admit') or
+            parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
             parsed.netloc != '127.0.0.1:'+str(parsed.port) or parsed.path or parsed.query or parsed.fragment):
         raise ValueError('missing-private-result-origin')
     session = require_owned_session()
     capability = os.environ.get('NOVA_OWNED_RESULT_CAPABILITY','')
-    if len(capability) != 64 or receipt.get('complete') is not True: raise ValueError('partial-owned-result')
-    raw = json.dumps({'session':session,'capability':capability,'receipt':receipt},
+    if len(capability) != 64: raise ValueError('missing-owned-capability')
+    raw = json.dumps({'session':session,'capability':capability,**value},
         sort_keys=True,separators=(',',':'),allow_nan=False).encode()
     if len(raw) > 1024*1024: raise ValueError('owned-result-budget')
     connection = http.client.HTTPConnection('127.0.0.1',parsed.port,timeout=2)
@@ -730,11 +732,32 @@ def publish_owned_result(receipt):
         with OFFLINE_GUARD.permit_owned_socket(handle,('127.0.0.1',parsed.port)):
             handle.connect(('127.0.0.1',parsed.port))
         connection.sock = handle
-        connection.request('POST','/owned-helper-result',body=raw,headers={'Content-Type':'application/json'})
+        connection.request('POST',route,body=raw,headers={'Content-Type':'application/json'})
         response = connection.getresponse(); body = response.read(4097)
-        if response.status != 200 or len(body)>4096 or json.loads(body) != {'ok':True}:
-            raise ValueError('owned-result-not-accepted')
+        if response.status != 200 or len(body)>4096: raise ValueError('owned-exchange-not-accepted')
+        return json.loads(body)
     finally: connection.close(); handle.close()
+
+
+def admit_owned_processing(binding, ticket):
+    from runtime_evidence import evidence_digest
+    contract = runtime_snapshot().get('runtimeEvidence',{}).get('contractDigest')
+    value = owned_helper_exchange('/owned-helper-admit',{'ticket':ticket,'binding':binding,'processingContract':contract})
+    expected = {'format':'NOVA_PROCESSING_ADMISSION','version':1,'session':binding['session'],
+        'request':binding['request'],'bindingDigest':evidence_digest(binding),'state':'ADMITTED'}
+    if (not isinstance(value,dict) or set(value) != set(expected)|{'authorizationDigest','deadlineAt'} or
+            any(type(value.get(k)) != type(v) or value.get(k) != v for k,v in expected.items()) or
+            not isinstance(value['authorizationDigest'],str) or len(value['authorizationDigest']) != 64 or
+            any(c not in '0123456789abcdef' for c in value['authorizationDigest']) or
+            type(value['deadlineAt']) is not int or value['deadlineAt'] <= __import__('time').time()*1000):
+        raise ValueError('foreign-or-partial-processing-admission')
+    return value
+
+
+def publish_owned_result(receipt):
+    if receipt.get('complete') is not True: raise ValueError('partial-owned-result')
+    if owned_helper_exchange('/owned-helper-result',{'receipt':receipt}) != {'ok':True}:
+        raise ValueError('owned-result-not-accepted')
 
 
 def main():

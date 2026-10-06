@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import hashlib
+import hmac
 import secrets
 import threading
 import time
@@ -76,6 +77,9 @@ class OwnedResultChannel:
         self.deadline_at = int((wall()+deadline-clock())*1000)
         self.sequence = 0; self.renewals = 0
         self.state = 'READY'; self.binding = None; self.result = None
+        self.owner = hashlib.sha256(self.capability.encode()).hexdigest()
+        self.final_key = self.capability; self.final_receipt = None
+        self.authorization = None; self.admitted = False; self.accepted_result = None
         self.lock = threading.RLock()
 
     def handoff(self):
@@ -100,10 +104,23 @@ class OwnedResultChannel:
                 current = processing_binding(self.session,self.binding['request'],self.binding['input'],inventory)
                 if current != self.binding: raise ValueError('changed-owned-processing-inventory')
             base = {'session','capability','sequence','action'}
-            if action == 'begin':
-                if set(value) != base|{'request','input'} or self.state != 'READY' or eligible is not True:
+            if action in ('begin','authorize'):
+                fields = {'request','input'} | ({'owner','expectedInventory','processingContract'} if action == 'authorize' else set())
+                if set(value) != base|fields or self.state != 'READY' or eligible is not True:
                     raise ValueError('ineligible-or-replayed-request')
                 self.binding = processing_binding(self.session, value['request'], value['input'], inventory)
+                if action == 'authorize':
+                    contract = inventory.get('runtimeEvidence',{}).get('contractDigest')
+                    if (value['owner'] != self.owner or value['expectedInventory'] != self.binding['inventoryRevision'] or
+                            not _token(contract) or value['processingContract'] != contract):
+                        self.binding = None
+                        raise ValueError('foreign-or-changed-processing-authorization')
+                    self.authorization = {'format':'NOVA_PROCESSING_AUTHORIZATION','version':1,
+                        'owner':self.owner,'session':self.session,'request':value['request'],
+                        'input':value['input'],'expectedInventory':self.binding['inventoryRevision'],
+                        'processingContract':contract,'bindingDigest':_digest(self.binding),
+                        'capabilityGeneration':self.renewals,'expiresAt':self.expires_at,
+                        'deadlineAt':self.deadline_at,'ticket':secrets.token_hex(32)}
                 self.state = 'PROCESSING'
             elif action == 'renew':
                 if set(value) != base or self.state not in ('READY','PROCESSING') or self.renewals >= 2:
@@ -119,6 +136,7 @@ class OwnedResultChannel:
                 if (set(value) != base|{'resultId','output'} or self.state != 'DELIVERED' or
                         value['resultId'] != self.result['resultId'] or _digest(value['output']) != _digest(self.result['output'])):
                     raise ValueError('foreign-replayed-or-output-mismatch')
+                self.accepted_result = json.loads(json.dumps(self.result))
                 self.state = 'ACCEPTED'
             elif action == 'stop':
                 if set(value) != base: raise ValueError('invalid-stop')
@@ -128,8 +146,31 @@ class OwnedResultChannel:
             response = {'format':'NOVA_OWNED_CONTROL_RECEIPT','version':1,'session':self.session,
                 'action':action,'state':self.state, **self.handoff(), 'renewals':self.renewals,
                 'bindingDigest':_digest(self.binding) if self.binding else None}
+            if action == 'authorize': response['authorization'] = json.loads(json.dumps(self.authorization))
             if action == 'result': response['result'] = json.loads(json.dumps(self.result))
             return response
+
+    def admit(self, value, inventory):
+        """Helper-private one-shot admission, after hashing input and before any backend."""
+        from runtime_evidence import processing_binding
+        with self.lock:
+            self.alive()
+            auth = self.authorization
+            if (self.state != 'PROCESSING' or auth is None or self.admitted or self.clock() >= self.expires or
+                    auth['capabilityGeneration'] != self.renewals or
+                    not isinstance(value,dict) or set(value) != {'session','capability','ticket','binding','processingContract'} or
+                    value['session'] != self.session or not _token(value['capability']) or
+                    not secrets.compare_digest(value['capability'],self.helper_capability) or
+                    not _token(value['ticket']) or not secrets.compare_digest(value['ticket'],auth['ticket']) or
+                    value['processingContract'] != auth['processingContract'] or
+                    inventory.get('runtimeEvidence',{}).get('contractDigest') != auth['processingContract'] or
+                    _digest(value['binding']) != _digest(self.binding) or
+                    processing_binding(self.session,self.binding['request'],self.binding['input'],inventory) != self.binding):
+                raise ValueError('missing-stale-foreign-or-replayed-authorization')
+            self.admitted = True
+            return {'format':'NOVA_PROCESSING_ADMISSION','version':1,'session':self.session,
+                'request':self.binding['request'],'bindingDigest':_digest(self.binding),
+                'authorizationDigest':_digest(auth),'deadlineAt':self.deadline_at,'state':'ADMITTED'}
 
     def publish(self, value, inventory):
         from runtime_evidence import processing_binding, BoundProcessingReceipt
@@ -139,6 +180,7 @@ class OwnedResultChannel:
                     set(value) != {'session','capability','receipt'} or value['session'] != self.session or
                     not _token(value['capability']) or not secrets.compare_digest(value['capability'], self.helper_capability)):
                 raise ValueError('foreign-or-replayed-helper-result')
+            if self.authorization is not None and not self.admitted: raise ValueError('unadmitted-helper-result')
             receipt = value['receipt']
             current = processing_binding(self.session,self.binding['request'],self.binding['input'],inventory)
             if (not isinstance(receipt,dict) or receipt.get('format') != 'NOVA_PROCESSING_RECEIPT' or
@@ -167,6 +209,90 @@ class OwnedResultChannel:
         with self.lock:
             self.state = 'FAILED' if failed else 'STOPPED'
             self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
+            self.authorization = None
+
+
+def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed=False):
+    """Detached authenticated summary. STOPPING/leader exit never proves descendants."""
+    with channel.lock:
+        if channel.final_receipt is not None: return json.loads(json.dumps(channel.final_receipt))
+        binding = channel.binding
+        accepted = channel.accepted_result
+        admission_closed = stop.get('status') == 'OBSERVED' and stop.get('state') == 'STOPPING'
+        descendants = shutdown.get('remainingOwnedDescendants')
+        proven = shutdown.get('ownedDescendantsComplete') is True and type(descendants) is int and descendants == 0
+        complete = not failed and admission_closed and proven and transport_closed is True
+        payload = {'format':'NOVA_FINAL_LIFECYCLE_RECEIPT','version':1,'owner':channel.owner,
+            'session':channel.session,'request':binding['request'] if binding else None,
+            'bindingDigest':_digest(binding) if binding else None,
+            'resultId':accepted['resultId'] if accepted else None,
+            'resultDigest':_digest(accepted) if accepted else None,
+            'stopDigest':_digest(stop),'shutdownDigest':_digest(shutdown),
+            'admissionClosed':admission_closed,'remainingOwnedDescendants':descendants,
+            'ownedDescendantsComplete':proven,'transportClosed':transport_closed is True,
+            'capabilityInvalidated':True,'completionState':'FAILED' if failed else 'COMPLETE' if complete else 'PARTIAL',
+            'status':'OBSERVED' if complete else 'PARTIAL','complete':complete}
+        key = channel.final_key
+        if not _token(key): raise ValueError('missing-final-receipt-owner')
+        channel.close(failed=failed)
+        channel.final_receipt = {'payload':payload,'authentication':hmac.new(key.encode(),
+            json.dumps(payload,sort_keys=True,separators=(',',':'),allow_nan=False).encode(),hashlib.sha256).hexdigest()}
+        channel.final_key = ''
+        return json.loads(json.dumps(channel.final_receipt))
+
+
+class OwnedChildInterruptionAdapter:
+    """Policy-neutral opaque handle provider contract; no OS/PID signal backend.
+
+    A trusted provider must attest its own live handle at operation time. The
+    identity/challenge/owner/freshness checks run BEFORE its scoped operation.
+    Unavailable or partial providers cannot execute an interruption.
+    """
+    def __init__(self, handle, owner, verify, interrupt, *, clock=time.monotonic):
+        if handle is None or not _token(owner) or not callable(verify) or not callable(interrupt):
+            raise ValueError('invalid-owned-interruption-provider')
+        self.handle=handle; self.owner=owner; self.verify=verify; self.interrupt=interrupt
+        self.clock=clock; self.consumed=False; self.lock=threading.Lock()
+
+    def __call__(self, handle, owner, timeout):
+        with self.lock:
+            if self.consumed or handle is not self.handle or owner != self.owner or type(timeout) not in (int,float) or not 0 < timeout <= 3:
+                raise ValueError('stale-foreign-interruption-handle')
+            self.consumed=True
+            challenge=secrets.token_hex(32); started=self.clock()
+            proof=self.verify(handle,owner,challenge)
+            expected={'owner':owner,'challenge':challenge,'liveHandleVerified':True,'scope':'EXACT_OWNED_HANDLE'}
+            if (not isinstance(proof,dict) or set(proof) != set(expected) or _digest(proof) != _digest(expected) or
+                    not 0 <= self.clock()-started < timeout):
+                raise ValueError('unverified-live-interruption-handle')
+            result=self.interrupt(handle,owner,challenge,max(0.001,timeout-(self.clock()-started)))
+            if (not isinstance(result,dict) or result.get('owner') != owner or result.get('challenge') != challenge or
+                    result.get('liveHandleVerified') is not True or result.get('ownedChildrenComplete') is not True or
+                    result.get('stopped') is not True or not 0 <= self.clock()-started <= timeout):
+                raise ValueError('partial-or-stale-interruption-receipt')
+            return result
+
+
+def stage2_software_closure(evidence):
+    """Explicit categories, never a substitute for strict runtime eligibility/formal A."""
+    categories={
+        'A':('swiftAuthorizationBinding','oneShotHelperAdmission','outputBytesAcceptance',
+             'authenticatedFinalSummary','partialShutdownRejection','ownedInterruptionContract','scopedEvidenceAggregation'),
+        'B':('approvedRuntimeAssets','approvedMLModels','realBackendLinkage','durableBackendAdapters'),
+        'C':('storagePolicy','distributionPolicy','signingNotarizationPKI','licenses','retentionGC'),
+        'D':('intelMac','appleSilicon','iPadSafari','gatekeeper','realMLPerformance','sixNoteAccuracy','logicKeystation'),
+        'E':('internalNativeKernelIdentity','authenticatedRuntimeLoaderEdges','hiddenTransientNativeLoads',
+             'completeNativeNetworkSyscallContainment','ownedDescendantLiveHandleProvider')}
+    rows=[]
+    for category, requirements in categories.items():
+        for requirement in requirements:
+            rows.append({'category':category,'requirement':requirement,
+                'satisfied':evidence.get(requirement) is True})
+    blocked=[row['requirement'] for row in rows if row['category']=='A' and not row['satisfied']]
+    return {'format':'NOVA_STAGE2_SOFTWARE_CLOSURE','version':1,'requirements':rows,
+        'repositorySoftwareComplete':not blocked,'pureSoftwareBlockedBy':blocked,
+        'stage2':'OPEN','stage3Gate':'NOT_PASSED','formalA':0,
+        'runtimeEligibilityAuthority':False}
 
 
 def bounded_owned_shutdown(child, *, timeout=3, interruption=None, owner=None):
@@ -219,7 +345,7 @@ class LocalEnvelopeServer:
         for path, value in assets.items():
             if (not isinstance(path, str) or not path.startswith('/') or
                     any(c in path for c in ('..', '?', '#', '%', '\\')) or
-                    path in ('/bootstrap-envelope','/owned-control','/owned-helper-result','/lifecycle') or not isinstance(value, bytes) or
+                    path in ('/bootstrap-envelope','/owned-control','/owned-helper-result','/owned-helper-admit','/lifecycle') or not isinstance(value, bytes) or
                     len(value) > 4*1024*1024):
                 raise ValueError('unsafe-web-asset')
             if hashlib.sha256(value).hexdigest() != expected_assets[path]:
@@ -268,7 +394,7 @@ class LocalEnvelopeServer:
                 self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' http://127.0.0.1:8766; object-src 'none'; base-uri 'none'; frame-src 'none'")
                 self.end_headers(); self.wfile.write(data)
             def do_POST(self):
-                if self.path in ('/owned-control', '/owned-helper-result'):
+                if self.path in ('/owned-control', '/owned-helper-result', '/owned-helper-admit'):
                     self.control(); return
                 if self.path == '/lifecycle':
                     self.lifecycle(); return
@@ -423,7 +549,7 @@ class LocalProductionLifecycle:
     A retry must instantiate a new lifecycle, never resurrect this instance.
     """
     def __init__(self, prepared, assets, expected_assets, *, popen=subprocess.Popen,
-                 health=None, browser=None, native_host=None, timeout=30):
+                 health=None, browser=None, native_host=None, final_sink=None, timeout=30):
         self.prepared = prepared
         envelope = prepared['browserEnvelope']
         manifest = envelope['manifest']
@@ -436,12 +562,12 @@ class LocalProductionLifecycle:
         self.server.on_lifecycle = self.browser_event
         self.server.on_control = self.control_event
         self.control = OwnedResultChannel(self.server.session, self.server.deadline)
-        self.shutdown_receipt = None
+        self.shutdown_receipt = None; self.final_receipt = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
         self.state = 'PREPARING'; self.child = None; self.popen = popen
         self.health = health or self.read_health; self.browser = browser; self.native_host = native_host
         self.timeout = timeout; self.inventory = {}; self.browser_verified = False
         self.last_seen = time.monotonic(); self.done = threading.Event()
-        self.lock = threading.RLock(); self.started = False
+        self.lock = threading.RLock(); self.started = False; self.closing = False
         self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
 
     def read_health(self):
@@ -524,24 +650,27 @@ class LocalProductionLifecycle:
 
     def control_event(self, route, value):
         with self.lock:
+            if self.closing: raise ValueError('closed-helper-admission')
             if self.child is None or self.child.poll() is not None:
                 self.state = 'FAILED'; self.control.close(failed=True); self.done.set()
                 raise ValueError('unexpected-helper-termination')
-            if route == '/owned-helper-result':
+            if route in ('/owned-helper-result','/owned-helper-admit'):
                 self.verify_health(self.health())
                 eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True,
                     browser_verified=self.browser_verified, fresh_session=time.monotonic() < self.server.deadline)
                 if not eligibility['processingEligible']: raise ValueError('ineligible-helper-result')
+                if route == '/owned-helper-admit': return self.control.admit(value,self.inventory)
                 self.control.publish(value,self.inventory)
                 return {'ok':True}
             if route != '/owned-control': raise ValueError('wrong-owned-control-route')
             self.verify_health(self.health())
             eligibility = strict_eligibility(self.inventory,trusted_bootstrap=True,
                 browser_verified=self.browser_verified,fresh_session=time.monotonic() < self.server.deadline)
+            if value.get('action') == 'begin': raise ValueError('explicit-processing-authorization-required')
             response = self.control.command(value,inventory=self.inventory,
                 eligible=eligibility['processingEligible'],helper_alive=True)
             self.last_seen = time.monotonic()
-            if response['state'] in ('ACCEPTED','STOPPING'):
+            if response['state'] == 'STOPPING':
                 self.eligibility = strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
                 self.done.set()
             return response
@@ -570,17 +699,27 @@ class LocalProductionLifecycle:
         finally: connection.close()
 
     def close(self, *, failed=False):
-        self.done.set(); self.browser_verified = False; self.inventory = {}
-        self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
-        self.server.close()
-        if self.child is not None and self.child.poll() is None:
-            self.graceful_stop_receipt = self.request_helper_stop()
-        self.control.close(failed=failed)
-        if self.shutdown_receipt is None:
+        with self.close_lock:
+            if self.final_receipt is not None: return
+            with self.lock:
+                self.closing = True
+            self.done.set(); self.browser_verified = False; self.inventory = {}
+            self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
+            stop = {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
+            if self.child is not None and self.child.poll() is None:
+                stop = self.request_helper_stop()
+            self.graceful_stop_receipt = stop
             self.shutdown_receipt = bounded_owned_shutdown(self.child)
-        if self.child is not None and self.child.poll() is not None: self.child = None
-        if self.child is not None: failed = True
-        self.state = 'FAILED' if failed else 'STOPPED'
+            self.server.close()
+            transport_closed = (self.server.server.socket.fileno() == -1 and
+                (self.server.thread is None or not self.server.thread.is_alive()))
+            if self.child is not None and self.child.poll() is not None: self.child = None
+            if self.child is not None: failed = True
+            self.final_receipt = final_lifecycle_receipt(self.control,stop,self.shutdown_receipt,transport_closed,failed=failed)
+            self.shutdown_state = self.final_receipt['payload']['completionState']
+            self.state = 'FAILED' if failed else 'STOPPED'
+            # Explicit private owner sink, never a browser route or a reopened transport.
+            if self.final_sink is not None: self.final_sink(json.loads(json.dumps(self.final_receipt)))
 
 
 def main():

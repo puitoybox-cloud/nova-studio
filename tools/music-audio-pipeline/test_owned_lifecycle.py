@@ -269,3 +269,142 @@ class AuthenticatedStopTests(unittest.TestCase):
                 with self.assertRaises(ValueError):module.require_owned_session('a'*64)
                 self.assertNotIn('complete',body)
         finally:server.shutdown();server.server_close();thread.join(timeout=3)
+
+class AuthorizationTests(unittest.TestCase):
+    setUp=ChannelTests.setUp
+    command=ChannelTests.command
+    receipt=ChannelTests.receipt
+    publish=ChannelTests.publish
+    def authorize(self,**changes):
+        self.inventory['runtimeEvidence']['contractDigest']='e'*64
+        binding=processing_binding(self.channel.session,'d'*64,self.input,self.inventory)
+        return self.command('authorize',request='d'*64,input=self.input,owner=self.channel.owner,
+            expectedInventory=binding['inventoryRevision'],processingContract='e'*64,**changes)
+    def admission(self,**changes):
+        c=self.channel
+        return c.admit({'session':c.session,'capability':c.helper_capability,'ticket':c.authorization['ticket'],
+            'binding':c.binding,'processingContract':'e'*64,**changes},self.inventory)
+    def test_authorization_exact_binding_one_shot_admission_and_result(self):
+        response=self.authorize();auth=response['authorization'];c=self.channel
+        self.assertEqual(auth['owner'],hashlib.sha256(c.capability.encode()).hexdigest())
+        self.assertEqual(auth['session'],c.session);self.assertEqual(auth['input'],self.input)
+        self.assertEqual(auth['capabilityGeneration'],0)
+        with self.assertRaisesRegex(ValueError,'unadmitted'):self.publish()
+        admission=self.admission();self.assertEqual(admission['bindingDigest'],auth['bindingDigest'])
+        with self.assertRaises(ValueError):self.admission()
+        self.publish();result=self.command('result');self.command('accept',resultId=result['result']['resultId'],output=self.output)
+        self.assertEqual(self.channel.state,'ACCEPTED');self.command('stop');self.assertEqual(self.channel.state,'STOPPING')
+    def test_missing_foreign_changed_inventory_contract_owner_denied(self):
+        c=self.channel;self.inventory['runtimeEvidence']['contractDigest']='e'*64
+        b=processing_binding(c.session,'d'*64,self.input,self.inventory)
+        base={'session':c.session,'capability':c.capability,'sequence':0,'action':'authorize','request':'d'*64,
+            'input':self.input,'owner':c.owner,'expectedInventory':b['inventoryRevision'],'processingContract':'e'*64}
+        for key in ('owner','expectedInventory','processingContract'):
+            for value in (None,'f'*64):
+                with self.assertRaises(ValueError):c.command({**base,key:value},inventory=self.inventory,eligible=True,helper_alive=True)
+                self.assertEqual(c.state,'READY');self.assertEqual(c.sequence,0)
+    def test_ticket_tamper_foreign_input_and_inventory_denied(self):
+        self.authorize();c=self.channel
+        for key,value in [('session','f'*64),('capability','f'*64),('ticket','f'*64),('processingContract','f'*64),
+                          ('binding',{**c.binding,'input':{**self.input,'digest':'f'*64}})]:
+            with self.assertRaises(ValueError):self.admission(**{key:value})
+            self.assertFalse(c.admitted)
+        self.inventory['changed']=True
+        with self.assertRaises(ValueError):self.admission()
+    def test_stale_generation_expiry_and_cancel_reject_admission(self):
+        self.authorize();self.command('renew')
+        with self.assertRaises(ValueError):self.admission()
+        self.now=160
+        with self.assertRaises(ValueError):self.admission()
+        self.setUp();self.authorize();self.command('stop')
+        with self.assertRaises(ValueError):self.admission()
+    def test_legacy_begin_is_not_processing_authority(self):
+        self.command('begin',request='d'*64,input=self.input)
+        c=self.channel
+        with self.assertRaises(ValueError):c.admit({'session':c.session,'capability':c.helper_capability,
+            'ticket':'f'*64,'binding':c.binding,'processingContract':'e'*64},self.inventory)
+
+class FinalClosureTests(unittest.TestCase):
+    def test_partial_final_authentication_after_invalidation_and_duplicate_snapshot(self):
+        import hmac
+        from local_distribution_entry import final_lifecycle_receipt
+        c=OwnedResultChannel('a'*64,time.monotonic()+20);key=c.capability
+        result=final_lifecycle_receipt(c,{'status':'OBSERVED','state':'STOPPING'},
+            {'leaderExited':True,'complete':False},True)
+        self.assertFalse(result['payload']['complete']);self.assertEqual(result['payload']['completionState'],'PARTIAL')
+        self.assertIsNone(result['payload']['remainingOwnedDescendants']);self.assertEqual(c.capability,'');self.assertEqual(c.final_key,'')
+        raw=json.dumps(result['payload'],sort_keys=True,separators=(',',':')).encode()
+        self.assertEqual(result['authentication'],hmac.new(key.encode(),raw,hashlib.sha256).hexdigest())
+        again=final_lifecycle_receipt(c,{}, {},False);self.assertEqual(again,result)
+        again['payload']['complete']=True;self.assertFalse(c.final_receipt['payload']['complete'])
+    def test_leader_stop_transport_alone_and_boolean_count_cannot_complete(self):
+        from local_distribution_entry import final_lifecycle_receipt
+        for shutdown,stop,closed in [({'leaderExited':True},{'status':'OBSERVED','state':'STOPPING'},True),
+            ({'ownedDescendantsComplete':True,'remainingOwnedDescendants':False},{'status':'OBSERVED','state':'STOPPING'},True),
+            ({'ownedDescendantsComplete':True,'remainingOwnedDescendants':0},{'status':'UNVERIFIED'},True),
+            ({'ownedDescendantsComplete':True,'remainingOwnedDescendants':0},{'status':'OBSERVED','state':'STOPPING'},False)]:
+            c=OwnedResultChannel('a'*64,time.monotonic()+20)
+            self.assertFalse(final_lifecycle_receipt(c,stop,shutdown,closed)['payload']['complete'])
+    def test_close_private_sink_receipt_no_admission_or_reopen(self):
+        from test_production_lifecycle import LifecycleTests
+        l=LifecycleTests().make();seen=[];l.final_sink=seen.append
+        try:
+            l.start();l.close();self.assertEqual(len(seen),1)
+            self.assertEqual(seen[0]['payload']['completionState'],'PARTIAL')
+            self.assertTrue(seen[0]['payload']['transportClosed']);self.assertTrue(seen[0]['payload']['capabilityInvalidated'])
+            self.assertEqual(l.shutdown_state,'PARTIAL')
+            with self.assertRaisesRegex(ValueError,'closed-helper-admission'):l.control_event('/owned-helper-admit',{})
+            l.close();self.assertEqual(len(seen),1)
+        finally:l.close()
+
+class SafeInterruptionAdapterTests(unittest.TestCase):
+    def test_no_operation_until_fresh_live_handle_proof_and_one_use(self):
+        from local_distribution_entry import OwnedChildInterruptionAdapter
+        handle=object();operations=[]
+        def verify(h,o,n):return {'owner':o,'challenge':n,'liveHandleVerified':True,'scope':'EXACT_OWNED_HANDLE'}
+        def interrupt(h,o,n,t):
+            operations.append(h);return {'owner':o,'challenge':n,'liveHandleVerified':True,'ownedChildrenComplete':True,'stopped':True}
+        adapter=OwnedChildInterruptionAdapter(handle,'a'*64,verify,interrupt)
+        with self.assertRaises(ValueError):adapter(object(),'a'*64,1)
+        with self.assertRaises(ValueError):adapter(handle,'b'*64,1)
+        self.assertEqual(operations,[]);self.assertTrue(adapter(handle,'a'*64,1)['stopped'])
+        with self.assertRaises(ValueError):adapter(handle,'a'*64,1)
+        self.assertEqual(operations,[handle])
+    def test_partial_foreign_stale_verifier_never_executes(self):
+        from local_distribution_entry import OwnedChildInterruptionAdapter
+        handle=object();operations=[]
+        for kind in ('partial','foreign','stale'):
+            clock=[100.]
+            def verify(h,o,n):
+                if kind=='stale':clock[0]+=4
+                return {'owner':'b'*64 if kind=='foreign' else o,'challenge':n,
+                    'liveHandleVerified':kind!='partial','scope':'EXACT_OWNED_HANDLE'}
+            adapter=OwnedChildInterruptionAdapter(handle,'a'*64,verify,lambda *args:operations.append(args),clock=lambda:clock[0])
+            with self.assertRaises(ValueError):adapter(handle,'a'*64,1)
+        self.assertEqual(operations,[])
+    def test_demucs_timeout_retains_handle_without_pid_signals(self):
+        import io
+        from demucs_receipt import ChildSession
+        from types import SimpleNamespace
+        child=SimpleNamespace(stdin=io.StringIO(),stdout=io.StringIO(),poll=lambda:None,
+            wait=lambda **kwargs:(_ for _ in ()).throw(subprocess.TimeoutExpired('fixture',3)))
+        session=ChildSession.__new__(ChildSession);session.process=child;session.receipt={}
+        with patch('os.kill') as kill,patch('os.killpg') as group:
+            session.close();self.assertIs(session.process,child)
+            self.assertFalse(session.shutdown_receipt['complete']);self.assertTrue(child.stdin.closed)
+            kill.assert_not_called();group.assert_not_called()
+
+class Stage2CategoryTests(unittest.TestCase):
+    def test_category_separation_and_no_runtime_formal_promotion(self):
+        from local_distribution_entry import stage2_software_closure
+        initial=stage2_software_closure({});self.assertFalse(initial['repositorySoftwareComplete'])
+        evidence={r['requirement']:True for r in initial['requirements'] if r['category']=='A'}
+        r=stage2_software_closure(evidence);self.assertTrue(r['repositorySoftwareComplete'])
+        self.assertEqual(r['pureSoftwareBlockedBy'],[]);self.assertEqual(r['formalA'],0)
+        self.assertEqual(r['stage2'],'OPEN');self.assertEqual(r['stage3Gate'],'NOT_PASSED')
+        self.assertTrue(all(not x['satisfied'] for x in r['requirements'] if x['category']!='A'))
+    def test_expanded_scoped_native_network_lookup_not_kernel_proof(self):
+        with patch('sys.addaudithook'):guard=OfflineRuntimeGuard()
+        for name in ('getaddrinfo_a','ares_getaddrinfo','ares_query','curl_multi_poll','SSL_set_fd','nw_endpoint_create_host'):
+            with self.assertRaises(PermissionError):guard.audit('ctypes.dlsym',(None,name))
+        self.assertFalse(guard.snapshot()['nativeNetworkVerified'])
