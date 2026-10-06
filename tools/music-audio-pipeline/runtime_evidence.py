@@ -775,7 +775,9 @@ def scoped_macho_dependencies(root, contract):
                 if matches: edge['declaredCandidateIds']=matches
                 edges.append(edge)
         except (ValueError,OSError,UnicodeError,struct.error):
-            edges.append({'parent':entry['id'],'status':'OBSERVED_UNVERIFIED','reason':'invalid-or-missing-native-image'})
+            edges.append({'parent':entry['id'],'status':'OBSERVED_UNVERIFIED',
+                'reason':'global-native-edge-budget' if len(edges) >= 4096 else 'invalid-or-missing-native-image'})
+            if len(edges) > 4096: break
     return {'version':3,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_AND_DECLARED_RPATHS_ONLY',
         'contractRevision':evidence_digest(contract),
         'reason':'declared-static-routing-and-exact-loaded-presence-do-not-prove-runtime-loader-edges'}

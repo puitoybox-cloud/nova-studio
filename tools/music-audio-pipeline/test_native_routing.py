@@ -157,6 +157,14 @@ class NativeRoutingTests(unittest.TestCase):
         for offset, size, limit in ((0, 1024*1024+1, 99999999), (-1, 1, 4), (3, 2, 4)):
             with self.assertRaises(ValueError): evidence._native_read(stream, offset, size, limit)
             self.assertEqual(stream.tell(), 0)
+    def test_graph_budget_has_one_terminal_failure_no_partial_success(self):
+        parent = self.entry('parent.so', macho(names=('@executable_path/undeclared',)*4097), 'parent')
+        second = self.entry('second.so', macho(names=()), 'second')
+        contract = {'native': [parent, second], 'architecture': 'x86_64', 'buildRevision': 'fixture'}
+        result = evidence.scoped_macho_dependencies(self.root, contract)
+        self.assertEqual(len(result['edges']), 4097)
+        self.assertEqual(result['edges'][-1]['reason'], 'global-native-edge-budget')
+        self.assertFalse(result['complete']); self.assertTrue(all(not e.get('runtimeEdgeVerified') for e in result['edges']))
     def test_scoped_unexpected_extension_and_duplicate_handle(self):
         declared = self.entry('child.so', b'fixture', 'child')
         contract = {'native': [declared], 'architecture': 'x86_64', 'namespaces': ['owned']}
