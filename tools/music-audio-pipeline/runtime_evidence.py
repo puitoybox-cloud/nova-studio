@@ -366,9 +366,9 @@ class ScopedLoaderWindow:
             raise PermissionError('scoped-loader-event-budget')
         target = args[0] if args else None
         if event != 'ctypes.dlopen': target = getattr(target, '_name', None)
-        # Only lexical matching against authenticated declared artifacts. Never
-        # resolve or probe the caller's undeclared path or load a fallback library.
-        candidates = window.paths.get(str(_lexical_native_path(target)), []) if isinstance(target, str) else []
+        # Exact trusted spellings only: normalizing caller dot/parent components
+        # could change symlink-aware loader meaning. Never probe caller paths.
+        candidates = window.paths.get(target, []) if isinstance(target, str) and len(target) <= 4096 else []
         identity = candidates[0]['id'] if len(candidates) == 1 else None
         allowed = identity in window.requested if identity is not None else False
         record = {'sequence': len(window.events), 'event': event, 'child': identity,

@@ -32,6 +32,13 @@ class LoaderWindowTests(unittest.TestCase):
         self.assertEqual(entry['artifactDigest'], self.entry['digest'])
         self.assertFalse(entry['runtimeEdgeVerified']); self.assertFalse(entry['actualDispatchVerified'])
         self.assertEqual(receipt['hiddenTransientCoverage'], 'UNVERIFIED')
+    def test_alternate_parent_dot_and_oversized_paths_are_not_normalized(self):
+        for target in (str(self.root)+'/undeclared/../child.so',
+                       str(self.root)+'/./child.so', 'x'*4097):
+            with self.window() as window, self.assertRaises(PermissionError): sys.audit('ctypes.dlopen', target)
+            self.assertEqual(window.events[0]['classification'], 'UNEXPECTED_ATTEMPT')
+            self.assertNotIn(target, json.dumps(window.snapshot()))
+
     def test_changed_artifact_and_unrequested_fail_closed(self):
         self.path.write_bytes(b'changed')
         with self.window() as window, self.assertRaises(PermissionError): sys.audit('ctypes.dlopen', str(self.path))
