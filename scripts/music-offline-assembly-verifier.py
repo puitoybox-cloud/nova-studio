@@ -6,40 +6,13 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent.parent/'tools/music-audio-pipeline'))
 from runtime_inventory import bootstrap
-from scoped_closure import load_contract,verify_assembly,validate_graph
+from scoped_closure import load_contract,verify_assembly
 
 
 def inspect(root,manifest,anchor,build):
     runtime=bootstrap(manifest,anchor,build,root)
     graph=load_contract(root,runtime.manifest)
-    nodes=validate_graph(graph)
-    report=verify_assembly(root,graph)
-    required={e['id'] for kind in ('models','dependencies','assets') for e in runtime.manifest[kind]}-{'runtime-closure'}
-    missing=sorted(required-set(nodes))
-    mismatches=[]
-    for kind in ('models','dependencies','assets'):
-        bindings={e['id']:e for e in runtime.bindings[kind]}
-        for expected in runtime.manifest[kind]:
-            identity=expected['id']
-            if identity=='runtime-closure':continue  # Independently anchored, no self-hash cycle.
-            node=nodes.get(identity)
-            binding=bindings.get(identity)
-            if identity=='runtime-config':binding={'path':'runtime-config.json'}
-            if binding is None:
-                for model in runtime.bindings['models']:
-                    binding=next((e for e in model.get('companions',[]) if e['id']==identity),binding)
-                binding=next((e for e in runtime.bindings['native'] if e['id']==identity),binding)
-                for dependency in runtime.bindings['dependencies']:
-                    binding=next((e for e in dependency.get('native',[]) if e['id']==identity),binding)
-            if node is None or binding is None:continue
-            file=next((f for f in node['files'] if f['path']==binding['path']),None)
-            if file is None or file['digest']!=expected['digest'] or ('byteLength' in expected and file['byteLength']!=expected['byteLength']):mismatches.append(identity)
-            if kind=='dependencies' and (node['kind']!='PYTHON_DISTRIBUTION' or node['version']!=expected['version']):mismatches.append(identity)
-            if kind=='models' and (node['kind']!='MODEL' or node['version']!=expected['revision']):mismatches.append(identity)
-    report['manifestIdentityMismatches']=sorted(set(mismatches))
-    report['missingManifestIdentities']=missing
-    report['trustedManifest']='EXTERNALLY_ANCHORED'
-    if missing or mismatches:report.update(status='OPEN',complete=False)
+    report=verify_assembly(root,graph,runtime=runtime)
     from runtime_evidence import assembly_evidence
     report['artifactAssemblyComplete'] = report['complete']
     report['runtimeAssembly'] = assembly_evidence(runtime)

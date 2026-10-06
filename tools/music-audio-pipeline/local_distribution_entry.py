@@ -618,7 +618,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
     if runtime.manifest['helper']['sourceDigest'] != runtime.expected('assets', 'helper-source')['digest']:
         raise ValueError('launcher-helper-source-mismatch')
     graph = load_contract(runtime.root, runtime.manifest)
-    artifact_report = verify_assembly(runtime.root, graph)
+    artifact_report = verify_assembly(runtime.root, graph, runtime=runtime)
     if not artifact_report['complete']:
         raise ValueError('launcher-artifact-assembly-incomplete')
     from runtime_evidence import load as load_evidence, assembly_evidence
@@ -641,6 +641,8 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                 raise ValueError('launcher-source-changed')
         if runtime.resolve_executable('python-runtime', sys.executable) != executable:
             raise ValueError('launcher-runtime-changed')
+        if not verify_assembly(runtime.root, graph, runtime=runtime)['complete']:
+            raise ValueError('launcher-artifact-assembly-changed')
         runtime.recheck()
     # Strict Helper boot will independently authenticate and refuse incomplete runtime evidence.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_'))}
