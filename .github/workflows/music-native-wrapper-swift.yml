@@ -55,7 +55,7 @@ jobs:
 
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build
 
       - name: Record actual native package architecture and linkage
         working-directory: tools/music-native-wrapper
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           MAC_APP="build/DerivedData/Build/Products/Debug/Music Studio.app"
-          IPAD_APP="build/Build/Products/Debug-iphonesimulator/Music Studio.app"
+          IPAD_APP="build/iPadDerivedData/Build/Products/Debug-iphonesimulator/Music Studio.app"
           python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$MAC_APP" --scope PACKAGE_OBSERVATION > macos-package-evidence.json
           python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$IPAD_APP" --scope PACKAGE_OBSERVATION > ipad-simulator-package-evidence.json
           MAC_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$MAC_APP/Contents/Info.plist")
