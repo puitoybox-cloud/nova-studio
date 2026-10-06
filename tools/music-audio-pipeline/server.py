@@ -529,7 +529,10 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
         raise RuntimeError("分離されたStemからMIDIノートを生成できませんでした。")
 
     output_path = work_dir / f"{source.stem}_stems.mid"
-    output.save(str(output_path))
+    if STRICT_BOOTSTRAP:
+        current_processing_calls().call('result', 'merged-midi-writer', output.save, str(output_path))
+    else:
+        output.save(str(output_path))
     return output_path, generated, counts
 
 

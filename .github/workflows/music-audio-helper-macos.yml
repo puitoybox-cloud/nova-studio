@@ -64,6 +64,31 @@ jobs:
           cp tools/music-audio-pipeline/requirements.txt "$RESOURCES/pipeline/requirements.txt"
           cp tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command "$RESOURCES/pipeline/STOP_AUDIO_PIPELINE.command"
           chmod +x "$RESOURCES/pipeline/STOP_AUDIO_PIPELINE.command"
+          # Inspect actual packaged bytes before signing; source hashes are not approval anchors.
+          python3 - "$APP_ROOT" <<'PY'
+          import hashlib, json, sys
+          from pathlib import Path
+          source = Path('tools/music-audio-pipeline').resolve()
+          sys.path.insert(0, str(source))
+          from local_distribution_entry import SOURCES
+          bundle = Path(sys.argv[1]) / 'Contents'
+          entries = []
+          resources = [(source / name, bundle / 'Resources/pipeline' / name)
+                       for name in sorted(set(SOURCES.values()) | {'helper_identity.py', 'requirements.txt', 'STOP_AUDIO_PIPELINE.command'})]
+          resources += [(source / 'mac-app/Info.plist', bundle / 'Info.plist'),
+                        (source / 'mac-app/NovaMusicAudioHelper', bundle / 'MacOS/NovaMusicAudioHelper')]
+          for original, packaged in resources:
+              raw = packaged.read_bytes()
+              if raw != original.read_bytes():
+                  raise SystemExit('Packaged Helper source mismatch: ' + packaged.name)
+              entries.append({'path': str(packaged.relative_to(bundle)), 'byteLength': len(raw),
+                              'digest': hashlib.sha256(raw).hexdigest(), 'status': 'OBSERVED_PACKAGE_BYTES'})
+          report = {'entries': entries, 'approvedAnchor': 'UNVERIFIED',
+                    'bundledPythonRuntime': False, 'bundledMLModels': False,
+                    'bundledMLNativeLibraries': False, 'publicationEligible': False}
+          (bundle / 'Resources/packaged-source-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
+          print(json.dumps(report))
+          PY
           /usr/bin/plutil -lint "$CONTENTS/Info.plist"
           /usr/bin/codesign --force --deep --sign - "$APP_ROOT"
           /usr/bin/codesign --verify --deep --strict "$APP_ROOT"

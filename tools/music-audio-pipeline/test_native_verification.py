@@ -257,8 +257,55 @@ class NetworkLauncherTests(unittest.TestCase):
                 self.assertEqual(result['browserEnvelope']['trust'],{'manifestDigest':'a'*64,'buildRevision':'build'})
                 self.assertEqual(json.loads(result['browserEnvelope']['runtimeConfigText']),runtime.bindings)
                 self.assertFalse(result['publicationEligible'])
+                result['_source_preflight']()
                 (root/'server.py').write_bytes(b'wrong')
+                with self.assertRaisesRegex(ValueError, 'launcher-source-changed'):
+                    result['_source_preflight']()
                 with self.assertRaises(ValueError):launcher.prepare(root,root/'manifest','a'*64,'build',pipeline=root)
+    def test_every_actual_launcher_adapter_is_rechecked_before_spawn(self):
+        import local_distribution_entry as launcher
+        for changed_identity, changed_relative in launcher.SOURCES.items():
+            with self.subTest(source=changed_identity), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder); assets={}
+                for identity, relative in launcher.SOURCES.items():
+                    artifact=entry(root,relative); artifact.update(id=identity,revision='1'); assets[identity]=artifact
+                runtime=SimpleNamespace(root=root,manifest={'helper':{'sourceDigest':assets['helper-source']['digest']}},
+                    bindings={'version':1,'models':[],'dependencies':[],'native':[],'assets':[]},
+                    expected=lambda kind,identity:assets[identity],recheck=lambda:None,
+                    resolve_executable=lambda identity,path:str(path))
+                with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),\
+                     patch.object(launcher,'bootstrap',return_value=runtime),\
+                     patch.object(launcher,'load_contract',return_value={}),\
+                     patch.object(launcher,'verify_assembly',return_value={'complete':True}),\
+                     patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
+                     patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
+                    result=launcher.prepare(root,root/'manifest','a'*64,'build',pipeline=root)
+                # Same-length change must fail on the retained prepared source generation.
+                path=root/changed_relative
+                path.write_bytes(b'x'*path.stat().st_size)
+                from test_production_lifecycle import LifecycleTests
+                fixture=LifecycleTests(); lifecycle=fixture.make()
+                lifecycle.prepared['_source_preflight']=result['_source_preflight']
+                with patch.object(lifecycle,'popen') as spawn:
+                    with self.assertRaisesRegex(ValueError,'launcher-source-changed'):
+                        lifecycle.start()
+                    spawn.assert_not_called()
+                self.assertEqual(lifecycle.state,'FAILED')
+                self.assertTrue(lifecycle.server.closed)
+                self.assertFalse(lifecycle.eligibility['processingEligible'])
+    def test_prepared_source_symlink_substitution_is_rejected(self):
+        import local_distribution_entry as launcher
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder); assets={}
+            for identity,relative in launcher.SOURCES.items():
+                artifact=entry(root,relative); artifact.update(id=identity,revision='1'); assets[identity]=artifact
+            (root/'demucs_child.py').rename(root/'other.py')
+            (root/'demucs_child.py').symlink_to(root/'other.py')
+            runtime=SimpleNamespace(expected=lambda kind,identity:assets[identity])
+            with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),\
+                 patch.object(launcher,'bootstrap',return_value=runtime):
+                with self.assertRaisesRegex(ValueError,'unsafe-runtime-path'):
+                    launcher.prepare(root,'manifest','a'*64,'build',pipeline=root)
     def test_distribution_entry_incomplete_assembly_and_stale_build(self):
         import local_distribution_entry as launcher
         with tempfile.TemporaryDirectory() as folder:
