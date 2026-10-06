@@ -432,6 +432,52 @@ def scoped_load_transition(before, after):
         'hiddenLoads': 'UNVERIFIED', 'runtimeEdges': 'UNVERIFIED'}
 
 
+class ScopedPythonDispatch:
+    """Exact code-object entry/return observation on the owned call thread only.
+
+    This is cooperative Python evidence, never internal native execution proof.
+    Existing profilers are refused rather than replaced or chained.
+    """
+    def __init__(self, function, call_id):
+        self.code = getattr(function, '__code__', None)
+        self.call_id = call_id
+        self.entries = 0; self.returns = 0; self.active = 0
+        self.overflow = False; self.changed = False
+        self.hook = self.observe
+
+    def observe(self, frame, event, arg):
+        if frame.f_code is not self.code: return
+        if event == 'call':
+            if self.entries >= 256:
+                self.overflow = True
+                raise PermissionError('python-dispatch-budget')
+            self.entries += 1; self.active += 1
+        elif event == 'return':
+            self.returns += 1; self.active -= 1
+
+    def __enter__(self):
+        if sys.getprofile() is not None: raise ValueError('occupied-python-dispatch-observer')
+        # Builtins/callable objects have no exact Python code boundary here.
+        if self.code is not None: sys.setprofile(self.hook)
+        return self
+
+    def __exit__(self, *_):
+        if self.code is not None:
+            self.changed = sys.getprofile() is not self.hook
+            sys.setprofile(None)
+
+    def snapshot(self, completed=False):
+        observed = (self.code is not None and self.entries > 0 and self.entries == self.returns
+            and self.active == 0 and not self.overflow and not self.changed and completed)
+        return {'version': 1, 'callIdentity': self.call_id,
+            'scope': 'OWNED_CALL_THREAD_EXACT_PYTHON_CODE', 'entryCount': self.entries,
+            'returnCount': self.returns, 'completed': completed, 'overflow': self.overflow,
+            'observerChanged': self.changed, 'pythonDispatch': 'OBSERVED' if observed else 'UNVERIFIED',
+            'status': 'OBSERVED_UNVERIFIED', 'actualNativeDispatch': 'UNVERIFIED',
+            'excluded': ['internal-c-cpp-dispatch', 'torch-kernels', 'worker-threads',
+                'cached-native-symbols', 'mapped-memory-integrity']}
+
+
 class ProcessingReceipt:
     """Runtime-scoped call receipts, not predictions of unexecuted backend stages."""
     def __init__(self, root, contract):
@@ -489,9 +535,14 @@ class ProcessingReceipt:
             'implementation': value['actualImplementation'], 'artifact': artifact})
         self.entries.append(value)
         window = ScopedLoaderWindow(self.root, self.contract, requested_ids, value['callIdentity'])
+        dispatch = ScopedPythonDispatch(function, value['callIdentity'])
+        completed = False
         try:
-            with window:
+            with window, dispatch:
                 result = function(*args, **kwargs)
+            completed = True
+            if dispatch.changed or dispatch.overflow:
+                raise ValueError('changed-or-overflow-python-dispatch-observer')
             if window.blocked or window.overflow:
                 raise ValueError('blocked-scoped-loader-operation')
         except BaseException:
@@ -499,6 +550,8 @@ class ProcessingReceipt:
             raise
         finally:
             value['loaderCallEvidence'] = window.snapshot()
+            value['dispatchEvidence'] = dispatch.snapshot(completed and value['status'] != 'FAILED')
+            value['dispatchEvidenceDigest'] = evidence_digest(value['dispatchEvidence'])
         mapped = mapped_native_receipts(self.root, self.contract) if self.contract.get('native') else {'complete': False, 'entries': []}
         if evidence_digest(self.contract) != self.contract_revision:
             value['status'] = 'FAILED'
@@ -1183,6 +1236,15 @@ class BoundProcessingReceipt:
             if loads.get('unresolved'): reasons.append('unresolved-scoped-native-load')
             if loads.get('complete') is not True: reasons.append('scoped-native-load-coverage-incomplete')
         for call in all_calls:
+            dispatch = call.get('dispatchEvidence')
+            if call.get('callIdentity') is not None and dispatch is None:
+                reasons.append('missing-actual-dispatch-evidence')
+            if dispatch is not None and (dispatch.get('callIdentity') != call.get('callIdentity') or
+                    call.get('dispatchEvidenceDigest') != evidence_digest(dispatch) or
+                    dispatch.get('pythonDispatch') != 'OBSERVED' or dispatch.get('completed') is not True or
+                    dispatch.get('observerChanged') or dispatch.get('overflow') or
+                    dispatch.get('actualNativeDispatch') != 'VERIFIED'):
+                reasons.append('partial-or-invalid-actual-dispatch-evidence')
             loader = call.get('loaderCallEvidence')
             transition = call.get('nativeLoadTransition')
             if loader is not None and (loader.get('blocked') or loader.get('overflow') or

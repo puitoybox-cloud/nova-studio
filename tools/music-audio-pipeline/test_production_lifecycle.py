@@ -134,8 +134,69 @@ class CodecReceiptTests(unittest.TestCase):
             value=receipt.snapshot();self.assertEqual(value['entries'][0]['artifactDigest'],entry['digest'])
             self.assertTrue(value['entries'][0]['completed']);self.assertFalse(value['complete'])
             self.assertEqual(value['entries'][0]['nativeIdentity'],'UNVERIFIED')
+            dispatch=value['entries'][0]['dispatchEvidence']
+            self.assertEqual(dispatch['pythonDispatch'],'OBSERVED')
+            self.assertEqual(dispatch['entryCount'],1)
+            self.assertEqual(dispatch['returnCount'],1)
+            self.assertEqual(dispatch['callIdentity'],value['entries'][0]['callIdentity'])
+            self.assertEqual(dispatch['actualNativeDispatch'],'UNVERIFIED')
     def test_wrong_artifact_and_external_fallback_blocked(self):
         fn,receipt,entry=self.make();entry['digest']='0'*64
         with self.assertRaises(ValueError):receipt.call('encoder','writer',fn)
         fn,receipt,_=self.make()
         with self.assertRaises(ValueError):receipt.call('decoder','ffmpeg',fn,fallback=True)
+
+
+class ActualDispatchTests(unittest.TestCase):
+    def window(self, function):
+        from runtime_evidence import ScopedPythonDispatch
+        return ScopedPythonDispatch(function, 'fixture-call')
+
+    def test_disk_presence_without_invocation_is_unverified(self):
+        def backend(): return 1
+        with self.window(backend) as window: pass
+        self.assertEqual(window.snapshot(True)['pythonDispatch'],'UNVERIFIED')
+
+    def test_other_callable_does_not_prove_requested_dispatch(self):
+        def backend(): return 1
+        def other(): return 2
+        with self.window(backend) as window: other()
+        self.assertEqual(window.snapshot(True)['entryCount'],0)
+
+    def test_exception_is_not_successful_dispatch(self):
+        def backend(): raise RuntimeError('fixture')
+        with self.assertRaises(RuntimeError):
+            with self.window(backend) as window: backend()
+        self.assertEqual(window.snapshot(False)['pythonDispatch'],'UNVERIFIED')
+
+    def test_existing_profiler_preserved(self):
+        import sys
+        def hook(*args): pass
+        sys.setprofile(hook)
+        try:
+            with self.assertRaisesRegex(ValueError,'occupied'):
+                with self.window(lambda: None): pass
+            self.assertIs(sys.getprofile(),hook)
+        finally: sys.setprofile(None)
+
+    def test_backend_disables_observer_rejected_and_released(self):
+        import sys
+        def backend(): sys.setprofile(None)
+        with self.window(backend) as window: backend()
+        self.assertTrue(window.snapshot(True)['observerChanged'])
+        self.assertEqual(window.snapshot(True)['pythonDispatch'],'UNVERIFIED')
+        self.assertIsNone(sys.getprofile())
+
+    def test_builtin_native_boundary_remains_unverified(self):
+        with self.window(len) as window: len([])
+        self.assertEqual(window.snapshot(True)['pythonDispatch'],'UNVERIFIED')
+
+    def test_recursion_budget_and_cleanup(self):
+        import sys
+        def backend(n):
+            if n: return backend(n-1)
+            return 0
+        with self.assertRaisesRegex(PermissionError,'budget'):
+            with self.window(backend) as window: backend(257)
+        self.assertTrue(window.snapshot(False)['overflow'])
+        self.assertIsNone(sys.getprofile())

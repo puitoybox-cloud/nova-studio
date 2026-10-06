@@ -285,7 +285,12 @@ class OfflineRuntimeGuard:
                         'curl_multi_perform', 'CFReadStreamCreateForHTTPRequest', 'socketpair',
                         'connectx', 'sendmmsg', 'res_query', 'res_search', 'getaddrinfo_a',
                         'recv', 'recvfrom', 'recvmsg', 'accept', 'accept4', 'listen', 'bind',
-                        'SSL_connect', 'SSL_write', 'BIO_new_connect', 'syscall'}:
+                        'SSL_connect', 'SSL_write', 'BIO_new_connect', 'syscall',
+                        'SSL_read', 'SSL_do_handshake', 'SSL_write_ex', 'SSL_read_ex',
+                        'BIO_new_ssl_connect', 'BIO_new_dgram', 'curl_easy_send', 'curl_easy_recv',
+                        'curl_multi_socket_action', 'res_nquery', 'res_nsearch', 'gethostbyaddr',
+                        'CFHostStartInfoResolution', 'CFReadStreamOpen', 'CFWriteStreamOpen',
+                        'nw_connection_start', 'nw_connection_send', 'nw_connection_receive'}:
                 with self.observation_lock:
                     self.observed['ctypes.network_symbol_lookup'] = min(1000000,
                         self.observed.get('ctypes.network_symbol_lookup', 0)+1)
