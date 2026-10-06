@@ -71,6 +71,21 @@ def load(runtime,contract,expected,nonce):
     return model,receipt
 
 
+def soundfile_only_save(save, path, *args, **kwargs):
+    """Keep Demucs 4.0.1 WAV output on the declared soundfile codec.
+
+    Upstream save_audio calls torchaudio.save without a backend. Its dispatcher
+    can otherwise choose FFmpeg before soundfile, bypassing our encoder receipt.
+    No backend installation, format fallback, or license approval happens here.
+    """
+    if '://' in str(path) or Path(path).suffix.lower() != '.wav':
+        raise ValueError('strict-stem-format-not-supported')
+    if kwargs.get('backend') not in (None, 'soundfile'):
+        raise ValueError('strict-stem-backend-not-supported')
+    kwargs['backend'] = 'soundfile'
+    return save(path, *args, **kwargs)
+
+
 def process(model,binding,source,output,codec=None,receipt=None):
     from demucs import separate
     import torchaudio
@@ -79,10 +94,12 @@ def process(model,binding,source,output,codec=None,receipt=None):
     original_writer = getattr(separate, 'save_audio', None)
     original_apply = getattr(separate, 'apply_model', None)
     original_sf_write = None
+    original_ta_save = None
     if receipt is not None:
         if codec is None or original_apply is None or original_writer is None: raise ValueError('missing-demucs-processing-backend')
         import soundfile
         original_sf_write = soundfile.write
+        original_ta_save = torchaudio.save
     separate.get_model_from_args=lambda args:model
     def local_track(track,audio_channels,samplerate):
         # No FFmpeg/PATH fallback. All subprocesses in this child are forbidden.
@@ -114,17 +131,20 @@ def process(model,binding,source,output,codec=None,receipt=None):
             if actual_model is not model: raise ValueError('demucs-stem-model-replaced')
             return receipt.call('stem', 'demucs-retained-model', original_apply, actual_model, *args, **kwargs)
         separate.apply_model = observed_apply
-        def observed_sf_write(path, *args, **kwargs):
-            if '://' in str(path): raise ValueError('remote-codec-output')
-            return receipt.call('encoder', 'soundfile-output', original_sf_write, path, *args,
+        def observed_sf_write(file, *args, **kwargs):
+            # torchaudio 2.2.2 calls soundfile.write(file=..., data=...).
+            if '://' in str(file): raise ValueError('remote-codec-output')
+            return receipt.call('encoder', 'soundfile-output', original_sf_write, file, *args,
                 native_ids=codec['nativeIds'], **kwargs)
         soundfile.write = observed_sf_write
+        torchaudio.save = lambda path, *args, **kwargs: soundfile_only_save(original_ta_save, path, *args, **kwargs)
     try:separate.main(['-n',binding['modelName'],'--repo',str(binding['repository']),'-o',str(output),str(source)])
     finally:
         separate.get_model_from_args=original_loader;separate.load_track=original_track
         if receipt is not None:
             separate.save_audio=original_writer; separate.apply_model=original_apply
             if original_sf_write is not None: soundfile.write=original_sf_write
+            if original_ta_save is not None: torchaudio.save=original_ta_save
     return receipt.snapshot() if receipt is not None else None
 
 
