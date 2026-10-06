@@ -1,12 +1,14 @@
 import Foundation
 import WebKit
 
-public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
+public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScriptMessageHandlerWithReply {
     public let webView: WKWebView
     public let configuration: MusicStudioAppConfiguration
     public private(set) var lifecycleState = "PREPARING"
     public private(set) var ownedLifecycle: MusicStudioOwnedLifecycle?
     private let ownedTransport = MusicStudioOwnedControlTransport()
+    private var renewalWork: DispatchWorkItem?
+    private var automaticRenewals = 0
     private var midiCoordinator: NativeMidiCoordinator?
     private let platform: String
 
@@ -38,6 +40,12 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
             ownedLifecycle = try? MusicStudioOwnedLifecycle(origin: origin, session: session, credential: credential)
         }
         webView.navigationDelegate = self
+        if ownedLifecycle != nil {
+            webConfiguration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: "novaOwnedProcessing")
+            webConfiguration.userContentController.addUserScript(WKUserScript(source:
+                "Object.defineProperty(window, '__NOVA_OWNED_PROCESSING', {value:Object.freeze({authorize:value=>window.webkit.messageHandlers.novaOwnedProcessing.postMessage({action:'authorize',...value}),accept:value=>window.webkit.messageHandlers.novaOwnedProcessing.postMessage({action:'accept',...value})}),writable:false,configurable:false});",
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
     }
 
     public func start() {
@@ -54,20 +62,84 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate {
     /// Explicit Swift owner API; page messages cannot choose request/result authority.
     public func ownedCommand(_ action: String, request: String? = nil,
                              input: MusicStudioOutputIdentity? = nil, outputBytes: Data? = nil,
+                             expectedInventory: String? = nil, processingContract: String? = nil,
                              completion: @escaping (Bool) -> Void) {
         guard let owner = ownedLifecycle else { completion(false); return }
+        if ["result","stop"].contains(action) { renewalWork?.cancel(); renewalWork = nil }
         do {
-            let message = try owner.command(action, request: request, input: input, outputBytes: outputBytes)
+            let message = try owner.command(action, request: request, input: input, outputBytes: outputBytes, expectedInventory: expectedInventory, processingContract: processingContract)
             ownedTransport.send(message) { [weak self] result in
                 DispatchQueue.main.async {
-                    do { try owner.receive(result.get()); self?.lifecycleState = owner.state; completion(true) }
+                    do {
+                        try owner.receive(result.get()); self?.lifecycleState = owner.state
+                        if action == "authorize" { self?.scheduleOwnedRenewal() }
+                        completion(true)
+                    }
                     catch { owner.fail(); self?.lifecycleState = "FAILED"; completion(false) }
                 }
             }
         } catch { completion(false) }
     }
 
+    private func scheduleOwnedRenewal() {
+        renewalWork?.cancel()
+        guard automaticRenewals < 2, ownedLifecycle?.state == "PROCESSING" else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.ownedLifecycle?.state == "PROCESSING", self.automaticRenewals < 2 else { return }
+            self.ownedCommand("renew") { ok in
+                guard ok else { self.ownedLifecycle?.fail(); self.lifecycleState = "FAILED"; return }
+                self.automaticRenewals += 1; self.scheduleOwnedRenewal()
+            }
+        }
+        renewalWork = work
+        DispatchQueue.main.asyncAfter(deadline:.now() + 15,execute:work)
+    }
+
+    /// Only the main frame at the exact approved local origin can request an owned admission.
+    /// The private control capability stays in Swift. The page receives a one-shot ticket.
+    public func userContentController(_ userContentController: WKUserContentController,
+                                      didReceive message: WKScriptMessage,
+                                      replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.frameInfo.isMainFrame, let url = message.frameInfo.request.url,
+              configuration.allows(url), url.scheme == "http", url.host == "127.0.0.1",
+              url.port == configuration.startURL.port, let owner = ownedLifecycle,
+              let value = message.body as? [String: Any], let action = value["action"] as? String else {
+            replyHandler(nil, "foreign-owned-processing-frame"); return
+        }
+        if action == "authorize" {
+            guard Set(value.keys) == Set(["action","request","input","expectedInventory","processingContract"]),
+                  let request = value["request"] as? String, let input = value["input"] as? [String: Any],
+                  Set(input.keys) == Set(["digest","byteLength"]), let digest = input["digest"] as? String,
+                  let length = input["byteLength"] as? Int, let expected = value["expectedInventory"] as? String,
+                  let contract = value["processingContract"] as? String else { replyHandler(nil,"invalid-owned-authorization"); return }
+            ownedCommand("authorize",request:request,input:MusicStudioOutputIdentity(digest:digest,byteLength:length),
+                         expectedInventory:expected,processingContract:contract) { ok in
+                guard ok, let auth = owner.authorization else { replyHandler(nil,"owned-authorization-denied"); return }
+                replyHandler(["ticket":auth.ticket,"request":auth.request,"session":auth.session],nil)
+            }
+        } else if action == "accept" {
+            guard Set(value.keys) == Set(["action","midiBase64"]), let encoded = value["midiBase64"] as? String,
+                  encoded.utf8.count <= 89478488, let bytes = Data(base64Encoded: encoded),
+                  bytes.count <= 64*1024*1024 else { replyHandler(nil,"invalid-owned-output"); return }
+            ownedCommand("result") { [weak self] ok in
+                guard ok, let self else { replyHandler(nil,"owned-result-denied"); return }
+                self.ownedCommand("accept",outputBytes:bytes) { ok in
+                    guard ok else { replyHandler(nil,"owned-output-denied"); return }
+                    self.ownedCommand("stop") { stopped in
+                        replyHandler(stopped ? ["accepted":true] : nil, stopped ? nil : "owned-stop-denied")
+                    }
+                }
+            }
+        } else { replyHandler(nil,"unknown-owned-processing-action") }
+    }
+
+    public func receiveOwnedShutdown(_ data: Data) throws {
+        guard let owner = ownedLifecycle else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        try owner.receiveShutdown(data); lifecycleState = owner.state
+    }
+
     public func stop() {
+        renewalWork?.cancel(); renewalWork = nil
         if let owner = ownedLifecycle {
             do {
                 let request = try owner.command("stop")

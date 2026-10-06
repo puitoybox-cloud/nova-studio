@@ -236,7 +236,7 @@
       binding?.session!==session||binding.request!==request||identityText(binding.input)!==identityText(input))throw Error('invalid-processing-receipt-binding');
     const evidence=inventory?.runtimeEvidence||{};
     const identities={inventoryRevision:stable(inventory),modelIdentity:inventory?.models||[],codecIdentity:evidence.codec||{},
-      nativeIdentity:Object.fromEntries(['mappedNative','dynamicNativeGraph','transitiveNativeObservation','nativeClosure'].map(key=>[key,evidence[key]??null])),networkIdentity:evidence.network||{}};
+      nativeIdentity:Object.fromEntries(['mappedNative','dynamicNativeGraph','transitiveNativeObservation','nativeClosure','scopedNativeLoads'].map(key=>[key,evidence[key]??null])),networkIdentity:evidence.network||{}};
     for(const [key,value] of Object.entries(identities))if(binding[key]!==await hash(value))throw Error('stale-processing-receipt:'+key);
     const required=['decoder','resample','model','inference','stem','encoder','result'];
     if(!Array.isArray(receipt.stages)||receipt.stages.length!==required.length||required.some(stage=>{
@@ -259,13 +259,20 @@
     if(typeof file?.size==='number'&&(file.size<=0||file.size>MAX_AUDIO_BYTES)){
       throw Error('音声ファイルは空でない500 MiB以下のファイルを選んでください。');
     }
-    let request=null,input=null;
+    let request=null,input=null,authorization=null;
     if(localSession){
       if(file.size>MAX_MIDI_BYTES)throw Error('strict-browser-input-hash-budget');
       if(!root.crypto?.getRandomValues||!root.crypto?.subtle||typeof file.arrayBuffer!=='function')throw Error('processing-identity-unavailable');
       request=Array.from(root.crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
       input={digest:Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',await file.arrayBuffer())),x=>x.toString(16).padStart(2,'0')).join(''),byteLength:file.size};
       check();
+      const owner=root.__NOVA_OWNED_PROCESSING;
+      if(typeof owner?.authorize!=='function'||typeof owner?.accept!=='function')throw Error('missing-swift-processing-authorization');
+      const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([key])=>!['cache','processingCalls'].includes(key)).map(([key,item])=>[key,stable(item)])):value;
+      const expectedInventory=Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(identityText(stable(health.runtimeIdentity.actualInventory))))),x=>x.toString(16).padStart(2,'0')).join('');
+      authorization=await owner.authorize({request,input,expectedInventory,processingContract:health.runtimeIdentity.actualInventory.runtimeEvidence?.contractDigest});
+      check();
+      if(authorization?.session!==localSession||authorization?.request!==request||!/^[a-f0-9]{64}$/.test(authorization?.ticket||''))throw Error('foreign-processing-authorization');
     }
     let response;
     try{response=await root.fetch(`${ENDPOINT}/process`,{
@@ -275,7 +282,7 @@
         'Content-Type':String(file.type||'application/octet-stream'),
         'X-Nova-Audio-Pipeline':'1',
         'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input')),
-        ...(localSession?{'X-Nova-Session':localSession,'X-Nova-Request':request}:{})
+        ...(localSession?{'X-Nova-Session':localSession,'X-Nova-Request':request,'X-Nova-Authorization':authorization.ticket}:{})
       },
       body:file
     })}catch(error){
@@ -289,6 +296,7 @@
       throw Error('別の版のAudio Helperが応答しています。以前のHelperをその配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、今回の製品HEADと一致するHelperソースを起動してください。');
     }
     if(!payload?.ok||!payload?.midiBase64)throw Error(String(payload?.message||'ローカル音声処理のMIDI結果を受け取れませんでした。'));
+    if(localSession){const accepted=await root.__NOVA_OWNED_PROCESSING.accept({midiBase64:payload.midiBase64});check();if(accepted?.accepted!==true)throw Error('owned-output-not-accepted')}
     return payload;
   }
 

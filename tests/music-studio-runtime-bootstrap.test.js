@@ -118,3 +118,23 @@ test('local processing rechecks fresh Helper session after successful bootstrap'
  const f=await localFixture();await f.pipeline.bootstrapLocal(f.h,{sha256:hash});f.health.lifecycleSession='old';
  await assert.rejects(f.pipeline.processAudioLocally({size:1}),/stale-helper-session/);
 });
+
+test('strict local processing without Swift authorization never uploads audio',async()=>{
+ const f=await localFixture();await f.pipeline.bootstrapLocal(f.h,{sha256:hash});
+ f.context.crypto=crypto.webcrypto;let uploads=0;const fetch=f.context.fetch;
+ f.context.fetch=async(url,options)=>{if(url.endsWith('/process'))uploads++;return fetch(url,options)};
+ await assert.rejects(f.pipeline.processAudioLocally({size:1,arrayBuffer:async()=>Buffer.from('a')}),/missing-swift-processing-authorization/);
+ assert.equal(uploads,0);
+});
+for(const mode of ['foreign','missing-ticket','valid'])test('Swift one-shot authorization '+mode+' gates request handoff',async()=>{
+ const f=await localFixture();await f.pipeline.bootstrapLocal(f.h,{sha256:hash});f.context.crypto=crypto.webcrypto;
+ // Transport fixture has no approved native contract; the Swift stub is not production authorization.
+ let uploads=0,seen=null,headers=null;const fetch=f.context.fetch;
+ f.context.__NOVA_OWNED_PROCESSING={authorize:async value=>{seen=value;return {request:value.request,session:mode==='foreign'?'f'.repeat(64):f.h.session,ticket:mode==='missing-ticket'?'invalid':'a'.repeat(64)}},accept:async()=>({accepted:true})};
+ f.context.fetch=async(url,options)=>{if(url.endsWith('/process')){uploads++;headers=options.headers;throw Error('disposable-boundary')}return fetch(url,options)};
+ await assert.rejects(f.pipeline.processAudioLocally({size:1,arrayBuffer:async()=>Buffer.from('a')}),mode==='valid'?/START_AUDIO_PIPELINE.command/:/foreign-processing-authorization/);
+ assert.equal(seen.processingContract,undefined);assert.match(seen.expectedInventory,/^[a-f0-9]{64}$/);
+ assert.equal(seen.input.digest,await hash(Buffer.from('a')));assert.equal(seen.input.byteLength,1);
+ assert.equal(uploads,mode==='valid'?1:0);
+ if(mode==='valid'){assert.equal(headers['X-Nova-Authorization'],'a'.repeat(64));assert.equal(headers['X-Nova-Request'],seen.request);assert.equal(headers['X-Nova-Session'],f.h.session)}
+});

@@ -1,4 +1,5 @@
 import XCTest
+import CryptoKit
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioOwnedLifecycleTests: XCTestCase {
@@ -119,5 +120,78 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         var rejected=false
         transport.send(remote) { result in if case .failure = result { rejected=true } }
         XCTAssertTrue(rejected)
+    }
+
+    func authorizationResponse(_ owner: MusicStudioOwnedLifecycle, input: MusicStudioOutputIdentity, mutation: String? = nil) throws -> Data {
+        var value = try XCTUnwrap(JSONSerialization.jsonObject(with:response(action:"authorize",state:"PROCESSING",sequence:1,binding:binding)) as? [String:Any])
+        var auth: [String:Any] = ["format":"NOVA_PROCESSING_AUTHORIZATION","version":1,
+            "owner":MusicStudioOwnedLifecycle.identity(Data(token.utf8)).digest,"session":token,"request":requestID,
+            "input":["digest":input.digest,"byteLength":input.byteLength],"expectedInventory":binding,
+            "processingContract":token,"bindingDigest":binding,"capabilityGeneration":0,
+            "expiresAt":1020000,"deadlineAt":1060000,"ticket":token]
+        if let mutation { auth[mutation] = String(repeating:"f",count:64) }
+        value["authorization"] = auth
+        return try JSONSerialization.data(withJSONObject:value)
+    }
+    func testExplicitAuthorizationBindsInputInventoryContractOwnerAndTicket() throws {
+        let owner = try owner();let input = MusicStudioOwnedLifecycle.identity(Data("input".utf8))
+        let message = try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with:try XCTUnwrap(message.httpBody)) as? [String:Any])
+        XCTAssertEqual(body["owner"] as? String,MusicStudioOwnedLifecycle.identity(Data(token.utf8)).digest)
+        XCTAssertEqual(body["expectedInventory"] as? String,binding)
+        try owner.receive(authorizationResponse(owner,input:input),now:now)
+        XCTAssertEqual(owner.authorization?.ticket,token);XCTAssertEqual(owner.authorization?.request,requestID)
+        XCTAssertThrowsError(try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token))
+    }
+    func testMissingAndTamperedAuthorizationCannotStartProcessing() throws {
+        let input = MusicStudioOwnedLifecycle.identity(Data("input".utf8))
+        for field in ["owner","session","request","expectedInventory","processingContract","bindingDigest","input","capabilityGeneration"] {
+            let owner = try owner()
+            _ = try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token)
+            XCTAssertThrowsError(try owner.receive(authorizationResponse(owner,input:input,mutation:field),now:now))
+            XCTAssertEqual(owner.state,"FAILED");XCTAssertNil(owner.authorization)
+        }
+        let owner = try owner()
+        XCTAssertThrowsError(try owner.command("authorize",request:requestID,input:input))
+        _ = try owner.command("authorize",request:requestID,input:input,expectedInventory:binding,processingContract:token)
+        XCTAssertThrowsError(try owner.receive(response(action:"authorize",state:"PROCESSING",sequence:1,binding:binding),now:now))
+    }
+    func shutdownEnvelope(_ payload: [String:Any]) throws -> Data {
+        let raw = try JSONSerialization.data(withJSONObject:payload,options:[.sortedKeys,.withoutEscapingSlashes])
+        let signature = HMAC<SHA256>.authenticationCode(for:raw,using:SymmetricKey(data:Data(token.utf8))).map { String(format:"%02x",$0) }.joined()
+        return try JSONSerialization.data(withJSONObject:["payload":payload,"authentication":signature])
+    }
+    func shutdownPayload() -> [String:Any] {
+        ["format":"NOVA_FINAL_LIFECYCLE_RECEIPT","version":1,
+         "owner":MusicStudioOwnedLifecycle.identity(Data(token.utf8)).digest,"session":token,
+         "request":NSNull(),"bindingDigest":NSNull(),"resultId":NSNull(),"resultDigest":NSNull(),
+         "stopDigest":token,"shutdownDigest":token,"admissionClosed":true,"remainingOwnedDescendants":NSNull(),
+         "ownedDescendantsComplete":false,"transportClosed":true,"capabilityInvalidated":true,
+         "completionState":"PARTIAL","status":"PARTIAL","complete":false]
+    }
+    func stoppedOwner() throws -> MusicStudioOwnedLifecycle {
+        let owner = try owner();_ = try owner.command("stop")
+        try owner.receive(response(action:"stop",state:"STOPPING",sequence:1),now:now);return owner
+    }
+    func testAuthenticatedPartialShutdownIsNotCompleteAndReplayRejected() throws {
+        let owner = try stoppedOwner();let data = try shutdownEnvelope(shutdownPayload())
+        try owner.receiveShutdown(data);XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
+        XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"FAILED")
+    }
+    func testForeignTamperedPrematureAndFalseCompleteShutdownRejected() throws {
+        for kind in ["foreign","tamper","complete","transport","boolean-count"] {
+            let owner = try stoppedOwner();var payload = shutdownPayload()
+            if kind == "foreign" { payload["session"] = String(repeating:"f",count:64) }
+            if kind == "complete" { payload["complete"] = true;payload["completionState"] = "COMPLETE";payload["status"] = "OBSERVED" }
+            if kind == "transport" { payload["transportClosed"] = false }
+            if kind == "boolean-count" { payload["remainingOwnedDescendants"] = false }
+            var data = try shutdownEnvelope(payload)
+            if kind == "tamper" {
+                var envelope = try XCTUnwrap(JSONSerialization.jsonObject(with:data) as? [String:Any]);envelope["authentication"] = String(repeating:"f",count:64)
+                data = try JSONSerialization.data(withJSONObject:envelope)
+            }
+            XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"FAILED")
+        }
+        XCTAssertThrowsError(try owner().receiveShutdown(shutdownEnvelope(shutdownPayload())))
     }
 }

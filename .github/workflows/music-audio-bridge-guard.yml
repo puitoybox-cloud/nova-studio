@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - name: Node regression tests
         run: node --test tests/music-studio-audio-pipeline.test.js tests/music-studio-audio-pipeline-startup.test.js tests/music-studio-audio-e2e.test.js

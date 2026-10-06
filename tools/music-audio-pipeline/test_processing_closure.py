@@ -291,12 +291,16 @@ class ProcessingHTTPTests(unittest.TestCase):
         import base64
         from http.client import HTTPConnection
         from types import SimpleNamespace
-        module=self.server_module;inventory=fixture_inventory();captured={}
+        module=self.server_module;inventory=fixture_inventory();inventory['runtimeEvidence']['contractDigest']='e'*64;captured={}
         from local_distribution_entry import OwnedResultChannel
         channel=OwnedResultChannel('a'*64,time.monotonic()+20)
-        channel.command({'session':'a'*64,'capability':channel.capability,'sequence':0,'action':'begin',
-            'request':'b'*64,'input':{'digest':hashlib.sha256(b'fixture').hexdigest(),'byteLength':7}},
+        channel.command({'session':'a'*64,'capability':channel.capability,'sequence':0,'action':'authorize','owner':channel.owner,
+            'expectedInventory':evidence.processing_binding('a'*64,'b'*64,{'digest':hashlib.sha256(b'fixture').hexdigest(),'byteLength':7},inventory)['inventoryRevision'],
+            'processingContract':'e'*64,'request':'b'*64,'input':{'digest':hashlib.sha256(b'fixture').hexdigest(),'byteLength':7}},
             inventory=inventory,eligible=True,helper_alive=True)
+        def admit(binding,ticket):
+            return channel.admit({'session':'a'*64,'capability':channel.helper_capability,'ticket':ticket,
+                'binding':binding,'processingContract':'e'*64},inventory)
         def publish(receipt):
             channel.publish({'session':'a'*64,'capability':channel.helper_capability,'receipt':receipt},inventory)
         def processor(source,work_dir):
@@ -315,11 +319,12 @@ class ProcessingHTTPTests(unittest.TestCase):
                  patch.object(module,'RUNTIME_EVIDENCE_MODULE',evidence),patch.object(module,'RUNTIME_INVENTORY',SimpleNamespace(root=Path('.'))),\
                  patch.object(module,'RUNTIME_EVIDENCE_CONTRACT',{'imports':[]}),\
                  patch.object(module,'PROCESSING_ATTEMPTS',evidence.SessionRequestRegistry('a'*64)),\
+                 patch.object(module,'admit_owned_processing',side_effect=admit),\
                  patch.object(module,'runtime_snapshot',return_value=inventory),patch.object(module,'publish_owned_result',side_effect=publish),\
                  patch.object(module,'process_audio',side_effect=processor):
                 connection=HTTPConnection('127.0.0.1',server.server_port,timeout=5)
                 connection.request('POST','/process',body=b'fixture',headers={'X-Nova-Audio-Pipeline':'1','X-Nova-File-Name':'fixture.wav',
-                    'X-Nova-Session':'a'*64,'X-Nova-Request':'b'*64})
+                    'X-Nova-Session':'a'*64,'X-Nova-Request':'b'*64,'X-Nova-Authorization':channel.authorization['ticket']})
                 response=connection.getresponse();status=response.status;payload=json.loads(response.read());connection.close()
         finally:server.shutdown();server.server_close();thread.join(timeout=5)
         self.assertFalse(captured['work'].exists());self.assertFalse(module.PROCESS_LOCK.locked())

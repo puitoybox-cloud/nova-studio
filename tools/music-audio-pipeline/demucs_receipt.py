@@ -105,19 +105,25 @@ class ChildSession:
             except Exception:self.close();raise
 
     def close(self):
+        """EOF is scoped to this owned pipe. No PID-based terminate/kill escalation."""
         self.receipt=None
         process=self.process
         if process is None:return
+        receipt={'scope':'EXPLICIT_OWNED_PIPE_ONLY','graceful':'UNVERIFIED',
+            'hardInterruption':'UNVERIFIED','ownedDescendantsComplete':False,'complete':False}
         try:
-            if process.poll() is None:process.terminate()
-            process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            process.kill();process.wait(timeout=3)
-        finally:
-            for stream in [process.stdin,process.stdout]:
-                if stream:
-                    try:stream.close()
-                    except OSError:pass
+            if process.stdin and not process.stdin.closed: process.stdin.close()
+            receipt['graceful']='OBSERVED'
+            try: process.wait(timeout=3)
+            except subprocess.TimeoutExpired: pass
+        except (OSError,ValueError): pass
+        receipt['leaderExited']=process.poll() is not None
+        self.shutdown_receipt=receipt
+        if receipt['leaderExited']:
+            if process.stdout:
+                try:process.stdout.close()
+                except OSError:pass
             reader=getattr(self,'reader',None)
             if reader and reader is not threading.current_thread():reader.join(timeout=1)
             self.process=None
+        # A live process handle is retained on timeout; descendants stay UNVERIFIED.
