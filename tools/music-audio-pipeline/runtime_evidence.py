@@ -361,8 +361,27 @@ class ProcessingReceipt:
             value['status'] = 'FAILED'
             raise
         mapped = mapped_native_receipts(self.root, self.contract) if self.contract.get('native') else {'complete': False, 'entries': []}
-        value['mappedEvidence'] = {'complete': mapped['complete'], 'entryCount': len(mapped['entries']),
-            'entriesDigest': evidence_digest(mapped['entries']), 'scope': 'EXACT_DECLARED_HANDLES_ONLY'}
+        declared_ids = {entry['id'] for entry in self.contract.get('native', [])}
+        requested_ids = list(native_ids)
+        if len(requested_ids) != len(set(requested_ids)) or any(identity not in declared_ids for identity in requested_ids):
+            value['status'] = 'FAILED'
+            raise ValueError('unexpected-processing-native-identity')
+        selected = [entry for entry in mapped['entries'] if entry['id'] in requested_ids]
+        selected_ids = {entry['id'] for entry in selected}
+        missing_ids = [identity for identity in requested_ids if identity not in selected_ids]
+        statuses = {}
+        for entry in selected:
+            statuses[entry['status']] = statuses.get(entry['status'], 0) + 1
+        native_observed = (bool(requested_ids) and not missing_ids and
+            all(entry.get('mapped') is True and entry.get('diskIntegrity') == 'VERIFIED' and
+                entry.get('architecture') == self.contract['architecture'] and
+                entry.get('status') == 'OBSERVED_UNVERIFIED' for entry in selected))
+        value['nativeIdentity'] = 'OBSERVED_UNVERIFIED' if native_observed else 'UNVERIFIED'
+        value['mappedEvidence'] = {'complete': False, 'entryCount': len(selected),
+            'entriesDigest': evidence_digest(selected), 'scope': 'REQUESTED_DECLARED_HANDLES_ONLY',
+            'requestedNativeIds': requested_ids, 'missingNativeIds': missing_ids,
+            'statusCounts': statuses, 'allRequestedObserved': native_observed,
+            'mappedIntegrity': 'UNVERIFIED'}
         value['completed'] = True
         return result
 
@@ -387,12 +406,57 @@ def processing_backend_inventory(contract, modules=None):
         {'stage': 'stem-writer', 'status': 'NOT_OBSERVED', 'reason': 'selected-writer-call-not-yet-receipted'}]}
 
 
-def scoped_macho_dependencies(root, contract):
-    """Read only declared native images' bounded Mach-O load commands.
+def _declared_native_path_index(root, entries):
+    result = {}
+    for entry in entries:
+        try:
+            absolute = resolve(root, entry['path']).resolve()
+        except (ValueError, OSError):
+            continue
+        result.setdefault(str(absolute), []).append(entry)
+    return result
 
-    Disk commands identify static dependencies, not actual mapped edges. No OS
-    image inventory, system path probing or subprocess/tool invocation occurs.
-    Fat/ELF/unknown files remain unverified. @rpath ambiguity stays unresolved.
+
+def _expand_macho_path(parent_path, value, rpaths):
+    """Resolve only loader-relative/rpath candidates; never probe system paths."""
+    parent = Path(parent_path)
+    if value.startswith('@loader_path/'):
+        return [(parent.parent / value[len('@loader_path/'):]).resolve()], 'LOADER_PATH'
+    if value.startswith('@rpath/'):
+        suffix = value[len('@rpath/'):]
+        candidates = []
+        for rpath in rpaths:
+            if rpath == '@loader_path':
+                candidates.append((parent.parent / suffix).resolve())
+            elif rpath.startswith('@loader_path/'):
+                candidates.append((parent.parent / rpath[len('@loader_path/'):] / suffix).resolve())
+        return candidates, 'RPATH_DECLARED_ONLY'
+    if value.startswith('@executable_path/'):
+        return [], 'EXECUTABLE_PATH_UNRESOLVED'
+    candidate = Path(value)
+    if candidate.is_absolute():
+        return [candidate.resolve()], 'ABSOLUTE_DECLARED_ONLY'
+    return [], 'UNSUPPORTED_LOAD_PATH'
+
+
+def _select_declared_native(root, entries, parent_path, name, rpaths):
+    index = _declared_native_path_index(root, entries)
+    candidates, mode = _expand_macho_path(parent_path, name, rpaths)
+    matches = []
+    for candidate in candidates:
+        matches.extend(index.get(str(candidate), []))
+    unique = {entry['id']: entry for entry in matches}
+    return (next(iter(unique.values())) if len(unique) == 1 else None), mode, sorted(unique)
+
+
+def scoped_macho_dependencies(root, contract):
+    """Read declared Mach-O load commands and resolve declared-only routing.
+
+    LC_RPATH is honored only when it expands through @loader_path into an
+    authenticated artifact already present in the runtime contract. Absolute
+    paths are matched only against declared artifacts. No filesystem search,
+    dyld image enumeration, subprocess, environment lookup, or system probing
+    occurs. Static routing evidence never becomes a verified runtime loader edge.
     """
     import struct
     edges = []; entries = contract['native']
@@ -410,42 +474,58 @@ def scoped_macho_dependencies(root, contract):
                 raw = stream.read(size)
                 if len(raw) != size: raise ValueError('truncated-native-load-commands')
             VERIFIER.verify(root,entry['path'],entry,identity=entry['id'],version=entry['version'],build=contract['buildRevision'])
-            offset = 0
+            commands=[]; rpaths=[]; offset=0
             for _ in range(count):
                 if offset+8 > len(raw): raise ValueError('truncated-native-command')
-                command, length = struct.unpack_from('<II', raw, offset)
+                command,length=struct.unpack_from('<II',raw,offset)
                 if length < 8 or offset+length > len(raw): raise ValueError('invalid-native-command-size')
-                if command in (0xc, 0x80000018, 0x8000001f, 0x80000023):
+                if command == 0x8000001c:  # LC_RPATH
+                    if length < 12: raise ValueError('invalid-rpath-command')
+                    name_offset=struct.unpack_from('<I',raw,offset+8)[0]
+                    if not 12 <= name_offset < length: raise ValueError('invalid-rpath-name')
+                    encoded=raw[offset+name_offset:offset+length]
+                    if b'\0' not in encoded: raise ValueError('unterminated-rpath-name')
+                    rpath=encoded.split(b'\0',1)[0].decode('utf8')
+                    if len(rpath) > 4096: raise ValueError('native-rpath-budget')
+                    rpaths.append(rpath)
+                elif command in (0xc,0x80000018,0x8000001f,0x80000023):
                     if length < 24: raise ValueError('invalid-dylib-command')
-                    name_offset = struct.unpack_from('<I',raw,offset+8)[0]
+                    name_offset=struct.unpack_from('<I',raw,offset+8)[0]
                     if not 24 <= name_offset < length: raise ValueError('invalid-dylib-name')
-                    encoded = raw[offset+name_offset:offset+length]
+                    encoded=raw[offset+name_offset:offset+length]
                     if b'\0' not in encoded: raise ValueError('unterminated-dylib-name')
-                    name = encoded.split(b'\0',1)[0].decode('utf8')
-                    # Exact loader-relative binding only; never guess @rpath or system resolution.
-                    relative = (Path(entry['path']).parent/name[len('@loader_path/'):]) if name.startswith('@loader_path/') else None
-                    matches = [e for e in entries if relative is not None and Path(e['path']) == relative]
-                    child = matches[0] if len(matches) == 1 else None
-                    status = 'UNEXPECTED_OBSERVED' if child is None else 'EXPECTED_NOT_OBSERVED'
-                    proof = None; observed = False
-                    if child is not None:
-                        loaded = scoped_loaded_library(root, child); observed = loaded['actualLoaded']
-                        try:
-                            proof = VERIFIER.verify(root,child['path'],child,identity=child['id'],version=child['version'],build=contract['buildRevision'])
-                            status = 'OBSERVED_UNVERIFIED' if observed else 'EXPECTED_NOT_OBSERVED'
-                        except FileNotFoundError: status = 'MISSING'
-                        except (OSError, ValueError): status = 'OBSERVED_UNVERIFIED'
-                    edges.append({'parent':entry['id'],'child':child['id'] if child else None,
-                        'status':status,'evidence':'DISK_LOAD_COMMAND','actualLoaded':observed,
-                        'artifactDigest':proof['digest'] if proof else None,
-                        'architecture':{0x1000007:'x86_64',0x100000c:'arm64'}.get(cpu,'UNVERIFIED'),
-                        'mappedIntegrity':'UNVERIFIED','runtimeEdgeVerified':False})
+                    name=encoded.split(b'\0',1)[0].decode('utf8')
+                    if len(name) > 4096: raise ValueError('native-dylib-name-budget')
+                    commands.append(name)
                 offset += length
             if offset != size: raise ValueError('native-command-size-mismatch')
+            for name in commands:
+                child, resolution, matches = _select_declared_native(root, entries, path, name, rpaths)
+                proof=None; observed=False
+                if child is None:
+                    status='UNEXPECTED_OBSERVED'
+                    reason='ambiguous-or-undeclared-native-route' if matches else 'unresolved-native-route'
+                else:
+                    loaded=scoped_loaded_library(root,child);observed=loaded['actualLoaded'];reason=None
+                    try:
+                        proof=VERIFIER.verify(root,child['path'],child,identity=child['id'],version=child['version'],build=contract['buildRevision'])
+                        status='OBSERVED_UNVERIFIED' if observed else 'EXPECTED_NOT_OBSERVED'
+                    except FileNotFoundError: status='MISSING'
+                    except (OSError,ValueError): status='OBSERVED_UNVERIFIED'
+                edge={'parent':entry['id'],'child':child['id'] if child else None,
+                    'status':status,'evidence':'DISK_LOAD_COMMAND_DECLARED_ROUTE',
+                    'resolution':resolution,'actualLoaded':observed,
+                    'artifactDigest':proof['digest'] if proof else None,
+                    'architecture':{0x1000007:'x86_64',0x100000c:'arm64'}.get(cpu,'UNVERIFIED'),
+                    'mappedIntegrity':'UNVERIFIED','runtimeEdgeVerified':False}
+                if reason: edge['reason']=reason
+                if matches: edge['declaredCandidateIds']=matches
+                edges.append(edge)
         except (ValueError,OSError,UnicodeError,struct.error):
             edges.append({'parent':entry['id'],'status':'OBSERVED_UNVERIFIED','reason':'invalid-or-missing-native-image'})
-    return {'version':1,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_ONLY',
-        'reason':'disk-commands-and-exact-loaded-presence-do-not-prove-mapped-transitive-closure'}
+    return {'version':2,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_AND_DECLARED_RPATHS_ONLY',
+        'reason':'declared-static-routing-and-exact-loaded-presence-do-not-prove-runtime-loader-edges'}
+
 
 def local_audio_path(path):
     value = str(path)
