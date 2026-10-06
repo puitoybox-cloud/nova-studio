@@ -238,6 +238,10 @@ def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backen
         checks['freshOwnedSession'] = fresh_session is True
         checks['mappedNativeIdentity'] = evidence.get('mappedNative', {}).get('complete') is True
         checks['processingChainComplete'] = inventory.get('processingChainComplete') is True
+    loads = evidence.get('scopedNativeLoads')
+    if loads is not None:
+        checks['scopedNativeLoadCoverage'] = (loads.get('complete') is True and
+            loads.get('unexpected') == [] and loads.get('unresolved') == [] and loads.get('ambiguous') == [])
     eligible = all(checks.values())
     return {'processingEligible': eligible, 'publicationEligible': eligible and backend_bound is True,
             'blockedBy': [key for key, value in checks.items() if not value]}

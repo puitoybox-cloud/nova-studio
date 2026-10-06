@@ -76,6 +76,7 @@ jobs:
           python3 scripts/music-offline-asset-inventory.py > /tmp/music-offline-inventory.json
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_production_lifecycle.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_processing_closure.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_routing.py -v
           node --test
           find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
           python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py tools/music-audio-pipeline/helper_identity.py tools/music-audio-pipeline/server.py

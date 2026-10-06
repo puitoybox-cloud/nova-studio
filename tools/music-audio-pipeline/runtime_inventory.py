@@ -272,6 +272,17 @@ class OfflineRuntimeGuard:
 
     def audit(self, event, args):
         # Logical event counts only: no hosts, URLs, paths, PIDs or socket inventory.
+        if event in ('ctypes.dlsym', 'ctypes.dlsym/handle'):
+            # Only this owned Helper/child's Python-to-native lookup boundary.
+            # Direct calls from ML/codec C code remain entirely unobserved.
+            name = args[1] if len(args) > 1 else None
+            if name in {'socket', 'connect', 'send', 'sendto', 'sendmsg', 'getaddrinfo',
+                        'gethostbyname', 'gethostbyname2', 'getnameinfo', 'curl_easy_perform',
+                        'curl_multi_perform', 'CFReadStreamCreateForHTTPRequest'}:
+                with self.observation_lock:
+                    self.observed['ctypes.network_symbol_lookup'] = min(1000000,
+                        self.observed.get('ctypes.network_symbol_lookup', 0)+1)
+                raise PermissionError('strict-offline-native-symbol-dispatch-blocked')
         if event in ('socket.__new__', 'socket.connect', 'socket.getaddrinfo',
                      'socket.sendto', 'subprocess.Popen', 'os.system', 'os.exec',
                      'os.posix_spawn', 'os.fork'):
@@ -303,6 +314,8 @@ class OfflineRuntimeGuard:
                 'scope': 'THIS_PROCESS_PYTHON_AUDIT_EVENTS_ONLY',
                 'events': events, 'classifications': categories, 'nativeNetworkVerified': False,
                 'nativeObservation': 'UNVERIFIED', 'nativeNetworkContainment': 'PARTIAL',
+                'nativeDispatchGuard': {'scope': 'OWNED_PROCESS_CTYPES_LOOKUPS_ONLY',
+                    'status': 'PARTIAL', 'directNativeCalls': 'UNVERIFIED'},
                 'nativeBlockedBy': 'NATIVE_SYSCALL_BOUNDARY_NOT_INSTALLED',
                 'components': {key: 'UNVERIFIED' for key in ('helper', 'demucs-child', 'basic-pitch', 'codec', 'approved-companion')}}
 
