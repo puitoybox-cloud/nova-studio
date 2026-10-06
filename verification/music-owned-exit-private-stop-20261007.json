@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-07 JST",
+  "basePR": 323,
+  "baseHead": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "scopedWorkItemsAddressed": 4,
+  "knownRemainingInRepairedBehaviors": 0,
+  "exhaustiveRepositoryBlockerCount": null,
+  "newTests": 16,
+  "localNode": {
+    "total": 1831,
+    "pass": 1831,
+    "skip": 0
+  },
+  "localPython": {
+    "total": 326,
+    "pass": 321,
+    "preexistingDependencySkip": 5
+  },
+  "installedHelperStopDelivery": "ACTUAL_POPEN_INHERITED_DESCRIPTOR_SOURCE_PATH_TESTED",
+  "installedSwiftPrivateFinalDelivery": "SOURCE_ONLY_PARTIAL",
+  "liveInterruptionHandle": "UNVERIFIED",
+  "ownedDescendantsComplete": false,
+  "modelBytes": "MISSING",
+  "formalA": 0,
+  "totalFunctions": 30,
+  "stage2": "OPEN",
+  "stage3": "NOT_PASSED",
+  "physicalAcceptance": "NOT_INFERRED",
+  "userDecisionsReady": 0
+}

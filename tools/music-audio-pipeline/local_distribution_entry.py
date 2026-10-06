@@ -15,6 +15,7 @@ import time
 import http.client
 import subprocess
 import signal
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -644,6 +645,20 @@ def prepare(root, manifest, anchor, build, pipeline=None):
         if not verify_assembly(runtime.root, graph, runtime=runtime)['complete']:
             raise ValueError('launcher-artifact-assembly-changed')
         runtime.recheck()
+    def owned_process_loader():
+        # Execute only the authenticated source snapshot, not import-cache/PATH content.
+        expected=source_assets['demucs-receipt-source']
+        path=local(pipeline,'demucs_receipt.py')
+        if stable(path)!=source_stamps['demucs_receipt.py']:
+            raise ValueError('launcher-owned-source-changed')
+        with path.open('rb') as handle:raw=handle.read(1024*1024+1)
+        if (len(raw)>1024*1024 or len(raw)!=expected['byteLength'] or
+                hashlib.sha256(raw).hexdigest()!=expected['digest'] or
+                stable(path)!=source_stamps['demucs_receipt.py']):
+            raise ValueError('launcher-owned-source-changed')
+        namespace={'__name__':'nova_authenticated_owned_process','__file__':str(path)}
+        exec(compile(raw,str(path),'exec'),namespace)
+        return namespace['OwnedStopPipe'],namespace['OwnedExitObservation']
     # Strict Helper boot will independently authenticate and refuse incomplete runtime evidence.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_'))}
     environment.update(NOVA_TRUSTED_MANIFEST_PATH=str(Path(manifest).resolve()),
@@ -651,7 +666,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                        NOVA_EXPECTED_BUILD_REVISION=build,
                        NOVA_RUNTIME_ASSET_ROOT=str(runtime.root), PYTHONUNBUFFERED='1')
     return {'command': [executable, '-I', str(pipeline/'server.py')],
-            '_source_preflight': source_preflight,
+            '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
             'environment': environment,
             'browserEnvelope': {'manifest': runtime.manifest, 'trust': {'manifestDigest': anchor, 'buildRevision': build},
                                 'runtimeConfigText': json.dumps(runtime.bindings, sort_keys=True, separators=(',', ':'), ensure_ascii=False)},
@@ -706,6 +721,7 @@ class LocalProductionLifecycle:
         self.control = OwnedResultChannel(self.server.session, self.server.deadline)
         self.shutdown_receipt = None; self.final_receipt = None; self.final_acknowledgement = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
         self.state = 'PREPARING'; self.child = None; self.popen = popen
+        self.stop_pipe=None;self.child_stop_socket=None
         self.health = health or self.read_health; self.browser = browser; self.native_host = native_host
         self.timeout = timeout; self.inventory = {}; self.browser_verified = False
         self.last_seen = time.monotonic(); self.done = threading.Event()
@@ -744,12 +760,26 @@ class LocalProductionLifecycle:
             environment.update(NOVA_LIFECYCLE_SESSION=self.server.session, NOVA_LOCAL_BROWSER_ORIGIN=self.server.origin,
                 NOVA_LIFECYCLE_DEADLINE=str(self.server.deadline),
                 NOVA_OWNED_RESULT_ORIGIN=self.server.origin, NOVA_OWNED_RESULT_CAPABILITY=self.control.helper_capability)
+            loader=self.prepared.get('_owned_process_loader')
+            if loader is not None:
+                OwnedStopPipe,OwnedExitObservation=loader()
+            else:
+                # Injected disposable lifecycle fixtures have no production prepare/anchor.
+                from demucs_receipt import OwnedStopPipe,OwnedExitObservation
+            parent_socket,self.child_stop_socket=socket.socketpair(socket.AF_UNIX,socket.SOCK_STREAM)
+            identity={'session':self.control.session,'owner':self.control.owner,
+                'generation':_digest(self.server.binding),'deadline':self.server.deadline}
+            try:self.stop_pipe=OwnedStopPipe(parent_socket,identity,self.control.helper_capability)
+            except BaseException:parent_socket.close();raise
+            environment.update(NOVA_OWNED_STOP_FD=str(self.child_stop_socket.fileno()),
+                NOVA_OWNED_STOP_IDENTITY=json.dumps(identity,sort_keys=True,separators=(',',':')))
             if '_source_preflight' in self.prepared:
                 self.prepared['_source_preflight']()
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
-                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            from demucs_receipt import OwnedExitObservation
-            self.exit_observer = OwnedExitObservation(self.child,self.server.session,self.server.binding)
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    pass_fds=(self.child_stop_socket.fileno(),))
+            self.child_stop_socket.close();self.child_stop_socket=None
+            self.exit_observer = OwnedExitObservation(self.child,self.server.session,self.server.binding,owned_channel=self.stop_pipe.handle)
             deadline = time.monotonic()+self.timeout
             while True:
                 if self.child.poll() is not None: raise ValueError('helper-startup-failed')
@@ -830,19 +860,12 @@ class LocalProductionLifecycle:
         finally: self.close(failed=self.state == 'FAILED')
 
     def request_helper_stop(self):
-        connection = http.client.HTTPConnection('127.0.0.1',8766,timeout=1)
-        try:
-            connection.request('POST','/owned-stop',body=b'',headers={
-                'X-Nova-Session':self.control.session,'X-Nova-Owned-Capability':self.control.helper_capability})
-            response = connection.getresponse(); raw = response.read(4097)
-            value = json.loads(raw)
-            if (response.status != 200 or len(raw)>4096 or value != {
-                    'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':self.control.session,'state':'STOPPING'}):
-                raise ValueError('invalid-graceful-stop-receipt')
-            return {'status':'OBSERVED','scope':'OWNED_AUTHENTICATED_HELPER','state':'STOPPING'}
-        except (OSError,ValueError,http.client.HTTPException):
+        # The retained socket is the exact creator-owned delivery channel. No HTTP retry.
+        if self.stop_pipe is None or not isinstance(self.child,subprocess.Popen):
             return {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
-        finally: connection.close()
+        try:return self.stop_pipe.request(self.control.binding)
+        except (OSError,ValueError,TypeError):
+            return {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
 
     def close(self, *, failed=False):
         with self.close_lock:
@@ -851,6 +874,11 @@ class LocalProductionLifecycle:
                 self.closing = True
             self.done.set(); self.browser_verified = False; self.inventory = {}
             self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
+            observer=getattr(self,'exit_observer',None)
+            if observer is not None and self.child is not None:
+                observer.bind_request(self.child,self.control.binding)
+                observer.request_stop(self.child,self.control.binding,{'owner':self.control.owner,
+                    'generation':self.control.renewals,'state':self.control.state})
             stop = {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
             if self.child is not None and self.child.poll() is None:
                 stop = self.request_helper_stop()
@@ -859,8 +887,11 @@ class LocalProductionLifecycle:
             observer=getattr(self,'exit_observer',None)
             if observer is not None and self.child is not None:
                 self.shutdown_receipt['ownedExitObservation']=observer.observe(self.child,self.control.binding)
-                observer.close()
-                self.shutdown_receipt['ownedExitObservation']['descriptorClosed']=True
+                if self.shutdown_receipt.get('leaderExited') is True:
+                    observer.close()
+                    self.shutdown_receipt['ownedExitObservation']['descriptorClosed']=True
+            if self.stop_pipe is not None:self.stop_pipe.close()
+            if self.child_stop_socket is not None:self.child_stop_socket.close();self.child_stop_socket=None
             self.server.close()
             transport_closed = (self.server.server.socket.fileno() == -1 and
                 (self.server.thread is None or not self.server.thread.is_alive()))
