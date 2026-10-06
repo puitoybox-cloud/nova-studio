@@ -376,8 +376,7 @@ class ProcessingReceipt:
             all(entry.get('mapped') is True and entry.get('diskIntegrity') == 'VERIFIED' and
                 entry.get('architecture') == self.contract['architecture'] and
                 entry.get('status') == 'OBSERVED_UNVERIFIED' for entry in selected))
-        value['nativeIdentity'] = 'OBSERVED_UNVERIFIED' if native_observed else (
-            'NOT_APPLICABLE' if not requested_ids else 'UNVERIFIED')
+        value['nativeIdentity'] = 'OBSERVED_UNVERIFIED' if native_observed else 'UNVERIFIED'
         value['mappedEvidence'] = {'complete': False, 'entryCount': len(selected),
             'entriesDigest': evidence_digest(selected), 'scope': 'REQUESTED_DECLARED_HANDLES_ONLY',
             'requestedNativeIds': requested_ids, 'missingNativeIds': missing_ids,
@@ -504,7 +503,7 @@ def scoped_macho_dependencies(root, contract):
                 child, resolution, matches = _select_declared_native(root, entries, path, name, rpaths)
                 proof=None; observed=False
                 if child is None:
-                    status='OBSERVED_UNVERIFIED'
+                    status='UNEXPECTED_OBSERVED'
                     reason='ambiguous-or-undeclared-native-route' if matches else 'unresolved-native-route'
                 else:
                     loaded=scoped_loaded_library(root,child);observed=loaded['actualLoaded'];reason=None
