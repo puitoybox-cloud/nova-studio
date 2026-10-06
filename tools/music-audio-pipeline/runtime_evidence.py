@@ -125,7 +125,7 @@ def load(runtime):
 
 
 def validate(contract):
-    if (not isinstance(contract, dict) or set(contract) - {'mappedSymbols'} !=
+    if (not isinstance(contract, dict) or set(contract) - {'mappedSymbols', 'processingNativeRoutes'} !=
             {'version', 'buildRevision', 'architecture', 'namespaces', 'imports', 'native', 'codec'} or
             type(contract['version']) is not int or contract['version'] != 1):
         raise ValueError('invalid-runtime-evidence')
@@ -185,6 +185,14 @@ def validate(contract):
     if (not isinstance(symbols, dict) or not set(symbols) <= {e['id'] for e in contract['native']} or
             any(not isinstance(v, str) or not v.isascii() or not v.isidentifier() or len(v) > 128 for v in symbols.values())):
         raise ValueError('invalid-mapped-symbol-contract')
+    routes = contract.get('processingNativeRoutes', {})
+    native_ids = {e['id'] for e in contract['native']}
+    if (not isinstance(routes, dict) or len(routes) > 256 or any(
+            not isinstance(logical, str) or not 0 < len(logical) <= 128 or
+            not isinstance(ids, list) or not 0 < len(ids) <= 4096 or
+            any(not isinstance(identity, str) for identity in ids) or
+            len(ids) != len(set(ids)) or not set(ids) <= native_ids for logical, ids in routes.items())):
+        raise ValueError('invalid-processing-native-route-contract')
     return contract
 
 
@@ -255,6 +263,7 @@ def observe(root, contract, modules=None, *, build=None, architecture=None, veri
             'processingChain': processing_backend_inventory(contract, modules),
             'transitiveNativeObservation': transitive,
             'mappedNative': mapped,
+            'scopedNativeLoads': scoped_native_load_observation(root, contract, modules=modules, mapped=mapped),
             'runtimeNativeClosure': runtime_native_closure(mapped, transitive),
             'sharedLibraries': shared,
             'dynamicNativeGraph': native_dependency_graph(contract, imports, native, shared),
@@ -290,6 +299,13 @@ def receipt_evidence(evidence):
     independent signature or a substitute for missing native network containment.
     """
     result = copy.deepcopy(evidence)
+    loads = result.get('scopedNativeLoads')
+    if loads is not None:
+        observation_digest = evidence_digest(loads)
+        for key in ('expected', 'observed', 'unexpected', 'unresolved', 'ambiguous'):
+            entries = loads.pop(key)
+            loads[key+'Count'] = len(entries)
+        loads['observationDigest'] = observation_digest
     transitive = result.get('transitiveNativeObservation')
     if transitive is not None:
         entries = transitive.pop('edges')
@@ -332,6 +348,19 @@ class ProcessingReceipt:
     def call(self, stage, logical, function, *args, native_ids=(), fallback=False, **kwargs):
         if evidence_digest(self.contract) != self.contract_revision: raise ValueError('changed-processing-contract')
         if len(self.entries) >= 256: raise ValueError('processing-receipt-budget')
+        requested_ids = list(native_ids)
+        routed_ids = self.contract.get('processingNativeRoutes', {}).get(logical)
+        if routed_ids is not None:
+            if requested_ids and requested_ids != routed_ids:
+                raise ValueError('wrong-processing-native-route')
+            requested_ids = list(routed_ids)
+        declared_ids = {entry['id'] for entry in self.contract.get('native', [])}
+        if (len(requested_ids) > 4096 or any(not isinstance(identity, str) for identity in requested_ids) or
+                len(requested_ids) != len(set(requested_ids)) or not set(requested_ids) <= declared_ids):
+            raise ValueError('unexpected-processing-native-identity')
+        before = scoped_native_load_observation(self.root, self.contract)
+        if before['unexpected'] or before['ambiguous']:
+            raise ValueError('unexpected-or-ambiguous-scoped-native-load')
         import inspect
         import importlib.metadata
         module = sys.modules.get(function.__module__)
@@ -350,7 +379,8 @@ class ProcessingReceipt:
             except importlib.metadata.PackageNotFoundError: version = None
         value = {'stage': stage, 'logicalId': logical, 'actualImplementation': function.__module__+'.'+function.__name__,
             'version': version, 'artifactDigest': artifact, 'architecture': platform.machine(),
-            'nativeIds': list(native_ids), 'nativeIdentity': 'UNVERIFIED', 'fallback': fallback,
+            'nativeIds': requested_ids, 'nativeIdentity': 'UNVERIFIED', 'fallback': fallback,
+            'nativeRouteEvidence': 'AUTHENTICATED_DECLARATION_ONLY' if routed_ids is not None else 'CALLER_REQUESTED_ONLY',
             'externalExecutable': False, 'status': status, 'completed': False}
         if fallback or status != 'VERIFIED_ENTRY' or (version is not None and version != entry['version']):
             raise ValueError('unverified-or-fallback-processing-backend')
@@ -361,8 +391,18 @@ class ProcessingReceipt:
             value['status'] = 'FAILED'
             raise
         mapped = mapped_native_receipts(self.root, self.contract) if self.contract.get('native') else {'complete': False, 'entries': []}
+        if evidence_digest(self.contract) != self.contract_revision:
+            value['status'] = 'FAILED'
+            raise ValueError('changed-processing-contract')
+        after = scoped_native_load_observation(self.root, self.contract, mapped=mapped)
+        value['scopedLoadEvidence'] = {'beforeDigest': evidence_digest(before), 'afterDigest': evidence_digest(after),
+            'observedCount': len(after['observed']), 'unexpectedCount': len(after['unexpected']),
+            'unresolvedCount': len(after['unresolved']), 'ambiguousCount': len(after['ambiguous']),
+            'complete': False, 'nativeNetwork': 'UNVERIFIED', 'runtimeEdges': 'UNVERIFIED'}
+        if after['unexpected'] or after['ambiguous']:
+            value['status'] = 'FAILED'
+            raise ValueError('unexpected-or-ambiguous-scoped-native-load')
         declared_ids = {entry['id'] for entry in self.contract.get('native', [])}
-        requested_ids = list(native_ids)
         if len(requested_ids) != len(set(requested_ids)) or any(identity not in declared_ids for identity in requested_ids):
             value['status'] = 'FAILED'
             raise ValueError('unexpected-processing-native-identity')
@@ -406,6 +446,53 @@ def processing_backend_inventory(contract, modules=None):
         {'stage': 'stem-writer', 'status': 'NOT_OBSERVED', 'reason': 'selected-writer-call-not-yet-receipted'}]}
 
 
+def scoped_native_load_observation(root, contract, *, modules=None, mapped=None):
+    """Exact handles + declared namespace extension entries, never a process image list.
+
+    Detects contradictions in this bounded coverage only. An empty unexpected
+    set never proves the absence of hidden direct dlopen or transient loads.
+    """
+    modules = sys.modules if modules is None else modules
+    entries = contract.get('native', [])
+    if len(entries) > 4096: raise ValueError('scoped-native-observation-budget')
+    expected = [entry['id'] for entry in entries]
+    ambiguous = sorted({identity for identity in expected if expected.count(identity) > 1})
+    paths = _declared_native_path_index(root, entries)
+    ambiguous += sorted({entry['id'] for values in paths.values() if len(values) > 1 for entry in values})
+    if mapped is None:
+        mapped = mapped_native_receipts(root, contract) if entries else {'entries': [], 'complete': False}
+    observed = []; unexpected = []; unresolved = []
+    seen = set()
+    for entry in mapped.get('entries', []):
+        identity = entry.get('id')
+        if identity in seen: ambiguous.append(identity)
+        seen.add(identity)
+        if identity not in expected or entry.get('status') == 'UNEXPECTED_OBSERVED': unexpected.append(identity)
+        elif (entry.get('mapped') and entry.get('diskIntegrity') == 'VERIFIED' and
+                entry.get('architecture') == contract['architecture'] and entry.get('status') == 'OBSERVED_UNVERIFIED'):
+            observed.append(identity)
+        else: unresolved.append(identity)
+    unresolved.extend(identity for identity in expected if identity not in seen)
+    namespaces = set(contract.get('namespaces', []))
+    scoped_modules = [name for name in modules if name.split('.')[0] in namespaces]
+    if len(scoped_modules) > 4096: raise ValueError('scoped-module-observation-budget')
+    for name in scoped_modules:
+        module = modules[name]; spec = getattr(module, '__spec__', None)
+        if not isinstance(getattr(spec, 'loader', None), importlib.machinery.ExtensionFileLoader): continue
+        origin = getattr(spec, 'origin', None); source = getattr(module, '__file__', None)
+        candidates = paths.get(str(Path(origin).resolve()), []) if isinstance(origin, str) else []
+        if (len(candidates) != 1 or not source or Path(source).resolve() != Path(origin).resolve() or
+                candidates[0]['module'] != name or candidates[0]['kind'] != 'EXTENSION'):
+            unexpected.append('module:'+name)
+    return {'version': 1, 'scope': 'EXACT_DECLARED_HANDLES_AND_DECLARED_NAMESPACE_EXTENSIONS',
+            'contractRevision': evidence_digest(contract),
+            'expected': sorted(set(expected)), 'observed': sorted(set(observed)),
+            'unexpected': sorted(set(unexpected)), 'unresolved': sorted(set(unresolved)),
+            'ambiguous': sorted(set(ambiguous)), 'complete': False, 'status': 'OBSERVED_UNVERIFIED',
+            'coverage': 'PARTIAL', 'runtimeEdges': 'UNVERIFIED', 'mappedIntegrity': 'UNVERIFIED',
+            'blockedBy': ['runtime-loader-edge-proof', 'mapped-memory-integrity', 'unobserved-direct-native-loads']}
+
+
 def _declared_native_path_index(root, entries):
     result = {}
     for entry in entries:
@@ -421,22 +508,30 @@ def _expand_macho_path(parent_path, value, rpaths):
     """Resolve only loader-relative/rpath candidates; never probe system paths."""
     parent = Path(parent_path)
     if value.startswith('@loader_path/'):
-        return [(parent.parent / value[len('@loader_path/'):]).resolve()], 'LOADER_PATH'
+        return [_lexical_native_path(parent.parent / value[len('@loader_path/'):])], 'LOADER_PATH'
     if value.startswith('@rpath/'):
         suffix = value[len('@rpath/'):]
         candidates = []
         for rpath in rpaths:
             if rpath == '@loader_path':
-                candidates.append((parent.parent / suffix).resolve())
+                candidates.append(_lexical_native_path(parent.parent / suffix))
             elif rpath.startswith('@loader_path/'):
-                candidates.append((parent.parent / rpath[len('@loader_path/'):] / suffix).resolve())
+                candidates.append(_lexical_native_path(parent.parent / rpath[len('@loader_path/'):] / suffix))
+            else:
+                return [], 'UNSUPPORTED_MACHO_RPATH'
         return candidates, 'RPATH_DECLARED_ONLY'
     if value.startswith('@executable_path/'):
         return [], 'EXECUTABLE_PATH_UNRESOLVED'
     candidate = Path(value)
     if candidate.is_absolute():
-        return [candidate.resolve()], 'ABSOLUTE_DECLARED_ONLY'
+        return [_lexical_native_path(candidate)], 'ABSOLUTE_DECLARED_ONLY'
     return [], 'UNSUPPORTED_LOAD_PATH'
+
+
+def _lexical_native_path(value):
+    # Candidate paths never cause filesystem probing outside declared artifacts.
+    import os
+    return Path(os.path.normpath(str(value)))
 
 
 def _select_declared_native(root, entries, parent_path, name, rpaths):
@@ -449,58 +544,208 @@ def _select_declared_native(root, entries, parent_path, name, rpaths):
     return (next(iter(unique.values())) if len(unique) == 1 else None), mode, sorted(unique)
 
 
-def scoped_macho_dependencies(root, contract):
-    """Read declared Mach-O load commands and resolve declared-only routing.
+def _native_read(stream, offset, size, limit):
+    """Every allocation is bounded; offset/size are checked before seeking."""
+    if offset < 0 or size < 0 or size > MAX_CONTRACT_BYTES or offset + size > limit:
+        raise ValueError('native-image-range-or-budget')
+    stream.seek(offset)
+    raw = stream.read(size)
+    if len(raw) != size: raise ValueError('truncated-native-image')
+    return raw
 
-    LC_RPATH is honored only when it expands through @loader_path into an
-    authenticated artifact already present in the runtime contract. Absolute
-    paths are matched only against declared artifacts. No filesystem search,
+
+def _macho_slice(stream, limit, architecture):
+    """Select exactly one CPU slice. Never infer a subtype or loader selection."""
+    import struct
+    magic = _native_read(stream, 0, 4, limit)
+    formats = {b'\xca\xfe\xba\xbe': ('>', False), b'\xbe\xba\xfe\xca': ('<', False),
+               b'\xca\xfe\xba\xbf': ('>', True), b'\xbf\xba\xfe\xca': ('<', True)}
+    if magic not in formats: return 0, limit, None
+    endian, wide = formats[magic]
+    count = struct.unpack(endian+'I', _native_read(stream, 4, 4, limit))[0]
+    if not 0 < count <= 64: raise ValueError('fat-slice-budget')
+    width = 32 if wide else 20
+    table_end = 8 + count * width
+    table = _native_read(stream, 8, count * width, limit)
+    slices = []; candidates = []
+    cpu_names = {0x1000007: 'x86_64', 0x100000c: 'arm64'}
+    for i in range(count):
+        values = struct.unpack_from(endian+('IIQQII' if wide else 'IIIII'), table, i*width)
+        cpu, subtype, offset, size, align = values[:5]
+        if (size < 32 or offset < table_end or offset + size > limit or align > 31 or
+                offset % (1 << align) or (wide and values[5] != 0)):
+            raise ValueError('invalid-fat-slice')
+        if any(offset < end and start < offset+size for start, end in slices):
+            raise ValueError('overlapping-fat-slices')
+        slices.append((offset, offset+size))
+        if cpu_names.get(cpu) == architecture: candidates.append((offset, size, cpu, subtype))
+    if len(candidates) != 1: raise ValueError('missing-or-ambiguous-fat-architecture')
+    offset, size, cpu, subtype = candidates[0]
+    header = _native_read(stream, offset, 12, offset+size)
+    endian = {b'\xcf\xfa\xed\xfe': '<', b'\xfe\xed\xfa\xcf': '>'}.get(header[:4])
+    if endian is None or struct.unpack_from(endian+'II', header, 4) != (cpu, subtype):
+        raise ValueError('fat-slice-header-mismatch')
+    return offset, offset+size, {'sliceCount': count, 'selectedArchitecture': architecture,
+                                'selection': 'UNIQUE_DECLARED_CPU_ONLY', 'runtimeSelectionVerified': False}
+
+
+def _elf_routes(stream, limit, architecture):
+    """ELF64 program headers only, bounded DT strings; no sections/tool/env search."""
+    import struct
+    header = _native_read(stream, 0, 64, limit)
+    if header[:4] != b'\x7fELF' or header[4] != 2 or header[5] not in (1, 2) or header[6] != 1:
+        raise ValueError('unsupported-elf-format')
+    endian = '<' if header[5] == 1 else '>'
+    fields = struct.unpack(endian+'HHIQQQIHHHHHH', header[16:])
+    kind, machine, version, _, phoff, _, _, ehsize, phsize, phcount, _, _, _ = fields
+    actual_arch = {62: 'x86_64', 183: 'arm64'}.get(machine)
+    if (kind not in (2, 3) or version != 1 or ehsize != 64 or phsize != 56 or
+            not 0 < phcount <= 1024 or phoff < 64 or actual_arch != architecture):
+        raise ValueError('elf-header-or-architecture')
+    raw = _native_read(stream, phoff, phcount*phsize, limit)
+    loads = []; dynamic = []
+    for i in range(phcount):
+        tag, _, offset, address, _, size, memory, _ = struct.unpack_from(endian+'IIQQQQQQ', raw, i*56)
+        if offset+size > limit or size > memory: raise ValueError('elf-segment-range')
+        if tag == 1: loads.append((address, address+size, offset))
+        if tag == 2: dynamic.append((offset, size))
+    if len(dynamic) != 1: raise ValueError('missing-or-ambiguous-elf-dynamic')
+    offset, size = dynamic[0]
+    if size % 16 or size > 4096*16: raise ValueError('elf-dynamic-budget')
+    raw = _native_read(stream, offset, size, limit)
+    tags = {}; needed = []; ended = False
+    for i in range(0, size, 16):
+        tag, value = struct.unpack_from(endian+'qQ', raw, i)
+        if tag == 0: ended = True; break
+        if tag == 1: needed.append(value)
+        elif tag in (5, 10, 15, 29):
+            if tag in tags: raise ValueError('duplicate-elf-dynamic-tag')
+            tags[tag] = value
+        elif tag in (0x7fffffff, 0x7ffffffd, 0x6ffffefb, 0x6ffffefc):
+            raise ValueError('unsupported-elf-filter-or-audit-route')
+    if not ended or not {5, 10} <= set(tags) or not 0 < tags[10] <= MAX_CONTRACT_BYTES:
+        raise ValueError('elf-string-table-budget')
+    matches = [file_offset+tags[5]-start for start, end, file_offset in loads
+               if start <= tags[5] and tags[5]+tags[10] <= end]
+    if len(matches) != 1: raise ValueError('ambiguous-or-unmapped-elf-strings')
+    strings = _native_read(stream, matches[0], tags[10], limit)
+    def string(index):
+        if index >= len(strings): raise ValueError('elf-string-index')
+        end = strings.find(b'\0', index, min(len(strings), index+4097))
+        if end < 0: raise ValueError('unterminated-or-overbudget-elf-string')
+        value = strings[index:end].decode('utf8')
+        if not value: raise ValueError('empty-elf-route')
+        return value
+    names = [string(index) for index in needed]
+    rpath = string(tags[15]).split(':') if 15 in tags else []
+    runpath = string(tags[29]).split(':') if 29 in tags else None
+    if len(rpath) > 128 or (runpath is not None and len(runpath) > 128):
+        raise ValueError('elf-search-path-budget')
+    return {'format': 'ELF64', 'architecture': actual_arch, 'commands': names,
+            'rpaths': rpath, 'runpaths': runpath, 'slice': None}
+
+
+def native_image_routes(path, architecture):
+    """Bounded disk syntax, not an authenticated runtime loader-edge proof."""
+    import os
+    import struct
+    from artifact_verification import stamp
+    with Path(path).open('rb') as stream:
+        before = os.fstat(stream.fileno()); limit = before.st_size
+        if _native_read(stream, 0, 4, limit) == b'\x7fELF':
+            result = _elf_routes(stream, limit, architecture)
+        else:
+            base, end, selection = _macho_slice(stream, limit, architecture)
+            header = _native_read(stream, base, 32, end)
+            endian = {b'\xcf\xfa\xed\xfe': '<', b'\xfe\xed\xfa\xcf': '>'}.get(header[:4])
+            if endian is None: raise ValueError('unsupported-native-image')
+            _, cpu, _, _, count, size, _, _ = struct.unpack(endian+'8I', header)
+            actual_arch = {0x1000007: 'x86_64', 0x100000c: 'arm64'}.get(cpu)
+            if actual_arch != architecture or count > 4096 or size > MAX_CONTRACT_BYTES:
+                raise ValueError('native-architecture-or-command-budget')
+            raw = _native_read(stream, base+32, size, end)
+            names = []; rpaths = []; offset = 0
+            for _ in range(count):
+                if offset+8 > size: raise ValueError('truncated-native-command')
+                command, length = struct.unpack_from(endian+'II', raw, offset)
+                if length < 8 or length % 8 or offset+length > size:
+                    raise ValueError('invalid-native-command-size')
+                if command in (0xe, 0x27):
+                    raise ValueError('unsupported-macho-loader-or-environment-route')
+                minimum = 12 if command == 0x8000001c else 24 if command in (0xc, 0x80000018, 0x8000001f, 0x80000023, 0x20) else None
+                if minimum is not None:
+                    if length < minimum: raise ValueError('invalid-native-route-command')
+                    index = struct.unpack_from(endian+'I', raw, offset+8)[0]
+                    if not minimum <= index < length: raise ValueError('invalid-native-route-name')
+                    encoded = raw[offset+index:offset+length]
+                    if b'\0' not in encoded: raise ValueError('unterminated-native-route')
+                    name = encoded.split(b'\0', 1)[0].decode('utf8')
+                    if not name or len(name) > 4096: raise ValueError('native-route-budget')
+                    (rpaths if command == 0x8000001c else names).append(name)
+                offset += length
+            if offset != size: raise ValueError('native-command-size-mismatch')
+            if len(rpaths) > 128: raise ValueError('native-rpath-budget')
+            result = {'format': 'MACHO64', 'architecture': actual_arch, 'commands': names,
+                      'rpaths': rpaths, 'runpaths': None, 'slice': selection}
+        if stamp(before) != stamp(os.fstat(stream.fileno())) or stamp(before) != stamp(Path(path).stat()):
+            raise ValueError('changed-native-image')
+        return result
+
+
+def _select_declared_elf(root, entries, parent_path, name, rpaths, runpaths):
+    index = _declared_native_path_index(root, entries)
+    candidates = []; unsupported = False
+    paths = runpaths if runpaths is not None else rpaths
+    def expand(value):
+        if value == '$ORIGIN' or value == '${ORIGIN}': return Path(parent_path).parent
+        for prefix in ('$ORIGIN/', '${ORIGIN}/'):
+            if value.startswith(prefix) and '$' not in value[len(prefix):]:
+                return Path(parent_path).parent / value[len(prefix):]
+        if '$' not in value and Path(value).is_absolute(): return Path(value)
+        return None
+    if '/' in name:
+        direct = expand(name)
+        if direct is None: unsupported = True
+        else: candidates.append(_lexical_native_path(direct))
+    else:
+        for route in paths:
+            directory = expand(route)
+            if directory is None: unsupported = True
+            else: candidates.append(_lexical_native_path(directory/name))
+    matches = {entry['id']: entry for candidate in candidates for entry in index.get(str(candidate), [])}
+    mode = 'ELF_RUNPATH_DECLARED_ONLY' if runpaths is not None else 'ELF_RPATH_DECLARED_ONLY'
+    if unsupported: return None, 'UNSUPPORTED_ELF_SEARCH_ROUTE', sorted(matches)
+    return (next(iter(matches.values())) if len(matches) == 1 else None), mode, sorted(matches)
+
+
+def scoped_macho_dependencies(root, contract):
+    """Compatibility entry point: declared thin/fat Mach-O and ELF disk routing.
+
+    LC_RPATH and ELF DT_RPATH/RUNPATH are honored only for lexical candidates
+    matching authenticated declared artifacts. Absolute paths likewise match
+    declared artifacts only. No filesystem search,
     dyld image enumeration, subprocess, environment lookup, or system probing
     occurs. Static routing evidence never becomes a verified runtime loader edge.
     """
     import struct
     edges = []; entries = contract['native']
     for entry in entries:
+        if len(edges) >= 4096:
+            edges.append({'parent': entry['id'], 'status': 'OBSERVED_UNVERIFIED', 'reason': 'global-native-edge-budget'})
+            break
         if entry['kind'] not in ('EXTENSION', 'SHARED_LIBRARY', 'FRAMEWORK'): continue
         try:
             path = resolve(root, entry['path'])
             VERIFIER.verify(root,entry['path'],entry,identity=entry['id'],version=entry['version'],build=contract['buildRevision'])
-            with path.open('rb') as stream:
-                header = stream.read(32)
-                if len(header) != 32 or header[:4] != b'\xcf\xfa\xed\xfe':
-                    edges.append({'parent':entry['id'], 'status':'OBSERVED_UNVERIFIED', 'reason':'unsupported-native-image'}); continue
-                _, cpu, _, _, count, size, _, _ = struct.unpack('<8I', header)
-                if count > 4096 or size > 1024*1024: raise ValueError('native-load-command-budget')
-                raw = stream.read(size)
-                if len(raw) != size: raise ValueError('truncated-native-load-commands')
+            routing = native_image_routes(path, contract['architecture'])
             VERIFIER.verify(root,entry['path'],entry,identity=entry['id'],version=entry['version'],build=contract['buildRevision'])
-            commands=[]; rpaths=[]; offset=0
-            for _ in range(count):
-                if offset+8 > len(raw): raise ValueError('truncated-native-command')
-                command,length=struct.unpack_from('<II',raw,offset)
-                if length < 8 or offset+length > len(raw): raise ValueError('invalid-native-command-size')
-                if command == 0x8000001c:  # LC_RPATH
-                    if length < 12: raise ValueError('invalid-rpath-command')
-                    name_offset=struct.unpack_from('<I',raw,offset+8)[0]
-                    if not 12 <= name_offset < length: raise ValueError('invalid-rpath-name')
-                    encoded=raw[offset+name_offset:offset+length]
-                    if b'\0' not in encoded: raise ValueError('unterminated-rpath-name')
-                    rpath=encoded.split(b'\0',1)[0].decode('utf8')
-                    if len(rpath) > 4096: raise ValueError('native-rpath-budget')
-                    rpaths.append(rpath)
-                elif command in (0xc,0x80000018,0x8000001f,0x80000023):
-                    if length < 24: raise ValueError('invalid-dylib-command')
-                    name_offset=struct.unpack_from('<I',raw,offset+8)[0]
-                    if not 24 <= name_offset < length: raise ValueError('invalid-dylib-name')
-                    encoded=raw[offset+name_offset:offset+length]
-                    if b'\0' not in encoded: raise ValueError('unterminated-dylib-name')
-                    name=encoded.split(b'\0',1)[0].decode('utf8')
-                    if len(name) > 4096: raise ValueError('native-dylib-name-budget')
-                    commands.append(name)
-                offset += length
-            if offset != size: raise ValueError('native-command-size-mismatch')
+            commands = routing['commands']; rpaths = routing['rpaths']
             for name in commands:
-                child, resolution, matches = _select_declared_native(root, entries, path, name, rpaths)
+                if len(edges) >= 4096: raise ValueError('global-native-edge-budget')
+                if routing['format'] == 'ELF64':
+                    child, resolution, matches = _select_declared_elf(root, entries, path, name, rpaths, routing['runpaths'])
+                else:
+                    child, resolution, matches = _select_declared_native(root, entries, path, name, rpaths)
                 proof=None; observed=False
                 if child is None:
                     status='UNEXPECTED_OBSERVED'
@@ -513,17 +758,21 @@ def scoped_macho_dependencies(root, contract):
                     except FileNotFoundError: status='MISSING'
                     except (OSError,ValueError): status='OBSERVED_UNVERIFIED'
                 edge={'parent':entry['id'],'child':child['id'] if child else None,
-                    'status':status,'evidence':'DISK_LOAD_COMMAND_DECLARED_ROUTE',
+                    'status':status,'evidence':'DISK_DYNAMIC_TAG_DECLARED_ROUTE' if routing['format'] == 'ELF64' else 'DISK_LOAD_COMMAND_DECLARED_ROUTE',
                     'resolution':resolution,'actualLoaded':observed,
                     'artifactDigest':proof['digest'] if proof else None,
-                    'architecture':{0x1000007:'x86_64',0x100000c:'arm64'}.get(cpu,'UNVERIFIED'),
+                    'parentArtifactDigest':entry['digest'],
+                    'architecture':routing['architecture'], 'imageFormat':routing['format'],
+                    'sliceSelection':routing['slice'],
+                    'routeState': 'AMBIGUOUS' if len(matches) > 1 else 'UNRESOLVED' if child is None else 'EXPECTED',
                     'mappedIntegrity':'UNVERIFIED','runtimeEdgeVerified':False}
                 if reason: edge['reason']=reason
                 if matches: edge['declaredCandidateIds']=matches
                 edges.append(edge)
         except (ValueError,OSError,UnicodeError,struct.error):
             edges.append({'parent':entry['id'],'status':'OBSERVED_UNVERIFIED','reason':'invalid-or-missing-native-image'})
-    return {'version':2,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_AND_DECLARED_RPATHS_ONLY',
+    return {'version':3,'edges':edges,'complete':False,'scope':'DECLARED_NATIVE_IMAGES_AND_DECLARED_RPATHS_ONLY',
+        'contractRevision':evidence_digest(contract),
         'reason':'declared-static-routing-and-exact-loaded-presence-do-not-prove-runtime-loader-edges'}
 
 
@@ -624,8 +873,11 @@ def evidence_digest(value):
         ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
 
-def native_architecture(path):
-    """Bounded image header only; unsupported/fat images remain explicit."""
+def native_architecture(path, expected=None):
+    """Bounded architecture observation, fat slice selected by declared CPU only."""
+    if expected is not None:
+        try: return native_image_routes(path, expected)['architecture']
+        except (ValueError, OSError): return 'UNSUPPORTED'
     import struct
     with Path(path).open('rb') as stream:
         header = stream.read(32)
@@ -707,7 +959,7 @@ def mapped_native_receipts(root, contract):
                 value['status'] = source if source in ('UNSUPPORTED', 'EXPECTED_NOT_OBSERVED') else 'OBSERVED_UNVERIFIED'
             proof = VERIFIER.verify(root, entry['path'], entry, identity=entry['id'],
                 version=entry['version'], build=contract['buildRevision'])
-            value.update(diskIntegrity='VERIFIED', diskDigest=proof['digest'], architecture=native_architecture(path))
+            value.update(diskIntegrity='VERIFIED', diskDigest=proof['digest'], architecture=native_architecture(path, contract['architecture']))
             if value['architecture'] != contract['architecture']:
                 value['status'] = 'UNSUPPORTED' if value['architecture'] == 'UNSUPPORTED' else 'OBSERVED_UNVERIFIED'
                 value['reason'] = 'architecture-unverified-or-mismatch'
@@ -743,7 +995,7 @@ def processing_binding(session, request, input_identity, inventory):
         'inventoryRevision': evidence_digest(stable_processing_inventory(inventory)), 'modelIdentity': evidence_digest(inventory.get('models', [])),
         'codecIdentity': evidence_digest(evidence.get('codec', {})),
         'nativeIdentity': evidence_digest({key: evidence.get(key) for key in
-            ('mappedNative', 'dynamicNativeGraph', 'transitiveNativeObservation', 'nativeClosure')}),
+            ('mappedNative', 'dynamicNativeGraph', 'transitiveNativeObservation', 'nativeClosure', 'scopedNativeLoads')}),
         'networkIdentity': evidence_digest(evidence.get('network', {}))}
 
 
@@ -807,6 +1059,12 @@ class BoundProcessingReceipt:
             stages.append({'stage': stage, 'status': 'VERIFIED' if verified else 'NOT_APPLICABLE' if not_applicable else 'UNVERIFIED' if calls else 'EXPECTED'})
         reasons = ['stage:'+s['stage'] for s in stages if s['status'] not in ('VERIFIED', 'NOT_APPLICABLE')]
         if evidence.get('dynamicNativeGraph', {}).get('complete') is not True: reasons.append('native-closure-incomplete')
+        loads = evidence.get('scopedNativeLoads')
+        if loads is not None:
+            if loads.get('unexpected'): reasons.append('unexpected-scoped-native-load')
+            if loads.get('ambiguous'): reasons.append('ambiguous-scoped-native-load')
+            if loads.get('unresolved'): reasons.append('unresolved-scoped-native-load')
+            if loads.get('complete') is not True: reasons.append('scoped-native-load-coverage-incomplete')
         network = evidence.get('network', {})
         if network.get('native') != 'CONTAINED' or network.get('nativeNetworkVerified') is not True: reasons.append('native-network-unverified')
         if inventory.get('identityComplete') is not True: reasons.append('model-helper-identity-incomplete')

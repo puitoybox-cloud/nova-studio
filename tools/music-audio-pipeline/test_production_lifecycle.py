@@ -93,7 +93,8 @@ class LifecycleTests(unittest.TestCase):
 class NativeTests(unittest.TestCase):
     def image(self,name):
         import struct
-        encoded=name.encode()+b'\0';length=24+len(encoded)
+        encoded=name.encode()+b'\0';length=(24+len(encoded)+7)//8*8
+        encoded += b'\0'*(length-24-len(encoded))
         command=struct.pack('<6I',0xc,length,24,0,0,0)+encoded
         return struct.pack('<8I',0xfeedfacf,0x1000007,0,6,1,len(command),0,0)+command
     def test_declared_transitive_missing_unexpected_and_wrong_artifact(self):
@@ -103,7 +104,7 @@ class NativeTests(unittest.TestCase):
             (root/'entry.so').write_bytes(self.image('@loader_path/lib.dylib'))
             parent.update(version='1',digest=hashlib.sha256((root/'entry.so').read_bytes()).hexdigest(),byteLength=(root/'entry.so').stat().st_size)
             (root/'lib.dylib').write_bytes(b'fixture')
-            c={'native':[parent,child],'buildRevision':'fixture'}
+            c={'native':[parent,child],'buildRevision':'fixture','architecture':'x86_64'}
             with patch('runtime_evidence.scoped_loaded_library',return_value={'actualLoaded':True}):
                 r=scoped_macho_dependencies(root,c);self.assertFalse(r['complete']);self.assertEqual(r['edges'][0]['status'],'OBSERVED_UNVERIFIED');self.assertIsNotNone(r['edges'][0]['artifactDigest'])
                 child['digest']='0'*64;r=scoped_macho_dependencies(root,c);self.assertIsNone(r['edges'][0]['artifactDigest'])
