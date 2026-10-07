@@ -53,6 +53,35 @@ class LifecycleTests(unittest.TestCase):
         with patch('local_distribution_entry.os.killpg'):
             with self.assertRaisesRegex(ValueError,'helper-startup'):l.start()
         self.assertTrue(l.server.closed)
+
+    def test_owned_helper_disk_preflight_brackets_actual_spawn(self):
+        l=self.make();events=[]
+        l.prepared['_source_preflight']=lambda:events.append('verify')
+        def spawn(*args,**kwargs):events.append('spawn');return self.child
+        l.popen=spawn
+        try:
+            l.start();self.assertEqual(events,['verify','spawn','verify'])
+        finally:self.cleanup(l)
+
+    def test_changed_post_spawn_identity_blocks_health_admission(self):
+        l=self.make();events=[]
+        def verify():
+            events.append('verify')
+            if len(events)==2:raise ValueError('changed-executable-after-spawn')
+        l.prepared['_source_preflight']=verify
+        l.health=lambda:(_ for _ in ()).throw(AssertionError('health-admitted-before-postflight'))
+        with self.assertRaisesRegex(ValueError,'changed-executable-after-spawn'):l.start()
+        self.assertEqual(l.state,'FAILED');self.assertTrue(l.server.closed)
+
+    def test_pinned_private_channel_origin_cannot_change_in_health(self):
+        l=self.make();health=l.health()
+        l.expected_child_private={'parentLaunchEvidence':{'session':l.server.session}}
+        health['runtimeIdentity']['actualInventory']['privatePython']=copy.deepcopy(l.expected_child_private)
+        try:
+            l.verify_health(health)
+            health['runtimeIdentity']['actualInventory']['privatePython']['parentLaunchEvidence']['session']='foreign'
+            with self.assertRaisesRegex(ValueError,'changed-or-foreign-helper-private-origin'):l.verify_health(health)
+        finally:l.close()
     def test_server_failure(self):
         l=self.make()
         with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):

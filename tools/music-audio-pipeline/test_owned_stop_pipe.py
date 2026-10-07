@@ -38,6 +38,50 @@ class StopPipeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'stale-owned-stop-pipe'):a.request(None)
         a.close();self.assertEqual(a.key,'');self.assertEqual(a.handle.fileno(),-1)
 
+    def test_owned_origin_handshake_then_existing_stop_and_final(self):
+        a,b=self.pair();actual={'executable':{'digest':'e'*64},'processOrigin':{'mappedBytesVerified':False}}
+        errors=[];bindings=[]
+        def child():
+            try:
+                bindings.append(b.accept_origin(actual))
+                b.accept(lambda _:None);b.send_final({'complete':False})
+            except BaseException as error:errors.append(error)
+        worker=threading.Thread(target=child);worker.start()
+        binding=a.request_origin(actual)
+        self.assertFalse(binding['parentLaunchAuthenticated']);self.assertFalse(binding['parentKernelOriginVerified'])
+        with self.assertRaisesRegex(ValueError,'stale-owned-origin'):a.request_origin(actual)
+        a.request({'request':'f'*64});self.assertFalse(a.receive_final()['shutdown']['complete'])
+        worker.join(2);self.assertFalse(worker.is_alive());self.assertEqual(errors,[]);self.assertEqual(bindings,[binding])
+
+    def test_owned_origin_foreign_identity_and_replay_rejected(self):
+        a,b=self.pair()
+        payload={**a.identity,'kind':'ORIGIN','challenge':'e'*64,'identity':{'build':'foreign'}}
+        a.send(a.seal(payload))
+        with self.assertRaisesRegex(ValueError,'foreign-child-owned-origin'):b.accept_origin({'build':'approved'})
+        with self.assertRaisesRegex(ValueError,'stale-owned-origin'):b.accept_origin({'build':'approved'})
+
+    def test_owned_origin_session_owner_generation_key_and_challenge_rejected(self):
+        for field in ('session','owner','generation','deadline','challenge'):
+            a,b=self.pair();payload={**a.identity,'kind':'ORIGIN','challenge':'e'*64,'identity':{}}
+            payload[field]=0 if field=='deadline' else 'foreign'
+            with self.assertRaisesRegex(ValueError,'foreign-owned-origin'):
+                b._origin_envelope(a.seal(payload),'ORIGIN')
+        a,b=self.pair();payload={**a.identity,'kind':'ORIGIN','challenge':'e'*64,'identity':{}}
+        b.key='0'*64
+        with self.assertRaisesRegex(ValueError,'foreign-owned-origin'):b._origin_envelope(a.seal(payload),'ORIGIN')
+
+    def test_owned_origin_changed_signed_reply_consumes_attempt(self):
+        a,b=self.pair();errors=[]
+        def child():
+            try:
+                p=b._origin_envelope(b.receive(),'ORIGIN')
+                b.send(b.seal({**p,'kind':'ORIGIN_REPLY','identity':{'foreign':True}}))
+            except BaseException as error:errors.append(error)
+        worker=threading.Thread(target=child);worker.start()
+        with self.assertRaisesRegex(ValueError,'foreign-owned-origin-reply'):a.request_origin({'approved':True})
+        worker.join(2);self.assertEqual(errors,[])
+        with self.assertRaisesRegex(ValueError,'stale-owned-origin'):a.request_origin({'approved':True})
+
     def test_authenticated_foreign_session_owner_generation_deadline_rejected(self):
         for field in ('session','owner','generation','deadline','requestBindingDigest','challenge'):
             a,b=self.pair();value=self.message(a)
@@ -126,6 +170,37 @@ class StopPipeTests(unittest.TestCase):
         self.assertIsNotNone(observed['stopBindingDigest'])
         self.assertEqual(l.final_receipt['payload']['completionState'],'PARTIAL')
         self.assertEqual(l.stop_pipe.key,'')
+
+    def test_actual_popen_child_origin_private_exchange_before_health(self):
+        import scoped_closure
+        fixture=lifecycle_fixtures.LifecycleTests();l=fixture.make();self.addCleanup(l.close)
+        source=str(Path(__file__).resolve().parent)
+        executable=Path(sys.executable).resolve()
+        if sys.platform=='darwin':
+            import ctypes
+            size=ctypes.c_uint32(65536);buffer=ctypes.create_string_buffer(size.value)
+            self.assertEqual(ctypes.CDLL(None)._NSGetExecutablePath(buffer,ctypes.byref(size)),0)
+            executable=Path(os.fsdecode(buffer.value)).resolve()
+        actual={'processOrigin':scoped_closure.private_process_origin(str(executable)),'productionReady':False}
+        l.prepared['_launch_origin_identity']=lambda:copy.deepcopy(actual)
+        l.prepared['_source_preflight']=lambda:None
+        code=('import sys,os,json,socket;sys.path.insert(0,'+repr(source)+');'
+            'from demucs_receipt import OwnedStopPipe;from scoped_closure import private_process_origin;'
+            'p=OwnedStopPipe(socket.socket(fileno=int(os.environ["NOVA_OWNED_STOP_FD"])),json.loads(os.environ["NOVA_OWNED_STOP_IDENTITY"]),os.environ["NOVA_OWNED_RESULT_CAPABILITY"]);'
+            'p.accept_origin({"processOrigin":private_process_origin('+repr(str(executable))+'),"productionReady":False});'
+            'p.accept(lambda _:None);p.send_final({"complete":False});p.close()')
+        l.prepared['command']=[sys.executable,'-I','-c',code];l.popen=subprocess.Popen
+        health=l.health
+        def observed_health():
+            result=health();result['runtimeIdentity']['actualInventory']['privatePython']=copy.deepcopy(l.expected_child_private)
+            return result
+        l.health=observed_health
+        l.start()
+        self.assertEqual(l.inventory['privatePython'],l.expected_child_private)
+        self.assertEqual(l.launch_origin_binding['session'],l.server.session)
+        self.assertFalse(l.launch_origin_binding['parentLaunchAuthenticated'])
+        l.close();self.assertEqual(l.graceful_stop_receipt['status'],'OBSERVED')
+        self.assertTrue(l.shutdown_receipt['ownedExitObservation']['leaderReaped'])
 
     def test_actual_helper_inherited_descriptor_closes_admission(self):
         import server as helper

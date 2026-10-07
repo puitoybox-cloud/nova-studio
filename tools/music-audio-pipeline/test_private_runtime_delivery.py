@@ -30,6 +30,9 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         self.bind_worker()
         self.runtime=SimpleNamespace(root=self.root,bindings={'native':[{'id':'python-runtime','version':'3.11.0','path':'runtime/bin/python'}]},
             resolve_executable=lambda identity,path:str(path),expected=lambda kind,identity:self.expected,stamps={},recheck=lambda:None)
+        self.runtime.native={'python-runtime':{'identity':{'id':'python-runtime'},'source':'runtime/bin/python'}}
+        self.runtime.root_identity=(self.root.stat().st_dev,self.root.stat().st_ino)
+        self.runtime.manifest={'buildRevision':'TEST_ONLY'}
 
     def bind_worker(self):
         source=self.graph['nodes'][0]
@@ -116,7 +119,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         layout=closure.private_python_layout(self.runtime,self.graph)
         fake=SimpleNamespace(implementation=SimpleNamespace(name='cpython'),version_info=(3,11,0),modules={},version='3.11.0 fixture',executable=layout['executable'],_stdlib_dir=layout['stdlib'],
             flags=SimpleNamespace(isolated=1,no_site=1),path=[str(self.root)]+layout['paths'])
-        runtime=copy.copy(self.runtime);runtime.manifest={'models':[],'dependencies':[],'assets':[]};runtime.bindings=dict(runtime.bindings,models=[],dependencies=[],assets=[])
+        runtime=copy.copy(self.runtime);runtime.manifest={'buildRevision':'TEST_ONLY','models':[],'dependencies':[],'assets':[]};runtime.bindings=dict(runtime.bindings,models=[],dependencies=[],assets=[])
         with patch.dict(sys.modules,{'sys':fake}), patch.object(closure,'private_process_origin',return_value={'status':'UNVERIFIED','source':'TEST_ONLY'}):
             self.assertTrue(callable(closure.private_runtime_preflight(runtime,self.graph,self.root)))
             self.assertEqual(runtime.private_python['stdlibArtifactDigest'],self.node['artifactDigest'])
@@ -162,8 +165,10 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         runtime=fixture.runtime
         runtime.verify('models','m','model')
         runtime.private_python={'stdlibArtifactDigest':'a'*64,'installedRecordInventory':[{'id':'fixture'}],
+                                'processOrigin':{'status':'UNVERIFIED','source':'TEST_ONLY'},
                                 'selection':'ANCHORED_PRIVATE_STARTUP','productionReady':False}
-        snapshot=runtime.snapshot()
+        with patch.object(closure,'private_process_origin',return_value={'status':'UNVERIFIED','source':'TEST_ONLY'}):
+            snapshot=runtime.snapshot()
         self.assertEqual(snapshot['privatePython']['stdlibArtifactDigest'],'a'*64)
         snapshot['privatePython']['installedRecordInventory'][0]['id']='foreign'
         self.assertEqual(runtime.private_python['installedRecordInventory'][0]['id'],'fixture')

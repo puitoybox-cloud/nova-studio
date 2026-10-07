@@ -140,6 +140,7 @@ class OwnedStopPipe:
         self.handle=handle;self.identity=copy.deepcopy(identity);self.key=capability
         self.clock=clock;self.consumed=False;self.closed=False
         self.stop_payload=None;self.final_used=False
+        self.origin_used=False
         os.set_inheritable(handle.fileno(),False)
 
     def seal(self,payload):
@@ -166,8 +167,9 @@ class OwnedStopPipe:
         if len(raw)>budget:raise ValueError('owned-stop-pipe-budget')
         self.handle.settimeout(1);self.handle.sendall(raw)
 
-    def receive(self, *, budget=4096):
-        deadline=min(self.clock()+1,self.identity['deadline']+10);raw=bytearray()
+    def receive(self, *, budget=4096, timeout=1):
+        if type(timeout) not in (int,float) or not 0<timeout<=30:raise ValueError('owned-pipe-time-budget')
+        deadline=min(self.clock()+timeout,self.identity['deadline']+10);raw=bytearray()
         while len(raw)<budget:
             remaining=deadline-self.clock()
             if remaining<=0:raise TimeoutError('owned-stop-pipe-time-budget')
@@ -188,6 +190,50 @@ class OwnedStopPipe:
         self.stop_payload=copy.deepcopy(payload);self.consumed=True
         return {'status':'OBSERVED','scope':'OWNED_INHERITED_DESCRIPTOR','state':'STOPPING',
             'deliveryIdentityDigest':hashlib.sha256(json.dumps(reply,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
+
+    def _origin_envelope(self, value, kind):
+        if self.origin_used or self.closed or self.consumed or self.clock()>=self.identity['deadline']:
+            raise ValueError('stale-owned-origin')
+        if not isinstance(value,dict) or set(value)!={'payload','authentication'}:
+            raise ValueError('invalid-owned-origin')
+        payload=value['payload']
+        if (not isinstance(payload,dict) or set(payload)!=set(self.identity)|{'kind','challenge','identity'} or
+                any(type(payload.get(k)) is not type(v) or payload.get(k)!=v for k,v in self.identity.items()) or
+                payload.get('kind')!=kind or not isinstance(payload.get('identity'),dict) or
+                not isinstance(payload.get('challenge'),str) or len(payload['challenge'])!=64 or
+                any(c not in '0123456789abcdef' for c in payload['challenge']) or
+                not isinstance(value['authentication'],str) or
+                not hmac.compare_digest(value['authentication'],self.seal(payload)['authentication'])):
+            raise ValueError('foreign-owned-origin')
+        return payload
+
+    def request_origin(self, expected):
+        """One-shot startup binding on the existing descriptor, not new authority."""
+        payload={**self.identity,'kind':'ORIGIN','challenge':secrets.token_hex(32),'identity':copy.deepcopy(expected)}
+        self._origin_envelope(self.seal(payload),'ORIGIN')
+        try:
+            self.send(self.seal(payload),budget=MAX_RECEIPT)
+            reply=self._origin_envelope(self.receive(budget=MAX_RECEIPT,timeout=30),'ORIGIN_REPLY')
+            if reply!={**payload,'kind':'ORIGIN_REPLY'}:raise ValueError('foreign-owned-origin-reply')
+            return self.origin_binding(payload)
+        finally:self.origin_used=True
+
+    def origin_binding(self, payload):
+        return {'status':'PARTIAL','transport':'AUTHENTICATED_OWNED_INHERITED_DESCRIPTOR',
+            'session':self.identity['session'],'owner':self.identity['owner'],
+            'generation':self.identity['generation'],
+            'launchIdentityDigest':hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+            'parentKernelOriginVerified':False,'parentLaunchAuthenticated':False}
+
+    def accept_origin(self, actual):
+        if self.origin_used or self.closed or self.consumed or self.clock()>=self.identity['deadline']:
+            raise ValueError('stale-owned-origin')
+        try:
+            payload=self._origin_envelope(self.receive(budget=MAX_RECEIPT),'ORIGIN')
+            if payload['identity']!=actual:raise ValueError('foreign-child-owned-origin')
+            self.send(self.seal({**payload,'kind':'ORIGIN_REPLY'}),budget=MAX_RECEIPT)
+            return self.origin_binding(payload)
+        finally:self.origin_used=True
 
     def accept(self,stop):
         payload=self.validate(self.receive(),'STOP')
@@ -253,6 +299,16 @@ def validate_receipt(value,expected,nonce):
                 evidence.get('complete') is not False or evidence.get('publicationEligible') is not False or
                 evidence.get('network',{}).get('native')!='UNVERIFIED'):
             raise ValueError('missing-wrong-or-overstated-child-runtime-evidence')
+    if 'privatePythonIdentity' in expected:
+        private = value.get('runtimeEvidence',{}).get('privatePython')
+        origin = private.get('processOrigin') if isinstance(private,dict) else None
+        if (not isinstance(private,dict) or
+                any(private.get(key) != identity for key,identity in expected['privatePythonIdentity'].items()) or
+                not isinstance(origin,dict) or origin.get('status') != 'PARTIAL' or
+                origin.get('approvedPathMatched') is not True or
+                origin.get('mappedBytesVerified') is not False or
+                origin.get('parentLaunchAuthenticated') is not False):
+            raise ValueError('foreign-child-private-runtime-origin')
     return copy.deepcopy(value)
 
 

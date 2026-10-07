@@ -783,6 +783,15 @@ def start_owned_stop_pipe(server):
     handle=socket.socket(fileno=int(descriptor))
     try:pipe=OwnedStopPipe(handle,identity,os.environ.get('NOVA_OWNED_RESULT_CAPABILITY',''))
     except BaseException:handle.close();raise
+    if os.environ.pop('NOVA_OWNED_ORIGIN_REQUIRED',None)=='1':
+        try:
+            RUNTIME_INVENTORY.recheck()
+            private=RUNTIME_INVENTORY.private_python
+            if private is None:raise ValueError('missing-helper-private-origin')
+            binding=pipe.accept_origin(private)
+            private['parentLaunchEvidence']=binding
+            RUNTIME_INVENTORY.recheck()
+        except BaseException:pipe.close();raise
     def close_admission(payload):
         OWNED_STOP_REQUESTED.set()
         if PROCESSING_ATTEMPTS is not None:PROCESSING_ATTEMPTS.close()

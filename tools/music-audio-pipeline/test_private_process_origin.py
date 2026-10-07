@@ -89,6 +89,29 @@ class PrivateProcessOriginTests(unittest.TestCase):
         changed=copy.deepcopy(inventory); changed['privatePython']['processOrigin']['status']='UNVERIFIED'
         self.assertNotEqual(first,processing_binding(*args,changed)['inventoryRevision'])
 
+    def test_recheck_observes_self_again_and_clears_changed_origin(self):
+        from test_runtime_inventory import RuntimeTests
+        fixture=RuntimeTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        runtime=fixture.runtime
+        original={'status':'PARTIAL','source':'TEST_ONLY','diskIdentity':[1,2,3,4,5]}
+        runtime.private_python={'processOrigin':copy.deepcopy(original)}
+        with patch.object(closure,'private_process_origin',return_value=original) as observe:
+            runtime.recheck();runtime.recheck();self.assertEqual(observe.call_count,2)
+        with patch.object(closure,'private_process_origin',return_value={**original,'source':'UNVERIFIED'}):
+            with self.assertRaisesRegex(ValueError,'stale-runtime-artifact'):runtime.recheck()
+        self.assertIsNone(runtime.private_python);self.assertEqual(runtime.native,{})
+
+    def test_parent_launch_and_disk_continuity_change_existing_revision(self):
+        args=('a'*64,'b'*64,{'digest':'c'*64,'byteLength':1})
+        private={'processOrigin':{'diskIdentity':[1,2,3,4,5]},
+            'parentLaunchEvidence':{'session':'a'*64,'owner':'d'*64,'generation':'e'*64}}
+        first=processing_binding(*args,{'privatePython':private})['inventoryRevision']
+        for key in ('session','owner','generation'):
+            changed=copy.deepcopy(private);changed['parentLaunchEvidence'][key]='f'*64
+            self.assertNotEqual(first,processing_binding(*args,{'privatePython':changed})['inventoryRevision'])
+        changed=copy.deepcopy(private);changed['processOrigin']['diskIdentity'][1]=99
+        self.assertNotEqual(first,processing_binding(*args,{'privatePython':changed})['inventoryRevision'])
+
     def test_demucs_actual_inventory_builder_binds_and_freezes_child_origin(self):
         private={'processOrigin':{'status':'PARTIAL','source':'DYLD_SELF_EXECUTABLE_PATH'}}
         runtime=type('Runtime',(),{'snapshot':lambda self:{'privatePython':private}})()

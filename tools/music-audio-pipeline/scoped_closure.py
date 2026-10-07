@@ -494,6 +494,7 @@ def private_process_origin(executable):
     return {'status':'PARTIAL' if source != 'UNSUPPORTED' else 'UNVERIFIED',
         'source':source, 'approvedPathMatched':source != 'UNSUPPORTED',
         'backingInodeMatched':backing, 'mappedBytesVerified':False,
+        'diskIdentity':list(before),
         'parentLaunchAuthenticated':False}
 
 
@@ -538,5 +539,8 @@ def private_runtime_preflight(runtime, contract, pipeline, *, configure_path=Fal
     runtime.private_python = {'stdlibArtifactDigest': nodes['python-runtime']['artifactDigest'],
         'installedRecordInventory': report['installedRecordInventory'],
         'processOrigin': process_origin,
+        'executable':copy.deepcopy(runtime.native['python-runtime']),
+        'runtimeRootIdentity':list(runtime.root_identity),
+        'buildRevision':runtime.manifest['buildRevision'],
         'selection': 'ANCHORED_PRIVATE_STARTUP', 'productionReady': False}
     return distribution
