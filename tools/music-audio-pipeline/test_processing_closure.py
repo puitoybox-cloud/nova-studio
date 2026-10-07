@@ -147,7 +147,7 @@ class ProcessingBindingTests(unittest.TestCase):
 
 class MappedTests(unittest.TestCase):
     def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
+        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name).resolve()
         self.path=self.root/'fixture.so';self.path.write_bytes(b'fixture')
         self.entry={'id':'codec-native','module':None,'version':'1','path':self.path.name,
             'digest':hashlib.sha256(self.path.read_bytes()).hexdigest(),'byteLength':7,'kind':'SHARED_LIBRARY'}

@@ -484,7 +484,7 @@ def private_process_origin(executable):
             if query(buffer, ctypes.byref(size)) != 0 or b'\x00' not in buffer.raw:
                 return {'status':'UNVERIFIED', 'source':'DYLD_QUERY_UNAVAILABLE', 'parentLaunchAuthenticated':False}
             actual = Path(os.fsdecode(buffer.value))
-            if not actual.is_absolute() or actual != expected:
+            if not actual.is_absolute() or actual.resolve() != expected:
                 raise ValueError('foreign-private-process-origin')
             source = 'DYLD_SELF_EXECUTABLE_PATH'
     except (OSError, AttributeError):
