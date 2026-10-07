@@ -237,8 +237,10 @@ def validate_graph(contract):
     return by_id
 
 
-def verify_closure(root,contract,distribution=importlib.metadata.distribution,stamp_sink=None,build="UNSPECIFIED"):
+def verify_closure(root,contract,distribution=None,stamp_sink=None,build="UNSPECIFIED"):
     contract=copy.deepcopy(contract);nodes=validate_graph(contract);results=[];total=0;stamps=[]
+    if distribution is None:
+        distribution = private_distribution_lookup(root, contract, authenticate=False)
     for identity,node in nodes.items():
         level=node['evidence'];reason=None
         if not node['files'] and level!='EXPECTED_ONLY':level='MISSING';reason='missing-artifact-files'
@@ -313,7 +315,7 @@ def manifest_assembly_binding(runtime, nodes):
             'trustedManifest':'EXTERNALLY_ANCHORED'}
 
 
-def verify_assembly(root,contract,distribution=importlib.metadata.distribution, *, runtime=None):
+def verify_assembly(root,contract,distribution=None, *, runtime=None):
     observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[];materials=[];records=[]
     for entry in observed['entries']:
         status=entry['status'];license_status=entry['licenseStatus']
@@ -364,7 +366,8 @@ def private_python_layout(runtime, contract):
     if len(stdlibs) != 1:
         raise ValueError('missing-or-ambiguous-private-stdlib')
     stdlib = stdlibs[0]
-    for relative in (stdlib+'/encodings/__init__.py', stdlib+'/encodings/utf_8.py'):
+    for relative in (stdlib+'/encodings/__init__.py', stdlib+'/encodings/utf_8.py',
+                     stdlib+'/json/__init__.py', stdlib+'/sysconfig.py'):
         if relative not in files:
             raise ValueError('missing-private-stdlib-bootstrap')
     roots = set()
@@ -386,19 +389,23 @@ def private_python_layout(runtime, contract):
             'paths': [str(Path(runtime.root).resolve()) if p=='.' else str(local(runtime.root,p)) for p in paths]}
 
 
-def private_distribution_lookup(root, contract):
+def private_distribution_lookup(root, contract, *, authenticate=True):
     """Use exact approved dist-info, without ambient metadata/PATH discovery."""
     nodes = validate_graph(contract)
     selected = {}
     for node in nodes.values():
         if node['kind'] != 'PYTHON_DISTRIBUTION': continue
-        metadata = verify_distribution_metadata(root,node)
+        candidates = [f for f in node['files'] if Path(f['path']).name == 'METADATA'
+                      and Path(f['path']).parent.name.endswith('.dist-info')]
+        if len(candidates) != 1: raise ValueError('missing-or-ambiguous-private-distribution')
+        metadata = verify_distribution_metadata(root,node) if authenticate else candidates[0]
         key = re.sub(r'[-_.]+','-',node['id']).lower()
         if key in selected: raise ValueError('ambiguous-private-distribution')
         selected[key] = local(root,str(PurePosixPath(metadata['path']).parent))
     def lookup(identity):
         key = re.sub(r'[-_.]+','-',identity).lower()
         if key not in selected: raise importlib.metadata.PackageNotFoundError(identity)
+        if not (selected[key] / 'METADATA').is_file(): raise importlib.metadata.PackageNotFoundError(identity)
         return importlib.metadata.PathDistribution(selected[key])
     return lookup
 
@@ -424,7 +431,7 @@ def private_python_command(runtime, contract, worker, arguments=()):
     # arbitrary .pth/sitecustomize execution, -I ignores user Python environment.
     # Source loaders compile source rather than consuming unbound cached .pyc.
     program = ('import sys\n'
-        'if sys.version.split()[0] != '+repr(layout['version'])+' or sys.executable != '+repr(layout['executable'])+': raise RuntimeError("private-python-identity")\n'
+        'if sys.implementation.name != \"cpython\" or sys.version_info[:2] != (3,11) or sys.version.split()[0] != '+repr(layout['version'])+' or sys.executable != '+repr(layout['executable'])+': raise RuntimeError("private-python-identity")\n'
         'if getattr(sys,"_stdlib_dir",None) != '+repr(layout['stdlib'])+': raise RuntimeError("private-stdlib-origin")\n'
         'sys.path[:] = '+repr([str(worker.parent)]+layout['paths'])+'\n'
         'sys.dont_write_bytecode = True\n'
@@ -437,18 +444,27 @@ def private_python_command(runtime, contract, worker, arguments=()):
     return [layout['executable'],'-I','-S','-B','-c',program]
 
 
-def private_runtime_preflight(runtime, contract, pipeline):
+def private_runtime_preflight(runtime, contract, pipeline, *, configure_path=False):
     """Independent in-process acceptance of the same actual private startup path."""
     import sys
     runtime.private_python = None
     layout = private_python_layout(runtime,contract)
-    if (sys.version.split()[0] != layout['version'] or sys.executable != layout['executable'] or
+    if (sys.implementation.name != 'cpython' or sys.version_info[:2] != (3,11) or
+            sys.version.split()[0] != layout['version'] or sys.executable != layout['executable'] or
             getattr(sys,'_stdlib_dir',None) != layout['stdlib'] or
             not sys.flags.isolated or not sys.flags.no_site or
-            sys.path != [str(Path(pipeline).resolve())]+layout['paths']):
+            (not configure_path and sys.path != [str(Path(pipeline).resolve())]+layout['paths'])):
         raise ValueError('wrong-private-runtime-startup')
-    distribution = private_distribution_lookup(runtime.root,contract)
     nodes = validate_graph(contract)
+    approved = {local(runtime.root,f['path']) for node in nodes.values()
+                if node['kind'] in ('PYTHON_RUNTIME','SOURCE') for f in node['files']}
+    for module in tuple(sys.modules.values()):
+        spec = getattr(module,'__spec__',None)
+        if getattr(spec,'origin',None) in ('built-in','frozen'): continue
+        origin = getattr(module,'__file__',None)
+        if origin is not None and Path(origin).resolve() not in approved:
+            raise ValueError('foreign-preloaded-private-python-module')
+    distribution = private_distribution_lookup(runtime.root,contract)
     before = {f['path']:stable(local(runtime.root,f['path'])) for node in nodes.values() for f in node['files']}
     report = verify_assembly(runtime.root,contract,distribution,runtime=runtime)
     if not report['complete']:
@@ -462,6 +478,9 @@ def private_runtime_preflight(runtime, contract, pipeline):
                 raise ValueError('changed-private-runtime-assembly')
             runtime.stamps[('private-python',f['path'])] = (f['path'],before[f['path']])
     runtime.recheck()
+    if configure_path:
+        sys.path[:] = [str(Path(pipeline).resolve())]+layout['paths']
+        importlib.invalidate_caches()
     runtime.private_python = {'stdlibArtifactDigest': nodes['python-runtime']['artifactDigest'],
         'installedRecordInventory': report['installedRecordInventory'],
         'selection': 'ANCHORED_PRIVATE_STARTUP', 'productionReady': False}

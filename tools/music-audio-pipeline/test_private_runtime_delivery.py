@@ -21,7 +21,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
             node['requires']=['python-runtime' if v=='python_runtime' else v for v in node['requires']]
         self.graph['roots']=['python-runtime' if v=='python_runtime' else v for v in self.graph['roots']]
         self.node['files']=[]
-        for name in ['runtime/bin/python','runtime/lib/python3.11/os.py','runtime/lib/python3.11/encodings/__init__.py','runtime/lib/python3.11/encodings/utf_8.py','runtime/lib/python3.11/lib-dynload/fixture.so']:
+        for name in ['runtime/bin/python','runtime/lib/python3.11/os.py','runtime/lib/python3.11/encodings/__init__.py','runtime/lib/python3.11/encodings/utf_8.py','runtime/lib/python3.11/json/__init__.py','runtime/lib/python3.11/sysconfig.py','runtime/lib/python3.11/lib-dynload/fixture.so']:
             self.add_file(name,b'fixture')
         self.refresh()
         self.worker=self.root/'server.py';self.worker.write_bytes(b'raise RuntimeError("worker-must-not-run")')
@@ -102,7 +102,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
 
     def test_independent_preflight_preserves_license_gate(self):
         layout=closure.private_python_layout(self.runtime,self.graph)
-        fake=SimpleNamespace(version='3.11.0 fixture',executable=layout['executable'],_stdlib_dir=layout['stdlib'],
+        fake=SimpleNamespace(implementation=SimpleNamespace(name='cpython'),version_info=(3,11,0),modules={},version='3.11.0 fixture',executable=layout['executable'],_stdlib_dir=layout['stdlib'],
             flags=SimpleNamespace(isolated=1,no_site=1),path=[str(self.root)]+layout['paths'])
         runtime=copy.copy(self.runtime);runtime.manifest={'models':[],'dependencies':[],'assets':[]};runtime.bindings=dict(runtime.bindings,models=[],dependencies=[],assets=[])
         with patch.dict(sys.modules,{'sys':fake}):
@@ -127,7 +127,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
         command=closure.private_python_command(self.runtime,self.graph,self.worker)
         layout=closure.private_python_layout(self.runtime,self.graph)
-        prefix='import sys;sys.version='+repr(layout['version'])+';sys.executable='+repr(layout['executable'])+';sys._stdlib_dir='+repr(layout['stdlib'])+'\n'
+        prefix='import sys;sys.version_info=(3,11,0);sys.version='+repr(layout['version'])+';sys.executable='+repr(layout['executable'])+';sys._stdlib_dir='+repr(layout['stdlib'])+'\n'
         result=subprocess.run([sys.executable]+command[1:5]+[prefix+command[5]],capture_output=True,timeout=5)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(result.stdout,b'SOURCE_ONLY_STARTUP_BODY\n')
@@ -195,6 +195,25 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         before=processing_binding(*args,inventory)['inventoryRevision']
         inventory['privatePython']['installedRecordInventory'][0]['artifactDigest']='f'*64
         self.assertNotEqual(processing_binding(*args,inventory)['inventoryRevision'],before)
+
+    def test_json_sysconfig_stdlib_footprints_are_required(self):
+        for relative in ['json/__init__.py','sysconfig.py']:
+            with self.subTest(relative=relative):
+                before=copy.deepcopy(self.node['files'])
+                self.node['files']=[f for f in before if not f['path'].endswith('/'+relative)]
+                self.refresh()
+                with self.assertRaisesRegex(ValueError,'missing-private-stdlib-bootstrap'):
+                    closure.private_python_layout(self.runtime,self.graph)
+                self.node['files']=before;self.refresh()
+
+    def test_demucs_foreign_runtime_rejected_before_metadata_version_lookup(self):
+        import demucs_child
+        runtime=SimpleNamespace(bindings={'models':[{'runtimeIdentifier':'demucs','loaderVersion':'4.0.1'}]})
+        with patch.object(demucs_child,'private_runtime_preflight',side_effect=ValueError('foreign-startup')), \
+             patch.object(demucs_child.importlib.metadata,'version',side_effect=AssertionError('premature metadata')) as metadata:
+            with self.assertRaisesRegex(ValueError,'foreign-startup'):
+                demucs_child.load(runtime,{}, {},'nonce')
+        metadata.assert_not_called()
 
 
 if __name__=='__main__':unittest.main()

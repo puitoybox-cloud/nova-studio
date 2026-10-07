@@ -29,8 +29,8 @@ def write(value):
 
 def load(runtime,contract,expected,nonce):
     binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
-    if binding['loaderVersion']!='4.0.1' or importlib.metadata.version('demucs')!=binding['loaderVersion']:raise ValueError('unsupported-or-wrong-loader-version')
     distribution=private_runtime_preflight(runtime,contract,SOURCE.parent)
+    if binding['loaderVersion']!='4.0.1' or importlib.metadata.version('demucs')!=binding['loaderVersion']:raise ValueError('unsupported-or-wrong-loader-version')
     closure=verify_closure(runtime.root,contract,distribution,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
     if not closure['complete']:raise ValueError('partial-runtime-closure')
     primary=runtime.verify('models',binding['id'],binding['path'])
@@ -157,6 +157,7 @@ def main():
     root,manifest_path,anchor,build=sys.argv[1:5]
     runtime=bootstrap(manifest_path,anchor,build,root)
     contract=load_contract(root,runtime.manifest)
+    private_runtime_preflight(runtime,contract,SOURCE.parent)
     from runtime_evidence import load as load_evidence, install_import_guard, observe, receipt_evidence
     evidence_contract=load_evidence(runtime)
     install_import_guard(root,evidence_contract)

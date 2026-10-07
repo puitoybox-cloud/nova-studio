@@ -99,6 +99,9 @@ def initialize_runtime():
                 ('runtime-evidence-source','runtime_evidence.py'),
                 ('scoped-closure-source','scoped_closure.py'), ('inventory-aggregation-source','inventory_aggregation.py')]:
             verify_local_asset(_pipeline_directory, relative, RUNTIME_INVENTORY.expected('assets',identity), 1024*1024)
+        from scoped_closure import load_contract, verify_closure, private_runtime_preflight
+        contract = load_contract(RUNTIME_INVENTORY.root, manifest)
+        distribution = private_runtime_preflight(RUNTIME_INVENTORY,contract,_pipeline_directory)
         import runtime_evidence
         RUNTIME_EVIDENCE_MODULE = runtime_evidence
         RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
@@ -109,9 +112,6 @@ def initialize_runtime():
         import inventory_aggregation
         INVENTORY_AGGREGATOR = inventory_aggregation
         # Authenticate the complete scoped file footprint before importing ML/native code.
-        from scoped_closure import load_contract, verify_closure, private_runtime_preflight
-        contract = load_contract(RUNTIME_INVENTORY.root, manifest)
-        distribution = private_runtime_preflight(RUNTIME_INVENTORY,contract,_pipeline_directory)
         SCOPED_CLOSURE = verify_closure(RUNTIME_INVENTORY.root,
             contract,distribution,
             build=RUNTIME_INVENTORY.manifest['buildRevision'],
