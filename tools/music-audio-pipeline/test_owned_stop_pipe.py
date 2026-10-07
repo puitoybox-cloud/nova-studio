@@ -338,8 +338,20 @@ class FinalDeliveryTests(unittest.TestCase):
         fixture=lifecycle_fixtures.LifecycleTests();l=fixture.make();self.addCleanup(l.close)
         source=str(Path(__file__).resolve().parent)
         code="import sys,os,json,socket;sys.path.insert(0,"+repr(source)+");from demucs_receipt import OwnedStopPipe;p=OwnedStopPipe(socket.socket(fileno=int(os.environ['NOVA_OWNED_STOP_FD'])),json.loads(os.environ['NOVA_OWNED_STOP_IDENTITY']),os.environ['NOVA_OWNED_RESULT_CAPABILITY']);p.accept(lambda _:None);p.send_final({'status':'PARTIAL','ownedDescendantsComplete':False});p.close()"
-        l.prepared['command']=[sys.executable,'-I','-c',code];l.popen=subprocess.Popen
-        l.start();l.close()
+        # Fake health is immediate; synchronize the actual disposable child before
+        # exercising the unchanged one-second production stop/final budgets.
+        parent_ready,child_ready=socket.socketpair()
+        self.addCleanup(parent_ready.close);self.addCleanup(child_ready.close)
+        parent_ready.settimeout(5)
+        code=code.replace("p.accept(lambda _:None);", "ready=socket.socket(fileno=int(os.environ['NOVA_TEST_READY_FD']));ready.sendall(b'R');assert ready.recv(1)==b'G';ready.close();p.accept(lambda _:None);")
+        def spawn(command,**options):
+            options['env']=dict(options['env'],NOVA_TEST_READY_FD=str(child_ready.fileno()))
+            options['pass_fds']=tuple(options['pass_fds'])+(child_ready.fileno(),)
+            return subprocess.Popen(command,**options)
+        l.prepared['command']=[sys.executable,'-I','-c',code];l.popen=spawn
+        l.start();child_ready.close()
+        self.assertEqual(parent_ready.recv(1),b'R')
+        parent_ready.sendall(b'G');l.close()
         delivery=l.shutdown_receipt['helperChildShutdownDelivery']
         self.assertEqual(delivery['status'],'OBSERVED');self.assertFalse(delivery['shutdown']['ownedDescendantsComplete'])
         raw=json.dumps(l.shutdown_receipt,sort_keys=True,separators=(',',':')).encode()
