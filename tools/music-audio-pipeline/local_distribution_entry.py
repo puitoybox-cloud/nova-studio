@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from runtime_inventory import bootstrap
-from scoped_closure import load_contract, verify_assembly
+from scoped_closure import load_contract, verify_assembly, private_python_command, private_distribution_lookup
 from dependency_identity import verify_local_asset
 from distribution_binding import load_manifest
 
@@ -619,14 +619,15 @@ def prepare(root, manifest, anchor, build, pipeline=None):
     if runtime.manifest['helper']['sourceDigest'] != runtime.expected('assets', 'helper-source')['digest']:
         raise ValueError('launcher-helper-source-mismatch')
     graph = load_contract(runtime.root, runtime.manifest)
-    artifact_report = verify_assembly(runtime.root, graph, runtime=runtime)
+    distribution = private_distribution_lookup(runtime.root, graph)
+    artifact_report = verify_assembly(runtime.root, graph, distribution, runtime=runtime)
     if not artifact_report['complete']:
         raise ValueError('launcher-artifact-assembly-incomplete')
     from runtime_evidence import load as load_evidence, assembly_evidence
     evidence = load_evidence(runtime)
     if evidence['buildRevision'] != build:
         raise ValueError('launcher-evidence-build-mismatch')
-    executable = runtime.resolve_executable('python-runtime', sys.executable)
+    command = private_python_command(runtime, graph, pipeline/'server.py')
     runtime.recheck()
     def source_preflight():
         # Reuse existing authenticated asset identities at the actual spawn boundary.
@@ -640,9 +641,9 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                             identity=identity, version=expected['revision'], build=build)
             if stable(path) != source_stamps[relative]:
                 raise ValueError('launcher-source-changed')
-        if runtime.resolve_executable('python-runtime', sys.executable) != executable:
+        if private_python_command(runtime, graph, pipeline/'server.py') != command:
             raise ValueError('launcher-runtime-changed')
-        if not verify_assembly(runtime.root, graph, runtime=runtime)['complete']:
+        if not verify_assembly(runtime.root, graph, distribution, runtime=runtime)['complete']:
             raise ValueError('launcher-artifact-assembly-changed')
         runtime.recheck()
     def owned_process_loader():
@@ -681,7 +682,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                 pass_fds=(descriptor,),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,start_new_session=True)
         return OwnedNativeSummaryDelivery(launch)
-    return {'command': [executable, '-I', str(pipeline/'server.py')],
+    return {'command': command,
             '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
             '_native_host': native_host,
             'environment': environment,

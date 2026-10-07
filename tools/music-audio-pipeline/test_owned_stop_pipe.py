@@ -197,7 +197,7 @@ class StopPipeTests(unittest.TestCase):
                 bindings={'version':1,'models':[],'dependencies':[],'native':[],'assets':[]},
                 expected=lambda kind,identity:assets[identity],recheck=lambda:None,
                 resolve_executable=lambda identity,path:str(path))
-            with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),patch.object(launcher,'bootstrap',return_value=runtime),patch.object(launcher,'load_contract',return_value={}),patch.object(launcher,'verify_assembly',return_value={'complete':True}),patch('runtime_evidence.load',return_value={'buildRevision':'build'}),patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
+            with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),patch.object(launcher,'bootstrap',return_value=runtime),patch.object(launcher,'load_contract',return_value={}),patch.object(launcher,'private_distribution_lookup'),patch.object(launcher,'private_python_command',return_value=[sys.executable,'-I',str(root/'server.py')]),patch.object(launcher,'verify_assembly',return_value={'complete':True}),patch('runtime_evidence.load',return_value={'buildRevision':'build'}),patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
                 prepared=launcher.prepare(root,'manifest','a'*64,'build',pipeline=root)
                 pipe_type,observer_type=prepared['_owned_process_loader']()
                 self.assertEqual(pipe_type.__module__,'nova_authenticated_owned_process')

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from dependency_identity import verify_local_asset
 from runtime_inventory import local
-from scoped_closure import load_contract, verify_closure
+from scoped_closure import load_contract, verify_closure, private_python_command, private_distribution_lookup, verify_assembly
 from demucs_receipt import ChildSession, unique
 
 SOURCES = {'artifact-verification-source':'artifact_verification.py','runtime-evidence-source':'runtime_evidence.py','demucs-child-source':'demucs_child.py','demucs-receipt-source':'demucs_receipt.py',
@@ -19,7 +19,10 @@ def start(runtime, manifest_path, anchor, build, guard):
         expected = runtime.expected('assets', identity)
         verify_local_asset(Path(__file__).parent, relative, expected, 1024*1024)
     contract = load_contract(runtime.root, runtime.manifest)
-    closure = verify_closure(runtime.root, contract,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
+    distribution = private_distribution_lookup(runtime.root,contract)
+    if not verify_assembly(runtime.root,contract,distribution,runtime=runtime)['complete']:
+        raise ValueError('unapproved-parent-assembly')
+    closure = verify_closure(runtime.root, contract,distribution,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
     if not closure['complete']: raise ValueError('partial-parent-closure')
     runtime.verify('assets','demucs-child-config','demucs-child-config.json')
     config_asset = runtime.expected('assets','demucs-child-config')
@@ -34,7 +37,7 @@ def start(runtime, manifest_path, anchor, build, guard):
             'source':binding['path'],'runtimeIdentifier':'demucs',
             'companions':[runtime.expected('assets',c['id']) for c in binding['companions']]},
         'companions':[runtime.expected('assets',c['id']) for c in binding['companions']],
-        'native':list(runtime.native.values())}
+        'native':[runtime.native[key] for key in sorted(runtime.native)]}
     loader = derived['loader']['source']
     if {k:v for k,v in loader.items() if k!='path'}!=runtime.expected('assets','demucs-loader-source'):raise ValueError('wrong-loader-expected-source')
     if expected!=derived:raise ValueError('child-config-manifest-mismatch')
@@ -44,9 +47,9 @@ def start(runtime, manifest_path, anchor, build, guard):
     evidence_contract=load_evidence(runtime)
     expected['runtimeEvidenceDigest']=hashlib.sha256(json.dumps(evidence_contract,sort_keys=True,
         separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
-    executable = runtime.resolve_executable('python-runtime',sys.executable)
+    runtime.resolve_executable('python-runtime',sys.executable)
     worker = str(Path(__file__).with_name('demucs_child.py').resolve())
-    command = [executable,'-I',worker,str(runtime.root),str(Path(manifest_path).resolve()),anchor,build]
+    command = private_python_command(runtime,contract,worker,[str(runtime.root),str(Path(manifest_path).resolve()),anchor,build])
     runtime.recheck()
     session=ChildSession(command,expected,permit=guard.permit)
     try:runtime.recheck()

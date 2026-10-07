@@ -109,9 +109,11 @@ def initialize_runtime():
         import inventory_aggregation
         INVENTORY_AGGREGATOR = inventory_aggregation
         # Authenticate the complete scoped file footprint before importing ML/native code.
-        from scoped_closure import load_contract, verify_closure
+        from scoped_closure import load_contract, verify_closure, private_runtime_preflight
+        contract = load_contract(RUNTIME_INVENTORY.root, manifest)
+        distribution = private_runtime_preflight(RUNTIME_INVENTORY,contract,_pipeline_directory)
         SCOPED_CLOSURE = verify_closure(RUNTIME_INVENTORY.root,
-            load_contract(RUNTIME_INVENTORY.root, manifest),
+            contract,distribution,
             build=RUNTIME_INVENTORY.manifest['buildRevision'],
             stamp_sink=lambda relative,stamp:RUNTIME_INVENTORY.stamps.__setitem__(('closure',relative),(relative,stamp)))
         if not SCOPED_CLOSURE['complete']:
@@ -119,9 +121,10 @@ def initialize_runtime():
         for binding in RUNTIME_INVENTORY.bindings['dependencies']:
             RUNTIME_INVENTORY.observe_dependency(binding)
         for binding in RUNTIME_INVENTORY.bindings['native']:
-            if binding['id'] != 'python-runtime':
+            if binding['id'] not in ('python-runtime','native-wrapper'):
                 raise ValueError('native-loader-not-integrated')
-            RUNTIME_INVENTORY.resolve_executable('python-runtime', sys.executable)
+            path = sys.executable if binding['id']=='python-runtime' else _runtime_module.local(RUNTIME_INVENTORY.root,binding['path'])
+            RUNTIME_INVENTORY.resolve_executable(binding['id'],path)
         for binding in RUNTIME_INVENTORY.bindings['models']:
             if binding['runtimeIdentifier'] == 'basic-pitch':
                 from basic_pitch.inference import Model

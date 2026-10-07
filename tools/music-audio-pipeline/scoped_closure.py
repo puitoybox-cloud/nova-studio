@@ -343,3 +343,126 @@ def verify_assembly(root,contract,distribution=importlib.metadata.distribution, 
             **manifest_binding, 'installedRecordInventory':records,
             'noticeMaterialInventory':materials,'noticeRedistributionApproved':False,
             'noticeScope':'AUTHENTICATED_INSTALLED_DECLARATIONS_ONLY'}
+
+
+def private_python_layout(runtime, contract):
+    """Resolve only existing anchored files; no conventional install/PATH fallback.
+
+    The existing runtime node must include the unpacked 3.11 stdlib. Other layouts
+    stay unsupported rather than guessing a distribution or accepting CI Python.
+    """
+    nodes = validate_graph(contract)
+    binding = next((b for b in runtime.bindings['native'] if b['id'] == 'python-runtime'), None)
+    node = nodes.get('python-runtime')
+    if (binding is None or node is None or node['kind'] != 'PYTHON_RUNTIME' or
+            node['version'] != binding['version'] or not node['version'].startswith('3.11.')):
+        raise ValueError('missing-private-python-slot')
+    files = {f['path']: f for f in node['files']}
+    if binding['path'] not in files:
+        raise ValueError('unbound-private-python-executable')
+    stdlibs = [str(PurePosixPath(f).parent) for f in files if PurePosixPath(f).name == 'os.py']
+    if len(stdlibs) != 1:
+        raise ValueError('missing-or-ambiguous-private-stdlib')
+    stdlib = stdlibs[0]
+    for relative in (stdlib+'/encodings/__init__.py', stdlib+'/encodings/utf_8.py'):
+        if relative not in files:
+            raise ValueError('missing-private-stdlib-bootstrap')
+    roots = set()
+    for distribution in nodes.values():
+        if distribution['kind'] != 'PYTHON_DISTRIBUTION': continue
+        metadata = verify_distribution_metadata(runtime.root, distribution)
+        verify_distribution_record(runtime.root, distribution, metadata)
+        roots.add(str(PurePosixPath(metadata['path']).parent.parent))
+    paths = [stdlib]
+    dynamic = stdlib+'/lib-dynload'
+    if any(f.startswith(dynamic+'/') for n in nodes.values() for f in (e['path'] for e in n['files'])):
+        paths.append(dynamic)
+    paths.extend(sorted(roots))
+    # Even a correct label cannot stand in for missing/stale runtime files.
+    for f in node['files']:
+        verify_local_asset(runtime.root, f['path'], f, 8*1024**3)
+    return {'executable': runtime.resolve_executable('python-runtime', local(runtime.root,binding['path'])),
+            'version': node['version'], 'stdlib': str(local(runtime.root,stdlib)),
+            'paths': [str(Path(runtime.root).resolve()) if p=='.' else str(local(runtime.root,p)) for p in paths]}
+
+
+def private_distribution_lookup(root, contract):
+    """Use exact approved dist-info, without ambient metadata/PATH discovery."""
+    nodes = validate_graph(contract)
+    selected = {}
+    for node in nodes.values():
+        if node['kind'] != 'PYTHON_DISTRIBUTION': continue
+        metadata = verify_distribution_metadata(root,node)
+        key = re.sub(r'[-_.]+','-',node['id']).lower()
+        if key in selected: raise ValueError('ambiguous-private-distribution')
+        selected[key] = local(root,str(PurePosixPath(metadata['path']).parent))
+    def lookup(identity):
+        key = re.sub(r'[-_.]+','-',identity).lower()
+        if key not in selected: raise importlib.metadata.PackageNotFoundError(identity)
+        return importlib.metadata.PathDistribution(selected[key])
+    return lookup
+
+
+def private_python_command(runtime, contract, worker, arguments=()):
+    """Actual Helper/Demucs command: disable site/.pth and pin approved roots.
+
+    Reuse source identity and full assembly checks. No new contract or authority.
+    Runtime disk identity is not mapped-native/network or installed acceptance.
+    """
+    layout = private_python_layout(runtime,contract)
+    worker = Path(worker)
+    if worker.is_symlink(): raise ValueError('unsafe-private-worker')
+    worker = worker.resolve()
+    identity = 'helper-source' if worker.name == 'server.py' else 'demucs-child-source' if worker.name == 'demucs_child.py' else None
+    if identity is None: raise ValueError('unexpected-private-python-worker')
+    expected = runtime.expected('assets',identity)
+    verify_local_asset(worker.parent,worker.name,expected,1024*1024)
+    raw = worker.read_bytes()
+    if len(raw) != expected['byteLength'] or hashlib.sha256(raw).hexdigest() != expected['digest']:
+        raise ValueError('changed-private-worker')
+    # Only builtin sys is imported before path/version validation. -S prevents
+    # arbitrary .pth/sitecustomize execution, -I ignores user Python environment.
+    # Source loaders compile source rather than consuming unbound cached .pyc.
+    program = ('import sys\n'
+        'if sys.version.split()[0] != '+repr(layout['version'])+' or sys.executable != '+repr(layout['executable'])+': raise RuntimeError("private-python-identity")\n'
+        'if getattr(sys,"_stdlib_dir",None) != '+repr(layout['stdlib'])+': raise RuntimeError("private-stdlib-origin")\n'
+        'sys.path[:] = '+repr([str(worker.parent)]+layout['paths'])+'\n'
+        'sys.dont_write_bytecode = True\n'
+        'def _nova_source_code(self, fullname):\n    return self.source_to_code(self.get_data(self.path),self.path)\n'
+        'sys.modules["_frozen_importlib_external"].SourceFileLoader.get_code = _nova_source_code\n'
+        'sys.argv = '+repr([str(worker)]+list(arguments))+'\n'
+        'globals()["__file__"] = '+repr(str(worker))+'\n'
+        'exec(compile('+repr(raw)+','+repr(str(worker))+',"exec"),globals())\n')
+    if len(program.encode()) > 120*1024: raise ValueError('private-startup-command-budget')
+    return [layout['executable'],'-I','-S','-B','-c',program]
+
+
+def private_runtime_preflight(runtime, contract, pipeline):
+    """Independent in-process acceptance of the same actual private startup path."""
+    import sys
+    runtime.private_python = None
+    layout = private_python_layout(runtime,contract)
+    if (sys.version.split()[0] != layout['version'] or sys.executable != layout['executable'] or
+            getattr(sys,'_stdlib_dir',None) != layout['stdlib'] or
+            not sys.flags.isolated or not sys.flags.no_site or
+            sys.path != [str(Path(pipeline).resolve())]+layout['paths']):
+        raise ValueError('wrong-private-runtime-startup')
+    distribution = private_distribution_lookup(runtime.root,contract)
+    nodes = validate_graph(contract)
+    before = {f['path']:stable(local(runtime.root,f['path'])) for node in nodes.values() for f in node['files']}
+    report = verify_assembly(runtime.root,contract,distribution,runtime=runtime)
+    if not report['complete']:
+        raise ValueError('unapproved-private-runtime-assembly')
+    # Bind startup selection to the existing inventory/request/result identity.
+    # This is disk/startup proof only, never mapped-native or device acceptance.
+    nodes = validate_graph(contract)
+    for node in nodes.values():
+        for f in node['files']:
+            if stable(local(runtime.root,f['path'])) != before[f['path']]:
+                raise ValueError('changed-private-runtime-assembly')
+            runtime.stamps[('private-python',f['path'])] = (f['path'],before[f['path']])
+    runtime.recheck()
+    runtime.private_python = {'stdlibArtifactDigest': nodes['python-runtime']['artifactDigest'],
+        'installedRecordInventory': report['installedRecordInventory'],
+        'selection': 'ANCHORED_PRIVATE_STARTUP', 'productionReady': False}
+    return distribution

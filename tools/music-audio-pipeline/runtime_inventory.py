@@ -58,6 +58,7 @@ class RuntimeInventory:
         self.assets = {}
         self.stamps = {}
         self.errors = []
+        self.private_python = None
         self.verification_evidence = {}
         self._validate_bindings()
 
@@ -214,6 +215,7 @@ class RuntimeInventory:
                 if stable(local(self.root, relative)) != stamp:
                     raise ValueError('stale-runtime-artifact')
         except (OSError, ValueError):
+            self.private_python = None
             self.loaded.clear(); self._retained_models.clear(); self.models.clear(); self.dependencies.clear(); self.native.clear(); self.assets.clear()
             raise ValueError('stale-runtime-artifact') from None
 
@@ -233,8 +235,9 @@ class RuntimeInventory:
             # Entry-file evidence does not authenticate an entire package/transitive closure.
             return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'PARTIAL',
                 'missing': missing, 'artifactClosure': 'UNVERIFIED',
+                'privatePython': copy.deepcopy(self.private_python),
                 'architecture': platform.machine(), 'models': list(self.models.values()),
-                'dependencies': list(self.dependencies.values()), 'native': list(self.native.values()),
+                'dependencies': list(self.dependencies.values()), 'native': [self.native[key] for key in sorted(self.native)],
                 'assets': list(self.assets.values()), 'largeArtifactVerification':
                 {'complete': not missing, 'entries': list(self.verification_evidence.values()),
                  'cacheScope': 'PROCESS_LOCAL_DIGEST_RECEIPT'}}

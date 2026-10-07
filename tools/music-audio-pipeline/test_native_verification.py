@@ -249,6 +249,8 @@ class NetworkLauncherTests(unittest.TestCase):
                 expected=lambda kind,identity:assets[identity],recheck=lambda:None,
                 resolve_executable=lambda identity,path:str(path))
             with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),patch.object(launcher,'bootstrap',return_value=runtime),patch.object(launcher,'load_contract',return_value={}),\
+                 patch.object(launcher,'private_distribution_lookup'),\
+                 patch.object(launcher,'private_python_command',return_value=[sys.executable,'-I',str(root.resolve()/'server.py')]),\
                  patch.object(launcher,'verify_assembly',return_value={'complete':True}),\
                  patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
                  patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
@@ -276,6 +278,8 @@ class NetworkLauncherTests(unittest.TestCase):
                 with patch.object(launcher,'load_manifest',return_value={'assets':list(assets.values())}),\
                      patch.object(launcher,'bootstrap',return_value=runtime),\
                      patch.object(launcher,'load_contract',return_value={}),\
+                 patch.object(launcher,'private_distribution_lookup'),\
+                 patch.object(launcher,'private_python_command',return_value=[sys.executable,'-I',str(root.resolve()/'server.py')]),\
                      patch.object(launcher,'verify_assembly',return_value={'complete':True}),\
                      patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
                      patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):

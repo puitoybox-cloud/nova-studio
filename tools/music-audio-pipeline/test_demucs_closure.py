@@ -179,17 +179,17 @@ class RealAdapterPathFixtures(unittest.TestCase):
     def test_real_load_hook_receipt_only_after_load_and_exact_object(self):
         with tempfile.TemporaryDirectory() as root:
             child,runtime,expected,model,modules=self.fixture(root)
-            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'verify_closure',return_value={'complete':True,'status':'COMPLETE','entries':[]}):
+            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'private_runtime_preflight'),patch.object(child,'verify_closure',return_value={'complete':True,'status':'COMPLETE','entries':[]}):
                 actual,receipt=child.load(runtime,{},expected,'n');self.assertIs(actual,model);self.assertEqual(receipt['status'],'LOADED');self.assertEqual(receipt['model']['identity']['id'],'demucs')
     def test_expected_checkpoint_exists_but_real_load_failure(self):
         with tempfile.TemporaryDirectory() as root:
             child,runtime,expected,model,modules=self.fixture(root,lambda path:None)
-            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'verify_closure',return_value={'complete':True}):
+            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'private_runtime_preflight'),patch.object(child,'verify_closure',return_value={'complete':True}):
                 with self.assertRaises(ValueError):child.load(runtime,{},expected,'n')
     def test_unexpected_local_checkpoint_is_rejected(self):
         with tempfile.TemporaryDirectory() as root:
             child,runtime,expected,model,modules=self.fixture(root);Path(root,'repo','unexpected.th').write_bytes(b'wrong')
-            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'verify_closure',return_value={'complete':True}):
+            with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),patch.object(child,'private_runtime_preflight'),patch.object(child,'verify_closure',return_value={'complete':True}):
                 with self.assertRaises(ValueError):child.load(runtime,{},expected,'n')
     def test_same_retained_model_is_used_for_processing_no_ffmpeg(self):
         import demucs_child,types
