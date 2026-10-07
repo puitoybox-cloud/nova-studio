@@ -27,8 +27,16 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         self.worker=self.root/'server.py';self.worker.write_bytes(b'raise RuntimeError("worker-must-not-run")')
         raw=self.worker.read_bytes()
         self.expected={'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)}
+        self.bind_worker()
         self.runtime=SimpleNamespace(root=self.root,bindings={'native':[{'id':'python-runtime','version':'3.11.0','path':'runtime/bin/python'}]},
             resolve_executable=lambda identity,path:str(path),expected=lambda kind,identity:self.expected,stamps={},recheck=lambda:None)
+
+    def bind_worker(self):
+        source=self.graph['nodes'][0]
+        raw=self.worker.read_bytes()
+        source['files']=[f for f in source['files'] if f['path']!='server.py']
+        source['files'].append({'path':'server.py','digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)})
+        source['artifactDigest']=hashlib.sha256(closure.canonical(sorted(source['files'],key=lambda f:f['path']))).hexdigest()
 
     def add_file(self,name,raw):
         path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
@@ -124,7 +132,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         before=module.stat();module.write_text("VALUE='source!'\n")
         os.utime(module,ns=(before.st_atime_ns,before.st_mtime_ns))
         self.worker.write_bytes(b"import shadow_module\nassert shadow_module.VALUE=='source!'\nassert __file__==sys.argv[0]\nassert sys.modules['__main__'].__dict__ is globals()\nassert sys.flags.isolated and sys.flags.no_site\nprint('SOURCE_ONLY_STARTUP_BODY')\n")
-        raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw));self.bind_worker()
         command=closure.private_python_command(self.runtime,self.graph,self.worker)
         layout=closure.private_python_layout(self.runtime,self.graph)
         prefix='import sys;sys.version_info=(3,11,0);sys.version='+repr(layout['version'])+';sys.executable='+repr(layout['executable'])+';sys._stdlib_dir='+repr(layout['stdlib'])+'\n'
@@ -139,7 +147,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
 
     def test_startup_command_has_bounded_size(self):
         self.worker.write_bytes(b'#'+b'a'*130000+b'\n')
-        raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw));self.bind_worker()
         with self.assertRaisesRegex(ValueError,'private-startup-command-budget'):
             closure.private_python_command(self.runtime,self.graph,self.worker)
 
@@ -214,6 +222,12 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'foreign-startup'):
                 demucs_child.load(runtime,{}, {},'nonce')
         metadata.assert_not_called()
+
+    def test_identical_worker_outside_anchored_source_is_rejected(self):
+        with tempfile.TemporaryDirectory() as foreign:
+            worker=Path(foreign)/'server.py';worker.write_bytes(self.worker.read_bytes())
+            with self.assertRaisesRegex(ValueError,'foreign-private-worker-source'):
+                closure.private_python_command(self.runtime,self.graph,worker)
 
 
 if __name__=='__main__':unittest.main()

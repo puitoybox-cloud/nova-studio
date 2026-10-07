@@ -420,6 +420,9 @@ def private_python_command(runtime, contract, worker, arguments=()):
     worker = Path(worker)
     if worker.is_symlink(): raise ValueError('unsafe-private-worker')
     worker = worker.resolve()
+    source_files = {local(runtime.root,f['path']) for node in validate_graph(contract).values()
+                    if node['kind']=='SOURCE' for f in node['files']}
+    if worker not in source_files: raise ValueError('foreign-private-worker-source')
     identity = 'helper-source' if worker.name == 'server.py' else 'demucs-child-source' if worker.name == 'demucs_child.py' else None
     if identity is None: raise ValueError('unexpected-private-python-worker')
     expected = runtime.expected('assets',identity)
