@@ -31,7 +31,7 @@ is_nova_pipeline(){
 # Strict branch precedes rsync, installation, process reuse and hosted browser open.
 if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then
   [ -n "${NOVA_LOCAL_PYTHON:-}" ] && [ -x "$NOVA_LOCAL_PYTHON" ] || exit 2
-  exec "$NOVA_LOCAL_PYTHON" -I "$APP_RESOURCES/pipeline/local_distribution_entry.py"
+  exec "$NOVA_LOCAL_PYTHON" -I -S "$APP_RESOURCES/pipeline/local_distribution_entry.py"
 fi
 
 mkdir -p "$PIPELINE_DIR"

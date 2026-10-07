@@ -58,6 +58,7 @@ class RuntimeInventory:
         self.assets = {}
         self.stamps = {}
         self.errors = []
+        self.private_python = None
         self.verification_evidence = {}
         self._validate_bindings()
 
@@ -215,7 +216,82 @@ class RuntimeInventory:
                     raise ValueError('stale-runtime-artifact')
         except (OSError, ValueError):
             self.loaded.clear(); self._retained_models.clear(); self.models.clear(); self.dependencies.clear(); self.native.clear(); self.assets.clear()
+            self.private_python = None
             raise ValueError('stale-runtime-artifact') from None
+
+    def activate_private_python(self, contract, pipeline):
+        """Use existing graph bytes for isolated CPython/stdlib/package routing.
+
+        This is startup selection, never mapped-page/native-network proof or an
+        installed product acceptance. No .pth execution, site scan or download.
+        """
+        import sysconfig
+        from scoped_closure import validate_graph, verify_assembly, private_distributions
+        nodes = validate_graph(contract)
+        executable = self.resolve_executable('python-runtime', sys.executable)
+        binding = next(e for e in self.bindings['native'] if e['id'] == 'python-runtime')
+        runtime_nodes = [n for n in nodes.values() if n['kind'] == 'PYTHON_RUNTIME'
+                         and any(f['path'] == binding['path'] for f in n['files'])]
+        if len(runtime_nodes) != 1:
+            raise ValueError('missing-or-ambiguous-private-python-footprint')
+        node = runtime_nodes[0]
+        if (sys.implementation.name != 'cpython' or sys.version_info[:2] != (3, 11)
+                or sys.version.split()[0] != node['version'] or binding['version'] != node['version']
+                or not sys.flags.isolated or not sys.flags.no_site):
+            raise ValueError('private-python-version-or-isolation-mismatch')
+        stdlib = Path(sysconfig.get_path('stdlib')).resolve()
+        if not stdlib.is_relative_to(self.root):
+            raise ValueError('foreign-private-stdlib')
+        files = {local(self.root, f['path']): f for f in node['files']}
+        # Missing executable-only inventories cannot establish stdlib delivery.
+        for relative in ('os.py', 'encodings/__init__.py', 'json/__init__.py', 'sysconfig.py'):
+            if stdlib / relative not in files:
+                raise ValueError('missing-private-stdlib-footprint')
+        before = {f['path']: stable(local(self.root, f['path']))
+                  for n in nodes.values() for f in n['files']}
+        report = verify_assembly(self.root, contract, runtime=self)
+        if not report['complete']:
+            raise ValueError('private-python-assembly-incomplete')
+        pipeline = Path(pipeline).resolve()
+        source_files = {local(self.root, f['path']) for n in nodes.values()
+                        if n['kind'] == 'SOURCE' for f in n['files']}
+        if pipeline / 'server.py' not in source_files:
+            raise ValueError('foreign-private-helper-source-root')
+        # Reject already-imported foreign modules before any ML imports. Builtin
+        # and frozen modules have no file delivery claim; files stay graph-bound.
+        approved = set(files) | source_files
+        for name, module in tuple(sys.modules.items()):
+            spec = getattr(module, '__spec__', None)
+            if getattr(spec, 'origin', None) in ('built-in', 'frozen'):
+                continue
+            origin = getattr(module, '__file__', None)
+            if origin is not None and Path(origin).resolve() not in approved:
+                raise ValueError('foreign-preloaded-private-python-module')
+        lookup = private_distributions(self.root, contract)
+        roots = []
+        for identity, dependency in nodes.items():
+            if dependency['kind'] != 'PYTHON_DISTRIBUTION':
+                continue
+            metadata = next(f for f in dependency['files'] if Path(f['path']).name == 'METADATA')
+            root = local(self.root, metadata['path']).parent.parent
+            if str(root) not in roots:
+                roots.append(str(root))
+        paths = [str(pipeline), str(stdlib)]
+        extensions = stdlib / 'lib-dynload'
+        if any(path.is_relative_to(extensions) for path in files):
+            paths.append(str(extensions))
+        for relative, stamp in before.items():
+            if stable(local(self.root, relative)) != stamp:
+                raise ValueError('changed-private-python-assembly')
+            self.stamps[('private-python', relative)] = (relative, stamp)
+        self.recheck()
+        sys.path[:] = list(dict.fromkeys(paths + roots))
+        importlib.invalidate_caches()
+        self.private_distribution = lookup
+        self.private_python = {'stdlibArtifactDigest': node['artifactDigest'],
+                'installedRecordInventory': report['installedRecordInventory'],
+                'selection': 'ANCHORED_PRIVATE_FILES', 'productionReady': False}
+        return copy.deepcopy(self.private_python)
 
     def verify_assets(self):
         for binding in self.bindings['assets']:
@@ -233,6 +309,7 @@ class RuntimeInventory:
             # Entry-file evidence does not authenticate an entire package/transitive closure.
             return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'PARTIAL',
                 'missing': missing, 'artifactClosure': 'UNVERIFIED',
+                'privatePython': copy.deepcopy(self.private_python),
                 'architecture': platform.machine(), 'models': list(self.models.values()),
                 'dependencies': list(self.dependencies.values()), 'native': list(self.native.values()),
                 'assets': list(self.assets.values()), 'largeArtifactVerification':

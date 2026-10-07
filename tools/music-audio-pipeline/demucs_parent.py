@@ -46,7 +46,7 @@ def start(runtime, manifest_path, anchor, build, guard):
         separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
     executable = runtime.resolve_executable('python-runtime',sys.executable)
     worker = str(Path(__file__).with_name('demucs_child.py').resolve())
-    command = [executable,'-I',worker,str(runtime.root),str(Path(manifest_path).resolve()),anchor,build]
+    command = [executable,'-I','-S',worker,str(runtime.root),str(Path(manifest_path).resolve()),anchor,build]
     runtime.recheck()
     session=ChildSession(command,expected,permit=guard.permit)
     try:runtime.recheck()

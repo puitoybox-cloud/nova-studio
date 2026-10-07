@@ -237,7 +237,30 @@ def validate_graph(contract):
     return by_id
 
 
-def verify_closure(root,contract,distribution=importlib.metadata.distribution,stamp_sink=None,build="UNSPECIFIED"):
+def private_distributions(root, contract):
+    """Resolve only exact anchored dist-info paths; never consult host site-packages."""
+    nodes = validate_graph(contract)
+    declared = {}
+    for identity, node in nodes.items():
+        if node['kind'] != 'PYTHON_DISTRIBUTION':
+            continue
+        metadata = [f for f in node['files'] if Path(f['path']).name == 'METADATA'
+                    and Path(f['path']).parent.name.endswith('.dist-info')]
+        if len(metadata) != 1:
+            raise ValueError('missing-or-ambiguous-private-distribution')
+        declared[identity] = local(root, metadata[0]['path']).parent
+    def lookup(identity):
+        if identity not in declared or not (declared[identity] / 'METADATA').is_file():
+            raise importlib.metadata.PackageNotFoundError(identity)
+        # PathDistribution reads only this directory; RECORD footprint/hash/size
+        # is independently checked by verify_closure before import/production use.
+        return importlib.metadata.PathDistribution(declared[identity])
+    return lookup
+
+
+def verify_closure(root,contract,distribution=None,stamp_sink=None,build="UNSPECIFIED"):
+    if distribution is None:
+        distribution = private_distributions(root, contract)
     contract=copy.deepcopy(contract);nodes=validate_graph(contract);results=[];total=0;stamps=[]
     for identity,node in nodes.items():
         level=node['evidence'];reason=None
@@ -313,7 +336,7 @@ def manifest_assembly_binding(runtime, nodes):
             'trustedManifest':'EXTERNALLY_ANCHORED'}
 
 
-def verify_assembly(root,contract,distribution=importlib.metadata.distribution, *, runtime=None):
+def verify_assembly(root,contract,distribution=None, *, runtime=None):
     observed=verify_closure(root,contract,distribution);nodes=validate_graph(contract);classified=[];materials=[];records=[]
     for entry in observed['entries']:
         status=entry['status'];license_status=entry['licenseStatus']
