@@ -21,14 +21,27 @@ public final class MusicStudioPrivateSummaryChannel {
         }
         var type: Int32 = 0; var typeSize = socklen_t(MemoryLayout<Int32>.size)
         var info = stat()
-        guard valid == 0, Int32(address.sun_family) == AF_UNIX, size <= 2,
+        let anonymous = withUnsafeBytes(of: address.sun_path) { $0.allSatisfy { $0 == 0 } }
+        var peer = sockaddr_un(); var peerSize = socklen_t(MemoryLayout<sockaddr_un>.size)
+        let connected = withUnsafeMutablePointer(to: &peer) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { getpeername(inheritedDescriptor, $0, &peerSize) }
+        }
+        let anonymousPeer = withUnsafeBytes(of: peer.sun_path) { $0.allSatisfy { $0 == 0 } }
+        // Darwin may return a padded sockaddr_un for an unnamed socketpair.
+        // Require empty local/peer paths rather than assuming its address length.
+        guard valid == 0, Int32(address.sun_family) == AF_UNIX, anonymous,
+              connected == 0, Int32(peer.sun_family) == AF_UNIX, anonymousPeer,
+              size >= 2, size <= socklen_t(MemoryLayout<sockaddr_un>.size),
+              peerSize >= 2, peerSize <= socklen_t(MemoryLayout<sockaddr_un>.size),
               getsockopt(inheritedDescriptor, SOL_SOCKET, SO_TYPE, &type, &typeSize) == 0, type == SOCK_STREAM,
               fstat(inheritedDescriptor, &info) == 0 else { throw MusicStudioOwnedLifecycle.Failure.invalid }
         let owned = dup(inheritedDescriptor)
         guard owned >= 0 else { throw MusicStudioOwnedLifecycle.Failure.invalid }
         descriptor = owned; device = info.st_dev; inode = info.st_ino; mode = info.st_mode
+        var retained = stat()
         var one: Int32 = 1
-        guard fcntl(owned, F_SETFD, FD_CLOEXEC) == 0,
+        guard fstat(owned, &retained) == 0, retained.st_dev == device, retained.st_ino == inode, retained.st_mode == mode,
+              fcntl(owned, F_SETFD, FD_CLOEXEC) == 0,
               fcntl(owned, F_SETFL, O_NONBLOCK) == 0,
               setsockopt(owned, SOL_SOCKET, SO_NOSIGPIPE, &one, socklen_t(MemoryLayout<Int32>.size)) == 0 else {
             Darwin.close(owned); descriptor = -1; throw MusicStudioOwnedLifecycle.Failure.invalid

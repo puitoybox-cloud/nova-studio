@@ -261,6 +261,12 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         let bytes = try JSONSerialization.data(withJSONObject:envelope)
         var descriptors: [Int32] = [-1,-1]
         XCTAssertEqual(socketpair(AF_UNIX,SOCK_STREAM,0,&descriptors),0)
+        var address = sockaddr_un(); var addressSize = socklen_t(MemoryLayout<sockaddr_un>.size)
+        let addressResult = withUnsafeMutablePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity:1) { getsockname(descriptors[0],$0,&addressSize) }
+        }
+        XCTAssertEqual(addressResult,0); XCTAssertEqual(Int32(address.sun_family),AF_UNIX)
+        print("Disposable Darwin anonymous socketpair sockaddr length: \(addressSize)")
         let channel = try MusicStudioPrivateSummaryChannel(inheritedDescriptor:descriptors[0])
         let peer = FileHandle(fileDescriptor:descriptors[1],closeOnDealloc:true)
         let count = UInt32(bytes.count)

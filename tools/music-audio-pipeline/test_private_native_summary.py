@@ -6,7 +6,9 @@ import socket
 import subprocess
 import sys
 import time
+import threading
 import unittest
+from unittest.mock import patch
 from local_distribution_entry import (OwnedNativeSummaryDelivery, OwnedResultChannel,
     final_lifecycle_receipt, acknowledge_final_lifecycle, strict_eligibility)
 
@@ -78,3 +80,23 @@ class PrivateNativeSummaryTests(unittest.TestCase):
         inv={'identityComplete':True,'evidence':{'dynamicNativeGraph':{'complete':True},'network':{'nativeNetworkVerified':True,'native':'CONTAINED'}}}
         result=strict_eligibility(inv,trusted_bootstrap=True,browser_verified=True,private_lifecycle=False)
         self.assertFalse(result['processingEligible']);self.assertIn('privateLifecycleDelivery',result['blockedBy'])
+    def test_concurrent_native_launch_cannot_create_second_child(self):
+        entered=threading.Event();release=threading.Event();calls=[];errors=[]
+        def launch(*args):
+            calls.append(args);entered.set();release.wait(2);return object()
+        d=OwnedNativeSummaryDelivery(launch)
+        def first():
+            try:d({})
+            except ValueError as error:errors.append(error)
+        thread=threading.Thread(target=first);thread.start()
+        try:
+            self.assertTrue(entered.wait(1))
+            with self.assertRaises(ValueError):d({})
+        finally:release.set();thread.join(2)
+        self.assertFalse(thread.is_alive());self.assertEqual(len(calls),1);self.assertEqual(len(errors),1)
+    def test_duplicate_sink_rejected_before_server_or_native_creation(self):
+        from local_distribution_entry import LocalProductionLifecycle
+        with patch('local_distribution_entry.LocalEnvelopeServer') as server:
+            with self.assertRaises(ValueError):
+                LocalProductionLifecycle({}, {}, {},native_host=OwnedNativeSummaryDelivery(lambda *_:None),final_sink=lambda *_:None)
+            server.assert_not_called()

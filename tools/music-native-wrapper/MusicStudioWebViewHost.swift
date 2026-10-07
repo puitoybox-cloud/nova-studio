@@ -163,6 +163,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
     public func stop() {
         renewalWork?.cancel(); renewalWork = nil
         if let owner = ownedLifecycle {
+            if owner.state == "STOPPING" || owner.state.hasPrefix("SHUTDOWN") {
+                lifecycleState = owner.state
+            } else {
             do {
                 let request = try owner.command("stop")
                 lifecycleState = "STOPPING"
@@ -173,6 +176,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
                     }
                 }
             } catch { owner.fail(); lifecycleState = "FAILED" }
+            }
         } else if configuration.ownedCredential != nil {
             lifecycleState = "FAILED"
         } else {

@@ -725,10 +725,12 @@ class OwnedNativeSummaryDelivery:
     """
     def __init__(self, launch):
         self.launch = launch; self.handle = None; self.child = None
-        self.used = False; self.identity = None; self.lock = threading.Lock()
+        self.used = False; self.started = False; self.identity = None; self.lock = threading.Lock()
 
     def __call__(self, handoff):
-        if self.handle is not None or self.used: raise ValueError('native-summary-replay')
+        with self.lock:
+            if self.started or self.used: raise ValueError('native-summary-replay')
+            self.started = True
         parent, child = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
             self.child = self.launch(handoff, child.fileno())
@@ -780,6 +782,8 @@ class LocalProductionLifecycle:
     """
     def __init__(self, prepared, assets, expected_assets, *, popen=subprocess.Popen,
                  health=None, browser=None, native_host=None, final_sink=None, timeout=30):
+        if isinstance(native_host, OwnedNativeSummaryDelivery) and final_sink is not None:
+            raise ValueError('duplicate-private-final-sink')
         self.prepared = prepared
         envelope = prepared['browserEnvelope']
         manifest = envelope['manifest']
@@ -794,7 +798,6 @@ class LocalProductionLifecycle:
         self.control = OwnedResultChannel(self.server.session, self.server.deadline)
         self.shutdown_receipt = None; self.final_receipt = None; self.final_acknowledgement = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
         if isinstance(native_host, OwnedNativeSummaryDelivery):
-            if final_sink is not None: raise ValueError('duplicate-private-final-sink')
             self.final_sink = native_host.deliver_final
         self.state = 'PREPARING'; self.child = None; self.popen = popen
         self.stop_pipe=None;self.child_stop_socket=None
