@@ -663,7 +663,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
         exec(compile(raw,str(path),'exec'),namespace)
         return namespace['OwnedStopPipe'],namespace['OwnedExitObservation']
     # Strict Helper boot will independently authenticate and refuse incomplete runtime evidence.
-    environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_'))}
+    environment = {k: v for k, v in os.environ.items() if not k.startswith(('PYTHON', 'NOVA_', 'DYLD_', 'LD_'))}
     environment.update(NOVA_TRUSTED_MANIFEST_PATH=str(Path(manifest).resolve()),
                        NOVA_TRUSTED_MANIFEST_DIGEST=anchor,
                        NOVA_EXPECTED_BUILD_REVISION=build,

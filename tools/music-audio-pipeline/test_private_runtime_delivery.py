@@ -45,6 +45,10 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
     def refresh(self):
         self.node['artifactDigest']=hashlib.sha256(closure.canonical(sorted(self.node['files'],key=lambda f:f['path']))).hexdigest()
 
+    def test_production_environment_drops_dynamic_loader_injection(self):
+        source=Path(closure.__file__).with_name('local_distribution_entry.py').read_text()
+        self.assertIn("not k.startswith(('PYTHON', 'NOVA_', 'DYLD_', 'LD_'))",source)
+
     def test_layout_binds_stdlib_package_roots_and_actual_executable(self):
         layout=closure.private_python_layout(self.runtime,self.graph)
         self.assertEqual(layout['executable'],str(self.root/'runtime/bin/python'))

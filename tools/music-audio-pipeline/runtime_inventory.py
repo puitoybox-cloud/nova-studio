@@ -45,7 +45,17 @@ def local(root, relative):
 
 class RuntimeInventory:
     def __init__(self, root, manifest, bindings, max_bytes=MAX_ARTIFACT_BYTES):
-        self.root = Path(root).resolve()
+        supplied_root = Path(root)
+        # The authenticated runtime root itself is part of the package identity.
+        # Do not let a symlinked package root redirect otherwise-valid relative
+        # asset bindings to a foreign tree.
+        if supplied_root.is_symlink():
+            raise ValueError('unsafe-runtime-root')
+        self.root = supplied_root.resolve()
+        if not self.root.is_dir():
+            raise ValueError('unsafe-runtime-root')
+        root_stat = self.root.stat()
+        self.root_identity = (root_stat.st_dev, root_stat.st_ino)
         self.manifest = copy.deepcopy(manifest)
         self.bindings = copy.deepcopy(bindings)
         self.max_bytes = min(max_bytes, MAX_ARTIFACT_BYTES)
@@ -207,6 +217,9 @@ class RuntimeInventory:
 
     def recheck(self):
         try:
+            root_stat = self.root.stat()
+            if self.root.is_symlink() or not self.root.is_dir() or (root_stat.st_dev, root_stat.st_ino) != self.root_identity:
+                raise ValueError('stale-runtime-root')
             if (set(self.loaded) != set(self._retained_models) or set(self.models) != set(self.loaded) or
                     any(self.loaded[key] is not self._retained_models[key] or
                         self.models[key].get('identity') != self.expected('models', key) for key in self.loaded)):
