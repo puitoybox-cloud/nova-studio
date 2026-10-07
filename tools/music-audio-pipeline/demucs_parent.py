@@ -37,7 +37,7 @@ def start(runtime, manifest_path, anchor, build, guard):
             'source':binding['path'],'runtimeIdentifier':'demucs',
             'companions':[runtime.expected('assets',c['id']) for c in binding['companions']]},
         'companions':[runtime.expected('assets',c['id']) for c in binding['companions']],
-        'native':list(runtime.native.values())}
+        'native':[runtime.native[key] for key in sorted(runtime.native)]}
     loader = derived['loader']['source']
     if {k:v for k,v in loader.items() if k!='path'}!=runtime.expected('assets','demucs-loader-source'):raise ValueError('wrong-loader-expected-source')
     if expected!=derived:raise ValueError('child-config-manifest-mismatch')

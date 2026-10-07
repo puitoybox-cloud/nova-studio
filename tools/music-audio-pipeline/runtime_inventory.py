@@ -237,7 +237,7 @@ class RuntimeInventory:
                 'missing': missing, 'artifactClosure': 'UNVERIFIED',
                 'privatePython': copy.deepcopy(self.private_python),
                 'architecture': platform.machine(), 'models': list(self.models.values()),
-                'dependencies': list(self.dependencies.values()), 'native': list(self.native.values()),
+                'dependencies': list(self.dependencies.values()), 'native': [self.native[key] for key in sorted(self.native)],
                 'assets': list(self.assets.values()), 'largeArtifactVerification':
                 {'complete': not missing, 'entries': list(self.verification_evidence.values()),
                  'cacheScope': 'PROCESS_LOCAL_DIGEST_RECEIPT'}}

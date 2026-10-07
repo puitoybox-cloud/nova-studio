@@ -71,6 +71,7 @@ def load(runtime,contract,expected,nonce):
         path=sys.executable if entry['id']=='python-runtime' else local(runtime.root,entry['path'])
         runtime.resolve_executable(entry['id'],path)
         receipt['native'].append(runtime.native[entry['id']])
+    receipt['native'].sort(key=lambda entry:entry['identity']['id'])
     return model,receipt
 
 

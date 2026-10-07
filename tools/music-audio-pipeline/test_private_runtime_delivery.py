@@ -160,4 +160,41 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         self.assertIsNone(runtime.private_python)
 
 
+    def test_native_slot_snapshot_order_survives_exact_executable_rechecks(self):
+        from test_runtime_inventory import RuntimeTests
+        fixture=RuntimeTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        runtime=fixture.runtime
+        wrapper=fixture.root/'wrapper';wrapper.write_bytes((fixture.root/'python').read_bytes());wrapper.chmod(0o700)
+        asset=dict(runtime.manifest['assets'][0],id='native-wrapper')
+        binding=dict(runtime.bindings['native'][0],id='native-wrapper',path='wrapper')
+        runtime.manifest['assets'].append(asset);runtime.bindings['native'].append(binding)
+        runtime.resolve_executable('python-runtime',fixture.root/'python')
+        runtime.resolve_executable('native-wrapper',wrapper)
+        before=runtime.snapshot()['native']
+        runtime.resolve_executable('python-runtime',fixture.root/'python')
+        self.assertEqual(runtime.snapshot()['native'],before)
+        self.assertEqual([entry['identity']['id'] for entry in before],['native-wrapper','python-runtime'])
+
+    def test_actual_demucs_adapter_receipt_uses_same_sorted_native_slot_identity(self):
+        from test_demucs_closure import RealAdapterPathFixtures
+        child,runtime,expected,model,modules=RealAdapterPathFixtures().fixture(self.root)
+        runtime.bindings['native']=[{'id':'python-runtime','path':'python'},{'id':'native-wrapper','path':'wrapper'}]
+        runtime.native={}
+        def resolve(identity,path):runtime.native[identity]={'identity':{'id':identity},'source':identity};return str(path)
+        runtime.resolve_executable=resolve
+        expected['native']=[{'identity':{'id':identity},'source':identity} for identity in ['native-wrapper','python-runtime']]
+        with patch.dict(sys.modules,modules),patch.object(child.importlib.metadata,'version',return_value='4.0.1'),\
+             patch.object(child,'private_runtime_preflight'),patch.object(child,'verify_closure',return_value={'complete':True,'status':'COMPLETE','entries':[]}):
+            actual,receipt=child.load(runtime,{},expected,'n')
+            self.assertIs(actual,model);self.assertEqual(receipt['native'],expected['native'])
+
+    def test_existing_request_binding_covers_private_startup_record_bytes(self):
+        from runtime_evidence import processing_binding
+        inventory={'privatePython':{'stdlibArtifactDigest':'a'*64,'installedRecordInventory':[{'id':'fixture','artifactDigest':'b'*64}]}}
+        args=('c'*64,'d'*64,{'digest':'e'*64,'byteLength':1})
+        before=processing_binding(*args,inventory)['inventoryRevision']
+        inventory['privatePython']['installedRecordInventory'][0]['artifactDigest']='f'*64
+        self.assertNotEqual(processing_binding(*args,inventory)['inventoryRevision'],before)
+
+
 if __name__=='__main__':unittest.main()
