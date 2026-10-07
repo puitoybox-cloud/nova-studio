@@ -65,8 +65,8 @@ def load(runtime,contract,expected,nonce):
     # Native receipts must be observed in this child, never copied as proof from its parent.
     receipt['native']=[]
     for entry in runtime.bindings['native']:
-        if entry['id']!='python-runtime':raise ValueError('unsupported-child-executable')
-        runtime.resolve_executable(entry['id'],sys.executable)
+        if entry['id'] not in ('python-runtime', 'native-wrapper'):raise ValueError('unsupported-child-executable')
+        runtime.resolve_executable(entry['id'],sys.executable if entry['id']=='python-runtime' else local(runtime.root,entry['path']))
         receipt['native'].append(runtime.native[entry['id']])
     return model,receipt
 
@@ -153,6 +153,7 @@ def main():
     root,manifest_path,anchor,build=sys.argv[1:5]
     runtime=bootstrap(manifest_path,anchor,build,root)
     contract=load_contract(root,runtime.manifest)
+    runtime.activate_private_python(contract, SOURCE.parent)
     from runtime_evidence import load as load_evidence, install_import_guard, observe, receipt_evidence
     evidence_contract=load_evidence(runtime)
     install_import_guard(root,evidence_contract)

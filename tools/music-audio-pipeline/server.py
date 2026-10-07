@@ -99,6 +99,9 @@ def initialize_runtime():
                 ('runtime-evidence-source','runtime_evidence.py'),
                 ('scoped-closure-source','scoped_closure.py'), ('inventory-aggregation-source','inventory_aggregation.py')]:
             verify_local_asset(_pipeline_directory, relative, RUNTIME_INVENTORY.expected('assets',identity), 1024*1024)
+        from scoped_closure import load_contract
+        private_contract = load_contract(RUNTIME_INVENTORY.root, manifest)
+        RUNTIME_INVENTORY.activate_private_python(private_contract, _pipeline_directory)
         import runtime_evidence
         RUNTIME_EVIDENCE_MODULE = runtime_evidence
         RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
@@ -119,9 +122,13 @@ def initialize_runtime():
         for binding in RUNTIME_INVENTORY.bindings['dependencies']:
             RUNTIME_INVENTORY.observe_dependency(binding)
         for binding in RUNTIME_INVENTORY.bindings['native']:
-            if binding['id'] != 'python-runtime':
+            if binding['id'] == 'python-runtime':
+                RUNTIME_INVENTORY.resolve_executable('python-runtime', sys.executable)
+            elif binding['id'] == 'native-wrapper':
+                RUNTIME_INVENTORY.resolve_executable('native-wrapper',
+                    _runtime_module.local(RUNTIME_INVENTORY.root, binding['path']))
+            else:
                 raise ValueError('native-loader-not-integrated')
-            RUNTIME_INVENTORY.resolve_executable('python-runtime', sys.executable)
         for binding in RUNTIME_INVENTORY.bindings['models']:
             if binding['runtimeIdentifier'] == 'basic-pitch':
                 from basic_pitch.inference import Model

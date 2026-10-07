@@ -48,7 +48,7 @@ fi
 # Strict entry executes before legacy setup, health reuse, or network-capable tools.
 if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then
   [ -x "$VENV_DIR/bin/python" ] || { echo "Preinstalled strict runtime required."; exit 2; }
-  exec "$VENV_DIR/bin/python" -I local_distribution_entry.py
+  exec "$VENV_DIR/bin/python" -I -S local_distribution_entry.py
 fi
 
 if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ] && [ ! -x "$VENV_DIR/bin/python" ]; then

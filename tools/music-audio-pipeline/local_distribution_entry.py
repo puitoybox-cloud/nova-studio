@@ -681,7 +681,11 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                 pass_fds=(descriptor,),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,start_new_session=True)
         return OwnedNativeSummaryDelivery(launch)
-    return {'command': [executable, '-I', str(pipeline/'server.py')],
+    def activate_runtime():
+        source_preflight()
+        return runtime.activate_private_python(graph, pipeline)
+    return {'command': [executable, '-I', '-S', str(pipeline/'server.py')],
+            '_runtime_activation': activate_runtime,
             '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
             '_native_host': native_host,
             'environment': environment,
@@ -1017,6 +1021,7 @@ def main():
         root = os.environ['NOVA_RUNTIME_ASSET_ROOT']
         result = prepare(root, os.environ['NOVA_TRUSTED_MANIFEST_PATH'],
                          os.environ['NOVA_TRUSTED_MANIFEST_DIGEST'], os.environ['NOVA_EXPECTED_BUILD_REVISION'])
+        result['_runtime_activation']()
         # Explicit externally approved web assets only. No recursive scan or guessed asset set.
         assets = {}; expected = {}
         for entry in result['browserEnvelope']['manifest']['assets']:

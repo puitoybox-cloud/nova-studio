@@ -253,7 +253,7 @@ class NetworkLauncherTests(unittest.TestCase):
                  patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
                  patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
                 result=launcher.prepare(root,root/'manifest','a'*64,'build',pipeline=root)
-                self.assertEqual(result['command'],[sys.executable,'-I',str(root.resolve()/'server.py')])
+                self.assertEqual(result['command'],[sys.executable,'-I','-S',str(root.resolve()/'server.py')])
                 self.assertEqual(result['browserEnvelope']['trust'],{'manifestDigest':'a'*64,'buildRevision':'build'})
                 self.assertEqual(json.loads(result['browserEnvelope']['runtimeConfigText']),runtime.bindings)
                 self.assertFalse(result['publicationEligible'])
