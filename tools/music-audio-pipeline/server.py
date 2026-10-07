@@ -792,10 +792,35 @@ def start_owned_stop_pipe(server):
             # EOF/invalid delivery removes admission, but never fabricates an authenticated receipt.
             close_admission(None)
         finally:
-            pipe.close()
+            # Preserve this exact descriptor until main has collected child cleanup.
             server.shutdown()
     threading.Thread(target=monitor,daemon=True).start()
     return pipe
+
+
+def finish_owned_shutdown(stop_pipe):
+    """Serialize child cleanup with processing; report through the existing stop FD.
+
+    Missing NOTE_EXIT or any unobserved deeper descendants remain PARTIAL.
+    A detached report never grants authority and never proves Helper exit itself.
+    """
+    report={'status':'PARTIAL','ownedDescendantsComplete':False,
+        'remainingOwnedDescendants':None,'hardInterruption':'UNVERIFIED',
+        'processingQuiescent':False,'child':None,'childExit':None}
+    acquired=PROCESS_LOCK.acquire(timeout=0.5)
+    try:
+        report['processingQuiescent']=acquired
+        if acquired and DEMUCS_SESSION is not None:
+            binding=DEMUCS_SESSION.processing_binding
+            report['child']={'session':DEMUCS_SESSION.nonce,'parentBinding':binding}
+            DEMUCS_SESSION.close()
+            report['childExit']=getattr(DEMUCS_SESSION,'shutdown_receipt',None)
+        if stop_pipe is not None and stop_pipe.stop_payload is not None:
+            stop_pipe.send_final(report)
+    finally:
+        if acquired:PROCESS_LOCK.release()
+        if stop_pipe is not None:stop_pipe.close()
+    return report
 
 
 def main():
@@ -815,9 +840,11 @@ def main():
         pass
     finally:
         server.server_close()
-        if stop_pipe is not None:stop_pipe.close()
         if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
-        if DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
+        if stop_pipe is not None:
+            try:finish_owned_shutdown(stop_pipe)
+            except (OSError,ValueError,TypeError):pass
+        elif DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
 
 
 if __name__ == "__main__":

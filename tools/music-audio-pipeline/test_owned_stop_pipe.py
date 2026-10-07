@@ -221,4 +221,130 @@ class StopPipeTests(unittest.TestCase):
         observer.close()
 
 
+class FinalDeliveryTests(unittest.TestCase):
+    pair=StopPipeTests.pair
+    # Reuse fixture helpers without re-running the inherited test methods.
+    def exchange(self, report):
+        a,b=self.pair();errors=[]
+        def worker():
+            try:b.accept(lambda _:None);b.send_final(report)
+            except BaseException as error:errors.append(error)
+        thread=threading.Thread(target=worker);thread.start()
+        a.request({'session':a.identity['session'],'request':'e'*64})
+        result=a.receive_final();thread.join(timeout=2)
+        self.assertFalse(thread.is_alive());self.assertEqual(errors,[])
+        return a,b,result
+
+    def test_final_delivery_one_shot_after_stop_and_not_descendant_promotion(self):
+        report={'status':'PARTIAL','ownedDescendantsComplete':False,'childExit':{'leaderExited':True}}
+        a,b,result=self.exchange(report)
+        self.assertEqual(result['shutdown'],report)
+        with self.assertRaises(ValueError):a.receive_final()
+        with self.assertRaises(ValueError):b.send_final(report)
+        a,b=self.pair()
+        with self.assertRaises(ValueError):a.receive_final()
+        with self.assertRaises(ValueError):b.send_final(report)
+
+    def test_authenticated_foreign_final_and_tamper_rejected_without_retry(self):
+        for field in ('session','owner','generation','deadline','requestBindingDigest','challenge','kind','shutdown'):
+            a,b=self.pair();errors=[]
+            def worker():
+                try:
+                    b.accept(lambda _:None)
+                    payload=b._final_payload({'status':'PARTIAL'})
+                    envelope=b.seal(payload)
+                    payload[field]=0 if field=='deadline' else {'tampered':True} if field=='shutdown' else '0'*64
+                    if field!='shutdown':envelope=b.seal(payload)
+                    b.send(envelope,budget=65536)
+                except BaseException as error:errors.append(error)
+            thread=threading.Thread(target=worker);thread.start();a.request(None)
+            with self.assertRaises(ValueError):a.receive_final()
+            with self.assertRaises(ValueError):a.receive_final()
+            thread.join(timeout=2);self.assertEqual(errors,[])
+
+    def test_final_frame_budget_duplicate_json_and_eof(self):
+        for raw in (b'x'*65536,b'{"payload":{},"payload":{}}\n',b''):
+            a,b=self.pair();errors=[]
+            def worker():
+                try:
+                    b.accept(lambda _:None)
+                    if raw:b.handle.sendall(raw)
+                    b.close()
+                except BaseException as error:errors.append(error)
+            thread=threading.Thread(target=worker);thread.start();a.request(None)
+            with self.assertRaises(ValueError):a.receive_final()
+            thread.join(timeout=2);self.assertEqual(errors,[])
+
+    def test_final_expiry_and_other_child_capability_rejected(self):
+        a,b,result=self.exchange({'status':'PARTIAL'})
+        a,b=self.pair()
+        errors=[]
+        def worker():
+            try:
+                b.accept(lambda _:None)
+                b.key='0'*64;b.send_final({'status':'PARTIAL'})
+            except BaseException as error:errors.append(error)
+        thread=threading.Thread(target=worker);thread.start();a.request(None)
+        with self.assertRaises(ValueError):a.receive_final()
+        thread.join(timeout=2);self.assertEqual(errors,[])
+        a,b=self.pair();a.consumed=True;a.stop_payload=self.message_for_final(a)
+        a.clock=lambda:a.identity['deadline']+10
+        with self.assertRaisesRegex(ValueError,'stale-owned-final-delivery'):a.receive_final()
+
+    def message_for_final(self,a):
+        return {**a.identity,'kind':'STOP','requestBindingDigest':'e'*64,'challenge':'f'*64}
+
+    def test_helper_cleanup_actual_demucs_exit_before_final_report(self):
+        import server as helper
+        from demucs_receipt import ChildSession
+        a,b=self.pair();process=subprocess.Popen([sys.executable,'-c','import sys;sys.stdin.read()'],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+        session=ChildSession.__new__(ChildSession);session.process=process;session.nonce='fixture-child'
+        session.processing_binding={'session':a.identity['session'],'request':'e'*64}
+        session.exit_observer=OwnedExitObservation(process,session.nonce,{'generation':'fixture'})
+        session.exit_observer.bind_request(process,session.processing_binding)
+        def cleanup():
+            if not process.stdin.closed:process.stdin.close()
+            process.wait(timeout=3);process.stdout.close();session.exit_observer.close()
+        self.addCleanup(cleanup);errors=[]
+        def worker():
+            try:
+                b.accept(lambda _:None)
+                with patch.object(helper,'DEMUCS_SESSION',session):helper.finish_owned_shutdown(b)
+            except BaseException as error:errors.append(error)
+        thread=threading.Thread(target=worker);thread.start();a.request(session.processing_binding)
+        report=a.receive_final()['shutdown'];thread.join(timeout=4)
+        self.assertFalse(thread.is_alive());self.assertEqual(errors,[])
+        self.assertTrue(report['processingQuiescent']);self.assertTrue(report['childExit']['leaderExited'])
+        observation=report['childExit']['ownedExitObservation']
+        self.assertEqual(observation['childSession'],session.nonce)
+        self.assertTrue(observation['leaderReaped']);self.assertFalse(report['ownedDescendantsComplete'])
+        if hasattr(__import__('select'),'kqueue'):self.assertTrue(observation['kernelExitObserved'])
+        self.assertEqual(b.key,'')
+
+    def test_busy_processing_never_fabricates_child_cleanup(self):
+        import server as helper
+        a,b=self.pair();events=[];helper.PROCESS_LOCK.acquire()
+        try:
+            def worker():
+                b.accept(lambda _:None);events.append(helper.finish_owned_shutdown(b))
+            thread=threading.Thread(target=worker);thread.start();a.request(None)
+            report=a.receive_final()['shutdown'];thread.join(timeout=2)
+            self.assertFalse(thread.is_alive());self.assertFalse(report['processingQuiescent'])
+            self.assertIsNone(report['childExit']);self.assertFalse(report['ownedDescendantsComplete'])
+        finally:helper.PROCESS_LOCK.release()
+
+    def test_actual_launcher_final_delivery_is_in_authenticated_shutdown_digest(self):
+        import hashlib
+        fixture=lifecycle_fixtures.LifecycleTests();l=fixture.make();self.addCleanup(l.close)
+        source=str(Path(__file__).resolve().parent)
+        code="import sys,os,json,socket;sys.path.insert(0,"+repr(source)+");from demucs_receipt import OwnedStopPipe;p=OwnedStopPipe(socket.socket(fileno=int(os.environ['NOVA_OWNED_STOP_FD'])),json.loads(os.environ['NOVA_OWNED_STOP_IDENTITY']),os.environ['NOVA_OWNED_RESULT_CAPABILITY']);p.accept(lambda _:None);p.send_final({'status':'PARTIAL','ownedDescendantsComplete':False});p.close()"
+        l.prepared['command']=[sys.executable,'-I','-c',code];l.popen=subprocess.Popen
+        l.start();l.close()
+        delivery=l.shutdown_receipt['helperChildShutdownDelivery']
+        self.assertEqual(delivery['status'],'OBSERVED');self.assertFalse(delivery['shutdown']['ownedDescendantsComplete'])
+        raw=json.dumps(l.shutdown_receipt,sort_keys=True,separators=(',',':')).encode()
+        self.assertEqual(l.final_receipt['payload']['shutdownDigest'],hashlib.sha256(raw).hexdigest())
+        self.assertEqual(l.final_receipt['payload']['completionState'],'PARTIAL')
+
+
 if __name__=='__main__':unittest.main()
