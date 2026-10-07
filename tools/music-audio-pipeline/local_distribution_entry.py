@@ -665,8 +665,25 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                        NOVA_TRUSTED_MANIFEST_DIGEST=anchor,
                        NOVA_EXPECTED_BUILD_REVISION=build,
                        NOVA_RUNTIME_ASSET_ROOT=str(runtime.root), PYTHONUNBUFFERED='1')
+    def native_host(executable_path):
+        # Existing anchored native slot and image CPU validation, no PATH guess.
+        native_executable = runtime.resolve_executable('native-wrapper', executable_path)
+        def launch(handoff, descriptor):
+            native_environment = dict(environment)
+            native_environment.update(NOVA_STRICT_OFFLINE='1',
+                NOVA_LOCAL_HANDOFF=json.dumps(handoff,sort_keys=True,separators=(',',':')),
+                NOVA_OWNED_SUMMARY_FD=str(descriptor))
+            source_preflight()
+            if runtime.resolve_executable('native-wrapper',executable_path) != native_executable:
+                raise ValueError('launcher-native-wrapper-changed')
+            runtime.recheck()
+            return subprocess.Popen([native_executable],env=native_environment,
+                pass_fds=(descriptor,),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,start_new_session=True)
+        return OwnedNativeSummaryDelivery(launch)
     return {'command': [executable, '-I', str(pipeline/'server.py')],
             '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
+            '_native_host': native_host,
             'environment': environment,
             'browserEnvelope': {'manifest': runtime.manifest, 'trust': {'manifestDigest': anchor, 'buildRevision': build},
                                 'runtimeConfigText': json.dumps(runtime.bindings, sort_keys=True, separators=(',', ':'), ensure_ascii=False)},
@@ -674,7 +691,7 @@ def prepare(root, manifest, anchor, build, pipeline=None):
             'publicationEligible': False}
 
 
-def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backend_bound=False, fresh_session=None):
+def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backend_bound=False, fresh_session=None, private_lifecycle=None):
     evidence = inventory.get('runtimeEvidence', {})
     checks = {
         'trustedBootstrap': trusted_bootstrap is True,
@@ -693,9 +710,67 @@ def strict_eligibility(inventory, *, trusted_bootstrap, browser_verified, backen
     if loads is not None:
         checks['scopedNativeLoadCoverage'] = (loads.get('complete') is True and
             loads.get('unexpected') == [] and loads.get('unresolved') == [] and loads.get('ambiguous') == [])
+    if private_lifecycle is not None:
+        checks['privateLifecycleDelivery'] = private_lifecycle is True
     eligible = all(checks.values())
     return {'processingEligible': eligible, 'publicationEligible': eligible and backend_bound is True,
             'blockedBy': [key for key, value in checks.items() if not value]}
+
+
+class OwnedNativeSummaryDelivery:
+    """Creator-owned anonymous native channel. Existing summary/ack are its authority.
+
+    The externally supplied native launcher must use pass_fds and its own anchored
+    executable preflight. This adapter never selects an executable or distribution.
+    """
+    def __init__(self, launch):
+        self.launch = launch; self.handle = None; self.child = None
+        self.used = False; self.started = False; self.identity = None; self.lock = threading.Lock()
+
+    def __call__(self, handoff):
+        with self.lock:
+            if self.started or self.used: raise ValueError('native-summary-replay')
+            self.started = True
+        parent, child = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            self.child = self.launch(handoff, child.fileno())
+            if not isinstance(self.child, subprocess.Popen) or self.child.poll() is not None:
+                raise ValueError('native-summary-owned-child-required')
+            self.handle = parent; self.identity = os.fstat(parent.fileno())
+            return True
+        except BaseException:
+            parent.close(); self.used = True; raise
+        finally: child.close()
+
+    def deliver_final(self, envelope):
+        with self.lock:
+            if self.used or self.handle is None: raise ValueError('native-summary-missing-or-replay')
+            self.used = True
+            try:
+                current = os.fstat(self.handle.fileno())
+                if (current.st_dev, current.st_ino, current.st_mode) != (self.identity.st_dev, self.identity.st_ino, self.identity.st_mode):
+                    raise ValueError('native-summary-descriptor-identity')
+                if self.child.poll() is not None: raise ValueError('native-summary-child-exited')
+                deadline = time.monotonic() + 2.5
+                raw = json.dumps(envelope,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+                if not 0 < len(raw) <= 16384: raise ValueError('native-summary-budget')
+                self.handle.settimeout(max(.001,deadline-time.monotonic()))
+                self.handle.sendall(len(raw).to_bytes(4,'big')+raw)
+                def read(count):
+                    value = bytearray()
+                    while len(value) < count:
+                        remaining = deadline-time.monotonic()
+                        if remaining <= 0: raise ValueError('native-summary-deadline')
+                        self.handle.settimeout(remaining)
+                        chunk = self.handle.recv(count-len(value))
+                        if not chunk: raise ValueError('native-summary-eof')
+                        value.extend(chunk)
+                    return bytes(value)
+                count = int.from_bytes(read(4),'big')
+                if not 0 < count <= 16384: raise ValueError('native-ack-budget')
+                return json.loads(read(count))
+            finally:
+                self.handle.close(); self.handle = None
 
 
 class LocalProductionLifecycle:
@@ -707,6 +782,8 @@ class LocalProductionLifecycle:
     """
     def __init__(self, prepared, assets, expected_assets, *, popen=subprocess.Popen,
                  health=None, browser=None, native_host=None, final_sink=None, timeout=30):
+        if isinstance(native_host, OwnedNativeSummaryDelivery) and final_sink is not None:
+            raise ValueError('duplicate-private-final-sink')
         self.prepared = prepared
         envelope = prepared['browserEnvelope']
         manifest = envelope['manifest']
@@ -720,6 +797,8 @@ class LocalProductionLifecycle:
         self.server.on_control = self.control_event
         self.control = OwnedResultChannel(self.server.session, self.server.deadline)
         self.shutdown_receipt = None; self.final_receipt = None; self.final_acknowledgement = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
+        if isinstance(native_host, OwnedNativeSummaryDelivery):
+            self.final_sink = native_host.deliver_final
         self.state = 'PREPARING'; self.child = None; self.popen = popen
         self.stop_pipe=None;self.child_stop_socket=None
         self.health = health or self.read_health; self.browser = browser; self.native_host = native_host
@@ -820,9 +899,16 @@ class LocalProductionLifecycle:
                 if self.state == 'SERVER_READY': raise ValueError('missing-browser-ready')
                 self.verify_health(self.health()); self.browser_verified = True
                 self.eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True, browser_verified=True,
+                    private_lifecycle=self.private_delivery_ready(),
                     fresh_session=self.child is not None and self.child.poll() is None and time.monotonic() < self.server.deadline)
                 self.state = 'PROCESSING_ELIGIBLE' if self.eligibility['processingEligible'] else 'IDENTITY_VERIFIED'
             elif self.state == 'SERVER_READY': self.state = 'BROWSER_READY'
+
+    def private_delivery_ready(self):
+        if '_source_preflight' not in self.prepared: return None
+        return (isinstance(self.native_host, OwnedNativeSummaryDelivery) and self.native_host.handle is not None
+            and not self.native_host.used and self.native_host.child is not None
+            and self.native_host.child.poll() is None and self.stop_pipe is not None)
 
     def control_event(self, route, value):
         with self.lock:
@@ -833,6 +919,7 @@ class LocalProductionLifecycle:
             if route in ('/owned-helper-result','/owned-helper-admit'):
                 self.verify_health(self.health())
                 eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True,
+                    private_lifecycle=self.private_delivery_ready(),
                     browser_verified=self.browser_verified, fresh_session=time.monotonic() < self.server.deadline)
                 if not eligibility['processingEligible']: raise ValueError('ineligible-helper-result')
                 if route == '/owned-helper-admit': return self.control.admit(value,self.inventory)
@@ -841,6 +928,7 @@ class LocalProductionLifecycle:
             if route != '/owned-control': raise ValueError('wrong-owned-control-route')
             self.verify_health(self.health())
             eligibility = strict_eligibility(self.inventory,trusted_bootstrap=True,
+                private_lifecycle=self.private_delivery_ready(),
                 browser_verified=self.browser_verified,fresh_session=time.monotonic() < self.server.deadline)
             if value.get('action') == 'begin': raise ValueError('explicit-processing-authorization-required')
             response = self.control.command(value,inventory=self.inventory,
@@ -915,6 +1003,10 @@ class LocalProductionLifecycle:
                     acknowledgement = self.final_sink(json.loads(json.dumps(self.final_receipt)))
                     if acknowledgement is not None:
                         self.final_acknowledgement = acknowledge_final_lifecycle(self.control,acknowledgement)
+                        if self.final_acknowledgement['complete']:
+                            self.state = 'CLOSED'
+            except (OSError, ValueError, TypeError):
+                self.shutdown_state = 'PARTIAL'; self.state = 'FAILED'
             finally:
                 self.control.ack_key = ''
 
@@ -937,9 +1029,12 @@ def main():
                     raise ValueError('stale-web-asset')
                 assets[route] = data; expected[route] = entry['digest']
         if '/music-studio.html' not in assets: raise ValueError('missing-approved-web-entry')
-        if os.environ.get('NOVA_LOCAL_BROWSER') != 'system': raise ValueError('explicit-local-browser-required')
+        native_host = None
+        if os.environ.get('NOVA_NATIVE_WRAPPER_PATH'):
+            native_host = result['_native_host'](os.environ['NOVA_NATIVE_WRAPPER_PATH'])
+        elif os.environ.get('NOVA_LOCAL_BROWSER') != 'system': raise ValueError('explicit-local-browser-required')
         import webbrowser
-        lifecycle = LocalProductionLifecycle(result, assets, expected, browser=webbrowser.open)
+        lifecycle = LocalProductionLifecycle(result, assets, expected, browser=webbrowser.open, native_host=native_host)
         signal.signal(signal.SIGTERM, lambda *_: lifecycle.done.set())
         signal.signal(signal.SIGINT, lambda *_: lifecycle.done.set())
         lifecycle.start(); lifecycle.supervise()

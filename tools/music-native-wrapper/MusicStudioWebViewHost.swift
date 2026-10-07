@@ -7,6 +7,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
     public private(set) var lifecycleState = "PREPARING"
     public private(set) var ownedLifecycle: MusicStudioOwnedLifecycle?
     private let ownedTransport = MusicStudioOwnedControlTransport()
+    private var privateSummary: MusicStudioPrivateSummaryChannel?
     private var renewalWork: DispatchWorkItem?
     private var automaticRenewals = 0
     private var midiCoordinator: NativeMidiCoordinator?
@@ -38,6 +39,10 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
         if let credential = configuration.ownedCredential, let session = configuration.ownedSession,
            let port = configuration.startURL.port, let origin = URL(string: "http://127.0.0.1:\(port)") {
             ownedLifecycle = try? MusicStudioOwnedLifecycle(origin: origin, session: session, credential: credential)
+            if let descriptor = configuration.ownedSummaryDescriptor {
+                privateSummary = try? MusicStudioPrivateSummaryChannel(inheritedDescriptor: descriptor)
+                if privateSummary == nil { ownedLifecycle?.fail(); ownedLifecycle = nil }
+            }
         }
         webView.navigationDelegate = self
         if ownedLifecycle != nil {
@@ -50,7 +55,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
 
     public func start() {
         guard lifecycleState == "PREPARING", configuration.allows(configuration.startURL),
-              configuration.ownedCredential == nil || ownedLifecycle != nil else { lifecycleState = "FAILED"; return }
+              configuration.ownedCredential == nil || (ownedLifecycle != nil && privateSummary != nil) else { lifecycleState = "FAILED"; return }
         lifecycleState = "SERVER_READY"
 
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
@@ -72,6 +77,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
                 DispatchQueue.main.async {
                     do {
                         try owner.receive(result.get()); self?.lifecycleState = owner.state
+                        if action == "stop" { self?.receivePrivateFinalSummary(owner) }
                         if action == "authorize" { self?.scheduleOwnedRenewal() }
                         completion(true)
                     }
@@ -79,6 +85,21 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
                 }
             }
         } catch { completion(false) }
+    }
+
+    private func receivePrivateFinalSummary(_ owner: MusicStudioOwnedLifecycle) {
+        guard let channel = privateSummary else { return }
+        privateSummary = nil
+        // Retain the owner/channel even if the view is dismantled during shutdown.
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            do {
+                try channel.exchange(owner: owner)
+                DispatchQueue.main.async { self?.lifecycleState = owner.state }
+            } catch {
+                owner.fail()
+                DispatchQueue.main.async { self?.lifecycleState = "FAILED" }
+            }
+        }
     }
 
     private func scheduleOwnedRenewal() {
@@ -142,16 +163,20 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
     public func stop() {
         renewalWork?.cancel(); renewalWork = nil
         if let owner = ownedLifecycle {
+            if owner.state == "STOPPING" || owner.state.hasPrefix("SHUTDOWN") {
+                lifecycleState = owner.state
+            } else {
             do {
                 let request = try owner.command("stop")
                 lifecycleState = "STOPPING"
-                ownedTransport.send(request) { [weak self] result in
+                ownedTransport.send(request) { [self] result in
                     DispatchQueue.main.async {
-                        do { try owner.receive(result.get()); self?.lifecycleState = owner.state }
-                        catch { owner.fail(); self?.lifecycleState = "FAILED" }
+                        do { try owner.receive(result.get()); self.lifecycleState = owner.state; self.receivePrivateFinalSummary(owner) }
+                        catch { owner.fail(); self.lifecycleState = "FAILED" }
                     }
                 }
             } catch { owner.fail(); lifecycleState = "FAILED" }
+            }
         } else if configuration.ownedCredential != nil {
             lifecycleState = "FAILED"
         } else {
