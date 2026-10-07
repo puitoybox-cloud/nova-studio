@@ -14,9 +14,10 @@ from pathlib import Path
 
 SOURCE=Path(__file__).resolve()
 SOURCE_DIGEST=hashlib.sha256(SOURCE.read_bytes()).hexdigest()
-sys.path.insert(0,str(SOURCE.parent))
+if str(SOURCE.parent) not in sys.path:
+    sys.path.insert(0,str(SOURCE.parent))
 from runtime_inventory import bootstrap, install_offline_guard, local, stable
-from scoped_closure import load_contract,verify_closure
+from scoped_closure import load_contract,verify_closure,private_runtime_preflight
 from demucs_receipt import FORMAT,MAX_RECEIPT,unique
 
 
@@ -29,7 +30,8 @@ def write(value):
 def load(runtime,contract,expected,nonce):
     binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
     if binding['loaderVersion']!='4.0.1' or importlib.metadata.version('demucs')!=binding['loaderVersion']:raise ValueError('unsupported-or-wrong-loader-version')
-    closure=verify_closure(runtime.root,contract,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
+    distribution=private_runtime_preflight(runtime,contract,SOURCE.parent)
+    closure=verify_closure(runtime.root,contract,distribution,build=runtime.manifest['buildRevision'],stamp_sink=lambda relative,stamp:runtime.stamps.__setitem__(('closure',relative),(relative,stamp)))
     if not closure['complete']:raise ValueError('partial-runtime-closure')
     primary=runtime.verify('models',binding['id'],binding['path'])
     companions=[runtime.verify('assets',e['id'],e['path']) for e in binding['companions']]
@@ -65,8 +67,9 @@ def load(runtime,contract,expected,nonce):
     # Native receipts must be observed in this child, never copied as proof from its parent.
     receipt['native']=[]
     for entry in runtime.bindings['native']:
-        if entry['id']!='python-runtime':raise ValueError('unsupported-child-executable')
-        runtime.resolve_executable(entry['id'],sys.executable)
+        if entry['id'] not in ('python-runtime','native-wrapper'):raise ValueError('unsupported-child-executable')
+        path=sys.executable if entry['id']=='python-runtime' else local(runtime.root,entry['path'])
+        runtime.resolve_executable(entry['id'],path)
         receipt['native'].append(runtime.native[entry['id']])
     return model,receipt
 
