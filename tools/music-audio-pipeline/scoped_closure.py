@@ -440,6 +440,7 @@ def private_python_command(runtime, contract, worker, arguments=()):
 def private_runtime_preflight(runtime, contract, pipeline):
     """Independent in-process acceptance of the same actual private startup path."""
     import sys
+    runtime.private_python = None
     layout = private_python_layout(runtime,contract)
     if (sys.version.split()[0] != layout['version'] or sys.executable != layout['executable'] or
             getattr(sys,'_stdlib_dir',None) != layout['stdlib'] or
@@ -447,6 +448,21 @@ def private_runtime_preflight(runtime, contract, pipeline):
             sys.path != [str(Path(pipeline).resolve())]+layout['paths']):
         raise ValueError('wrong-private-runtime-startup')
     distribution = private_distribution_lookup(runtime.root,contract)
-    if not verify_assembly(runtime.root,contract,distribution,runtime=runtime)['complete']:
+    nodes = validate_graph(contract)
+    before = {f['path']:stable(local(runtime.root,f['path'])) for node in nodes.values() for f in node['files']}
+    report = verify_assembly(runtime.root,contract,distribution,runtime=runtime)
+    if not report['complete']:
         raise ValueError('unapproved-private-runtime-assembly')
+    # Bind startup selection to the existing inventory/request/result identity.
+    # This is disk/startup proof only, never mapped-native or device acceptance.
+    nodes = validate_graph(contract)
+    for node in nodes.values():
+        for f in node['files']:
+            if stable(local(runtime.root,f['path'])) != before[f['path']]:
+                raise ValueError('changed-private-runtime-assembly')
+            runtime.stamps[('private-python',f['path'])] = (f['path'],before[f['path']])
+    runtime.recheck()
+    runtime.private_python = {'stdlibArtifactDigest': nodes['python-runtime']['artifactDigest'],
+        'installedRecordInventory': report['installedRecordInventory'],
+        'selection': 'ANCHORED_PRIVATE_STARTUP', 'productionReady': False}
     return distribution

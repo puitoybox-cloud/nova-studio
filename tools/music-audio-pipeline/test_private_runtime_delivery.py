@@ -15,7 +15,7 @@ from test_demucs_closure import contract_fixture
 class PrivateRuntimeDeliveryTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.root=Path(self.temp.name);self.graph=contract_fixture(self.root)
+        self.root=Path(self.temp.name).resolve();self.graph=contract_fixture(self.root)
         self.node=self.graph['nodes'][1];self.node.update(id='python-runtime',version='3.11.0')
         for node in self.graph['nodes']:
             node['requires']=['python-runtime' if v=='python_runtime' else v for v in node['requires']]
@@ -28,7 +28,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         raw=self.worker.read_bytes()
         self.expected={'digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)}
         self.runtime=SimpleNamespace(root=self.root,bindings={'native':[{'id':'python-runtime','version':'3.11.0','path':'runtime/bin/python'}]},
-            resolve_executable=lambda identity,path:str(path),expected=lambda kind,identity:self.expected)
+            resolve_executable=lambda identity,path:str(path),expected=lambda kind,identity:self.expected,stamps={},recheck=lambda:None)
 
     def add_file(self,name,raw):
         path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
@@ -107,6 +107,9 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         runtime=copy.copy(self.runtime);runtime.manifest={'models':[],'dependencies':[],'assets':[]};runtime.bindings=dict(runtime.bindings,models=[],dependencies=[],assets=[])
         with patch.dict(sys.modules,{'sys':fake}):
             self.assertTrue(callable(closure.private_runtime_preflight(runtime,self.graph,self.root)))
+            self.assertEqual(runtime.private_python['stdlibArtifactDigest'],self.node['artifactDigest'])
+            self.assertEqual(runtime.private_python['installedRecordInventory'][0]['fileCount'],3)
+            self.assertFalse(runtime.private_python['productionReady'])
             self.graph['nodes'][4]['licenseStatus']='REVIEW_REQUIRED'
             with self.assertRaisesRegex(ValueError,'unapproved-private-runtime-assembly'):
                 closure.private_runtime_preflight(runtime,self.graph,self.root)
@@ -139,6 +142,22 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         raw=self.worker.read_bytes();self.expected.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
         with self.assertRaisesRegex(ValueError,'private-startup-command-budget'):
             closure.private_python_command(self.runtime,self.graph,self.worker)
+
+
+    def test_existing_inventory_binds_startup_and_clears_it_on_stale_bytes(self):
+        from test_runtime_inventory import RuntimeTests
+        fixture=RuntimeTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+        runtime=fixture.runtime
+        runtime.verify('models','m','model')
+        runtime.private_python={'stdlibArtifactDigest':'a'*64,'installedRecordInventory':[{'id':'fixture'}],
+                                'selection':'ANCHORED_PRIVATE_STARTUP','productionReady':False}
+        snapshot=runtime.snapshot()
+        self.assertEqual(snapshot['privatePython']['stdlibArtifactDigest'],'a'*64)
+        snapshot['privatePython']['installedRecordInventory'][0]['id']='foreign'
+        self.assertEqual(runtime.private_python['installedRecordInventory'][0]['id'],'fixture')
+        fixture.root.joinpath('model').write_bytes(b'other')
+        self.assertEqual(runtime.snapshot()['status'],'BLOCKED')
+        self.assertIsNone(runtime.private_python)
 
 
 if __name__=='__main__':unittest.main()
