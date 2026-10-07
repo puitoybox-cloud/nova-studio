@@ -114,6 +114,20 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(legacy_snapshot()['status'],'UNVERIFIED')
         self.assertIn('models:m',self.runtime.snapshot()['missing'])
 
+    def test_runtime_root_symlink_is_never_an_authenticated_package_root(self):
+        real=self.root/'real-root';real.mkdir()
+        link=self.root/'linked-root';link.symlink_to(real,target_is_directory=True)
+        with self.assertRaisesRegex(ValueError,'unsafe-runtime-root'):
+            RuntimeInventory(link,self.manifest,self.bindings)
+
+    def test_runtime_root_identity_is_rechecked(self):
+        # Root identity is retained alongside per-file stamps. This synthetic
+        # mutation proves a changed package root cannot silently remain trusted.
+        self.runtime.root_identity=(-1,-1)
+        self.assertEqual(self.runtime.snapshot()['status'],'BLOCKED')
+        with self.assertRaisesRegex(ValueError,'stale-runtime-artifact'):
+            self.runtime.recheck()
+
     def test_unsafe_path_symlink_ancestor_and_wrong_expected_inventory(self):
         for path in ['../model','/model']:
             self.runtime.bindings['models'][0]['path']=path
