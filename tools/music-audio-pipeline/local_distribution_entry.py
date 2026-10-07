@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from runtime_inventory import bootstrap
-from scoped_closure import load_contract, verify_assembly, private_python_command, private_distribution_lookup
+from scoped_closure import load_contract, verify_assembly, private_python_command, private_distribution_lookup, private_runtime_preflight
 from dependency_identity import verify_local_asset
 from distribution_binding import load_manifest
 
@@ -628,6 +628,8 @@ def prepare(root, manifest, anchor, build, pipeline=None):
     if evidence['buildRevision'] != build:
         raise ValueError('launcher-evidence-build-mismatch')
     command = private_python_command(runtime, graph, pipeline/'server.py')
+    if runtime.resolve_executable('python-runtime', sys.executable) != command[0]:
+        raise ValueError('foreign-launcher-private-python')
     runtime.recheck()
     def source_preflight():
         # Reuse existing authenticated asset identities at the actual spawn boundary.
@@ -682,7 +684,11 @@ def prepare(root, manifest, anchor, build, pipeline=None):
                 pass_fds=(descriptor,),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,start_new_session=True)
         return OwnedNativeSummaryDelivery(launch)
+    def activate_runtime():
+        source_preflight()
+        return private_runtime_preflight(runtime, graph, pipeline, configure_path=True)
     return {'command': command,
+            '_runtime_activation': activate_runtime,
             '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
             '_native_host': native_host,
             'environment': environment,
@@ -1018,6 +1024,7 @@ def main():
         root = os.environ['NOVA_RUNTIME_ASSET_ROOT']
         result = prepare(root, os.environ['NOVA_TRUSTED_MANIFEST_PATH'],
                          os.environ['NOVA_TRUSTED_MANIFEST_DIGEST'], os.environ['NOVA_EXPECTED_BUILD_REVISION'])
+        result['_runtime_activation']()
         # Explicit externally approved web assets only. No recursive scan or guessed asset set.
         assets = {}; expected = {}
         for entry in result['browserEnvelope']['manifest']['assets']:
