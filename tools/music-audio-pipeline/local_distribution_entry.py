@@ -687,9 +687,17 @@ def prepare(root, manifest, anchor, build, pipeline=None):
     def activate_runtime():
         source_preflight()
         return private_runtime_preflight(runtime, graph, pipeline, configure_path=True)
+    def launch_origin_identity():
+        runtime.recheck()
+        if runtime.private_python is None:raise ValueError('missing-launcher-private-origin')
+        origin=runtime.private_python.get('processOrigin',{})
+        if origin.get('status')!='PARTIAL' or origin.get('approvedPathMatched') is not True:
+            raise ValueError('unverified-launcher-private-origin')
+        return json.loads(json.dumps(runtime.private_python))
     return {'command': command,
             '_runtime_activation': activate_runtime,
             '_source_preflight': source_preflight, '_owned_process_loader': owned_process_loader,
+            '_launch_origin_identity': launch_origin_identity,
             '_native_host': native_host,
             'environment': environment,
             'browserEnvelope': {'manifest': runtime.manifest, 'trust': {'manifestDigest': anchor, 'buildRevision': build},
@@ -836,6 +844,9 @@ class LocalProductionLifecycle:
         inventory = actual.get('actualInventory', {})
         if inventory.get('mode') != 'STRICT' or inventory.get('identityComplete') is not True:
             raise ValueError('helper-actual-identity-incomplete')
+        if (hasattr(self,'expected_child_private') and
+                inventory.get('privatePython')!=self.expected_child_private):
+            raise ValueError('changed-or-foreign-helper-private-origin')
         self.inventory = inventory
 
     def start(self):
@@ -859,6 +870,10 @@ class LocalProductionLifecycle:
             except BaseException:parent_socket.close();raise
             environment.update(NOVA_OWNED_STOP_FD=str(self.child_stop_socket.fileno()),
                 NOVA_OWNED_STOP_IDENTITY=json.dumps(identity,sort_keys=True,separators=(',',':')))
+            origin_identity=self.prepared.get('_launch_origin_identity')
+            if origin_identity is not None:
+                expected_origin=origin_identity()
+                environment['NOVA_OWNED_ORIGIN_REQUIRED']='1'
             if '_source_preflight' in self.prepared:
                 self.prepared['_source_preflight']()
             self.child = self.popen(self.prepared['command'], env=environment, start_new_session=True,
@@ -866,6 +881,18 @@ class LocalProductionLifecycle:
                                     pass_fds=(self.child_stop_socket.fileno(),))
             self.child_stop_socket.close();self.child_stop_socket=None
             self.exit_observer = OwnedExitObservation(self.child,self.server.session,self.server.binding,owned_channel=self.stop_pipe.handle)
+            if '_source_preflight' in self.prepared:
+                # Disk continuity after Popen, before health/browser admission;
+                # not kernel image integrity or parent-authenticated origin.
+                self.prepared['_source_preflight']()
+            if origin_identity is not None:
+                if not isinstance(self.child,subprocess.Popen) or self.child.poll() is not None:
+                    raise ValueError('unowned-private-origin-child')
+                if origin_identity()!=expected_origin:raise ValueError('changed-parent-launch-origin')
+                self.launch_origin_binding=self.stop_pipe.request_origin(expected_origin)
+                self.prepared['_source_preflight']()
+                if origin_identity()!=expected_origin:raise ValueError('changed-parent-launch-origin')
+                self.expected_child_private={**expected_origin,'parentLaunchEvidence':self.launch_origin_binding}
             deadline = time.monotonic()+self.timeout
             while True:
                 if self.child.poll() is not None: raise ValueError('helper-startup-failed')

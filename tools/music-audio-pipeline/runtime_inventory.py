@@ -227,6 +227,12 @@ class RuntimeInventory:
             for relative, stamp in self.stamps.values():
                 if stable(local(self.root, relative)) != stamp:
                     raise ValueError('stale-runtime-artifact')
+            if self.private_python is not None:
+                from scoped_closure import private_process_origin
+                binding = next(e for e in self.bindings['native'] if e['id']=='python-runtime')
+                observed = private_process_origin(str(local(self.root,binding['path'])))
+                if observed != self.private_python.get('processOrigin'):
+                    raise ValueError('stale-private-process-origin')
         except (OSError, ValueError):
             self.private_python = None
             self.loaded.clear(); self._retained_models.clear(); self.models.clear(); self.dependencies.clear(); self.native.clear(); self.assets.clear()

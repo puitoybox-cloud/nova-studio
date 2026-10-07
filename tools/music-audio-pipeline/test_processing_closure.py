@@ -164,6 +164,18 @@ class MappedTests(unittest.TestCase):
     def test_mapped_disk_unverified(self):
         self.entry['digest']='0'*64;entry=self.observe(self.path)['entries'][0]
         self.assertTrue(entry['mapped']);self.assertEqual(entry['diskIntegrity'],'UNVERIFIED');self.assertFalse(self.observe(self.path)['complete'])
+
+    def test_mapped_origin_binds_disk_root_and_build_without_memory_promotion(self):
+        value=self.observe(self.path)['entries'][0]['originBinding']
+        self.assertEqual(value['buildRevision'],'fixture')
+        self.assertEqual(value['runtimeRootIdentity'],[self.root.stat().st_dev,self.root.stat().st_ino])
+        self.assertEqual(value['diskIdentity'][2],7);self.assertFalse(value['mappedBytesVerified'])
+        first=evidence.processing_binding('a'*64,'b'*64,{'digest':'c'*64,'byteLength':1},
+            {'runtimeEvidence':{'mappedNative':self.observe(self.path)}})['inventoryRevision']
+        self.contract['buildRevision']='next-generation'
+        current=evidence.processing_binding('a'*64,'b'*64,{'digest':'c'*64,'byteLength':1},
+            {'runtimeEvidence':{'mappedNative':self.observe(self.path)}})['inventoryRevision']
+        self.assertNotEqual(first,current)
     def test_wrong_mapped_artifact(self):
         entry=self.observe(self.root/'wrong.so')['entries'][0]
         self.assertEqual(entry['status'],'UNEXPECTED_OBSERVED');self.assertIsNone(entry['actualMappedArtifact'])

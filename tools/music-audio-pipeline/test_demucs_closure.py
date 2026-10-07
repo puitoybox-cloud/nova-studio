@@ -27,6 +27,21 @@ def receipt():
 class ReceiptTests(unittest.TestCase):
     def test_correct_receipt(self):
         e,r=receipt();self.assertEqual(validate_receipt(r,e,'n'),r)
+
+    def test_child_private_identity_pinned_to_parent_owned_exchange(self):
+        e,r=receipt()
+        identity={'stdlibArtifactDigest':'a'*64,'installedRecordInventory':[{'id':'fixture'}],
+            'executable':{'identity':{'digest':'b'*64}},'runtimeRootIdentity':[1,2],'buildRevision':'fixture'}
+        e['privatePythonIdentity']=copy.deepcopy(identity)
+        origin={'status':'PARTIAL','approvedPathMatched':True,'mappedBytesVerified':False,'parentLaunchAuthenticated':False}
+        r['runtimeEvidence']={'privatePython':{**identity,'processOrigin':origin}}
+        self.assertEqual(validate_receipt(r,e,'n'),r)
+        for key in identity:
+            changed=copy.deepcopy(r);changed['runtimeEvidence']['privatePython'][key]='foreign'
+            with self.assertRaisesRegex(ValueError,'foreign-child-private-runtime-origin'):validate_receipt(changed,e,'n')
+        for key in ('mappedBytesVerified','parentLaunchAuthenticated'):
+            changed=copy.deepcopy(r);changed['runtimeEvidence']['privatePython']['processOrigin'][key]=True
+            with self.assertRaisesRegex(ValueError,'foreign-child-private-runtime-origin'):validate_receipt(changed,e,'n')
     def test_wrong_loader_model_digest_companion_architecture(self):
         e,r=receipt()
         mutations=[lambda v:v['loader'].update(version='wrong'),lambda v:v['model']['identity'].update(id='wrong'),

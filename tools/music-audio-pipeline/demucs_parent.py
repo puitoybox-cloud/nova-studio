@@ -51,6 +51,12 @@ def start(runtime, manifest_path, anchor, build, guard):
     worker = str(Path(__file__).with_name('demucs_child.py').resolve())
     command = private_python_command(runtime,contract,worker,[str(runtime.root),str(Path(manifest_path).resolve()),anchor,build])
     runtime.recheck()
+    if runtime.private_python is None:
+        raise ValueError('missing-parent-private-runtime-origin')
+    # Pin only the existing private-runtime identity into the owned child
+    # load/nonce exchange. This is not an independent parent kernel attestation.
+    expected['privatePythonIdentity'] = {key: runtime.private_python[key] for key in
+        ('stdlibArtifactDigest','installedRecordInventory','executable','runtimeRootIdentity','buildRevision','processOrigin')}
     session=ChildSession(command,expected,permit=guard.permit)
     try:runtime.recheck()
     except Exception:session.close();raise

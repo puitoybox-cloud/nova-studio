@@ -50,7 +50,7 @@ class PrivatePythonRoutingTests(unittest.TestCase):
         self.addCleanup(fixture.doCleanups)
         self.fixture = fixture; self.root = fixture.root; self.graph = fixture.graph
         self.runtime = fixture.runtime
-        self.runtime.manifest = {'models':[], 'dependencies':[], 'assets':[]}
+        self.runtime.manifest = {'buildRevision':'TEST_ONLY','models':[], 'dependencies':[], 'assets':[]}
         self.runtime.bindings.update(models=[], dependencies=[], assets=[])
         from scoped_closure import private_python_layout
         self.layout = private_python_layout(self.runtime,self.graph)

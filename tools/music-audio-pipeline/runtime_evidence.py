@@ -1143,6 +1143,8 @@ def mapped_native_receipts(root, contract):
             if not path.exists():
                 raise FileNotFoundError('missing-mapped-native-artifact')
             before = stable(path)
+            root_stat = Path(root).stat()
+            root_identity = (root_stat.st_dev,root_stat.st_ino)
             actual, source = exact_mapped_path(path, probes.get(entry['id']))
             value['observation'] = source
             if actual is not None:
@@ -1156,11 +1158,17 @@ def mapped_native_receipts(root, contract):
                 value['status'] = source if source in ('UNSUPPORTED', 'EXPECTED_NOT_OBSERVED') else 'OBSERVED_UNVERIFIED'
             proof = VERIFIER.verify(root, entry['path'], entry, identity=entry['id'],
                 version=entry['version'], build=contract['buildRevision'])
-            if stable(path) != before:
+            current_root = Path(root).stat()
+            if (stable(path) != before or Path(root).is_symlink() or
+                    (current_root.st_dev,current_root.st_ino) != root_identity):
                 value['actualMappedArtifact'] = None
                 value['status'] = 'OBSERVED_UNVERIFIED'
                 raise ValueError('changed-mapped-native-origin')
             value.update(diskIntegrity='VERIFIED', diskDigest=proof['digest'], architecture=native_architecture(path, contract['architecture']))
+            value['originBinding'] = {'buildRevision':contract['buildRevision'],
+                'runtimeRootIdentity':list(root_identity), 'diskIdentity':list(before),
+                'artifactId':entry['id'], 'declaredComponent':entry['module'],
+                'mappedBytesVerified':False}
             if value['architecture'] != contract['architecture']:
                 value['status'] = 'UNSUPPORTED' if value['architecture'] == 'UNSUPPORTED' else 'OBSERVED_UNVERIFIED'
                 value['reason'] = 'architecture-unverified-or-mismatch'
