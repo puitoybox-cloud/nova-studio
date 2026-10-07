@@ -167,6 +167,12 @@ class MappedTests(unittest.TestCase):
     def test_wrong_mapped_artifact(self):
         entry=self.observe(self.root/'wrong.so')['entries'][0]
         self.assertEqual(entry['status'],'UNEXPECTED_OBSERVED');self.assertIsNone(entry['actualMappedArtifact'])
+    def test_symlink_alias_is_not_declared_mapped_origin(self):
+        alias=self.root/'foreign-alias.so';alias.symlink_to(self.path)
+        entry=self.observe(alias)['entries'][0]
+        self.assertEqual(entry['status'],'UNEXPECTED_OBSERVED')
+        self.assertIsNone(entry['actualMappedArtifact'])
+        self.assertFalse(self.observe(alias)['complete'])
     def test_not_loaded_missing_and_unsupported(self):
         self.assertEqual(self.observe(None,'EXPECTED_NOT_OBSERVED')['entries'][0]['status'],'EXPECTED_NOT_OBSERVED')
         self.assertEqual(self.observe(None,'UNSUPPORTED')['entries'][0]['status'],'UNSUPPORTED')

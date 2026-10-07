@@ -1139,11 +1139,15 @@ def mapped_native_receipts(root, contract):
             'status': 'OBSERVED_UNVERIFIED', 'observation': 'UNSUPPORTED'}
         try:
             path = resolve(root, entry['path'])
+            from runtime_inventory import stable
+            if not path.exists():
+                raise FileNotFoundError('missing-mapped-native-artifact')
+            before = stable(path)
             actual, source = exact_mapped_path(path, probes.get(entry['id']))
             value['observation'] = source
             if actual is not None:
                 value['mapped'] = True
-                if not actual.is_absolute() or actual.resolve() != path.resolve():
+                if not actual.is_absolute() or actual != path or actual.is_symlink():
                     value['status'] = 'UNEXPECTED_OBSERVED'
                 else:
                     value['actualMappedArtifact'] = entry['id']
@@ -1152,6 +1156,10 @@ def mapped_native_receipts(root, contract):
                 value['status'] = source if source in ('UNSUPPORTED', 'EXPECTED_NOT_OBSERVED') else 'OBSERVED_UNVERIFIED'
             proof = VERIFIER.verify(root, entry['path'], entry, identity=entry['id'],
                 version=entry['version'], build=contract['buildRevision'])
+            if stable(path) != before:
+                value['actualMappedArtifact'] = None
+                value['status'] = 'OBSERVED_UNVERIFIED'
+                raise ValueError('changed-mapped-native-origin')
             value.update(diskIntegrity='VERIFIED', diskDigest=proof['digest'], architecture=native_architecture(path, contract['architecture']))
             if value['architecture'] != contract['architecture']:
                 value['status'] = 'UNSUPPORTED' if value['architecture'] == 'UNSUPPORTED' else 'OBSERVED_UNVERIFIED'

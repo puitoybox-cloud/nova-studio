@@ -117,7 +117,7 @@ class PrivateRuntimeDeliveryTests(unittest.TestCase):
         fake=SimpleNamespace(implementation=SimpleNamespace(name='cpython'),version_info=(3,11,0),modules={},version='3.11.0 fixture',executable=layout['executable'],_stdlib_dir=layout['stdlib'],
             flags=SimpleNamespace(isolated=1,no_site=1),path=[str(self.root)]+layout['paths'])
         runtime=copy.copy(self.runtime);runtime.manifest={'models':[],'dependencies':[],'assets':[]};runtime.bindings=dict(runtime.bindings,models=[],dependencies=[],assets=[])
-        with patch.dict(sys.modules,{'sys':fake}):
+        with patch.dict(sys.modules,{'sys':fake}), patch.object(closure,'private_process_origin',return_value={'status':'UNVERIFIED','source':'TEST_ONLY'}):
             self.assertTrue(callable(closure.private_runtime_preflight(runtime,self.graph,self.root)))
             self.assertEqual(runtime.private_python['stdlibArtifactDigest'],self.node['artifactDigest'])
             self.assertEqual(runtime.private_python['installedRecordInventory'][0]['fileCount'],3)
