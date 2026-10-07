@@ -139,6 +139,7 @@ class OwnedStopPipe:
             raise ValueError('invalid-owned-stop-pipe')
         self.handle=handle;self.identity=copy.deepcopy(identity);self.key=capability
         self.clock=clock;self.consumed=False;self.closed=False
+        self.stop_payload=None;self.final_used=False
         os.set_inheritable(handle.fileno(),False)
 
     def seal(self,payload):
@@ -160,14 +161,14 @@ class OwnedStopPipe:
             raise ValueError('foreign-owned-stop-pipe')
         return p
 
-    def send(self,value):
+    def send(self,value, *, budget=4096):
         raw=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()+b'\n'
-        if len(raw)>4096:raise ValueError('owned-stop-pipe-budget')
+        if len(raw)>budget:raise ValueError('owned-stop-pipe-budget')
         self.handle.settimeout(1);self.handle.sendall(raw)
 
-    def receive(self):
+    def receive(self, *, budget=4096):
         deadline=min(self.clock()+1,self.identity['deadline']+10);raw=bytearray()
-        while len(raw)<4096:
+        while len(raw)<budget:
             remaining=deadline-self.clock()
             if remaining<=0:raise TimeoutError('owned-stop-pipe-time-budget')
             self.handle.settimeout(remaining)
@@ -184,15 +185,43 @@ class OwnedStopPipe:
         self.validate(self.seal(payload),'STOP')
         self.send(self.seal(payload));reply=self.validate(self.receive(),'STOPPING')
         if reply!={**payload,'kind':'STOPPING'}:raise ValueError('foreign-owned-stop-reply')
-        self.consumed=True
+        self.stop_payload=copy.deepcopy(payload);self.consumed=True
         return {'status':'OBSERVED','scope':'OWNED_INHERITED_DESCRIPTOR','state':'STOPPING',
             'deliveryIdentityDigest':hashlib.sha256(json.dumps(reply,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
 
     def accept(self,stop):
         payload=self.validate(self.receive(),'STOP')
         stop(copy.deepcopy(payload))
-        self.send(self.seal({**payload,'kind':'STOPPING'}));self.consumed=True
+        self.send(self.seal({**payload,'kind':'STOPPING'}));self.stop_payload=copy.deepcopy(payload);self.consumed=True
         return payload
+
+    def _final_payload(self, shutdown):
+        if (self.closed or not self.consumed or self.stop_payload is None or self.final_used or
+                not self.clock()<self.identity['deadline']+10 or not isinstance(shutdown,dict)):
+            raise ValueError('stale-owned-final-delivery')
+        return {**self.stop_payload,'kind':'HELPER_SHUTDOWN','shutdown':copy.deepcopy(shutdown)}
+
+    def send_final(self, shutdown):
+        """Report after actual child cleanup; never authorize another operation."""
+        payload=self._final_payload(shutdown)
+        self.final_used=True
+        self.send(self.seal(payload),budget=MAX_RECEIPT)
+
+    def receive_final(self):
+        # Consume before reading: timeout, malformed and foreign delivery cannot retry.
+        self._final_payload({});self.final_used=True
+        envelope=self.receive(budget=MAX_RECEIPT)
+        if not isinstance(envelope,dict) or set(envelope)!={'payload','authentication'}:
+            raise ValueError('invalid-owned-final-envelope')
+        payload=envelope['payload']
+        if (not isinstance(payload,dict) or set(payload)!=set(self.stop_payload)|{'shutdown'} or
+                {k:v for k,v in payload.items() if k!='shutdown'}!={**self.stop_payload,'kind':'HELPER_SHUTDOWN'} or
+                not isinstance(payload['shutdown'],dict) or not isinstance(envelope['authentication'],str) or
+                not hmac.compare_digest(envelope['authentication'],self.seal(payload)['authentication'])):
+            raise ValueError('foreign-owned-final-delivery')
+        return {'status':'OBSERVED','scope':'OWNED_INHERITED_DESCRIPTOR',
+            'deliveryIdentityDigest':hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+            'shutdown':copy.deepcopy(payload['shutdown'])}
 
     def close(self):
         if not self.closed:self.handle.close()

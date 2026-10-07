@@ -884,6 +884,15 @@ class LocalProductionLifecycle:
                 stop = self.request_helper_stop()
             self.graceful_stop_receipt = stop
             self.shutdown_receipt = bounded_owned_shutdown(self.child)
+            # The buffered final frame is sent after Helper child cleanup. A retained
+            # channel authenticates its report; only our observer proves Helper exit.
+            descendant_delivery={'status':'UNVERIFIED','scope':'OWNED_INHERITED_DESCRIPTOR'}
+            if stop.get('status')=='OBSERVED' and self.stop_pipe is not None:
+                try:descendant_delivery=self.stop_pipe.receive_final()
+                except (OSError,ValueError,TypeError):pass
+            self.shutdown_receipt['helperChildShutdownDelivery']=descendant_delivery
+            if self.child is not None:
+                self.shutdown_receipt['leaderExited']=self.child.poll() is not None
             observer=getattr(self,'exit_observer',None)
             if observer is not None and self.child is not None:
                 self.shutdown_receipt['ownedExitObservation']=observer.observe(self.child,self.control.binding)
