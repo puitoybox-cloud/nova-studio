@@ -14,7 +14,7 @@ from runtime_inventory import RuntimeInventory
 class PrivateDistributionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name); self.graph = contract_fixture(self.root)
+        self.root = Path(self.temp.name).resolve(); self.graph = contract_fixture(self.root)
 
     def test_actual_private_metadata_record_without_host_lookup(self):
         with patch('importlib.metadata.distribution', side_effect=AssertionError('host lookup')):
@@ -46,7 +46,7 @@ class PrivateDistributionTests(unittest.TestCase):
 class PrivatePythonRoutingTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name); self.graph = contract_fixture(self.root)
+        self.root = Path(self.temp.name).resolve(); self.graph = contract_fixture(self.root)
         node = self.graph['nodes'][1]; node['version'] = '3.11.17'
         node['files'] = []
         for name in ('python', 'lib/os.py', 'lib/encodings/__init__.py', 'lib/json/__init__.py', 'lib/sysconfig.py'):
