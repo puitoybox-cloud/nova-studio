@@ -5,6 +5,7 @@ The parent verifies this worker and its companion sources before launch. This
 worker independently authenticates the manifest/config and rechecks local bytes.
 """
 import contextlib
+import copy
 import hashlib
 import importlib.metadata
 import json
@@ -25,6 +26,14 @@ def write(value):
     raw=json.dumps(value,separators=(',',':'))
     if len(raw.encode())>MAX_RECEIPT:raise ValueError('receipt-budget')
     print(raw,flush=True)
+
+
+def processing_inventory(runtime, model, evidence):
+    private = runtime.snapshot().get('privatePython')
+    if not isinstance(private, dict) or not isinstance(private.get('processOrigin'), dict):
+        raise ValueError('missing-child-private-process-origin')
+    return {'identityComplete':True, 'models':[copy.deepcopy(model)],
+        'runtimeEvidence':copy.deepcopy(evidence), 'privatePython':copy.deepcopy(private)}
 
 
 def load(runtime,contract,expected,nonce):
@@ -173,6 +182,7 @@ def main():
     try:
         with contextlib.redirect_stdout(sys.stderr):model,receipt=load(runtime,contract,expected,nonce)
         receipt["runtimeEvidence"]=receipt_evidence(observe(root,evidence_contract,build=build))
+        receipt['runtimeEvidence']['privatePython'] = processing_inventory(runtime,receipt['model'],{})['privatePython']
         write(receipt)
         binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
         while True:
@@ -189,7 +199,7 @@ def main():
             from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, audio_identity, evidence_digest, processing_binding
             if request['binding'].get('input') != audio_identity(source): raise ValueError('wrong-child-input-identity')
             child_evidence = observe(root,evidence_contract,build=build); child_evidence['network'] = guard.snapshot()
-            child_inventory = {'identityComplete':True, 'models':[receipt['model']], 'runtimeEvidence':child_evidence}
+            child_inventory = processing_inventory(runtime,receipt['model'],child_evidence)
             child_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
             bound = BoundProcessingReceipt(child_binding)
             try:
@@ -206,7 +216,7 @@ def main():
                 if not files or len(files) > 16: raise ValueError('missing-or-excess-child-outputs')
                 identities = [audio_identity(path) for path in files]
                 identity = {'digest': evidence_digest(identities), 'byteLength': sum(e['byteLength'] for e in identities)}
-                child_inventory = {'identityComplete':True, 'models':[receipt['model']], 'runtimeEvidence':evidence}
+                child_inventory = processing_inventory(runtime,receipt['model'],evidence)
                 current_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
                 processed = bound.finish(current_binding, child_inventory, identity)
                 bound.consume(processed, current_binding)

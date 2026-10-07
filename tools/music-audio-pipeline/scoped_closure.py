@@ -447,6 +447,56 @@ def private_python_command(runtime, contract, worker, arguments=()):
     return [layout['executable'],'-I','-S','-B','-c',program]
 
 
+def private_process_origin(executable):
+    """Observe this process only; sys.executable is never the observation source.
+
+    Linux retains /proc/self/exe while comparing its backing inode. Darwin's
+    bounded dyld query gives a path, not mapped-page integrity. Neither promotes
+    parent-authenticated launch or complete native closure.
+    """
+    import os
+    import platform
+    expected = Path(executable)
+    before = stable(expected)
+    source = 'UNSUPPORTED'
+    backing = False
+    try:
+        if platform.system() == 'Linux':
+            with open('/proc/self/exe', 'rb') as image:
+                actual = Path(os.readlink('/proc/self/exe'))
+                observed = os.fstat(image.fileno())
+                if (not actual.is_absolute() or actual != expected or
+                        (observed.st_dev, observed.st_ino) != before[:2]):
+                    raise ValueError('foreign-private-process-origin')
+                # An open kernel-backed executable reference survives pathname
+                # replacement; disk recheck below independently detects it.
+                backing = True
+                source = 'PROC_SELF_EXE_BACKING_INODE'
+        elif platform.system() == 'Darwin':
+            import ctypes
+            query = ctypes.CDLL(None)._NSGetExecutablePath
+            query.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32)]
+            query.restype = ctypes.c_int
+            size = ctypes.c_uint32(0)
+            if query(None, ctypes.byref(size)) != -1 or not 0 < size.value <= 65536:
+                return {'status':'UNVERIFIED', 'source':'DYLD_QUERY_UNAVAILABLE', 'parentLaunchAuthenticated':False}
+            buffer = ctypes.create_string_buffer(size.value)
+            if query(buffer, ctypes.byref(size)) != 0 or b'\x00' not in buffer.raw:
+                return {'status':'UNVERIFIED', 'source':'DYLD_QUERY_UNAVAILABLE', 'parentLaunchAuthenticated':False}
+            actual = Path(os.fsdecode(buffer.value))
+            if not actual.is_absolute() or actual.resolve() != expected:
+                raise ValueError('foreign-private-process-origin')
+            source = 'DYLD_SELF_EXECUTABLE_PATH'
+    except (OSError, AttributeError):
+        return {'status':'UNVERIFIED', 'source':source, 'parentLaunchAuthenticated':False}
+    if stable(expected) != before:
+        raise ValueError('changed-private-process-origin')
+    return {'status':'PARTIAL' if source != 'UNSUPPORTED' else 'UNVERIFIED',
+        'source':source, 'approvedPathMatched':source != 'UNSUPPORTED',
+        'backingInodeMatched':backing, 'mappedBytesVerified':False,
+        'parentLaunchAuthenticated':False}
+
+
 def private_runtime_preflight(runtime, contract, pipeline, *, configure_path=False):
     """Independent in-process acceptance of the same actual private startup path."""
     import sys
@@ -472,6 +522,7 @@ def private_runtime_preflight(runtime, contract, pipeline, *, configure_path=Fal
     report = verify_assembly(runtime.root,contract,distribution,runtime=runtime)
     if not report['complete']:
         raise ValueError('unapproved-private-runtime-assembly')
+    process_origin = private_process_origin(layout['executable'])
     # Bind startup selection to the existing inventory/request/result identity.
     # This is disk/startup proof only, never mapped-native or device acceptance.
     nodes = validate_graph(contract)
@@ -486,5 +537,6 @@ def private_runtime_preflight(runtime, contract, pipeline, *, configure_path=Fal
         importlib.invalidate_caches()
     runtime.private_python = {'stdlibArtifactDigest': nodes['python-runtime']['artifactDigest'],
         'installedRecordInventory': report['installedRecordInventory'],
+        'processOrigin': process_origin,
         'selection': 'ANCHORED_PRIVATE_STARTUP', 'productionReady': False}
     return distribution

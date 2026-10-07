@@ -62,6 +62,7 @@ class PrivatePythonRoutingTests(unittest.TestCase):
 
     def activate(self, *, complete=True, configure_path=False):
         with patch.dict(__import__('sys').modules, {'sys':self.state}), \
+             patch('scoped_closure.private_process_origin',return_value={'status':'UNVERIFIED','source':'TEST_ONLY'}), \
              patch('scoped_closure.verify_assembly',return_value={'complete':complete,'installedRecordInventory':[]}):
             private_runtime_preflight(self.runtime,self.graph,self.root,configure_path=configure_path)
             return self.runtime.private_python
