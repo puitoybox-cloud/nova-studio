@@ -1,5 +1,6 @@
 import XCTest
 import CryptoKit
+import Darwin
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioOwnedLifecycleTests: XCTestCase {
@@ -246,6 +247,58 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         let owner = try stoppedOwner();let data = try shutdownEnvelope(shutdownPayload())
         try owner.receiveShutdown(data);XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
         XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"FAILED")
+    }
+    func testActualAnonymousDescriptorSummaryValidationAndPrivateAck() throws {
+        let owner = try owner(); _ = try owner.command("stop")
+        var responseValue = try XCTUnwrap(JSONSerialization.jsonObject(with:response(action:"stop",state:"STOPPING",sequence:1)) as? [String:Any])
+        var evidence = responseValue; evidence.removeValue(forKey:"capability")
+        let stop = try auditEntry(event:"stop",evidence:evidence,index:1,previous:String(repeating:"0",count:64))
+        responseValue["audit"] = [stop]
+        try owner.receive(JSONSerialization.data(withJSONObject:responseValue),now:now)
+        let payload = shutdownPayload()
+        var envelope = try XCTUnwrap(JSONSerialization.jsonObject(with:shutdownEnvelope(payload)) as? [String:Any])
+        envelope["audit"] = [try auditEntry(event:"summary",evidence:payload,index:2,previous:try XCTUnwrap(stop["digest"] as? String))]
+        let bytes = try JSONSerialization.data(withJSONObject:envelope)
+        var descriptors: [Int32] = [-1,-1]
+        XCTAssertEqual(socketpair(AF_UNIX,SOCK_STREAM,0,&descriptors),0)
+        let channel = try MusicStudioPrivateSummaryChannel(inheritedDescriptor:descriptors[0])
+        let peer = FileHandle(fileDescriptor:descriptors[1],closeOnDealloc:true)
+        let count = UInt32(bytes.count)
+        var frame = Data([UInt8((count >> 24) & 255),UInt8((count >> 16) & 255),UInt8((count >> 8) & 255),UInt8(count & 255)])
+        frame.append(bytes); try peer.write(contentsOf:frame)
+        try channel.exchange(owner:owner)
+        func read(_ count: Int) throws -> Data {
+            var data = Data()
+            while data.count < count {
+                let chunk = try XCTUnwrap(peer.read(upToCount:count-data.count))
+                XCTAssertFalse(chunk.isEmpty); if chunk.isEmpty { break }; data.append(chunk)
+            }
+            return data
+        }
+        let length = try read(4).reduce(0) { ($0 << 8) | Int($1) }
+        XCTAssertTrue((1...16384).contains(length))
+        let ack = try XCTUnwrap(JSONSerialization.jsonObject(with:read(length)) as? [String:Any])
+        let body = try XCTUnwrap(ack["payload"] as? [String:Any])
+        XCTAssertEqual(body["owner"] as? String,payload["owner"] as? String)
+        XCTAssertEqual(body["session"] as? String,token)
+        XCTAssertEqual(body["summaryDigest"] as? String,MusicStudioOwnedLifecycle.identity(try JSONSerialization.data(withJSONObject:payload,options:[.sortedKeys,.withoutEscapingSlashes])).digest)
+        XCTAssertEqual(body["completionState"] as? String,"PARTIAL")
+        XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
+        XCTAssertThrowsError(try channel.exchange(owner:owner))
+        try peer.close()
+    }
+    func testPrivateChannelRejectsNonSocketOversizeAndTruncatedFrame() throws {
+        XCTAssertThrowsError(try MusicStudioPrivateSummaryChannel(inheritedDescriptor:0))
+        for frame in [Data([0,0,64,1]),Data([0,0,0,8,123,125])] {
+            var descriptors: [Int32] = [-1,-1]
+            XCTAssertEqual(socketpair(AF_UNIX,SOCK_STREAM,0,&descriptors),0)
+            let channel = try MusicStudioPrivateSummaryChannel(inheritedDescriptor:descriptors[0])
+            let peer = FileHandle(fileDescriptor:descriptors[1],closeOnDealloc:true)
+            try peer.write(contentsOf:frame); shutdown(descriptors[1],SHUT_WR)
+            XCTAssertThrowsError(try channel.exchange(owner:stoppedOwner()))
+            XCTAssertThrowsError(try channel.exchange(owner:stoppedOwner()))
+            try peer.close()
+        }
     }
     func testDelayedFinalSummaryIsRejectedWithoutRenewingProcessingAuthority() throws {
         var clock: TimeInterval = 100

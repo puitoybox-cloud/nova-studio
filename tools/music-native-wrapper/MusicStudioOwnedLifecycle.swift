@@ -1,5 +1,90 @@
 import Foundation
 import CryptoKit
+import Darwin
+
+/// Owns a duplicated, anonymous inherited AF_UNIX stream, never a public endpoint.
+/// Frames are bounded before allocation. The lifecycle authenticates every byte.
+public final class MusicStudioPrivateSummaryChannel {
+    private var descriptor: Int32
+    private let device: dev_t
+    private let inode: ino_t
+    private let mode: mode_t
+    private var consumed = false
+    private let lock = NSLock()
+    public init(inheritedDescriptor: Int32) throws {
+        guard inheritedDescriptor > 2 else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        var address = sockaddr_un(); var size = socklen_t(MemoryLayout<sockaddr_un>.size)
+        let valid = withUnsafeMutablePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getsockname(inheritedDescriptor, $0, &size)
+            }
+        }
+        var type: Int32 = 0; var typeSize = socklen_t(MemoryLayout<Int32>.size)
+        var info = stat()
+        guard valid == 0, Int32(address.sun_family) == AF_UNIX, size <= 2,
+              getsockopt(inheritedDescriptor, SOL_SOCKET, SO_TYPE, &type, &typeSize) == 0, type == SOCK_STREAM,
+              fstat(inheritedDescriptor, &info) == 0 else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        let owned = dup(inheritedDescriptor)
+        guard owned >= 0 else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        descriptor = owned; device = info.st_dev; inode = info.st_ino; mode = info.st_mode
+        var one: Int32 = 1
+        guard fcntl(owned, F_SETFD, FD_CLOEXEC) == 0,
+              fcntl(owned, F_SETFL, O_NONBLOCK) == 0,
+              setsockopt(owned, SOL_SOCKET, SO_NOSIGPIPE, &one, socklen_t(MemoryLayout<Int32>.size)) == 0 else {
+            Darwin.close(owned); descriptor = -1; throw MusicStudioOwnedLifecycle.Failure.invalid
+        }
+        // Transfer of the inherited reference. Only our retained duplicate survives.
+        Darwin.close(inheritedDescriptor)
+    }
+    deinit { if descriptor >= 0 { Darwin.close(descriptor) } }
+    public func exchange(owner: MusicStudioOwnedLifecycle) throws {
+        lock.lock(); defer { lock.unlock() }
+        guard !consumed, descriptor >= 0 else { throw MusicStudioOwnedLifecycle.Failure.occupied }
+        consumed = true
+        defer { Darwin.close(descriptor); descriptor = -1 }
+        let deadline = ProcessInfo.processInfo.systemUptime + 9.5
+        func ready(_ event: Int16) throws {
+            var info = stat()
+            guard fstat(descriptor, &info) == 0, info.st_dev == device, info.st_ino == inode, info.st_mode == mode else {
+                throw MusicStudioOwnedLifecycle.Failure.foreign
+            }
+            let remaining = deadline - ProcessInfo.processInfo.systemUptime
+            guard remaining > 0 else { throw MusicStudioOwnedLifecycle.Failure.expired }
+            var item = pollfd(fd: descriptor, events: event, revents: 0)
+            let result = poll(&item, 1, Int32(min(remaining * 1000, 9500)))
+            guard result > 0, item.revents & event != 0 else { throw MusicStudioOwnedLifecycle.Failure.partial }
+        }
+        func read(_ count: Int) throws -> Data {
+            var bytes = Data(count: count); var offset = 0
+            while offset < count {
+                try ready(Int16(POLLIN))
+                let received = bytes.withUnsafeMutableBytes { buffer in
+                    recv(descriptor, buffer.baseAddress!.advanced(by: offset), count - offset, 0)
+                }
+                if received < 0 && (errno == EINTR || errno == EAGAIN) { continue }
+                guard received > 0 else { throw MusicStudioOwnedLifecycle.Failure.partial }
+                offset += received
+            }
+            return bytes
+        }
+        let header = try read(4)
+        let count = header.reduce(0) { ($0 << 8) | Int($1) }
+        guard (1...16384).contains(count) else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        let acknowledgement = try owner.receiveShutdown(read(count))
+        guard (1...16384).contains(acknowledgement.count) else { throw MusicStudioOwnedLifecycle.Failure.invalid }
+        let count32 = UInt32(acknowledgement.count)
+        var frame = Data([UInt8((count32 >> 24) & 255), UInt8((count32 >> 16) & 255), UInt8((count32 >> 8) & 255), UInt8(count32 & 255)])
+        frame.append(acknowledgement)
+        var offset = 0
+        while offset < frame.count {
+            try ready(Int16(POLLOUT))
+            let sent = frame.withUnsafeBytes { send(descriptor, $0.baseAddress!.advanced(by: offset), frame.count - offset, 0) }
+            if sent < 0 && (errno == EINTR || errno == EAGAIN) { continue }
+            guard sent > 0 else { throw MusicStudioOwnedLifecycle.Failure.partial }
+            offset += sent
+        }
+    }
+}
 
 public struct MusicStudioOwnedCredential: Equatable, Codable {
     public let capability: String

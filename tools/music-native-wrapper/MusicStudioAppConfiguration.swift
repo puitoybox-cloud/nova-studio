@@ -7,6 +7,7 @@ public struct MusicStudioAppConfiguration: Equatable {
     public private(set) var localHandoffJSON: String? = nil
     public private(set) var ownedCredential: MusicStudioOwnedCredential? = nil
     public private(set) var ownedSession: String? = nil
+    public private(set) var ownedSummaryDescriptor: Int32? = nil
 
     /// Explicit adapter for a launcher-supplied loopback origin. Caller must
     /// validate its anchored envelope; this is navigation containment only.
@@ -47,6 +48,10 @@ public struct MusicStudioAppConfiguration: Equatable {
                   let controlOrigin = URL(string: origin),
                   (try? MusicStudioOwnedLifecycle(origin: controlOrigin, session: session, credential: credential, now: now)) != nil else { return nil }
             configuration.ownedCredential = credential; configuration.ownedSession = session
+            if let descriptor = environment["NOVA_OWNED_SUMMARY_FD"] {
+                guard let number = Int32(descriptor), number > 2 else { return nil }
+                configuration.ownedSummaryDescriptor = number
+            }
         }
         guard let sanitized = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
               let sanitizedText = String(data: sanitized, encoding: .utf8) else { return nil }
