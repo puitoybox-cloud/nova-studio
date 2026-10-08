@@ -353,7 +353,7 @@ public final class MusicStudioOwnedLifecycle {
                 credential = MusicStudioOwnedCredential(capability: "", sequence: response.sequence,
                     expiresAt: response.expiresAt, deadlineAt: response.deadlineAt)
             }
-        } catch { state = "FAILED"; self.pending = nil; result = nil; authorization = nil; throw error }
+        } catch { fail(); throw error }
     }
     /// Called only by an explicit private launcher sink after transports close.
     /// Authentication proves the owner summary; unknown descendants remain PARTIAL.
@@ -405,7 +405,14 @@ public final class MusicStudioOwnedLifecycle {
             return acknowledgement
         } catch { fail(); finalKey = Data(); throw error }
     }
-    public func fail() { lock.lock(); defer { lock.unlock() }; state = "FAILED"; pending = nil; result = nil; authorization = nil; finalKey = Data(); shutdownReceiptDeadline = nil }
+    public func fail() {
+        lock.lock(); defer { lock.unlock() }
+        state = "FAILED"; pending = nil; result = nil; authorization = nil; expectedAuthorization = nil
+        acceptedOutput = nil; acceptedResultID = nil; acceptedResultDigest = nil
+        requestID = nil; bindingDigest = nil; finalKey = Data(); shutdownReceiptDeadline = nil
+        credential = MusicStudioOwnedCredential(capability: "", sequence: credential.sequence,
+            expiresAt: credential.expiresAt, deadlineAt: credential.deadlineAt)
+    }
 }
 
 /// Exact-origin, redirect-denying, ephemeral transport with a response byte budget.

@@ -39,6 +39,26 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         XCTAssertThrowsError(try owner.command("accept",outputBytes:bytes))
         XCTAssertThrowsError(try owner.command("begin",request:requestID,input:identity))
     }
+    func testFailureClearsAcceptedRequestOutputAndCannotResume() throws {
+        for malformedResponse in [false, true] {
+            let owner = try owner(); try begin(owner)
+            let bytes = Data("output".utf8); let identity = MusicStudioOwnedLifecycle.identity(bytes)
+            _ = try owner.command("result")
+            try owner.receive(response(action:"result",state:"DELIVERED",sequence:2,binding:binding,result:[
+                "resultId":token,"request":requestID,"bindingDigest":binding,"receiptDigest":token,
+                "output":["digest":identity.digest,"byteLength":identity.byteLength]]),now:now)
+            _ = try owner.command("accept",outputBytes:bytes)
+            try owner.receive(response(action:"accept",state:"ACCEPTED",sequence:3,binding:binding),now:now)
+            XCTAssertEqual(owner.acceptedOutput,identity)
+            if malformedResponse { XCTAssertThrowsError(try owner.receive(Data("{}".utf8),now:now)) }
+            else { owner.fail() }
+            XCTAssertEqual(owner.state,"FAILED"); XCTAssertNil(owner.acceptedOutput); XCTAssertNil(owner.authorization)
+            for action in ["authorize","renew","result","accept","stop"] {
+                XCTAssertThrowsError(try owner.command(action,request:requestID,input:identity,outputBytes:bytes))
+            }
+            XCTAssertThrowsError(try owner.receiveShutdown(Data("{}".utf8)))
+        }
+    }
     func testForeignSessionSequenceStateAndBindingFailClosed() throws {
         for field in ["session","sequence","state","bindingDigest"] {
             let owner = try owner(); try begin(owner); _ = try owner.command("renew")

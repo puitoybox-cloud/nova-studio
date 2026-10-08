@@ -139,6 +139,52 @@ class ReceiptTests(unittest.TestCase):
                         self.assertIsNone(session.receipt)
                         self.assertIsNotNone(process.poll())
                 finally:session.close()
+    def test_resident_child_fresh_requests_reject_replay_and_previous_receipt(self):
+        from runtime_evidence import audio_identity, stem_output_identity
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+            output=root/'output';stems=output/'htdemucs_6s'/'input';stems.mkdir(parents=True)
+            (stems/'vocals.wav').write_bytes(b'x'*45)
+            binding={'session':'a'*64,'request':'b'*64,'input':audio_identity(source)}
+            session=self.session('ok');original=session._receive;sent=[];old=[]
+            send=session._send
+            def tracked_send(value): sent.append(copy.deepcopy(value));send(value)
+            def receive():
+                result=original();current=sent[-1]['binding']
+                child={'format':'NOVA_PROCESSING_RECEIPT','parentBinding':current,'binding':current,
+                    'complete':True,'processingEligible':True,'publicationEligible':False,
+                    'output':stem_output_identity(output)}
+                if not old: old.append(copy.deepcopy(child))
+                result['processingReceipt']=old[0] if current['request']=='d'*64 else child
+                return result
+            session._send=tracked_send;session._receive=receive
+            try:
+                self.assertEqual(session.process_audio(source,output,binding=binding)['parentBinding'],binding)
+                second={**binding,'request':'c'*64}
+                self.assertEqual(session.process_audio(source,output,binding=second)['parentBinding'],second)
+                self.assertEqual(session.processing_binding,second)
+                for replay in (binding,second,{**second,'session':'f'*64}):
+                    with self.assertRaisesRegex(ValueError,'stale-replayed-or-exhausted-processing-request'):
+                        session.process_audio(source,output,binding=replay)
+                    self.assertEqual(len(sent),2)
+                with self.assertRaisesRegex(ValueError,'invalid-or-partial-child-processing-receipt'):
+                    session.process_audio(source,output,binding={**binding,'request':'d'*64})
+                self.assertIsNone(session.receipt)
+            finally:session.close()
+    def test_processing_preflight_and_send_failures_invalidate_child_before_retry(self):
+        for failure in ('preflight','send'):
+            with self.subTest(failure=failure):
+                session=self.session('ok');process=session.process
+                def changed(*args): raise ValueError('changed-child-request-boundary')
+                if failure=='preflight':session.recheck=changed
+                else:session._send=changed
+                try:
+                    with self.assertRaisesRegex(ValueError,'changed-child-request-boundary'):
+                        session.process_audio('input.wav','output')
+                    self.assertIsNone(session.receipt);self.assertTrue(process.stdin.closed)
+                    self.assertIsNotNone(process.poll())
+                    with self.assertRaises(ValueError):session.current()
+                finally:session.close()
     def test_unexpected_executable_permit_rejected(self):
         class Reject:
             def __enter__(self):raise PermissionError('unexpected-executable')

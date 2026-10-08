@@ -316,6 +316,7 @@ class ChildSession:
     def __init__(self,command,expected,launch=subprocess.Popen,timeout=30,permit=None,recheck=None):
         self.command=tuple(command);self.expected=copy.deepcopy(expected);self.timeout=timeout;self.recheck=recheck
         self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue(maxsize=2);self.protocol_error=None;self.lock=threading.Lock();self.processing_binding=None
+        self.processing_attempts=None
         try:
             if permit:
                 with permit(self.command):self.process=launch(list(self.command),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={'PYTHONDONTWRITEBYTECODE':'1'})
@@ -367,14 +368,19 @@ class ChildSession:
     def process_audio(self,source,output,*,binding=None):
         with self.lock:
             if 'runtimeEvidenceDigest' in self.expected and binding is None: raise ValueError('missing-strict-processing-binding')
-            self.current()
+            try:self.current()
+            except Exception:self.close();raise
+            if binding is not None:
+                from runtime_evidence import SessionRequestRegistry
+                if self.processing_attempts is None: self.processing_attempts=SessionRequestRegistry(binding['session'])
+                self.processing_attempts.claim(binding['session'],binding['request'])
             request = {'type':'process','nonce':self.nonce,'source':str(Path(source).resolve()),'output':str(Path(output).resolve())}
             if binding is not None: request['binding'] = copy.deepcopy(binding)
             self.processing_binding=copy.deepcopy(binding)
-            self.exit_observer.bind_request(self.process,self.processing_binding)
-            self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
-            self._send(request)
             try:
+                self.exit_observer.bind_request(self.process,self.processing_binding)
+                self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
+                self._send(request)
                 result=self._receive()
                 keys = {'version','nonce','status'} | ({'processingReceipt'} if binding is not None else set())
                 if set(result)!=keys or result['version']!=1 or result['nonce']!=self.nonce or result['status']!='PROCESSED':raise ValueError('child-processing-failed')
@@ -395,6 +401,8 @@ class ChildSession:
     def close(self):
         """EOF is scoped to this owned pipe. No PID-based terminate/kill escalation."""
         self.receipt=None
+        attempts=getattr(self,'processing_attempts',None)
+        if attempts is not None: attempts.close()
         process=self.process
         if process is None:return
         receipt={'scope':'EXPLICIT_OWNED_PIPE_ONLY','graceful':'UNVERIFIED',

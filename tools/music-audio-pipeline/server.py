@@ -206,10 +206,11 @@ def current_processing_calls():
 
 def clear_processing_request():
     bound = getattr(REQUEST_RECEIPTS, 'bound', None)
-    if bound is not None and bound.state != 'CONSUMED': bound.abort()
+    # Revoke request-local access before calling fallible receipt cleanup.
     REQUEST_RECEIPTS.calls = None; REQUEST_RECEIPTS.bound = None
     REQUEST_RECEIPTS.stem_output = None
     REQUEST_RECEIPTS.midi_output = None
+    if bound is not None and bound.state != 'CONSUMED': bound.abort()
 
 
 def recheck_stem_output():
@@ -717,6 +718,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(409, {"ok": False, "busy": True, "message": "別の音声を処理中です。完了後に再試行してください。"})
             return
         try:
+            clear_processing_request()
             with tempfile.TemporaryDirectory(prefix="nova-music-audio-") as temp:
                 work_dir = Path(temp)
                 source = work_dir / filename
@@ -766,8 +768,10 @@ class Handler(BaseHTTPRequestHandler):
                 traceback.print_exc()
                 self._json(500, {"ok": False, "message": str(error)})
         finally:
-            clear_processing_request()
-            PROCESS_LOCK.release()
+            try:
+                clear_processing_request()
+            finally:
+                PROCESS_LOCK.release()
 
     def log_message(self, format, *args):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")

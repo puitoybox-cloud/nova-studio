@@ -298,6 +298,22 @@ class AuthorizationTests(unittest.TestCase):
         c=self.channel
         return c.admit({'session':c.session,'capability':c.helper_capability,'ticket':c.authorization['ticket'],
             'binding':c.binding,'processingContract':'e'*64,**changes},self.inventory)
+    def test_terminal_close_discards_admission_and_accepted_request_authority(self):
+        for failed in (False, True):
+            with self.subTest(failed=failed):
+                self.setUp(); self.authorize(); self.admission(); self.publish()
+                result = self.command('result')['result']
+                self.command('accept', resultId=result['resultId'], output=self.output)
+                c = self.channel; self.assertTrue(c.admitted); self.assertIsNotNone(c.accepted_result)
+                stale_admission = {'session':c.session, 'capability':c.helper_capability,
+                    'ticket':c.authorization['ticket'], 'binding':copy.deepcopy(c.binding), 'processingContract':'e'*64}
+                c.close(failed=failed)
+                self.assertFalse(c.admitted); self.assertIsNone(c.accepted_result)
+                for field in ('binding', 'result', 'authorization'): self.assertIsNone(getattr(c, field))
+                for action in ('authorize', 'renew', 'result', 'accept', 'stop'):
+                    with self.assertRaises(ValueError): self.command(action)
+                with self.assertRaises(ValueError): c.admit(stale_admission, self.inventory)
+
     def test_authorization_exact_binding_one_shot_admission_and_result(self):
         response=self.authorize();auth=response['authorization'];c=self.channel
         self.assertEqual(auth['owner'],hashlib.sha256(c.capability.encode()).hexdigest())
