@@ -108,7 +108,8 @@ class LifecycleTests(unittest.TestCase):
                     finally:l.child=None;l.close()
 
     def test_replaced_private_pipe_with_same_identity_is_rejected(self):
-        import socket
+        import os, socket
+        from demucs_receipt import OwnedExitObservation
         l=self.make();process=subprocess.Popen([sys.executable,'-I','-c','import sys;sys.stdin.read()'],stdin=subprocess.PIPE)
         a,b=socket.socketpair();c,d=socket.socketpair()
         identity={'session':l.control.session,'owner':l.control.owner,
@@ -116,15 +117,20 @@ class LifecycleTests(unittest.TestCase):
         pipe=SimpleNamespace(identity=copy.deepcopy(identity),handle=a,closed=False)
         l.child=process;l._origin_owned_child=process;l._origin_owned_identity=identity
         l.stop_pipe=pipe;l._origin_owned_pipe=pipe;l._origin_owned_handle=a
+        l.exit_observer=OwnedExitObservation(process,l.server.session,l.server.binding,owned_channel=a)
         try:
             l.verify_owned_continuity()
             pipe.handle=c
             with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
             pipe.handle=a;l.stop_pipe=SimpleNamespace(identity=copy.deepcopy(identity),handle=a,closed=False)
             with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
-            l.stop_pipe=pipe;a.close()
+            l.stop_pipe=pipe
+            os.dup2(c.fileno(),a.fileno())
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
+            a.close()
             with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
         finally:
+            l.exit_observer.close()
             for handle in (a,b,c,d):handle.close()
             process.stdin.close();process.wait(timeout=3);l.child=None;l.stop_pipe=None;l.close()
 

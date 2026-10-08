@@ -868,7 +868,9 @@ class LocalProductionLifecycle:
                 (hasattr(self, '_origin_owned_pipe') and
                  (self.stop_pipe is not self._origin_owned_pipe or
                   self.stop_pipe.handle is not self._origin_owned_handle or
-                  self.stop_pipe.closed or self.stop_pipe.handle.fileno() < 0)) or
+                  self.stop_pipe.closed or self.stop_pipe.handle.fileno() < 0 or
+                  self.exit_observer.closed or
+                  self.exit_observer.observe(self.child,self.control.binding)['ownedPipeIdentityStatus'] != 'OBSERVED')) or
                 self.child.poll() is not None):
             self.inventory = {}
             self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
