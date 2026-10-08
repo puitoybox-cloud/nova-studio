@@ -99,7 +99,7 @@ def soundfile_only_save(save, path, *args, **kwargs):
     return save(path, *args, **kwargs)
 
 
-def process(model,binding,source,output,codec=None,receipt=None):
+def process(model,binding,source,output,codec=None,receipt=None,*,recheck=None):
     from demucs import separate
     import torchaudio
     from demucs.audio import convert_audio
@@ -137,6 +137,7 @@ def process(model,binding,source,output,codec=None,receipt=None):
     if receipt is not None:
         def observed_writer(*args, **kwargs):
             # Receipt of dispatch wrapper is separate from the concrete soundfile encoder below.
+            if recheck is not None: recheck()
             return receipt.call('encoder','demucs-stem-writer',original_writer,*args,**kwargs)
         separate.save_audio = observed_writer
     if receipt is not None:
@@ -147,6 +148,7 @@ def process(model,binding,source,output,codec=None,receipt=None):
         def observed_sf_write(file, *args, **kwargs):
             # torchaudio 2.2.2 calls soundfile.write(file=..., data=...).
             if '://' in str(file): raise ValueError('remote-codec-output')
+            if recheck is not None: recheck()
             return receipt.call('encoder', 'soundfile-output', original_sf_write, file, *args,
                 native_ids=codec['nativeIds'], **kwargs)
         soundfile.write = observed_sf_write
@@ -202,9 +204,16 @@ def main():
             child_inventory = processing_inventory(runtime,receipt['model'],child_evidence)
             child_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
             bound = BoundProcessingReceipt(child_binding)
+            def recheck_processing():
+                runtime.recheck()
+                current_evidence=observe(root,evidence_contract,build=build)
+                current_evidence['network']=guard.snapshot()
+                current_inventory=processing_inventory(runtime,receipt['model'],current_evidence)
+                bound.check(processing_binding(request['binding']['session'],request['binding']['request'],
+                    audio_identity(source),current_inventory))
             try:
                 with contextlib.redirect_stdout(sys.stderr):
-                    processing_receipt=process(model,binding,source,output,evidence_contract["codec"],ProcessingReceipt(root,evidence_contract))
+                    processing_receipt=process(model,binding,source,output,evidence_contract["codec"],ProcessingReceipt(root,evidence_contract),recheck=recheck_processing)
                 runtime.recheck()
                 processing_receipt['entries'].append({'stage':'model','logicalId':'demucs-retained-model',
                     'identity':receipt['model']['identity'],'status':'VERIFIED','nativeIdentity':'NOT_APPLICABLE',

@@ -6,6 +6,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 from local_distribution_entry import LocalProductionLifecycle, strict_eligibility
 from runtime_evidence import scoped_macho_dependencies, ProcessingReceipt
@@ -62,7 +63,7 @@ class LifecycleTests(unittest.TestCase):
         def spawn(*args,**kwargs):events.append('spawn');return self.child
         l.popen=spawn
         try:
-            l.start();self.assertEqual(events,['verify','spawn','verify'])
+            l.start();self.assertEqual(events,['verify','spawn','verify','verify','verify'])
         finally:self.cleanup(l)
 
     def test_changed_post_spawn_identity_blocks_health_admission(self):
@@ -84,6 +85,83 @@ class LifecycleTests(unittest.TestCase):
             health['runtimeIdentity']['actualInventory']['privatePython']['parentLaunchEvidence']['session']='foreign'
             with self.assertRaisesRegex(ValueError,'changed-or-foreign-helper-private-origin'):l.verify_health(health)
         finally:l.close()
+    def test_completion_preflight_blocks_publication_and_delivery_on_mutation(self):
+        for route, action in (('/owned-helper-result', None), ('/owned-control', 'result'),
+                ('/owned-control', 'accept')):
+            for timing in ('before', 'during'):
+                with self.subTest(route=route, action=action, timing=timing):
+                    l=self.make();l.child=self.child;l.inventory={'stale':True}
+                    changed=[timing=='before'];health=l.health
+                    def preflight():
+                        if changed[0]:raise ValueError('changed-runtime-at-completion')
+                    def read():
+                        value=health();changed[0]=True;return value
+                    l.prepared['_source_preflight']=preflight
+                    if timing=='during':l.health=read
+                    try:
+                        with patch.object(l.control,'publish') as publish, patch.object(l.control,'command') as command:
+                            with self.assertRaisesRegex(ValueError,'changed-runtime-at-completion'):
+                                l.control_event(route,{'action':action})
+                            publish.assert_not_called();command.assert_not_called()
+                        self.assertEqual(l.inventory,{})
+                        self.assertFalse(l.eligibility['processingEligible'])
+                    finally:l.child=None;l.close()
+
+    def test_replaced_private_pipe_with_same_identity_is_rejected(self):
+        import os, socket
+        from demucs_receipt import OwnedExitObservation
+        l=self.make();process=subprocess.Popen([sys.executable,'-I','-c','import sys;sys.stdin.read()'],stdin=subprocess.PIPE)
+        a,b=socket.socketpair();c,d=socket.socketpair()
+        identity={'session':l.control.session,'owner':l.control.owner,
+            'generation':digest(l.server.binding),'deadline':l.server.deadline}
+        pipe=SimpleNamespace(identity=copy.deepcopy(identity),handle=a,closed=False)
+        l.child=process;l._origin_owned_child=process;l._origin_owned_identity=identity
+        l.stop_pipe=pipe;l._origin_owned_pipe=pipe;l._origin_owned_handle=a
+        l.exit_observer=OwnedExitObservation(process,l.server.session,l.server.binding,owned_channel=a)
+        try:
+            l.verify_owned_continuity()
+            pipe.handle=c
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
+            pipe.handle=a;l.stop_pipe=SimpleNamespace(identity=copy.deepcopy(identity),handle=a,closed=False)
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
+            l.stop_pipe=pipe
+            os.dup2(c.fileno(),a.fileno())
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
+            a.close()
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verify_owned_continuity()
+        finally:
+            l.exit_observer.close()
+            for handle in (a,b,c,d):handle.close()
+            process.stdin.close();process.wait(timeout=3);l.child=None;l.stop_pipe=None;l.close()
+
+    def test_publication_boundary_rechecks_inventory_after_receipt_aggregation(self):
+        from runtime_evidence import processing_binding
+        from test_processing_closure import fixture_inventory
+        l=self.make();l.child=self.child
+        inventory=fixture_inventory()
+        l.control.binding=processing_binding(l.control.session,'a'*64,{'digest':'b'*64,'byteLength':7},inventory)
+        l.inventory=copy.deepcopy(inventory);l.inventory['privatePython']={'buildRevision':'changed'}
+        l.prepared['_source_preflight']=lambda:None
+        try:
+            with patch.object(l,'verified_owned_health') as health:
+                with self.assertRaisesRegex(ValueError,'changed-publication-processing-inventory'):
+                    l.control.continuity()
+                health.assert_called_once()
+            self.assertEqual(l.inventory,{})
+            self.assertFalse(l.eligibility['processingEligible'])
+        finally:l.child=None;l.close()
+
+    def test_processing_supervision_rejects_changed_owned_continuity(self):
+        l=self.make();l.child=self.child;l.state='PROCESSING_ELIGIBLE'
+        try:
+            with patch.object(l.done,'wait',return_value=False), \
+                    patch.object(l,'verify_owned_continuity',side_effect=ValueError('changed-owned-helper')) as check, \
+                    patch.object(l,'close') as close:
+                l.supervise()
+                check.assert_called_once();close.assert_called_once_with(failed=True)
+            self.assertEqual(l.state,'FAILED')
+        finally:l.child=None;l.close()
+
     def test_server_failure(self):
         l=self.make()
         with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):

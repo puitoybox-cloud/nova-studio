@@ -533,6 +533,13 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
 
     output_path = work_dir / f"{source.stem}_stems.mid"
     if STRICT_BOOTSTRAP:
+        require_runtime_processing()
+        bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+        if bound is None: raise ValueError('missing-final-writer-processing-binding')
+        inventory = runtime_snapshot()
+        current = RUNTIME_EVIDENCE_MODULE.processing_binding(require_owned_session(),
+            bound.binding['request'], RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+        bound.check(current)
         current_processing_calls().call('result', 'merged-midi-writer', output.save, str(output_path))
     else:
         output.save(str(output_path))

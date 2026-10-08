@@ -69,6 +69,40 @@ class ReceiptTests(unittest.TestCase):
                 self.assertEqual(session.current()['status'],'LOADED');self.assertTrue(session.process_audio('input.wav','output'))
             finally:session.close()
             with self.assertRaises(ValueError):session.current()
+    def test_parent_recheck_brackets_actual_processing_and_rejects_completion_mutation(self):
+        session=self.session('ok');events=[];process=session.process
+        try:
+            original=session._receive
+            def receive():
+                result=original();events.append('processed');return result
+            session._receive=receive
+            def recheck():
+                events.append('recheck')
+                if 'processed' in events:raise ValueError('changed-parent-private-runtime')
+            session.recheck=recheck
+            with self.assertRaisesRegex(ValueError,'changed-parent-private-runtime'):
+                session.process_audio('input.wav','output')
+            self.assertEqual(events,['recheck','processed','recheck'])
+            self.assertIsNone(session.receipt)
+            self.assertIsNotNone(process.poll())
+        finally:session.close()
+
+    def test_demucs_receipt_rejects_changed_pipe_nonce_and_generation(self):
+        for mutation in ('stdin', 'nonce', 'generation'):
+            with self.subTest(mutation=mutation):
+                session=self.session('ok');original=session.process.stdin
+                replacement=None
+                try:
+                    if mutation=='stdin':
+                        replacement=tempfile.TemporaryFile(mode='w+');session.process.stdin=replacement
+                    elif mutation=='nonce':session.nonce='foreign'
+                    else:session.expected['child']['buildRevision']='foreign'
+                    with self.assertRaisesRegex(ValueError,'changed-owned-demucs-continuity'):session.current()
+                finally:
+                    session.process.stdin=original
+                    if replacement is not None:replacement.close()
+                    session.close()
+
     def test_timeout_crash_loadfailure(self):
         for mode in ['timeout','crash','failed']:
             with self.subTest(mode=mode):

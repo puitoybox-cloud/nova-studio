@@ -1,4 +1,5 @@
 """Authenticated exact-command resident-child startup. Never searches PATH."""
+import copy
 import hashlib
 import json
 import platform
@@ -55,9 +56,14 @@ def start(runtime, manifest_path, anchor, build, guard):
         raise ValueError('missing-parent-private-runtime-origin')
     # Pin only the existing private-runtime identity into the owned child
     # load/nonce exchange. This is not an independent parent kernel attestation.
-    expected['privatePythonIdentity'] = {key: runtime.private_python[key] for key in
-        ('stdlibArtifactDigest','installedRecordInventory','executable','runtimeRootIdentity','buildRevision','processOrigin')}
-    session=ChildSession(command,expected,permit=guard.permit)
+    expected['privatePythonIdentity'] = copy.deepcopy({key: runtime.private_python[key] for key in
+        ('stdlibArtifactDigest','installedRecordInventory','executable','runtimeRootIdentity','buildRevision','processOrigin')})
+    def recheck_parent():
+        runtime.recheck()
+        if (runtime.private_python is None or any(runtime.private_python.get(key) != value
+                for key,value in expected['privatePythonIdentity'].items())):
+            raise ValueError('changed-demucs-parent-private-runtime')
+    session=ChildSession(command,expected,permit=guard.permit,recheck=recheck_parent)
     try:runtime.recheck()
     except Exception:session.close();raise
     return session,closure

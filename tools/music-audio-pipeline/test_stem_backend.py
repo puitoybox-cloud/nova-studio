@@ -32,7 +32,7 @@ class StemBackendTests(unittest.TestCase):
             demucs_child.soundfile_only_save(save, 'stem.wav', object())
         self.assertEqual(save.call_count, 1)
 
-    def run_child(self, fail=False):
+    def run_child(self, fail=False, changed_at=None):
         separate = types.ModuleType('demucs.separate')
         package = types.ModuleType('demucs'); package.separate = separate
         audio = types.ModuleType('demucs.audio'); audio.convert_audio = Mock()
@@ -58,8 +58,18 @@ class StemBackendTests(unittest.TestCase):
                      separate.apply_model, sf.write, ta.save]
         modules = {'demucs':package, 'demucs.separate':separate, 'demucs.audio':audio,
                    'soundfile':sf, 'torchaudio':ta}
+        checks=[]
+        def recheck():
+            checks.append('recheck')
+            if len(checks)==changed_at:raise ValueError('changed-child-writer-inventory')
         with patch.dict(sys.modules, modules):
-            if fail:
+            if changed_at is not None:
+                with self.assertRaisesRegex(ValueError,'changed-child-writer-inventory'):
+                    demucs_child.process(object(), {'modelName':'fixture', 'repository':'repo'},
+                        Path('input.wav'),Path('output'),codec,receipt,recheck=recheck)
+                originals[4].assert_not_called()
+                self.assertEqual(len(checks),changed_at)
+            elif fail:
                 with self.assertRaises(RuntimeError):
                     demucs_child.process(object(), {'modelName':'fixture', 'repository':'repo'},
                         Path('input.wav'), Path('output'), codec, receipt)
@@ -70,7 +80,12 @@ class StemBackendTests(unittest.TestCase):
                   separate.apply_model, sf.write, ta.save]
         for expected, observed in zip(originals, actual): self.assertIs(observed, expected)
         names = [call.args[1] for call in receipt.call.call_args_list]
-        self.assertEqual(names, ['demucs-stem-writer', 'soundfile-output'])
+        if changed_at is None:self.assertEqual(names, ['demucs-stem-writer', 'soundfile-output'])
+        else:self.assertEqual(names, [] if changed_at==1 else ['demucs-stem-writer'])
+
+    def test_runtime_mutation_blocks_outer_and_concrete_wav_writer(self):
+        for boundary in (1,2):
+            with self.subTest(boundary=boundary):self.run_child(changed_at=boundary)
 
     def test_strict_actual_child_dispatch_and_restoration(self):
         self.run_child()
