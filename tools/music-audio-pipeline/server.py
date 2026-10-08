@@ -208,6 +208,38 @@ def clear_processing_request():
     bound = getattr(REQUEST_RECEIPTS, 'bound', None)
     if bound is not None and bound.state != 'CONSUMED': bound.abort()
     REQUEST_RECEIPTS.calls = None; REQUEST_RECEIPTS.bound = None
+    REQUEST_RECEIPTS.stem_output = None
+    REQUEST_RECEIPTS.midi_output = None
+
+
+def recheck_stem_output():
+    if not STRICT_BOOTSTRAP: return
+    value = getattr(REQUEST_RECEIPTS, 'stem_output', None)
+    if value is None: raise ValueError('missing-child-output-binding')
+    root, receipt = value
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    if bound is None or receipt.get('parentBinding') != bound.binding or receipt not in bound.children:
+        raise ValueError('foreign-child-output-binding')
+    bound.check(bound.binding)
+    if receipt.get('output') != RUNTIME_EVIDENCE_MODULE.stem_output_identity(root):
+        raise ValueError('changed-child-output-identity')
+
+
+def generated_midi_bytes(path):
+    if not STRICT_BOOTSTRAP: return path.read_bytes()
+    expected = getattr(REQUEST_RECEIPTS, 'midi_output', None)
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    if expected is None or bound is None or expected[0] != path or expected[1] != bound.binding:
+        raise ValueError('missing-or-foreign-final-midi-output')
+    bound.check(bound.binding)
+    recheck_stem_output()
+    if RUNTIME_EVIDENCE_MODULE.audio_identity(path) != expected[2]:
+        raise ValueError('changed-final-midi-output')
+    raw = path.read_bytes()
+    if ({'digest': hashlib.sha256(raw).hexdigest(), 'byteLength': len(raw)} != expected[2] or
+            RUNTIME_EVIDENCE_MODULE.audio_identity(path) != expected[2]):
+        raise ValueError('changed-final-midi-output')
+    return raw
 
 
 MAX_BYTES = 500 * 1024 * 1024
@@ -283,6 +315,8 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
         if DEMUCS_SESSION is None: raise ValueError('missing-live-demucs-child')
         child = DEMUCS_SESSION.process_audio(source, output_dir, binding=REQUEST_RECEIPTS.bound.binding)
         REQUEST_RECEIPTS.bound.add_child(child)
+        REQUEST_RECEIPTS.stem_output = (output_dir.resolve(), child)
+        recheck_stem_output()
     else:
         subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
     candidates = [path.parent for path in output_dir.rglob("vocals.wav")]
@@ -320,7 +354,7 @@ def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
             librosa.load = original_load; librosa.resample = original_resample
         # The existing actual model instance above is reused; no receipt-only reload.
         calls.call('result', 'basic-pitch-midi', midi_data.write, str(midi_path))
-        return
+        return RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path)
     else:
         _, midi_data, _ = predict(str(stem_path))
     midi_data.write(str(midi_path))
@@ -510,6 +544,7 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
     ]
 
     for label, filename in source_stems:
+        recheck_stem_output()
         stem_path = stem_dir / filename
         if not stem_path.exists() or stem_path.stat().st_size <= 44:
             continue
@@ -517,8 +552,12 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
             events = drum_events(stem_path)
         else:
             midi_path = work_dir / f"{label.lower()}.mid"
-            transcribe_pitched_stem(stem_path, midi_path)
+            midi_identity = transcribe_pitched_stem(stem_path, midi_path)
+            if STRICT_BOOTSTRAP and midi_identity != RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path):
+                raise ValueError('changed-transcribed-midi-identity')
             events = extract_note_events(midi_path)
+            if STRICT_BOOTSTRAP and midi_identity != RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path):
+                raise ValueError('changed-transcribed-midi-identity')
             if label == "Vocals":
                 events = refine_clear_melody(events, source)
         note_count = sum(1 for event in events if event[1] == "note_on" and event[3] > 0)
@@ -527,6 +566,8 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
         write_track(output, label, events, bpm, STEM_PROGRAMS.get(label), STEM_CHANNELS[label])
         generated.append(label)
         counts[label] = note_count
+
+    recheck_stem_output()
 
     if not generated:
         raise RuntimeError("分離されたStemからMIDIノートを生成できませんでした。")
@@ -540,7 +581,10 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
         current = RUNTIME_EVIDENCE_MODULE.processing_binding(require_owned_session(),
             bound.binding['request'], RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
         bound.check(current)
+        recheck_stem_output()
         current_processing_calls().call('result', 'merged-midi-writer', output.save, str(output_path))
+        REQUEST_RECEIPTS.midi_output = (output_path, __import__('copy').deepcopy(bound.binding),
+            RUNTIME_EVIDENCE_MODULE.audio_identity(output_path))
     else:
         output.save(str(output_path))
     return output_path, generated, counts
@@ -550,6 +594,7 @@ def process_audio(source: Path, work_dir: Path):
     bpm = estimate_bpm(source)
     stems_root = run_demucs(source, work_dir / "demucs")
     midi_path, stems, note_counts = build_merged_midi(stems_root, work_dir, source, bpm)
+    recheck_stem_output()
     return {
         "ok": True,
         "version": 1,
@@ -561,7 +606,7 @@ def process_audio(source: Path, work_dir: Path):
         "stems": stems,
         "noteCounts": note_counts,
         "midiFileName": midi_path.name,
-        "midiBase64": base64.b64encode(midi_path.read_bytes()).decode("ascii"),
+        "midiBase64": base64.b64encode(generated_midi_bytes(midi_path)).decode("ascii"),
     }
 
 

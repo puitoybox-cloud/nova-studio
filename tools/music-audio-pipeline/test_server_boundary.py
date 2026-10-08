@@ -17,7 +17,81 @@ server_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(server_module)
 
 
+def bind_stem_output(root, bound, evidence):
+    stems = root/'demucs'/'htdemucs_6s'/'input'
+    stems.mkdir(parents=True)
+    (stems/'vocals.wav').write_bytes(b'x'*45)
+    receipt = {'parentBinding': bound.binding, 'output': evidence.stem_output_identity(root/'demucs')}
+    bound.children.append(receipt)
+    return stems, (root/'demucs', receipt)
+
+
 class FinalWriterBindingTests(unittest.TestCase):
+    def test_final_midi_delivery_checks_written_bytes_and_matching_request(self):
+        import copy
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('unchanged','bytes','path','request','missing'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),fixture_inventory())
+                bound=evidence.BoundProcessingReceipt(binding)
+                _,stem_output=bind_stem_output(root,bound,evidence)
+                path=root/'output.mid';path.write_bytes(b'written-midi')
+                expected=(path,copy.deepcopy(binding),evidence.audio_identity(path))
+                if mutation=='bytes':path.write_bytes(b'changed-midi')
+                if mutation=='path':expected=(root/'foreign.mid',expected[1],expected[2])
+                if mutation=='request':expected[1]['request']='f'*64
+                with patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'midi_output',None if mutation=='missing' else expected,create=True):
+                    if mutation=='unchanged':self.assertEqual(server_module.generated_midi_bytes(path),b'written-midi')
+                    else:
+                        with self.assertRaisesRegex(ValueError,'final-midi-output'):server_module.generated_midi_bytes(path)
+
+    def test_changed_stems_during_transcription_never_reach_final_writer(self):
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('bytes','missing','renamed','extra','foreign-receipt','missing-receipt','midi-bytes'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
+                def transcribe(stem_path,midi_path):
+                    midi_path.write_bytes(b'fixture-midi')
+                    identity=evidence.audio_identity(midi_path)
+                    if mutation=='bytes':(stems/'vocals.wav').write_bytes(b'y'*45)
+                    if mutation=='missing':(stems/'vocals.wav').unlink()
+                    if mutation=='renamed':(stems/'vocals.wav').rename(stems/'other.wav')
+                    if mutation=='extra':(stems/'other.wav').write_bytes(b'x'*45)
+                    if mutation=='foreign-receipt':stem_output[1]['parentBinding']={'session':'f'*64}
+                    if mutation=='missing-receipt':server_module.REQUEST_RECEIPTS.stem_output=None
+                    if mutation=='midi-bytes':midi_path.write_bytes(b'changed-midi')
+                    return identity
+                class Output:
+                    def __init__(self):self.tracks=[]
+                    def save(self,path):raise AssertionError('changed-stem-final-writer-dispatched')
+                mido=SimpleNamespace(MidiFile=lambda **kw:Output(),MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                with patch.dict('sys.modules',{'mido':mido}), \
+                        patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
+                        patch.object(server_module,'current_processing_calls') as calls, \
+                        patch.object(server_module,'transcribe_pitched_stem',side_effect=transcribe), \
+                        patch.object(server_module,'extract_note_events',return_value=[(0,'note_on',60,90)]), \
+                        patch.object(server_module,'refine_clear_melody',side_effect=lambda events,source:events), \
+                        patch.object(server_module,'write_track'):
+                    with self.assertRaisesRegex(ValueError,'child-output|child-outputs|transcribed-midi'):
+                        server_module.build_merged_midi(stems,root,source,120)
+                    calls.assert_not_called()
+                self.assertFalse((root/'input_stems.mid').exists())
+
     def test_actual_final_writer_passes_through_strict_receipt_and_denial_blocks_write(self):
         class Output:
             def __init__(self): self.tracks=[]
@@ -36,6 +110,7 @@ class FinalWriterBindingTests(unittest.TestCase):
                 inventory=fixture_inventory()
                 binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(root/'input.wav'),inventory)
                 bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
                 output=Output();calls=Calls(denied)
                 mido=SimpleNamespace(MidiFile=lambda **kw:output,MidiTrack=list,
                     MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
@@ -48,16 +123,17 @@ class FinalWriterBindingTests(unittest.TestCase):
                      patch.object(server_module,'runtime_snapshot',return_value=inventory),\
                      patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence),\
                      patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True),\
-                     patch.object(server_module,'transcribe_pitched_stem'),\
+                     patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True),\
+                     patch.object(server_module,'transcribe_pitched_stem',side_effect=lambda stem,path:(path.write_bytes(b'fixture-midi'),evidence.audio_identity(path))[1]),\
                      patch.object(server_module,'extract_note_events',return_value=events),\
                      patch.object(server_module,'refine_clear_melody',return_value=events),\
                      patch.object(server_module,'write_track'):
                     if denied:
                         with self.assertRaisesRegex(ValueError,'unverified-or-fallback'):
-                            server_module.build_merged_midi(root,root,root/'input.wav',120)
+                            server_module.build_merged_midi(stems,root,root/'input.wav',120)
                         self.assertFalse((root/'input_stems.mid').exists())
                     else:
-                        path,labels,counts=server_module.build_merged_midi(root,root,root/'input.wav',120)
+                        path,labels,counts=server_module.build_merged_midi(stems,root,root/'input.wav',120)
                         self.assertEqual(path.read_bytes(),b'disposable-writer-bytes')
                         self.assertEqual((labels,counts),(['Vocals'],{'Vocals':1}))
                 self.assertEqual(len(calls.observed),1)
@@ -75,6 +151,7 @@ class FinalWriterBindingTests(unittest.TestCase):
                 inventory=fixture_inventory()
                 binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),inventory)
                 bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
                 current=copy.deepcopy(inventory)
                 if mutation=='inventory':current['privatePython']={'buildRevision':'changed'}
                 if mutation=='input':source.write_bytes(b'changed')
@@ -91,13 +168,14 @@ class FinalWriterBindingTests(unittest.TestCase):
                         patch.object(server_module,'runtime_snapshot',return_value=current), \
                         patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
                         patch.object(server_module.REQUEST_RECEIPTS,'bound',None if mutation=='missing' else bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
                         patch.object(server_module,'current_processing_calls') as calls, \
-                        patch.object(server_module,'transcribe_pitched_stem'), \
+                        patch.object(server_module,'transcribe_pitched_stem',side_effect=lambda stem,path:(path.write_bytes(b'fixture-midi'),evidence.audio_identity(path))[1]), \
                         patch.object(server_module,'extract_note_events',return_value=[(0,'note_on',60,90)]), \
                         patch.object(server_module,'refine_clear_melody',side_effect=lambda events,source:events), \
                         patch.object(server_module,'write_track'):
-                    with self.assertRaisesRegex(ValueError,'processing-binding|stale-or-expired-processing'):
-                        server_module.build_merged_midi(root,root,source,120)
+                    with self.assertRaisesRegex(ValueError,'processing-binding|stale-or-expired-processing|foreign-child-output-binding'):
+                        server_module.build_merged_midi(stems,root,source,120)
                     calls.assert_not_called()
                 self.assertFalse((root/'input_stems.mid').exists())
 

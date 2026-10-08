@@ -198,7 +198,7 @@ def main():
             if not source.is_absolute() or not output.is_absolute() or source.is_symlink() or not source.is_file() or source.stat().st_size>500*1024*1024:raise ValueError('unsafe-child-audio-input')
             if not receipt["runtimeEvidence"].get("complete"):
                 raise ValueError("strict-child-native-network-incomplete")
-            from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, audio_identity, evidence_digest, processing_binding
+            from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, audio_identity, stem_output_identity, processing_binding
             if request['binding'].get('input') != audio_identity(source): raise ValueError('wrong-child-input-identity')
             child_evidence = observe(root,evidence_contract,build=build); child_evidence['network'] = guard.snapshot()
             child_inventory = processing_inventory(runtime,receipt['model'],child_evidence)
@@ -221,10 +221,7 @@ def main():
                 bound.add_calls(processing_receipt)
                 evidence = observe(root,evidence_contract,build=build); evidence['network'] = guard.snapshot()
                 # Identity set of request-owned WAV outputs only, never an output directory inventory.
-                files = sorted(output.glob('*/*/*.wav'))
-                if not files or len(files) > 16: raise ValueError('missing-or-excess-child-outputs')
-                identities = [audio_identity(path) for path in files]
-                identity = {'digest': evidence_digest(identities), 'byteLength': sum(e['byteLength'] for e in identities)}
+                identity = stem_output_identity(output)
                 child_inventory = processing_inventory(runtime,receipt['model'],evidence)
                 current_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
                 processed = bound.finish(current_binding, child_inventory, identity)

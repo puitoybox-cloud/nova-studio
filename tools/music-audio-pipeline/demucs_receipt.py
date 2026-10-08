@@ -385,6 +385,9 @@ class ChildSession:
                             any(receipt.get('binding', {}).get(key) != binding[key] for key in ('session', 'request', 'input')) or receipt.get('complete') is not True or
                             receipt.get('processingEligible') is not True or receipt.get('publicationEligible') is not False):
                         raise ValueError('invalid-or-partial-child-processing-receipt')
+                    from runtime_evidence import stem_output_identity
+                    if receipt.get('output') != stem_output_identity(Path(output).resolve()):
+                        raise ValueError('changed-child-output-identity')
                     self.current(); return copy.deepcopy(receipt)
                 self.current();return True
             except Exception:self.close();raise

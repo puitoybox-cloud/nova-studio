@@ -107,6 +107,38 @@ class ReceiptTests(unittest.TestCase):
         for mode in ['timeout','crash','failed']:
             with self.subTest(mode=mode):
                 with self.assertRaises((ValueError,TimeoutError)):self.session(mode)
+
+    def test_actual_child_completion_rejects_changed_missing_or_renamed_stem_bytes(self):
+        from runtime_evidence import audio_identity, stem_output_identity
+        for mutation in ('unchanged','bytes','missing','rename','extra','symlink'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                output=root/'output';stems=output/'htdemucs_6s'/'input';stems.mkdir(parents=True)
+                stem=stems/'vocals.wav';stem.write_bytes(b'x'*45)
+                binding={'session':'a'*64,'request':'b'*64,'input':audio_identity(source)}
+                child={'format':'NOVA_PROCESSING_RECEIPT','parentBinding':binding,'binding':binding,
+                    'complete':True,'processingEligible':True,'publicationEligible':False,
+                    'output':stem_output_identity(output)}
+                session=self.session('ok');original=session._receive;process=session.process
+                def receive():
+                    result=original();result['processingReceipt']=copy.deepcopy(child)
+                    if mutation=='bytes':stem.write_bytes(b'y'*45)
+                    if mutation=='missing':stem.unlink()
+                    if mutation=='rename':stem.rename(stems/'other.wav')
+                    if mutation=='extra':(stems/'other.wav').write_bytes(b'x'*45)
+                    if mutation=='symlink':
+                        target=root/'foreign.wav';stem.rename(target);stem.symlink_to(target)
+                    return result
+                session._receive=receive
+                try:
+                    if mutation=='unchanged':
+                        self.assertEqual(session.process_audio(source,output,binding=binding),child)
+                    else:
+                        with self.assertRaisesRegex(ValueError,'child-output|child-outputs'):
+                            session.process_audio(source,output,binding=binding)
+                        self.assertIsNone(session.receipt)
+                        self.assertIsNotNone(process.poll())
+                finally:session.close()
     def test_unexpected_executable_permit_rejected(self):
         class Reject:
             def __enter__(self):raise PermissionError('unexpected-executable')
