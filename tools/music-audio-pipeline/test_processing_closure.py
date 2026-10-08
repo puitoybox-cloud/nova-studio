@@ -364,7 +364,7 @@ class ProcessingHTTPTests(unittest.TestCase):
     def test_complete_software_chain_success_and_cleanup(self):
         status,payload=self.run_request('success');self.assertEqual(status,200)
         self.assertTrue(payload['processingReceipt']['complete']);self.assertFalse(payload['processingReceipt']['publicationEligible'])
-        self.assertEqual(payload['processingReceipt']['output'],{'digest':hashlib.sha256(b'disposable-midi').hexdigest(),'byteLength':14})
+        self.assertEqual(payload['processingReceipt']['output'],{'digest':hashlib.sha256(b'disposable-midi').hexdigest(),'byteLength':len(b'disposable-midi')})
     def test_partial_failure_close_expiry_replacement_restart_cleanup(self):
         for mode in ('failure','partial','browser-close','heartbeat-expiry','helper-replacement','server-restart'):
             with self.subTest(mode=mode):
