@@ -178,7 +178,7 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         let input=MusicStudioOwnedLifecycle.identity(Data("input".utf8))
         _ = try owner.command("authorize",request:requestID,input:input,expectedInventory:try XCTUnwrap(value["inventory"] as? String),processingContract:try XCTUnwrap(value["contract"] as? String))
         try owner.receive(JSONSerialization.data(withJSONObject:responses[0]),now:now)
-        for (index,action) in ["renew","result","accept","stop"].enumerated() {
+        for (index,action) in ["result","accept","stop"].enumerated() {
             _ = try owner.command(action,outputBytes:action == "accept" ? Data("output".utf8) : nil)
             try owner.receive(JSONSerialization.data(withJSONObject:responses[index+1]),now:now)
         }
@@ -186,7 +186,22 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         let ack=try owner.receiveShutdown(JSONSerialization.data(withJSONObject:summary))
         XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL");XCTAssertEqual(owner.acceptedOutput,MusicStudioOwnedLifecycle.identity(Data("output".utf8)))
         let envelope=try XCTUnwrap(JSONSerialization.jsonObject(with:ack) as? [String:Any]);let body=try XCTUnwrap(envelope["payload"] as? [String:Any])
-        XCTAssertEqual(body["generation"] as? Int,1);XCTAssertEqual(body["completionState"] as? String,"PARTIAL")
+        XCTAssertEqual(body["generation"] as? Int,0);XCTAssertEqual(body["completionState"] as? String,"PARTIAL")
+    }
+
+    func testOldAuthenticatedGenerationCannotPublishDeliverOrAccept() throws {
+        let path = URL(fileURLWithPath:#filePath).deletingLastPathComponent().appendingPathComponent("OwnedAuditStaleGenerationTranscript.json")
+        let value = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:path)) as? [String:Any])
+        let responses = try XCTUnwrap(value["responses"] as? [[String:Any]])
+        let owner = try owner();let input=MusicStudioOwnedLifecycle.identity(Data("input".utf8))
+        _ = try owner.command("authorize",request:requestID,input:input,expectedInventory:try XCTUnwrap(value["inventory"] as? String),processingContract:try XCTUnwrap(value["contract"] as? String))
+        try owner.receive(JSONSerialization.data(withJSONObject:responses[0]),now:now)
+        _ = try owner.command("renew")
+        try owner.receive(JSONSerialization.data(withJSONObject:responses[1]),now:now)
+        XCTAssertThrowsError(try owner.command("result"));XCTAssertNil(owner.acceptedOutput)
+        XCTAssertThrowsError(try owner.receive(JSONSerialization.data(withJSONObject:responses[2]),now:now))
+        XCTAssertEqual(owner.state,"FAILED");XCTAssertNil(owner.acceptedOutput)
+        XCTAssertThrowsError(try owner.command("accept",outputBytes:Data("output".utf8)))
     }
 
     func authorizationResponse(_ owner: MusicStudioOwnedLifecycle, input: MusicStudioOutputIdentity, mutation: String? = nil) throws -> Data {
