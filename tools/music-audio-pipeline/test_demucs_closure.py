@@ -171,6 +171,20 @@ class ReceiptTests(unittest.TestCase):
                     session.process_audio(source,output,binding={**binding,'request':'d'*64})
                 self.assertIsNone(session.receipt)
             finally:session.close()
+    def test_processing_preflight_and_send_failures_invalidate_child_before_retry(self):
+        for failure in ('preflight','send'):
+            with self.subTest(failure=failure):
+                session=self.session('ok');process=session.process
+                def changed(*args): raise ValueError('changed-child-request-boundary')
+                if failure=='preflight':session.recheck=changed
+                else:session._send=changed
+                try:
+                    with self.assertRaisesRegex(ValueError,'changed-child-request-boundary'):
+                        session.process_audio('input.wav','output')
+                    self.assertIsNone(session.receipt);self.assertTrue(process.stdin.closed)
+                    self.assertIsNotNone(process.poll())
+                    with self.assertRaises(ValueError):session.current()
+                finally:session.close()
     def test_unexpected_executable_permit_rejected(self):
         class Reject:
             def __enter__(self):raise PermissionError('unexpected-executable')

@@ -368,7 +368,8 @@ class ChildSession:
     def process_audio(self,source,output,*,binding=None):
         with self.lock:
             if 'runtimeEvidenceDigest' in self.expected and binding is None: raise ValueError('missing-strict-processing-binding')
-            self.current()
+            try:self.current()
+            except Exception:self.close();raise
             if binding is not None:
                 from runtime_evidence import SessionRequestRegistry
                 if self.processing_attempts is None: self.processing_attempts=SessionRequestRegistry(binding['session'])
@@ -376,10 +377,10 @@ class ChildSession:
             request = {'type':'process','nonce':self.nonce,'source':str(Path(source).resolve()),'output':str(Path(output).resolve())}
             if binding is not None: request['binding'] = copy.deepcopy(binding)
             self.processing_binding=copy.deepcopy(binding)
-            self.exit_observer.bind_request(self.process,self.processing_binding)
-            self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
-            self._send(request)
             try:
+                self.exit_observer.bind_request(self.process,self.processing_binding)
+                self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
+                self._send(request)
                 result=self._receive()
                 keys = {'version','nonce','status'} | ({'processingReceipt'} if binding is not None else set())
                 if set(result)!=keys or result['version']!=1 or result['nonce']!=self.nonce or result['status']!='PROCESSED':raise ValueError('child-processing-failed')
