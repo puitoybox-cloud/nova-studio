@@ -441,4 +441,3 @@ class Stage2CategoryTests(unittest.TestCase):
         for name in ('getaddrinfo_a','ares_getaddrinfo','ares_query','curl_multi_poll','SSL_set_fd','nw_endpoint_create_host'):
             with self.assertRaises(PermissionError):guard.audit('ctypes.dlsym',(None,name))
         self.assertFalse(guard.snapshot()['nativeNetworkVerified'])
-
