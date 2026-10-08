@@ -27,6 +27,27 @@ def bind_stem_output(root, bound, evidence):
 
 
 class FinalWriterBindingTests(unittest.TestCase):
+    def test_cleanup_detaches_all_request_state_before_fallible_abort(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        for failure in (False, True):
+            with self.subTest(failure=failure):
+                def abort():
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    if failure: raise RuntimeError('cleanup-abort-failure')
+                bound = SimpleNamespace(state='ACTIVE', abort=abort)
+                with patch.object(server_module.REQUEST_RECEIPTS, 'bound', bound, create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'calls', object(), create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'stem_output', object(), create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'midi_output', object(), create=True):
+                    if failure:
+                        with self.assertRaisesRegex(RuntimeError, 'cleanup-abort-failure'):
+                            server_module.clear_processing_request()
+                    else: server_module.clear_processing_request()
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    server_module.clear_processing_request()
+
     def test_final_midi_delivery_checks_written_bytes_and_matching_request(self):
         import copy
         import runtime_evidence as evidence
@@ -199,6 +220,46 @@ class AudioHelperBoundaryTests(unittest.TestCase):
             return response.status, dict(response.getheaders()), json.loads(response.read())
         finally:
             connection.close()
+
+    def test_cleanup_exception_releases_lock_and_next_request_has_no_old_state(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        finished = threading.Event()
+        observed = []
+        def process(source, root):
+            observed.append([getattr(server_module.REQUEST_RECEIPTS, field, None) for field in fields])
+            if len(observed) == 1:
+                def abort():
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    raise RuntimeError('cleanup-abort-failure')
+                server_module.REQUEST_RECEIPTS.bound = SimpleNamespace(state='ACTIVE', abort=abort)
+                for field in fields[1:]: setattr(server_module.REQUEST_RECEIPTS, field, object())
+            return {'ok': True}
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                patch.object(server_module, 'process_audio', side_effect=process), \
+                patch.object(self.server, 'handle_error', side_effect=lambda *args: finished.set()):
+            headers = {'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav'}
+            self.assertEqual(self.request('POST', '/process', body=b'input-a', headers=headers)[0], 200)
+            self.assertTrue(finished.wait(3))
+            self.assertFalse(server_module.PROCESS_LOCK.locked())
+            self.assertEqual(self.request('POST', '/process', body=b'input-b', headers=headers)[0], 200)
+            self.assertEqual(observed, [[None]*4, [None]*4])
+
+    def test_request_entry_resets_stale_worker_artifact_bindings(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        observed = []
+        def stale_state():
+            server_module.REQUEST_RECEIPTS.bound = SimpleNamespace(state='CONSUMED')
+            for field in fields[1:]: setattr(server_module.REQUEST_RECEIPTS, field, object())
+        def process(source, root):
+            observed.append([getattr(server_module.REQUEST_RECEIPTS, field, None) for field in fields])
+            return {'ok': True}
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                patch.object(server_module, 'require_runtime_processing', side_effect=stale_state), \
+                patch.object(server_module, 'process_audio', side_effect=process):
+            self.assertEqual(self.request('POST', '/process', body=b'input', headers={
+                'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav'})[0], 200)
+            self.assertEqual(observed, [[None]*4])
 
     def test_strict_missing_bootstrap_rejects_before_body_storage_processing(self):
         with patch.object(server_module, 'STRICT_BOOTSTRAP', True), patch.object(server_module, 'RUNTIME_INVENTORY', None), patch.object(server_module, 'BOOTSTRAP_ERROR', 'fixture'), patch.object(server_module.tempfile, 'TemporaryDirectory') as storage, patch.object(server_module, 'process_audio') as processor:
