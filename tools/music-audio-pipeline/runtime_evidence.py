@@ -1340,6 +1340,25 @@ def audio_identity(path):
     return {'digest': value.hexdigest(), 'byteLength': total}
 
 
+def stem_output_identity(output):
+    """Bind the existing child output digest to names and actual request-owned bytes."""
+    output = Path(output)
+    if not output.is_absolute() or output.is_symlink() or not output.is_dir():
+        raise ValueError('unsafe-child-output-root')
+    files = sorted(output.glob('*/*/*.wav'))
+    if not files or len(files) > 16:
+        raise ValueError('missing-or-excess-child-outputs')
+    entries = []
+    for path in files:
+        relative = path.relative_to(output)
+        if any(part.is_symlink() for part in (path, path.parent, path.parent.parent)):
+            raise ValueError('unsafe-child-output-alias')
+        entries.append({'path': relative.as_posix(), **audio_identity(path)})
+    if files != sorted(output.glob('*/*/*.wav')):
+        raise ValueError('changed-child-output-set')
+    return {'digest': evidence_digest(entries), 'byteLength': sum(e['byteLength'] for e in entries)}
+
+
 def runtime_native_closure(mapped, disk_graph):
     """Join static parent edges to independent mapped/disk receipts; never invent edges."""
     actual = {entry['id']: entry for entry in mapped.get('entries', [])}

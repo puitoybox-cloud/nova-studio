@@ -405,7 +405,8 @@ class BasicPitchCallTests(unittest.TestCase):
             def resample(*args,**kwargs):events.append('resample');return [1]
             def load(*args,**kwargs):events.append('decode');return librosa.resample([1]),22050
             librosa.load=load;librosa.resample=resample
-            def write(path):events.append('midi-write')
+            def write(path):
+                events.append('midi-write');Path(path).write_bytes(b'fixture-midi')
             def predict(path,model_or_model_path):
                 self.assertIs(model_or_model_path,model);librosa.load(path)
                 if failed:raise RuntimeError('fixture-inference-failed')
@@ -425,7 +426,9 @@ class BasicPitchCallTests(unittest.TestCase):
                      patch.object(module,'current_processing_calls',return_value=calls):
                     if failed:
                         with self.assertRaises(RuntimeError):module.transcribe_pitched_stem(source,Path(folder,'result.mid'))
-                    else:module.transcribe_pitched_stem(source,Path(folder,'result.mid'))
+                    else:
+                        output=Path(folder,'result.mid')
+                        self.assertEqual(module.transcribe_pitched_stem(source,output),evidence.audio_identity(output))
                 self.assertIs(librosa.load,load);self.assertIs(librosa.resample,resample)
                 self.assertIn('decoder',[e['stage'] for e in calls.entries]);self.assertIn('resample',[e['stage'] for e in calls.entries])
                 self.assertEqual('midi-write' in events,not failed)

@@ -147,7 +147,7 @@ class InstalledRecordAssemblyTests(unittest.TestCase):
              patch.object(launcher,'load_contract',return_value={}),\
              patch.object(launcher,'private_distribution_lookup'),\
              patch.object(launcher,'private_python_command',return_value=[sys.executable,'-I',str(self.root/'server.py')]),\
-             patch.object(launcher,'verify_assembly',side_effect=[{'complete':True},{'complete':False}]) as assembly,\
+             patch.object(launcher,'verify_assembly',side_effect=[{'complete':True}]+[{'complete':False}]*3) as assembly,\
              patch('runtime_evidence.load',return_value={'buildRevision':'build'}),\
              patch('runtime_evidence.assembly_evidence',return_value={'complete':False}):
             prepared=launcher.prepare(self.root,'manifest','a'*64,'build',pipeline=self.root)
@@ -157,7 +157,8 @@ class InstalledRecordAssemblyTests(unittest.TestCase):
             with patch.object(lifecycle,'popen') as spawn:
                 with self.assertRaisesRegex(ValueError,'launcher-artifact-assembly-changed'):lifecycle.start()
                 spawn.assert_not_called()
-            self.assertEqual(assembly.call_count,2);self.assertEqual(lifecycle.state,'FAILED')
+            self.assertEqual(assembly.call_count,4);self.assertEqual(lifecycle.state,'FAILED')
+            self.assertEqual(lifecycle.final_receipt['payload']['completionState'],'FAILED')
             self.assertFalse(lifecycle.eligibility['processingEligible'])
 
     def test_offline_verifier_passes_runtime_into_same_assembly_gate(self):

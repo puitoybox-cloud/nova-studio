@@ -1054,17 +1054,30 @@ class LocalProductionLifecycle:
     def close(self, *, failed=False):
         with self.close_lock:
             if self.final_receipt is not None: return
+            preflight = self.prepared.get('_source_preflight')
+            if preflight is not None:
+                try: preflight()
+                except (OSError, ValueError, TypeError): failed = True
             with self.lock:
                 self.closing = True
             self.done.set(); self.browser_verified = False; self.inventory = {}
             self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
             observer=getattr(self,'exit_observer',None)
+            retained = getattr(self, '_origin_owned_child', None)
+            if retained is not None and self.child is not retained:
+                # Never route shutdown through a replacement Popen object.
+                self.child = retained; failed = True
+            stop_allowed = True
+            try: self.verify_owned_continuity()
+            except (OSError, ValueError, TypeError): failed = True; stop_allowed = False
             if observer is not None and self.child is not None:
-                observer.bind_request(self.child,self.control.binding)
-                observer.request_stop(self.child,self.control.binding,{'owner':self.control.owner,
-                    'generation':self.control.renewals,'state':self.control.state})
+                try:
+                    observer.bind_request(self.child,self.control.binding)
+                    observer.request_stop(self.child,self.control.binding,{'owner':self.control.owner,
+                        'generation':self.control.renewals,'state':self.control.state})
+                except (OSError, ValueError, TypeError): failed = True; stop_allowed = False
             stop = {'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}
-            if self.child is not None and self.child.poll() is None:
+            if stop_allowed and self.child is not None and self.child.poll() is None:
                 stop = self.request_helper_stop()
             self.graceful_stop_receipt = stop
             self.shutdown_receipt = bounded_owned_shutdown(self.child)
@@ -1079,10 +1092,13 @@ class LocalProductionLifecycle:
                 self.shutdown_receipt['leaderExited']=self.child.poll() is not None
             observer=getattr(self,'exit_observer',None)
             if observer is not None and self.child is not None:
-                self.shutdown_receipt['ownedExitObservation']=observer.observe(self.child,self.control.binding)
+                try:
+                    self.shutdown_receipt['ownedExitObservation']=observer.observe(self.child,self.control.binding)
+                except (OSError, ValueError, TypeError): failed = True
                 if self.shutdown_receipt.get('leaderExited') is True:
                     observer.close()
-                    self.shutdown_receipt['ownedExitObservation']['descriptorClosed']=True
+                    if 'ownedExitObservation' in self.shutdown_receipt:
+                        self.shutdown_receipt['ownedExitObservation']['descriptorClosed']=True
             if self.stop_pipe is not None:self.stop_pipe.close()
             if self.child_stop_socket is not None:self.child_stop_socket.close();self.child_stop_socket=None
             self.server.close()
@@ -1090,6 +1106,11 @@ class LocalProductionLifecycle:
                 (self.server.thread is None or not self.server.thread.is_alive()))
             if self.child is not None and self.child.poll() is not None: self.child = None
             if self.child is not None: failed = True
+            # Cleanup must continue after identity failure, but its final summary
+            # must never promote stale package/runtime evidence to COMPLETE.
+            if preflight is not None:
+                try: preflight()
+                except (OSError, ValueError, TypeError): failed = True
             self.final_receipt = final_lifecycle_receipt(self.control,stop,self.shutdown_receipt,transport_closed,failed=failed)
             self.shutdown_state = self.final_receipt['payload']['completionState']
             self.state = 'FAILED' if failed else 'STOPPED'
