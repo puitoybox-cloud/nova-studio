@@ -304,7 +304,7 @@ class OwnedResultChannel:
         with self.lock:
             self.state = 'FAILED' if failed else 'STOPPED'
             self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
-            self.authorization = None
+            self.authorization = None; self.admitted = False; self.accepted_result = None
 
 
 def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed=False):
