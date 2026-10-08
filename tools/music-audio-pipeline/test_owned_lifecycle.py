@@ -33,6 +33,20 @@ class ChannelTests(unittest.TestCase):
         c=self.channel
         value=self.receipt()
         c.publish({'session':c.session,'capability':c.helper_capability,'receipt':receipt or value,**extra},self.inventory)
+    def test_owned_continuity_gate_blocks_publication_delivery_and_acceptance(self):
+        self.begin();c=self.channel
+        def changed():raise ValueError('changed-owned-helper-at-publication')
+        c.continuity=changed
+        with self.assertRaisesRegex(ValueError,'changed-owned-helper-at-publication'):self.publish()
+        self.assertEqual(c.state,'PROCESSING');self.assertIsNone(c.result)
+        c.continuity=None;self.publish();c.continuity=changed
+        with self.assertRaisesRegex(ValueError,'changed-owned-helper-at-publication'):self.command('result')
+        self.assertEqual(c.state,'RESULT_READY')
+        c.continuity=None;r=self.command('result');c.continuity=changed
+        with self.assertRaisesRegex(ValueError,'changed-owned-helper-at-publication'):
+            self.command('accept',resultId=r['result']['resultId'],output=self.output)
+        self.assertEqual(c.state,'DELIVERED');self.assertIsNone(c.accepted_result)
+
     def test_one_shot_result_acceptance_output_bound(self):
         self.begin();self.publish();r=self.command('result')
         self.assertEqual(r['state'],'DELIVERED');self.assertEqual(r['result']['output'],self.output)

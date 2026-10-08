@@ -133,10 +133,11 @@ class OwnedResultChannel:
     the original Helper/session deadline; it cannot extend processing authority.
     This is process-local bearer authentication, not PKI or native containment.
     """
-    def __init__(self, session, deadline, *, clock=time.monotonic, wall=time.time):
+    def __init__(self, session, deadline, *, clock=time.monotonic, wall=time.time, continuity=None):
         if not _token(session) or not clock() < deadline <= clock()+300:
             raise ValueError('invalid-owned-channel')
         self.session = session; self.deadline = deadline; self.clock = clock; self.wall = wall
+        self.continuity = continuity
         self.capability = secrets.token_hex(32); self.helper_capability = secrets.token_hex(32)
         self.expires = min(clock()+20, deadline)
         self.expires_at = int((wall()+self.expires-clock())*1000)
@@ -206,10 +207,12 @@ class OwnedResultChannel:
                 self.expires = min(self.expires+20, self.deadline)
                 self.expires_at = min(self.expires_at+20000, self.deadline_at)
             elif action == 'result':
+                if self.continuity is not None: self.continuity()
                 if set(value) != base or self.state != 'RESULT_READY': raise ValueError('missing-or-replayed-result')
                 # Delivery consumes its sequence; only explicit output acceptance releases it.
                 self.state = 'DELIVERED'
             elif action == 'accept':
+                if self.continuity is not None: self.continuity()
                 if (set(value) != base|{'resultId','output'} or self.state != 'DELIVERED' or
                         value['resultId'] != self.result['resultId'] or _digest(value['output']) != _digest(self.result['output'])):
                     raise ValueError('foreign-replayed-or-output-mismatch')
@@ -283,6 +286,7 @@ class OwnedResultChannel:
             reproduced = check.finish(self.binding,inventory,output)
             if _digest(reproduced) != _digest(receipt) or reproduced['complete'] is not True:
                 raise ValueError('tampered-or-partial-processing-chain')
+            if self.continuity is not None: self.continuity()
             self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
                 'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}
             self.state = 'RESULT_READY'
@@ -810,7 +814,7 @@ class LocalProductionLifecycle:
         self.server = LocalEnvelopeServer(assets, envelope, expected_assets=expected_assets, expected_binding=binding)
         self.server.on_lifecycle = self.browser_event
         self.server.on_control = self.control_event
-        self.control = OwnedResultChannel(self.server.session, self.server.deadline)
+        self.control = OwnedResultChannel(self.server.session, self.server.deadline, continuity=self.verify_processing_continuity)
         self.shutdown_receipt = None; self.final_receipt = None; self.final_acknowledgement = None; self.final_sink = final_sink; self.close_lock = threading.Lock()
         if isinstance(native_host, OwnedNativeSummaryDelivery):
             self.final_sink = native_host.deliver_final
@@ -860,15 +864,41 @@ class LocalProductionLifecycle:
                 not isinstance(self.child, subprocess.Popen) or
                 identity != self._origin_owned_identity or
                 self.server.session != identity['session'] or self.stop_pipe is None or
-                self.stop_pipe.identity != identity or self.child.poll() is not None):
+                self.stop_pipe.identity != identity or
+                (hasattr(self, '_origin_owned_pipe') and
+                 (self.stop_pipe is not self._origin_owned_pipe or
+                  self.stop_pipe.handle is not self._origin_owned_handle or
+                  self.stop_pipe.closed or self.stop_pipe.handle.fileno() < 0)) or
+                self.child.poll() is not None):
             self.inventory = {}
             self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
             raise ValueError('changed-or-dead-owned-helper')
 
     def verified_owned_health(self):
         self.verify_owned_continuity()
-        health = self.health()
-        self.verify_health(health)
+        preflight = self.prepared.get('_source_preflight')
+        try:
+            if preflight is not None: preflight()
+            health = self.health()
+            if preflight is not None: preflight()
+            self.verify_health(health)
+        except (ValueError, OSError):
+            self.inventory = {}
+            self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
+            raise
+
+    def verify_processing_continuity(self):
+        self.verify_owned_continuity()
+        if '_source_preflight' not in self.prepared: return
+        self.verified_owned_health()
+        binding=self.control.binding
+        if binding is not None:
+            from runtime_evidence import processing_binding
+            current=processing_binding(self.control.session,binding['request'],binding['input'],self.inventory)
+            if current != binding:
+                self.inventory={}
+                self.eligibility=strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
+                raise ValueError('changed-publication-processing-inventory')
 
     def start(self):
         if self.started or self.state != 'PREPARING': raise ValueError('stale-lifecycle-retry')
@@ -908,6 +938,8 @@ class LocalProductionLifecycle:
                 self.prepared['_source_preflight']()
             if origin_identity is not None:
                 self._origin_owned_child = self.child
+                self._origin_owned_pipe = self.stop_pipe
+                self._origin_owned_handle = self.stop_pipe.handle
                 self._origin_owned_identity = dict(identity)
                 self.verify_owned_continuity()
                 if not isinstance(self.child,subprocess.Popen) or self.child.poll() is not None:
@@ -1001,6 +1033,9 @@ class LocalProductionLifecycle:
     def supervise(self):
         try:
             while not self.done.wait(0.25):
+                try: self.verify_owned_continuity()
+                except ValueError:
+                    self.state = 'FAILED'; break
                 if (self.child.poll() is not None or time.monotonic()-self.last_seen > 30 or
                         time.monotonic() >= self.server.deadline):
                     self.state = 'FAILED'; break

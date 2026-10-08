@@ -313,8 +313,8 @@ def validate_receipt(value,expected,nonce):
 
 
 class ChildSession:
-    def __init__(self,command,expected,launch=subprocess.Popen,timeout=30,permit=None):
-        self.command=tuple(command);self.expected=copy.deepcopy(expected);self.timeout=timeout
+    def __init__(self,command,expected,launch=subprocess.Popen,timeout=30,permit=None,recheck=None):
+        self.command=tuple(command);self.expected=copy.deepcopy(expected);self.timeout=timeout;self.recheck=recheck
         self.nonce=uuid.uuid4().hex;self.process=None;self.receipt=None;self.messages=queue.Queue(maxsize=2);self.protocol_error=None;self.lock=threading.Lock();self.processing_binding=None
         try:
             if permit:
@@ -353,9 +353,15 @@ class ChildSession:
         return value
 
     def current(self):
+        if self.recheck is not None: self.recheck()
         if self.protocol_error:raise self.protocol_error
         if self.process is None or self.process.poll() is not None:raise ValueError('child-not-live')
         self.exit_evidence=self.exit_observer.observe(self.process,self.processing_binding)
+        generation=hashlib.sha256(json.dumps(self.expected,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        if (self.exit_evidence['ownedPipeIdentityStatus'] != 'OBSERVED' or
+                self.exit_evidence['childSession'] != self.nonce or
+                self.exit_evidence['generationIdentity'] != generation or self.exit_evidence['descriptorClosed']):
+            raise ValueError('changed-owned-demucs-continuity')
         return validate_receipt(self.receipt,self.expected,self.nonce)
 
     def process_audio(self,source,output,*,binding=None):

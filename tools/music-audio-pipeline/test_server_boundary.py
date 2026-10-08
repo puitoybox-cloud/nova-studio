@@ -28,9 +28,14 @@ class FinalWriterBindingTests(unittest.TestCase):
                 self.observed.append((stage,logical,function.__self__,path))
                 if self.denied: raise ValueError('unverified-or-fallback-processing-backend')
                 return function(path)
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
         for denied in (False,True):
             with self.subTest(denied=denied), tempfile.TemporaryDirectory() as folder:
-                root=Path(folder);(root/'vocals.wav').write_bytes(b'x'*45)
+                root=Path(folder);(root/'vocals.wav').write_bytes(b'x'*45);(root/'input.wav').write_bytes(b'input')
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(root/'input.wav'),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
                 output=Output();calls=Calls(denied)
                 mido=SimpleNamespace(MidiFile=lambda **kw:output,MidiTrack=list,
                     MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
@@ -38,6 +43,11 @@ class FinalWriterBindingTests(unittest.TestCase):
                 with patch.dict('sys.modules',{'mido':mido}),\
                      patch.object(server_module,'STRICT_BOOTSTRAP',True),\
                      patch.object(server_module,'current_processing_calls',return_value=calls),\
+                     patch.object(server_module,'require_runtime_processing'),\
+                     patch.object(server_module,'require_owned_session',return_value='a'*64),\
+                     patch.object(server_module,'runtime_snapshot',return_value=inventory),\
+                     patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence),\
+                     patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True),\
                      patch.object(server_module,'transcribe_pitched_stem'),\
                      patch.object(server_module,'extract_note_events',return_value=events),\
                      patch.object(server_module,'refine_clear_melody',return_value=events),\
@@ -53,6 +63,43 @@ class FinalWriterBindingTests(unittest.TestCase):
                 self.assertEqual(len(calls.observed),1)
                 self.assertEqual(calls.observed[0][:2],('result','merged-midi-writer'))
                 self.assertIs(calls.observed[0][2],output)
+
+    def test_changed_inventory_input_and_stale_receipt_never_reach_final_writer(self):
+        import copy
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('inventory', 'input', 'session', 'expired', 'missing'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                (root/'vocals.wav').write_bytes(b'x'*45)
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
+                current=copy.deepcopy(inventory)
+                if mutation=='inventory':current['privatePython']={'buildRevision':'changed'}
+                if mutation=='input':source.write_bytes(b'changed')
+                if mutation=='expired':bound.deadline=0
+                class Output:
+                    def __init__(self):self.tracks=[]
+                    def save(self,path):raise AssertionError('stale-final-writer-dispatched')
+                mido=SimpleNamespace(MidiFile=lambda **kw:Output(),MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                with patch.dict('sys.modules',{'mido':mido}), \
+                        patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'require_runtime_processing'), \
+                        patch.object(server_module,'require_owned_session',return_value='f'*64 if mutation=='session' else 'a'*64), \
+                        patch.object(server_module,'runtime_snapshot',return_value=current), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',None if mutation=='missing' else bound,create=True), \
+                        patch.object(server_module,'current_processing_calls') as calls, \
+                        patch.object(server_module,'transcribe_pitched_stem'), \
+                        patch.object(server_module,'extract_note_events',return_value=[(0,'note_on',60,90)]), \
+                        patch.object(server_module,'refine_clear_melody',side_effect=lambda events,source:events), \
+                        patch.object(server_module,'write_track'):
+                    with self.assertRaisesRegex(ValueError,'processing-binding|stale-or-expired-processing'):
+                        server_module.build_merged_midi(root,root,source,120)
+                    calls.assert_not_called()
+                self.assertFalse((root/'input_stems.mid').exists())
 
 
 class AudioHelperBoundaryTests(unittest.TestCase):
