@@ -328,7 +328,17 @@ class ProcessingHTTPTests(unittest.TestCase):
             if mode=='partial': module.current_processing_calls().entries=[]
             if mode in ('browser-close','heartbeat-expiry'): os.environ['NOVA_LIFECYCLE_DEADLINE']='0'
             if mode in ('helper-replacement','server-restart'): os.environ['NOVA_LIFECYCLE_SESSION']='f'*64
-            return {'ok':True,'midiBase64':base64.b64encode(b'disposable-midi').decode()}
+            stems=work_dir/'demucs';stems.mkdir();(stems/'vocals.wav').write_bytes(b'x'*45)
+            bound=module.REQUEST_RECEIPTS.bound
+            child={'format':'NOVA_PROCESSING_RECEIPT','version':1,'parentBinding':copy.deepcopy(bound.binding),
+                'binding':copy.deepcopy(bound.binding),'entries':[],'complete':True,'status':'VERIFIED',
+                'nativeClosureComplete':True,'networkContainment':'CONTAINED','blockedBy':[],
+                'processingEligible':True,'publicationEligible':False,'output':evidence.stem_output_identity(stems)}
+            bound.add_child(child)
+            module.REQUEST_RECEIPTS.stem_output=(stems,child)
+            midi=work_dir/'output.mid';midi.write_bytes(b'disposable-midi')
+            module.REQUEST_RECEIPTS.midi_output=(midi,copy.deepcopy(bound.binding),evidence.audio_identity(midi))
+            return {'ok':True,'midiBase64':base64.b64encode(midi.read_bytes()).decode()}
         server=module.ThreadingHTTPServer(('127.0.0.1',0),module.Handler)
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         try:
@@ -353,6 +363,7 @@ class ProcessingHTTPTests(unittest.TestCase):
     def test_complete_software_chain_success_and_cleanup(self):
         status,payload=self.run_request('success');self.assertEqual(status,200)
         self.assertTrue(payload['processingReceipt']['complete']);self.assertFalse(payload['processingReceipt']['publicationEligible'])
+        self.assertEqual(payload['processingReceipt']['output'],{'digest':hashlib.sha256(b'disposable-midi').hexdigest(),'byteLength':14})
     def test_partial_failure_close_expiry_replacement_restart_cleanup(self):
         for mode in ('failure','partial','browser-close','heartbeat-expiry','helper-replacement','server-restart'):
             with self.subTest(mode=mode):
