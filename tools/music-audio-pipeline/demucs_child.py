@@ -187,6 +187,7 @@ def main():
         receipt['runtimeEvidence']['privatePython'] = processing_inventory(runtime,receipt['model'],{})['privatePython']
         write(receipt)
         binding=next(e for e in runtime.bindings['models'] if e['runtimeIdentifier']=='demucs')
+        processing_attempts=None
         while True:
             line=sys.stdin.readline(MAX_RECEIPT+1)
             if not line:return
@@ -198,11 +199,13 @@ def main():
             if not source.is_absolute() or not output.is_absolute() or source.is_symlink() or not source.is_file() or source.stat().st_size>500*1024*1024:raise ValueError('unsafe-child-audio-input')
             if not receipt["runtimeEvidence"].get("complete"):
                 raise ValueError("strict-child-native-network-incomplete")
-            from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, audio_identity, stem_output_identity, processing_binding
+            from runtime_evidence import ProcessingReceipt, BoundProcessingReceipt, SessionRequestRegistry, audio_identity, stem_output_identity, processing_binding
             if request['binding'].get('input') != audio_identity(source): raise ValueError('wrong-child-input-identity')
             child_evidence = observe(root,evidence_contract,build=build); child_evidence['network'] = guard.snapshot()
             child_inventory = processing_inventory(runtime,receipt['model'],child_evidence)
             child_binding = processing_binding(request['binding']['session'], request['binding']['request'], audio_identity(source), child_inventory)
+            if processing_attempts is None: processing_attempts=SessionRequestRegistry(child_binding['session'])
+            processing_attempts.claim(child_binding['session'],child_binding['request'])
             bound = BoundProcessingReceipt(child_binding)
             def recheck_processing():
                 runtime.recheck()
