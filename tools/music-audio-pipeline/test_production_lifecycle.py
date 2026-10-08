@@ -162,6 +162,31 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(l.state,'FAILED')
         finally:l.child=None;l.close()
 
+    def test_shutdown_preflight_failure_before_or_after_cleanup_never_completes(self):
+        for failure_at in (1,2):
+            with self.subTest(failure_at=failure_at):
+                l=self.make();events=[]
+                def preflight():
+                    events.append('preflight')
+                    if events.count('preflight')==failure_at:raise ValueError('changed-shutdown-runtime')
+                l.prepared['_source_preflight']=preflight
+                original=l.server.close
+                def close_transport():events.append('cleanup');original()
+                l.server.close=close_transport
+                seen=[];l.final_sink=seen.append
+                try:
+                    l.close()
+                    self.assertEqual(events,['preflight','cleanup','preflight'])
+                    self.assertEqual(l.state,'FAILED')
+                    self.assertEqual(l.shutdown_state,'FAILED')
+                    self.assertEqual(seen[0]['payload']['completionState'],'FAILED')
+                    self.assertFalse(seen[0]['payload']['complete'])
+                    self.assertTrue(seen[0]['payload']['transportClosed'])
+                    self.assertTrue(seen[0]['payload']['capabilityInvalidated'])
+                    self.assertIsNone(l.final_acknowledgement)
+                    l.close();self.assertEqual(len(seen),1)
+                finally:l.close()
+
     def test_server_failure(self):
         l=self.make()
         with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):

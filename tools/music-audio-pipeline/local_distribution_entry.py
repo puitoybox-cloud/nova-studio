@@ -1054,6 +1054,10 @@ class LocalProductionLifecycle:
     def close(self, *, failed=False):
         with self.close_lock:
             if self.final_receipt is not None: return
+            preflight = self.prepared.get('_source_preflight')
+            if preflight is not None:
+                try: preflight()
+                except (OSError, ValueError, TypeError): failed = True
             with self.lock:
                 self.closing = True
             self.done.set(); self.browser_verified = False; self.inventory = {}
@@ -1090,6 +1094,11 @@ class LocalProductionLifecycle:
                 (self.server.thread is None or not self.server.thread.is_alive()))
             if self.child is not None and self.child.poll() is not None: self.child = None
             if self.child is not None: failed = True
+            # Cleanup must continue after identity failure, but its final summary
+            # must never promote stale package/runtime evidence to COMPLETE.
+            if preflight is not None:
+                try: preflight()
+                except (OSError, ValueError, TypeError): failed = True
             self.final_receipt = final_lifecycle_receipt(self.control,stop,self.shutdown_receipt,transport_closed,failed=failed)
             self.shutdown_state = self.final_receipt['payload']['completionState']
             self.state = 'FAILED' if failed else 'STOPPED'
