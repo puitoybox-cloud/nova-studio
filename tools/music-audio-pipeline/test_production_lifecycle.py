@@ -187,6 +187,49 @@ class LifecycleTests(unittest.TestCase):
                     l.close();self.assertEqual(len(seen),1)
                 finally:l.close()
 
+    def test_shutdown_observation_failure_still_delivers_failed_summary(self):
+        for failure in ('binding','observation'):
+            with self.subTest(failure=failure):
+                l=self.make();l.child=self.child;seen=[];closed=[]
+                def reject(*args):raise ValueError('changed-owned-observation')
+                l.exit_observer=SimpleNamespace(bind_request=reject if failure=='binding' else lambda *a:None,
+                    request_stop=lambda *a:None,observe=reject,close=lambda:closed.append(True))
+                l.final_sink=seen.append
+                try:
+                    with patch.object(l,'request_helper_stop',return_value={'status':'UNVERIFIED','state':'STOP_NOT_CONFIRMED'}) as stop:
+                        l.close()
+                        if failure=='binding':stop.assert_not_called()
+                        else:stop.assert_called_once()
+                    self.assertTrue(l.server.closed)
+                    self.assertEqual(l.state,'FAILED')
+                    self.assertEqual(seen[0]['payload']['completionState'],'FAILED')
+                    self.assertFalse(seen[0]['payload']['complete'])
+                    self.assertEqual(closed,[True])
+                    l.close();self.assertEqual(len(seen),1)
+                finally:l.close()
+
+    def test_shutdown_replacement_never_uses_foreign_process(self):
+        from demucs_receipt import OwnedExitObservation
+        l=self.make();process=subprocess.Popen([sys.executable,'-I','-c','import sys;sys.stdin.read()'],
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+        l._origin_owned_child=process;l.exit_observer=OwnedExitObservation(process,l.control.session,{})
+        l._origin_owned_identity={'session':l.control.session,'owner':l.control.owner,
+            'generation':digest(l.server.binding),'deadline':l.server.deadline}
+        class Foreign:
+            def poll(self):raise AssertionError('foreign-process-polled')
+            def wait(self,timeout):raise AssertionError('foreign-process-waited')
+        l.child=Foreign();seen=[];l.final_sink=seen.append
+        process.stdin.close();process.wait(timeout=3)
+        try:
+            with patch.object(l,'request_helper_stop') as stop:
+                l.close();stop.assert_not_called()
+            self.assertEqual(l.state,'FAILED');self.assertTrue(l.server.closed)
+            self.assertEqual(seen[0]['payload']['completionState'],'FAILED')
+            self.assertFalse(seen[0]['payload']['complete'])
+            self.assertIsNone(l.child)
+        finally:
+            l.exit_observer.close();process.stdout.close();l.close()
+
     def test_server_failure(self):
         l=self.make()
         with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):
