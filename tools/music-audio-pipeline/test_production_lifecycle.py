@@ -2,6 +2,8 @@ import copy
 import hashlib
 import json
 import tempfile
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -87,6 +89,49 @@ class LifecycleTests(unittest.TestCase):
         with patch.object(l.server,'start',side_effect=OSError('bind')),patch('local_distribution_entry.os.killpg'):
             with self.assertRaises(OSError):l.start()
         self.assertEqual(l.state,'FAILED')
+
+    def test_owned_health_rejects_process_exit_and_binding_changes_during_read(self):
+        for mutation in ('exit', 'object', 'session', 'owner', 'generation', 'pipe'):
+            with self.subTest(mutation=mutation):
+                l=self.make(); process=subprocess.Popen([sys.executable,'-I','-c',
+                    'import sys;sys.stdin.read()'],stdin=subprocess.PIPE)
+                try:
+                    l.child=process;l._origin_owned_child=process
+                    identity={'session':l.control.session,'owner':l.control.owner,
+                        'generation':digest(l.server.binding),'deadline':l.server.deadline}
+                    l._origin_owned_identity=copy.deepcopy(identity)
+                    l.stop_pipe=type('Pipe',(),{'identity':copy.deepcopy(identity)})()
+                    valid=l.health
+                    def changed():
+                        health=valid()
+                        if mutation=='exit':process.stdin.close();process.wait(timeout=3)
+                        elif mutation=='object':l.child=Child()
+                        elif mutation=='session':l.server.session='foreign'
+                        elif mutation=='owner':l.control.owner='foreign'
+                        elif mutation=='generation':l.server.binding['buildRevision']='foreign'
+                        elif mutation=='pipe':l.stop_pipe.identity['session']='foreign'
+                        return health
+                    l.health=changed
+                    with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):
+                        l.verified_owned_health()
+                    self.assertEqual(l.inventory,{})
+                    self.assertFalse(l.eligibility['processingEligible'])
+                finally:
+                    if not process.stdin.closed:process.stdin.close()
+                    process.wait(timeout=3)
+                    l.child=None;l.stop_pipe=None;l.close()
+
+    def test_owned_health_rejects_replaced_child_before_health_read(self):
+        l=self.make();process=subprocess.Popen([sys.executable,'-I','-c',
+            'import sys;sys.stdin.read()'],stdin=subprocess.PIPE)
+        try:
+            l._origin_owned_child=process;l.child=Child()
+            l._origin_owned_identity={'session':l.control.session,'owner':l.control.owner,
+                'generation':digest(l.server.binding),'deadline':l.server.deadline}
+            l.health=lambda:(_ for _ in ()).throw(AssertionError('foreign-health-read'))
+            with self.assertRaisesRegex(ValueError,'changed-or-dead-owned-helper'):l.verified_owned_health()
+        finally:
+            process.stdin.close();process.wait(timeout=3);l.child=None;l.close()
     def test_browser_failure_and_retry(self):
         l=self.make(browser=lambda url:False);old=l.server.session
         with patch('local_distribution_entry.os.killpg'):

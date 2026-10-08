@@ -833,6 +833,7 @@ class LocalProductionLifecycle:
         finally: connection.close()
 
     def verify_health(self, health):
+        self.verify_owned_continuity()
         if (health.get('host') != '127.0.0.1' or health.get('port') != 8766 or
                 health.get('localOnly') is not True or health.get('lifecycleSession') != self.server.session):
             raise ValueError('stale-or-wrong-helper')
@@ -848,6 +849,26 @@ class LocalProductionLifecycle:
                 inventory.get('privatePython')!=self.expected_child_private):
             raise ValueError('changed-or-foreign-helper-private-origin')
         self.inventory = inventory
+
+    def verify_owned_continuity(self):
+        # Retained creator object + private lifecycle binding, never PID authority.
+        # Liveness is bounded observation, not kernel executable attestation.
+        if not hasattr(self, '_origin_owned_child'): return
+        identity = {'session': self.control.session, 'owner': self.control.owner,
+            'generation': _digest(self.server.binding), 'deadline': self.server.deadline}
+        if (self.child is not self._origin_owned_child or
+                not isinstance(self.child, subprocess.Popen) or
+                identity != self._origin_owned_identity or
+                self.server.session != identity['session'] or self.stop_pipe is None or
+                self.stop_pipe.identity != identity or self.child.poll() is not None):
+            self.inventory = {}
+            self.eligibility = strict_eligibility({}, trusted_bootstrap=False, browser_verified=False)
+            raise ValueError('changed-or-dead-owned-helper')
+
+    def verified_owned_health(self):
+        self.verify_owned_continuity()
+        health = self.health()
+        self.verify_health(health)
 
     def start(self):
         if self.started or self.state != 'PREPARING': raise ValueError('stale-lifecycle-retry')
@@ -886,17 +907,21 @@ class LocalProductionLifecycle:
                 # not kernel image integrity or parent-authenticated origin.
                 self.prepared['_source_preflight']()
             if origin_identity is not None:
+                self._origin_owned_child = self.child
+                self._origin_owned_identity = dict(identity)
+                self.verify_owned_continuity()
                 if not isinstance(self.child,subprocess.Popen) or self.child.poll() is not None:
                     raise ValueError('unowned-private-origin-child')
                 if origin_identity()!=expected_origin:raise ValueError('changed-parent-launch-origin')
                 self.launch_origin_binding=self.stop_pipe.request_origin(expected_origin)
+                self.verify_owned_continuity()
                 self.prepared['_source_preflight']()
                 if origin_identity()!=expected_origin:raise ValueError('changed-parent-launch-origin')
                 self.expected_child_private={**expected_origin,'parentLaunchEvidence':self.launch_origin_binding}
             deadline = time.monotonic()+self.timeout
             while True:
                 if self.child.poll() is not None: raise ValueError('helper-startup-failed')
-                try: self.verify_health(self.health()); break
+                try: self.verified_owned_health(); break
                 except (OSError, http.client.HTTPException):
                     if time.monotonic() >= deadline: raise ValueError('helper-startup-timeout')
                     self.done.wait(0.05)
@@ -931,7 +956,7 @@ class LocalProductionLifecycle:
                 raise ValueError('out-of-order-browser-receipt')
             if state == 'IDENTITY_VERIFIED':
                 if self.state == 'SERVER_READY': raise ValueError('missing-browser-ready')
-                self.verify_health(self.health()); self.browser_verified = True
+                self.verified_owned_health(); self.browser_verified = True
                 self.eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True, browser_verified=True,
                     private_lifecycle=self.private_delivery_ready(),
                     fresh_session=self.child is not None and self.child.poll() is None and time.monotonic() < self.server.deadline)
@@ -951,7 +976,7 @@ class LocalProductionLifecycle:
                 self.state = 'FAILED'; self.control.close(failed=True); self.done.set()
                 raise ValueError('unexpected-helper-termination')
             if route in ('/owned-helper-result','/owned-helper-admit'):
-                self.verify_health(self.health())
+                self.verified_owned_health()
                 eligibility = strict_eligibility(self.inventory, trusted_bootstrap=True,
                     private_lifecycle=self.private_delivery_ready(),
                     browser_verified=self.browser_verified, fresh_session=time.monotonic() < self.server.deadline)
@@ -960,7 +985,7 @@ class LocalProductionLifecycle:
                 self.control.publish(value,self.inventory)
                 return {'ok':True}
             if route != '/owned-control': raise ValueError('wrong-owned-control-route')
-            self.verify_health(self.health())
+            self.verified_owned_health()
             eligibility = strict_eligibility(self.inventory,trusted_bootstrap=True,
                 private_lifecycle=self.private_delivery_ready(),
                 browser_verified=self.browser_verified,fresh_session=time.monotonic() < self.server.deadline)
