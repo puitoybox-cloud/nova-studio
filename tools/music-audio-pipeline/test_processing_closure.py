@@ -328,7 +328,8 @@ class ProcessingHTTPTests(unittest.TestCase):
             if mode=='partial': module.current_processing_calls().entries=[]
             if mode in ('browser-close','heartbeat-expiry'): os.environ['NOVA_LIFECYCLE_DEADLINE']='0'
             if mode in ('helper-replacement','server-restart'): os.environ['NOVA_LIFECYCLE_SESSION']='f'*64
-            stems=work_dir/'demucs';stems.mkdir();(stems/'vocals.wav').write_bytes(b'x'*45)
+            stems=work_dir/'demucs';named_stems=stems/'htdemucs_6s'/'input'
+            named_stems.mkdir(parents=True);(named_stems/'vocals.wav').write_bytes(b'x'*45)
             bound=module.REQUEST_RECEIPTS.bound
             child={'format':'NOVA_PROCESSING_RECEIPT','version':1,'parentBinding':copy.deepcopy(bound.binding),
                 'binding':copy.deepcopy(bound.binding),'entries':[],'complete':True,'status':'VERIFIED',
