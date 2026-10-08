@@ -168,6 +168,10 @@ class OwnedResultChannel:
         if self.clock() >= self.deadline or self.state in ('STOPPING', 'STOPPED', 'FAILED'):
             raise ValueError('expired-or-terminal-owned-channel')
 
+    def require_authorization_generation(self):
+        if self.authorization is not None and self.authorization['capabilityGeneration'] != self.renewals:
+            raise ValueError('changed-owned-authorization-generation')
+
     def command(self, value, *, inventory, eligible, helper_alive):
         from runtime_evidence import processing_binding
         with self.lock:
@@ -208,11 +212,13 @@ class OwnedResultChannel:
                 self.expires_at = min(self.expires_at+20000, self.deadline_at)
             elif action == 'result':
                 if self.continuity is not None: self.continuity()
+                self.require_authorization_generation()
                 if set(value) != base or self.state != 'RESULT_READY': raise ValueError('missing-or-replayed-result')
                 # Delivery consumes its sequence; only explicit output acceptance releases it.
                 self.state = 'DELIVERED'
             elif action == 'accept':
                 if self.continuity is not None: self.continuity()
+                self.require_authorization_generation()
                 if (set(value) != base|{'resultId','output'} or self.state != 'DELIVERED' or
                         value['resultId'] != self.result['resultId'] or _digest(value['output']) != _digest(self.result['output'])):
                     raise ValueError('foreign-replayed-or-output-mismatch')
@@ -266,6 +272,7 @@ class OwnedResultChannel:
                     not _token(value['capability']) or not secrets.compare_digest(value['capability'], self.helper_capability)):
                 raise ValueError('foreign-or-replayed-helper-result')
             if self.authorization is not None and not self.admitted: raise ValueError('unadmitted-helper-result')
+            self.require_authorization_generation()
             receipt = value['receipt']
             current = processing_binding(self.session,self.binding['request'],self.binding['input'],inventory)
             if (not isinstance(receipt,dict) or receipt.get('format') != 'NOVA_PROCESSING_RECEIPT' or
@@ -287,6 +294,7 @@ class OwnedResultChannel:
             if _digest(reproduced) != _digest(receipt) or reproduced['complete'] is not True:
                 raise ValueError('tampered-or-partial-processing-chain')
             if self.continuity is not None: self.continuity()
+            self.require_authorization_generation()
             self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
                 'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}
             self.state = 'RESULT_READY'
@@ -1166,3 +1174,4 @@ def main():
 
 if __name__ == '__main__':
     raise SystemExit(main())
+
