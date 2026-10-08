@@ -209,6 +209,68 @@ class AudioHelperBoundaryTests(unittest.TestCase):
             status, _, health = self.request('GET', '/health')
             self.assertEqual(health['runtimeIdentity']['actualInventory']['status'], 'BLOCKED')
 
+    def test_completion_mutation_after_base64_never_publishes_http_success(self):
+        import base64
+        import copy
+        import os
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory, complete_calls
+        for mutation in ('unchanged', 'stem-bytes', 'stem-rename', 'stem-extra',
+                         'stem-symlink', 'midi-bytes', 'response-bytes', 'missing-midi-binding'):
+            with self.subTest(mutation=mutation):
+                inventory = fixture_inventory()
+                state = {}
+                def process(source, root):
+                    bound = server_module.REQUEST_RECEIPTS.bound
+                    stems, stem_output = bind_stem_output(root, bound, evidence)
+                    path = root/'output.mid'; path.write_bytes(b'written-midi')
+                    server_module.REQUEST_RECEIPTS.stem_output = stem_output
+                    server_module.REQUEST_RECEIPTS.midi_output = (path, copy.deepcopy(bound.binding), evidence.audio_identity(path))
+                    state.update(stems=stems, path=path)
+                    raw = server_module.generated_midi_bytes(path)
+                    if mutation == 'response-bytes': raw = b'foreign-midi'
+                    return {'ok': True, 'midiBase64': base64.b64encode(raw).decode('ascii')}
+                def snapshot():
+                    if state and not state.get('mutated'):
+                        state['mutated'] = True
+                        stem = state['stems']/'vocals.wav'
+                        if mutation == 'stem-bytes': stem.write_bytes(b'y'*45)
+                        if mutation == 'stem-rename': stem.rename(state['stems']/'other.wav')
+                        if mutation == 'stem-extra': (state['stems']/'other.wav').write_bytes(b'x'*45)
+                        if mutation == 'stem-symlink':
+                            stem.unlink(); stem.symlink_to(state['path'])
+                        if mutation == 'midi-bytes': state['path'].write_bytes(b'changed-midi')
+                        if mutation == 'missing-midi-binding': server_module.REQUEST_RECEIPTS.midi_output = None
+                    return inventory
+                registry = evidence.SessionRequestRegistry('a'*64)
+                with patch.object(server_module, 'STRICT_BOOTSTRAP', True), \
+                        patch.object(server_module, 'RUNTIME_EVIDENCE_MODULE', evidence), \
+                        patch.object(server_module, 'RUNTIME_INVENTORY', SimpleNamespace(root=Path('.'))), \
+                        patch.object(evidence, 'ProcessingReceipt', return_value=SimpleNamespace(snapshot=complete_calls)), \
+                        patch.object(server_module, 'PROCESSING_ATTEMPTS', registry), \
+                        patch.object(server_module, 'require_runtime_processing'), \
+                        patch.object(server_module, 'require_owned_session', return_value='a'*64), \
+                        patch.object(server_module, 'runtime_snapshot', side_effect=snapshot), \
+                        patch.object(server_module, 'admit_owned_processing'), \
+                        patch.object(server_module, 'current_processing_calls', return_value=SimpleNamespace(snapshot=complete_calls)), \
+                        patch.object(server_module, 'process_audio', side_effect=process), \
+                        patch.object(server_module, 'publish_owned_result') as publish, \
+                        patch.dict(os.environ, {'NOVA_LIFECYCLE_DEADLINE': str(time.monotonic()+60)}):
+                    status, _, payload = self.request('POST', '/process', body=b'input', headers={
+                        'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav',
+                        'X-Nova-Session':'a'*64, 'X-Nova-Request':'b'*64, 'X-Nova-Authorization':'c'*64})
+                    deadline = time.monotonic()+3
+                    while server_module.PROCESS_LOCK.locked() and time.monotonic() < deadline: time.sleep(.01)
+                    self.assertFalse(server_module.PROCESS_LOCK.locked())
+                    self.assertFalse(state['path'].exists())
+                    if mutation == 'unchanged':
+                        self.assertEqual(status, 200); publish.assert_called_once()
+                        self.assertTrue(payload['processingReceipt']['complete'])
+                    else:
+                        self.assertEqual(status, 503); publish.assert_not_called()
+                        self.assertEqual(payload['code'], 'STRICT_PROCESSING_RECEIPT_INCOMPLETE')
+                        self.assertNotIn('midiBase64', payload)
+
     def test_health_version2_is_additive_legacy_is_never_verified(self):
         status, _, health = self.request('GET', '/health')
         self.assertEqual(status, 200)

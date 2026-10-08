@@ -747,6 +747,11 @@ class Handler(BaseHTTPRequestHandler):
                     if len(payload['midiBase64']) > 89478488: raise ValueError('processing-output-budget')
                     raw_output = base64.b64decode(payload['midiBase64'], validate=True)
                     if len(raw_output) > 64*1024*1024: raise ValueError('processing-output-budget')
+                    # Completion inventory/call collection can run after Base64 creation.
+                    # Reuse the active request's actual output gate before sealing its receipt.
+                    midi_output = getattr(REQUEST_RECEIPTS, 'midi_output', None)
+                    if midi_output is None or raw_output != generated_midi_bytes(midi_output[0]):
+                        raise ValueError('changed-final-response-output')
                     output = {'digest': hashlib.sha256(raw_output).hexdigest(), 'byteLength': len(raw_output)}
                     receipt = REQUEST_RECEIPTS.bound.finish(current, inventory, output)
                     payload['processingReceipt'] = REQUEST_RECEIPTS.bound.consume(receipt, current)
