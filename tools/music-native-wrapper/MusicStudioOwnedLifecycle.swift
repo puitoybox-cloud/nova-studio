@@ -273,8 +273,11 @@ public final class MusicStudioOwnedLifecycle {
             requestID = request
         case "renew":
             guard ["READY","PROCESSING"].contains(state), renewals < 2 else { throw Failure.invalid }
-        case "result": guard state == "PROCESSING" else { throw Failure.invalid }
+        case "result":
+            guard state == "PROCESSING" else { throw Failure.invalid }
+            if let authorization, authorization.capabilityGeneration != renewals { throw Failure.foreign }
         case "accept":
+            if let authorization, authorization.capabilityGeneration != renewals { throw Failure.foreign }
             guard state == "DELIVERED", let result, let outputBytes,
                   outputBytes.count <= 64*1024*1024, Self.identity(outputBytes) == result.output else { throw Failure.foreign }
             body["resultId"] = result.resultId
@@ -321,6 +324,7 @@ public final class MusicStudioOwnedLifecycle {
                 authorization = auth; expectedAuthorization = nil
             } else if response.authorization != nil { throw Failure.foreign }
             if pending.0 == "result" {
+                if let authorization, authorization.capabilityGeneration != response.renewals { throw Failure.foreign }
                 guard let received = response.result, received.request == requestID,
                       received.bindingDigest == bindingDigest, Self.token(received.resultId), Self.token(received.receiptDigest),
                       Self.token(received.output.digest), (1...64*1024*1024).contains(received.output.byteLength) else { throw Failure.foreign }
@@ -333,6 +337,7 @@ public final class MusicStudioOwnedLifecycle {
                 auditRequired = true
             }
             if pending.0 == "accept" {
+                if let authorization, authorization.capabilityGeneration != response.renewals { throw Failure.foreign }
                 acceptedOutput = result?.output; acceptedResultID = result?.resultId
                 let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys,.withoutEscapingSlashes]
                 if let result { acceptedResultDigest = Self.identity(try encoder.encode(result)).digest }

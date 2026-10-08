@@ -332,6 +332,25 @@ class AuthorizationTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.admission()
         self.setUp();self.authorize();self.command('stop')
         with self.assertRaises(ValueError):self.admission()
+    def test_admitted_generation_change_rejects_publication_delivery_and_acceptance(self):
+        self.authorize();self.admission();self.command('renew')
+        with self.assertRaisesRegex(ValueError,'changed-owned-authorization-generation'):self.publish()
+        self.assertEqual(self.channel.state,'PROCESSING');self.assertIsNone(self.channel.result)
+        self.command('stop');self.assertEqual(self.channel.state,'STOPPING')
+        for boundary in ('publication','delivery','acceptance'):
+            with self.subTest(boundary=boundary):
+                self.setUp();self.authorize();self.admission();c=self.channel
+                if boundary != 'publication':self.publish()
+                if boundary == 'acceptance':result=self.command('result')
+                before=c.state;sequence=c.sequence
+                def changed():c.renewals += 1
+                c.continuity=changed
+                with self.assertRaisesRegex(ValueError,'changed-owned-authorization-generation'):
+                    if boundary == 'publication':self.publish()
+                    elif boundary == 'delivery':self.command('result')
+                    else:self.command('accept',resultId=result['result']['resultId'],output=self.output)
+                self.assertEqual(c.state,before);self.assertEqual(c.sequence,sequence)
+                self.assertIsNone(c.accepted_result)
     def test_legacy_begin_is_not_processing_authority(self):
         self.command('begin',request='d'*64,input=self.input)
         c=self.channel
