@@ -5,7 +5,7 @@ permissions:
   contents: read
 jobs:
   software:
-    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-pcm-eq-persist-chat-v1'
+    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-pcm-eq-persist-verify-chat-v1'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -37,7 +37,7 @@ jobs:
           PY
           git diff --check 73009702854ab77049174e27f5ab2848896fbd2f...HEAD
   native:
-    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-pcm-eq-persist-chat-v1'
+    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-pcm-eq-persist-verify-chat-v1'
     runs-on: macos-15-intel
     timeout-minutes: 20
     steps:
@@ -46,7 +46,12 @@ jobs:
           ref: ${{ github.sha }}
       - name: Exact checkout identity
         run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-      - name: Swift test
-        run: |
-          cd mac-app
-          swift test
+      - name: Swift tests
+        working-directory: tools/music-native-wrapper
+        run: swift test
+      - name: Unsigned macOS build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Unsigned iPad simulator build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build
