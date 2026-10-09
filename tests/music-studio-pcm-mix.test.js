@@ -115,3 +115,40 @@ for(const [name,s] of [
  ['release',{thresholdDb:-12,ratio:4,attackMs:10,releaseMs:Infinity}],
  ['typed',{thresholdDb:'-12',ratio:4,attackMs:10,releaseMs:100}]
 ])test('compressor rejects invalid '+name,()=>{const{a,pcm}=fixture();assert.throws(()=>a.pcmCompress(pcm,s),/invalid-pcm-compressor/);});
+
+test('Compression persists atomically, retains original and provides EQ-compatible Undo/Redo',async()=>{
+ const f=await ready(),id=f.a.pcmEditor.assetId,original=plain(f.p.pcmMix.assets[0].original),midi=plain(f.p.midiData);
+ const settings={thresholdDb:-24,ratio:4,attackMs:.1,releaseMs:30},preview=f.a.pcmCompressorPreview(f.p,id,settings);
+ assert.equal(preview.kind,'compressor-preview');
+ assert.ok(preview.after.peak<preview.before.peak);
+ f.a.pcmEditor.preview=preview;assert.equal((await f.a.pcmApply('p')).ok,true);
+ let p=await f.repo.get('p'),asset=p.pcmMix.assets[0];
+ assert.equal(asset.compressorHistory.cursor,1);
+ assert.deepEqual(plain(asset.original),original);assert.deepEqual(plain(p.midiData),midi);
+ const rendered=f.a.pcmRenderAsset(asset);
+ assert.deepEqual(plain(rendered),plain(f.a.pcmCompress(f.a.pcmGain(asset.original,0),settings)));
+ const json=await f.a.exportProject('p');assert.equal(json.text.includes('compressorHistory'),true);
+ assert.equal((await f.a.pcmUndoRedoCompressor('p',-1)).ok,true);
+ p=await f.repo.get('p');assert.equal(p.pcmMix.assets[0].compressorHistory.cursor,0);
+ assert.deepEqual(plain(f.a.pcmRenderAsset(p.pcmMix.assets[0])),original);
+ assert.equal((await f.a.pcmUndoRedoCompressor('p',1)).ok,true);
+ p=await f.repo.get('p');assert.equal(p.pcmMix.assets[0].compressorHistory.cursor,1);
+ assert.deepEqual(plain(p.midiData),midi);
+});
+test('Compression preview invalidation and corrupt history fail closed',()=>{
+ const f=fixture();let p=f.a.pcmImport(f.p,f.pcm,'vocal.wav'),id=p.pcmMix.assets[0].id;
+ const settings={thresholdDb:-24,ratio:3,attackMs:1,releaseMs:100};
+ const preview=f.a.pcmCompressorPreview(p,id,settings);
+ preview.after.peak=-3;assert.throws(()=>f.a.pcmCompressorAdopt(p,preview),/stale-or-modified/);
+ p=f.a.pcmCompressorAdopt(p,f.a.pcmCompressorPreview(p,id,settings));
+ const invalid=plain(p);invalid.pcmMix.assets[0].compressorHistory.settings[1].ratio=100;
+ assert.equal(f.a.validateProject(invalid).valid,false);
+ assert.equal(f.a.validateProject(plain(p)).valid,true);
+ assert.throws(()=>f.a.pcmCompressorAdopt(p,{...f.a.pcmCompressorPreview(p,id,{...settings,ratio:5}),baseline:'outdated'}),/stale-or-modified/);
+});
+test('Compression applied WAV bytes equal quantized rendered samples',()=>{
+ const f=fixture();let p=f.a.pcmImport(f.p,{sampleRate:8000,channels:[Array(320).fill(.5)]},'vocal.wav'),id=p.pcmMix.assets[0].id;
+ p=f.a.pcmCompressorAdopt(p,f.a.pcmCompressorPreview(p,id,{thresholdDb:-20,ratio:4,attackMs:.1,releaseMs:50}));
+ const pcm=f.a.pcmRenderAsset(p.pcmMix.assets[0]),round=f.a.pcmDecodeWav(f.a.pcmEncodeWav(pcm));
+ for(let i=0;i<pcm.channels[0].length;i++)assert.ok(Math.abs(round.channels[0][i]-pcm.channels[0][i])<=1/32768);
+});
