@@ -52,7 +52,7 @@ test('Music Studio 0.2 exposes beginner guides without changing project storage'
   for(const text of ['クラウド同期ではありません','Project全体の外部バックアップ','Logic ProからStandard MIDI File','用語を確認'])assert.match(html,new RegExp(text));
   for(const text of ['ノート位置・長さをGridへ合わせます','1\/4＝1拍','Export All MIDI','Fit Range','Add Measure','MIDIキーボードを選択して演奏・録音'])assert.match(source,new RegExp(text));
   assert.match(source,/function openHelp\(id\)/);assert.match(source,/function closeHelp\(id\)/);
-  assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,5\)/);
+  assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,6\)/);
 });
 
 test('first-song guide reuses one definition for dialog and named-window route',()=>{
