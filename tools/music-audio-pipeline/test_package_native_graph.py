@@ -24,7 +24,7 @@ def native(loads=(),rpaths=(),install=None,cpu=0x1000007,kind=6,loader=None):
 class PackageNativeGraphTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.root=Path(self.temp.name); self.nodes=[]
+        self.root=Path(self.temp.name).resolve(); self.nodes=[]
         self.add(MAIN,native(kind=2),'EXECUTABLE')
         self.add(LIB,native(install='@rpath/a.dylib'))
 

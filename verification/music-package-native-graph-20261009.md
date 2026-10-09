@@ -83,3 +83,11 @@ Logic/Keystation physical acceptance UNVERIFIED.
 E: signing/notarization/entitlement/external approvals UNVERIFIED; candidate order only.
 formal A 0/30; Stage 2 OPEN; Stage 3 NOT PASSED. Software approx 99% is the user's
 unofficial planning estimate, not a measured completeness claim or 100% production status.
+
+
+macOS first-head CI: two new fixture failures were identified as /var versus
+/private/var temporary-root spelling. The fixture root is now canonicalized once
+before embedding an absolute route or comparing the injected mutation target.
+Production route/symlink checks and all assertions remain unchanged. The first
+head is not a safe checkpoint; only final-head Actions may establish this PR's
+verification checkpoint.
