@@ -14,6 +14,7 @@ from runtime_inventory import stable
 from scoped_closure import canonical, validate_graph, MAX_FILES, MAX_TOTAL
 from runtime_evidence import native_image_routes, _macho_slice
 from unsigned_app import MAGICS, unsigned_image_type
+from package_macho import package_image_routes
 
 APPROVED_SLOTS = ('native-wrapper','helper-source','python-runtime','private-stdlib',
     'private-site-packages','native-shared-libraries','basic-pitch-model',
@@ -97,7 +98,8 @@ def observe(root,build,architecture):
             natives.append({'path':relative,'architecture':route['architecture'],
                 'slice':route['slice'],'commands':route['commands'],'rpaths':route['rpaths'],
                 'signing':signing,'routingStatus':route['routingStatus'],
-                'reason':route.get('reason'),'actualLoaded':False,'mappedBytesVerified':False})
+                'reason':route.get('reason'),'packageRouting':package_image_routes(path,architecture),
+                'actualLoaded':False,'mappedBytesVerified':False})
         elif relative == main: raise ValueError('wrapper-executable-not-macho')
         if stable(path) != before: raise ValueError('changed-wrapper-file')
         groups.setdefault(kind,[]).append(item)
