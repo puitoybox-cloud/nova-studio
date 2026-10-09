@@ -33,6 +33,15 @@ def complete_calls():
 
 
 class ProcessingBindingTests(unittest.TestCase):
+    def test_backend_inventory_detaches_declared_native_route_list(self):
+        contract={'codec':{'version':'1','nativeIds':['fixture-codec']}}
+        snapshot=evidence.processing_backend_inventory(contract,modules={})
+        frozen=copy.deepcopy(snapshot);digest=evidence.evidence_digest(snapshot)
+        contract['codec']['nativeIds'].append('late-route')
+        self.assertEqual(snapshot,frozen)
+        self.assertEqual(evidence.evidence_digest(snapshot),digest)
+        snapshot['entries'][0]['nativeIds'].append('caller-route')
+        self.assertEqual(contract['codec']['nativeIds'],['fixture-codec','late-route'])
     def test_finished_parent_child_receipt_detaches_calls_binding_and_output(self):
         inventory=fixture_inventory();identity=binding(inventory)
         child=evidence.BoundProcessingReceipt(identity);calls=complete_calls()

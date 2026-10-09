@@ -199,7 +199,7 @@ class OwnedResultChannel:
                         raise ValueError('foreign-or-changed-processing-authorization')
                     self.authorization = {'format':'NOVA_PROCESSING_AUTHORIZATION','version':1,
                         'owner':self.owner,'session':self.session,'request':value['request'],
-                        'input':value['input'],'expectedInventory':self.binding['inventoryRevision'],
+                        'input':json.loads(json.dumps(self.binding['input'])),'expectedInventory':self.binding['inventoryRevision'],
                         'processingContract':contract,'bindingDigest':_digest(self.binding),
                         'capabilityGeneration':self.renewals,'expiresAt':self.expires_at,
                         'deadlineAt':self.deadline_at,'ticket':secrets.token_hex(32)}
@@ -294,9 +294,16 @@ class OwnedResultChannel:
             if _digest(reproduced) != _digest(receipt) or reproduced['complete'] is not True:
                 raise ValueError('tampered-or-partial-processing-chain')
             if self.continuity is not None: self.continuity()
+            # The callback may stop/fail the request or replace its live identity.
+            # Publish only the detached receipt already reproduced above.
+            self.alive()
             self.require_authorization_generation()
+            if (self.state != 'PROCESSING' or self.binding != reproduced['binding'] or
+                    processing_binding(self.session,reproduced['binding']['request'],
+                        reproduced['binding']['input'],inventory) != reproduced['binding']):
+                raise ValueError('changed-owned-publication-context')
             self.result = {'resultId':secrets.token_hex(32),'request':self.binding['request'],
-                'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(receipt), 'output':dict(output)}
+                'bindingDigest':_digest(self.binding), 'receiptDigest':_digest(reproduced), 'output':dict(reproduced['output'])}
             self.state = 'RESULT_READY'
             self.audit_event('publication',self.result)
 

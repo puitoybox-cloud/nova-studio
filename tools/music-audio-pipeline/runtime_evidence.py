@@ -624,7 +624,7 @@ def processing_backend_inventory(contract, modules=None):
     return {'version': 1, 'complete': False, 'entries': [
         {'stage': 'decoder', 'logicalId': 'audio-input', 'actualBackend': 'soundfile' if sf else None,
          'version': getattr(sf, '__version__', None), 'expectedVersion': codec['version'],
-         'nativeIds': codec['nativeIds'], 'architecture': platform.machine(),
+         'nativeIds': list(codec['nativeIds']), 'architecture': platform.machine(),
          'status': 'OBSERVED_ONLY' if sf else 'NOT_OBSERVED', 'fallback': False,
          'nativeBackendVersion': getattr(sf, '__libsndfile_version__', None)},
         {'stage': 'basic-pitch-input', 'status': 'UNVERIFIED', 'reason': 'internal-decoder-resample-not-intercepted'},
