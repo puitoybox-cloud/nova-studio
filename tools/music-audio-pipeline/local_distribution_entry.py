@@ -989,7 +989,8 @@ class LocalProductionLifecycle:
 
     def browser_event(self, state):
         with self.lock:
-            if self.state in ('FAILED','STOPPED'): raise ValueError('stale-browser-receipt')
+            if self.closing or self.state in ('FAILED','STOPPING','STOPPED','CLOSED') or self.state.startswith('SHUTDOWN'):
+                raise ValueError('stale-browser-receipt')
             self.last_seen = time.monotonic()
             if state in ('FAILED','STOPPED'):
                 # Handler thread cannot synchronously shut down its own server.
@@ -1134,7 +1135,8 @@ class LocalProductionLifecycle:
                         if self.final_acknowledgement['complete']:
                             self.state = 'CLOSED'
             except (OSError, ValueError, TypeError):
-                self.shutdown_state = 'PARTIAL'; self.state = 'FAILED'
+                if self.shutdown_state != 'FAILED': self.shutdown_state = 'PARTIAL'
+                self.state = 'FAILED'
             finally:
                 self.control.ack_key = ''
 

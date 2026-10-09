@@ -374,6 +374,38 @@ class AuthorizationTests(unittest.TestCase):
             'ticket':'f'*64,'binding':c.binding,'processingContract':'e'*64},self.inventory)
 
 class FinalClosureTests(unittest.TestCase):
+    def test_terminal_or_closing_browser_callbacks_cannot_reopen_or_replace_state(self):
+        from test_production_lifecycle import LifecycleTests
+        from unittest.mock import Mock
+        for state, closing in [('SERVER_READY',True),('FAILED',False),('STOPPING',False),
+                ('STOPPED',False),('SHUTDOWN_PARTIAL',False),('SHUTDOWN_FAILED',False),('CLOSED',False)]:
+            l=LifecycleTests().make(); l.state=state; l.closing=closing
+            l.verified_owned_health=Mock(side_effect=AssertionError('late health read'))
+            try:
+                for event in ['BROWSER_READY','IDENTITY_VERIFIED','FAILED','STOPPED']:
+                    with self.subTest(state=state,event=event), self.assertRaisesRegex(ValueError,'stale-browser-receipt'):
+                        l.browser_event(event)
+                    self.assertEqual(l.state,state)
+                l.verified_owned_health.assert_not_called()
+            finally: l.close(failed=True)
+
+    def test_failed_summary_transport_error_preserves_failed_completion(self):
+        from test_production_lifecycle import LifecycleTests
+        for error in [OSError('closed transport'), ValueError('foreign ack')]:
+            l=LifecycleTests().make()
+            def reject(summary): raise error
+            l.final_sink=reject
+            try:
+                l.start(); l.close(failed=True)
+                self.assertEqual(l.final_receipt['payload']['completionState'],'FAILED')
+                self.assertEqual(l.shutdown_state,'FAILED')
+                self.assertEqual(l.state,'FAILED')
+                self.assertEqual(l.control.state,'FAILED')
+                self.assertEqual(l.control.ack_key,'')
+                self.assertIsNone(l.final_acknowledgement)
+                l.close(); self.assertEqual(l.shutdown_state,'FAILED')
+            finally: l.close()
+
     def test_failed_channel_cannot_be_closed_or_summarized_as_success(self):
         from local_distribution_entry import final_lifecycle_receipt, acknowledge_final_lifecycle, _digest
         import hmac

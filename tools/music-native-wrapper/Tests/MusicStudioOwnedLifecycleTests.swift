@@ -143,6 +143,65 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         XCTAssertTrue(rejected)
     }
 
+    func testForeignAndLateTransportCallbacksAreRejected() throws {
+        let transport = MusicStudioOwnedControlTransport()
+        let listener = socket(AF_INET,SOCK_STREAM,0)
+        XCTAssertGreaterThanOrEqual(listener,0)
+        defer { close(listener) }
+        var address = sockaddr_in()
+        address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let bound = withUnsafePointer(to:&address) { pointer in
+            pointer.withMemoryRebound(to:sockaddr.self,capacity:1) { Darwin.bind(listener,$0,socklen_t(MemoryLayout<sockaddr_in>.size)) }
+        }
+        XCTAssertEqual(bound,0); XCTAssertEqual(listen(listener,1),0)
+        var size = socklen_t(MemoryLayout<sockaddr_in>.size)
+        XCTAssertEqual(withUnsafeMutablePointer(to:&address) { pointer in
+            pointer.withMemoryRebound(to:sockaddr.self,capacity:1) { getsockname(listener,$0,&size) }
+        },0)
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let url = try XCTUnwrap(URL(string:"http://127.0.0.1:\(UInt16(bigEndian:address.sin_port))/owned-control"))
+        var request = URLRequest(url:url); request.httpMethod="POST"
+        let completed = expectation(description:"Only the current task may finish its bounded transport")
+        transport.send(request) { result in
+            if case .success = result { XCTFail("Foreign task completed the current transport") }
+            completed.fulfill()
+        }
+        let task = session.dataTask(with:url)
+        let response = try XCTUnwrap(HTTPURLResponse(url:url,statusCode:200,httpVersion:nil,
+            headerFields:["Content-Length":"2"]))
+        for afterCompletion in [false,true] {
+            if afterCompletion { transport.urlSession(session,task:task,didCompleteWithError:nil) }
+            var disposition: URLSession.ResponseDisposition?
+            transport.urlSession(session,dataTask:task,didReceive:response) { disposition=$0 }
+            XCTAssertEqual(disposition,.cancel)
+            transport.urlSession(session,dataTask:task,didReceive:Data("{}".utf8))
+            transport.urlSession(session,task:task,didCompleteWithError:nil)
+        }
+        wait(for:[completed],timeout:5)
+    }
+
+    func testLateControlAndShutdownResponsesCannotResumeFailedOwner() throws {
+        for shutdownFirst in [false,true] {
+            let owner = try stoppedOwner()
+            owner.fail()
+            let summary = try shutdownEnvelope(shutdownPayload())
+            let control = try response(action:"stop",state:"STOPPING",sequence:1)
+            if shutdownFirst {
+                XCTAssertThrowsError(try owner.receiveShutdown(summary))
+                XCTAssertThrowsError(try owner.receive(control,now:now))
+            } else {
+                XCTAssertThrowsError(try owner.receive(control,now:now))
+                XCTAssertThrowsError(try owner.receiveShutdown(summary))
+            }
+            XCTAssertEqual(owner.state,"FAILED")
+            XCTAssertNil(owner.authorization); XCTAssertNil(owner.acceptedOutput)
+            XCTAssertThrowsError(try owner.command("stop"))
+        }
+    }
+
     func auditEntry(event: String, evidence: [String:Any], index: Int, previous: String,
                     request: String? = nil, binding: String? = nil, contract: String? = nil, generation: Int = 0) throws -> [String:Any] {
         func raw(_ value: Any) throws -> Data { try JSONSerialization.data(withJSONObject:value,options:[.sortedKeys,.withoutEscapingSlashes]) }
