@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const plain=x=>JSON.parse(JSON.stringify(x));
-function fixture(){let i=0;const w={console,Date,Math,JSON,Intl,ArrayBuffer,DataView,Float32Array,crypto:{randomUUID:()=>`pcm-${++i}`},location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio,p=a.makeProject({projectId:'p',projectName:'PCM',midiData:{ppq:480,tracks:[{id:'keep',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]},audioAssets:[{id:'legacy',file:'legacy.wav'}],legacy:{future:true}}),pcm={sampleRate:48000,channels:[[0,.25,-.5,.75],[0,-.25,.5,-.75]]};return{w,a,p,pcm}}
+function fixture(){let i=0;const w={console,Date,Math,JSON,Intl,ArrayBuffer,DataView,Float32Array,Blob,crypto:{randomUUID:()=>`pcm-${++i}`},location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio,p=a.makeProject({projectId:'p',projectName:'PCM',midiData:{ppq:480,tracks:[{id:'keep',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]},audioAssets:[{id:'legacy',file:'legacy.wav'}],legacy:{future:true}}),pcm={sampleRate:48000,channels:[[0,.25,-.5,.75],[0,-.25,.5,-.75]]};return{w,a,p,pcm}}
 async function ready(){const f=fixture();f.p=f.a.pcmImport(f.p,f.pcm,'voice.wav');const repo=f.a.memoryRepository([f.p,{...f.p,projectId:'other'}]);f.a.setRepository(repo);f.a.state.projects=[f.p];f.a.pcmMixView('p');f.a.pcmEditor.assetId=f.p.pcmMix.assets[0].id;f.a.pcmEditor.gainDb=-6;f.a.pcmEditor.preview=f.a.pcmPreview(f.p,f.a.pcmEditor.assetId,-6);return{...f,repo}}
 test('actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input',()=>{const{a,pcm}=fixture(),original=JSON.stringify(pcm),out=a.pcmGain(pcm,6.020599913279624);assert.equal(JSON.stringify(pcm),original);assert.deepEqual(plain(out.channels),[[0,.5,-1,1.5],[0,-.5,1,-1.5]]);const m=a.pcmAnalyze(out);assert.equal(m.peak,1.5);assert.equal(m.clippingSamples,4);assert.equal(m.frames,4);assert.equal(m.seconds,4/48000);assert.ok(Math.abs(m.rms-Math.sqrt(.875))<1e-12)});
 test('silence has no fake finite dBFS',()=>{const{a}=fixture(),m=a.pcmAnalyze({sampleRate:8000,channels:[[0,0]]});assert.equal(m.peakDb,null);assert.equal(m.rmsDb,null);assert.equal(m.clippingSamples,0)});
@@ -216,4 +216,42 @@ test('stream WAV reader rejects malformed headers and invalid slice sizes',async
  await assert.rejects(collect(new Blob([malformed]),1),/truncated-wav-stream/);
  const bad={size:b.byteLength,slice(){return{arrayBuffer:async()=>new ArrayBuffer(0)}}};
  await assert.rejects(collect(bad,1),/short-wav-stream-read/);
+});
+
+test('async long-WAV reader drives continuous EQ and compressor without boundary resets',async()=>{
+ const a=fixture().a,pcm={sampleRate:8000,channels:[
+   Array.from({length:211},(_,i)=>Math.sin(i*.04)*.35),
+   Array.from({length:211},(_,i)=>Math.cos(i*.03)*.4)]};
+ const settings={gainDb:2,eq:{frequency:900,gainDb:5,q:1},compressor:{thresholdDb:-16,ratio:3,attackMs:1,releaseMs:30}};
+ const expected=a.pcmCompress(a.pcmEq(a.pcmGain(pcm,2),900,5,1),settings.compressor);
+ const file=new Blob([a.pcmEncodeWav(pcm)]),seen=[];
+ for await(const part of a.pcmRenderLongWav(file,settings,17))seen.push(part);
+ assert.equal(seen.length,13);
+ for(let channel=0;channel<2;channel++){
+   const actual=seen.flatMap(item=>item.channels[channel]);
+   assert.equal(actual.length,211);
+   for(let i=0;i<actual.length;i++)assert.ok(Math.abs(actual[i]-expected.channels[channel][i])<.0002);
+ }
+});
+test('async long-WAV rendered binary has exact length, RIFF header and no full PCM JSON',async()=>{
+ const a=fixture().a,frames=160003,header=a.pcmEncodeWav({sampleRate:8000,channels:[[0]]});
+ const bytes=Buffer.alloc(44+frames*2);Buffer.from(header).copy(bytes,0,0,44);
+ bytes.writeUInt32LE(36+frames*2,4);bytes.writeUInt32LE(frames*2,40);
+ for(let i=0;i<frames;i++)bytes.writeInt16LE(i%5===0?4096:-4096,44+i*2);
+ const file=new Blob([bytes]),settings={gainDb:-6};
+ const result=await a.pcmRenderLongWavBlob(file,settings,4096);
+ assert.equal(result.frames,frames);assert.equal(result.channels,1);
+ assert.equal(result.blob.size,44+frames*2);
+ const view=new DataView(await result.blob.slice(0,44).arrayBuffer());
+ assert.equal(view.getUint32(4,true),36+frames*2);
+ assert.equal(view.getUint32(40,true),frames*2);
+ const audio=new DataView(await result.blob.slice(44,50).arrayBuffer());
+ const gain=10**(-6/20);
+ assert.ok(Math.abs(audio.getInt16(0,true)/32768-.125*gain)<1/32768);
+ assert.ok(Math.abs(audio.getInt16(2,true)/32768+.125*gain)<1/32768);
+});
+test('stream render rejects clipping and never returns partial final Blob',async()=>{
+ const a=fixture().a,pcm={sampleRate:8000,channels:[[.1,.1,1,.1]]},file=new Blob([a.pcmEncodeWav(pcm)]);
+ await assert.rejects(a.pcmRenderLongWavBlob(file,{gainDb:12},2),/wav-clipping-requires-lower-gain/);
+ await assert.rejects(a.pcmRenderLongWavBlob(file,{compressor:{ratio:0,thresholdDb:-12,attackMs:1,releaseMs:50}},2),/invalid-pcm-compressor/);
 });
