@@ -108,6 +108,16 @@ jobs:
           assert candidate['dynamicLinkers'] and candidate['externalPaths']
           assert all(loader['path'] == '/usr/lib/dyld' and loader['status'] == 'UNVERIFIED'
                      for loader in candidate['dynamicLinkers'])
+          native_graph = candidate['nativeDependencyGraph']
+          assert native_graph['externalSystemPolicyComplete'] is False
+          assert native_graph['publicationEligible'] is False and native_graph['approvedAnchor'] is False
+          assert all(native_graph[key] is False for key in ('parentLaunchAuthenticated',
+              'parentKernelOriginVerified','mappedBytesVerified','actualLoaded','runtimeSelectionVerified'))
+          assert native_graph['edgeCounts']['APPLE_SYSTEM_CANDIDATE_POLICY_REQUIRED'] > 0
+          print(json.dumps({'nativeGraphCounts':native_graph['edgeCounts'],
+              'nativeGraphDiagnostics':native_graph['diagnostics'],
+              'packageInternalNativeClosureComplete':native_graph['packageInternalNativeClosureComplete'],
+              'externalSystemPolicyComplete':native_graph['externalSystemPolicyComplete']}))
           report['packageLayoutCandidate'] = candidate
           print(json.dumps({'packageLayout': candidate}))
           Path('wrapper-build-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
