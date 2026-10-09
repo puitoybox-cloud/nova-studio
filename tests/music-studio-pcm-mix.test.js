@@ -152,3 +152,39 @@ test('Compression applied WAV bytes equal quantized rendered samples',()=>{
  const pcm=f.a.pcmRenderAsset(p.pcmMix.assets[0]),round=f.a.pcmDecodeWav(f.a.pcmEncodeWav(pcm));
  for(let i=0;i<pcm.channels[0].length;i++)assert.ok(Math.abs(round.channels[0][i]-pcm.channels[0][i])<=1/32768);
 });
+
+test('chunk DSP equals continuous full Gain/EQ/Compression across arbitrary boundaries',()=>{
+ const f=fixture(),a=f.a,frames=2500,pcm={sampleRate:8000,channels:[
+  Array.from({length:frames},(_,i)=>Math.sin(i*.031)*.7),
+  Array.from({length:frames},(_,i)=>Math.cos(i*.047)*.5)]};
+ const gain=2.5,eq={frequency:750,gainDb:5,q:1.3},compressor={thresholdDb:-18,ratio:3,attackMs:2,releaseMs:60};
+ const reference=a.pcmCompress(a.pcmEq(a.pcmGain(pcm,gain),eq.frequency,eq.gainDb,eq.q),compressor);
+ const splits=[137,1,503,204,711,944],parts=[],original=JSON.stringify(pcm);let start=0;
+ for(const n of splits){parts.push({sampleRate:8000,channels:pcm.channels.map(ch=>ch.slice(start,start+n))});start+=n}
+ assert.equal(start,frames);
+ const result=Array.from(a.pcmProcessChunks(parts,{sampleRate:8000,channelCount:2,gainDb:gain,eq,compressor}));
+ assert.equal(JSON.stringify(pcm),original);
+ for(let c=0;c<2;c++){const joined=result.flatMap(part=>part.channels[c]);assert.equal(joined.length,frames);
+  for(let i=0;i<frames;i++)assert.ok(Math.abs(joined[i]-reference.channels[c][i])<1e-12,'difference at '+c+':'+i);}
+});
+test('chunk processor streams beyond previous whole-project sample cap without concatenating full track',()=>{
+ const a=fixture().a,part={sampleRate:8000,channels:[Array(40000).fill(.125)]};
+ let provided=0,observed=0,count=0;
+ function* input(){for(let i=0;i<51;i++){provided++;yield part}}
+ for(const output of a.pcmProcessChunks(input(),{sampleRate:8000,channelCount:1,gainDb:0})){
+  observed+=output.channels[0].length;count++;
+  assert.equal(output.channels[0].length,40000);
+  assert.equal(output.channels[0][0],.125);
+ }
+ assert.equal(provided,51);assert.equal(count,51);assert.equal(observed,2040000);
+ assert.ok(observed>a.PCM_LIMIT);
+});
+test('stream rejects malformed chunk or format switch instead of corrupting original',()=>{
+ const a=fixture().a,good={sampleRate:8000,channels:[[0,.5]]};
+ assert.throws(()=>Array.from(a.pcmProcessChunks([],{sampleRate:8000,channelCount:1})),/pcm-stream-empty/);
+ assert.throws(()=>Array.from(a.pcmProcessChunks([good,{sampleRate:16000,channels:[[0]]}],{sampleRate:8000,channelCount:1})),/pcm-stream-format-changed/);
+ assert.throws(()=>Array.from(a.pcmProcessChunks([good],{sampleRate:8000,channelCount:1,gainDb:Infinity})),/invalid-pcm-gain/);
+ assert.throws(()=>Array.from(a.pcmProcessChunks([good],{sampleRate:8000,channelCount:1,compressor:{thresholdDb:0,ratio:100,attackMs:10,releaseMs:100}})),/invalid-pcm-compressor/);
+ assert.throws(()=>Array.from(a.pcmProcessChunks([{sampleRate:8000,channels:[[NaN]]}],{sampleRate:8000,channelCount:1})),/invalid-pcm-sample/);
+ assert.deepEqual(plain(good),{sampleRate:8000,channels:[[0,.5]]});
+});
