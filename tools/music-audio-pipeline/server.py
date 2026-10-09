@@ -7,6 +7,7 @@ locally, returned as a merged Type 1 MIDI file, then deleted with the temp tree.
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import importlib.util
 import json
@@ -884,10 +885,10 @@ def finish_owned_shutdown(stop_pipe):
     try:
         report['processingQuiescent']=acquired
         if acquired and DEMUCS_SESSION is not None:
-            binding=DEMUCS_SESSION.processing_binding
+            binding=copy.deepcopy(DEMUCS_SESSION.processing_binding)
             report['child']={'session':DEMUCS_SESSION.nonce,'parentBinding':binding}
             DEMUCS_SESSION.close()
-            report['childExit']=getattr(DEMUCS_SESSION,'shutdown_receipt',None)
+            report['childExit']=copy.deepcopy(getattr(DEMUCS_SESSION,'shutdown_receipt',None))
         if stop_pipe is not None and stop_pipe.stop_payload is not None:
             stop_pipe.send_final(report)
     finally:

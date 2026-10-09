@@ -410,6 +410,21 @@ class FinalDeliveryTests(unittest.TestCase):
         if hasattr(__import__('select'),'kqueue'):self.assertTrue(observation['kernelExitObserved'])
         self.assertEqual(b.key,'')
 
+    def test_helper_final_report_detaches_child_binding_and_exit_evidence(self):
+        import server as helper
+        from types import SimpleNamespace
+        child=SimpleNamespace(nonce='fixture',processing_binding={'input':{'digest':'e'*64}},
+            shutdown_receipt={'events':[{'exit':True}]},close=lambda:None)
+        with patch.object(helper,'DEMUCS_SESSION',child):report=helper.finish_owned_shutdown(None)
+        frozen=copy.deepcopy(report)
+        child.processing_binding['input']['digest']='f'*64
+        child.shutdown_receipt['events'][0]['exit']=False
+        self.assertEqual(report,frozen)
+        report['child']['parentBinding']['input']['digest']='0'*64
+        report['childExit']['events'][0]['exit']=True
+        self.assertEqual(child.processing_binding['input']['digest'],'f'*64)
+        self.assertFalse(child.shutdown_receipt['events'][0]['exit'])
+
     def test_busy_processing_never_fabricates_child_cleanup(self):
         import server as helper
         a,b=self.pair();events=[];helper.PROCESS_LOCK.acquire()

@@ -255,10 +255,10 @@ class RuntimeInventory:
             return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'PARTIAL',
                 'missing': missing, 'artifactClosure': 'UNVERIFIED',
                 'privatePython': copy.deepcopy(self.private_python),
-                'architecture': platform.machine(), 'models': list(self.models.values()),
-                'dependencies': list(self.dependencies.values()), 'native': [self.native[key] for key in sorted(self.native)],
-                'assets': list(self.assets.values()), 'largeArtifactVerification':
-                {'complete': not missing, 'entries': list(self.verification_evidence.values()),
+                'architecture': platform.machine(), 'models': copy.deepcopy(list(self.models.values())),
+                'dependencies': copy.deepcopy(list(self.dependencies.values())), 'native': copy.deepcopy([self.native[key] for key in sorted(self.native)]),
+                'assets': copy.deepcopy(list(self.assets.values())), 'largeArtifactVerification':
+                {'complete': not missing, 'entries': copy.deepcopy(list(self.verification_evidence.values())),
                  'cacheScope': 'PROCESS_LOCAL_DIGEST_RECEIPT'}}
 
     def require_processing(self):
