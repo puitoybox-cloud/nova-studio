@@ -374,6 +374,20 @@ class AuthorizationTests(unittest.TestCase):
             'ticket':'f'*64,'binding':c.binding,'processingContract':'e'*64},self.inventory)
 
 class FinalClosureTests(unittest.TestCase):
+    def test_stop_receipt_immediately_closes_launcher_browser_and_control_admission(self):
+        from test_production_lifecycle import LifecycleTests
+        l=LifecycleTests().make()
+        try:
+            l.start()
+            receipt=l.control_event('/owned-control',{'session':l.control.session,
+                'capability':l.control.capability,'sequence':0,'action':'stop'})
+            self.assertEqual(receipt['state'],'STOPPING')
+            self.assertEqual(l.state,'STOPPING')
+            for event in ['BROWSER_READY','IDENTITY_VERIFIED','FAILED','STOPPED']:
+                with self.assertRaisesRegex(ValueError,'stale-browser-receipt'): l.browser_event(event)
+            with self.assertRaisesRegex(ValueError,'closed-helper-admission'): l.control_event('/owned-control',{})
+        finally: l.close()
+
     def test_terminal_or_closing_browser_callbacks_cannot_reopen_or_replace_state(self):
         from test_production_lifecycle import LifecycleTests
         from unittest.mock import Mock

@@ -1039,6 +1039,7 @@ class LocalProductionLifecycle:
                 eligible=eligibility['processingEligible'],helper_alive=True)
             self.last_seen = time.monotonic()
             if response['state'] == 'STOPPING':
+                self.state = 'STOPPING'
                 self.eligibility = strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
                 self.done.set()
             return response
