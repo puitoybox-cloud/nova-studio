@@ -80,6 +80,33 @@ jobs:
           } > native-architecture-linkage-evidence.txt
           cat native-architecture-linkage-evidence.txt
 
+      - name: Observe Wrapper build without approving production assets
+        working-directory: tools/music-native-wrapper
+        env:
+          WRAPPER_BUILD_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - <<'PYOBS'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('../music-audio-pipeline').resolve()))
+          from wrapper_build_inventory import observe
+          report = observe('build/DerivedData/Build/Products/Debug/Music Studio.app',
+                           os.environ['WRAPPER_BUILD_REVISION'], 'x86_64')
+          assert report['status'] == 'INCOMPLETE' and report['complete'] is False
+          assert report['approvedAnchor'] is False and report['publicationEligible'] is False
+          assert report['observedGraph'] is not None and report['files'] and report['nativeImages']
+          assert all(node['evidence'] == 'OBSERVED_METADATA_ONLY' and
+                     node['licenseStatus'] == 'REVIEW_REQUIRED' for node in report['observedGraph']['nodes'])
+          assert all(slot['status'] == 'MISSING' for slot in report['missingApprovedAssets'])
+          Path('wrapper-build-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
+          print(json.dumps({'status': report['status'], 'complete': report['complete'],
+              'fileCount': len(report['files']), 'nativeImageCount': len(report['nativeImages']),
+              'graphNodeCount': len(report['observedGraph']['nodes']),
+              'nativeRoutingStatus': [image['routingStatus'] for image in report['nativeImages']],
+              'missingApprovedAssets': report['missingApprovedAssets'], 'approvedAnchor': False,
+              'publicationEligible': False, 'buildRevision': report['buildRevision']}))
+          PYOBS
+
       - uses: actions/upload-artifact@v4
         with:
           name: Native-package-evidence-${{ github.event.pull_request.head.sha || github.sha }}
@@ -87,6 +114,7 @@ jobs:
             tools/music-native-wrapper/macos-package-evidence.json
             tools/music-native-wrapper/ipad-simulator-package-evidence.json
             tools/music-native-wrapper/native-architecture-linkage-evidence.txt
+            tools/music-native-wrapper/wrapper-build-inventory.json
           if-no-files-found: error
           retention-days: 7
 
