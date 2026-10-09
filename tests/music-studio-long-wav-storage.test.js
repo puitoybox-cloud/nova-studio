@@ -90,3 +90,8 @@ test('long mix saves and Undo/Redo keep real AI workspace revision aligned witho
  const saved=await a.longMixSave(p.projectId,imported.assetId);assert.equal(saved.ok,true,saved.error);assert.equal(saved.project.aiWorkspace.baseRevision,saved.project.revision);assert.equal(JSON.stringify(saved.project.midiData),JSON.stringify(p.midiData));
  for(const direction of [-1,1]){const r=await a.longMixSave(p.projectId,imported.assetId,direction);assert.equal(r.ok,true,r.error);assert.equal(r.project.aiWorkspace.baseRevision,r.project.revision)}
 });
+test('cancel during pending real compare-and-put aborts staged metadata before transaction completion',async()=>{
+ const f=await setup(),{a,p,repo}=f,r=await a.pcmImportLongFile(wav(100),p.projectId),s={gainDb:-3,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-20,ratio:1,attackMs:10,releaseMs:100}};assert.equal((await a.longMixPreview(p.projectId,r.assetId,s)).ok,true);const baseline=JSON.stringify(await repo.get(p.projectId)),compare=repo.compareAndPut;
+ repo.compareAndPut=(item,base,guard)=>{const register=guard.registerAbort;guard.registerAbort=abort=>{register(abort);setImmediate(()=>a.longMixCancel())};return compare(item,base,guard)};
+ const result=await a.longMixSave(p.projectId,r.assetId);assert.equal(result.ok,false);assert.match(result.error,/cancelled/);assert.equal(JSON.stringify(await repo.get(p.projectId)),baseline);assert.equal(a.longMix.abort,null);
+});
