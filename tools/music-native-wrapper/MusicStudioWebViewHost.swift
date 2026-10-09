@@ -181,7 +181,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
             lifecycleState = "FAILED"
         } else {
             webView.evaluateJavaScript("window.MusicStudioAudioPipeline?.stopLocal(window.__NOVA_LOCAL_HANDOFF)", completionHandler: nil)
-            lifecycleState = "STOPPED"
+            if lifecycleState != "FAILED" { lifecycleState = "STOPPED" }
         }
         midiCoordinator?.stop()
         midiCoordinator = nil
@@ -201,14 +201,19 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
     }
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        ownedLifecycle?.fail()
         stop(); lifecycleState = "FAILED"
     }
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        ownedLifecycle?.fail()
         stop(); lifecycleState = "FAILED"
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard let url = webView.url, configuration.allows(url) else { lifecycleState = "FAILED"; stop(); return }
+        guard !["FAILED","STOPPING","STOPPED","CLOSED"].contains(lifecycleState),
+              !lifecycleState.hasPrefix("SHUTDOWN"),
+              ownedLifecycle.map({ !["FAILED","STOPPING","STOPPED"].contains($0.state) && !$0.state.hasPrefix("SHUTDOWN") }) ?? true else { return }
+        guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
         #if os(iOS)
         let platformName = "ipad"

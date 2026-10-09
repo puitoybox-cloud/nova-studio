@@ -302,7 +302,7 @@ class OwnedResultChannel:
 
     def close(self, *, failed=False):
         with self.lock:
-            self.state = 'FAILED' if failed else 'STOPPED'
+            self.state = 'FAILED' if failed or self.state == 'FAILED' else 'STOPPED'
             self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
             self.authorization = None; self.admitted = False; self.accepted_result = None
 
@@ -311,6 +311,7 @@ def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed
     """Detached authenticated summary. STOPPING/leader exit never proves descendants."""
     with channel.lock:
         if channel.final_receipt is not None: return json.loads(json.dumps(channel.final_receipt))
+        failed = failed or channel.state == 'FAILED'
         binding = channel.binding
         accepted = channel.accepted_result
         admission_closed = stop.get('status') == 'OBSERVED' and stop.get('state') == 'STOPPING'
@@ -1062,6 +1063,7 @@ class LocalProductionLifecycle:
     def close(self, *, failed=False):
         with self.close_lock:
             if self.final_receipt is not None: return
+            failed = failed or self.state == 'FAILED' or self.control.state == 'FAILED'
             preflight = self.prepared.get('_source_preflight')
             if preflight is not None:
                 try: preflight()
@@ -1121,7 +1123,7 @@ class LocalProductionLifecycle:
                 except (OSError, ValueError, TypeError): failed = True
             self.final_receipt = final_lifecycle_receipt(self.control,stop,self.shutdown_receipt,transport_closed,failed=failed)
             self.shutdown_state = self.final_receipt['payload']['completionState']
-            self.state = 'FAILED' if failed else 'STOPPED'
+            self.state = 'FAILED' if self.shutdown_state == 'FAILED' else 'STOPPED'
             # Explicit private owner sink, never a browser route or a reopened transport.
             try:
                 if self.final_sink is not None:

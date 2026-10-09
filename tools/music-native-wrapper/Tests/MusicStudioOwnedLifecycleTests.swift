@@ -204,7 +204,10 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
         }
         let summary=try XCTUnwrap(value["summary"] as? [String:Any])
         let ack=try owner.receiveShutdown(JSONSerialization.data(withJSONObject:summary))
-        XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL");XCTAssertEqual(owner.acceptedOutput,MusicStudioOwnedLifecycle.identity(Data("output".utf8)))
+        XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL");XCTAssertNil(owner.acceptedOutput);XCTAssertNil(owner.authorization)
+        for action in ["authorize","renew","result","accept","stop"] {
+            XCTAssertThrowsError(try owner.command(action,request:requestID,input:input,outputBytes:Data("output".utf8)))
+        }
         let envelope=try XCTUnwrap(JSONSerialization.jsonObject(with:ack) as? [String:Any]);let body=try XCTUnwrap(envelope["payload"] as? [String:Any])
         XCTAssertEqual(body["generation"] as? Int,0);XCTAssertEqual(body["completionState"] as? String,"PARTIAL")
     }

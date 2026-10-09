@@ -29,6 +29,20 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(scripts[0].source, MusicStudioWebMidiBridge.nativeWebMidiShimSource)
     }
 
+    func testLateNavigationCompletionCannotReplaceStoppedOrFailedState() {
+        let host = MusicStudioWebViewHost(configuration: .production, platform: "mac")
+        host.stop()
+        XCTAssertEqual(host.lifecycleState, "STOPPED")
+        host.webView(host.webView, didFinish: nil)
+        XCTAssertEqual(host.lifecycleState, "STOPPED")
+        host.webView(host.webView, didFail: nil, withError: NSError(domain: "fixture", code: 1))
+        XCTAssertEqual(host.lifecycleState, "FAILED")
+        host.webView(host.webView, didFinish: nil)
+        XCTAssertEqual(host.lifecycleState, "FAILED")
+        host.stop()
+        XCTAssertEqual(host.lifecycleState, "FAILED")
+    }
+
     func testShimExposesTheMusicStudioRequestMIDIAccessContract() throws {
         let context = try makeContext()
         XCTAssertEqual(context.evaluateScript("typeof navigator.requestMIDIAccess")?.toString(), "function")

@@ -30,9 +30,9 @@ class LifecycleTests(unittest.TestCase):
         def valid():return {'version':1,'pipelineRevision':2,'sourceDigest':'a'*64,'host':'127.0.0.1','port':8766,'localOnly':True,'lifecycleSession':lifecycle.server.session,'runtimeIdentity':{'actualInventory':{'mode':'STRICT','identityComplete':True}}}
         lifecycle.health=health or valid
         return lifecycle
-    def cleanup(self,l):
+    def cleanup(self,l,expected_state='STOPPED'):
         with patch('local_distribution_entry.os.killpg') as kill:
-            l.close();self.assertEqual(l.state,'STOPPED')
+            l.close();self.assertEqual(l.state,expected_state)
             self.assertFalse(l.eligibility['processingEligible']);self.assertEqual(l.server.nonce,'')
             self.assertEqual(l.server.server.socket.fileno(),-1)
         l.close()
@@ -56,6 +56,20 @@ class LifecycleTests(unittest.TestCase):
         with patch('local_distribution_entry.os.killpg'):
             with self.assertRaisesRegex(ValueError,'helper-startup'):l.start()
         self.assertTrue(l.server.closed)
+
+    def test_preexisting_failure_survives_default_cleanup(self):
+        for failed_owner in [False, True]:
+            l=self.make()
+            if failed_owner: l.control.close(failed=True)
+            else: l.state='FAILED'
+            l.close()
+            self.assertEqual(l.state,'FAILED')
+            self.assertEqual(l.control.state,'FAILED')
+            self.assertEqual(l.final_receipt['payload']['completionState'],'FAILED')
+            self.assertFalse(l.final_receipt['payload']['complete'])
+            self.assertTrue(l.server.closed)
+            l.close()
+            self.assertEqual(l.state,'FAILED')
 
     def test_owned_helper_disk_preflight_brackets_actual_spawn(self):
         l=self.make();events=[]
@@ -292,7 +306,7 @@ class LifecycleTests(unittest.TestCase):
             l.start();l.browser_event('FAILED');self.assertTrue(l.done.is_set())
             with self.assertRaises(ValueError):l.browser_event('IDENTITY_VERIFIED')
             self.assertFalse(l.eligibility['processingEligible'])
-        finally:self.cleanup(l)
+        finally:self.cleanup(l,expected_state='FAILED')
     def test_out_of_order_rejected(self):
         l=self.make()
         try:
