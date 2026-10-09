@@ -53,6 +53,9 @@ def inspect_native_graph(root, graph, architecture, main_executable):
     folds = {}; stamps = {}; directories = {}; diagnostics = []; images = {}; scripts = []
     def fold(name): return unicodedata.normalize('NFC',name).casefold()
     for node in nodes.values():
+        if not node['files']:
+            diagnostics.append({'parent':None,'assetId':node['id'],'status':'MISSING',
+                                'classification':BLOCKED,'reason':'missing-artifact-files'})
         for binding in node['files']:
             name = binding['path']
             if name in bindings: raise ValueError('duplicate-package-binding')
@@ -93,7 +96,9 @@ def inspect_native_graph(root, graph, architecture, main_executable):
                 routing = package_image_routes(path,architecture)
                 if routing['fileType'] not in (2,6,8): raise ValueError('unsupported-native-filetype')
                 images[name] = routing
-            elif owners[name]['kind'] in ('EXECUTABLE','PYTHON_RUNTIME','NATIVE_EXTENSION') or Path(name).suffix in ('.so','.dylib'):
+            elif owners[name]['kind']=='NATIVE_EXTENSION' or Path(name).suffix in ('.so','.dylib'):
+                raise ValueError('native-format-required')
+            elif owners[name]['kind'] in ('EXECUTABLE','PYTHON_RUNTIME'):
                 if prefix.startswith(b'#!'):
                     line = prefix.split(b'\n',1)[0]
                     if b'\n' not in prefix: raise ValueError('unbounded-script-interpreter')
