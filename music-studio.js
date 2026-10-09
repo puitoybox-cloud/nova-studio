@@ -931,7 +931,7 @@
       const tl=Math.tan(Math.PI*200/rate),th=Math.tan(Math.PI*2000/rate),al=tl/(1+tl),ah=th/(1+th),bl=(tl-1)/(tl+1),bh=(th-1)/(th+1);
       for(let i=0;i<n;i++){
         for(let c=0;c<channels;c++){
-          const x=chunk.channels[c][i],a=Math.abs(x);peak=Math.max(peak,a);sum+=x*x;windowSum+=x*x;if(a>=1)clipping++;
+          const x=chunk.channels[c][i],a=Math.abs(x);peak=Math.max(peak,a);sum+=x*x;windowSum+=x*x;if(a>=32767/32768)clipping++;
           low[c]=al*(x+previous[c])-bl*low[c];high[c]=ah*(x+previous[c])-bh*high[c];previous[c]=x;
           energy[0]+=low[c]**2;energy[1]+=(high[c]-low[c])**2;energy[2]+=(x-high[c])**2;
         }
@@ -943,7 +943,7 @@
     if(!frames)throw Error('mix-analysis-empty');finishWindow();
     const quantile=q=>{let count=0;for(let i=0;i<histogram.length;i++){count+=histogram[i];if(count>=Math.ceil(windows*q))return i-120}return null};
     const rms=Math.sqrt(sum/(frames*channels)),total=energy.reduce((a,b)=>a+b,0),peakDb=db(peak),rmsDb=db(rms);
-    return{frames,channels,sampleRate:rate,seconds:frames/rate,peak,peakDb,rms,rmsDb,clippingSamples:clipping,crestDb:peakDb===null?null:peakDb-rmsDb,windowP10Db:quantile(.1),windowP90Db:quantile(.9),dynamicRangeDb:quantile(.9)-quantile(.1),bandEnergy:energy,bandFractions:energy.map(v=>total?v/total:0),method:'100ms RMS histogram (1dB); 200/2000Hz bilinear one-pole approximate band energy; not LUFS'};
+    return{frames,channels,sampleRate:rate,seconds:frames/rate,peak,peakDb,rms,rmsDb,clippingSamples:clipping,crestDb:peakDb===null?null:peakDb-rmsDb,windowP10Db:quantile(.1),windowP90Db:quantile(.9),dynamicRangeDb:quantile(.9)-quantile(.1),bandEnergy:energy,bandFractions:energy.map(v=>total?v/total:0),method:'100ms RMS histogram (1dB); 200/2000Hz bilinear one-pole approximate band energy; possible clipping at abs(sample)>=32767/32768; not LUFS'};
   }
   function mixPropose(measured,saved){
     if(!measured||measured.rmsDb===null||measured.peakDb===null)throw Error('mix-analysis-silence');
