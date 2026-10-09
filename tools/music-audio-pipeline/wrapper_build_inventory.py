@@ -69,7 +69,16 @@ def observe(root,build,architecture):
         files.append(dict(item,status='OBSERVED_DISK_BYTES'))
         kind = 'EXECUTABLE' if relative == main or path.stat().st_mode & 0o111 else 'CONFIG'
         if prefix in MAGICS:
-            route = native_image_routes(path,architecture)
+            try:
+                route = native_image_routes(path,architecture)
+                route['routingStatus'] = 'OBSERVED_DISK_SYNTAX_ONLY'
+            except ValueError as error:
+                if str(error) != 'unsupported-macho-loader-or-environment-route': raise
+                # Keep the strict production parser unchanged. Inventory may retain
+                # bytes of an unsupported build, but cannot claim its routing/CPU.
+                route = {'format':'MACHO64','architecture':'UNVERIFIED','slice':'UNVERIFIED',
+                    'commands':None,'rpaths':None,'routingStatus':'UNSUPPORTED',
+                    'reason':'unsupported-macho-loader-or-environment-route'}
             if route['format'] != 'MACHO64': raise ValueError('non-macos-wrapper-image')
             signing = 'UNSIGNED_SELECTED_SLICE'
             try: filetype = unsigned_image_type(path,architecture)
@@ -87,7 +96,8 @@ def observe(root,build,architecture):
             else: kind = 'EXECUTABLE' if filetype == 2 else 'NATIVE_EXTENSION'
             natives.append({'path':relative,'architecture':route['architecture'],
                 'slice':route['slice'],'commands':route['commands'],'rpaths':route['rpaths'],
-                'signing':signing,'actualLoaded':False,'mappedBytesVerified':False})
+                'signing':signing,'routingStatus':route['routingStatus'],
+                'reason':route.get('reason'),'actualLoaded':False,'mappedBytesVerified':False})
         elif relative == main: raise ValueError('wrapper-executable-not-macho')
         if stable(path) != before: raise ValueError('changed-wrapper-file')
         groups.setdefault(kind,[]).append(item)

@@ -102,6 +102,7 @@ jobs:
           print(json.dumps({'status': report['status'], 'complete': report['complete'],
               'fileCount': len(report['files']), 'nativeImageCount': len(report['nativeImages']),
               'graphNodeCount': len(report['observedGraph']['nodes']),
+              'nativeRoutingStatus': [image['routingStatus'] for image in report['nativeImages']],
               'missingApprovedAssets': report['missingApprovedAssets'], 'approvedAnchor': False,
               'publicationEligible': False, 'buildRevision': report['buildRevision']}))
           PYOBS

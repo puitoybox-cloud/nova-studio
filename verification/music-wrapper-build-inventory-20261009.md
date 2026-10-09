@@ -59,3 +59,12 @@ not a measured completion ratio. No lifecycle/receipt/state/audit/publication ch
 Next safe checkpoint work: app-relative missing-slot diagnostics against explicit
 unapproved Wrapper evidence plus the existing actual generation inputs, without
 promoting evidence, choosing runtime policy or inventing asset paths/approval.
+
+Actual first-head CI observation exposed unsupported-macho-loader-or-environment-route
+for the built executable. A synthetic LC_LOAD_DYLINKER regression reproduces that
+exact exception before the correction. The observer now retains the authenticated
+read-only file identity in an unapproved graph while marking native routing and CPU
+as UNSUPPORTED/UNVERIFIED with no commands/rpaths inferred. The existing strict
+production Mach-O verifier and unsigned package acceptance are unchanged. This is
+a concrete packaging/parser limitation, not a claim that all remaining gaps are
+only external B/C/D/E. It requires further packaging-focused investigation.

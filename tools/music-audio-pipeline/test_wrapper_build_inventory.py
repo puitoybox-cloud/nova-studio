@@ -100,3 +100,18 @@ class WrapperBuildInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'MH_EXECUTE'): self.observe()
         (self.root/'Contents/Info.plist').write_bytes(plistlib.dumps([]))
         with self.assertRaisesRegex(ValueError,'info-plist'): self.observe()
+
+    def test_unhandled_executable_loader_is_observed_as_unsupported_not_accepted(self):
+        import struct
+        raw = bytearray(executable_macho(names=()))
+        text = b'/usr/lib/dyld\x00'; length = (12+len(text)+7)//8*8
+        command = struct.pack('<III',0xe,length,12)+text+b'\x00'*(length-12-len(text))
+        struct.pack_into('<II',raw,16,1,len(command)); raw.extend(command)
+        self.executable.write_bytes(raw)
+        report = self.observe()
+        image = report['nativeImages'][0]
+        self.assertEqual(image['routingStatus'],'UNSUPPORTED')
+        self.assertIsNone(image['commands']); self.assertEqual(image['architecture'],'UNVERIFIED')
+        self.assertFalse(report['complete']); self.assertFalse(report['publicationEligible'])
+        self.assertIsNotNone(report['observedGraph'])
+        self.assertFalse(verify_assembly(self.root,report['observedGraph'])['complete'])
