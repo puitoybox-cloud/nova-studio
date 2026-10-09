@@ -51,15 +51,43 @@ for(const [freq,gain,q] of [[NaN,1,1],[Infinity,1,1],[0,1,1],[22000,1,1],[1000,1
   const{a,pcm}=fixture();assert.throws(()=>a.pcmEq(pcm,freq,gain,q),/invalid-pcm-eq/);
 });
 
-test('EQ preview computes real peak and refuses accidental Gain Apply',async()=>{
+test('EQ preview computes real peak and commits EQ without rewriting original PCM',async()=>{
  const f=await ready(),id=f.a.pcmEditor.assetId,original=JSON.stringify(await f.repo.get('p'));
  const eq={frequency:1000,gainDb:6,q:1},preview=f.a.pcmEqPreview(f.p,id,eq);
  assert.equal(preview.kind,'eq-preview-only');
  assert.notEqual(preview.before.peak,preview.after.peak);
  f.a.pcmEditor.preview=preview;
  const result=await f.a.pcmApply('p');
- assert.equal(result.ok,false);
- assert.equal(JSON.stringify(await f.repo.get('p')),original);
+ assert.equal(result.ok,true);
+ assert.notEqual(JSON.stringify(await f.repo.get('p')),original);
+ assert.deepEqual(plain((await f.repo.get('p')).pcmMix.assets[0].original),plain(f.p.pcmMix.assets[0].original));
  const changed={...preview,eq:{...eq,gainDb:-6}};
  assert.notDeepEqual(plain(f.a.pcmEqPreview(f.p,id,changed.eq).after),plain(preview.after));
+});
+
+test('EQ applied signal is used by Gain preview, A/B and WAV render, and EQ Undo/Redo protects unrelated data',async()=>{
+ const f=await ready(),id=f.a.pcmEditor.assetId,pcmBefore=plain(f.p.pcmMix.assets[0].original),baseline=plain(f.p.midiData);
+ const eq={frequency:1000,gainDb:-6,q:1};f.a.pcmEditor.preview=f.a.pcmEqPreview(f.p,id,eq);
+ assert.equal((await f.a.pcmApply('p')).ok,true);
+ let saved=await f.repo.get('p');assert.equal(saved.pcmMix.assets[0].eqHistory.cursor,1);
+ assert.deepEqual(plain(saved.pcmMix.assets[0].original),pcmBefore);assert.deepEqual(plain(saved.midiData),baseline);
+ assert.deepEqual(plain(f.a.pcmRenderAsset(saved.pcmMix.assets[0]).channels),plain(f.a.pcmEq(f.a.pcmGain(saved.pcmMix.assets[0].original,0),1000,-6,1).channels));
+ assert.equal(f.a.pcmPreview(saved,id,-3).before.peak,f.a.pcmAnalyze(f.a.pcmRenderAsset(saved.pcmMix.assets[0])).peak);
+ assert.equal((await f.a.pcmUndoRedoEq('p',-1)).ok,true);
+ saved=await f.repo.get('p');assert.equal(saved.pcmMix.assets[0].eqHistory.cursor,0);
+ assert.deepEqual(plain(f.a.pcmRenderAsset(saved.pcmMix.assets[0])),plain(f.p.pcmMix.assets[0].original));
+ assert.equal((await f.a.pcmUndoRedoEq('p',1)).ok,true);
+ saved=await f.repo.get('p');assert.equal(saved.pcmMix.assets[0].eqHistory.cursor,1);
+ assert.deepEqual(plain(saved.midiData),baseline);
+});
+test('EQ history validates imported state and preview cannot adopt after state drift',()=>{
+ const f=fixture();let p=f.a.pcmImport(f.p,f.pcm,'eq'),id=p.pcmMix.assets[0].id;
+ const eq={frequency:1200,gainDb:3,q:1},preview=f.a.pcmEqPreview(p,id,eq);
+ preview.after.peak=999;assert.throws(()=>f.a.pcmEqAdopt(p,preview),/stale-or-modified/);
+ p=f.a.pcmEqAdopt(p,f.a.pcmEqPreview(p,id,eq));
+ assert.equal(f.a.validateProject(JSON.parse(JSON.stringify(p))).valid,true);
+ const bad=JSON.parse(JSON.stringify(p));bad.pcmMix.assets[0].eqHistory.cursor=500;
+ assert.equal(f.a.validateProject(bad).valid,false);
+ const stale=f.a.pcmEqPreview(p,id,{frequency:1200,gainDb:4,q:1});stale.baseline='stale';
+ assert.throws(()=>f.a.pcmEqAdopt(p,stale),/stale-or-modified/);
 });
