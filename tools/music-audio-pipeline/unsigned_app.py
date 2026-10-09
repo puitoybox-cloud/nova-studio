@@ -12,7 +12,8 @@ from pathlib import Path, PurePosixPath
 from runtime_inventory import local, stable
 from scoped_closure import validate_graph, MAX_FILES
 from dependency_identity import verify_local_asset
-from runtime_evidence import native_image_routes, _expand_macho_path, _macho_slice
+from runtime_evidence import _expand_macho_path, _macho_slice
+from package_macho import package_image_routes
 from unsigned_generation import inspect as inspect_generation, assemble as assemble_generation
 
 MAGICS = {b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf', b'\xca\xfe\xba\xbe',
@@ -60,7 +61,7 @@ def layout(root, graph, architecture):
             missing.append({'path':name,'status':'MISSING','reason':'unbound-app-layout'})
     report = {'status':'INCOMPLETE','layoutComplete':False,'nativeDiskRoutesComplete':False,
               'missing':missing,'nestedMachO':[],'signingOrderCandidate':[],
-              'externalPaths':[], 'publicationEligible':False,'runtimeAcceptance':'UNVERIFIED',
+              'externalPaths':[], 'dynamicLinkers':[], 'publicationEligible':False,'runtimeAcceptance':'UNVERIFIED',
               'signing':'NOT_PERFORMED','externalRequests':0}
     if missing: return report
     # All authenticated application files must be present, including license material.
@@ -104,14 +105,15 @@ def layout(root, graph, architecture):
         if is_executable and not path.stat().st_mode & 0o111:
             raise ValueError('app-executable-permission-missing')
         if magic in MAGICS:
-            routing = native_image_routes(path,architecture)
+            routing = package_image_routes(path,architecture)
             if routing['format'] != 'MACHO64': raise ValueError('non-macos-native-image')
             filetype = unsigned_image_type(path,architecture)
             if name == main and filetype != 2: raise ValueError('native-wrapper-not-MH_EXECUTE')
             verify_local_asset(root,name,binding,8*1024**3)
             images[name] = routing
             report['nestedMachO'].append({'path':name,'architecture':routing['architecture'],
-                'digest':binding['digest'],'byteLength':binding['byteLength'],'executable':is_executable})
+                'digest':binding['digest'],'byteLength':binding['byteLength'],'executable':is_executable,
+                'installName':routing['installName']})
         elif is_executable:
             # Shell Helper remains separately visible, never called a native wrapper.
             executables.append(name)
@@ -119,6 +121,11 @@ def layout(root, graph, architecture):
     index = {str(local(root,name)):name for name in images}
     edges = []
     for name,routing in images.items():
+        if routing['dynamicLinker'] is not None:
+            loader = routing['dynamicLinker']
+            report['dynamicLinkers'].append({'parent':name,'path':loader,'status':'UNVERIFIED'})
+            classification = 'APPLE_SYSTEM_LOADER_CANDIDATE_POLICY_REQUIRED' if loader == '/usr/lib/dyld' else 'EXTERNAL_DYNAMIC_LINKER_POLICY_REQUIRED'
+            report['externalPaths'].append({'parent':name,'path':loader,'kind':classification,'status':'UNVERIFIED'})
         for rpath in routing['rpaths']:
             if rpath != '@loader_path' and not rpath.startswith('@loader_path/'):
                 report['externalPaths'].append({'parent':name,'path':rpath,'kind':'LC_RPATH','status':'UNVERIFIED'})

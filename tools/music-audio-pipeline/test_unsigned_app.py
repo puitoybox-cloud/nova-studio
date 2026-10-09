@@ -137,3 +137,31 @@ class UnsignedAppTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'pre-signed'):
             app.layout(self.root,self.graph,'x86_64')
         self.assertEqual((self.root/'Contents/MacOS/Music Studio').read_bytes(),before)
+
+    def test_dynamic_linker_is_recorded_without_granting_system_policy(self):
+        from test_package_macho import image, route_command
+        self.replace(1,image([route_command(0xe,'/usr/lib/dyld')]))
+        report = app.layout(self.root,self.graph,'x86_64')
+        self.assertTrue(report['layoutComplete'])
+        self.assertFalse(report['nativeDiskRoutesComplete'])
+        self.assertFalse(report['publicationEligible'])
+        self.assertEqual(report['dynamicLinkers'][0]['path'],'/usr/lib/dyld')
+        self.assertEqual(report['externalPaths'][0]['kind'],'APPLE_SYSTEM_LOADER_CANDIDATE_POLICY_REQUIRED')
+        self.assertEqual(report['status'],'PARTIAL')
+
+    def test_foreign_dynamic_loader_never_completes_disk_candidate(self):
+        from test_package_macho import image, route_command
+        for loader in ('/opt/homebrew/lib/dyld','@loader_path/private-dyld','dyld'):
+            with self.subTest(loader=loader):
+                self.replace(1,image([route_command(0xe,loader)]))
+                with patch.object(app,'inspect_generation',return_value=({'complete':True},self.graph)):
+                    report = app.inspect(self.root,'manifest','anchor','build','x86_64')
+                self.assertFalse(report['unsignedDiskComplete'])
+                self.assertFalse(report['complete'])
+                self.assertEqual(report['appLayout']['externalPaths'][0]['kind'],'EXTERNAL_DYNAMIC_LINKER_POLICY_REQUIRED')
+
+    def test_dyld_environment_still_rejected_at_package_boundary(self):
+        from test_package_macho import image, route_command
+        self.replace(1,image([route_command(0x27,'DYLD_LIBRARY_PATH=/foreign')]))
+        with self.assertRaisesRegex(ValueError,'environment-forbidden'):
+            app.layout(self.root,self.graph,'x86_64')

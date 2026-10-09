@@ -90,6 +90,7 @@ jobs:
           from pathlib import Path
           sys.path.insert(0, str(Path('../music-audio-pipeline').resolve()))
           from wrapper_build_inventory import observe
+          from unsigned_app import layout
           report = observe('build/DerivedData/Build/Products/Debug/Music Studio.app',
                            os.environ['WRAPPER_BUILD_REVISION'], 'x86_64')
           assert report['status'] == 'INCOMPLETE' and report['complete'] is False
@@ -98,6 +99,17 @@ jobs:
           assert all(node['evidence'] == 'OBSERVED_METADATA_ONLY' and
                      node['licenseStatus'] == 'REVIEW_REQUIRED' for node in report['observedGraph']['nodes'])
           assert all(slot['status'] == 'MISSING' for slot in report['missingApprovedAssets'])
+          assert all(image['packageRouting']['scope'] == 'PACKAGE_DISK_SYNTAX_ONLY' and
+                     image['packageRouting']['runtimeSelectionVerified'] is False for image in report['nativeImages'])
+          candidate = layout('build/DerivedData/Build/Products/Debug/Music Studio.app',
+                             report['observedGraph'], 'x86_64')
+          assert candidate['layoutComplete'] and candidate['status'] == 'PARTIAL'
+          assert candidate['nativeDiskRoutesComplete'] is False and candidate['publicationEligible'] is False
+          assert candidate['dynamicLinkers'] and candidate['externalPaths']
+          assert all(loader['path'] == '/usr/lib/dyld' and loader['status'] == 'UNVERIFIED'
+                     for loader in candidate['dynamicLinkers'])
+          report['packageLayoutCandidate'] = candidate
+          print(json.dumps({'packageLayout': candidate}))
           Path('wrapper-build-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
           print(json.dumps({'status': report['status'], 'complete': report['complete'],
               'fileCount': len(report['files']), 'nativeImageCount': len(report['nativeImages']),

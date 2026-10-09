@@ -115,3 +115,16 @@ class WrapperBuildInventoryTests(unittest.TestCase):
         self.assertFalse(report['complete']); self.assertFalse(report['publicationEligible'])
         self.assertIsNotNone(report['observedGraph'])
         self.assertFalse(verify_assembly(self.root,report['observedGraph'])['complete'])
+
+    def test_package_loader_syntax_does_not_promote_runtime_or_approval(self):
+        from test_package_macho import image, route_command
+        self.executable.write_bytes(image([route_command(0xe,'/usr/lib/dyld')]))
+        report = self.observe(); native = report['nativeImages'][0]
+        self.assertEqual(native['routingStatus'],'UNSUPPORTED')
+        self.assertEqual(native['architecture'],'UNVERIFIED')
+        self.assertEqual(native['packageRouting']['architecture'],'x86_64')
+        self.assertEqual(native['packageRouting']['dynamicLinker'],'/usr/lib/dyld')
+        self.assertFalse(native['packageRouting']['runtimeSelectionVerified'])
+        self.assertFalse(native['actualLoaded']); self.assertFalse(native['mappedBytesVerified'])
+        self.assertFalse(report['complete']); self.assertFalse(report['approvedAnchor'])
+        self.assertFalse(verify_assembly(self.root,report['observedGraph'])['complete'])
