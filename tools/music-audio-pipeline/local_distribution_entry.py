@@ -1014,7 +1014,8 @@ class LocalProductionLifecycle:
 
     def control_event(self, route, value):
         with self.lock:
-            if self.closing: raise ValueError('closed-helper-admission')
+            if self.closing or self.state in ('FAILED','STOPPING','STOPPED','CLOSED') or self.state.startswith('SHUTDOWN'):
+                raise ValueError('closed-helper-admission')
             if self.child is None or self.child.poll() is not None:
                 self.state = 'FAILED'; self.control.close(failed=True); self.done.set()
                 raise ValueError('unexpected-helper-termination')

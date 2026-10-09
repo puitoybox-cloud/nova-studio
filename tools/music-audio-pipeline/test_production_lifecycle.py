@@ -71,6 +71,18 @@ class LifecycleTests(unittest.TestCase):
             l.close()
             self.assertEqual(l.state,'FAILED')
 
+    def test_terminal_launcher_rejects_control_before_health_or_owner_dispatch(self):
+        for terminal in ['FAILED','STOPPING','STOPPED','SHUTDOWN_PARTIAL','CLOSED']:
+            l=self.make();l.child=self.child;l.state=terminal
+            try:
+                with patch.object(l,'verified_owned_health') as health, patch.object(l.control,'command') as command, \
+                        patch.object(l.control,'admit') as admit, patch.object(l.control,'publish') as publish:
+                    for route in ['/owned-control','/owned-helper-admit','/owned-helper-result']:
+                        with self.assertRaisesRegex(ValueError,'closed-helper-admission'):
+                            l.control_event(route,{'action':'renew'})
+                    health.assert_not_called();command.assert_not_called();admit.assert_not_called();publish.assert_not_called()
+            finally:l.close(failed=True)
+
     def test_owned_helper_disk_preflight_brackets_actual_spawn(self):
         l=self.make();events=[]
         l.prepared['_source_preflight']=lambda:events.append('verify')
