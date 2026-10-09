@@ -5,7 +5,7 @@ permissions:
   contents: read
 jobs:
   software:
-    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-long-wav-mix-ui-v1'
+    if: github.event.ref_type == 'branch' && (github.event.ref == 'feature/music-long-wav-mix-ui-v1' || github.event.ref == 'verification/music-long-wav-mix-ui-v1-final')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -37,7 +37,7 @@ jobs:
           PY
           git diff --check b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff...HEAD
   native:
-    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-long-wav-mix-ui-v1'
+    if: github.event.ref_type == 'branch' && (github.event.ref == 'feature/music-long-wav-mix-ui-v1' || github.event.ref == 'verification/music-long-wav-mix-ui-v1-final')
     runs-on: macos-15-intel
     timeout-minutes: 20
     steps:

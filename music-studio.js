@@ -893,7 +893,7 @@
       const h=longMixHistory(a);
       if(direction){if(![-1,1].includes(direction)||h.cursor+direction<0||h.cursor+direction>=h.settings.length)throw Error('long-mix-history-boundary');h.cursor+=direction}
       else{if(!candidate||candidate.assetId!==assetId||candidate.baseline!==JSON.stringify(p))throw Error('long-mix-preview-stale');h.settings=h.settings.slice(0,h.cursor+1);h.settings.push(longMixSettings(candidate.settings,a.sampleRate));if(h.settings.length>100)h.settings.shift();h.cursor=h.settings.length-1}
-      const updated=clone(p);updated.longWavAssets.find(a=>a.id===assetId).mixHistory=h;updated.revision=(p.revision||0)+1;updated.updatedAt=now();
+      const updated=clone(p);updated.longWavAssets.find(a=>a.id===assetId).mixHistory=h;updated.revision=(p.revision||0)+1;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,updated.projectId,updated.revision);
       if(!validateProject(updated).valid)throw Error('invalid-long-mix-project');return updated;
     },pcmEditor.generation,()=>{if(token!==longMix.generation)throw Error('long-mix-cancelled')}).then(r=>{if(r.ok){longMix.candidate=null;longMixStop()}return r});
   }
