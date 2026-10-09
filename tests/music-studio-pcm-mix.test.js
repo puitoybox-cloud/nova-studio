@@ -91,3 +91,27 @@ test('EQ history validates imported state and preview cannot adopt after state d
  const stale=f.a.pcmEqPreview(p,id,{frequency:1200,gainDb:4,q:1});stale.baseline='stale';
  assert.throws(()=>f.a.pcmEqAdopt(p,stale),/stale-or-modified/);
 });
+
+test('real stereo-linked compressor attenuates sustained signal and preserves original',()=>{
+ const{a}=fixture(),pcm={sampleRate:8000,channels:[Array(3000).fill(.8),Array(3000).fill(-.8)]},original=JSON.stringify(pcm);
+ const out=a.pcmCompress(pcm,{thresholdDb:-20,ratio:4,attackMs:.1,releaseMs:100});
+ assert.equal(JSON.stringify(pcm),original);
+ assert.ok(out.channels[0][2999]>0&&out.channels[0][2999]<.45);
+ assert.equal(out.channels[0][2999],-out.channels[1][2999]);
+ assert.deepEqual(plain(a.pcmCompress(pcm,{thresholdDb:-20,ratio:1,attackMs:10,releaseMs:100})),pcm);
+});
+test('compressor silence passes unchanged and envelope release recovers gain',()=>{
+ const{a}=fixture(),v={thresholdDb:-20,ratio:4,attackMs:.1,releaseMs:10};
+ assert.deepEqual(plain(a.pcmCompress({sampleRate:8000,channels:[[0,0,0]]},v).channels),[[0,0,0]]);
+ const pcm={sampleRate:8000,channels:[[...Array(3000).fill(.8),...Array(3000).fill(.03)]]};
+ const out=a.pcmCompress(pcm,v).channels[0];
+ assert.ok(out[3000]<.03);
+ assert.ok(out[5999]>out[3000]);
+});
+for(const [name,s] of [
+ ['threshold',{thresholdDb:-61,ratio:4,attackMs:10,releaseMs:100}],
+ ['ratio',{thresholdDb:-12,ratio:0,attackMs:10,releaseMs:100}],
+ ['attack',{thresholdDb:-12,ratio:4,attackMs:0,releaseMs:100}],
+ ['release',{thresholdDb:-12,ratio:4,attackMs:10,releaseMs:Infinity}],
+ ['typed',{thresholdDb:'-12',ratio:4,attackMs:10,releaseMs:100}]
+])test('compressor rejects invalid '+name,()=>{const{a,pcm}=fixture();assert.throws(()=>a.pcmCompress(pcm,s),/invalid-pcm-compressor/);});
