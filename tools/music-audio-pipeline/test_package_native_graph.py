@@ -222,3 +222,35 @@ class PackageNativeGraphTests(unittest.TestCase):
         r=self.inspect(); self.assertEqual(r['privateCPythonNativeClosureStatus'],'UNVERIFIED')
         self.assertEqual(r['edgeCounts']['APPLE_SYSTEM_CANDIDATE_POLICY_REQUIRED'],2)
         self.assertFalse(r['actualLoaded']); self.assertFalse(r['publicationEligible'])
+
+    def test_extension_without_suffix_requires_native_bytes(self):
+        self.add('Contents/Resources/native-module', b'ordinary text', 'NATIVE_EXTENSION')
+        r = self.inspect()
+        self.assertFalse(r['packageFilesComplete'])
+        self.assertFalse(r['packageInternalNativeClosureComplete'])
+        self.assertTrue(any(d['reason'] == 'native-format-required' for d in r['diagnostics']))
+
+    def test_extension_script_cannot_replace_native_bytes(self):
+        self.add('Contents/Resources/native-module', b'#!/bin/bash\nexit 0\n', 'NATIVE_EXTENSION')
+        r = self.inspect()
+        self.assertFalse(r['packageFilesComplete'])
+        self.assertFalse(r['architectureClosureComplete'])
+        self.assertEqual(r['helperInterpreters'], [])
+        self.assertTrue(any(d['reason'] == 'native-format-required' for d in r['diagnostics']))
+
+    def test_shared_library_script_cannot_become_helper(self):
+        self.add('Contents/Resources/site-packages/fake.so', b'#!/bin/sh\nexit 0\n', 'PYTHON_DISTRIBUTION')
+        r = self.inspect()
+        self.assertFalse(r['transitiveClosureComplete'])
+        self.assertEqual(r['helperInterpreters'], [])
+        self.assertTrue(any(d['reason'] == 'native-format-required' for d in r['diagnostics']))
+
+    def test_empty_native_asset_does_not_complete_package(self):
+        self.nodes.append({'id': 'missing-native', 'kind': 'NATIVE_EXTENSION', 'version': 'TEST_ONLY',
+            'requires': [], 'files': [], 'artifactDigest': hashlib.sha256(canonical([])).hexdigest(),
+            'evidence': 'MISSING', 'licenseStatus': 'REVIEW_REQUIRED'})
+        r = self.inspect()
+        self.assertFalse(r['packageFilesComplete'])
+        self.assertFalse(r['packageInternalNativeClosureComplete'])
+        self.assertTrue(any(d['status'] == 'MISSING' and d['assetId'] == 'missing-native'
+                            for d in r['diagnostics']))
