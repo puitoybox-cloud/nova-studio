@@ -374,6 +374,28 @@ class AuthorizationTests(unittest.TestCase):
             'ticket':'f'*64,'binding':c.binding,'processingContract':'e'*64},self.inventory)
 
 class FinalClosureTests(unittest.TestCase):
+    def test_failed_channel_cannot_be_closed_or_summarized_as_success(self):
+        from local_distribution_entry import final_lifecycle_receipt, acknowledge_final_lifecycle, _digest
+        import hmac
+        for repeat_close in [False, True]:
+            c=OwnedResultChannel('a'*64,time.monotonic()+20)
+            c.close(failed=True)
+            if repeat_close: c.close()
+            self.assertEqual(c.state,'FAILED')
+            summary=final_lifecycle_receipt(c,{'status':'OBSERVED','state':'STOPPING'},
+                {'ownedDescendantsComplete':True,'remainingOwnedDescendants':0},True)
+            self.assertEqual(summary['payload']['completionState'],'FAILED')
+            self.assertFalse(summary['payload']['complete'])
+            self.assertEqual(c.state,'FAILED')
+            body={'format':'NOVA_FINAL_ACKNOWLEDGEMENT','version':1,'owner':c.owner,'session':c.session,
+                'request':None,'bindingDigest':None,'processingContract':None,'generation':0,
+                'summaryDigest':_digest(summary['payload']),'auditDigest':c.audit.entries[-1]['digest'],
+                'completionState':'FAILED','accepted':True}
+            ack={'payload':body,'authentication':hmac.new(c.ack_key.encode(),
+                json.dumps(body,sort_keys=True,separators=(',',':')).encode(),hashlib.sha256).hexdigest()}
+            self.assertFalse(acknowledge_final_lifecycle(c,ack)['complete'])
+            with self.assertRaises(ValueError): acknowledge_final_lifecycle(c,ack)
+
     def test_partial_final_authentication_after_invalidation_and_duplicate_snapshot(self):
         import hmac
         from local_distribution_entry import final_lifecycle_receipt

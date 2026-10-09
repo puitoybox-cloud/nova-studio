@@ -402,6 +402,9 @@ public final class MusicStudioOwnedLifecycle {
             let acknowledgement = try Self.canonical(["payload":ack,"authentication":try Self.authentication(ack,key:Data(ackKey.utf8))])
             state = summary.complete ? "SHUTDOWN_OBSERVED" : "SHUTDOWN_" + summary.completionState
             shutdownReceived = true; finalKey = Data(); authorization = nil
+            acceptedOutput = nil; acceptedResultID = nil; acceptedResultDigest = nil
+            requestID = nil; bindingDigest = nil; result = nil; expectedAuthorization = nil
+            pending = nil; shutdownReceiptDeadline = nil
             return acknowledgement
         } catch { fail(); finalKey = Data(); throw error }
     }
