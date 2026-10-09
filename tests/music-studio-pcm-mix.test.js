@@ -31,3 +31,22 @@ test('PCM IndexedDB Apply waits for transaction commit and reopens actual origin
 test('PCM IndexedDB quota failure aborts all writes and allows retry',async()=>{const f=await indexedPcm();f.db.control.failPut=true;assert.equal((await f.a.pcmApply('p')).ok,false);assert.deepEqual(plain(await f.repo.get('p')),plain(f.p));assert.ok(f.a.pcmEditor.preview);f.db.control.failPut=false;assert.equal((await f.a.pcmApply('p')).ok,true)});
 test('PCM IndexedDB compare-and-put rejects competing tab at readwrite boundary',async()=>{const f=await indexedPcm();await f.repo.put({...f.p,productionNotes:'competing tab'});assert.equal((await f.a.pcmApply('p')).ok,false);assert.equal((await f.repo.get('p')).productionNotes,'competing tab')});
 test('Preview Cancel is read-only and leaving route invalidates pending operation',async()=>{const f=await ready(),before=JSON.stringify(await f.repo.get('p'));f.a.pcmCancel();assert.equal(f.a.pcmEditor.preview,null);assert.equal(JSON.stringify(await f.repo.get('p')),before);f.a.pcmEditor.preview=f.a.pcmPreview(f.p,f.a.pcmEditor.assetId,-6);const get=f.repo.get;f.repo.get=async id=>{f.a.renderRoute('#music-studio');return get(id)};assert.equal((await f.a.pcmApply('p')).ok,false);assert.equal(JSON.stringify(await get('p')),before)});
+
+test('EQ actually transforms samples deterministically without mutating source',()=>{
+  const{a,pcm}=fixture(),before=JSON.stringify(pcm),out=a.pcmEq(pcm,2000,6,1);
+  assert.equal(JSON.stringify(pcm),before);
+  assert.notDeepEqual(plain(out.channels),plain(pcm.channels));
+  assert.deepEqual(plain(a.pcmEq(pcm,2000,6,1)),plain(out));
+  assert.deepEqual(plain(a.pcmEq(pcm,2000,0).channels),plain(pcm.channels));
+  assert.notStrictEqual(a.pcmEq(pcm,2000,0).channels[0],pcm.channels[0]);
+});
+test('EQ processes stereo independently and leaves silent channel silent',()=>{
+  const{a}=fixture(),pcm={sampleRate:48000,channels:[[1,...Array(127).fill(0)],Array(128).fill(0)]};
+  const out=a.pcmEq(pcm,1000,-6,1);
+  assert.ok(out.channels[0].some((v,i)=>Math.abs(v-pcm.channels[0][i])>1e-7));
+  assert.ok(out.channels[1].every(v=>v===0));
+  assert.equal(a.pcmAnalyze(out).frames,128);
+});
+for(const [freq,gain,q] of [[NaN,1,1],[Infinity,1,1],[0,1,1],[22000,1,1],[1000,19,1],[1000,-19,1],[1000,1,0],[1000,1,11],[1000,'6',1]])test('EQ fails closed on invalid coefficients '+String(freq)+':'+String(gain)+':'+String(q),()=>{
+  const{a,pcm}=fixture();assert.throws(()=>a.pcmEq(pcm,freq,gain,q),/invalid-pcm-eq/);
+});
