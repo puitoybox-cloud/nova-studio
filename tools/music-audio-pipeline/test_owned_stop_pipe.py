@@ -25,6 +25,19 @@ class StopPipeTests(unittest.TestCase):
     def message(self,a):
         return a.seal({**a.identity,'kind':'STOP','requestBindingDigest':'e'*64,'challenge':'f'*64})
 
+    def test_sealed_payload_detaches_nested_origin_and_shutdown_evidence(self):
+        for kind in ('ORIGIN','HELPER_SHUTDOWN'):
+            a,b=self.pair()
+            payload={**a.identity,'kind':kind,'evidence':{'entries':[{'digest':'e'*64}]}}
+            sealed=a.seal(payload);original=copy.deepcopy(sealed)
+            payload['evidence']['entries'][0]['digest']='f'*64
+            payload['evidence']['entries'].append({'late':True})
+            self.assertEqual(sealed,original)
+            self.assertEqual(sealed['authentication'],b.seal(sealed['payload'])['authentication'])
+            a.close();self.assertEqual(sealed,original)
+            sealed['payload']['evidence']['entries'][0]['digest']='0'*64
+            self.assertNotEqual(sealed['authentication'],b.seal(sealed['payload'])['authentication'])
+
     def test_authenticated_one_shot_stop_reply_and_key_erasure(self):
         a,b=self.pair();events=[];errors=[]
         def run():
@@ -330,6 +343,7 @@ class FinalDeliveryTests(unittest.TestCase):
                     envelope=b.seal(payload)
                     payload[field]=0 if field=='deadline' else {'tampered':True} if field=='shutdown' else '0'*64
                     if field!='shutdown':envelope=b.seal(payload)
+                    else:envelope['payload']['shutdown']=payload['shutdown']
                     b.send(envelope,budget=65536)
                 except BaseException as error:errors.append(error)
             thread=threading.Thread(target=worker);thread.start();a.request(None)
