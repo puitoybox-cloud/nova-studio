@@ -217,3 +217,41 @@ test('stream WAV reader rejects malformed headers and invalid slice sizes',async
  const bad={size:b.byteLength,slice(){return{arrayBuffer:async()=>new ArrayBuffer(0)}}};
  await assert.rejects(collect(bad,1),/short-wav-stream-read/);
 });
+
+test('async long-WAV reader drives continuous EQ and compressor without boundary resets',async()=>{
+ const a=fixture().a,pcm={sampleRate:8000,channels:[
+   Array.from({length:211},(_,i)=>Math.sin(i*.04)*.35),
+   Array.from({length:211},(_,i)=>Math.cos(i*.03)*.4)]};
+ const settings={gainDb:2,eq:{frequency:900,gainDb:5,q:1},compressor:{thresholdDb:-16,ratio:3,attackMs:1,releaseMs:30}};
+ const expected=a.pcmCompress(a.pcmEq(a.pcmGain(pcm,2),900,5,1),settings.compressor);
+ const file=new Blob([a.pcmEncodeWav(pcm)]),seen=[];
+ for await(const part of a.pcmRenderLongWav(file,settings,17))seen.push(part);
+ assert.equal(seen.length,13);
+ for(let channel=0;channel<2;channel++){
+   const actual=seen.flatMap(item=>item.channels[channel]);
+   assert.equal(actual.length,211);
+   for(let i=0;i<actual.length;i++)assert.ok(Math.abs(actual[i]-expected.channels[channel][i])<.0002);
+ }
+});
+test('async long-WAV rendered binary has exact length, RIFF header and no full PCM JSON',async()=>{
+ const a=fixture().a,frames=160003,header=a.pcmEncodeWav({sampleRate:8000,channels:[[0]]});
+ const bytes=Buffer.alloc(44+frames*2);Buffer.from(header).copy(bytes,0,0,44);
+ bytes.writeUInt32LE(36+frames*2,4);bytes.writeUInt32LE(frames*2,40);
+ for(let i=0;i<frames;i++)bytes.writeInt16LE(i%5===0?4096:-4096,44+i*2);
+ const file=new Blob([bytes]),settings={gainDb:-6};
+ const result=await a.pcmRenderLongWavBlob(file,settings,4096);
+ assert.equal(result.frames,frames);assert.equal(result.channels,1);
+ assert.equal(result.blob.size,44+frames*2);
+ const view=new DataView(await result.blob.slice(0,44).arrayBuffer());
+ assert.equal(view.getUint32(4,true),36+frames*2);
+ assert.equal(view.getUint32(40,true),frames*2);
+ const audio=new DataView(await result.blob.slice(44,50).arrayBuffer());
+ const gain=10**(-6/20);
+ assert.ok(Math.abs(audio.getInt16(0,true)/32768-.125*gain)<1/32768);
+ assert.ok(Math.abs(audio.getInt16(2,true)/32768+.125*gain)<1/32768);
+});
+test('stream render rejects clipping and never returns partial final Blob',async()=>{
+ const a=fixture().a,pcm={sampleRate:8000,channels:[[.1,.1,1,.1]]},file=new Blob([a.pcmEncodeWav(pcm)]);
+ await assert.rejects(a.pcmRenderLongWavBlob(file,{gainDb:12},2),/wav-clipping-requires-lower-gain/);
+ await assert.rejects(a.pcmRenderLongWavBlob(file,{compressor:{ratio:0,thresholdDb:-12,attackMs:1,releaseMs:50}},2),/invalid-pcm-compressor/);
+});
