@@ -50,3 +50,16 @@ test('EQ processes stereo independently and leaves silent channel silent',()=>{
 for(const [freq,gain,q] of [[NaN,1,1],[Infinity,1,1],[0,1,1],[22000,1,1],[1000,19,1],[1000,-19,1],[1000,1,0],[1000,1,11],[1000,'6',1]])test('EQ fails closed on invalid coefficients '+String(freq)+':'+String(gain)+':'+String(q),()=>{
   const{a,pcm}=fixture();assert.throws(()=>a.pcmEq(pcm,freq,gain,q),/invalid-pcm-eq/);
 });
+
+test('EQ preview computes real peak and refuses accidental Gain Apply',async()=>{
+ const f=await ready(),id=f.a.pcmEditor.assetId,original=JSON.stringify(await f.repo.get('p'));
+ const eq={frequency:1000,gainDb:6,q:1},preview=f.a.pcmEqPreview(f.p,id,eq);
+ assert.equal(preview.kind,'eq-preview-only');
+ assert.notEqual(preview.before.peak,preview.after.peak);
+ f.a.pcmEditor.preview=preview;
+ const result=await f.a.pcmApply('p');
+ assert.equal(result.ok,false);
+ assert.equal(JSON.stringify(await f.repo.get('p')),original);
+ const changed={...preview,eq:{...eq,gainDb:-6}};
+ assert.notDeepEqual(plain(f.a.pcmEqPreview(f.p,id,changed.eq).after),plain(preview.after));
+});
