@@ -394,6 +394,25 @@ class CodecReceiptTests(unittest.TestCase):
 
 
 class ActualDispatchTests(unittest.TestCase):
+    def test_native_boundary_snapshots_do_not_share_mutable_records(self):
+        import copy
+        from runtime_evidence import evidence_digest
+        def backend(): return len([1,2])
+        with self.window(backend) as window: backend()
+        first=window.snapshot(True)
+        expected=copy.deepcopy(first)
+        self.assertTrue(first['nativeBoundary']['entries'])
+        first['nativeBoundary']['entries'][0]['nativeArtifactIdentity']='FORGED'
+        first['nativeBoundary']['entries'].append({'event':'forged'})
+        second=window.snapshot(True)
+        self.assertEqual(second,expected)
+        self.assertEqual(second['nativeBoundary']['eventsDigest'],evidence_digest(second['nativeBoundary']['entries']))
+        window.native_events[0]['name']='changed-after-snapshot'
+        window.native_events.clear()
+        self.assertEqual(second,expected)
+        self.assertFalse(second['nativeBoundary']['complete'])
+        self.assertEqual(second['actualNativeDispatch'],'UNVERIFIED')
+
     def window(self, function):
         from runtime_evidence import ScopedPythonDispatch
         return ScopedPythonDispatch(function, 'fixture-call')

@@ -492,7 +492,7 @@ class ScopedPythonDispatch:
             'returnCount': self.returns, 'completed': completed, 'overflow': self.overflow,
             'observerChanged': self.changed, 'pythonDispatch': 'OBSERVED' if observed else 'UNVERIFIED',
             'nativeBoundary': {'scope':'OWNED_CALL_THREAD_CPROFILE_BOUNDARIES',
-                'entries':list(self.native_events),'eventsDigest':evidence_digest(self.native_events),
+                'entries':copy.deepcopy(self.native_events),'eventsDigest':evidence_digest(self.native_events),
                 'status':'OBSERVED_UNVERIFIED' if self.native_events else 'UNVERIFIED',
                 'partial':self.native_partial or bool(self.native_stack) or self.overflow or self.changed or not completed,
                 'complete':False,'artifactIdentity':'UNVERIFIED','mappedIntegrity':'UNVERIFIED'},
