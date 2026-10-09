@@ -374,6 +374,25 @@ class AuthorizationTests(unittest.TestCase):
             'ticket':'f'*64,'binding':c.binding,'processingContract':'e'*64},self.inventory)
 
 class FinalClosureTests(unittest.TestCase):
+    def test_complete_ack_after_late_owner_failure_cannot_close(self):
+        from local_distribution_entry import final_lifecycle_receipt, acknowledge_final_lifecycle, _digest
+        import hmac
+        c=OwnedResultChannel('a'*64,time.monotonic()+20)
+        summary=final_lifecycle_receipt(c,{'status':'OBSERVED','state':'STOPPING'},
+            {'ownedDescendantsComplete':True,'remainingOwnedDescendants':0},True)
+        self.assertTrue(summary['payload']['complete'])
+        body={'format':'NOVA_FINAL_ACKNOWLEDGEMENT','version':1,'owner':c.owner,'session':c.session,
+            'request':None,'bindingDigest':None,'processingContract':None,'generation':0,
+            'summaryDigest':_digest(summary['payload']),'auditDigest':c.audit.entries[-1]['digest'],
+            'completionState':'COMPLETE','accepted':True}
+        ack={'payload':body,'authentication':hmac.new(c.ack_key.encode(),
+            json.dumps(body,sort_keys=True,separators=(',',':')).encode(),hashlib.sha256).hexdigest()}
+        c.close(failed=True)
+        with self.assertRaises(ValueError): acknowledge_final_lifecycle(c,ack)
+        self.assertEqual(c.state,'FAILED'); self.assertIsNone(c.final_acknowledgement)
+        self.assertEqual(c.ack_key,'')
+        self.assertEqual(final_lifecycle_receipt(c,{}, {},False),summary)
+
     def test_stop_receipt_immediately_closes_launcher_browser_and_control_admission(self):
         from test_production_lifecycle import LifecycleTests
         l=LifecycleTests().make()

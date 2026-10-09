@@ -305,6 +305,7 @@ class OwnedResultChannel:
             self.state = 'FAILED' if failed or self.state == 'FAILED' else 'STOPPED'
             self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
             self.authorization = None; self.admitted = False; self.accepted_result = None
+            if self.state == 'FAILED' and hasattr(self,'ack_key'): self.ack_key = ''
 
 
 def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed=False):
