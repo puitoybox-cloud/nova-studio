@@ -144,6 +144,8 @@ class OwnedStopPipe:
         os.set_inheritable(handle.fileno(),False)
 
     def seal(self,payload):
+        # Authenticate the same detached snapshot that the caller will deliver.
+        payload=copy.deepcopy(payload)
         raw=json.dumps(payload,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
         return {'payload':payload,'authentication':hmac.new(self.key.encode(),raw,hashlib.sha256).hexdigest()}
 

@@ -363,6 +363,8 @@ public final class MusicStudioOwnedLifecycle {
     /// Authentication proves the owner summary; unknown descendants remain PARTIAL.
     @discardableResult public func receiveShutdown(_ data: Data) throws -> Data {
         lock.lock(); defer { lock.unlock() }
+        // A consumed summary/key cannot create an acknowledgement or alter its terminal state.
+        guard !shutdownReceived, !["FAILED","SHUTDOWN_OBSERVED","SHUTDOWN_PARTIAL","SHUTDOWN_FAILED"].contains(state) else { throw Failure.invalid }
         do {
             guard state == "STOPPING", !shutdownReceived, let finalDeadline = shutdownReceiptDeadline, uptime() < finalDeadline, data.count <= 16384,
                   let envelope = try JSONSerialization.jsonObject(with: data) as? [String:Any],

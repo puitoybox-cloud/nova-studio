@@ -12,6 +12,23 @@ from pathlib import Path
 from runtime_inventory import RuntimeInventory, bootstrap, legacy_snapshot
 
 class RuntimeTests(unittest.TestCase):
+    def test_runtime_snapshot_detaches_every_retained_evidence_collection(self):
+        from unittest.mock import patch
+        runtime=self.runtime
+        for field in ('models','dependencies','native','assets','verification_evidence'):
+            getattr(runtime,field)['fixture']={'identity':{'digest':'a'*64},'entries':[{'status':'OBSERVED'}]}
+        with patch.object(runtime,'recheck'):
+            first=runtime.snapshot();frozen=copy.deepcopy(first)
+            for field in ('models','dependencies','native','assets','verification_evidence'):
+                getattr(runtime,field)['fixture']['entries'][0]['status']='LATE'
+            self.assertEqual(first,frozen)
+            second=runtime.snapshot()
+            for field in ('models','dependencies','native','assets'):
+                next(e for e in second[field] if 'entries' in e)['entries'][0]['status']='CALLER'
+            second['largeArtifactVerification']['entries'][0]['identity']['digest']='f'*64
+            for field in ('models','dependencies','native','assets','verification_evidence'):
+                self.assertEqual(getattr(runtime,field)['fixture']['entries'][0]['status'],'LATE')
+                self.assertEqual(getattr(runtime,field)['fixture']['identity']['digest'],'a'*64)
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

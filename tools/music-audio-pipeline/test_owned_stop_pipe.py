@@ -25,6 +25,19 @@ class StopPipeTests(unittest.TestCase):
     def message(self,a):
         return a.seal({**a.identity,'kind':'STOP','requestBindingDigest':'e'*64,'challenge':'f'*64})
 
+    def test_sealed_payload_detaches_nested_origin_and_shutdown_evidence(self):
+        for kind in ('ORIGIN','HELPER_SHUTDOWN'):
+            a,b=self.pair()
+            payload={**a.identity,'kind':kind,'evidence':{'entries':[{'digest':'e'*64}]}}
+            sealed=a.seal(payload);original=copy.deepcopy(sealed)
+            payload['evidence']['entries'][0]['digest']='f'*64
+            payload['evidence']['entries'].append({'late':True})
+            self.assertEqual(sealed,original)
+            self.assertEqual(sealed['authentication'],b.seal(sealed['payload'])['authentication'])
+            a.close();self.assertEqual(sealed,original)
+            sealed['payload']['evidence']['entries'][0]['digest']='0'*64
+            self.assertNotEqual(sealed['authentication'],b.seal(sealed['payload'])['authentication'])
+
     def test_authenticated_one_shot_stop_reply_and_key_erasure(self):
         a,b=self.pair();events=[];errors=[]
         def run():
@@ -330,6 +343,7 @@ class FinalDeliveryTests(unittest.TestCase):
                     envelope=b.seal(payload)
                     payload[field]=0 if field=='deadline' else {'tampered':True} if field=='shutdown' else '0'*64
                     if field!='shutdown':envelope=b.seal(payload)
+                    else:envelope['payload']['shutdown']=payload['shutdown']
                     b.send(envelope,budget=65536)
                 except BaseException as error:errors.append(error)
             thread=threading.Thread(target=worker);thread.start();a.request(None)
@@ -395,6 +409,21 @@ class FinalDeliveryTests(unittest.TestCase):
         self.assertTrue(observation['leaderReaped']);self.assertFalse(report['ownedDescendantsComplete'])
         if hasattr(__import__('select'),'kqueue'):self.assertTrue(observation['kernelExitObserved'])
         self.assertEqual(b.key,'')
+
+    def test_helper_final_report_detaches_child_binding_and_exit_evidence(self):
+        import server as helper
+        from types import SimpleNamespace
+        child=SimpleNamespace(nonce='fixture',processing_binding={'input':{'digest':'e'*64}},
+            shutdown_receipt={'events':[{'exit':True}]},close=lambda:None)
+        with patch.object(helper,'DEMUCS_SESSION',child):report=helper.finish_owned_shutdown(None)
+        frozen=copy.deepcopy(report)
+        child.processing_binding['input']['digest']='f'*64
+        child.shutdown_receipt['events'][0]['exit']=False
+        self.assertEqual(report,frozen)
+        report['child']['parentBinding']['input']['digest']='0'*64
+        report['childExit']['events'][0]['exit']=True
+        self.assertEqual(child.processing_binding['input']['digest'],'f'*64)
+        self.assertFalse(child.shutdown_receipt['events'][0]['exit'])
 
     def test_busy_processing_never_fabricates_child_cleanup(self):
         import server as helper

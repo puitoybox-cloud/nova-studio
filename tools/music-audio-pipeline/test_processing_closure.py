@@ -33,6 +33,25 @@ def complete_calls():
 
 
 class ProcessingBindingTests(unittest.TestCase):
+    def test_finished_parent_child_receipt_detaches_calls_binding_and_output(self):
+        inventory=fixture_inventory();identity=binding(inventory)
+        child=evidence.BoundProcessingReceipt(identity);calls=complete_calls()
+        child.add_calls(calls);output={'digest':'d'*64,'byteLength':10}
+        result=child.finish(identity,inventory,output)
+        parent=evidence.BoundProcessingReceipt(identity)
+        child_result={**result,'parentBinding':copy.deepcopy(identity)}
+        parent.add_child(child_result)
+        child_result['entries'][0]['status']='FAILED'
+        sealed=parent.finish(identity,inventory,output);frozen=copy.deepcopy(sealed)
+        calls['entries'][0]['status']='FAILED';output['digest']='f'*64
+        identity['input']['digest']='f'*64;inventory['runtimeEvidence']['network']['native']='UNVERIFIED'
+        parent.calls.append({'late':True});parent.children[0]['entries'][0]['status']='FAILED'
+        self.assertEqual(parent.result,frozen)
+        sealed['children'][0]['binding']['input']['digest']='0'*64
+        self.assertEqual(parent.result,frozen)
+        with self.assertRaises(ValueError):parent.consume(sealed,parent.binding)
+        with self.assertRaises(ValueError):parent.add_child(child_result)
+        with self.assertRaises(ValueError):child.add_calls(calls)
     def make(self):
         inventory=fixture_inventory(); identity=binding(inventory)
         receipt=evidence.BoundProcessingReceipt(identity)

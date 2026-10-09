@@ -8,6 +8,18 @@ import test_owned_lifecycle
 
 class AuditTests(unittest.TestCase):
     def chain(self):return OwnedAuditChain('a'*64,'b'*64,'c'*64)
+    def test_audit_entries_and_acknowledgement_detach_caller_evidence(self):
+        a=self.chain();evidence={'nested':[{'digest':'d'*64}]}
+        entry=a.append('renew',evidence,generation=1);frozen=copy.deepcopy(a.entries)
+        evidence['nested'][0]['digest']='f'*64;entry['evidenceDigest']='0'*64
+        suffix=a.suffix();suffix[0]['previousDigest']='f'*64
+        self.assertEqual(a.entries,frozen);a.verify()
+        self.assertEqual(a.entries[0]['evidenceDigest'],_digest({'nested':[{'digest':'d'*64}]}))
+        c,envelope=self.final();body=copy.deepcopy(envelope['payload'])
+        acknowledge_final_lifecycle(c,envelope)
+        envelope['payload']['summaryDigest']='f'*64
+        self.assertEqual(c.final_acknowledgement,body);self.assertEqual(c.ack_key,'')
+        with self.assertRaises(ValueError):acknowledge_final_lifecycle(c,envelope)
     def test_secret_free_bounded_signed_chain_and_suffix(self):
         a=self.chain();r=a.append('authorize',{'digest':'d'*64},request='d'*64,binding='e'*64,contract='f'*64)
         self.assertEqual(len(a.suffix()),1);self.assertEqual(a.suffix(),[])

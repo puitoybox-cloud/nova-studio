@@ -343,7 +343,34 @@ final class MusicStudioOwnedLifecycleTests: XCTestCase {
     func testAuthenticatedPartialShutdownIsNotCompleteAndReplayRejected() throws {
         let owner = try stoppedOwner();let data = try shutdownEnvelope(shutdownPayload())
         try owner.receiveShutdown(data);XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
-        XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"FAILED")
+        XCTAssertThrowsError(try owner.receiveShutdown(data));XCTAssertEqual(owner.state,"SHUTDOWN_PARTIAL")
+    }
+    func testFinalShutdownSnapshotRejectsSameDifferentAndMalformedLateSummaries() throws {
+        for completion in ["PARTIAL","COMPLETE","FAILED"] {
+            let owner = try stoppedOwner()
+            var payload = shutdownPayload()
+            payload["completionState"] = completion
+            if completion == "COMPLETE" {
+                payload["remainingOwnedDescendants"] = 0
+                payload["ownedDescendantsComplete"] = true
+                payload["complete"] = true; payload["status"] = "OBSERVED"
+            }
+            let summary = try shutdownEnvelope(payload)
+            let acknowledgement = try owner.receiveShutdown(summary)
+            let expected = completion == "COMPLETE" ? "SHUTDOWN_OBSERVED" : "SHUTDOWN_" + completion
+            XCTAssertEqual(owner.state,expected)
+            let frozen = acknowledgement
+            payload["shutdownDigest"] = String(repeating:"f",count:64)
+            for late in [summary,try shutdownEnvelope(payload),Data("{}".utf8)] {
+                XCTAssertThrowsError(try owner.receiveShutdown(late))
+                XCTAssertEqual(owner.state,expected)
+                XCTAssertEqual(acknowledgement,frozen)
+                XCTAssertNil(owner.authorization); XCTAssertNil(owner.acceptedOutput)
+            }
+            owner.fail(); XCTAssertEqual(owner.state,"FAILED")
+            XCTAssertThrowsError(try owner.receiveShutdown(summary))
+            XCTAssertEqual(owner.state,"FAILED")
+        }
     }
     func testActualAnonymousDescriptorSummaryValidationAndPrivateAck() throws {
         let owner = try owner(); _ = try owner.command("stop")

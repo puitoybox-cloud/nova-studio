@@ -22,6 +22,25 @@ class Child:
     def wait(self,timeout=None): self.exited=True
 
 class LifecycleTests(unittest.TestCase):
+    def test_final_sink_is_one_shot_and_cannot_mutate_retained_summary(self):
+        for failed in (False,True):
+            l=self.make();deliveries=[]
+            def sink(summary):
+                deliveries.append(copy.deepcopy(summary))
+                summary['payload']['shutdownDigest']='f'*64
+                summary['audit'][-1]['evidenceDigest']='f'*64
+            l.final_sink=sink
+            try:
+                l.start();l.close(failed=failed)
+                self.assertEqual(len(deliveries),1)
+                frozen=copy.deepcopy(l.final_receipt)
+                self.assertEqual(frozen,deliveries[0])
+                l.shutdown_receipt['late']={'changed':True}
+                l.control.audit.entries[-1]['evidenceDigest']='0'*64
+                l.close(failed=True);l.close()
+                self.assertEqual(len(deliveries),1);self.assertEqual(l.final_receipt,frozen)
+                self.assertEqual(l.control.ack_key,'');self.assertEqual(l.control.final_key,'')
+            finally:l.close()
     def make(self, health=None, browser=None):
         config='{}';manifest={'buildRevision':'fixture','helper':{'version':1,'pipelineRevision':2,'sourceDigest':'a'*64},'assets':[{'id':'runtime-config','digest':hashlib.sha256(config.encode()).hexdigest()}]}
         prepared={'command':['/fixture/python','server.py'],'environment':{},'browserEnvelope':{'manifest':manifest,'trust':{'buildRevision':'fixture','manifestDigest':digest(manifest)},'runtimeConfigText':config}}

@@ -13,6 +13,30 @@ from runtime_evidence import ScopedPythonDispatch, processing_binding
 from runtime_inventory import OfflineRuntimeGuard
 
 class ChannelTests(unittest.TestCase):
+    def test_published_delivered_accepted_and_final_snapshots_are_detached(self):
+        from local_distribution_entry import final_lifecycle_receipt
+        self.begin();receipt=self.receipt();self.publish(receipt)
+        frozen=copy.deepcopy(self.channel.result)
+        receipt['output']['digest']='f'*64;receipt['entries'][0]['status']='FAILED'
+        self.assertEqual(self.channel.result,frozen)
+        delivered=self.command('result');delivered['result']['output']['digest']='f'*64
+        self.assertEqual(self.channel.result,frozen)
+        self.command('accept',resultId=frozen['resultId'],output=self.output)
+        self.channel.result['output']['digest']='f'*64
+        self.assertEqual(self.channel.accepted_result,frozen)
+        self.command('stop');stop={'status':'OBSERVED','state':'STOPPING'}
+        shutdown={'remainingOwnedDescendants':0,'ownedDescendantsComplete':True,'nested':[{'exit':True}]}
+        final=final_lifecycle_receipt(self.channel,stop,shutdown,True);snapshot=copy.deepcopy(final)
+        stop['state']='FAILED';shutdown['nested'][0]['exit']=False
+        self.channel.audit.entries[-1]['evidenceDigest']='f'*64
+        self.channel.close(failed=True)
+        self.assertEqual(final_lifecycle_receipt(self.channel,stop,shutdown,False),snapshot)
+        final['audit'][-1]['evidenceDigest']='0'*64;final['payload']['complete']=False
+        self.assertEqual(final_lifecycle_receipt(self.channel,{}, {},False),snapshot)
+        self.assertEqual(self.channel.capability,'');self.assertEqual(self.channel.helper_capability,'')
+        self.assertEqual(self.channel.final_key,'');self.assertEqual(self.channel.ack_key,'')
+        self.assertIsNone(self.channel.binding);self.assertIsNone(self.channel.result)
+        self.assertIsNone(self.channel.accepted_result);self.assertIsNone(self.channel.authorization)
     def setUp(self):
         self.now=100.;self.channel=OwnedResultChannel('a'*64,160.,clock=lambda:self.now,wall=lambda:1000+self.now)
         from test_processing_closure import fixture_inventory
