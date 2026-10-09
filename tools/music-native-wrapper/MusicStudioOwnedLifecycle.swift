@@ -131,7 +131,11 @@ public struct MusicStudioProcessingAuthorization: Codable, Equatable {
 /// Bearer authentication authenticates the owned channel, not native containment.
 public final class MusicStudioOwnedLifecycle {
     public enum Failure: Error { case invalid, expired, occupied, foreign, partial }
-    public private(set) var state = "READY"
+    private var storedState = "READY"
+    public private(set) var state: String {
+        get { lock.lock(); defer { lock.unlock() }; return storedState }
+        set { lock.lock(); defer { lock.unlock() }; storedState = newValue }
+    }
     public private(set) var authorization: MusicStudioProcessingAuthorization?
     private var expectedAuthorization: (MusicStudioOutputIdentity, String, String)?
     private var ownerIdentity: String = ""
@@ -446,17 +450,20 @@ public final class MusicStudioOwnedControlTransport: NSObject, URLSessionDataDel
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                            completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         lock.lock(); defer { lock.unlock() }
-        guard response.url == expectedURL, let http = response as? HTTPURLResponse, http.statusCode == 200,
+        guard session === self.session, dataTask === task,
+              response.url == expectedURL, let http = response as? HTTPURLResponse, http.statusCode == 200,
               response.expectedContentLength >= 0, response.expectedContentLength <= 16384 else { completionHandler(.cancel); return }
         completionHandler(.allow)
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         lock.lock(); defer { lock.unlock() }
+        guard session === self.session, dataTask === task else { return }
         guard bytes.count + data.count <= 16384 else { dataTask.cancel(); return }
         bytes.append(data)
     }
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         lock.lock()
+        guard session === self.session, task === self.task else { lock.unlock(); return }
         let callback = completion; let result: Result<Data, Error> = error.map { .failure($0) } ?? .success(bytes)
         completion = nil; self.task = nil; self.session = nil; expectedURL = nil; bytes = Data()
         lock.unlock(); session.invalidateAndCancel(); callback?(result)

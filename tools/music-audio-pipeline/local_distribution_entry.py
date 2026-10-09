@@ -305,6 +305,7 @@ class OwnedResultChannel:
             self.state = 'FAILED' if failed or self.state == 'FAILED' else 'STOPPED'
             self.capability = ''; self.helper_capability = ''; self.binding = None; self.result = None
             self.authorization = None; self.admitted = False; self.accepted_result = None
+            if self.state == 'FAILED' and hasattr(self,'ack_key'): self.ack_key = ''
 
 
 def final_lifecycle_receipt(channel, stop, shutdown, transport_closed, *, failed=False):
@@ -989,7 +990,8 @@ class LocalProductionLifecycle:
 
     def browser_event(self, state):
         with self.lock:
-            if self.state in ('FAILED','STOPPED'): raise ValueError('stale-browser-receipt')
+            if self.closing or self.state in ('FAILED','STOPPING','STOPPED','CLOSED') or self.state.startswith('SHUTDOWN'):
+                raise ValueError('stale-browser-receipt')
             self.last_seen = time.monotonic()
             if state in ('FAILED','STOPPED'):
                 # Handler thread cannot synchronously shut down its own server.
@@ -1038,6 +1040,7 @@ class LocalProductionLifecycle:
                 eligible=eligibility['processingEligible'],helper_alive=True)
             self.last_seen = time.monotonic()
             if response['state'] == 'STOPPING':
+                self.state = 'STOPPING'
                 self.eligibility = strict_eligibility({},trusted_bootstrap=False,browser_verified=False)
                 self.done.set()
             return response
@@ -1134,7 +1137,8 @@ class LocalProductionLifecycle:
                         if self.final_acknowledgement['complete']:
                             self.state = 'CLOSED'
             except (OSError, ValueError, TypeError):
-                self.shutdown_state = 'PARTIAL'; self.state = 'FAILED'
+                if self.shutdown_state != 'FAILED': self.shutdown_state = 'PARTIAL'
+                self.state = 'FAILED'
             finally:
                 self.control.ack_key = ''
 
