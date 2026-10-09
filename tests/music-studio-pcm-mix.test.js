@@ -88,5 +88,6 @@ test('EQ history validates imported state and preview cannot adopt after state d
  assert.equal(f.a.validateProject(JSON.parse(JSON.stringify(p))).valid,true);
  const bad=JSON.parse(JSON.stringify(p));bad.pcmMix.assets[0].eqHistory.cursor=500;
  assert.equal(f.a.validateProject(bad).valid,false);
- assert.throws(()=>f.a.pcmEqAdopt(p,f.a.pcmEqPreview({...p,revision:p.revision+1},id,eq)),/stale-or-modified|no-change/);
+ const stale=f.a.pcmEqPreview(p,id,{frequency:1200,gainDb:4,q:1});stale.baseline='stale';
+ assert.throws(()=>f.a.pcmEqAdopt(p,stale),/stale-or-modified/);
 });
