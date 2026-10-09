@@ -188,3 +188,32 @@ test('stream rejects malformed chunk or format switch instead of corrupting orig
  assert.throws(()=>Array.from(a.pcmProcessChunks([{sampleRate:8000,channels:[[NaN]]}],{sampleRate:8000,channelCount:1})),/invalid-pcm-sample/);
  assert.deepEqual(plain(good),{sampleRate:8000,channels:[[0,.5]]});
 });
+
+test('stream WAV reader decodes chunks without full-file arrayBuffer and maintains precise sample order',async()=>{
+ const f=fixture(),wave=f.a.pcmEncodeWav(f.pcm),original=new Blob([wave]),reads=[];
+ const file={size:original.size,slice(a,b){reads.push(b-a);return original.slice(a,b)},arrayBuffer(){throw Error('whole-file read prohibited')}};
+ const chunks=[];for await(const item of f.a.pcmDecodeWavStream(file,2))chunks.push(plain(item));
+ assert.equal(chunks.length,2);assert.deepEqual(chunks.flatMap(p=>p.channels[0]),f.pcm.channels[0]);
+ assert.deepEqual(chunks.flatMap(p=>p.channels[1]),f.pcm.channels[1]);
+ assert.ok(reads.every(n=>n<=65536));
+});
+test('long WAV stream decodes over 2M channel samples with bounded chunk memory',async()=>{
+ const a=fixture().a,frames=2001000,raw=Buffer.allocUnsafe(44+frames*2);
+ const hdr=Buffer.from(a.pcmEncodeWav({sampleRate:8000,channels:[[0]]}));
+ hdr.copy(raw,0,0,44);raw.writeUInt32LE(36+frames*2,4);raw.writeUInt32LE(frames*2,40);
+ for(let i=0;i<frames;i++)raw.writeInt16LE(i%2===0?8192:-8192,44+i*2);
+ const blob=new Blob([raw]),lengths=[];let total=0,peak=0;
+ for await(const p of a.pcmDecodeWavStream(blob,16384)){lengths.push(p.channels[0].length);total+=p.channels[0].length;peak=Math.max(peak,p.channels[0].length);assert.ok(p.channels[0].every(x=>Math.abs(x)===.25))}
+ assert.equal(total,frames);assert.ok(total>a.PCM_LIMIT);assert.ok(peak<=16384);assert.ok(lengths.length>100);
+});
+test('stream WAV reader rejects malformed headers and invalid slice sizes',async()=>{
+ const a=fixture().a,pcm={sampleRate:8000,channels:[[.5,0,-.5]]},b=a.pcmEncodeWav(pcm);
+ async function collect(file,limit){const rows=[];for await(const x of a.pcmDecodeWavStream(file,limit))rows.push(x);return rows}
+ await assert.rejects(collect(new Blob([b]),0),/invalid-wav-stream/);
+ const broken=b.slice(0);new DataView(broken).setUint32(4,0,true);
+ await assert.rejects(collect(new Blob([broken]),1),/invalid-wav-stream-header/);
+ const malformed=b.slice(0);new DataView(malformed).setUint32(40,9999,true);
+ await assert.rejects(collect(new Blob([malformed]),1),/truncated-wav-stream/);
+ const bad={size:b.byteLength,slice(){return{arrayBuffer:async()=>new ArrayBuffer(0)}}};
+ await assert.rejects(collect(bad,1),/short-wav-stream-read/);
+});
