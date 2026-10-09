@@ -13,6 +13,33 @@ from runtime_evidence import ScopedPythonDispatch, processing_binding
 from runtime_inventory import OfflineRuntimeGuard
 
 class ChannelTests(unittest.TestCase):
+    def test_publication_uses_validated_receipt_snapshot_after_continuity_callback(self):
+        from local_distribution_entry import _digest
+        self.begin();receipt=self.receipt();snapshot=copy.deepcopy(receipt)
+        def late_mutation():
+            receipt['output']['digest']='f'*64
+            receipt['entries'][0]['status']='FAILED'
+            receipt['binding']['input']['digest']='f'*64
+        self.channel.continuity=late_mutation
+        self.publish(receipt)
+        self.assertEqual(self.channel.result['receiptDigest'],_digest(snapshot))
+        self.assertEqual(self.channel.result['output'],snapshot['output'])
+
+    def test_publication_callback_cannot_restore_terminal_request_or_changed_binding(self):
+        for boundary in ('stop','failure','deadline','binding','inventory'):
+            with self.subTest(boundary=boundary):
+                self.setUp();self.begin();receipt=self.receipt();c=self.channel
+                def change():
+                    if boundary=='stop':self.command('stop')
+                    elif boundary=='failure':c.close(failed=True)
+                    elif boundary=='deadline':self.now=c.deadline
+                    elif boundary=='binding':c.binding['input']['digest']='f'*64
+                    else:self.inventory['models'][0]['digest']='f'*64
+                c.continuity=change
+                with self.assertRaises(ValueError):self.publish(receipt)
+                self.assertIsNone(c.result)
+                self.assertNotEqual(c.state,'RESULT_READY')
+                self.assertNotIn('publication',[e['event'] for e in c.audit.entries])
     def test_published_delivered_accepted_and_final_snapshots_are_detached(self):
         from local_distribution_entry import final_lifecycle_receipt
         self.begin();receipt=self.receipt();self.publish(receipt)
@@ -322,6 +349,17 @@ class AuthorizationTests(unittest.TestCase):
         c=self.channel
         return c.admit({'session':c.session,'capability':c.helper_capability,'ticket':c.authorization['ticket'],
             'binding':c.binding,'processingContract':'e'*64,**changes},self.inventory)
+    def test_authorization_input_detaches_source_and_returned_payload(self):
+        from local_distribution_entry import _digest
+        response=self.authorize();c=self.channel;snapshot=copy.deepcopy(c.authorization)
+        original_digest=_digest(snapshot)
+        self.input['digest']='f'*64
+        response['authorization']['input']['byteLength']=99
+        self.assertEqual(c.authorization,snapshot)
+        self.assertEqual(_digest(c.authorization),original_digest)
+        self.assertEqual(c.authorization['input'],c.binding['input'])
+        admitted=self.admission()
+        self.assertEqual(admitted['authorizationDigest'],original_digest)
     def test_terminal_close_discards_admission_and_accepted_request_authority(self):
         for failed in (False, True):
             with self.subTest(failed=failed):
