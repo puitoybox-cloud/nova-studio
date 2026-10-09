@@ -128,3 +128,14 @@ class WrapperBuildInventoryTests(unittest.TestCase):
         self.assertFalse(native['actualLoaded']); self.assertFalse(native['mappedBytesVerified'])
         self.assertFalse(report['complete']); self.assertFalse(report['approvedAnchor'])
         self.assertFalse(verify_assembly(self.root,report['observedGraph'])['complete'])
+
+    def test_wrapper_observation_connects_native_disk_graph_without_approval(self):
+        from test_package_macho import image, route_command
+        self.executable.write_bytes(image([route_command(0xe,'/usr/lib/dyld')]))
+        report=self.observe(); graph=report['nativeDependencyGraph']
+        self.assertEqual(graph['edgeCounts']['APPLE_SYSTEM_CANDIDATE_POLICY_REQUIRED'],1)
+        self.assertFalse(graph['externalSystemPolicyComplete'])
+        self.assertFalse(graph['actualLoaded']); self.assertFalse(graph['mappedBytesVerified'])
+        self.assertFalse(graph['runtimeSelectionVerified']); self.assertFalse(graph['approvedAnchor'])
+        self.assertFalse(report['complete']); self.assertFalse(report['publicationEligible'])
+        self.assertEqual(report['dependencyRelations'],'PACKAGE_DISK_GRAPH_OBSERVATION_ONLY')

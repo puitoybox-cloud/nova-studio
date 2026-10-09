@@ -23,7 +23,7 @@ def package_image_routes(path, architecture):
         if actual != architecture or count > 4096 or size > MAX_CONTRACT_BYTES:
             raise ValueError('package-architecture-or-command-budget')
         raw = _native_read(stream,base+32,size,end)
-        names = []; rpaths = []; loader = None; install = None; offset = 0
+        names = []; load_commands = []; rpaths = []; loader = None; install = None; offset = 0
         dylibs = (0xc,0x80000018,0x8000001f,0x80000023,0x20)
         for _ in range(count):
             if offset+8 > size: raise ValueError('truncated-package-command')
@@ -46,12 +46,15 @@ def package_image_routes(path, architecture):
                 elif command == 0xd:
                     if install is not None: raise ValueError('duplicate-package-install-name')
                     install = name
-                else: (rpaths if command == 0x8000001c else names).append(name)
+                else:
+                    (rpaths if command == 0x8000001c else names).append(name)
+                    if command != 0x8000001c:
+                        load_commands.append({'command':command,'name':name})
             offset += length
         if offset != size: raise ValueError('package-command-size-mismatch')
         if len(rpaths) > 128: raise ValueError('package-rpath-budget')
         if stamp(before) != stamp(os.fstat(stream.fileno())) or stamp(before) != stamp(Path(path).stat()):
             raise ValueError('changed-package-native-image')
-    return {'format':'MACHO64','architecture':actual,'commands':names,'rpaths':rpaths,
+    return {'format':'MACHO64','architecture':actual,'commands':names,'loadCommands':load_commands,'rpaths':rpaths,
         'runpaths':None,'slice':selection,'dynamicLinker':loader,'installName':install,
         'fileType':filetype,'scope':'PACKAGE_DISK_SYNTAX_ONLY','runtimeSelectionVerified':False}

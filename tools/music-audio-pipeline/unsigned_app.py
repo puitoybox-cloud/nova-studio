@@ -14,6 +14,7 @@ from scoped_closure import validate_graph, MAX_FILES
 from dependency_identity import verify_local_asset
 from runtime_evidence import _expand_macho_path, _macho_slice
 from package_macho import package_image_routes
+from package_native_graph import inspect_native_graph
 from unsigned_generation import inspect as inspect_generation, assemble as assemble_generation
 
 MAGICS = {b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf', b'\xca\xfe\xba\xbe',
@@ -60,6 +61,8 @@ def layout(root, graph, architecture):
         if name not in files:
             missing.append({'path':name,'status':'MISSING','reason':'unbound-app-layout'})
     report = {'status':'INCOMPLETE','layoutComplete':False,'nativeDiskRoutesComplete':False,
+              'packageFilesComplete':False,'packageInternalNativeClosureComplete':False,
+              'externalSystemPolicyComplete':False,'licenseMaterialComplete':False,'signingComplete':False,
               'missing':missing,'nestedMachO':[],'signingOrderCandidate':[],
               'externalPaths':[], 'dynamicLinkers':[], 'publicationEligible':False,'runtimeAcceptance':'UNVERIFIED',
               'signing':'NOT_PERFORMED','externalRequests':0}
@@ -149,6 +152,11 @@ def layout(root, graph, architecture):
         for ancestor in PurePosixPath(name).parents:
             if ancestor.suffix in ('.framework','.app','.xpc','.appex'): targets.add(str(ancestor))
     report['signingOrderCandidate'] = sorted(targets,key=lambda name:(-len(PurePosixPath(name).parts),name))+['.']
+    native_graph = inspect_native_graph(root,graph,architecture,main)
+    report['nativeDependencyGraph'] = native_graph
+    for key in ('packageFilesComplete','packageInternalNativeClosureComplete',
+                'externalSystemPolicyComplete','licenseMaterialComplete','signingComplete'):
+        report[key] = native_graph[key]
     report['layoutComplete'] = True
     report['nativeDiskRoutesComplete'] = not report['externalPaths']
     report['status'] = 'VERIFIED_CANDIDATE_LAYOUT' if report['nativeDiskRoutesComplete'] else 'PARTIAL'
@@ -158,10 +166,17 @@ def layout(root, graph, architecture):
 def inspect(root,manifest,anchor,build,architecture):
     generation,graph = inspect_generation(root,manifest,anchor,build)
     report = {'status':'INCOMPLETE','unsignedDiskComplete':False,'complete':False,
-              'generation':generation,'publicationEligible':False,'runtimeAcceptance':'UNVERIFIED'}
+              'generation':generation,'publicationEligible':False,'runtimeAcceptance':'UNVERIFIED',
+              'packageFilesComplete':False,'packageInternalNativeClosureComplete':False,
+              'externalSystemPolicyComplete':False,'licenseMaterialComplete':False,'signingComplete':False,
+              'parentLaunchAuthenticated':False,'parentKernelOriginVerified':False,'mappedBytesVerified':False,
+              'actualLoaded':False,'runtimeSelectionVerified':False}
     if graph is None: return report
     app = layout(root,graph,architecture); report['appLayout'] = app
-    report['unsignedDiskComplete'] = generation['complete'] and app['layoutComplete'] and app['nativeDiskRoutesComplete']
+    for key in ('packageFilesComplete','packageInternalNativeClosureComplete',
+                'externalSystemPolicyComplete','licenseMaterialComplete','signingComplete'):
+        report[key] = app[key]
+    report['unsignedDiskComplete'] = generation['complete'] and app['layoutComplete'] and app['packageInternalNativeClosureComplete'] and app['externalSystemPolicyComplete']
     report['status'] = 'VERIFIED_UNSIGNED_DISK_CANDIDATE' if report['unsignedDiskComplete'] else 'INCOMPLETE'
     # Whole production assembly is still open (launcher/backend/policy/device).
     report['complete'] = False

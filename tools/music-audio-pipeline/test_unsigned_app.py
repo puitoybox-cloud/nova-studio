@@ -108,7 +108,9 @@ class UnsignedAppTests(unittest.TestCase):
     def test_disk_candidate_never_promotes_whole_production_complete(self):
         with patch.object(app,'inspect_generation',return_value=({'complete':True},self.graph)):
             report = app.inspect(self.root,'manifest','anchor','build','x86_64')
-        self.assertTrue(report['unsignedDiskComplete']); self.assertFalse(report['complete'])
+        self.assertFalse(report['unsignedDiskComplete']); self.assertFalse(report['complete'])
+        self.assertFalse(report['appLayout']['externalSystemPolicyComplete'])
+        self.assertEqual(report['appLayout']['nativeDependencyGraph']['helperInterpreters'][0]['interpreter'],'/bin/bash')
         self.assertFalse(report['publicationEligible']); self.assertEqual(report['runtimeAcceptance'],'UNVERIFIED')
 
     def test_dylib_cannot_substitute_for_wrapper_executable(self):
@@ -165,3 +167,25 @@ class UnsignedAppTests(unittest.TestCase):
         self.replace(1,image([route_command(0x27,'DYLD_LIBRARY_PATH=/foreign')]))
         with self.assertRaisesRegex(ValueError,'environment-forbidden'):
             app.layout(self.root,self.graph,'x86_64')
+
+    def test_graph_install_name_validation_gates_final_package_candidate(self):
+        from test_package_native_graph import native
+        self.replace(1,native([(0xc,'@loader_path/../Frameworks/private.dylib')],kind=2))
+        self.replace(2,native(install='/foreign/unexpected.dylib'))
+        with patch.object(app,'inspect_generation',return_value=({'complete':True},self.graph)):
+            report=app.inspect(self.root,'manifest','anchor','build','x86_64')
+        self.assertTrue(report['appLayout']['nativeDiskRoutesComplete'])
+        self.assertFalse(report['appLayout']['packageInternalNativeClosureComplete'])
+        self.assertFalse(report['unsignedDiskComplete']); self.assertFalse(report['publicationEligible'])
+
+    def test_executable_relative_graph_resolution_preserves_policy_block(self):
+        from test_package_native_graph import native
+        route='@executable_path/../Frameworks/private.dylib'
+        self.replace(1,native([(0xc,route)],kind=2))
+        self.replace(2,native(install=route))
+        report=app.layout(self.root,self.graph,'x86_64')
+        self.assertTrue(report['packageInternalNativeClosureComplete'])
+        self.assertFalse(report['externalSystemPolicyComplete'])
+        edge=report['nativeDependencyGraph']['edges'][0]
+        self.assertEqual(edge['classification'],'PACKAGE_INTERNAL')
+        self.assertEqual(edge['resolvedPackagePath'],'Contents/Frameworks/private.dylib')

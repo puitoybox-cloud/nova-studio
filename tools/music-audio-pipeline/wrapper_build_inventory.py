@@ -15,6 +15,7 @@ from scoped_closure import canonical, validate_graph, MAX_FILES, MAX_TOTAL
 from runtime_evidence import native_image_routes, _macho_slice
 from unsigned_app import MAGICS, unsigned_image_type
 from package_macho import package_image_routes
+from package_native_graph import inspect_native_graph
 
 APPROVED_SLOTS = ('native-wrapper','helper-source','python-runtime','private-stdlib',
     'private-site-packages','native-shared-libraries','basic-pitch-model',
@@ -126,7 +127,8 @@ def observe(root,build,architecture):
         'buildRevision':build,'provenance':'CALLER_DECLARED_NOT_AUTHENTICATED',
         'scope':'EXPLICIT_WRAPPER_BUILD_OBSERVATION_ONLY','architecture':architecture,
         'files':files,'nativeImages':natives,'observedGraph':graph,'graphConversionIssues':reasons,
-        'dependencyRelations':'NOT_EVALUATED','redistributionApproved':False,'modelsApproved':False,
+        'nativeDependencyGraph':inspect_native_graph(root,graph,architecture,main) if graph else None,
+        'dependencyRelations':'PACKAGE_DISK_GRAPH_OBSERVATION_ONLY' if graph else 'NOT_EVALUATED','redistributionApproved':False,'modelsApproved':False,
         'licenseCandidates':[f['path'] for f in files if re.search(r'license|licence|notice|copying|copyright',f['path'],re.I)],
         'signatureMaterial':[f['path'] for f in files if '_CodeSignature' in Path(f['path']).parts],
         'missingApprovedAssets':[{'id':slot,'path':main if slot=='native-wrapper' else None,'status':'MISSING'} for slot in APPROVED_SLOTS],
