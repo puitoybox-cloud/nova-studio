@@ -95,3 +95,53 @@ test('cancel during pending real compare-and-put aborts staged metadata before t
  repo.compareAndPut=(item,base,guard)=>{const register=guard.registerAbort;guard.registerAbort=abort=>{register(abort);setImmediate(()=>a.longMixCancel())};return compare(item,base,guard)};
  const result=await a.longMixSave(p.projectId,r.assetId);assert.equal(result.ok,false);assert.match(result.error,/cancelled/);assert.equal(JSON.stringify(await repo.get(p.projectId)),baseline);assert.equal(a.longMix.abort,null);
 });
+
+function toneFile(a,frames=16000,frequency=100,amplitude=.35){const channels=[Array.from({length:frames},(_,i)=>amplitude*Math.sin(2*Math.PI*frequency*i/8000))],file=new Blob([a.pcmEncodeWav({sampleRate:8000,channels})]);file.name='measured.wav';return file}
+test('measured real PCM RMS/peak/crest and frequency energy match known signals across chunk sizes',async()=>{
+ const{a}=fixture();for(const frequency of [100,1000,3000]){const pcm={sampleRate:8000,channels:[Array.from({length:16000},(_,i)=>.5*Math.sin(2*Math.PI*frequency*i/8000))]};const whole=await a.mixMeasure([pcm]);assert.ok(Math.abs(whole.rms-.5/Math.sqrt(2))<1e-10);assert.ok(Math.abs(whole.peak-.5)<1e-10);assert.ok(Math.abs(whole.crestDb-3.0103)<.0001);assert.equal(whole.clippingSamples,0);const chunks=[];for(let i=0;i<16000;i+=137)chunks.push({sampleRate:8000,channels:[pcm.channels[0].slice(i,i+137)]});const split=await a.mixMeasure(chunks);assert.equal(JSON.stringify(split),JSON.stringify(whole));assert.ok(whole.bandFractions[frequency===100?0:frequency===1000?1:2]>.5)}
+});
+test('analysis rejects silence, clipping, malformed/changed format and cancellation without publishing proposals',async()=>{
+ const{a}=fixture();for(const sample of [-1,1,32767/32768])assert.equal((await a.mixMeasure([{sampleRate:8000,channels:[[sample]]}])).clippingSamples,1);const saved={gainDb:0,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-12,ratio:1,attackMs:10,releaseMs:100}};
+ assert.throws(()=>a.mixPropose({rmsDb:null,peakDb:null},saved),/silence/);await assert.rejects(a.mixMeasure([{sampleRate:8000,channels:[[NaN]]}]),/sample/);await assert.rejects(a.mixMeasure([{sampleRate:8000,channels:[[.1]]},{sampleRate:16000,channels:[[.1]]}]),/format/);
+ const f=await setup(),r=await f.a.pcmImportLongFile(wav(100),f.p.projectId);assert.equal((await f.a.longMixAnalyze(f.p.projectId,r.assetId)).ok,false);assert.equal(f.a.longMix.proposals,null);assert.equal((await f.a.longMixAnalyze(f.p.projectId,r.assetId,{signal:{aborted:true}})).ok,false);
+ const file=new Blob([f.a.pcmEncodeWav({sampleRate:8000,channels:[[-1,0,.25]]})]);file.name='clipped.wav';const imported=await f.a.pcmImportLongFile(file,f.p.projectId);assert.match((await f.a.longMixAnalyze(f.p.projectId,imported.assetId)).error,/clipping/);
+});
+test('two measured proposals differ, partial adoption saves and fresh reopen/undo/redo/archive preserve settings and bytes',async()=>{
+ const f=await setup(),{a,p,repo}=f,file=toneFile(a),r=await a.pcmImportLongFile(file,p.projectId),before=JSON.stringify(await repo.get(p.projectId));
+ const result=await a.longMixAnalyze(p.projectId,r.assetId);assert.equal(result.ok,true,result.error);assert.equal(result.proposals.length,2);assert.notEqual(JSON.stringify(result.proposals[0].settings),JSON.stringify(result.proposals[1].settings));assert.ok(result.proposals[1].settings.eq.gainDb<0);assert.equal(JSON.stringify(await repo.get(p.projectId)),before);
+ assert.equal((await a.longMixSelect(p.projectId,r.assetId,1,'eq')).ok,true);assert.equal(a.longMix.candidate.settings.gainDb,0);assert.equal(a.longMix.candidate.settings.compressor.ratio,1);assert.equal((await a.longMixSave(p.projectId,r.assetId)).ok,true);
+ const saved=await repo.get(p.projectId),fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());fresh.a.state.projects=[saved];fresh.a.pcmOpen(p.projectId);
+ assert.ok(fresh.a.longMixHistory(saved.longWavAssets[0]).settings[1].eq.gainDb<0);assert.equal((await fresh.a.longMixSave(p.projectId,r.assetId,-1)).ok,true);assert.equal((await fresh.a.longMixSave(p.projectId,r.assetId,1)).ok,true);assert.equal((await fresh.a.longMixExport(p.projectId,r.assetId)).ok,true);
+ const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(await fresh.a.createLongWavArchive());assert.equal(restored.ok,true);assert.equal(JSON.stringify(restored.projects[0].longWavAssets[0].mixHistory),JSON.stringify(saved.longWavAssets[0].mixHistory));assert.equal(JSON.stringify(saved.midiData),JSON.stringify(p.midiData));assert.equal(Buffer.compare(Buffer.from(await a.pcmLoadLongWav(p.projectId,r.assetId).then(b=>b.arrayBuffer())),Buffer.from(await file.arrayBuffer())),0);
+});
+test('proposals track measured amplitude and dynamics, without hardcoded settings',async()=>{
+ const{a}=fixture(),saved={gainDb:0,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-12,ratio:1,attackMs:10,releaseMs:100}};const results=[];
+ for(const amp of [.1,.5]){const metrics=await a.mixMeasure(a.pcmDecodeWavStream(toneFile(a,16000,100,amp)));results.push(a.mixPropose(metrics,saved))}assert.notEqual(results[0][0].settings.gainDb,results[1][0].settings.gainDb);
+ const pcm={sampleRate:8000,channels:[Array.from({length:16000},(_,i)=>(i%800<5?.8:.01)*Math.sin(2*Math.PI*100*i/8000))]},m=await a.mixMeasure([pcm]),v=a.mixPropose(m,saved)[1];assert.ok(v.settings.compressor.ratio>1);assert.ok(v.settings.compressor.thresholdDb<0);
+});
+test('analysis >2M frames only reads bounded slices and rejects a mid-analysis cancellation',async()=>{
+ const f=await setup(),{a,p,repo}=f,raw=await wav(2100000).arrayBuffer(),view=new DataView(raw);for(let i=0;i<2100000;i++)view.setInt16(44+i*2,Math.round(10000*Math.sin(2*Math.PI*100*i/8000)),true);const file=new Blob([raw]);file.name='nonzero-long.wav';const r=await a.pcmImportLongFile(file,p.projectId),get=repo.getLongWav;let max=0,reads=0;
+ repo.getLongWav=async id=>{const rec=await get(id),blob=rec.blob,slice=blob.slice.bind(blob);blob.arrayBuffer=()=>{throw Error('whole-read-forbidden')};blob.slice=(start,end)=>{max=Math.max(max,end-start);reads++;return slice(start,end)};return rec};
+ const result=await a.longMixAnalyze(p.projectId,r.assetId);assert.equal(result.ok,true,result.error);assert.equal(result.before.frames,2100000);assert.ok(max<=1048576);assert.ok(reads>400);assert.equal(result.proposals[0].after.clippingSamples,0);
+ const before=JSON.stringify(await repo.get(p.projectId));repo.getLongWav=async id=>{const rec=await get(id),slice=rec.blob.slice.bind(rec.blob);let n=0;rec.blob.slice=(...args)=>{if(++n===12)a.longMixCancel();return slice(...args)};return rec};assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,false);assert.equal(a.longMix.proposals,null);assert.equal(JSON.stringify(await repo.get(p.projectId)),before);
+});
+test('measured selection stale/conflict/quota/cancel never saves unreviewed settings',async()=>{
+ for(const mode of ['quota','conflict','cancel','tamper']){const f=await setup(),{a,p,repo,indexedDB}=f,r=await a.pcmImportLongFile(toneFile(a),p.projectId);assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,true);const before=JSON.stringify(await repo.get(p.projectId));
+ if(mode==='cancel'){a.longMixCancel();assert.equal((await a.longMixSelect(p.projectId,r.assetId,0)).ok,false);continue}
+ if(mode==='tamper'){a.longMix.proposals.proposals[0].settings.gainDb=24;assert.equal((await a.longMixSelect(p.projectId,r.assetId,0)).ok,false);assert.equal(a.longMix.candidate,null);continue}
+ assert.equal((await a.longMixSelect(p.projectId,r.assetId,1)).ok,true);if(mode==='quota')indexedDB.fail();else await repo.put({...await repo.get(p.projectId),revision:999});assert.equal((await a.longMixSave(p.projectId,r.assetId)).ok,false);assert.equal(JSON.stringify(await repo.get(p.projectId)),mode==='quota'?before:JSON.stringify({...JSON.parse(before),revision:999}));
+ }
+});
+test('original A0 and measured candidate B use different actual audio Blobs, and cancel removes previews',async()=>{
+ const f=await setup(),{a,p,w}=f,file=toneFile(a),r=await a.pcmImportLongFile(file,p.projectId),blobs=[],revoked=[];
+ w.URL={createObjectURL:blob=>{blobs.push(blob);return 'blob:'+blobs.length},revokeObjectURL:u=>revoked.push(u)};w.Audio=class{pause(){}removeAttribute(){}load(){}async play(){}};
+ assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,true);assert.equal((await a.longMixSelect(p.projectId,r.assetId,0,'all')).ok,true);assert.equal((await a.longMixListen(p.projectId,r.assetId,'Original')).ok,true);assert.equal((await a.longMixListen(p.projectId,r.assetId,'B')).ok,true);
+ assert.equal(Buffer.compare(Buffer.from(await blobs[0].arrayBuffer()),Buffer.from(await file.arrayBuffer())),0);assert.notEqual(Buffer.compare(Buffer.from(await blobs[0].arrayBuffer()),Buffer.from(await blobs[1].arrayBuffer())),0);assert.equal(revoked.length,1);a.longMixCancel();assert.equal(revoked.length,2);assert.equal(a.longMix.candidate,null);assert.equal(a.longMix.proposals,null);
+});
+test('corrupt bytes and concurrent metadata during measurement reject proposals and preserve storage',async()=>{
+ for(const mode of ['corrupt','conflict']){const f=await setup(),{a,p,repo,indexedDB}=f,r=await a.pcmImportLongFile(toneFile(a),p.projectId),before=JSON.stringify(await repo.get(p.projectId));
+ if(mode==='corrupt')indexedDB.stores.get('longWavBinaries').get(r.assetId).blob=new Blob([new Uint8Array(32044)]);
+ else{const get=repo.getLongWav;repo.getLongWav=async id=>{const record=await get(id);await repo.put({...await repo.get(p.projectId),revision:444});return record}}
+ assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,false);assert.equal(a.longMix.proposals,null);assert.equal(JSON.stringify(await repo.get(p.projectId)),mode==='corrupt'?before:JSON.stringify({...JSON.parse(before),revision:444}));
+ }
+});
