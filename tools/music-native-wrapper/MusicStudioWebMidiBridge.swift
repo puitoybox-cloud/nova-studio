@@ -20,6 +20,7 @@ final class MusicStudioWebMidiBridge {
 
       const listeners = new Set();
       let sourceAvailable = false;
+      let explicitlyClosed = false;
       let lastTimestamp = 0;
       const heldNotes = new Map();
       const stateListeners = new Set();
@@ -43,12 +44,16 @@ final class MusicStudioWebMidiBridge {
         },
         open() {
           if (!sourceAvailable) return Promise.reject(new Error('MIDI input disconnected'));
+          explicitlyClosed = false;
           this.connection = 'open';
           return Promise.resolve(this);
         },
         close() {
-          releaseHeldNotes();
+          // Block reentrant MIDI delivery before notifying handlers of note-offs.
+          // Those handlers may synchronously invoke dispatch() or close() again.
+          explicitlyClosed = true;
           this.connection = 'closed';
+          releaseHeldNotes();
           return Promise.resolve(this);
         }
       };
@@ -87,11 +92,12 @@ final class MusicStudioWebMidiBridge {
         const next = available === true;
         if (next === sourceAvailable) return;
         sourceAvailable = next;
+        // Reject reentrant note delivery before notifying listeners of unplug.
+        input.state = next ? 'connected' : 'disconnected';
+        input.connection = next && !explicitlyClosed ? 'open' : 'closed';
         if (!next) {
           releaseHeldNotes();
         }
-        input.state = next ? 'connected' : 'disconnected';
-        input.connection = next ? 'open' : 'closed';
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
         for (const listener of stateListeners) listener(event);
