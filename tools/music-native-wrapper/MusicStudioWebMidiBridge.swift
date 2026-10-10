@@ -83,12 +83,14 @@ final class MusicStudioWebMidiBridge {
         const notes = Array.from(heldNotes.values());
         heldNotes.clear();
         for (const note of notes) {
-          const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
+          const bytes = [0x80 | note.channel, note.pitch, 0];
+          const timeStamp = pageTimestamp();
+          const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
           const onMessage = input.onmidimessage;
           const recipients = Array.from(listeners);
-          try { if (typeof onMessage === 'function') onMessage(event); } catch (_) {}
+          try { if (typeof onMessage === 'function') onMessage(makeEvent()); } catch (_) {}
           for (const listener of recipients) {
-            try { listener(event); } catch (_) {}
+            try { listener(makeEvent()); } catch (_) {}
           }
         }
       }
@@ -152,24 +154,24 @@ final class MusicStudioWebMidiBridge {
         // occurs while notifying handlers of this incoming note.
         if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
         else heldNotes.delete(key);
-        const event = {
-          data: Uint8Array.from(data.map(Number)),
-          timeStamp: pageTimestamp(),
+        const timeStamp = pageTimestamp();
+        // Each recipient receives original validated bytes even when another
+        // page handler mutates the Uint8Array in its event.
+        const makeEvent = () => ({
+          data: Uint8Array.from(data),
+          timeStamp,
           target: input,
           currentTarget: input
-        };
-        // Snapshot callbacks before delivery: handlers may close/disconnect the
-        // port, remove listeners or add listeners during this very event.
+        });
         const onMessage = input.onmidimessage;
         const recipients = Array.from(listeners);
         try {
-          if (typeof onMessage === 'function') onMessage(event);
+          if (typeof onMessage === 'function') onMessage(makeEvent());
         } catch (_) {
-          // A faulty page callback must not prevent other MIDI consumers
-          // from receiving a note-off or leave native delivery broken.
+          // Keep other consumers alive after a page callback failure.
         }
         for (const listener of recipients) {
-          try { listener(event); } catch (_) {}
+          try { listener(makeEvent()); } catch (_) {}
         }
         return { accepted: true };
       }

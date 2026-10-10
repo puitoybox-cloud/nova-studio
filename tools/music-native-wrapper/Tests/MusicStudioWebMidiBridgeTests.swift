@@ -331,6 +331,18 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(c.evaluateScript("JSON.stringify(states)")?.toString(), #"["connected","connected","disconnected","disconnected"]"#)
     }
 
+    func testMessageByteMutationCannotCorruptOtherListeners() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var received=[]; NovaMusicNativeMidiShim.input.onmidimessage=e=>{e.data[1]=1;}; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>{received.push(Array.from(e.data)); e.data[2]=0;}); NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>received.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,60,100]});")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(received)")?.toString(), #"[[144,60,100],[144,60,100]]"#)
+    }
+
+    func testHeldNoteReleaseBytesRemainStableAcrossMutatingListeners() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var notes=[]; NovaMusicNativeMidiShim.input.onmidimessage=e=>{if ((e.data[0]&240)===128) e.data[1]=1;}; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>{if ((e.data[0]&240)===128) notes.push(Array.from(e.data));}); NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}); NovaMusicNativeMidiShim.input.close();")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[128,60,0]]"#)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
