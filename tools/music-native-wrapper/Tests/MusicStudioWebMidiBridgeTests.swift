@@ -58,7 +58,6 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
     func testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage() throws {
         let context = try makeContext()
         context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
-        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = event => received.push({ data: Array.from(event.data), timeStamp: event.timeStamp });")
         XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x90,60,100]}).accepted")?.toBool() == true)
         XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x80,60,0]}).accepted")?.toBool() == true)
@@ -133,7 +132,6 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         )
         let payload = bytes.map(String.init).joined(separator: ",")
 
-        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = event => received.push({ data: Array.from(event.data), timeStamp: event.timeStamp });")
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({ data: [\(payload)] });")
