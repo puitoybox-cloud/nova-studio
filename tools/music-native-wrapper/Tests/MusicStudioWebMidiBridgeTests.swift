@@ -299,6 +299,20 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertLessThan(unlock.lowerBound, notify.lowerBound)
     }
 
+    func testDisconnectNoteReleaseCannotPublishStaleDisconnectedEventAfterReentrantReconnect() throws {
+        let c = try makeContext()
+        c.evaluateScript("var states=[]; NovaMusicNativeMidiShim.access.onstatechange=e=>states.push(e.port.state); NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}); NovaMusicNativeMidiShim.input.onmidimessage=e=>{if ((e.data[0]&240)===128) NovaMusicNativeMidiShim.setSourceAvailable(true);}; NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(states)")?.toString(), #"["connected","connected"]"#)
+        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "connected")
+    }
+
+    func testNestedSourceTransitionDoesNotPublishOldPortEvent() throws {
+        let c = try makeContext()
+        c.evaluateScript("var accessStates=[]; var portStates=[]; NovaMusicNativeMidiShim.access.onstatechange=e=>{accessStates.push(e.port.state); if(e.port.state==='connected') NovaMusicNativeMidiShim.setSourceAvailable(false);}; NovaMusicNativeMidiShim.input.onstatechange=e=>portStates.push(e.port.state); NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(accessStates)")?.toString(), #"["connected","disconnected"]"#)
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(portStates)")?.toString(), #"["disconnected"]"#)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
