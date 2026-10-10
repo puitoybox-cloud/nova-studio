@@ -146,6 +146,8 @@ final class MusicStudioWebMidiBridge {
         const channel = status & 0x0f;
         const pitch = Number(data[1]);
         const key = channel + ':' + pitch;
+        // Avoid retaining stale held notes if a reentrant disconnect/close
+        // occurs while notifying handlers of this incoming note.
         if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
         else heldNotes.delete(key);
         const event = {
@@ -158,8 +160,15 @@ final class MusicStudioWebMidiBridge {
         // port, remove listeners or add listeners during this very event.
         const onMessage = input.onmidimessage;
         const recipients = Array.from(listeners);
-        if (typeof onMessage === 'function') onMessage(event);
-        for (const listener of recipients) listener(event);
+        try {
+          if (typeof onMessage === 'function') onMessage(event);
+        } catch (_) {
+          // A faulty page callback must not prevent other MIDI consumers
+          // from receiving a note-off or leave native delivery broken.
+        }
+        for (const listener of recipients) {
+          try { listener(event); } catch (_) {}
+        }
         return { accepted: true };
       }
 
