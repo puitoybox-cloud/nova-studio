@@ -20,6 +20,7 @@ final class MusicStudioWebMidiBridge {
 
       const listeners = new Set();
       let sourceAvailable = false;
+      let sourceRevision = 0;
       let explicitlyClosed = false;
       let lastTimestamp = 0;
       const heldNotes = new Map();
@@ -94,12 +95,16 @@ final class MusicStudioWebMidiBridge {
         const next = available === true;
         if (next === sourceAvailable) return;
         sourceAvailable = next;
+        const revision = ++sourceRevision;
         // Reject reentrant note delivery before notifying listeners of unplug.
         input.state = next ? 'connected' : 'disconnected';
         input.connection = next && !explicitlyClosed ? 'open' : 'closed';
         if (!next) {
           releaseHeldNotes();
         }
+        // A note-off callback may synchronously change source availability.
+        // Only the newest transition may notify subscribers.
+        if (revision !== sourceRevision) return;
         // Snapshot both recipient sets before user callbacks: an onstatechange
         // property handler may synchronously remove or add either listener.
         const accessHandler = access.onstatechange;
@@ -108,10 +113,19 @@ final class MusicStudioWebMidiBridge {
         const portRecipients = Array.from(portStateListeners);
         const event = { port: input, target: access, currentTarget: access };
         if (typeof accessHandler === 'function') accessHandler(event);
-        for (const listener of accessRecipients) listener(event);
+        if (revision !== sourceRevision) return;
+        for (const listener of accessRecipients) {
+          if (revision !== sourceRevision) return;
+          listener(event);
+        }
+        if (revision !== sourceRevision) return;
         const portEvent = { port: input, target: input, currentTarget: input };
         if (typeof portHandler === 'function') portHandler(portEvent);
-        for (const listener of portRecipients) listener(portEvent);
+        if (revision !== sourceRevision) return;
+        for (const listener of portRecipients) {
+          if (revision !== sourceRevision) return;
+          listener(portEvent);
+        }
       }
 
       function dispatch(payload) {
