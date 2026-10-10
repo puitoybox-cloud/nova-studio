@@ -70,9 +70,11 @@ A=physical acceptance complete; B=production/backend/policy/automated verificati
 A0/B0/C30. Previous A0/B0/C30; delta0/0/0. No estimated percentage. Next B candidate No.2 (close browser/native whole-path evidence); No.1 and No.6 retained C pending all-edit persistence/selective Undo and family apply evidence. No external implementation blocker to MIDI code required switching to unrelated features in this change.
 
 ## Verification
-Final local Node2012/2012 PASS;182 JS node --check PASS;53 Python compile PASS;git diff --check PASS. Remote exact-head native results are reported in the PR description. Python508 tests:503 PASS, five preexisting skips. Local Swift/macOS/iPad builds UNVERIFIED; exact-head Actions scheduled via added create-event workflow. Browser launch attempted using already-installed Playwright: missing Chromium executable; widths1440/820/390, Console errors/warnings/external browser traffic UNVERIFIED. No install requested or performed.
+Final local Node2012/2012 PASS;182 JS node --check PASS;53 Python compile PASS;git diff --check PASS. Remote exact-head native results are reported in the PR description. Python509 tests:504 PASS, five preexisting skips. Local Swift/macOS/iPad builds UNVERIFIED; exact-head Actions scheduled via added create-event workflow. Browser launch attempted using already-installed Playwright: missing Chromium executable; widths1440/820/390, Console errors/warnings/external browser traffic UNVERIFIED. No install requested or performed.
 
 ## Physical checks last
 Intel Mac Chrome + Keystation: permission/audio wait Stop; route/change project; Count-in Stop/disconnect; reconnect; rapid Record/Stop and repeated keys; tempo/meter changes; held-note Stop; save/reopen/play/edit; existing locked/unlocked/other Tracks unchanged. Native Mac/iPad permissions, input availability, restart durability. Other30-feature hardware obligations remain recorded in the source matrix.
 
 Draft only. No Ready/Merge/Auto Merge/force push, main/existing PR/song/backup changes, Live Provider requests, model downloads, installations, signatures, notarization or sale.
+
+Follow-up: inherited dependency CI on both #368/#369 failed when static URL scanning encountered malformed IPv6 syntax. Scanner now retains INVALID_URL_REFERENCE/UNVERIFIED evidence and continues scanning valid hosts, without suppressing the unresolved boundary. Added Python regression; no runtime network or installation. All115 historical head workflow listings retrieved; job/log exhaustive coverage remains UNVERIFIED.
