@@ -186,6 +186,21 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result['externalReferences'][0]['host'],'cdn.example.invalid')
         self.assertTrue(all(e['distributionStatus']=='UNVERIFIED' for e in result['assets']))
 
+    def test_malformed_url_does_not_hide_valid_hosts_or_certify_offline(self):
+        import importlib.util
+        source=Path(__file__).resolve().parents[2]/'scripts'/'music-offline-asset-inventory.py'
+        spec=importlib.util.spec_from_file_location('offline_malformed_fixture',source)
+        scanner=importlib.util.module_from_spec(spec);spec.loader.exec_module(scanner)
+        self.root.joinpath('app.js').write_text('"http://[broken" "https://cdn.example.invalid/a" "http://[::1]/"')
+        result=scanner.inspect(self.root,['app.js'])
+        invalid=[e for e in result['externalReferences'] if e['kind']=='INVALID_URL_REFERENCE']
+        self.assertEqual(len(invalid),1)
+        self.assertEqual(invalid[0]['classification'],'UNVERIFIED')
+        self.assertEqual(invalid[0]['status'],'UNVERIFIED')
+        self.assertIn('cdn.example.invalid',{e.get('host') for e in result['externalReferences']})
+        self.assertEqual(result['actualOfflineDistribution'],'OPEN')
+        self.assertEqual(result['liveRequests'],0)
+
     def test_missing_companion_inventory_and_model_budget_fail_closed(self):
         wrong=copy.deepcopy(self.bindings);wrong['native']=[]
         with self.assertRaisesRegex(ValueError,'missing-or-unexpected-local-asset'):

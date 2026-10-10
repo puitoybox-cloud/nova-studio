@@ -1504,3 +1504,61 @@ test('External current Track download pins selection rejects stale Track and lea
 test('Editor exposes selected External Track export while preserving Core part and All export UI',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'single-export-ui',projectName:'Single Export UI',midiData:{tracks:[{id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:480,velocity:90}]},{id:'external-track',name:'External Strings',roleAssignment:'strings',trackType:'midi-melodic',channel:3,program:48,notes:[{id:'e',pitch:72,startTick:0,durationTicks:960,velocity:82}]}]}});app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/Export Melody MIDI（書き出す）/);assert.match(html,/Export All MIDI（全て書き出す）/);window.MusicStudioEditor.selectTrackById(app.state.midiEditor,'external-track');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/Export Current Track MIDI（書き出す）/);assert.match(html,/performCurrentTrackMidiExport\('single-export-ui'\)/);assert.equal(app.midiExportSummary({...project,midiData:app.state.midiEditor.midiData},'track','external-track').filename,'Single-Export-UI_External-Strings.mid');assert.match(html,/Export All MIDI（全て書き出す）/)
 });
+
+async function pendingRecordingFixture(stage){
+  let resolve;const gate=new Promise(r=>resolve=r),input={id:'keys',name:'Keys'},access={inputs:new Map([['keys',input]])};
+  const{app,window}=load({requestMIDIAccess:()=>stage==='permission'?gate:Promise.resolve(access)}),repo=app.memoryRepository(),project=app.makeProject({projectId:'pending-session',projectName:'Pending'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:()=>stage==='audio'?gate:Promise.resolve(true),noteOn(){},noteOff(){},allNotesOff(){},stopPreview(){},stopPlayback(){},stopMetronome(){}};
+  if(stage==='audio')await app.editorInitializeMidi();
+  return{app,window,input,access,repo,project,resolve:()=>resolve(stage==='permission'?access:true)};
+}
+for(const stage of ['audio','permission'])for(const action of ['stop','route','session'])test(`${action} invalidates pending ${stage} MIDI start`,async()=>{
+  const f=await pendingRecordingFixture(stage),before=JSON.stringify(await f.repo.get(f.project.projectId));
+  const pending=f.app.editorStartMidiRecording({skipCountIn:true});await new Promise(r=>setImmediate(r));
+  assert.equal(f.app.state.midiInput.starting,true);
+  if(action==='stop'){assert.equal((await f.app.editorStopTransport()).startCancelled,true);await f.app.editorStopTransport()}
+  else if(action==='route')f.app.renderRoute('music-studio');
+  else{const other=f.app.makeProject({projectId:'other',projectName:'Other'});f.app.state.projects.push(other);f.app.renderRoute('music-studio/midi-editor/other')}
+  f.resolve();assert.equal((await pending).reason,'start-cancelled');assert.equal(f.app.state.midiInput.recording,false);assert.equal(f.app.state.midiInput.starting,false);assert.equal(f.app.state.midiInput.recorder,null);assert.equal(JSON.stringify(await f.repo.get(f.project.projectId)),before);
+});
+test('stale input callback cannot enter a later recording session',async()=>{
+  const f=await pendingRecordingFixture('audio');f.resolve();await f.app.editorStartMidiRecording({skipCountIn:true});const old=f.input.onmidimessage;
+  await f.app.editorStopTransport();await f.app.editorStartMidiRecording({skipCountIn:true});const fresh=f.input.onmidimessage;
+  old({data:[0x90,60,90],timeStamp:10});assert.equal(f.app.state.midiInput.liveNotes.length,0);
+  fresh({data:[0x90,64,90],timeStamp:20});await f.app.editorStopTransport();assert.equal((await f.repo.get(f.project.projectId)).midiData.tracks.find(t=>t.part==='melody').notes.length,1);
+});
+test('audio unlock failure releases transport and permits a subsequent start',async()=>{
+  const f=await pendingRecordingFixture('audio');f.app.state.melodyAudio.synth.unlock=async()=>{throw Error('unlock-denied')};
+  assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).reason,'start-failed');assert.equal(f.app.state.midiInput.starting,false);
+  f.app.state.melodyAudio.synth.unlock=async()=>true;assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).recording,true);await f.app.editorStopTransport();
+});
+
+test('disconnect cancels pending audio unlock and reconnect permits recording',async()=>{
+ const f=await pendingRecordingFixture('audio'),pending=f.app.editorStartMidiRecording({skipCountIn:true});await new Promise(r=>setImmediate(r));
+ f.access.inputs.clear();f.access.onstatechange();f.resolve();assert.equal((await pending).reason,'start-cancelled');assert.equal(f.app.state.midiInput.recording,false);
+ f.access.inputs.set('keys',f.input);f.access.onstatechange();assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).recording,true);await f.app.editorStopTransport();
+});
+test('a stale animation callback cannot advance a new recording',async()=>{
+ const f=await pendingRecordingFixture('audio');f.resolve();let frame,clock=1000;f.window.performance={now:()=>clock};f.window.requestAnimationFrame=cb=>{frame=cb;return 1};
+ await f.app.editorStartMidiRecording({skipCountIn:true});const old=frame;await f.app.editorStopTransport();await f.app.editorStartMidiRecording({skipCountIn:true});const current=frame,before=f.app.state.midiEditor.playheadTick;
+ clock=1250;old();assert.equal(f.app.state.midiEditor.playheadTick,before);current();assert.ok(f.app.state.midiEditor.playheadTick>before);await f.app.editorStopTransport();
+});
+test('quota failure after disconnect retains exact Track notes for retry and reopen',async()=>{
+ const f=await pendingRecordingFixture('audio');f.resolve();let fail=true,clock=1000;const original=JSON.stringify(await f.repo.get(f.project.projectId));
+ f.app.setRepository({...f.repo,put:async p=>{if(fail){const error=Error('quota');error.name='QuotaExceededError';throw error}return f.repo.put(p)}});f.window.performance={now:()=>clock};
+ await f.app.editorStartMidiRecording({skipCountIn:true});const trackId=f.app.state.midiInput.recordingTrackId;
+ f.input.onmidimessage({data:[0x90,67,91],timeStamp:1000});clock=1250;f.access.inputs.clear();f.access.onstatechange();await new Promise(r=>setImmediate(r));
+ assert.equal(f.app.state.midiInput.recording,false);assert.equal(f.app.state.midiInput.stopping,false);assert.equal(f.app.state.midiEditor.dirty,true);assert.equal(JSON.stringify(await f.repo.get(f.project.projectId)),original);
+ const notes=f.app.state.midiEditor.midiData.tracks.find(t=>t.id===trackId).notes;assert.equal(notes.length,1);assert.equal(notes[0].pitch,67);assert.equal(notes[0].durationTicks,240);
+ fail=false;assert.equal((await f.app.saveMidiEditor()).ok,true);const saved=await f.repo.get(f.project.projectId);f.app.state.projects=[saved];f.app.state.midiEditor=null;f.app.renderRoute(`music-studio/midi-editor/${saved.projectId}`);
+ assert.equal(JSON.stringify(f.app.state.midiEditor.midiData.tracks.find(t=>t.id===trackId).notes),JSON.stringify(notes));
+});
+
+test('superseded MIDI access and saved old state callback cannot replace current input',async()=>{
+ let firstResolve;const firstPending=new Promise(r=>firstResolve=r),first={inputs:new Map([['old',{id:'old'}]])},second={inputs:new Map([['new',{id:'new'}]])},third={inputs:new Map([['third',{id:'third'}]])};let requests=0;
+ const{app}=load({requestMIDIAccess:()=>++requests===1?firstPending:Promise.resolve(requests===2?second:third)});
+ const old=app.editorInitializeMidi();await app.editorInitializeMidi({forceRefresh:true});firstResolve(first);assert.equal((await old).reason,'access-superseded');assert.equal(app.state.midiInput.access,second);assert.equal(app.state.midiInput.selectedId,'new');
+ const stale=second.onstatechange;await app.editorInitializeMidi({forceRefresh:true});second.inputs.clear();stale();assert.equal(app.state.midiInput.access,third);assert.equal(app.state.midiInput.selectedId,'third');
+});

@@ -25,12 +25,22 @@ def inspect(root, paths):
         if re.search(r'pip(?:3)?\s+install|["\x27]pip["\x27].*["\x27]install',text):kinds.add('PACKAGE_REGISTRY_INSTALL')
         if re.search(r'get_model|load_state_dict_from_url|torch\.hub',text):kinds.add('MODEL_LOADER_REQUIRES_RUNTIME_PROOF')
         if 'subprocess.' in text or re.search(r'\bffmpeg\b',text):kinds.add('NATIVE_OR_SUBPROCESS_REQUIREMENT')
-        for host in sorted({urlsplit(u.rstrip('.,);')).hostname for u in re.findall(r'https?://[^\s"\x27<>]+',text)}-{None,'localhost','127.0.0.1'}):
+        hosts=set()
+        for url in sorted(set(re.findall(r'https?://[^\s"\x27<>]+',text))):
+            candidate=url.rstrip('.,);')
+            try:
+                host=urlsplit(candidate).hostname
+            except ValueError:
+                external.append({'source':relative,'scope':scope,'kind':'INVALID_URL_REFERENCE','status':'UNVERIFIED','evidence':'STATIC_REFERENCE_ONLY'})
+                continue
+            if host not in {None,'localhost','127.0.0.1'}:hosts.add(host)
+        for host in sorted(hosts):
             external.append({'source':relative,'scope':scope,'kind':'REMOTE_URL_REFERENCE','host':host,'evidence':'STATIC_REFERENCE_ONLY'})
         for kind in sorted(kinds):external.append({'source':relative,'scope':scope,'kind':kind,'evidence':'STATIC_REFERENCE_ONLY'})
     for reference in external:
         source=reference['source'];host=reference.get('host');kind=reference['kind']
-        if reference['scope']=='TEST_OR_TOOL': classification='DEVELOPMENT_ONLY';reason='test/diagnostic fixture; not production startup'
+        if kind=='INVALID_URL_REFERENCE': classification='UNVERIFIED';reason='malformed static URL; cannot classify host or infer runtime behavior'
+        elif reference['scope']=='TEST_OR_TOOL': classification='DEVELOPMENT_ONLY';reason='test/diagnostic fixture; not production startup'
         elif source.endswith('Info.plist') or (source=='app.js' and host=='example.com') or host=='type.googleapis.com': classification='DOCUMENTATION_ONLY';reason='DTD, placeholder or error type identifier; no fetch at this reference'
         elif source.startswith('gemini-bridge'): classification='OPTIONAL';reason='explicit user navigation; not offline Helper processing'
         elif source=='music-studio-editor.js': classification='POLICY_DEPENDENT';reason='online provider branch; optional for local runtime, provider choice required'
