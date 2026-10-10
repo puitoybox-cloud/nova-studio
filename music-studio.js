@@ -1847,7 +1847,27 @@
   async function exportProject(id){const project=await repository.get(id);if(!project)return;const exported={...clone(project),midiAssets:(project.midiAssets||[]).map(markExternal),audioAssets:(project.audioAssets||[]).map(markExternal),fileReferences:(project.fileReferences||[]).map(markExternal)};const text=JSON.stringify(exported,null,project.pcmMix?undefined:2);const date=now().slice(0,10);const filename=`${safeFileName(project.projectName)}-${date}.json`;if(!root.document||!root.Blob||!root.URL?.createObjectURL)return{filename,text};const url=root.URL.createObjectURL(new Blob([text],{type:'application/json'}));const link=root.document.createElement('a');link.href=url;link.download=filename;root.document.body.appendChild(link);link.click();link.remove();setTimeout(()=>root.URL.revokeObjectURL(url),1000);notice('JSONを書き出しました。PCM Mixの元音声は含まれます。外部音声参照の本体は含まれません。','success');return{filename,text}}
   function markExternal(asset){return{...clone(asset),storage:{...(asset.storage||{}),requiresReselection:true}}}
   // Legacy internal text API; production files use guarded ingress below.
-  async function importText(text,control={}){let parsed;try{parsed=JSON.parse(text)}catch(_){return{ok:false,message:'JSONが壊れているため読み込めません。既存データは変更していません。'}}const checked=validateProject(parsed);if(!checked.valid)return{ok:false,message:`読み込めません：${checked.errors.join(' ')}`};const target=repository;control.check?.();const incoming=clone(parsed);let duplicated=false;if(await target.has(incoming.projectId)){incoming.projectId=uuid();incoming.projectName=`${incoming.projectName}（読み込み）`;incoming.createdAt=now();duplicated=true}incoming.updatedAt=now();incoming.revision=Math.max(1,Number(incoming.revision)||1);if(duplicated&&incoming.aiWorkspace)incoming.aiWorkspace=rebindAIWorkspace(incoming.aiWorkspace,incoming.projectId,incoming.revision);control.check?.();if(repository!==target)throw Error('stale-repository');await target.put(incoming);setLastProject(incoming.projectId);await refresh();return{ok:true,project:incoming,duplicated,message:duplicated?'ID重複を検出し、新しいIDで安全に読み込みました。':'プロジェクトを読み込みました。'}}
+  async function importText(text,control={}){
+    let parsed;try{parsed=JSON.parse(text)}catch(_){return{ok:false,message:'JSONが壊れているため読み込めません。既存データは変更していません。'}}
+    const checked=validateProject(parsed);if(!checked.valid)return{ok:false,message:`読み込めません：${checked.errors.join(' ')}`};
+    const target=repository,guard=()=>{control.check?.();if(repository!==target)throw Error('stale-repository')};guard();
+    if(typeof target.compareAndPut!=='function')throw Error('atomic-project-import-unavailable');
+    let incoming=clone(parsed),duplicated=false;
+    for(let attempt=0;attempt<8;attempt++){
+      guard();
+      if(await target.has(incoming.projectId)){
+        incoming.projectId=uuid();incoming.projectName=`${parsed.projectName}（読み込み）`;incoming.createdAt=now();duplicated=true;
+      }
+      incoming.updatedAt=now();incoming.revision=Math.max(1,Number(incoming.revision)||1);
+      if(duplicated&&incoming.aiWorkspace)incoming.aiWorkspace=rebindAIWorkspace(parsed.aiWorkspace,incoming.projectId,incoming.revision);
+      guard();
+      try{await target.compareAndPut(incoming,undefined,guard)}catch(error){
+        guard();if(error.message==='stale-lyrics-assignment-storage')continue;throw error;
+      }
+      setLastProject(incoming.projectId);await refresh();return{ok:true,project:incoming,duplicated,message:duplicated?'ID重複を検出し、新しいIDで安全に読み込みました。':'プロジェクトを読み込みました。'};
+    }
+    throw Error('project-import-id-conflict');
+  }
   let fileIngress;
   function cancelFileIngress(){fileIngress?.cancel();return{cancelled:true}}
   async function guardedJsonFile(file,options={}){

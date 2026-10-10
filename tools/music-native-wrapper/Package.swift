@@ -15,7 +15,7 @@ let package = Package(
         .target(
             name: "NovaMusicNativeWrapper",
             path: ".",
-            exclude: ["Tests", "MusicStudioApp.swift", "MusicStudioRootView.swift"],
+            exclude: ["Tests", "MusicStudioApp.swift", "MusicStudioRootView.swift", "MusicStudioWeb"],
             sources: [
                 "CoreMidiInputBridge.swift",
                 "MusicStudioWebMidiBridge.swift",
@@ -38,7 +38,8 @@ let package = Package(
                 "MusicStudioOwnedLifecycle.swift",
                 "MusicStudioWebViewHost.swift"
             ],
-            sources: ["MusicStudioApp.swift", "MusicStudioRootView.swift"]
+            sources: ["MusicStudioApp.swift", "MusicStudioRootView.swift"],
+            resources: [.copy("MusicStudioWeb")]
         ),
         .testTarget(
             name: "NovaMusicNativeWrapperTests",
