@@ -145,3 +145,18 @@ test('corrupt bytes and concurrent metadata during measurement reject proposals 
  assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,false);assert.equal(a.longMix.proposals,null);assert.equal(JSON.stringify(await repo.get(p.projectId)),mode==='corrupt'?before:JSON.stringify({...JSON.parse(before),revision:444}));
  }
 });
+
+test('real PCM and streamed WAV share relationship measurement and overlap-based proposals',async()=>{
+ const f=await setup();f.p=f.a.pcmImport(f.p,{sampleRate:8000,channels:[Array.from({length:16000},(_,i)=>.1*Math.sin(2*Math.PI*800*i/8000))]},'explicit-vocal.wav');await f.repo.put(f.p);f.a.state.projects=[f.p];
+ const imported=await f.a.pcmImportLongFile(toneFile(f.a,16000,800,.2),f.p.projectId);assert.equal(imported.ok,true);
+ const before=JSON.stringify(await f.repo.get(f.p.projectId)),vocalId='pcm:'+f.p.pcmMix.assets[0].id;
+ const r=await f.a.mixAnalyzeRelationships(f.p.projectId,vocalId);assert.equal(r.ok,true,r.error);assert.equal(r.rows.length,2);assert.ok(r.pairs[0].overlap>.99);assert.ok(Math.abs(r.pairs[0].vocalMarginDb+6.02)<.02);
+ const suggestions=await f.a.longMixAnalyze(f.p.projectId,imported.assetId);assert.equal(suggestions.ok,true,suggestions.error);assert.equal(suggestions.proposals.length,3);assert.equal(suggestions.proposals[2].after.clippingSamples,0);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+ assert.equal((await f.a.longMixSelect(f.p.projectId,imported.assetId,2,'eq')).ok,true);assert.equal((await f.a.longMixSave(f.p.projectId,imported.assetId)).ok,true);
+});
+test('multi-asset analysis rejects corrupt binary and cancellation without cached success or writes',async()=>{
+ for(const mode of ['corrupt','cancel']){const f=await setup();f.p=f.a.pcmImport(f.p,{sampleRate:8000,channels:[[0,.1,-.1]]},'short');await f.repo.put(f.p);f.a.state.projects=[f.p];const r=await f.a.pcmImportLongFile(toneFile(f.a),f.p.projectId);assert.equal(r.ok,true);
+ const before=JSON.stringify(await f.repo.get(f.p.projectId));if(mode==='corrupt'){const rec=f.indexedDB.stores.get('longWavBinaries').get(r.assetId);rec.blob=new Blob([new Uint8Array(rec.blob.size)])}else{const get=f.repo.get;f.repo.get=async id=>{const p=await get(id);f.a.pcmCancel();return p}}
+ const result=await f.a.mixAnalyzeRelationships(f.p.projectId);assert.equal(result.ok,false);assert.equal(f.a.pcmSuggestions.relationships,null);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+ }
+});
