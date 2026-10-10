@@ -217,6 +217,70 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
     }
 
+    func testSysEx() throws {
+        let c = try makeContext()
+                XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.access.sysexEnabled")?.toBool(), false)
+                XCTAssertTrue(c.evaluateScript("navigator.requestMIDIAccess({sysex:true}).then(() => false, () => true) instanceof Promise")?.toBool() == true)
+                XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.access.outputs.size")?.toInt32(), 0)
+    }
+
+    func testListenerRemovalDuringDelivery() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var hit = []; var second = () => hit.push('second'); NovaMusicNativeMidiShim.input.addEventListener('midimessage', () => {hit.push('first'); NovaMusicNativeMidiShim.input.removeEventListener('midimessage', second);}); NovaMusicNativeMidiShim.input.addEventListener('midimessage', second); NovaMusicNativeMidiShim.dispatch({data:[144,60,1]});")
+                XCTAssertEqual(c.evaluateScript("JSON.stringify(hit)")?.toString(), "[\"first\",\"second\"]")
+    }
+
+    func testListenerAdditionDuringDelivery() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var count = 0; var added = false; NovaMusicNativeMidiShim.input.addEventListener('midimessage', () => {if (!added) {added = true; NovaMusicNativeMidiShim.input.addEventListener('midimessage', () => count++);}}); NovaMusicNativeMidiShim.dispatch({data:[144,60,1]});")
+                XCTAssertEqual(c.evaluateScript("count")?.toInt32(), 0)
+                c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[128,60,0]});")
+                XCTAssertEqual(c.evaluateScript("count")?.toInt32(), 1)
+    }
+
+    func testPortCloseInsideMessageDelivery() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var log = []; NovaMusicNativeMidiShim.input.onmidimessage = e => {log.push('property'); NovaMusicNativeMidiShim.input.close();}; NovaMusicNativeMidiShim.input.addEventListener('midimessage', e => log.push('listener')); NovaMusicNativeMidiShim.dispatch({data:[144,60,90]});")
+                XCTAssertEqual(c.evaluateScript("JSON.stringify(log)")?.toString(), "[\"property\",\"property\",\"listener\",\"listener\"]")
+    }
+
+    func testMultiChannelDelivery() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var data=[]; NovaMusicNativeMidiShim.input.onmidimessage=e=>data.push(Array.from(e.data)); NovaMusicNativeMidiShim.dispatch({data:[159,127,127]}); NovaMusicNativeMidiShim.dispatch({data:[143,127,0]});")
+                XCTAssertEqual(c.evaluateScript("JSON.stringify(data)")?.toString(), "[[159,127,127],[143,127,0]]")
+    }
+
+    func testCloseThenSourceTransition() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.input.close(); NovaMusicNativeMidiShim.setSourceAvailable(false); NovaMusicNativeMidiShim.setSourceAvailable(true);")
+                XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
+                XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "connected")
+    }
+
+    func testUnsupportedMessageDoesNotEmit() throws {
+        let c = try makeContext()
+                c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var hits=0; NovaMusicNativeMidiShim.input.onmidimessage=()=>hits++; NovaMusicNativeMidiShim.dispatch({data:[240,60,2]}); NovaMusicNativeMidiShim.dispatch({data:[176,60,2]});")
+                XCTAssertEqual(c.evaluateScript("hits")?.toInt32(), 0)
+    }
+
+    func testZeroEndpointDeduplication() throws {
+        let changes = CoreMidiInputBridge.sourceChanges(available: [0, 11, 11, 22, 22], connected: [0, 33, 33])
+                XCTAssertEqual(changes.connect, [11, 22])
+                XCTAssertEqual(changes.disconnect, [33])
+    }
+
+    func testExistingSourceNotReconnected() throws {
+        let changes = CoreMidiInputBridge.sourceChanges(available: [20, 20, 30], connected: [20, 20, 40])
+                XCTAssertEqual(changes.connect, [30])
+                XCTAssertEqual(changes.disconnect, [40])
+    }
+
+    func testNoSourceChange() throws {
+        let changes = CoreMidiInputBridge.sourceChanges(available: [1, 2], connected: [1, 2])
+                XCTAssertTrue(changes.connect.isEmpty)
+                XCTAssertTrue(changes.disconnect.isEmpty)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
