@@ -83,12 +83,14 @@ final class MusicStudioWebMidiBridge {
         const notes = Array.from(heldNotes.values());
         heldNotes.clear();
         for (const note of notes) {
-          const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
+          const bytes = [0x80 | note.channel, note.pitch, 0];
+          const timeStamp = pageTimestamp();
+          const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
           const onMessage = input.onmidimessage;
           const recipients = Array.from(listeners);
-          try { if (typeof onMessage === 'function') onMessage(event); } catch (_) {}
+          try { if (typeof onMessage === 'function') onMessage(makeEvent()); } catch (_) {}
           for (const listener of recipients) {
-            try { listener(event); } catch (_) {}
+            try { listener(makeEvent()); } catch (_) {}
           }
         }
       }
