@@ -89,11 +89,12 @@ final class MusicStudioWebMidiBridge {
         const next = available === true;
         if (next === sourceAvailable) return;
         sourceAvailable = next;
+        // Reject reentrant note delivery before notifying listeners of unplug.
+        input.state = next ? 'connected' : 'disconnected';
+        input.connection = next ? 'open' : 'closed';
         if (!next) {
           releaseHeldNotes();
         }
-        input.state = next ? 'connected' : 'disconnected';
-        input.connection = next ? 'open' : 'closed';
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
         for (const listener of stateListeners) listener(event);
