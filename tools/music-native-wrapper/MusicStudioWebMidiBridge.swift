@@ -94,7 +94,7 @@ final class MusicStudioWebMidiBridge {
       }
 
       function dispatch(payload) {
-        if (!sourceAvailable) return { accepted: false, reason: 'midi-disconnected' };
+        if (!sourceAvailable || input.connection !== 'open') return { accepted: false, reason: 'midi-disconnected' };
         const raw = payload?.data;
         if (!Array.isArray(raw) && !(raw instanceof Uint8Array)) return { accepted: false, reason: 'invalid-message' };
         const data = Array.from(raw);

@@ -140,6 +140,15 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[\"property:connected\",\"listener:connected\",\"property:disconnected\",\"listener:disconnected\"]")
     }
 
+    func testExplicitPortCloseBlocksDeliveryUntilReopened() throws {
+        let context = try makeContext()
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.input.close();")
+        XCTAssertFalse(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}).accepted")?.toBool() == true)
+        context.evaluateScript("NovaMusicNativeMidiShim.input.open();")
+        XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}).accepted")?.toBool() == true)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
