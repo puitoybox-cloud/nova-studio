@@ -287,6 +287,18 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(c.evaluateScript("JSON.stringify(events)")?.toString(), #"["access-property","access-listener","port-property","port-listener"]"#)
     }
 
+    func testCoreMidiSourceCallbackRunsAfterConnectionLockRelease() throws {
+        let source = try XCTUnwrap(
+            String(contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("CoreMidiInputBridge.swift"))
+        )
+        let refresh = try XCTUnwrap(source.components(separatedBy: "private func refreshSources()").dropFirst().first?.components(separatedBy: "static func sourceChanges(").first)
+        let unlock = try XCTUnwrap(refresh.range(of: "connectionLock.unlock()", options: .backwards))
+        let notify = try XCTUnwrap(refresh.range(of: "onSourceAvailability(available)"))
+        XCTAssertLessThan(unlock.lowerBound, notify.lowerBound)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
