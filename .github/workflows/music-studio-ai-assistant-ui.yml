@@ -4,6 +4,7 @@ on:
     branches: ['checkpoint/music-resume-20261002-late']
   pull_request:
     paths:
+      - 'tools/music-native-wrapper/**'
       - 'scripts/music-bundled-midi-browser.js'
       - 'scripts/music-stage-native-web.py'
       - 'tools/music-audio-pipeline/**'

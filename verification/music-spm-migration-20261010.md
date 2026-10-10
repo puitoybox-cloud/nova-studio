@@ -58,3 +58,13 @@ A0/B0/C30; prior A0/B0/C30; delta0/0/0. No.2 remains C until native production w
 See music-residual-ledger-20261010.json for deduplicated confirmed residual subset and the explicitly unknown total denominator.
 
 Physical checks last: Intel Mac/Keystation actual input/permission/audio unlock, count-in/metronome tempo/meter audibility, rapid starts/stops/held/repeated notes/disconnect,record→Stop→save→quit→restart→reopen→play→edit; native macOS/iPad file-origin persistence across restart/update; old public version explicit Export/Import and Backup/Restore into native application with original retained. Simulator/Chrome never substitutes physical evidence.
+
+## Native file import follow-up — 2026-10-10 JST
+
+At base #371, MusicStudioWebViewHost had no WKUIDelegate/runOpenPanelWith implementation. macOS web file inputs therefore lacked the host chooser path. The host now owns the UI delegate and presents NSOpenPanel for an approved main-frame file input after BROWSER_READY. Cancellation, foreign/subframes and stopped hosts return nil; selected files do not become allowed navigation targets. Existing JavaScript validators and atomic add-only JSON import remain authoritative. Swift regression checks readiness/origin/frame/stop and delegate ownership; existing loaded file-origin test checks allowed main frame and denied subframe. Actual chooser interaction, legacy exports, Backup import UI and whole native production path remain UNVERIFIED.
+
+No whole ledger item is closed by this subtask. A0/B0/C30 unchanged. Partial R1=3/R2=3/R3=4/R4=3; known pre-physical subset10, full total unknown. The formal PDF was reread in this follow-up (all5 pages/166 lines, confirmed2026-09-30). The inherited 30-feature matrix is preserved; current production evidence is not newly certified exhaustive.
+
+Follow-up local validation: Node2018/2018 PASS, Python504 PASS/5 existing skips (509 run), all184 tracked JavaScript syntax PASS and git diff --check PASS. Local Swift/Xcode/Chrome absent: UNVERIFIED. #371 five non-skipped workflows/six jobs SUCCESS, all six decoded job logs reread. These base results do not certify the new HEAD. Native-path changes now trigger the existing real-Chrome regression CI.
+
+Separate-process CI fixture added: the actual SPM executable starts the production WebView host/default persistent store in four distinct OS processes (write, edit, read, delete), with the same disposable file origin and unique fixture database. Every phase exits before the next launches; exact stable Track ID/pitch/revision is verified before edit and after the next restart. It does not open real project databases or claim whole production recording/migration/UI acceptance. Pending exact-head CI at commit.

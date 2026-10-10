@@ -1,7 +1,10 @@
 import Foundation
 import WebKit
+#if os(macOS)
+import AppKit
+#endif
 
-public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScriptMessageHandlerWithReply {
+public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply {
     public let webView: WKWebView
     public let configuration: MusicStudioAppConfiguration
     public private(set) var lifecycleState = "PREPARING"
@@ -45,6 +48,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
             }
         }
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         if ownedLifecycle != nil {
             webConfiguration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: "novaOwnedProcessing")
             webConfiguration.userContentController.addUserScript(WKUserScript(source:
@@ -208,6 +212,34 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
         ownedLifecycle?.fail()
         stop(); lifecycleState = "FAILED"
     }
+
+    /// File inputs require a UI delegate on macOS. Only the approved main page
+    /// may ask; selection is explicit and does not grant navigation to the file.
+    public func allowsFileSelection(frameURL: URL?, isMainFrame: Bool) -> Bool {
+        guard isMainFrame, let frameURL, lifecycleState == "BROWSER_READY" else { return false }
+        return configuration.allows(frameURL)
+    }
+
+    #if os(macOS)
+    public func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters,
+                        initiatedByFrame frame: WKFrameInfo,
+                        completionHandler: @escaping ([URL]?) -> Void) {
+        guard allowsFileSelection(frameURL: frame.request.url, isMainFrame: frame.isMainFrame) else {
+            completionHandler(nil); return
+        }
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = parameters.allowsMultipleSelection
+        panel.begin { [weak self] response in
+            guard response == .OK, let self,
+                  self.allowsFileSelection(frameURL: frame.request.url, isMainFrame: frame.isMainFrame) else {
+                completionHandler(nil); return
+            }
+            completionHandler(panel.urls)
+        }
+    }
+    #endif
     public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         ownedLifecycle?.fail()
         stop(); lifecycleState = "FAILED"
