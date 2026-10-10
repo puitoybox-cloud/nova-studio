@@ -106,11 +106,13 @@ final class CoreMidiInputBridge {
         available: [MIDIEndpointRef],
         connected: [MIDIEndpointRef]
     ) -> (connect: [MIDIEndpointRef], disconnect: [MIDIEndpointRef]) {
-        let availableSet = Set(available)
-        let connectedSet = Set(connected)
+        let availableSet = Set(available.filter { $0 != 0 })
+        let connectedSet = Set(connected.filter { $0 != 0 })
+        var seenConnect = Set<MIDIEndpointRef>()
+        var seenDisconnect = Set<MIDIEndpointRef>()
         return (
-            connect: available.filter { !connectedSet.contains($0) },
-            disconnect: connected.filter { !availableSet.contains($0) }
+            connect: available.filter { $0 != 0 && !connectedSet.contains($0) && seenConnect.insert($0).inserted },
+            disconnect: connected.filter { $0 != 0 && !availableSet.contains($0) && seenDisconnect.insert($0).inserted }
         )
     }
 
