@@ -24,6 +24,7 @@ final class MusicStudioWebMidiBridge {
       let explicitlyClosed = false;
       let lastTimestamp = 0;
       const heldNotes = new Map();
+      let releasingHeldNotes = false;
       const stateListeners = new Set();
       const portStateListeners = new Set();
       const input = {
@@ -44,7 +45,7 @@ final class MusicStudioWebMidiBridge {
           if (type === 'statechange') portStateListeners.delete(handler);
         },
         open() {
-          if (!sourceAvailable) return Promise.reject(new Error('MIDI input disconnected'));
+          if (!sourceAvailable || releasingHeldNotes) return Promise.reject(new Error('MIDI input unavailable'));
           explicitlyClosed = false;
           this.connection = 'open';
           return Promise.resolve(this);
@@ -79,10 +80,13 @@ final class MusicStudioWebMidiBridge {
       }
 
       function releaseHeldNotes() {
+        if (releasingHeldNotes) return;
+        releasingHeldNotes = true;
         // Clear before callbacks: a MIDI handler may synchronously call close().
         const notes = Array.from(heldNotes.values());
         heldNotes.clear();
-        for (const note of notes) {
+        try {
+          for (const note of notes) {
           const bytes = [0x80 | note.channel, note.pitch, 0];
           const timeStamp = pageTimestamp();
           const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
@@ -92,6 +96,9 @@ final class MusicStudioWebMidiBridge {
           for (const listener of recipients) {
             try { listener(makeEvent()); } catch (_) {}
           }
+          }
+        } finally {
+          releasingHeldNotes = false;
         }
       }
 
