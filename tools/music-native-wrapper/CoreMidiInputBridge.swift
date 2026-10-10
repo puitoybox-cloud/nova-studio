@@ -80,8 +80,10 @@ final class CoreMidiInputBridge {
 
     private func refreshSources() {
         connectionLock.lock()
-        defer { connectionLock.unlock() }
-        guard inputPort != 0 else { return }
+        guard inputPort != 0 else {
+            connectionLock.unlock()
+            return
+        }
 
         let availableSources = (0..<MIDIGetNumberOfSources())
             .map(MIDIGetSource)
@@ -99,7 +101,12 @@ final class CoreMidiInputBridge {
         for source in changes.connect where MIDIPortConnectSource(inputPort, source, nil) == noErr {
             connectedSources.append(source)
         }
-        onSourceAvailability(!connectedSources.isEmpty)
+        let available = !connectedSources.isEmpty
+        connectionLock.unlock()
+
+        // Never invoke app callbacks while holding the Core MIDI connection
+        // lock. A synchronous consumer may call stop() or restart the bridge.
+        onSourceAvailability(available)
     }
 
     static func sourceChanges(
