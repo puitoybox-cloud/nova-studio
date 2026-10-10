@@ -23,6 +23,7 @@ final class MusicStudioWebMidiBridge {
       let lastTimestamp = 0;
       const heldNotes = new Map();
       const stateListeners = new Set();
+      const portStateListeners = new Set();
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
@@ -31,11 +32,14 @@ final class MusicStudioWebMidiBridge {
         state: 'disconnected',
         connection: 'closed',
         onmidimessage: null,
+        onstatechange: null,
         addEventListener(type, handler) {
           if (type === 'midimessage' && typeof handler === 'function') listeners.add(handler);
+          if (type === 'statechange' && typeof handler === 'function') portStateListeners.add(handler);
         },
         removeEventListener(type, handler) {
           if (type === 'midimessage') listeners.delete(handler);
+          if (type === 'statechange') portStateListeners.delete(handler);
         },
         open() {
           if (!sourceAvailable) return Promise.reject(new Error('MIDI input disconnected'));
@@ -84,6 +88,9 @@ final class MusicStudioWebMidiBridge {
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
         for (const listener of stateListeners) listener(event);
+        const portEvent = { port: input, target: input, currentTarget: input };
+        if (typeof input.onstatechange === 'function') input.onstatechange(portEvent);
+        for (const listener of portStateListeners) listener(portEvent);
       }
 
       function dispatch(payload) {
