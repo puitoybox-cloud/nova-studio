@@ -100,12 +100,18 @@ final class MusicStudioWebMidiBridge {
         if (!next) {
           releaseHeldNotes();
         }
+        // Snapshot both recipient sets before user callbacks: an onstatechange
+        // property handler may synchronously remove or add either listener.
+        const accessHandler = access.onstatechange;
+        const accessRecipients = Array.from(stateListeners);
+        const portHandler = input.onstatechange;
+        const portRecipients = Array.from(portStateListeners);
         const event = { port: input, target: access, currentTarget: access };
-        if (typeof access.onstatechange === 'function') access.onstatechange(event);
-        for (const listener of Array.from(stateListeners)) listener(event);
+        if (typeof accessHandler === 'function') accessHandler(event);
+        for (const listener of accessRecipients) listener(event);
         const portEvent = { port: input, target: input, currentTarget: input };
-        if (typeof input.onstatechange === 'function') input.onstatechange(portEvent);
-        for (const listener of Array.from(portStateListeners)) listener(portEvent);
+        if (typeof portHandler === 'function') portHandler(portEvent);
+        for (const listener of portRecipients) listener(portEvent);
       }
 
       function dispatch(payload) {

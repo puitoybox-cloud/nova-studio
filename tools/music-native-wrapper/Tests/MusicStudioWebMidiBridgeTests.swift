@@ -281,6 +281,12 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
                 XCTAssertTrue(changes.disconnect.isEmpty)
     }
 
+    func testStateChangeSnapshotsBeforePropertyHandlersMutateListeners() throws {
+        let c = try makeContext()
+        c.evaluateScript("var events=[]; var accessListener=e=>events.push('access-listener'); var portListener=e=>events.push('port-listener'); NovaMusicNativeMidiShim.access.addEventListener('statechange',accessListener); NovaMusicNativeMidiShim.input.addEventListener('statechange',portListener); NovaMusicNativeMidiShim.access.onstatechange=e=>{events.push('access-property'); NovaMusicNativeMidiShim.access.removeEventListener('statechange',accessListener); NovaMusicNativeMidiShim.input.removeEventListener('statechange',portListener);}; NovaMusicNativeMidiShim.input.onstatechange=e=>events.push('port-property'); NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(events)")?.toString(), #"["access-property","access-listener","port-property","port-listener"]"#)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
