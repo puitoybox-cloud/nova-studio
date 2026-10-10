@@ -83,8 +83,10 @@ final class MusicStudioWebMidiBridge {
         heldNotes.clear();
         for (const note of notes) {
           const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
-          if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
-          for (const listener of listeners) listener(event);
+          const onMessage = input.onmidimessage;
+          const recipients = Array.from(listeners);
+          if (typeof onMessage === 'function') onMessage(event);
+          for (const listener of recipients) listener(event);
         }
       }
 
@@ -100,10 +102,10 @@ final class MusicStudioWebMidiBridge {
         }
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
-        for (const listener of stateListeners) listener(event);
+        for (const listener of Array.from(stateListeners)) listener(event);
         const portEvent = { port: input, target: input, currentTarget: input };
         if (typeof input.onstatechange === 'function') input.onstatechange(portEvent);
-        for (const listener of portStateListeners) listener(portEvent);
+        for (const listener of Array.from(portStateListeners)) listener(portEvent);
       }
 
       function dispatch(payload) {
@@ -132,14 +134,21 @@ final class MusicStudioWebMidiBridge {
           target: input,
           currentTarget: input
         };
-        if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
-        for (const listener of listeners) listener(event);
+        // Snapshot callbacks before delivery: handlers may close/disconnect the
+        // port, remove listeners or add listeners during this very event.
+        const onMessage = input.onmidimessage;
+        const recipients = Array.from(listeners);
+        if (typeof onMessage === 'function') onMessage(event);
+        for (const listener of recipients) listener(event);
         return { accepted: true };
       }
 
       Object.defineProperty(navigator, 'requestMIDIAccess', {
         configurable: true,
-        value: async () => access
+        value: async (options = {}) => {
+          if (options?.sysex === true) throw new Error('Native MIDI SysEx is not supported');
+          return access;
+        }
       });
 
       window.NovaMusicNativeMidiShim = { access, input, dispatch, setSourceAvailable };
