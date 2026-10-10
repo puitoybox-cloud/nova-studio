@@ -17,181 +17,1174 @@
       "feature": 1,
       "classification": "C",
       "task": "Map each PDF No.1 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION",
+        "LEGACY-MIGRATION",
+        "NATIVE-RESTART"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Piano Roll",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "音符編集",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Velocity",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Quantize",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "音長",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Mute/Solo",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "複数Track",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Partial Edit",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Melody Correction",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "MIDI Cleanup",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 2,
       "classification": "C",
       "task": "Map each PDF No.2 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION",
+        "MIDI-FAULTS",
+        "LEGACY-MIGRATION",
+        "NATIVE-RESTART",
+        "MIDI-HARDWARE"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "MIDI鍵盤録音",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Count-in",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Metronome",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "録音",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "再生",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "保存",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 3,
       "classification": "C",
       "task": "Map each PDF No.3 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "BPM/Key/Scale/拍子解析",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "曲途中のTempo/Key/拍子変更",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "セクション解析",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "小節位置合わせ",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 4,
       "classification": "C",
       "task": "Map each PDF No.4 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "文章または歌詞からBPM候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Key候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "コード候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "メロディ候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "構成候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "楽器編成候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 5,
       "classification": "C",
       "task": "Map each PDF No.5 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "普通の会話で制作相談",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "操作案内",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "機能呼出し",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "複数作業",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "次の作業",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完成までの進行支援",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 6,
       "classification": "C",
       "task": "Map each PDF No.6 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "変更前確認",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "編集ロック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "A/B/C",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "部分採用/却下",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "変更履歴",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "特定変更Undo",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "元データ保護",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 7,
       "classification": "C",
       "task": "Map each PDF No.7 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "曲の続き",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "2番",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "ラスサビ",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Intro/Interlude/Outro",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "指定時間版",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "部分再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 8,
       "classification": "C",
       "task": "Map each PDF No.8 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "伴奏全体再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "単一/複数Track再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "メロディ固定",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "選択範囲固定",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 9,
       "classification": "C",
       "task": "Map each PDF No.9 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "コード解析",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "自動コード",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "コード候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "追従補正",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Voicing",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "コードだけ別案",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 10,
       "classification": "C",
       "task": "Map each PDF No.10 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "歌詞生成/修正",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "文字数",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "音符割当",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "アクセント",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "歌詞とメロディ調整",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "部分/全体再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "歌詞固定で曲再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "メロディ固定で歌詞再生成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 11,
       "classification": "C",
       "task": "Map each PDF No.11 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS",
+        "OWN-VOICE"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "メロディと歌詞から仮歌",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完成形確認",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "仮歌を聴きながら自然言語で部分修正",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 12,
       "classification": "C",
       "task": "Map each PDF No.12 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "非圧縮WAV",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "入力チェック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "モニター",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Latency補正",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Punch/Cycle",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Take/Comp",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "歌詞スクロール",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 13,
       "classification": "C",
       "task": "Map each PDF No.13 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "波形/歌詞/音符同期",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Pitch/Timing/長さ",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Crossfade",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Breath",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Vibrato",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "非破壊編集",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 14,
       "classification": "C",
       "task": "Map each PDF No.14 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS",
+        "OWN-VOICE"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Harmony",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Double",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Chorus",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "仮歌",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "自分の声利用:本人同意/技術/権利確認前提",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 15,
       "classification": "C",
       "task": "Map each PDF No.15 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "仮歌比較",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Take比較",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "音程/Timing/音域",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "補正か録り直しかの判断支援",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 16,
       "classification": "C",
       "task": "Map each PDF No.16 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS",
+        "MODEL-ACCURACY"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Vocals/Drums/Bass/Guitar/Piano/Other分離",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 17,
       "classification": "C",
       "task": "Map each PDF No.17 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS",
+        "MODEL-ACCURACY"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "変換",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "比較修正",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "誤変換候補",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "信頼度",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "楽器/精度/単音和音設定",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "自動整理",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 18,
       "classification": "C",
       "task": "Map each PDF No.18 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "Volume",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "EQ",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Compression",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "空間",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "伴奏との衝突",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "ボーカル可聴性",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "複数Mix案比較",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 19,
       "classification": "C",
       "task": "Map each PDF No.19 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "MASTER-PROCESSING"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "複数Master案",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "LUFS",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Peak",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Clipping",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "最終音量チェック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 20,
       "classification": "C",
       "task": "Map each PDF No.20 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOGIC-METHOD"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Logic用Export",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完成WAV/Stem/MIDI再取込",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "差分/対応管理",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "受渡し前チェック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 21,
       "classification": "C",
       "task": "Map each PDF No.21 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "MASTER-PROCESSING"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Master WAV/Instrumental/Stem/MIDI等一括Export",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "配信前チェック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 22,
       "classification": "C",
       "task": "Map each PDF No.22 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION",
+        "LEGACY-MIGRATION",
+        "NATIVE-RESTART",
+        "BINARY-BACKUP",
+        "CLOUD-ARCH"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Auto Save",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Checkpoint",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "複製",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "A/B比較",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "候補版",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "複数Version部分合成",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 23,
       "classification": "C",
       "task": "Map each PDF No.23 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION",
+        "LEGACY-MIGRATION",
+        "NATIVE-RESTART",
+        "BINARY-BACKUP",
+        "CLOUD-ARCH"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "完全Backup",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "別Mac移行",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "依存ファイル検査",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "破損チェック",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "自動復旧",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "更新前保（PDF抽出末尾の正式表記は未確認）",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 24,
       "classification": "C",
       "task": "Map each PDF No.24 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "重い原因",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "不具合診断",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "安全軽量化",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "安全に直せる範囲の自動修復",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 25,
       "classification": "C",
       "task": "Map each PDF No.25 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "ONLINE-POLICY",
+        "CLOUD-ARCH"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Local優先",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完全Local",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Project外部送信禁止",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "通信内容表示",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Intel/Apple Silicon最適化",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 26,
       "classification": "C",
       "task": "Map each PDF No.26 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "ONLINE-POLICY"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "有料処理事前料金表示",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "月額上限",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "AI別使用量/料金確認",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 27,
       "classification": "C",
       "task": "Map each PDF No.27 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [
+        "LOCAL-MODELS",
+        "ONLINE-POLICY",
+        "MODEL-ACCURACY"
+      ],
+      "subrequirements": [
+        {
+          "requirement": "Provider交換可能",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "軽量Model切替",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "速度/品質",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "旧Model",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "更新前Test",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "過去生成結果保護",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 28,
       "classification": "C",
       "task": "Map each PDF No.28 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "不要機能OFF",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "作業別UI",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "お気に入り操作",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "自然言語から必要画面",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 29,
       "classification": "C",
       "task": "Map each PDF No.29 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "曲/一部分素材保存",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "Key/BPM等調整",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "文章検索",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     },
     {
       "feature": 30,
       "classification": "C",
       "task": "Map each PDF No.30 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
-      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit",
+      "source": "Music_Studio_最終機能仕様書_v1.pdf p2; common integration p3/p4; conditional decisions p5; reread2026-10-10 JST",
+      "priority": 2,
+      "dependsOn": [],
+      "subrequirements": [
+        {
+          "requirement": "完成版固定",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "曲情報",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完成曲検索",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "制作Session",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "日次記録",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        },
+        {
+          "requirement": "完成までの時系列履歴",
+          "evidenceStatus": "CURRENT_END_TO_END_MAPPING_UNVERIFIED",
+          "doneWhen": "Current production path, backend/assets/policy when applicable, automated failure protection and physical acceptance evidence mapped; share common residual IDs rather than count duplicates"
+        }
+      ]
     }
   ],
   "items": [
@@ -440,5 +1433,6 @@
       "swift": "UNVERIFIED locally",
       "chrome": "UNVERIFIED locally"
     }
-  }
+  },
+  "requirementInventoryScope": "All30 feature headings and listed subrequirements transcribed from extracted PDF; no assertion that production trace is complete. No23 and No21 extracted titles/text are truncated; exact visual wording remains UNVERIFIED."
 }
