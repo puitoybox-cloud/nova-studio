@@ -37,6 +37,9 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
 
+      - name: Stage current Swift Package web resources
+        run: python3 scripts/music-stage-native-web.py tools/music-native-wrapper/MusicStudioWeb
+
       - name: Build native wrapper package
         working-directory: tools/music-native-wrapper
         run: swift build
@@ -48,6 +51,10 @@ jobs:
       - name: Build Swift package app target
         working-directory: tools/music-native-wrapper
         run: swift build --product MusicStudioNativeApp
+
+      - name: Verify executable resource bundle exact bytes
+        working-directory: tools/music-native-wrapper
+        run: swift run MusicStudioNativeApp --verify-bundled-assets
 
       - name: Build macOS Xcode app target
         working-directory: tools/music-native-wrapper

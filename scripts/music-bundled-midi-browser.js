@@ -60,7 +60,22 @@ async function verify(browser,base,width){
  assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);
  await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');await page.waitForFunction(()=>MusicStudio.state.midiEditor?.midiData?.tracks.find(t=>t.id==='melody')?.notes.some(n=>n.pitch===69));
  assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ // Explicit transfer into an isolated destination repository; no old-origin reads.
+ const transfer=await page.evaluate(()=>JSON.stringify(MusicStudio.state.projects.find(p=>p.projectId==='virtual-midi')));
+ const destination=await browser.newContext({viewport:{width,height:900}}),migrated=await destination.newPage();
+ await destination.route('**/*',route=>{const u=route.request().url();if(u.startsWith(base+'/')||u.startsWith('data:'))return route.continue();external.push(u);return route.abort()});
+ migrated.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push(m.text())});migrated.on('pageerror',e=>messages.push(e.message));
+ await migrated.goto(base+'/music-studio.html#music-studio',{waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),0);
+ const first=await migrated.evaluate(text=>MusicStudio.importText(text),transfer);assert.equal(first.ok,true);
+ const second=await migrated.evaluate(text=>MusicStudio.importText(text),transfer);assert.equal(second.ok,true);assert.equal(second.duplicated,true);assert.notEqual(second.project.projectId,first.project.projectId);
+ assert.deepEqual(second.project.midiData.tracks,first.project.midiData.tracks);
+ assert.equal((await migrated.evaluate(()=>MusicStudio.importText('{broken'))).ok,false);
+ await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),2);
+ assert.deepEqual(await migrated.evaluate(id=>MusicStudio.state.projects.find(p=>p.projectId===id).midiData.tracks,first.project.projectId),first.project.midiData.tracks);
+ await destination.close();
  assert.ok(expectedStorageErrors.length>0);
- assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,expectedStorageErrors,console:messages,external};
+ assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,expectedStorageErrors,console:messages,external};
 }
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||undefined,args:['--autoplay-policy=no-user-gesture-required']});try{const results=[];for(const width of [1440,820,390])results.push(await verify(browser,base,width));fs.mkdirSync('verification',{recursive:true});fs.writeFileSync('verification/music-bundled-midi-browser.json',JSON.stringify({scope:'CONTROLLED_VIRTUAL_MIDI_CHROME_NOT_PHYSICAL_OR_WKWEBVIEW',results},null,2));console.log(JSON.stringify(results))}finally{await browser.close();server.close();fs.rmSync(root,{recursive:true,force:true})}})().catch(e=>{console.error(e);server.close();process.exitCode=1});

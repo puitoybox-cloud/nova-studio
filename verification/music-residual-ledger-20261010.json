@@ -1,0 +1,423 @@
+{
+  "date": "2026-10-10 JST",
+  "source": "Music_Studio_最終機能仕様書_v1.pdf confirmed 2026-09-30",
+  "scope": "CONFIRMED_PARTIAL_RESIDUALS_NOT_TOTAL",
+  "totalResidualCounts": null,
+  "mandatoryBeforePhysicalTotal": null,
+  "knownSubsetCounts": {
+    "R1": 3,
+    "R2": 3,
+    "R3": 4,
+    "R4": 3
+  },
+  "knownSubsetBeforePhysical": 10,
+  "unknownReason": "Prior all30 matrix records groups of unverified functionality, not atomic completed requirements. No full current production/backend/policy evidence trace for all subrequirements, so unknown evidence is not mislabeled missing implementation. Per-feature audit obligations below are not added to residual counts.",
+  "featureAuditObligations": [
+    {
+      "feature": 1,
+      "classification": "C",
+      "task": "Map each PDF No.1 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 2,
+      "classification": "C",
+      "task": "Map each PDF No.2 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 3,
+      "classification": "C",
+      "task": "Map each PDF No.3 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 4,
+      "classification": "C",
+      "task": "Map each PDF No.4 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 5,
+      "classification": "C",
+      "task": "Map each PDF No.5 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 6,
+      "classification": "C",
+      "task": "Map each PDF No.6 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 7,
+      "classification": "C",
+      "task": "Map each PDF No.7 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 8,
+      "classification": "C",
+      "task": "Map each PDF No.8 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 9,
+      "classification": "C",
+      "task": "Map each PDF No.9 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 10,
+      "classification": "C",
+      "task": "Map each PDF No.10 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 11,
+      "classification": "C",
+      "task": "Map each PDF No.11 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 12,
+      "classification": "C",
+      "task": "Map each PDF No.12 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 13,
+      "classification": "C",
+      "task": "Map each PDF No.13 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 14,
+      "classification": "C",
+      "task": "Map each PDF No.14 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 15,
+      "classification": "C",
+      "task": "Map each PDF No.15 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 16,
+      "classification": "C",
+      "task": "Map each PDF No.16 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 17,
+      "classification": "C",
+      "task": "Map each PDF No.17 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 18,
+      "classification": "C",
+      "task": "Map each PDF No.18 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 19,
+      "classification": "C",
+      "task": "Map each PDF No.19 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 20,
+      "classification": "C",
+      "task": "Map each PDF No.20 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 21,
+      "classification": "C",
+      "task": "Map each PDF No.21 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 22,
+      "classification": "C",
+      "task": "Map each PDF No.22 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 23,
+      "classification": "C",
+      "task": "Map each PDF No.23 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 24,
+      "classification": "C",
+      "task": "Map each PDF No.24 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 25,
+      "classification": "C",
+      "task": "Map each PDF No.25 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 26,
+      "classification": "C",
+      "task": "Map each PDF No.26 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 27,
+      "classification": "C",
+      "task": "Map each PDF No.27 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 28,
+      "classification": "C",
+      "task": "Map each PDF No.28 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 29,
+      "classification": "C",
+      "task": "Map each PDF No.29 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    },
+    {
+      "feature": 30,
+      "classification": "C",
+      "task": "Map each PDF No.30 subrequirement and page3 integration to current code/backend/UI/storage/fault evidence; split only established missing units; share common dependencies.",
+      "completion": "Each subrequirement has PASS or concrete deduplicated residual ID; unresolved scope explicit"
+    }
+  ],
+  "items": [
+    {
+      "id": "NATIVE-PRODUCTION",
+      "category": "R2",
+      "features": [
+        1,
+        2,
+        6,
+        22,
+        23
+      ],
+      "task": "Native MIDI/WKWebView/WebAudio production recording→Stop→save→reopen→play→edit automation",
+      "evidence": "PR370 native production evidence missing",
+      "priority": 1,
+      "dependsOn": [],
+      "doneWhen": "Executable native test reports actual production APIs and original Track preservation",
+      "status": "OPEN"
+    },
+    {
+      "id": "MIDI-FAULTS",
+      "category": "R2",
+      "features": [
+        2
+      ],
+      "task": "Complete bounded delayed-audio/count-in/navigation/disconnect rapid-toggle matrix",
+      "evidence": "PR370 expressly limits browser fault combinations",
+      "priority": 2,
+      "dependsOn": [],
+      "doneWhen": "Each defined case asserts cancellation and no stale writes in real browser",
+      "status": "OPEN"
+    },
+    {
+      "id": "LEGACY-MIGRATION",
+      "category": "R2",
+      "features": [
+        1,
+        2,
+        22,
+        23
+      ],
+      "task": "Versioned old-public fixtures through explicit JSON and Backup migration, native file UI included",
+      "evidence": "Current test uses current-schema source, not historical release fixture",
+      "priority": 1,
+      "dependsOn": [],
+      "doneWhen": "Historical fixture IDs/notes preserved, duplicate and malformed input safe, native import/export functional",
+      "status": "OPEN"
+    },
+    {
+      "id": "NATIVE-RESTART",
+      "category": "R4",
+      "features": [
+        1,
+        2,
+        22,
+        23
+      ],
+      "task": "Quit/restart/update macOS+iPad and reopen saved music",
+      "evidence": "Same-process WebView replacement cannot certify physical persistence",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION"
+      ],
+      "doneWhen": "Actual device records unchanged IDs/notes after app restart/update",
+      "status": "OPEN"
+    },
+    {
+      "id": "MIDI-HARDWARE",
+      "category": "R4",
+      "features": [
+        2
+      ],
+      "task": "Keystation input, audible count-in/metronome/playback and cancellation acceptance",
+      "evidence": "Formal specification No2 + no physical device here",
+      "priority": 1,
+      "dependsOn": [
+        "NATIVE-PRODUCTION",
+        "MIDI-FAULTS"
+      ],
+      "doneWhen": "Device checklist completed with recordings preserved",
+      "status": "OPEN"
+    },
+    {
+      "id": "MASTER-PROCESSING",
+      "category": "R1",
+      "features": [
+        19,
+        21
+      ],
+      "task": "Implement production LUFS/Peak/Clipping mastering and candidate audition/export",
+      "evidence": "Prior matrix No19 planned mastering status",
+      "priority": 3,
+      "dependsOn": [],
+      "doneWhen": "Actual measured audio processing connected with tests and export",
+      "status": "OPEN"
+    },
+    {
+      "id": "BINARY-BACKUP",
+      "category": "R1",
+      "features": [
+        22,
+        23
+      ],
+      "task": "Connect automatic binary backup and external referenced bytes add-only restore",
+      "evidence": "Prior matrix No23 automatic binary backup unconnected",
+      "priority": 2,
+      "dependsOn": [],
+      "doneWhen": "Validated actual binary+metadata atomic restore tests and UI pass",
+      "status": "OPEN"
+    },
+    {
+      "id": "LOCAL-MODELS",
+      "category": "R3",
+      "features": [
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        16,
+        17,
+        27
+      ],
+      "task": "Select processing-specific practical Intel/Apple Silicon models and approved assets/licenses",
+      "evidence": "Formal PDF page5 Local AI/model decision remains open",
+      "priority": 3,
+      "dependsOn": [],
+      "doneWhen": "Model inventory, licenses and explicit authorized assets verified; no download assumed",
+      "status": "OPEN"
+    },
+    {
+      "id": "OWN-VOICE",
+      "category": "R3",
+      "features": [
+        11,
+        14
+      ],
+      "task": "Confirm consent/model/license/quality/processing mode for own-voice guide vocal",
+      "evidence": "Formal PDF page5 explicitly conditional",
+      "priority": 3,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "doneWhen": "Explicit consent and permitted usable model documented",
+      "status": "OPEN"
+    },
+    {
+      "id": "ONLINE-POLICY",
+      "category": "R3",
+      "features": [
+        25,
+        26,
+        27
+      ],
+      "task": "Confirm interchangeable provider terms, data retention/training, fee and limits",
+      "evidence": "Formal PDF page5 Online AI not fixed",
+      "priority": 3,
+      "dependsOn": [],
+      "doneWhen": "Selected terms/date and allowed operation policy verified; no live calls",
+      "status": "OPEN"
+    },
+    {
+      "id": "CLOUD-ARCH",
+      "category": "R1",
+      "features": [
+        22,
+        23,
+        25
+      ],
+      "task": "Select and implement cloud-sync encryption/conflict/offline architecture",
+      "evidence": "Formal PDF page5 Cloud Sync architecture unresolved",
+      "priority": 3,
+      "dependsOn": [
+        "ONLINE-POLICY"
+      ],
+      "doneWhen": "Approved architecture and actual adapter/conflict/offline tests complete",
+      "status": "OPEN"
+    },
+    {
+      "id": "LOGIC-METHOD",
+      "category": "R3",
+      "features": [
+        20
+      ],
+      "task": "Verify official safe Logic direct-operation or .logicx compatibility method before implementation choice",
+      "evidence": "Formal PDF page5 conditional; direct .logicx is not an assumed unconditional requirement",
+      "priority": 3,
+      "dependsOn": [],
+      "doneWhen": "Official supported method established or unresolved scope expressly retained",
+      "status": "OPEN"
+    },
+    {
+      "id": "MODEL-ACCURACY",
+      "category": "R4",
+      "features": [
+        16,
+        17,
+        27
+      ],
+      "task": "Intel real audio separation/conversion accuracy and resource limits",
+      "evidence": "PDF pages3/5 prioritizes Intel Audio-to-MIDI accuracy",
+      "priority": 3,
+      "dependsOn": [
+        "LOCAL-MODELS"
+      ],
+      "doneWhen": "Actual models/device fixture results recorded",
+      "status": "OPEN"
+    }
+  ],
+  "shortestKnownOrder": [
+    "NATIVE-PRODUCTION",
+    "MIDI-FAULTS",
+    "LEGACY-MIGRATION",
+    "BINARY-BACKUP",
+    "MASTER-PROCESSING",
+    "LOCAL-MODELS",
+    "OWN-VOICE",
+    "ONLINE-POLICY",
+    "LOGIC-METHOD",
+    "CLOUD-ARCH",
+    "NATIVE-RESTART",
+    "MIDI-HARDWARE",
+    "MODEL-ACCURACY"
+  ]
+}
