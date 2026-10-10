@@ -2,7 +2,7 @@
 
 Primary source: Music_Studio_最終機能仕様書_v1.pdf (2026-09-30), all 5 pages /166 extracted lines reread 2026-10-10. Prior matrix: verification/music-bundled-midi-20261010.md at #370 f661d538b1c83b7e0005dd2e6af5b89e29e88ecf.
 
-Current main via git ls-remote: 552d56eafddfd192970c09f7d6278696cf8775c3. GitHub REST open PR pages 1/2:117 open,115 Draft, newest #370. Every list record includes current HEAD/base; full per-PR conflicts/commits/files/exact-head historical runs for all115 remain UNVERIFIED (not claimed retrieved). #370 metadata/patch reread: Draft/Open/mergeable,3 commits/10 files. Base native/browser Actions38035997288/38035997294 SUCCESS and decoded job logs fetched. This branch stacks on unchanged #370; no existing refs changed.
+Current main via git ls-remote: 552d56eafddfd192970c09f7d6278696cf8775c3. GitHub REST open PR pages 1/2:117 open,115 Draft, newest #370. Every list record includes current HEAD/base; All115 Draft metadata/head/base/conflicts/change stats and paginated filenames re-fetched without errors; all115 mergeable, no HEAD change. All115 current base..head commit ranges retrieved from fetched Git objects. PR-triggered exact-head first-page run listings retrieved for all115; historical branch-create runs/full logs exhaustion remains UNVERIFIED. #370 metadata/patch reread: Draft/Open/mergeable,3 commits/10 files. Base native/browser Actions38035997288/38035997294 SUCCESS and decoded job logs fetched. This branch stacks on unchanged #370; no existing refs changed.
 
 ## Concrete implementation
 - Swift Package executable declares MusicStudioWeb copy resources and passes Bundle.module.resourceURL on both platform paths. Supported standard launcher scripts/music-run-native-package.sh stages current tracked HTML/JS/CSS/images before swift run. CI stages resources before Swift build/test. A raw swift run without staging fails closed; README placeholder is not a working product bundle.
@@ -11,8 +11,13 @@ Current main via git ls-remote: 552d56eafddfd192970c09f7d6278696cf8775c3. GitHub
 - Browser explicit JSON transfer from source into a separate empty context, duplicate project-ID import and invalid JSON rejection, reload and exact MIDI Tracks. Browser context isolation does not prove legacy-version compatibility or native import/download UI. No cross-origin automatic data access.
 - Existing JSON import is add-only for a duplicate project ID; original MIDI Track IDs/notes retained. No existing production databases are touched. MIDI JSON does not include externally referenced audio bytes; full binary migration has separate unfinished requirements.
 
+Initial HEAD70d6b12 real Chrome CI38037070196 SUCCESS: all3 widths recording/save/reopen/play/edit/fault recovery and explicit isolated JSON import/duplicate/corrupt rejection PASS; ordinary console error/warn/pageerror0 and external requests0. One deliberately injected IndexedDB AbortError per width is reported separately, not concealed. These results do not certify the later import-race fix before final CI.
+
+## Additional No.1 original-song protection fix
+A deterministic regression reproduced JSON import overwriting a different song inserted between has(projectId) and put(). The import now uses existing atomic compareAndPut with an absent baseline in the same storage transaction; a collision retries with a new project ID. Missing atomic adapters fail closed. Track IDs/notes are unchanged; operational storage failures are not treated as collisions. Added unit regression and real IndexedDB race fixture in Chrome migration flow. This also protects No.6/22/23 shared original data boundaries, without claiming their full completion.
+
 ## Evidence
-Local Node2015/2015 PASS; Python504 PASS/5 skips (509 run);184 JS checks and54 Python compile PASS; git diff --check PASS. Local Swift/Xcode/Chrome absent: UNVERIFIED. Remote exact-head CI pending at commit; final PR evidence supersedes this pending state. No estimated rate or time.
+Final local Node2018/2018 PASS (+3 meaningful import-safety regressions); Python504 PASS/5 skips (509 run);184 JS checks and54 Python compile PASS; git diff --check PASS. Local Swift/Xcode/Chrome absent: UNVERIFIED. Initial published HEAD70d6b122ed6c4f681ae96bb5a9b36cc2770fff4d software/native CI38037068040 SUCCESS: Node2015,Python504/5 skip,Swift57,file-origin fixture host replacement PASS,SPM152 exact bytes verified,both unsigned builds SUCCESS. Production whole recording/native restart remains unverified. Updated final exact-head CI pending at commit; final PR evidence supersedes this pending state. No estimated rate or time.
 
 ## All30 current classifications
 |No.|正式大機能|区分|C理由の分類|根拠と実機以外の残件|次の作業|
@@ -34,7 +39,7 @@ Local Node2015/2015 PASS; Python504 PASS/5 skips (509 run);184 JS checks and54 P
 |15|ボーカル完成チェック|C|実装不足／backend不足／実機確認待ち|Take/仮歌比較・補正判断支援完成は確認できません。単独起動の機能別証明は未完。|software/backend未確認の解消、共通production/policy不足解消後に実機|
 |16|Stem Separation|C|依存資産不足／policy不足／自動テスト不足／実機確認待ち|server/Demucs child pipelineあり、approved runtimeなし。単独起動の機能別証明は未完。|actual assets/policy/実model未完の解消、共通production/policy不足解消後に実機|
 |17|Audio-to-MIDI|C|依存資産不足／policy不足／自動テスト不足／実機確認待ち|pipeline/repair/comparisonあり、今回realモデル精度未検証。単独起動の機能別証明は未完。|actual assets/Intel精度未完の解消、共通production/policy不足解消後に実機|
-|18|AIミックス支援|C|実装不足／自動テスト不足／実機確認待ち|music-studio.js: 実PCM Gain/EQ/Compression/提案/A-B/保存あり。本PRで同期区間を候補へ接続し、短PCM空間処理・保存・履歴・再Open・WAV出力を追加。ボーカル可聴性の完成証明、複数伴奏分析・ブラウザ検証は未完。単独起動の機能別証明は未完。|複数伴奏/可聴性・空間全仕様・ブラウザ検証、共通production/policy不足解消後に実機|
+|18|AIミックス支援|C|実装不足／自動テスト不足／実機確認待ち|music-studio.js: 実PCM Gain/EQ/Compression/提案/A-B/保存あり。既存実装で同期区間を候補へ接続し、短PCM空間処理・保存・履歴・再Open・WAV出力を追加。ボーカル可聴性の完成証明、複数伴奏分析・ブラウザ検証は未完。単独起動の機能別証明は未完。|複数伴奏/可聴性・空間全仕様・ブラウザ検証、共通production/policy不足解消後に実機|
 |19|AIマスタリング|C|実装不足／backend不足／画面未接続／実機確認待ち|music-studio.js mastering status=planned、masteringNotesはLUFS処理ではない。単独起動の機能別証明は未完。|planned・処理backend未完の解消、共通production/policy不足解消後に実機|
 |20|Logic Pro往復連携|C|実装不足／画面未接続／実機確認待ち|SMF import/exportあり、audio referenceはtab内確認のみ、.logicx直接未対応。単独起動の機能別証明は未完。|WAV/Stem往復・直接操作未達の解消、共通production/policy不足解消後に実機|
 |21|最終書出し・配信パッケー|C|実装不足／backend不足／実機確認待ち|MIDI exportあり、Master/Instrumental/Stem一括完成は未確認。単独起動の機能別証明は未完。|一括audio export全要件未確認の解消、共通production/policy不足解消後に実機|

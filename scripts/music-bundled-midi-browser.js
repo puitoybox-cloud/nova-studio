@@ -71,11 +71,21 @@ async function verify(browser,base,width){
  const second=await migrated.evaluate(text=>MusicStudio.importText(text),transfer);assert.equal(second.ok,true);assert.equal(second.duplicated,true);assert.notEqual(second.project.projectId,first.project.projectId);
  assert.deepEqual(second.project.midiData.tracks,first.project.midiData.tracks);
  assert.equal((await migrated.evaluate(()=>MusicStudio.importText('{broken'))).ok,false);
+ const raced=await migrated.evaluate(async text=>{
+  const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);
+  const incoming=JSON.parse(text);incoming.projectId='race-song';incoming.projectName='Incoming race';
+  const protectedSong=structuredClone(incoming);protectedSong.projectName='Protected race';
+  const has=repo.has;let inserted=false;repo.has=async id=>{const found=await has(id);if(!inserted){inserted=true;await repo.put(protectedSong)}return found};
+  const result=await app.importText(JSON.stringify(incoming));
+  return {result,protectedSong:await repo.get('race-song')};
+ },transfer);
+ assert.equal(raced.result.ok,true);assert.equal(raced.result.duplicated,true);assert.notEqual(raced.result.project.projectId,'race-song');assert.equal(raced.protectedSong.projectName,'Protected race');assert.deepEqual(raced.result.project.midiData.tracks,raced.protectedSong.midiData.tracks);
  await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
- assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),2);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),4);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.find(p=>p.projectId==='race-song').projectName),'Protected race');
  assert.deepEqual(await migrated.evaluate(id=>MusicStudio.state.projects.find(p=>p.projectId===id).midiData.tracks,first.project.projectId),first.project.midiData.tracks);
  await destination.close();
  assert.ok(expectedStorageErrors.length>0);
- assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,expectedStorageErrors,console:messages,external};
+ assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,expectedStorageErrors,console:messages,external};
 }
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||undefined,args:['--autoplay-policy=no-user-gesture-required']});try{const results=[];for(const width of [1440,820,390])results.push(await verify(browser,base,width));fs.mkdirSync('verification',{recursive:true});fs.writeFileSync('verification/music-bundled-midi-browser.json',JSON.stringify({scope:'CONTROLLED_VIRTUAL_MIDI_CHROME_NOT_PHYSICAL_OR_WKWEBVIEW',results},null,2));console.log(JSON.stringify(results))}finally{await browser.close();server.close();fs.rmSync(root,{recursive:true,force:true})}})().catch(e=>{console.error(e);server.close();process.exitCode=1});
