@@ -86,8 +86,10 @@ final class MusicStudioWebMidiBridge {
           const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
           const onMessage = input.onmidimessage;
           const recipients = Array.from(listeners);
-          if (typeof onMessage === 'function') onMessage(event);
-          for (const listener of recipients) listener(event);
+          try { if (typeof onMessage === 'function') onMessage(event); } catch (_) {}
+          for (const listener of recipients) {
+            try { listener(event); } catch (_) {}
+          }
         }
       }
 
@@ -112,19 +114,19 @@ final class MusicStudioWebMidiBridge {
         const portHandler = input.onstatechange;
         const portRecipients = Array.from(portStateListeners);
         const event = { port: input, target: access, currentTarget: access };
-        if (typeof accessHandler === 'function') accessHandler(event);
+        try { if (typeof accessHandler === 'function') accessHandler(event); } catch (_) {}
         if (revision !== sourceRevision) return;
         for (const listener of accessRecipients) {
           if (revision !== sourceRevision) return;
-          listener(event);
+          try { listener(event); } catch (_) {}
         }
         if (revision !== sourceRevision) return;
         const portEvent = { port: input, target: input, currentTarget: input };
-        if (typeof portHandler === 'function') portHandler(portEvent);
+        try { if (typeof portHandler === 'function') portHandler(portEvent); } catch (_) {}
         if (revision !== sourceRevision) return;
         for (const listener of portRecipients) {
           if (revision !== sourceRevision) return;
-          listener(portEvent);
+          try { listener(portEvent); } catch (_) {}
         }
       }
 
@@ -146,6 +148,8 @@ final class MusicStudioWebMidiBridge {
         const channel = status & 0x0f;
         const pitch = Number(data[1]);
         const key = channel + ':' + pitch;
+        // Avoid retaining stale held notes if a reentrant disconnect/close
+        // occurs while notifying handlers of this incoming note.
         if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
         else heldNotes.delete(key);
         const event = {
@@ -158,8 +162,15 @@ final class MusicStudioWebMidiBridge {
         // port, remove listeners or add listeners during this very event.
         const onMessage = input.onmidimessage;
         const recipients = Array.from(listeners);
-        if (typeof onMessage === 'function') onMessage(event);
-        for (const listener of recipients) listener(event);
+        try {
+          if (typeof onMessage === 'function') onMessage(event);
+        } catch (_) {
+          // A faulty page callback must not prevent other MIDI consumers
+          // from receiving a note-off or leave native delivery broken.
+        }
+        for (const listener of recipients) {
+          try { listener(event); } catch (_) {}
+        }
         return { accepted: true };
       }
 

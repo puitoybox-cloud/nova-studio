@@ -313,6 +313,24 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(c.evaluateScript("JSON.stringify(portStates)")?.toString(), #"["disconnected"]"#)
     }
 
+    func testThrowingMidiCallbackDoesNotSuppressOtherConsumers() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var events=[]; NovaMusicNativeMidiShim.input.onmidimessage=e=>{throw Error('handler fault');}; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>events.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,60,90]}); NovaMusicNativeMidiShim.dispatch({data:[128,60,0]});")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(events)")?.toString(), #"[[144,60,90],[128,60,0]]"#)
+    }
+
+    func testThrowingListenerDoesNotSuppressOtherMidiListeners() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var events=[]; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>{throw Error('fault');}); NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>events.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,61,90]}); NovaMusicNativeMidiShim.input.close();")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(events)")?.toString(), #"[[144,61,90],[128,61,0]]"#)
+    }
+
+    func testThrowingStateListenersDoNotBlockConnectionState() throws {
+        let c = try makeContext()
+        c.evaluateScript("var states=[]; NovaMusicNativeMidiShim.access.onstatechange=e=>{throw Error('fault');}; NovaMusicNativeMidiShim.access.addEventListener('statechange',e=>states.push(e.port.state)); NovaMusicNativeMidiShim.input.onstatechange=e=>{throw Error('fault');}; NovaMusicNativeMidiShim.input.addEventListener('statechange',e=>states.push(e.port.state)); NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(states)")?.toString(), #"["connected","connected","disconnected","disconnected"]"#)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
