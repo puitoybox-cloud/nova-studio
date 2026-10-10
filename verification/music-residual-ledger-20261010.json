@@ -428,8 +428,17 @@
     "newConfirmedResiduals": 0,
     "limitations": [
       "Native chooser UI automation pending",
-      "App process restart unverified",
-      "Formal PDF not reread in this work; full denominator remains unknown"
-    ]
+      "App process restart unverified"
+    ],
+    "formalSourceReread": "2026-10-10 JST: all5 pages/166 extracted lines; full production evidence denominator remains unknown",
+    "localValidation": {
+      "nodePass": 2018,
+      "pythonPass": 504,
+      "pythonSkip": 5,
+      "jsSyntax": "PASS",
+      "whitespace": "PASS",
+      "swift": "UNVERIFIED locally",
+      "chrome": "UNVERIFIED locally"
+    }
   }
 }
