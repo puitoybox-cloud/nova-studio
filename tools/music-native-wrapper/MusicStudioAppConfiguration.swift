@@ -9,6 +9,18 @@ public struct MusicStudioAppConfiguration: Equatable {
     public private(set) var ownedSession: String? = nil
     public private(set) var ownedSummaryDescriptor: Int32? = nil
 
+    private var bundledRoot: URL? = nil
+
+    /// Current build's packaged web assets; absent assets never fall back online.
+    public static func bundled(resourceURL: URL?) -> MusicStudioAppConfiguration? {
+        guard let root = resourceURL?.appendingPathComponent("MusicStudioWeb", isDirectory: true) else { return nil }
+        let entry = root.appendingPathComponent("music-studio.html")
+        guard FileManager.default.fileExists(atPath: entry.path) else { return nil }
+        var result = MusicStudioAppConfiguration(startURL: entry)
+        result.bundledRoot = root.resolvingSymlinksInPath().standardizedFileURL
+        return result
+    }
+
     /// Explicit adapter for a launcher-supplied loopback origin. Caller must
     /// validate its anchored envelope; this is navigation containment only.
     public static func localHosted(startURL: URL) -> MusicStudioAppConfiguration? {
@@ -22,8 +34,8 @@ public struct MusicStudioAppConfiguration: Equatable {
     }
 
     /// Explicit launcher channel. Invalid/missing strict startup never chooses HTTPS.
-    public static func startup(environment: [String: String], now: Date = Date()) -> MusicStudioAppConfiguration? {
-        guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return .production }
+    public static func startup(environment: [String: String], now: Date = Date(), resourceURL: URL? = Bundle.main.resourceURL) -> MusicStudioAppConfiguration? {
+        guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return bundled(resourceURL: resourceURL) }
         guard let text = environment["NOVA_LOCAL_HANDOFF"], text.utf8.count <= 4096,
               let data = text.data(using: .utf8),
               var value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
@@ -82,7 +94,11 @@ public struct MusicStudioAppConfiguration: Equatable {
         if startURL.isFileURL {
             // Local mode is selected only by a local start URL. Keep it separate
             // from the remote allowlist and reject file URLs with a remote host.
-            return url.isFileURL && url.host == nil
+            guard url.isFileURL && url.host == nil else { return false }
+            if let root = bundledRoot {
+                return url.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(root.path + "/")
+            }
+            return true
         }
 
         guard

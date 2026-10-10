@@ -4,6 +4,8 @@ on:
     branches: ['checkpoint/music-resume-20261002-late']
   pull_request:
     paths:
+      - 'scripts/music-bundled-midi-browser.js'
+      - 'scripts/music-stage-native-web.py'
       - 'tools/music-audio-pipeline/**'
       - 'music-studio-ai-*.js'
       - 'music-studio-ai-*.css'
@@ -37,11 +39,13 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-bundled-midi-browser.json
             music-ai-*.png
             verification/music-ai-assistant-browser-report-20261002.json

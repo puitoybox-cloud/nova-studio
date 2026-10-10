@@ -61,7 +61,11 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKScr
         let coordinator = NativeMidiCoordinator(webView: webView, platform: platform)
         midiCoordinator = coordinator
         _ = coordinator.start()
-        webView.load(URLRequest(url: configuration.startURL))
+        if configuration.startURL.isFileURL {
+            webView.loadFileURL(configuration.startURL, allowingReadAccessTo: configuration.startURL.deletingLastPathComponent())
+        } else {
+            webView.load(URLRequest(url: configuration.startURL))
+        }
     }
 
     /// Explicit Swift owner API; page messages cannot choose request/result authority.
