@@ -5,7 +5,7 @@ execFileSync('python3',[path.join(__dirname,'music-stage-native-web.py'),root]);
 const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://localhost').pathname.slice(1),file=path.resolve(root,name);if(!file.startsWith(root+'/')||!fs.existsSync(file)){res.writeHead(404);return res.end()}res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res)});
 async function verify(browser,base,width){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),messages=[],external=[],expectedStorageErrors=[];let injectingStorageFailure=false;
- page.on('console',m=>{if(['error','warning'].includes(m.type()))(injectingStorageFailure?expectedStorageErrors:messages).push(m.text())});page.on('pageerror',e=>messages.push(e.message));
+ page.on('console',m=>{if(['error','warning'].includes(m.type()))(injectingStorageFailure?expectedStorageErrors:messages).push(m.text())});page.on('pageerror',e=>messages.push(e.message));page.on('response',r=>{if(r.status()>=400)console.log('BUNDLED_HTTP_ERROR',r.status(),r.url())});
  await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith(base+'/')||u.startsWith('data:'))return route.continue();external.push(u);return route.abort()});
  await context.addInitScript(()=>{
   const input={id:'virtual-keys',name:'Controlled virtual MIDI',state:'connected',type:'input',onmidimessage:null},access={inputs:new Map([[input.id,input]]),onstatechange:null};
