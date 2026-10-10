@@ -19,14 +19,15 @@ final class MusicStudioWebMidiBridge {
       if (typeof navigator.requestMIDIAccess === 'function') return;
 
       const listeners = new Set();
+      let sourceAvailable = false;
       let lastTimestamp = 0;
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
         name: 'Core MIDI (Native)',
         type: 'input',
-        state: 'connected',
-        connection: 'open',
+        state: 'disconnected',
+        connection: 'closed',
         onmidimessage: null,
         addEventListener(type, handler) {
           if (type === 'midimessage' && typeof handler === 'function') listeners.add(handler);
@@ -35,6 +36,7 @@ final class MusicStudioWebMidiBridge {
           if (type === 'midimessage') listeners.delete(handler);
         },
         open() {
+          if (!sourceAvailable) return Promise.reject(new Error('MIDI input disconnected'));
           this.connection = 'open';
           return Promise.resolve(this);
         },
@@ -57,7 +59,18 @@ final class MusicStudioWebMidiBridge {
         return lastTimestamp;
       }
 
+      function setSourceAvailable(available) {
+        const next = available === true;
+        if (next === sourceAvailable) return;
+        sourceAvailable = next;
+        input.state = next ? 'connected' : 'disconnected';
+        input.connection = next ? 'open' : 'closed';
+        const event = { port: input, target: access, currentTarget: access };
+        if (typeof access.onstatechange === 'function') access.onstatechange(event);
+      }
+
       function dispatch(payload) {
+        if (!sourceAvailable) return { accepted: false, reason: 'midi-disconnected' };
         const data = Array.from(payload?.data || []);
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
         if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
@@ -85,9 +98,18 @@ final class MusicStudioWebMidiBridge {
         value: async () => access
       });
 
-      window.NovaMusicNativeMidiShim = { access, input, dispatch };
+      window.NovaMusicNativeMidiShim = { access, input, dispatch, setSourceAvailable };
     })();
     """#
+
+    func setSourceAvailable(_ available: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            self?.webView?.callAsyncJavaScript(
+                "return window.NovaMusicNativeMidiShim?.setSourceAvailable(available) ?? null;",
+                arguments: ["available": available], in: nil, in: .page
+            ) { _ in }
+        }
+    }
 
     func sendNoteMessage(_ bytes: [UInt8]) {
         guard bytes.count == 3 else { return }
