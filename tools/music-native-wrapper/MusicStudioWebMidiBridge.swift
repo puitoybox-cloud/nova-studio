@@ -115,7 +115,10 @@ final class MusicStudioWebMidiBridge {
         const accessRecipients = Array.from(stateListeners);
         const portHandler = input.onstatechange;
         const portRecipients = Array.from(portStateListeners);
-        const event = { port: input, target: access, currentTarget: access };
+        // Preserve the event's state at dispatch time. Nested reconnects must
+        // not change what listeners of the earlier transition observe.
+        const transitionState = input.state;
+        const event = { port: input, target: access, currentTarget: access, transitionState };
         try { if (typeof accessHandler === 'function') accessHandler(event); } catch (_) {}
         if (revision !== sourceRevision) return;
         for (const listener of accessRecipients) {
@@ -123,7 +126,7 @@ final class MusicStudioWebMidiBridge {
           try { listener(event); } catch (_) {}
         }
         if (revision !== sourceRevision) return;
-        const portEvent = { port: input, target: input, currentTarget: input };
+        const portEvent = { port: input, target: input, currentTarget: input, transitionState };
         try { if (typeof portHandler === 'function') portHandler(portEvent); } catch (_) {}
         if (revision !== sourceRevision) return;
         for (const listener of portRecipients) {
