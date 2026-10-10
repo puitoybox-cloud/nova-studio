@@ -78,3 +78,5 @@ Intel Mac Chrome + Keystation: permission/audio wait Stop; route/change project;
 Draft only. No Ready/Merge/Auto Merge/force push, main/existing PR/song/backup changes, Live Provider requests, model downloads, installations, signatures, notarization or sale.
 
 Follow-up: inherited dependency CI on both #368/#369 failed when static URL scanning encountered malformed IPv6 syntax. Scanner now retains INVALID_URL_REFERENCE/UNVERIFIED evidence and continues scanning valid hosts, without suppressing the unresolved boundary. Added Python regression; no runtime network or installation. All115 historical head workflow listings retrieved; job/log exhaustive coverage remains UNVERIFIED.
+
+Second inherited browser-fixture defect surfaced after URL scanning resumed: transaction harness requested IndexedDB version5 although production is version6. Open the already initialized fixture DB without imposing a downgrade version; production schema/database and saved songs unchanged. Local JS syntax/whitespace PASS; real-browser proof remains pending final CI.
