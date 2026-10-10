@@ -257,5 +257,6 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         let platformName = "mac"
         #endif
         MusicStudioWebMidiBridge(webView: webView).installCapabilityMetadata(platform: platformName)
+        midiCoordinator?.resyncPageAvailability()
     }
 }

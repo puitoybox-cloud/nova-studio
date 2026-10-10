@@ -50,13 +50,14 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.access.inputs.size")?.toInt32(), 1)
         XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.id")?.toString(), "nova-native-core-midi")
         XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.name")?.toString(), "Core MIDI (Native)")
-        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "connected")
-        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "open")
+        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "disconnected")
+        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
         XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.access.outputs.size")?.toInt32(), 0)
     }
 
     func testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage() throws {
         let context = try makeContext()
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = event => received.push({ data: Array.from(event.data), timeStamp: event.timeStamp });")
         XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x90,60,100]}).accepted")?.toBool() == true)
         XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x80,60,0]}).accepted")?.toBool() == true)
@@ -72,7 +73,10 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
             "NovaMusicNativeMidiShim.dispatch({data:[0x90,128,1]}).accepted",
             "NovaMusicNativeMidiShim.dispatch({data:[0x90,60,-1]}).accepted",
             "NovaMusicNativeMidiShim.dispatch({data:[0xB0,60,1]}).accepted",
-            "NovaMusicNativeMidiShim.dispatch({data:['bad',60,1]}).accepted"
+            "NovaMusicNativeMidiShim.dispatch({data:['bad',60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:['144',60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:[true,60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:{0:144,1:60,2:1,length:3}}).accepted"
         ] {
             XCTAssertFalse(context.evaluateScript(expression)?.toBool() == true)
         }
@@ -80,9 +84,98 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
 
     func testShimUsesFiniteNonnegativeMonotonicPageClock() throws {
         let context = try makeContext(performanceNow: "(() => { let values = [12, 8, NaN]; return () => values.shift(); })()")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var stamps = []; NovaMusicNativeMidiShim.input.onmidimessage = event => stamps.push(event.timeStamp);")
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x90,60,1]}); NovaMusicNativeMidiShim.dispatch({data:[0x80,60,0]}); NovaMusicNativeMidiShim.dispatch({data:[0x90,61,1]});")
         XCTAssertEqual(context.evaluateScript("JSON.stringify(stamps)")?.toString(), "[12,12,12]")
+    }
+
+    func testSourceDisconnectRejectsNotesAndReconnectRestoresDelivery() throws {
+        let context = try makeContext()
+        context.evaluateScript("var changes = []; NovaMusicNativeMidiShim.access.onstatechange = e => changes.push(e.port.state);")
+        XCTAssertFalse(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,90]}).accepted")?.toBool() == true)
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,90]}).accepted")?.toBool() == true)
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertFalse(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,90]}).accepted")?.toBool() == true)
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(changes)")?.toString(), "[\"connected\",\"disconnected\"]")
+    }
+
+    func testDisconnectReleasesHeldNotesAndDoesNotReplayThem() throws {
+        let context = try makeContext()
+        context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = e => received.push(Array.from(e.data));")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,60,90]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(received)")?.toString(), "[[145,60,90],[129,60,0]]")
+    }
+
+    func testDisconnectReleasesAllChannelsAndRepeatedNotesOnce() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; NovaMusicNativeMidiShim.input.onmidimessage = e => events.push(Array.from(e.data));")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,110]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,60,90]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,62,90]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,62,0]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events.slice(5))")?.toString(), "[[128,60,0],[129,60,0]]")
+    }
+
+    func testStateChangeEventListenersReceiveTransitionsOnce() throws {
+        let context = try makeContext()
+        context.evaluateScript("var states = []; var handler = e => states.push(e.port.state); NovaMusicNativeMidiShim.access.addEventListener('statechange', handler);")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.access.removeEventListener('statechange', handler);")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(states)")?.toString(), "[\"connected\"]")
+    }
+
+    func testInputPortReceivesStateChangeEvents() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; NovaMusicNativeMidiShim.input.onstatechange = e => events.push('property:' + e.target.state); NovaMusicNativeMidiShim.input.addEventListener('statechange', e => events.push('listener:' + e.port.state));")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[\"property:connected\",\"listener:connected\",\"property:disconnected\",\"listener:disconnected\"]")
+    }
+
+    func testExplicitPortCloseBlocksDeliveryUntilReopened() throws {
+        let context = try makeContext()
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.input.close();")
+        XCTAssertFalse(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}).accepted")?.toBool() == true)
+        context.evaluateScript("NovaMusicNativeMidiShim.input.open();")
+        XCTAssertTrue(context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}).accepted")?.toBool() == true)
+    }
+
+    func testExplicitCloseReleasesHeldNotesWithoutDuplicates() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; NovaMusicNativeMidiShim.input.onmidimessage = e => events.push(Array.from(e.data));")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[146,64,110]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.input.close(); NovaMusicNativeMidiShim.input.close();")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[[146,64,110],[130,64,0]]")
+    }
+
+    func testVelocityZeroNoteOnDoesNotLeaveHeldNoteOnDisconnect() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; NovaMusicNativeMidiShim.input.onmidimessage = e => events.push(Array.from(e.data));")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,0]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[[144,60,100],[144,60,0]]")
+    }
+
+    func testReentrantCloseFromNoteOffCallbackDoesNotRepeatRelease() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; NovaMusicNativeMidiShim.input.onmidimessage = e => { events.push(Array.from(e.data)); if ((e.data[0] & 240) === 128) NovaMusicNativeMidiShim.input.close(); };")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.input.close();")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[[144,60,100],[128,60,0]]")
     }
 
     func testShimDoesNotReplaceExistingWebMidi() throws {
@@ -95,6 +188,7 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
 
     func testRepeatedInjectionDoesNotReplaceInputOrDuplicateListeners() throws {
         let context = try makeContext()
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var originalInput = NovaMusicNativeMidiShim.input; var listenerCount = 0; NovaMusicNativeMidiShim.input.addEventListener('midimessage', () => listenerCount++);")
         context.evaluateScript(MusicStudioWebMidiBridge.nativeWebMidiShimSource)
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[0x90,60,1]});")
@@ -118,6 +212,7 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         )
         let payload = bytes.map(String.init).joined(separator: ",")
 
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
         context.evaluateScript("var received = []; NovaMusicNativeMidiShim.input.onmidimessage = event => received.push({ data: Array.from(event.data), timeStamp: event.timeStamp });")
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({ data: [\(payload)] });")
 

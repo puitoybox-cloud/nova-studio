@@ -21,6 +21,9 @@ final class MusicStudioWebMidiBridge {
       const listeners = new Set();
       let sourceAvailable = false;
       let lastTimestamp = 0;
+      const heldNotes = new Map();
+      const stateListeners = new Set();
+      const portStateListeners = new Set();
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
@@ -29,11 +32,14 @@ final class MusicStudioWebMidiBridge {
         state: 'disconnected',
         connection: 'closed',
         onmidimessage: null,
+        onstatechange: null,
         addEventListener(type, handler) {
           if (type === 'midimessage' && typeof handler === 'function') listeners.add(handler);
+          if (type === 'statechange' && typeof handler === 'function') portStateListeners.add(handler);
         },
         removeEventListener(type, handler) {
           if (type === 'midimessage') listeners.delete(handler);
+          if (type === 'statechange') portStateListeners.delete(handler);
         },
         open() {
           if (!sourceAvailable) return Promise.reject(new Error('MIDI input disconnected'));
@@ -41,6 +47,7 @@ final class MusicStudioWebMidiBridge {
           return Promise.resolve(this);
         },
         close() {
+          releaseHeldNotes();
           this.connection = 'closed';
           return Promise.resolve(this);
         }
@@ -50,6 +57,12 @@ final class MusicStudioWebMidiBridge {
         inputs: new Map([[input.id, input]]),
         outputs: new Map(),
         onstatechange: null,
+        addEventListener(type, handler) {
+          if (type === 'statechange' && typeof handler === 'function') stateListeners.add(handler);
+        },
+        removeEventListener(type, handler) {
+          if (type === 'statechange') stateListeners.delete(handler);
+        },
         sysexEnabled: false
       };
 
@@ -59,21 +72,41 @@ final class MusicStudioWebMidiBridge {
         return lastTimestamp;
       }
 
+      function releaseHeldNotes() {
+        // Clear before callbacks: a MIDI handler may synchronously call close().
+        const notes = Array.from(heldNotes.values());
+        heldNotes.clear();
+        for (const note of notes) {
+          const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
+          if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
+          for (const listener of listeners) listener(event);
+        }
+      }
+
       function setSourceAvailable(available) {
         const next = available === true;
         if (next === sourceAvailable) return;
         sourceAvailable = next;
+        if (!next) {
+          releaseHeldNotes();
+        }
         input.state = next ? 'connected' : 'disconnected';
         input.connection = next ? 'open' : 'closed';
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
+        for (const listener of stateListeners) listener(event);
+        const portEvent = { port: input, target: input, currentTarget: input };
+        if (typeof input.onstatechange === 'function') input.onstatechange(portEvent);
+        for (const listener of portStateListeners) listener(portEvent);
       }
 
       function dispatch(payload) {
-        if (!sourceAvailable) return { accepted: false, reason: 'midi-disconnected' };
-        const data = Array.from(payload?.data || []);
+        if (!sourceAvailable || input.connection !== 'open') return { accepted: false, reason: 'midi-disconnected' };
+        const raw = payload?.data;
+        if (!Array.isArray(raw) && !(raw instanceof Uint8Array)) return { accepted: false, reason: 'invalid-message' };
+        const data = Array.from(raw);
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
-        if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
+        if (data.some((value, index) => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > (index === 0 ? 255 : 127))) {
           return { accepted: false, reason: 'invalid-message' };
         }
         const status = Number(data[0]);
@@ -82,6 +115,11 @@ final class MusicStudioWebMidiBridge {
           return { accepted: false, reason: 'invalid-message' };
         }
 
+        const channel = status & 0x0f;
+        const pitch = Number(data[1]);
+        const key = channel + ':' + pitch;
+        if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
+        else heldNotes.delete(key);
         const event = {
           data: Uint8Array.from(data.map(Number)),
           timeStamp: pageTimestamp(),
