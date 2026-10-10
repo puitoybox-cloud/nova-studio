@@ -191,6 +191,18 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(context.evaluateScript("events.length")?.toInt32(), 2)
     }
 
+    func testDisconnectBlocksReentrantNotesBeforeNoteOffCallbacks() throws {
+        let context = try makeContext()
+        context.evaluateScript("var events = []; var reentrantAccepted = null; NovaMusicNativeMidiShim.input.onmidimessage = e => { events.push(Array.from(e.data)); if ((e.data[0] & 240) === 128) reentrantAccepted = NovaMusicNativeMidiShim.dispatch({data:[144,61,90]}).accepted; };")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,60,100]});")
+        context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events)")?.toString(), "[[144,60,100],[128,60,0]]")
+        XCTAssertFalse(context.evaluateScript("reentrantAccepted")?.toBool() == true)
+        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "disconnected")
+        XCTAssertEqual(context.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
