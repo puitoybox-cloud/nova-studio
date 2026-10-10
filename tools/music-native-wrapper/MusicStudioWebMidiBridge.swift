@@ -73,12 +73,14 @@ final class MusicStudioWebMidiBridge {
       }
 
       function releaseHeldNotes() {
-          for (const [key, note] of heldNotes) {
-            const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
-            if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
-            for (const listener of listeners) listener(event);
-          }
-          heldNotes.clear();
+        // Clear before callbacks: a MIDI handler may synchronously call close().
+        const notes = Array.from(heldNotes.values());
+        heldNotes.clear();
+        for (const note of notes) {
+          const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
+          if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
+          for (const listener of listeners) listener(event);
+        }
       }
 
       function setSourceAvailable(available) {
