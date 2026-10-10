@@ -15,9 +15,11 @@ final class CoreMidiInputBridge {
     private let connectionLock = NSLock()
     private let sourceRefreshQueue = DispatchQueue(label: "NovaMusicStudio.CoreMidiSources")
     private let onMessage: MessageHandler
+    private let onSourceAvailability: (Bool) -> Void
 
-    init(onMessage: @escaping MessageHandler) {
+    init(onMessage: @escaping MessageHandler, onSourceAvailability: @escaping (Bool) -> Void = { _ in }) {
         self.onMessage = onMessage
+        self.onSourceAvailability = onSourceAvailability
     }
 
     deinit {
@@ -69,6 +71,7 @@ final class CoreMidiInputBridge {
         let clientToDispose = client
         client = 0
         connectionLock.unlock()
+        onSourceAvailability(false)
 
         // Disposing a client may synchronously emit a setup notification. Do
         // not hold the connection lock across that callback.
@@ -96,6 +99,7 @@ final class CoreMidiInputBridge {
         for source in changes.connect where MIDIPortConnectSource(inputPort, source, nil) == noErr {
             connectedSources.append(source)
         }
+        onSourceAvailability(!connectedSources.isEmpty)
     }
 
     static func sourceChanges(
