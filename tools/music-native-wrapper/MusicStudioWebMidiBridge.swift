@@ -21,6 +21,7 @@ final class MusicStudioWebMidiBridge {
       const listeners = new Set();
       let sourceAvailable = false;
       let lastTimestamp = 0;
+      const heldNotes = new Map();
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
@@ -63,6 +64,14 @@ final class MusicStudioWebMidiBridge {
         const next = available === true;
         if (next === sourceAvailable) return;
         sourceAvailable = next;
+        if (!next) {
+          for (const [key, note] of heldNotes) {
+            const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
+            if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
+            for (const listener of listeners) listener(event);
+          }
+          heldNotes.clear();
+        }
         input.state = next ? 'connected' : 'disconnected';
         input.connection = next ? 'open' : 'closed';
         const event = { port: input, target: access, currentTarget: access };
@@ -82,6 +91,11 @@ final class MusicStudioWebMidiBridge {
           return { accepted: false, reason: 'invalid-message' };
         }
 
+        const channel = status & 0x0f;
+        const pitch = Number(data[1]);
+        const key = channel + ':' + pitch;
+        if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
+        else heldNotes.delete(key);
         const event = {
           data: Uint8Array.from(data.map(Number)),
           timeStamp: pageTimestamp(),
