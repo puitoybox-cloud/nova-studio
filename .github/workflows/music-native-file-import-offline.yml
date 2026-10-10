@@ -1,0 +1,63 @@
+name: Music native file import offline verification
+on:
+  create:
+permissions:
+  contents: read
+jobs:
+  software:
+    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-native-file-import-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Exact checkout identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git rev-parse HEAD
+      - name: Node tests
+        run: node --test
+      - name: Python tests
+        run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
+      - name: Syntax and whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import py_compile, subprocess
+          for path in subprocess.check_output(['git','ls-files'],text=True).splitlines():
+              if path.endswith('.js'):
+                  subprocess.run(['node','--check',path],check=True)
+              elif path.endswith('.py'):
+                  py_compile.compile(path,doraise=True)
+              elif path.endswith(('.sh','.command')) or path.endswith('mac-app/NovaMusicAudioHelper'):
+                  subprocess.run(['bash','-n',path],check=True)
+          PY
+          git diff --check 97d6cdecf61f07ca6d896819704c68d978f40461...HEAD
+  native:
+    if: github.event.ref_type == 'branch' && github.event.ref == 'feature/music-native-file-import-v1'
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Exact checkout identity
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Stage Swift Package resources
+        run: python3 scripts/music-stage-native-web.py tools/music-native-wrapper/MusicStudioWeb
+      - name: Swift tests
+        working-directory: tools/music-native-wrapper
+        run: swift test
+      - name: Verify executable resource bundle exact bytes
+        working-directory: tools/music-native-wrapper
+        run: swift run MusicStudioNativeApp --verify-bundled-assets
+
+      - name: Unsigned macOS build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Unsigned iPad simulator build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build

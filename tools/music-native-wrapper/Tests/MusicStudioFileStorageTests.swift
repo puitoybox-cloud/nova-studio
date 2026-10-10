@@ -3,6 +3,17 @@ import WebKit
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioFileStorageTests: XCTestCase {
+    @MainActor func testFileSelectionRejectsForeignFramesAndStoppedHost() async throws {
+        let url = URL(string: "https://puitoybox-cloud.github.io/nova-studio/music-studio.html")!
+        let host = MusicStudioWebViewHost(configuration: MusicStudioAppConfiguration(startURL: url), platform: "mac")
+        XCTAssertTrue(host.webView.uiDelegate === host)
+        XCTAssertFalse(host.allowsFileSelection(frameURL: url, isMainFrame: true))
+        XCTAssertFalse(host.allowsFileSelection(frameURL: nil, isMainFrame: true))
+        XCTAssertFalse(host.allowsFileSelection(frameURL: URL(string: "https://example.com"), isMainFrame: true))
+        XCTAssertFalse(host.allowsFileSelection(frameURL: url, isMainFrame: false))
+        host.stop()
+        XCTAssertFalse(host.allowsFileSelection(frameURL: url, isMainFrame: true))
+    }
     // Disposable fixture only. This is WebView replacement in one test process,
     // not application termination/update or physical MIDI acceptance.
     @MainActor func testFileOriginIndexedDBSurvivesWebViewReplacement() async throws {
@@ -25,6 +36,8 @@ final class MusicStudioFileStorageTests: XCTestCase {
         }
         var first: MusicStudioWebViewHost? = MusicStudioWebViewHost(configuration: configuration, platform: "mac")
         try await loaded(first!)
+        XCTAssertTrue(first!.allowsFileSelection(frameURL: configuration.startURL, isMainFrame: true))
+        XCTAssertFalse(first!.allowsFileSelection(frameURL: configuration.startURL, isMainFrame: false))
         XCTAssertTrue(first!.webView.configuration.websiteDataStore.isPersistent)
         let write = """
         return await new Promise((resolve,reject)=>{const r=indexedDB.open(name,1);
