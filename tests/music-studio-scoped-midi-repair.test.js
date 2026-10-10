@@ -192,7 +192,7 @@ test('standalone and host load current editor and Studio asset versions',()=>{
  const host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
  const editor=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');
  const studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
- for(const [asset,version,source] of [['music-studio-editor','1.4.25',editor],['music-studio','1.4.129',studio]]){
+ for(const [asset,version,source] of [['music-studio-editor','1.4.25',editor],['music-studio','1.4.130',studio]]){
   assert.ok(source.includes("const ASSET_VERSION='"+version+"'"));
   assert.ok(standalone.includes(asset+'.js?v='+version));
   assert.ok(host.includes(asset+'.js?v='+version));
