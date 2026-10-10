@@ -47,6 +47,7 @@ final class MusicStudioWebMidiBridge {
           return Promise.resolve(this);
         },
         close() {
+          releaseHeldNotes();
           this.connection = 'closed';
           return Promise.resolve(this);
         }
@@ -71,17 +72,21 @@ final class MusicStudioWebMidiBridge {
         return lastTimestamp;
       }
 
-      function setSourceAvailable(available) {
-        const next = available === true;
-        if (next === sourceAvailable) return;
-        sourceAvailable = next;
-        if (!next) {
+      function releaseHeldNotes() {
           for (const [key, note] of heldNotes) {
             const event = { data: Uint8Array.from([0x80 | note.channel, note.pitch, 0]), timeStamp: pageTimestamp(), target: input, currentTarget: input };
             if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
             for (const listener of listeners) listener(event);
           }
           heldNotes.clear();
+      }
+
+      function setSourceAvailable(available) {
+        const next = available === true;
+        if (next === sourceAvailable) return;
+        sourceAvailable = next;
+        if (!next) {
+          releaseHeldNotes();
         }
         input.state = next ? 'connected' : 'disconnected';
         input.connection = next ? 'open' : 'closed';
