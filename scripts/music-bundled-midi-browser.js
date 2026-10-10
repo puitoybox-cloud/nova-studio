@@ -73,13 +73,14 @@ async function verify(browser,base,width){
  assert.equal((await migrated.evaluate(()=>MusicStudio.importText('{broken'))).ok,false);
  const raced=await migrated.evaluate(async text=>{
   const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);
-  const incoming=JSON.parse(text);incoming.projectId='race-song';incoming.projectName='Incoming race';
+  const incoming=JSON.parse(text);incoming.projectId='race-song';incoming.projectName='Incoming race';if(incoming.aiWorkspace)incoming.aiWorkspace.projectId=incoming.projectId;
+  const checked=app.validateProject(incoming);if(!checked.valid)throw Error('Invalid race fixture: '+checked.errors.join(' '));
   const protectedSong=structuredClone(incoming);protectedSong.projectName='Protected race';
   const has=repo.has;let inserted=false;repo.has=async id=>{const found=await has(id);if(!inserted){inserted=true;await repo.put(protectedSong)}return found};
   const result=await app.importText(JSON.stringify(incoming));
   return {result,protectedSong:await repo.get('race-song')};
  },transfer);
- assert.equal(raced.result.ok,true);assert.equal(raced.result.duplicated,true);assert.notEqual(raced.result.project.projectId,'race-song');assert.equal(raced.protectedSong.projectName,'Protected race');assert.deepEqual(raced.result.project.midiData.tracks,raced.protectedSong.midiData.tracks);
+ assert.equal(raced.result.ok,true,raced.result.message);assert.equal(raced.result.duplicated,true);assert.notEqual(raced.result.project.projectId,'race-song');assert.equal(raced.protectedSong.projectName,'Protected race');assert.deepEqual(raced.result.project.midiData.tracks,raced.protectedSong.midiData.tracks);
  await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
  assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),4);
  assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.find(p=>p.projectId==='race-song').projectName),'Protected race');
