@@ -73,7 +73,10 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
             "NovaMusicNativeMidiShim.dispatch({data:[0x90,128,1]}).accepted",
             "NovaMusicNativeMidiShim.dispatch({data:[0x90,60,-1]}).accepted",
             "NovaMusicNativeMidiShim.dispatch({data:[0xB0,60,1]}).accepted",
-            "NovaMusicNativeMidiShim.dispatch({data:['bad',60,1]}).accepted"
+            "NovaMusicNativeMidiShim.dispatch({data:['bad',60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:['144',60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:[true,60,1]}).accepted",
+            "NovaMusicNativeMidiShim.dispatch({data:{0:144,1:60,2:1,length:3}}).accepted"
         ] {
             XCTAssertFalse(context.evaluateScript(expression)?.toBool() == true)
         }

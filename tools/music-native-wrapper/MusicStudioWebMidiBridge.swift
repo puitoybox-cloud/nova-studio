@@ -88,9 +88,11 @@ final class MusicStudioWebMidiBridge {
 
       function dispatch(payload) {
         if (!sourceAvailable) return { accepted: false, reason: 'midi-disconnected' };
-        const data = Array.from(payload?.data || []);
+        const raw = payload?.data;
+        if (!Array.isArray(raw) && !(raw instanceof Uint8Array)) return { accepted: false, reason: 'invalid-message' };
+        const data = Array.from(raw);
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
-        if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
+        if (data.some((value, index) => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > (index === 0 ? 255 : 127))) {
           return { accepted: false, reason: 'invalid-message' };
         }
         const status = Number(data[0]);
