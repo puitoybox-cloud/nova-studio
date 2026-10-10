@@ -2,6 +2,27 @@ import XCTest
 @testable import NovaMusicNativeWrapper
 
 final class MusicStudioAppConfigurationTests: XCTestCase {
+    func testDefaultStartupUsesCurrentBundleAndRejectsEscape() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let assets = root.appendingPathComponent("MusicStudioWeb")
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("fixture".utf8).write(to: assets.appendingPathComponent("music-studio.html"))
+        let configuration = try XCTUnwrap(MusicStudioAppConfiguration.startup(environment: [:], resourceURL: root))
+        XCTAssertTrue(configuration.startURL.isFileURL)
+        XCTAssertTrue(configuration.allows(assets.appendingPathComponent("music-studio.js")))
+        XCTAssertFalse(configuration.allows(root.appendingPathComponent("private.json")))
+        XCTAssertFalse(configuration.allows(assets.appendingPathComponent("../private.json")))
+        XCTAssertFalse(configuration.allows(MusicStudioAppConfiguration.production.startURL))
+        // Strict launcher remains independent: a bundle cannot bypass handoff validation.
+        XCTAssertNil(MusicStudioAppConfiguration.startup(environment: ["NOVA_STRICT_OFFLINE": "1"], resourceURL: root))
+    }
+
+    func testMissingBundleNeverFallsBackToPublishedHTML() {
+        XCTAssertNil(MusicStudioAppConfiguration.startup(environment: [:], resourceURL: nil))
+        XCTAssertNil(MusicStudioAppConfiguration.bundled(resourceURL: URL(fileURLWithPath: "/missing-nova-assets")))
+    }
+
     func testStrictStartupRequiresFreshAnchoredHandoff() throws {
         let now = Date(timeIntervalSince1970: 1000)
         var value: [String: Any] = ["format": "NOVA_LOCAL_BROWSER_HANDOFF", "version": 1,
