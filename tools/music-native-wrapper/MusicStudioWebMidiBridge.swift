@@ -22,6 +22,7 @@ final class MusicStudioWebMidiBridge {
       let sourceAvailable = false;
       let lastTimestamp = 0;
       const heldNotes = new Map();
+      const stateListeners = new Set();
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
@@ -51,6 +52,12 @@ final class MusicStudioWebMidiBridge {
         inputs: new Map([[input.id, input]]),
         outputs: new Map(),
         onstatechange: null,
+        addEventListener(type, handler) {
+          if (type === 'statechange' && typeof handler === 'function') stateListeners.add(handler);
+        },
+        removeEventListener(type, handler) {
+          if (type === 'statechange') stateListeners.delete(handler);
+        },
         sysexEnabled: false
       };
 
@@ -76,6 +83,7 @@ final class MusicStudioWebMidiBridge {
         input.connection = next ? 'open' : 'closed';
         const event = { port: input, target: access, currentTarget: access };
         if (typeof access.onstatechange === 'function') access.onstatechange(event);
+        for (const listener of stateListeners) listener(event);
       }
 
       function dispatch(payload) {
