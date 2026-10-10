@@ -160,3 +160,11 @@ test('multi-asset analysis rejects corrupt binary and cancellation without cache
  const result=await f.a.mixAnalyzeRelationships(f.p.projectId);assert.equal(result.ok,false);assert.equal(f.a.pcmSuggestions.relationships,null);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
  }
 });
+test('spatial stereo output survives Save/reopen/Undo/Redo/archive and protects original bytes and MIDI',async()=>{
+ const f=await setup(),{a,p,repo,indexedDB}=f,pcm={sampleRate:8000,channels:[Array(160).fill(.4),Array(160).fill(.2)]},file=new Blob([a.pcmEncodeWav(pcm)]);file.name='stereo.wav';const imported=await a.pcmImportLongFile(file,p.projectId);assert.equal(imported.ok,true,imported.error);
+ const setting={gainDb:0,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-20,ratio:1,attackMs:10,releaseMs:100},spatial:{balance:.5,width:0}};
+ const preview=await a.longMixPreview(p.projectId,imported.assetId,setting);assert.equal(preview.ok,true,preview.error);const out=a.pcmDecodeWav(await preview.blob.arrayBuffer());assert.ok(Math.abs(out.channels[0][0]-.15)<.0001);assert.ok(Math.abs(out.channels[1][0]-.3)<.0001);
+ const saved=await a.longMixSave(p.projectId,imported.assetId);assert.equal(saved.ok,true,saved.error);const fresh=fixture(indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());fresh.a.state.projects=[await repo.get(p.projectId)];fresh.a.pcmOpen(p.projectId);assert.deepEqual(JSON.parse(JSON.stringify(fresh.a.longMixHistory(fresh.a.state.projects[0].longWavAssets[0]).settings[1].spatial)),setting.spatial);
+ for(const d of [-1,1])assert.equal((await fresh.a.longMixSave(p.projectId,imported.assetId,d)).ok,true);
+ const archive=await fresh.a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(archive);assert.equal(restored.ok,true,restored.error);assert.deepEqual(JSON.parse(JSON.stringify(dst.a.longMixHistory(restored.projects[0].longWavAssets[0]).settings[1].spatial)),setting.spatial);assert.equal(JSON.stringify(restored.projects[0].midiData),JSON.stringify(p.midiData));assert.equal(Buffer.compare(Buffer.from(await a.pcmLoadLongWav(p.projectId,imported.assetId).then(b=>b.arrayBuffer())),Buffer.from(await file.arrayBuffer())),0);
+});
