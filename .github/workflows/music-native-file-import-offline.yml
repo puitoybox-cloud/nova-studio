@@ -57,6 +57,20 @@ jobs:
       - name: Swift tests
         working-directory: tools/music-native-wrapper
         run: swift test
+      - name: File-origin storage across separate executable processes
+        working-directory: tools/music-native-wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          executable="$(swift build --show-bin-path)/MusicStudioNativeApp"
+          fixture_root="$(mktemp -d)"
+          fixture_database="nova-ci-process-$(uuidgen)"
+          mkdir -p "$fixture_root/MusicStudioWeb"
+          printf '<!doctype html><title>Disposable process storage fixture</title>' > "$fixture_root/MusicStudioWeb/music-studio.html"
+          trap 'rm -rf "$fixture_root"' EXIT
+          for phase in write edit read delete; do
+            "$executable" --verify-file-storage-process "$fixture_root" "$fixture_database" "$phase"
+          done
       - name: Verify executable resource bundle exact bytes
         working-directory: tools/music-native-wrapper
         run: swift run MusicStudioNativeApp --verify-bundled-assets
