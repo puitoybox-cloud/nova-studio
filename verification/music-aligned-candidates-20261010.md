@@ -51,7 +51,7 @@ A0/B0/C30、前回差すべて0。下位要件母数が未確定のため完成�
 No.23の外部参照binary完全Backup/復元・自動binary Backupは未解消。元WAV archiveは既存のまま外部参照をfail closedで拒否する。Cloud Sync構成も未確定。既存データの扱いを緩和してBへ上げない。
 
 ## 再取得・検証
-2026-10-10 JST: 正式仕様書の現行5ページ166行（確定2026-09-30）と前回30行を再読。main 552d56eafddfd192970c09f7d6278696cf8775c3、113 Open PRの全metadata・HEAD/base/mergeableと各commits/files/runs先頭100を再取得。112 Draft。詳細はinventory JSON。100件を超える履歴の全page/全logは未監査。最新#366 exact-head create Actions 38016090076 software/native成功を取得し、2job decoded logsも再取得。
+2026-10-10 JST: 正式仕様書の現行5ページ166行（確定2026-09-30）と前回30行を再読。main 552d56eafddfd192970c09f7d6278696cf8775c3、113 Open PRの全metadata・HEAD/base/mergeableと各commits/files/runs先頭100を再取得。111 Draft。詳細はinventory JSON。100件を超える履歴の全page/全logは未監査。最新#366 exact-head create Actions 38016090076 software/native成功を取得し、2job decoded logsも再取得。
 新HEADの最終結果はDraft PR本文・Actionsを参照。ローカルSwift/Xcodeはなし。1440/820/390、Console error/warn、ブラウザ外部通信はUNVERIFIED: Playwright Chromium executableが存在せず起動できない。download/installなし。元曲/既存PR/main/バックアップ変更なし。Live Provider通信なし。
 
 ## 実機必須確認（最後に集約）
