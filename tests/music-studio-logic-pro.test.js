@@ -5,6 +5,30 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+test('selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input',async()=>{
+  const input={id:'keys',name:'Keys'},replacement={id:'other',name:'Other'},access={inputs:new Map([['keys',input],['other',replacement]])};
+  const {app,window}=load({requestMIDIAccess:async()=>access}),repo=app.memoryRepository(),project=app.makeProject({projectId:'disconnect-count-in',projectName:'Disconnect'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const jobs=new Map();let sequence=0;window.setTimeout=callback=>{jobs.set(++sequence,callback);return sequence};window.clearTimeout=id=>jobs.delete(id);
+  window.performance={now:()=>1000};window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,allNotesOff(){},stopPreview(){},stopPlayback(){},stopMetronome(){},metronomeClick(){}};
+  await app.editorInitializeMidi();const before=JSON.stringify(await repo.get(project.projectId));
+  const pending=app.editorStartMidiRecording();await new Promise(resolve=>setImmediate(resolve));assert.equal(app.state.midiInput.countingIn,true);
+  const staleJobs=[...jobs.values()];access.inputs.delete('keys');access.onstatechange();
+  const result=await pending;assert.equal(result.countInCancelled,true);assert.equal(app.state.midiInput.recording,false);assert.equal(app.state.midiInput.recorder,null);assert.equal(app.state.midiInput.recordingTrackId,null);assert.equal(app.state.midiInput.countInTimer,null);
+  assert.equal(app.state.midiInput.selectedId,'other');assert.equal(input.onmidimessage,null);
+  for(const callback of staleJobs)callback();assert.equal(app.state.midiInput.recording,false);assert.equal(JSON.stringify(await repo.get(project.projectId)),before);
+});
+test('MIDI input switching and rescan are rejected throughout active transport without requesting access',async()=>{
+  let requests=0;const {app,window}=load({requestMIDIAccess:async()=>{requests++;return{inputs:new Map()}}});
+  const midi=app.state.midiInput;midi.inputs=[{id:'keys'},{id:'other'}];midi.selectedId='keys';
+  for(const phase of ['starting','countingIn','recording','stopping']){
+    midi[phase]=true;
+    for(const id of ['other','__rescan__']){const result=await app.editorSelectMidiInput(id);assert.equal(result.reason,'transport-busy');assert.equal(midi.selectedId,'keys');}
+    midi[phase]=false;
+  }
+  assert.equal(requests,0);assert.equal(window.MusicStudio.state.midiInput.selectedId,'keys');
+});
 function load(navigator={}){
   const values=new Map([['novaStudio_v01','nova-safe'],['aiMusicHelperProject','ai-safe']]);
   let uuidSequence=0;const window={navigator,crypto:{randomUUID:()=>`id-${++uuidSequence}`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
@@ -168,7 +192,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/<summary aria-label="MIDI入力">MIDI入力<\/summary>/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__">↻ 再検出/);assert.match(html,/接続状態/);
   assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
-  await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
+  assert.equal((await app.editorSelectMidiInput('pads')).reason,'transport-busy');assert.equal(app.state.midiInput.selectedId,'keys');app.state.midiInput.recording=false;await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover input\[type=radio\]\{appearance:auto;width:18px!important/);
   assert.match(css,/iPad: let the toolbar own its rendered height/);
