@@ -47,8 +47,10 @@ final class MusicStudioWebMidiBridge {
           return Promise.resolve(this);
         },
         close() {
-          releaseHeldNotes();
+          // Block reentrant MIDI delivery before notifying handlers of note-offs.
+          // Those handlers may synchronously invoke dispatch() or close() again.
           this.connection = 'closed';
+          releaseHeldNotes();
           return Promise.resolve(this);
         }
       };
