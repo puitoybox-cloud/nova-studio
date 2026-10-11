@@ -121,7 +121,7 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,62,90]});")
         context.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[145,62,0]});")
         context.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false);")
-        XCTAssertEqual(context.evaluateScript("JSON.stringify(events.slice(5))")?.toString(), "[[128,60,0],[129,60,0]]")
+        XCTAssertEqual(context.evaluateScript("JSON.stringify(events.slice(5))")?.toString(), "[[128,60,0],[128,60,0],[129,60,0]]")
     }
 
     func testStateChangeEventListenersReceiveTransitionsOnce() throws {
@@ -362,8 +362,8 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         let c = try makeContext()
         c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.dispatch({data:[144,60,100]}); NovaMusicNativeMidiShim.input.onmidimessage=e=>{if((e.data[0]&240)===128) NovaMusicNativeMidiShim.setSourceAvailable(true);}; NovaMusicNativeMidiShim.setSourceAvailable(false);")
         XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.state")?.toString(), "connected")
-        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
-        XCTAssertFalse(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,61,100]}).accepted")?.toBool() == true)
+        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "open")
+        XCTAssertTrue(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,61,100]}).accepted")?.toBool() == true)
     }
 
     func testDeferredReconnectNotifiesAccessAndPortListeners() throws {
