@@ -197,8 +197,16 @@ final class MusicStudioWebMidiBridge {
         const key = channel + ':' + pitch;
         // Avoid retaining stale held notes if a reentrant disconnect/close
         // occurs while notifying handlers of this incoming note.
-        if (command === 0x90 && Number(data[2]) > 0) heldNotes.set(key, { channel, pitch });
-        else heldNotes.delete(key);
+        if (command === 0x90 && Number(data[2]) > 0) {
+          // Repeated note-on messages for the same pitch must each have a
+          // matching note-off before the note is considered fully released.
+          const prior = heldNotes.get(key);
+          heldNotes.set(key, { channel, pitch, count: Math.min((prior?.count ?? 0) + 1, 65535) });
+        } else {
+          const prior = heldNotes.get(key);
+          if (prior && prior.count > 1) heldNotes.set(key, { channel, pitch, count: prior.count - 1 });
+          else heldNotes.delete(key);
+        }
         const timeStamp = pageTimestamp();
         // Each recipient receives original validated bytes even when another
         // page handler mutates the Uint8Array in its event.

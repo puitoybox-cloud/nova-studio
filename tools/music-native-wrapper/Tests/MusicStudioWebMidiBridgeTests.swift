@@ -378,6 +378,18 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[144,64,100],[128,64,0]]"#)
     }
 
+    func testOverlappingSamePitchNoteOnsKeepNoteHeldUntilFinalNoteOff() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var notes=[]; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>notes.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,60,90]}); NovaMusicNativeMidiShim.dispatch({data:[144,60,95]}); NovaMusicNativeMidiShim.dispatch({data:[128,60,0]}); NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[144,60,90],[144,60,95],[128,60,0],[128,60,0]]"#)
+    }
+
+    func testAllMatchingNoteOffsClearOverlappingHeldNote() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var notes=[]; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>notes.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,61,90]}); NovaMusicNativeMidiShim.dispatch({data:[144,61,95]}); NovaMusicNativeMidiShim.dispatch({data:[128,61,0]}); NovaMusicNativeMidiShim.dispatch({data:[128,61,0]}); NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[144,61,90],[144,61,95],[128,61,0],[128,61,0]]"#)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
