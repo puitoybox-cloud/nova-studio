@@ -414,6 +414,19 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[144,69,80],[144,69,90],[128,69,0],[128,69,0]]"#)
     }
 
+    func testCloseThenDisconnectDoesNotReplayAlreadyReleasedNotes() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); var notes=[]; NovaMusicNativeMidiShim.input.addEventListener('midimessage',e=>notes.push(Array.from(e.data))); NovaMusicNativeMidiShim.dispatch({data:[144,72,80]}); NovaMusicNativeMidiShim.dispatch({data:[144,72,90]}); NovaMusicNativeMidiShim.input.close(); NovaMusicNativeMidiShim.setSourceAvailable(false);")
+        XCTAssertEqual(c.evaluateScript("JSON.stringify(notes)")?.toString(), #"[[144,72,80],[144,72,90],[128,72,0],[128,72,0]]"#)
+    }
+
+    func testExplicitCloseKeepsPortClosedAfterPhysicalReconnect() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.input.close(); NovaMusicNativeMidiShim.setSourceAvailable(false); NovaMusicNativeMidiShim.setSourceAvailable(true);")
+        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
+        XCTAssertFalse(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,72,80]}).accepted")?.toBool() == true)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
