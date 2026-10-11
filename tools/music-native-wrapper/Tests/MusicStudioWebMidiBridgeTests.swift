@@ -427,6 +427,20 @@ final class MusicStudioWebMidiBridgeTests: XCTestCase {
         XCTAssertFalse(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,72,80]}).accepted")?.toBool() == true)
     }
 
+    func testExplicitlyClosedPortReopensOnlyAfterPageOpen() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.input.close(); NovaMusicNativeMidiShim.setSourceAvailable(false); NovaMusicNativeMidiShim.setSourceAvailable(true); NovaMusicNativeMidiShim.input.open();")
+        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "open")
+        XCTAssertTrue(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,74,90]}).accepted")?.toBool() == true)
+    }
+
+    func testDisconnectedPortCannotBeOpenedByPage() throws {
+        let c = try makeContext()
+        c.evaluateScript("NovaMusicNativeMidiShim.setSourceAvailable(false); var opened=false; NovaMusicNativeMidiShim.input.open().then(()=>opened=true,()=>opened=false);")
+        XCTAssertEqual(c.evaluateScript("NovaMusicNativeMidiShim.input.connection")?.toString(), "closed")
+        XCTAssertFalse(c.evaluateScript("NovaMusicNativeMidiShim.dispatch({data:[144,74,90]}).accepted")?.toBool() == true)
+    }
+
     func testShimDoesNotReplaceExistingWebMidi() throws {
         let context = try XCTUnwrap(JSContext())
         context.evaluateScript("globalThis.window = globalThis; globalThis.navigator = { requestMIDIAccess: () => 'browser-midi' };")
