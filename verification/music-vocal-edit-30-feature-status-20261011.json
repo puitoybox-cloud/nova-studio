@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-11 JST",
+  "source": "verification/music-residual-ledger-20261010.json and PR #401 existing classification; original PDF not present/read this turn",
+  "A": 0,
+  "B": 0,
+  "C": 30,
+  "features": [
+    {
+      "number": 1,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 2,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 3,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 4,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 5,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 6,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 7,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 8,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 9,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 10,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 11,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 12,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 13,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 14,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 15,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 16,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 17,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 18,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 19,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 20,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 21,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 22,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 23,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 24,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 25,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 26,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 27,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 28,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 29,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    },
+    {
+      "number": 30,
+      "classification": "C",
+      "reason": "Full feature production/software scope and physical acceptance remain unclosed. The connected vocal editing subset is documented in music-vocal-edit-production-20261011.md; this is not an all-feature promotion."
+    }
+  ],
+  "remainingSoftware": [
+    "Punch/cycle/comp and lyric scroll during capture",
+    "Live monitor routing and automatic latency measurement",
+    "Lossless capture assurance on unsupported Worklet environments (fallback is compressed)",
+    "Pitch/formant/timing/crossfade/breath/vibrato editor",
+    "Lyrics/notes/audio synchronized editor and singing model runtime/assets/license closure",
+    "Whole-song vocal harmony/double/chorus and final multi/stem batch export",
+    "Native file-origin mic/AudioWorklet production acceptance, standalone distribution/model closure",
+    "Complete current per-subrequirement production evidence mapping and legacy/origin migration"
+  ],
+  "residualCount": null,
+  "percentComplete": null,
+  "patchScope": "vocal PCM pitch/duration correction, Comp and source waveform/note/lyric synchronization",
+  "claims100Percent": false
+}
