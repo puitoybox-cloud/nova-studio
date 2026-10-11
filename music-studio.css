@@ -666,3 +666,5 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 
 .music-original-files .music-auto-backup-row{flex-wrap:wrap}.music-original-files .music-auto-backup-row>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}.music-original-files label{min-width:0;max-width:100%}.music-original-files input[type=file]{max-width:100%;width:100%;box-sizing:border-box}
 @media(max-width:600px){.music-original-files .music-auto-backup-row>div{flex:0 1 auto}}
+
+.music-vocal-panel{margin-top:1rem}.music-vocal-panel article{border-top:1px solid #777;padding-top:1rem;margin-top:1rem}.music-vocal-panel form{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end}.music-vocal-panel label{display:flex;flex-direction:column;max-width:100%;min-width:0}.music-vocal-panel input,.music-vocal-panel select{max-width:100%;width:180px}.music-vocal-panel svg{display:block;max-width:100%}

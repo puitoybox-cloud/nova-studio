@@ -66,6 +66,21 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         }
     }
 
+    // Only the configured main document may request a microphone. The OS and
+    // WebKit still prompt; no camera capture or automatic permission grant.
+    public func webView(_ webView: WKWebView,
+                        requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                        initiatedByFrame frame: WKFrameInfo,
+                        type: WKMediaCaptureType,
+                        decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        let expected = configuration.startURL
+        let allowed = frame.isMainFrame && type == .microphone &&
+            origin.protocol == expected.scheme && origin.host == (expected.host ?? "") &&
+            origin.port == (expected.port ?? (expected.scheme == "https" ? 443 : expected.scheme == "http" ? 80 : 0)) &&
+            frame.request.url.map(configuration.allows) == true
+        decisionHandler(allowed ? .prompt : .deny)
+    }
+
     public func start() {
         guard lifecycleState == "PREPARING", configuration.allows(configuration.startURL),
               configuration.ownedCredential == nil || (ownedLifecycle != nil && privateSummary != nil) else { lifecycleState = "FAILED"; return }
