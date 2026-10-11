@@ -23,13 +23,13 @@ Main `552d56eafddfd192970c09f7d6278696cf8775c3` was fetched by git. Enumerated 1
 
 ## Validation
 
-New focused DSP/capture suite: final count in PR evidence. Actual amplitude changes, unchanged outside-selection samples/source bytes, durable v3 reopen, Undo/Redo and byte-identical full restore tested. Monitor graph is exercised with an injected audio implementation; physical monitoring quality/latency is not established by this unit test. PCM worklet synthetic test proves exact 513-frame punch limit without document timer.
+New focused DSP/capture suite: 39 PASS. Actual amplitude changes, unchanged outside-selection samples/source bytes, durable v3 reopen, Undo/Redo and byte-identical full restore tested. Monitor graph is exercised with an injected audio implementation; physical monitoring quality/latency is not established by this unit test. PCM worklet synthetic test proves exact 513-frame punch limit without document timer.
 
 Local Python: 509 run, 504 PASS, five preexisting audio-dependency skips. Python emitted preexisting subprocess/file ResourceWarnings; these are not Chrome Console findings. Local all-JS syntax: 192 files PASS; final changed JS rechecked. git diff --check PASS.
 
 Initial full Node run: 2137 PASS / 2 FAIL, both stale escaped cache-version expectations. Those expectations were updated to the new actual version; corrected full Node 2139 PASS before Pause/Resume follow-up; final full Node is rerun for the follow-up, see exact-head CI/PR final report for final results.
 
-Local Playwright launcher could not find an installed browser executable. No local Chrome, Swift/Xcode, macOS/iPad build or physical-device pass is claimed. Updated CI browser scenario checks real Chromium synthetic microphone meter/monitor UI, gain UI preview/Before/After/adoption at 1440/820/390, save/reopen, archive, console and external requests. Native and full tests run against exact PR HEAD in Actions; consult final PR body for outcomes. Browser screenshots include the gain candidate controls.
+Local Playwright launcher could not find an installed browser executable. Initial CI Chrome found a positional form selector broken by the added gain form; selectors now identify analysis/region forms by their actual submit action. No local Chrome, Swift/Xcode, macOS/iPad build or physical-device pass is claimed. Updated CI browser scenario checks real Chromium synthetic microphone meter/monitor UI, gain UI preview/Before/After/adoption at 1440/820/390, save/reopen, archive, console and external requests. Native and full tests run against exact PR HEAD in Actions; consult final PR body for outcomes. Browser screenshots include the gain candidate controls.
 
 ## Formal 30-feature status and software remaining
 
