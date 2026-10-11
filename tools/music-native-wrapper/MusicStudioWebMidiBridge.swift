@@ -87,15 +87,15 @@ final class MusicStudioWebMidiBridge {
         heldNotes.clear();
         try {
           for (const note of notes) {
-          const bytes = [0x80 | note.channel, note.pitch, 0];
-          const timeStamp = pageTimestamp();
-          const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
-          const onMessage = input.onmidimessage;
-          const recipients = Array.from(listeners);
-          try { if (typeof onMessage === 'function') onMessage(makeEvent()); } catch (_) {}
-          for (const listener of recipients) {
-            try { listener(makeEvent()); } catch (_) {}
-          }
+            const bytes = [0x80 | note.channel, note.pitch, 0];
+            const timeStamp = pageTimestamp();
+            const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
+            const onMessage = input.onmidimessage;
+            const recipients = Array.from(listeners);
+            try { if (typeof onMessage === 'function') onMessage(makeEvent()); } catch (_) {}
+            for (const listener of recipients) {
+              try { listener(makeEvent()); } catch (_) {}
+            }
           }
         } finally {
           releasingHeldNotes = false;
