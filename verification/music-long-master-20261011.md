@@ -4,7 +4,7 @@ Baseline: PR #399 `33cc706c7d1bc1e2451d967181ee3924127ce354`, Open/Draft/mergeab
 
 Authoritative scope: `Music_Studio_最終機能仕様書_v1.pdf`, fixed 2026-09-30, current five-page contents read 2026-10-11. This change addresses a subset of No.19/22/23; it does not complete all 30 major features.
 
-## Production behavior delivered (24 small behaviors, one connected mastering workflow)
+## Production behavior delivered (25 small behaviors, one connected mastering workflow)
 
 1. Existing long-WAV screen exposes a real mastering form.
 2. User enters target LUFS and true-peak ceiling with validated limits.
@@ -30,6 +30,8 @@ Authoritative scope: `Music_Studio_最終機能仕様書_v1.pdf`, fixed 2026-09-
 22. Full WAV Archive preserves original binary, settings and measurements; Restore remaps the mastering source identity to the restored asset and exports identical processed bytes.
 23. Cancel invalidates processing/choices/adoption, stops playback and frees retained comparison choices; failed processing permits retry.
 24. Dirty edits, concurrent storage changes, quota, candidate tampering and stale selection reject unsafe writes. Cache versions align host/standalone.
+
+25. Long-WAV and adjacent analysis forms use the readable dark settings-panel style; long-WAV heading/body/label contrast is checked at all three widths.
 
 These count new behavior or newly connected production paths, not independent major features. Saved long Master is non-destructive DSP settings plus original audio, not a separately retained rendered Master binary. Processed WAV materializes the result on export; full archive can faithfully regenerate it. JSON/ordinary backup deliberately cannot claim complete long-binary backup. Use Full WAV Archive.
 
