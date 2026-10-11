@@ -104,11 +104,26 @@ final class MusicStudioWebMidiBridge {
           // explicitly closed by the page.
           if (sourceAvailable && input.state === 'connected' && input.connection === 'closed' && !explicitlyClosed) {
             input.connection = 'open';
-            const event = { port: input, target: access, currentTarget: access, transitionState: 'connected' };
-            const handler = access.onstatechange;
-            const recipients = Array.from(stateListeners);
-            try { if (typeof handler === 'function') handler(event); } catch (_) {}
-            for (const listener of recipients) { try { listener(event); } catch (_) {} }
+            const revision = sourceRevision;
+            const accessEvent = { port: input, target: access, currentTarget: access, transitionState: 'connected' };
+            const accessHandler = access.onstatechange;
+            const accessRecipients = Array.from(stateListeners);
+            const portHandler = input.onstatechange;
+            const portRecipients = Array.from(portStateListeners);
+            try { if (typeof accessHandler === 'function') accessHandler(accessEvent); } catch (_) {}
+            if (revision !== sourceRevision) return;
+            for (const listener of accessRecipients) {
+              if (revision !== sourceRevision) return;
+              try { listener(accessEvent); } catch (_) {}
+            }
+            if (revision !== sourceRevision) return;
+            const portEvent = { port: input, target: input, currentTarget: input, transitionState: 'connected' };
+            try { if (typeof portHandler === 'function') portHandler(portEvent); } catch (_) {}
+            if (revision !== sourceRevision) return;
+            for (const listener of portRecipients) {
+              if (revision !== sourceRevision) return;
+              try { listener(portEvent); } catch (_) {}
+            }
           }
         }
       }
