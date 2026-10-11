@@ -105,6 +105,15 @@ final class MusicStudioWebMidiBridge {
       function setSourceAvailable(available) {
         const next = available === true;
         if (next === sourceAvailable) return;
+        // A reconnect reported during synthetic note-off cleanup must not
+        // reopen the port until the current release has completed.
+        if (next && releasingHeldNotes) {
+          sourceAvailable = true;
+          ++sourceRevision;
+          input.state = 'connected';
+          input.connection = 'closed';
+          return;
+        }
         sourceAvailable = next;
         const revision = ++sourceRevision;
         // Reject reentrant note delivery before notifying listeners of unplug.
