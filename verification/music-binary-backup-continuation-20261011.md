@@ -2,7 +2,7 @@
 
 Source: Music_Studio_最終機能仕様書_v1.pdf, 2026-09-30; all five pages reread 2026-10-11. Base #396, 0f36624de7cfde69e35180ecc128584fb06fcad2. Its six exact-head workflows succeeded. Main 552d56eafddfd192970c09f7d6278696cf8775c3. Fresh 143 Open PR / 141 Draft audit: each HEAD/base/mergeability/commit and file count fetched, Draft workflow runs retrieved; no Draft conflict. See start audit JSON.
 
-18 production subrequirements implemented (not 18 completed major features):
+20 production subrequirements implemented (not 18 completed major features):
 
 1. Automatic Backup includes original long WAV bytes through the existing portable archive.
 2. IndexedDB auto-backup writer retains immutable Blob instead of JSON-cloning it away.
@@ -22,6 +22,8 @@ Source: Music_Studio_最終機能仕様書_v1.pdf, 2026-09-30; all five pages re
 16. Concurrent archive operations fail safely; native cooperative close refuses archive/automatic operations in progress.
 17. Failed preview clears previous selection; transfer busy state releases after failure.
 18. Generic manual Backup routes WAV songs to the binary archive; dated filenames, settings-only archives and refreshed host/standalone caches support the path.
+19. Shared WAV references across duplicated projects are packed once; conflicting byte identities fail before publication.
+20. Restore maps shared references to one new binary identity while preserving independent project/mix metadata.
 
 Production changes: music-studio.js, app.js, music-studio.html. No schema increment. Restore remains additive with new project/asset identities and one metadata/binary/settings transaction. External midiAssets/audioAssets/fileReferences still block complete archives; no false complete claim. Legacy JSON and automatic JSON records remain supported. Existing retention settings remain in use; auto archive size is constrained by actual storage quota, and platform quota acceptance remains physical.
 

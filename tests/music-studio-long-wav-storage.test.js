@@ -196,3 +196,9 @@ test('manual generic Backup routes WAV songs to verified binary archive and empt
  const f=await setup();await f.a.pcmImportLongFile(wav(100),f.p.projectId);const exported=await f.a.exportBackup();assert.equal(exported.ok,true,exported.error);assert.ok(exported.blob instanceof Blob);
  const src=fixture();src.a.setRepository(src.a.indexedDbRepository());const archive=await src.a.createLongWavArchive();const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const r=await dst.a.restoreLongWavArchive(archive);assert.equal(r.ok,true,r.error);assert.equal(r.projects.length,0);
 });
+test('shared WAV across duplicated songs is packed once and restores shared identity without losing edits',async()=>{
+ const f=await setup();await f.a.pcmImportLongFile(wav(100),f.p.projectId);const original=await f.repo.get(f.p.projectId),copy=structuredClone(original);copy.projectId='copied-song';copy.projectName='Copied';copy.longWavAssets[0].name='shared but independent name';await f.repo.put(copy);f.a.state.projects=[original,copy];
+ const blob=await f.a.createLongWavArchive(),header=new DataView(await blob.slice(0,12).arrayBuffer()),manifest=JSON.parse(await blob.slice(12,12+header.getUint32(8,true)).text());assert.equal(manifest.entries.length,1);assert.equal(manifest.projects.length,2);
+ const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const r=await dst.a.restoreLongWavArchive(blob);assert.equal(r.ok,true,r.error);assert.equal(r.projects.length,2);assert.equal(r.projects[0].longWavAssets[0].id,r.projects[1].longWavAssets[0].id);assert.equal(r.projects[1].longWavAssets[0].name,'shared but independent name');assert.equal(dst.indexedDB.stores.get('longWavBinaries').size,1);
+ copy.longWavAssets[0].frames++;await f.repo.put(copy);f.a.state.projects=[original,copy];await assert.rejects(f.a.createLongWavArchive(),/shared-asset-conflict/);
+});

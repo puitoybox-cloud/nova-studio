@@ -761,7 +761,7 @@
   }
   function archiveValidateProjects(projects){
     if(!Array.isArray(projects))throw Error('archive-projects-invalid');
-    const ids=new Set(),assets=new Set();
+    const ids=new Set(),assets=new Map();
     for(const p of projects){
       if(!validateProject(p).valid||ids.has(p.projectId))throw Error('archive-project-invalid');ids.add(p.projectId);
       // Never claim a full archive when external referenced bytes are absent.
@@ -769,7 +769,9 @@
       if(p.longWavAssets!==undefined&&!Array.isArray(p.longWavAssets))throw Error('archive-assets-invalid');
       for(const a of p.longWavAssets||[]){
         if(a?.mixHistory)longMixHistory(a);
-        if(!a||typeof a.id!=='string'||!a.id||assets.has(a.id)||!Number.isSafeInteger(a.size)||a.size<44||!Array.isArray(a.hashes)||a.hashes.length!==Math.ceil(a.size/1048576)||a.hashes.some(h=>typeof h!=='string'||! /^[a-f0-9]{64}$/.test(h)))throw Error('archive-asset-invalid');assets.add(a.id);
+        if(!a||typeof a.id!=='string'||!a.id||!Number.isSafeInteger(a.size)||a.size<44||!Array.isArray(a.hashes)||a.hashes.length!==Math.ceil(a.size/1048576)||a.hashes.some(h=>typeof h!=='string'||! /^[a-f0-9]{64}$/.test(h)))throw Error('archive-asset-invalid');
+        const identity=JSON.stringify([a.size,a.hashes,a.frames,a.sampleRate,a.channels]);
+        if(assets.has(a.id)&&assets.get(a.id)!==identity)throw Error('archive-shared-asset-conflict');assets.set(a.id,identity);
       }
     }
   }
@@ -777,9 +779,9 @@
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=()=>{archiveGuard(target,options.signal);if(JSON.stringify([state.projects,state.settings])!==baseline)throw Error('archive-state-conflict')};guard();
     if(target.kind!=='indexeddb'||!target.getLongWav)throw Error('archive-durable-storage-required');
     const projects=await target.list();guard();archiveValidateProjects(projects);
-    const storedSettings=await target.getSettings(),settings=preserveRestoreSettings(storedSettings||state.settings||defaultSettings()),parts=[],entries=[];
+    const storedSettings=await target.getSettings(),settings=preserveRestoreSettings(storedSettings||state.settings||defaultSettings()),parts=[],entries=[],packed=new Set();
     for(const p of projects)for(const a of p.longWavAssets||[]){
-      guard();const record=await target.getLongWav(a.id);
+      guard();if(packed.has(a.id))continue;packed.add(a.id);const record=await target.getLongWav(a.id);
       if(!record?.blob||record.blob.size!==a.size||JSON.stringify(record.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(record.blob))!==JSON.stringify(a.hashes))throw Error('archive-binary-corrupt-or-missing');
       guard();parts.push(record.blob);entries.push({id:a.id,size:a.size});
     }
@@ -803,7 +805,7 @@
       const manifest=JSON.parse(await file.slice(12,12+length).text());guard();
       if(manifest.format!==LONG_ARCHIVE_FORMAT||!validateSettings(manifest.settings).valid||!Array.isArray(manifest.entries))throw Error('archive-manifest-invalid');
       archiveValidateProjects(manifest.projects);
-      const expected=manifest.projects.flatMap(p=>p.longWavAssets||[]);
+      const expected=[...new Map(manifest.projects.flatMap(p=>p.longWavAssets||[]).map(a=>[a.id,a])).values()];
       if(expected.length!==manifest.entries.length)throw Error('archive-binary-count');
       const records=[],mapping=new Map();let offset=12+length;
       for(let i=0;i<expected.length;i++){

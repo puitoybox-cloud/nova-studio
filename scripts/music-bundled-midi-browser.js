@@ -106,6 +106,7 @@ async function verify(browser,base,width){
   const song=app.state.projects[0];app.pcmOpen(song.projectId);
   const file=new Blob([app.pcmEncodeWav({sampleRate:8000,channels:[Array(160).fill(.1)]})],{type:'audio/wav'});file.name='backup-tone.wav';
   const imported=await app.pcmImportLongFile(file,song.projectId);if(!imported.ok)throw Error(imported.error);
+  const copied=structuredClone(await repo.get(song.projectId));copied.projectId='shared-wav-copy';copied.projectName='Shared WAV copy';if(copied.aiWorkspace)copied.aiWorkspace.projectId=copied.projectId;await repo.put(copied);await app.refresh();
   app.state.settings.backup.automaticEnabled=true;await repo.putSettings(app.state.settings);
   const result=await app.runAutoBackupCheck();if(!result.created)throw Error(result.reason);
   window.__archive=result.backup.archive;window.__archiveCount=app.state.projects.length;
