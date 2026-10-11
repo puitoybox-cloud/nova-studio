@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.134';
+  const ASSET_VERSION='1.4.135';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -878,6 +878,7 @@
       // New identities prevent overwriting songs, even when restoring on the source device.
       const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=uuid();p.projectName+='（復元）';p.updatedAt=now();
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
+        p.masteringNotes=(p.masteringNotes||[]).map(n=>n.format==='nova-long-master-result-v1'?{...n,sourceAssetId:mapping.get(n.sourceAssetId)||n.sourceAssetId}:n);
         for(const field of REFERENCE_FIELDS)p[field]=(p[field]||[]).map(r=>({...r,binary:{...r.binary,id:mapping.get(r.binary.id)}}));
         if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);return p});
       if(projects.some(p=>!validateProject(p).valid))throw Error('archive-remapped-project-invalid');
@@ -952,7 +953,7 @@
   // Long WAV settings are additive project metadata; original authenticated bytes never change.
   const longMix={candidate:null,generation:0,audio:null,url:null};
   function longMixStop(){if(longMix.audio){longMix.audio.pause();longMix.audio.removeAttribute('src');longMix.audio.load();longMix.audio=null}if(longMix.url){root.URL?.revokeObjectURL(longMix.url);longMix.url=null}}
-  function longMixCancel(){longMix.abort?.(Error('long-mix-cancelled'));longMix.generation++;longMixStop();longMix.candidate=null;longMix.proposals=null;pcmEditor.message='長時間WAVの処理を取り消しました。';requestPaint()}
+  function longMixCancel(){longMix.abort?.(Error('long-mix-cancelled'));longMix.generation++;longMixStop();longMix.candidate=null;longMix.masterChoices=null;longMix.proposals=null;pcmEditor.message='長時間WAVの処理を取り消しました。';requestPaint()}
   function longMixSettings(v,rate){
     if(!v||typeof v.gainDb!=='number'||!Number.isFinite(v.gainDb)||v.gainDb< -24||v.gainDb>24)throw Error('invalid-long-mix-gain');
     return{gainDb:v.gainDb,eq:pcmEqValidate(v.eq,rate),compressor:pcmCompressorSetting(v.compressor),...(v.spatial?{spatial:pcmSpatialSetting(v.spatial)}:{})};
@@ -986,11 +987,12 @@
       if(token!==longMix.generation)throw Error('long-mix-cancelled');
       const a=p.longWavAssets?.find(a=>a.id===assetId);if(!a)throw Error('long-mix-asset-missing');
       const h=longMixHistory(a);
+      if(!direction&&candidate?.mastering&&longMasterProof.get(candidate)!==JSON.stringify({baseline:candidate.baseline,assetId:candidate.assetId,settings:candidate.settings,mastering:candidate.mastering}))throw Error('long-master-preview-modified');
       if(direction){if(![-1,1].includes(direction)||h.cursor+direction<0||h.cursor+direction>=h.settings.length)throw Error('long-mix-history-boundary');h.cursor+=direction}
       else{if(!candidate||candidate.assetId!==assetId||candidate.baseline!==JSON.stringify(p))throw Error('long-mix-preview-stale');h.settings=h.settings.slice(0,h.cursor+1);h.settings.push(longMixSettings(candidate.settings,a.sampleRate));if(h.settings.length>100)h.settings.shift();h.cursor=h.settings.length-1}
-      const updated=clone(p);updated.longWavAssets.find(a=>a.id===assetId).mixHistory=h;updated.revision=(p.revision||0)+1;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,updated.projectId,updated.revision);
+      const updated=clone(p);updated.longWavAssets.find(a=>a.id===assetId).mixHistory=h;if(!direction&&candidate?.mastering)updated.masteringNotes.push({...clone(candidate.mastering),settings:clone(candidate.settings),historyCursor:h.cursor,createdAt:now()});updated.revision=(p.revision||0)+1;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,updated.projectId,updated.revision);
       if(!validateProject(updated).valid)throw Error('invalid-long-mix-project');return updated;
-    },pcmEditor.generation,extraGuard).then(r=>{if(r.ok){longMix.candidate=null;longMixStop()}return r});
+    },pcmEditor.generation,extraGuard).then(r=>{if(r.ok){longMix.candidate=null;longMix.masterChoices=null;longMixStop()}return r});
   }
   async function longMixListen(id,assetId,side){
     longMixStop();const token=longMix.generation;
@@ -1273,7 +1275,7 @@
   function longMixView(id,asset){
     try{const h=longMixHistory(asset),v=h.settings[h.cursor],key=escapeHtml(asset.id),pid=escapeHtml(id),candidate=longMix.candidate?.assetId===asset.id&&longMix.candidate.baseline===JSON.stringify(state.projects.find(p=>p.projectId===id)),disabled=pcmEditor.busy?' disabled':'';
       const input=(name,label,value,min,max,step)=>`<label>${label}<input type="number" name="${name}" value="${value}" min="${min}" max="${max}" step="${step}" required${disabled}></label>`;
-      return`<section><h2>${escapeHtml(asset.name)} · Long WAV（長時間音声）</h2><p>${asset.frames} frames · 履歴 ${h.cursor+1}/${h.settings.length} · Aは保存済み、Bは候補</p>${longMixProposalsView(id,asset)}<form oninput="MusicStudio.longMix.generation++;MusicStudio.longMix.candidate=null" onsubmit="MusicStudio.longMixSubmit(event,'${pid}','${key}')"><div class="music-form-grid">${input('gainDb','Gain（音量 dB）',v.gainDb,-24,24,.1)}${input('frequency','EQ（周波数 Hz）',v.eq.frequency,20,asset.sampleRate*.45-1,1)}${input('eqGain','EQ Gain（帯域音量 dB）',v.eq.gainDb,-18,18,.1)}${input('q','Q（帯域幅）',v.eq.q,.1,10,.1)}${input('thresholdDb','Compression Threshold（圧縮開始 dB）',v.compressor.thresholdDb,-60,0,.1)}${input('ratio','Ratio（圧縮率）',v.compressor.ratio,1,20,.1)}${input('attackMs','Attack（反応 ms）',v.compressor.attackMs,.1,200,.1)}${input('releaseMs','Release（戻り ms）',v.compressor.releaseMs,1,2000,1)}${asset.channels===2?input('balance','Balance（左右 −1左 / 1右）',v.spatial?.balance??0,-1,1,.05)+input('width','Width（広がり 0中央 / 1元のまま）',v.spatial?.width??1,0,1,.05):'<input type="hidden" name="balance" value="0"><input type="hidden" name="width" value="1">'}</div><button class="music-primary"${disabled}>Preview Long WAV（候補を処理）</button></form><div class="music-action-row"><button onclick="MusicStudio.longMixListen('${pid}','${key}','Original')"${disabled}>Original（元音声を聴く）</button><button onclick="MusicStudio.longMixListen('${pid}','${key}','A')"${disabled}>A（長時間・保存済み）</button><button onclick="MusicStudio.longMixListen('${pid}','${key}','B')"${candidate&&!pcmEditor.busy?'':' disabled'}>B（長時間・候補）</button><button onclick="MusicStudio.longMixSave('${pid}','${key}')"${candidate&&!pcmEditor.busy?'':' disabled'}>Save Long Mix（確定・保存）</button><button onclick="MusicStudio.longMixSave('${pid}','${key}',-1)"${h.cursor>0&&!pcmEditor.busy?'':' disabled'}>Undo Long Mix</button><button onclick="MusicStudio.longMixSave('${pid}','${key}',1)"${h.cursor<h.settings.length-1&&!pcmEditor.busy?'':' disabled'}>Redo Long Mix</button><button onclick="MusicStudio.longMixExport('${pid}','${key}')"${disabled}>Processed WAV（加工済み書出し）</button><button onclick="MusicStudio.longMixCancel()">Cancel / Stop（取消・停止）</button></div></section>`;
+      return`<section><h2>${escapeHtml(asset.name)} · Long WAV（長時間音声）</h2><p>${asset.frames} frames · 履歴 ${h.cursor+1}/${h.settings.length} · Aは保存済み、Bは候補</p>${longMasterView(id,asset)}${longMixProposalsView(id,asset)}<form oninput="MusicStudio.longMix.generation++;MusicStudio.longMix.candidate=null" onsubmit="MusicStudio.longMixSubmit(event,'${pid}','${key}')"><div class="music-form-grid">${input('gainDb','Gain（音量 dB）',v.gainDb,-24,24,.1)}${input('frequency','EQ（周波数 Hz）',v.eq.frequency,20,asset.sampleRate*.45-1,1)}${input('eqGain','EQ Gain（帯域音量 dB）',v.eq.gainDb,-18,18,.1)}${input('q','Q（帯域幅）',v.eq.q,.1,10,.1)}${input('thresholdDb','Compression Threshold（圧縮開始 dB）',v.compressor.thresholdDb,-60,0,.1)}${input('ratio','Ratio（圧縮率）',v.compressor.ratio,1,20,.1)}${input('attackMs','Attack（反応 ms）',v.compressor.attackMs,.1,200,.1)}${input('releaseMs','Release（戻り ms）',v.compressor.releaseMs,1,2000,1)}${asset.channels===2?input('balance','Balance（左右 −1左 / 1右）',v.spatial?.balance??0,-1,1,.05)+input('width','Width（広がり 0中央 / 1元のまま）',v.spatial?.width??1,0,1,.05):'<input type="hidden" name="balance" value="0"><input type="hidden" name="width" value="1">'}</div><button class="music-primary"${disabled}>Preview Long WAV（候補を処理）</button></form><div class="music-action-row"><button onclick="MusicStudio.longMixListen('${pid}','${key}','Original')"${disabled}>Original（元音声を聴く）</button><button onclick="MusicStudio.longMixListen('${pid}','${key}','A')"${disabled}>A（長時間・保存済み）</button><button onclick="MusicStudio.longMixListen('${pid}','${key}','B')"${candidate&&!pcmEditor.busy?'':' disabled'}>B（長時間・候補）</button><button onclick="MusicStudio.longMixSave('${pid}','${key}')"${candidate&&!pcmEditor.busy?'':' disabled'}>Save Long Mix（確定・保存）</button><button onclick="MusicStudio.longMixSave('${pid}','${key}',-1)"${h.cursor>0&&!pcmEditor.busy?'':' disabled'}>Undo Long Mix</button><button onclick="MusicStudio.longMixSave('${pid}','${key}',1)"${h.cursor<h.settings.length-1&&!pcmEditor.busy?'':' disabled'}>Redo Long Mix</button><button onclick="MusicStudio.longMixExport('${pid}','${key}')"${disabled}>Processed WAV（加工済み書出し）</button><button onclick="MusicStudio.longMixCancel()">Cancel / Stop（取消・停止）</button></div></section>`;
     }catch(e){return`<p role="alert">${escapeHtml(e.message)}</p>`}
   }
 
@@ -2156,7 +2158,7 @@
       if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>Array(12).fill(0))}
       if(count!==pcm.channels.length)throw Error('master-format-changed');
       for(let i=0;i<n;i++){let energy=0;for(let c=0;c<count;c++){const x=pcm.channels[c][i];peak=Math.max(peak,Math.abs(x));if(Math.abs(x)>=1)clipping++;trueSample(c,x);const y=filters[c][1](filters[c][0](x));energy+=y*y}const at=frames%19200;sum+=energy-ring[at];ring[at]=energy;frames++;if(frames>=19200&&(frames-19200)%4800===0)blocks.push(Math.max(0,sum/19200))}
-      options.guard?.();if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
+      options.guard?.();options.progress?.(frames);if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
     }
     if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
     const loud=x=>x>0?-.691+10*Math.log10(x):null,mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
@@ -2176,6 +2178,58 @@
     const output=pcmGain(source,gainDb),buffer=pcmEncodeWav(output),quantized=pcmDecodeWav(buffer),after=await masterMeasure([quantized],options);options.guard?.();
     if(after.truePeakDb>ceilingDb+.002||after.clippingSamples)throw Error('master-output-ceiling-exceeded');
     return{format:'nova-master-preview-v1',baseline:JSON.stringify(project),assetId,targetLufs,ceilingDb,gainDb,before,after,peakLimited:gainDb<requested-.01,output:quantized};
+  }
+  // Measure the saved long-WAV DSP path and actual quantized result in bounded chunks.
+  const longMasterProof=new WeakMap();
+  function masterTargets(target,ceiling){
+    if(!Number.isFinite(target)||target< -36||target> -5||!Number.isFinite(ceiling)||ceiling< -12||ceiling> -.1)throw Error('invalid-master-target');
+  }
+  async function longMasterPreview(id,assetId,targetLufs,ceilingDb,options={}){
+    if(pcmEditor.busy||archiveTransfer.busy)return{ok:false,error:'production-busy'};
+    const baseline=JSON.stringify(state.projects.find(p=>p.projectId===id)),target=repository,token=++longMix.generation;
+    longMix.candidate=null;longMixStop();pcmEditor.busy=true;requestPaint();
+    const guard=()=>{if(options.signal?.aborted||token!==longMix.generation||repository!==target||pcmEditor.projectId!==id||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('long-master-cancelled-or-stale')};
+    const progress=frames=>{guard();pcmEditor.message=`Mastering ${frames} frames`;const el=root.document?.querySelector('[data-long-mix-status]');if(el)el.textContent=pcmEditor.message};
+    try{
+      masterTargets(targetLufs,ceilingDb);guard();const p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('long-master-storage-conflict');
+      const asset=p.longWavAssets?.find(a=>a.id===assetId);if(!asset)throw Error('long-master-asset-missing');if(asset.sampleRate!==48000)throw Error('master-48khz-required');
+      const source=await pcmLoadLongWav(id,assetId);guard();const h=longMixHistory(asset),saved=h.settings[h.cursor];
+      const before=await masterMeasure(pcmRenderLongWav(source,saved),{guard,progress});if(before.lufs===null)throw Error('master-loudness-unavailable-silence-or-short');
+      const requested=targetLufs-before.lufs,delta=Math.min(requested,ceilingDb-before.truePeakDb,24-saved.gainDb);
+      if(saved.gainDb+delta< -24)throw Error('master-gain-range-exceeded');
+      // Only change gain: retain the user's saved EQ, compressor and spatial settings.
+      const settings=longMixSettings({...saved,gainDb:saved.gainDb+delta},48000);
+      const result=await pcmRenderLongWavBlob(source,settings,16384,{guard,progress});guard();
+      const after=await masterMeasure(pcmDecodeWavStream(result.blob),{guard,progress});guard();
+      if(after.truePeakDb>ceilingDb+.002||after.clippingSamples)throw Error('master-output-ceiling-exceeded');
+      if(after.frames!==asset.frames||after.channels!==asset.channels||result.sampleRate!==48000)throw Error('long-master-output-mismatch');
+      if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-master-storage-conflict');guard();
+      const mastering={format:'nova-long-master-result-v1',sourceAssetId:assetId,targetLufs,ceilingDb,gainDb:delta,before,after,peakLimited:delta<requested-.01};
+      const candidate={ok:true,...result,baseline,assetId,name:asset.name,settings,mastering};
+      longMasterProof.set(candidate,JSON.stringify({baseline,assetId,settings,mastering}));longMix.candidate=candidate;
+      pcmEditor.message='長時間Master候補を作成しました。A/B比較後に保存してください。';return candidate;
+    }catch(e){pcmEditor.message='Masteringできません：'+e.message;return{ok:false,error:e.message}}
+    finally{pcmEditor.busy=false;requestPaint()}
+  }
+  async function longMasterCompare(id,assetId,target,ceiling){
+    try{masterTargets(target,ceiling)}catch(e){return{ok:false,error:e.message}}
+    longMix.masterChoices=null;const choices=[];
+    for(const lufs of [...new Set([target,-14,-18])]){const c=await longMasterPreview(id,assetId,lufs,ceiling);if(!c.ok){longMix.masterChoices=null;return c}choices.push(c)}
+    longMix.masterChoices=choices;requestPaint();return{ok:true,count:choices.length};
+  }
+  function longMasterSelect(id,assetId,index){
+    const c=longMix.masterChoices?.[index];
+    if(pcmEditor.busy||archiveTransfer.busy||!Number.isInteger(index)||!c||c.assetId!==assetId||pcmEditor.projectId!==id||c.baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||longMasterProof.get(c)!==JSON.stringify({baseline:c.baseline,assetId:c.assetId,settings:c.settings,mastering:c.mastering}))return{ok:false,error:'long-master-choice-stale'};
+    longMixStop();longMix.candidate=c;pcmEditor.message='選択したMaster候補の音量だけを採用対象にしました。';requestPaint();return{ok:true};
+  }
+  function longMasterCompareSubmit(button,id,assetId){const f=button.form.elements;return longMasterCompare(id,assetId,Number(f.target.value),Number(f.ceiling.value))}
+  function longMasterSubmit(event,id,assetId){event?.preventDefault?.();const f=event.currentTarget.elements;return longMasterPreview(id,assetId,Number(f.target.value),Number(f.ceiling.value))}
+  function longMasterView(id,asset){
+    const arg=JSON.stringify(String(id)).replace(/</g,'\\u003c'),aid=JSON.stringify(String(asset.id)).replace(/</g,'\\u003c'),handler=escapeHtml;
+    const c=longMix.candidate,m=c?.assetId===asset.id&&c.baseline===JSON.stringify(state.projects.find(p=>p.projectId===id))?c.mastering:null;
+    const metric=v=>`${v.lufs===null?'測定不可':v.lufs.toFixed(2)} LUFS / ${v.truePeakDb===null?'無音':v.truePeakDb.toFixed(2)} dBTP`;
+    if(asset.sampleRate!==48000)return'<p>長時間MasterのLUFS・True Peak測定は48 kHz mono/stereo限定です。他sample rateは未対応です。</p>';
+    return`<section class="music-setting-section"><h3>Long Mastering（長時間・最終音量候補）</h3><p>分割PCM処理・48 kHz限定。元WAVは保持。音量だけ変更し、保存済みEQ・圧縮・左右設定を保持します。規格適合試験は未完了。</p><form onsubmit="${handler(`MusicStudio.longMasterSubmit(event,${arg},${aid})`)}"><div class="music-form-grid"><label>Target（目標LUFS）<input name="target" type="number" min="-36" max="-5" step=".1" value="${m?.targetLufs??-14}" required></label><label>Ceiling（上限dBTP）<input name="ceiling" type="number" min="-12" max="-.1" step=".1" value="${m?.ceilingDb??-1}" required></label></div><button${pcmEditor.busy?' disabled':''}>Preview Long Master（実音声候補）</button><button type="button" onclick="${handler(`MusicStudio.longMasterCompareSubmit(this,${arg},${aid})`)}"${pcmEditor.busy?' disabled':''}>Compare Masters（音量候補を比較）</button></form>${(longMix.masterChoices||[]).filter(v=>v.assetId===asset.id&&v.baseline===JSON.stringify(state.projects.find(p=>p.projectId===id))).map((v,i)=>`<p>${v.mastering.targetLufs} LUFS → ${metric(v.mastering.after)} <button onclick="${handler(`MusicStudio.longMasterSelect(${arg},${aid},${i})`)}"${pcmEditor.busy?' disabled':''}>音量だけを候補に選択</button></p>`).join('')}${m?`<p>A: ${metric(m.before)}<br>B: ${metric(m.after)} / Gain ${m.gainDb.toFixed(2)} dB${m.peakLimited?' / ピーク保護で目標音量を制限':''}</p>`:''}<p>A/B・Save・Undo・Redo・Processed WAVは下の長時間音声ボタンを使えます。Full WAV Archiveは元音声・設定・測定記録を含みます。</p></section>`;
   }
   function harmonyPreview(project,input){
     if(!validateProject(project).valid||!input||!Number.isInteger(input.tonic)||input.tonic<0||input.tonic>11||!['major','minor'].includes(input.scale)||![-4,-2,2,4].includes(input.steps)||!Number.isInteger(input.low)||!Number.isInteger(input.high)||input.low<0||input.high>127||input.low>input.high)throw Error('invalid-harmony-input');
@@ -2229,7 +2283,7 @@
   }
 
   const api={retainReferenceFile,loadReferenceFile,downloadReferenceFile,referenceFilesView,archiveTransfer,cancelArchiveTransfer,previewLongWavArchive,restorePreviewedArchive,mixAlignedProposal,pcmSavedSpatial,pcmSpatialAdopt,pcmSpatialHistory,pcmShowSpatialPreview,pcmUndoRedoSpatial,pcmSpatialView,mixAlignedPair,mixAlignedSubmit,mixAlignedView,pcmSpatial,pcmSpatialSetting,pcmSuggestions,pcmSettings,pcmSettingsPreview,pcmSettingsAdopt,pcmAnalyzeSuggestions,pcmSelectSuggestion,pcmSuggestionsView,mixRelationships,mixAnalyzeRelationships,mixRelationshipsView,mixMeasure,mixPropose,longMixAnalyze,longMixSelect,longMixProposalsView,longMix,longMixSettings,longMixHistory,longMixRender,longMixPreview,longMixSave,longMixListen,longMixExport,longMixSubmit,longMixView,longMixCancel,createLongWavArchive,restoreLongWavArchive,exportLongWavArchive,pcmImportLongFile,pcmLoadLongWav,pcmDownloadLongOriginal,PCM_LIMIT,PCM_FORMAT,pcmValidate,pcmAnalyze,pcmGain,pcmEq,pcmCompress,pcmCompressorSetting,pcmProcessChunks,pcmDecodeWavStream,pcmRenderLongWav,pcmRenderLongWavBlob,pcmCompressorPreview,pcmCompressorAdopt,pcmCompressorHistory,pcmSavedCompressor,pcmShowCompressorPreview,pcmUndoRedoCompressor,pcmEqPreview,pcmEqAdopt,pcmEqHistory,pcmSavedEq,pcmRenderAsset,pcmShowEqPreview,pcmUndoRedoEq,pcmDecodeWav,pcmEncodeWav,pcmMixValidate,pcmPreview,pcmAdopt,pcmImport,pcmHistory,pcmEditor,pcmOpen,pcmChange,pcmShowPreview,pcmCancel,pcmCommit,pcmImportFile,pcmApply,pcmUndoRedo,pcmListen,pcmStop,pcmDownload,pcmMixView,pcmInvalidate,lyricsAssignmentPreview,adoptLyricsAssignment,lyricsSavedRows,lyricsAssignmentView,openLyricsAssignment,changeLyricsAssignment,cancelLyricsAssignment,previewLyricsAssignment,saveLyricsAssignment,lyricsEditor,ASSET_VERSION,HOME_ROUTE,PROJECTS_ROUTE,NEW_ROUTE,EDIT_ROUTE,MIDI_EDITOR_ROUTE,SETTINGS_ROUTE,BACKUP_ROUTE,LOGIC_PRO_ROUTE,FORMAT,SCHEMA_VERSION,APP_VERSION,DB_NAME,STORE_NAME,SETTINGS_STORE_NAME,AUTO_BACKUP_STORE_NAME,MIDI_HISTORY_STORE_NAME,MIDI_IMPORT_HISTORY_STORE_NAME,SETTINGS_FORMAT,SETTINGS_VERSION,BACKUP_FORMAT,BACKUP_VERSION,LAST_PROJECT_KEY,FEATURES:FEATURES.map(item=>({...item})),STATUS_LABELS:{...STATUS_LABELS},PROJECT_STATUS_LABELS:{...PROJECT_STATUS_LABELS},state,defaultSettings,normalizeSettings,validateSettings,makeProject,validateProject,safeFileName,fileNameTemplateErrors,renderFileName,memoryRepository,indexedDbRepository,setRepository,loadSettings,refresh,homeView,createView,listView,editView,midiEditorView,settingsView,backupView,logicProView,placeholderView,renderRoute,isMusicRoute,installHostRoutes,mountStandalone,initialize,submitCreate,submitEdit,duplicateProject,askDelete,exportProject,importText,importFile,selectedMidiProject,midiExportInput,midiExportSummary,requestMidiExport,cancelMidiExport,createMidiTestProject,performMidiExport,loadMidiHistory,inspectMidiFile,cancelMidiImport,loadMidiImportHistory,saveMidiImport,importMidiAsNew,importMidiAsDuplicate,inspectAudioReference,openMidiEditor,openPart,openMelody,openLogicPro,drumNoteName,noteLabelMode,updateNoteLabelElement,updateNoteLabelLayout,editorVisibleBarRange,syncEditorPianoPosition,editorPlaybackTracks,editorSelectPart,editorSelectNote,editorToggleMultiSelect,editorSelectAllNotes,editorStartNoteDrag,editorStartMarqueeSelection,editorStartNoteResize,editorMoveSelected,editorResizeSelected,editorSetSnap,editorToggleSnap,editorResetZoom,editorMatchDuration,editorMatchVelocity,editorClearSelection,editorHandleShortcut,editorZoom,editorAddMeasures,editorRemoveMeasures,editorFitPitchRange,editorRememberPitchScroll,editorPreviewPitch,editorAddNote,editorDeleteNote,editorLockSelectedNotes,editorUnlockSelectedNotes,editorUndo,editorRedo,editorCopy,editorPaste,editorDuplicate,editorToggleMeasure,editorSelectMeasureRange,editorToggleLock,editorPrepareRegeneration,editorPianoInput,editorInitializeMidi,editorSelectMidiInput,editorSelectMidiTarget,editorStartMidiRecording,editorStopMidiRecording,editorStopTransport,editorPlayMelody,editorStopMelody,editorUpdateTransposeSettings,editorPreviewTranspose,editorCancelTranspose,editorApplyTranspose,editorPreviewSongTranspose,editorCancelSongTranspose,editorApplySongTranspose,editorUpdateCorrectionGuide,editorPreviewCorrection,editorToggleCorrectionPreview,editorCancelCorrection,editorApplyCorrection,editorDrumInput,editorGenerateCandidate,editorApplyCandidate,editorUpdateSelected,saveMidiEditor,hasUnsavedChanges,markDirty,markSettingsDirty,updateFileNamePreview,saveSettingsForm,persistSettings,discardSettings,resetSettings,exportSettings,importSettingsText,importFile,backupObject,validateBackup,inspectBackupCompleteness,exportBackup,previewBackupText,previewBackupFile,restoreBackup,restorePreflight,cancelBackupRestore,restorePreviewedBackup,clearBackupPreview,loadAutoBackups,runAutoBackupCheck,checkAutoBackupNow,restoreAutoBackup,backupSignature,saveCurrentProject,configureAutosave,cancelScheduledSave,cancelEdit,clearNotice,getSettings(){return clone(state.settings||defaultSettings())},getMidiSettings(){return clone((state.settings||defaultSettings()).midi)},getLogicProSettings(){return clone((state.settings||defaultSettings()).logicPro)},searchProjects(value){state.search=value;const query=value.trim().toLocaleLowerCase('ja');const items=state.projects.filter(project=>!query||[project.projectName,project.songTitle,project.purpose].some(field=>String(field||'').toLocaleLowerCase('ja'))).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));const target=root.document?.querySelector('.music-project-list');if(target)target.innerHTML=items.map(projectRow).join('')||`<div class="music-empty"><p>${query?'検索条件に一致するプロジェクトはありません。':'プロジェクトはまだありません。'}</p><button class="music-primary" onclick="MusicStudio.goNew()">最初のプロジェクトを作る</button></div>`},openProject(id){cancelScheduledSave();state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`)},goHome(){go(HOME_ROUTE)},goProjects(){go(PROJECTS_ROUTE)},goNew(){go(NEW_ROUTE)},goBackup(){go(BACKUP_ROUTE)},goSettings(){go(SETTINGS_ROUTE)}};
-  Object.assign(api,{masterMeasure,masterPreview,harmonyPreview,harmonyTone,productionPreview,productionSubmit,productionSave,productionListen,productionCancel,productionView});
+  Object.assign(api,{longMasterCompare,longMasterSelect,longMasterCompareSubmit,longMasterPreview,longMasterSubmit,longMasterView,masterMeasure,masterPreview,harmonyPreview,harmonyTone,productionPreview,productionSubmit,productionSave,productionListen,productionCancel,productionView});
   api.prepareForShutdown=prepareForShutdown;
   api.createAIProject=createAIProject;
   api.repaintEditor=repaintEditor;
