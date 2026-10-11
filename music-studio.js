@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.140';
+  const ASSET_VERSION='1.4.141';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1156,7 +1156,12 @@
   function vocalBreathForm(event,id,assetId){event.preventDefault();const f=new root.FormData(event.target),a=state.projects.find(x=>x.projectId===id).longWavAssets.find(x=>x.id===assetId);return vocalBreathPreview(id,assetId,Math.round(Number(f.get('first'))*a.sampleRate),Math.round(Number(f.get('end'))*a.sampleRate),Number(f.get('gain')))}
   function vocalCorrectionCancel(){vocalCorrection.generation++;vocalCorrection.preview=null;vocalPlaybackStop();if(vocal.phase==='analyzing')vocal.phase='idle';requestPaint()}
   function vocalCorrectionToggle(index,checked){const p=vocalCorrection.preview;if(!p||!Number.isInteger(index)||!p.candidates[index])return false;p.selected=p.selected.filter(x=>x!==index);if(checked)p.selected.push(index);vocalPlaybackStop();return true}
-  function vocalReplaceRegions(regions,replacements){let kept=regions.map(r=>({...r}));for(const next of replacements){kept=kept.flatMap(r=>{if(r.end<=next.first||r.first>=next.end)return[r];return[...(r.first<next.first?[{...r,end:next.first}]:[]),...(r.end>next.end?[{...r,first:next.end}]:[])]});kept.push({...next})}return kept.sort((a,b)=>a.first-b.first)}
+  function vocalReplaceRegions(regions,replacements){let kept=regions.map(r=>({...r}));for(const next of replacements){
+    // Pitch/timing edits retain independent range gain from earlier breath edits.
+    const cuts=[...new Set([next.first,next.end,...(next.gainDb===undefined?kept.filter(r=>r.gainDb!==undefined).flatMap(r=>[r.first,r.end]).filter(n=>n>next.first&&n<next.end):[])])].sort((a,b)=>a-b),pieces=[];
+    for(let i=0;i<cuts.length-1;i++){const first=cuts[i],end=cuts[i+1],prior=kept.find(r=>r.first<=first&&r.end>=end);pieces.push({...next,first,end,...(next.gainDb===undefined&&prior?.gainDb!==undefined?{gainDb:prior.gainDb}:{})})}
+    kept=kept.flatMap(r=>{if(r.end<=next.first||r.first>=next.end)return[r];return[...(r.first<next.first?[{...r,end:next.first}]:[]),...(r.end>next.end?[{...r,first:next.end}]:[])]});kept.push(...pieces)
+  }return kept.sort((a,b)=>a.first-b.first)}
   function vocalTrimSetting(asset,setting,first,end,gainDb,startTick,latencyMs){return vocalSetting(asset,{...setting,first,end,gainDb,startTick,latencyMs,...(setting.regions?{regions:setting.regions.filter(r=>r.end>first&&r.first<end).map(r=>({...r,first:Math.max(first,r.first),end:Math.min(end,r.end)}))}:{})})}
   function vocalCandidateSetting(preview){const selected=preview.selected.map(i=>preview.candidates[i]).sort((a,b)=>a.first-b.first),old=preview.setting.regions||[];return{...preview.setting,regions:vocalReplaceRegions(old,selected)}}
   async function vocalCorrectionListen(after=true){try{const p=vocalCorrection.preview;if(!p||p.baseline!==JSON.stringify(state.projects.find(x=>x.projectId===p.id)))throw Error('vocal-preview-stale');const setting=after?vocalCandidateSetting(p):p.setting,pcm=vocalProcessPCM(p.pcm,setting),wav=vocalWav(pcm.channels,pcm.sampleRate);vocalPlaybackStop();vocal.url=root.URL.createObjectURL(wav.blob);vocal.audio=new root.Audio(vocal.url);await vocal.audio.play();return{ok:true}}catch(e){vocal.message=e.message;requestPaint();return{ok:false,error:e.message}}}
