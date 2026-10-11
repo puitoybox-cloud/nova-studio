@@ -90,7 +90,7 @@ final class MusicStudioWebMidiBridge {
             // Each outstanding same-pitch note-on needs a matching release.
             // Emit all releases before moving to the next held pitch.
             for (let press = 0; press < (note.count ?? 1); press++) {
-            const bytes = [0x80 | note.channel, note.pitch, 0];
+              const bytes = [0x80 | note.channel, note.pitch, 0];
             const timeStamp = pageTimestamp();
             const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
             const onMessage = input.onmidimessage;
