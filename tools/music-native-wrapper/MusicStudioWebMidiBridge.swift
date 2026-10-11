@@ -89,7 +89,11 @@ final class MusicStudioWebMidiBridge {
           for (const note of notes) {
             // Each outstanding same-pitch note-on needs a matching release.
             // Emit all releases before moving to the next held pitch.
-            for (let press = 0; press < (note.count ?? 1); press++) {
+            // A bounded count prevents a malformed internal state from
+            // monopolizing the page while releasing held notes.
+            const outstanding = Number.isSafeInteger(note.count) && note.count > 0
+              ? Math.min(note.count, 65535) : 1;
+            for (let press = 0; press < outstanding; press++) {
               const bytes = [0x80 | note.channel, note.pitch, 0];
             const timeStamp = pageTimestamp();
             const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
