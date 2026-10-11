@@ -2,7 +2,7 @@
 
 Source: Music_Studio_最終機能仕様書_v1.pdf, confirmed 2026-09-30, reread in full 2026-10-11. Prior checkpoint #395 / 459306debbb96cf6831622d6fe833b39dfd96b9d; all three returned exact-head workflows SUCCESS. Main 552d56eafddfd192970c09f7d6278696cf8775c3. Fresh audit retrieved 142 Open PRs, including 140 Drafts: each Draft HEAD/base/mergeability and returned workflow runs fetched; no Draft conflict. No old PR/main writes.
 
-22 production implementation units, grouped below. These are subrequirements, NOT 22 completed major features, and tests are not counted as implementation units.
+23 production implementation units, grouped below. These are subrequirements, NOT 23 completed major features, and tests are not counted as implementation units.
 
 | Unit | Production behavior |
 |---|---|
@@ -28,6 +28,7 @@ Source: Music_Studio_最終機能仕様書_v1.pdf, confirmed 2026-09-30, reread 
 |20|Backup export refuses pending edits/recording instead of silently omitting them|
 |21|Candidate Preview and Preview cancellation do not create false pending AI edits|
 |22|Family Preview/Plan/Preflight/Cancel do not create false pending AI edits|
+|23|Refresh both host and standalone core/panel cache keys so the new production code is loaded|
 
 Changed production: music-studio.js, music-studio-ai-assistant-panel.js, MusicStudioWebViewHost.swift, both Swift Package and Xcode app entrypoints. Existing storage schema unchanged. Older custom repositories lacking compare-and-put retain their existing put fallback; no cross-process atomic guarantee is claimed for those adapters.
 
