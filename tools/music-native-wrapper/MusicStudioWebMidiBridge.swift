@@ -99,6 +99,17 @@ final class MusicStudioWebMidiBridge {
           }
         } finally {
           releasingHeldNotes = false;
+          // Reentrant reconnects are deferred until note-off cleanup ends.
+          // Publish the new connected state once, without reopening a port
+          // explicitly closed by the page.
+          if (sourceAvailable && input.state === 'connected' && input.connection === 'closed' && !explicitlyClosed) {
+            input.connection = 'open';
+            const event = { port: input, target: access, currentTarget: access, transitionState: 'connected' };
+            const handler = access.onstatechange;
+            const recipients = Array.from(stateListeners);
+            try { if (typeof handler === 'function') handler(event); } catch (_) {}
+            for (const listener of recipients) { try { listener(event); } catch (_) {} }
+          }
         }
       }
 
