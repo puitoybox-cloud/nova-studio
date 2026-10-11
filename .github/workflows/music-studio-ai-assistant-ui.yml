@@ -51,6 +51,7 @@ jobs:
           path: |
             verification/music-harmony-mastering-browser.json
             verification/music-harmony-mastering-*.png
+            verification/music-long-master-*.png
             verification/music-bundled-midi-browser.json
             music-ai-*.png
             verification/music-ai-assistant-browser-report-20261002.json
