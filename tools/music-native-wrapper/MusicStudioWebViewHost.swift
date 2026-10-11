@@ -15,6 +15,12 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
     private var automaticRenewals = 0
     private var midiCoordinator: NativeMidiCoordinator?
     private let platform: String
+    private var closePreparationInFlight = false
+    #if os(macOS)
+    public static let activeHosts = NSHashTable<MusicStudioWebViewHost>.weakObjects()
+    private weak var guardedWindow: NSWindow?
+    private var windowCloseGuard: MusicStudioWindowCloseGuard?
+    #endif
 
     public init(configuration: MusicStudioAppConfiguration, platform: String) {
         self.configuration = configuration
@@ -39,6 +45,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         self.webView = WKWebView(frame: .zero, configuration: webConfiguration)
 
         super.init()
+        #if os(macOS)
+        Self.activeHosts.add(self)
+        #endif
         if let credential = configuration.ownedCredential, let session = configuration.ownedSession,
            let port = configuration.startURL.port, let origin = URL(string: "http://127.0.0.1:\(port)") {
             ownedLifecycle = try? MusicStudioOwnedLifecycle(origin: origin, session: session, credential: credential)
@@ -168,6 +177,61 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         return acknowledgement
     }
 
+    /// Await the actual page save promise; missing API, timeout and storage errors
+    /// keep the application open. No data is discarded to make closing succeed.
+    public func prepareForClose(completion: @escaping (Bool) -> Void) {
+        guard lifecycleState == "BROWSER_READY", !closePreparationInFlight,
+              let url = webView.url, configuration.allows(url) else { completion(false); return }
+        closePreparationInFlight = true
+        var completed = false
+        let finish: (Bool) -> Void = { [weak self] ok in
+            guard !completed else { return }
+            completed = true
+            self?.closePreparationInFlight = false
+            completion(ok)
+        }
+        let timeout = DispatchWorkItem { finish(false) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeout)
+        webView.callAsyncJavaScript(
+            "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return false; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return result?.ok===true;}finally{if(body)body.inert=previous;}",
+            arguments: [:], in: nil, in: .page) { result in
+                DispatchQueue.main.async {
+                    timeout.cancel()
+                    switch result {
+                    case .success(let value): finish(value as? Bool == true)
+                    case .failure: finish(false)
+                    }
+                }
+            }
+    }
+
+    #if os(macOS)
+    public static func prepareAllForTermination(completion: @escaping (Bool) -> Void) {
+        let hosts = activeHosts.allObjects.filter { !["STOPPED", "CLOSED"].contains($0.lifecycleState) }
+        func next(_ index: Int) {
+            guard index < hosts.count else { completion(true); return }
+            hosts[index].prepareForClose { ok in
+                if ok { next(index + 1) } else { completion(false) }
+            }
+        }
+        next(0)
+    }
+    public static func showSaveFailure() {
+        let alert = NSAlert()
+        alert.messageText = "保存を完了できないため、終了を取り消しました。"
+        alert.informativeText = "処理が終わるまで待ち、未保存の変更を保存してから、もう一度終了してください。"
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+    private func attachWindowCloseGuard() {
+        guard let window = webView.window, guardedWindow !== window else { return }
+        let guardDelegate = MusicStudioWindowCloseGuard(host: self, previous: window.delegate)
+        windowCloseGuard = guardDelegate
+        guardedWindow = window
+        window.delegate = guardDelegate
+    }
+    #endif
+
     public func stop() {
         renewalWork?.cancel(); renewalWork = nil
         if let owner = ownedLifecycle {
@@ -251,6 +315,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
               ownedLifecycle.map({ !["FAILED","STOPPING","STOPPED"].contains($0.state) && !$0.state.hasPrefix("SHUTDOWN") }) ?? true else { return }
         guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
+        #if os(macOS)
+        attachWindowCloseGuard()
+        #endif
         #if os(iOS)
         let platformName = "ipad"
         #else
@@ -260,3 +327,52 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         midiCoordinator?.resyncPageAvailability()
     }
 }
+
+#if os(macOS)
+private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
+    private weak var host: MusicStudioWebViewHost?
+    private weak var previous: NSWindowDelegate?
+    private var approvedClose = false
+    private var preparing = false
+    init(host: MusicStudioWebViewHost, previous: NSWindowDelegate?) {
+        self.host = host; self.previous = previous
+    }
+    override func responds(to selector: Selector!) -> Bool {
+        super.responds(to: selector) || (previous?.responds(to: selector) ?? false)
+    }
+    override func forwardingTarget(for selector: Selector!) -> Any? {
+        if previous?.responds(to: selector) == true { return previous }
+        return super.forwardingTarget(for: selector)
+    }
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if previous?.windowShouldClose?(sender) == false { return false }
+        if approvedClose { approvedClose = false; return true }
+        guard !preparing, let host else { return false }
+        preparing = true
+        host.prepareForClose { [weak self, weak sender] ok in
+            guard let self else { return }
+            self.preparing = false
+            if ok, let sender { self.approvedClose = true; sender.performClose(nil) }
+            else { MusicStudioWebViewHost.showSaveFailure() }
+        }
+        return false
+    }
+}
+
+/// Shared by the Swift Package and Xcode app entrypoints.
+public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelegate {
+    private var preparing = false
+    public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !preparing else { return .terminateCancel }
+        preparing = true
+        DispatchQueue.main.async {
+            MusicStudioWebViewHost.prepareAllForTermination { [weak self] ok in
+                self?.preparing = false
+                sender.reply(toApplicationShouldTerminate: ok)
+                if !ok { MusicStudioWebViewHost.showSaveFailure() }
+            }
+        }
+        return .terminateLater
+    }
+}
+#endif
