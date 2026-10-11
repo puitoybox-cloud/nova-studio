@@ -94,6 +94,8 @@ final class MusicStudioWebMidiBridge {
             const outstanding = Number.isSafeInteger(note.count) && note.count > 0
               ? Math.min(note.count, 65535) : 1;
             for (let press = 0; press < outstanding; press++) {
+              // A callback can close/reconnect the port. Continue releasing
+              // the snapshot, but never deliver a new note-on mid-cleanup.
               const bytes = [0x80 | note.channel, note.pitch, 0];
             const timeStamp = pageTimestamp();
             const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
