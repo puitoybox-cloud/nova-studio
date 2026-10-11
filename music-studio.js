@@ -975,7 +975,7 @@
     if(value.lyricOffsets!==undefined){if(!Array.isArray(value.lyricOffsets)||value.lyricOffsets.length>4096||new Set(value.lyricOffsets.map(x=>(x.trackId||'')+':'+x.noteId)).size!==value.lyricOffsets.length||value.lyricOffsets.some(x=>(x.trackId!==undefined&&typeof x.trackId!=='string')||typeof x.noteId!=='string'||!x.noteId||!Number.isFinite(x.seconds)||Math.abs(x.seconds)>10))throw Error('vocal-lyric-offset-invalid');result.lyricOffsets=value.lyricOffsets.map(x=>({...((x.trackId!==undefined)?{trackId:x.trackId}:{}),noteId:x.noteId,seconds:x.seconds}))}return result;
   }
   function vocalHistory(asset){
-    const t=asset?.vocalTake;if(!Number.isSafeInteger(asset?.frames)||asset.frames<1||!Number.isInteger(asset.sampleRate)||asset.sampleRate<8000||asset.sampleRate>192000||![1,2].includes(asset.channels))throw Error('vocal-asset-format-invalid');if(!t||t.format!=='nova-vocal-take-v1'||!Number.isInteger(t.cursor)||!Array.isArray(t.edits)||t.edits.length<1||t.edits.length>100||t.cursor<0||t.cursor>=t.edits.length||!Array.isArray(t.waveform)||t.waveform.length>240||t.waveform.some(x=>!Number.isFinite(x)||x<0||x>1))throw Error('vocal-history-invalid');
+    const t=asset?.vocalTake;if(!Number.isSafeInteger(asset?.frames)||asset.frames<1||!Number.isInteger(asset.sampleRate)||asset.sampleRate<8000||asset.sampleRate>192000||![1,2].includes(asset.channels))throw Error('vocal-asset-format-invalid');if(!t||!['nova-vocal-take-v1','nova-vocal-take-v2'].includes(t.format)||!Number.isInteger(t.cursor)||!Array.isArray(t.edits)||t.edits.length<1||t.edits.length>100||t.cursor<0||t.cursor>=t.edits.length||!Array.isArray(t.waveform)||t.waveform.length>240||t.waveform.some(x=>!Number.isFinite(x)||x<0||x>1))throw Error('vocal-history-invalid');
     return{cursor:t.cursor,edits:t.edits.map(x=>vocalSetting(asset,x))};
   }
   function vocalWav(channels,rate){
@@ -1047,7 +1047,7 @@
     vocal.phase='saving';vocalPlaybackStop();requestPaint();try{guard();const updated=clone(p),asset=updated.longWavAssets.find(x=>x.id===assetId),h=vocalHistory(asset);
       if(direction){if(![-1,1].includes(direction)||h.cursor+direction<0||h.cursor+direction>=h.edits.length)throw Error('vocal-history-boundary');h.cursor+=direction}
       else{if(h.cursor>=99)throw Error('vocal-history-full');h.edits=h.edits.slice(0,h.cursor+1);h.edits.push(vocalSetting(asset,value));h.cursor++}
-      asset.vocalTake={...asset.vocalTake,...h};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
+      asset.vocalTake={...asset.vocalTake,...h,format:h.edits.some(e=>e.regions?.length||e.lyricOffsets?.length)?'nova-vocal-take-v2':asset.vocalTake.format};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
       await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?updated:x);vocal.phase='saved';vocalCorrection.preview=null;vocal.message='編集を保存しました。元音声は保持しています。';return{ok:true,project:updated};
     }catch(e){vocal.phase='error';vocal.message=e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
