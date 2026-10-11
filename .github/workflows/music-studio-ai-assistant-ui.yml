@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'tools/music-native-wrapper/**'
+      - 'scripts/music-harmony-mastering-browser.js'
       - 'scripts/music-bundled-midi-browser.js'
       - 'scripts/music-stage-native-web.py'
       - 'tools/music-audio-pipeline/**'
@@ -40,6 +41,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-harmony-mastering-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
       - uses: actions/upload-artifact@v4
@@ -47,6 +49,8 @@ jobs:
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-harmony-mastering-browser.json
+            verification/music-harmony-mastering-*.png
             verification/music-bundled-midi-browser.json
             music-ai-*.png
             verification/music-ai-assistant-browser-report-20261002.json

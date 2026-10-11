@@ -207,11 +207,11 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.3/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.25/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.25/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.13/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.13/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.133/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.133/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.133/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.133/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.134/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.134/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.134/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.134/);
   assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.25'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.133'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
-  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.66',stylesheet:'1\.4\.133'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.134'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.66',stylesheet:'1\.4\.134'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -298,3 +298,5 @@ test('display assist controls are grouped without changing their actions',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-display-assist>\.music-assist-layout\{grid-auto-rows:max-content;flex:none;gap:10px\}/);assert.match(css,/\.music-display-assist \.music-assist-description\{margin-top:8px;line-height:1\.45\}/);assert.match(css,/@media\(min-width:901px\)\{\s*\.music-midi-editor-page \.music-piano-viewport/);
 });
+
+test('Mastering home entry opens the real selected-project Harmony and Master forms',()=>{const app=loadMusicStudio().MusicStudio;const p=app.makeProject({projectId:'master-home',projectName:'Master home'});app.state.projects=[p];app.state.loaded=true;assert.equal(app.FEATURES.find(f=>f.id==='mastering').status,'working');const html=app.renderRoute('music-studio/mastering');assert.match(html,/Preview master/);assert.match(html,/Preview harmony/);assert.match(html,/music-production-tools music-setting-section/);assert.doesNotMatch(html,/現在は既存データを変更しない安全な準備中画面/)});
