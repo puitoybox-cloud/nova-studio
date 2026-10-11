@@ -194,7 +194,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeout)
         webView.callAsyncJavaScript(
             "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return false; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return result?.ok===true;}finally{if(body)body.inert=previous;}",
-            arguments: [:], in: nil, contentWorld: .page) { result in
+            arguments: [:], in: nil, in: .page) { result in
                 DispatchQueue.main.async {
                     timeout.cancel()
                     switch result {
