@@ -100,8 +100,30 @@ async function verify(browser,base,width){
  assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),4);
  assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.find(p=>p.projectId==='race-song').projectName),'Protected race');
  assert.deepEqual(await migrated.evaluate(id=>MusicStudio.state.projects.find(p=>p.projectId===id).midiData.tracks,first.project.projectId),first.project.midiData.tracks);
+ // Actual IndexedDB Blob backup, preview and add-only restore on the production page.
+ const archiveResult=await migrated.evaluate(async()=>{
+  const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);await app.refresh();
+  const song=app.state.projects[0];app.pcmOpen(song.projectId);
+  const file=new Blob([app.pcmEncodeWav({sampleRate:8000,channels:[Array(160).fill(.1)]})],{type:'audio/wav'});file.name='backup-tone.wav';
+  const imported=await app.pcmImportLongFile(file,song.projectId);if(!imported.ok)throw Error(imported.error);
+  app.state.settings.backup.automaticEnabled=true;await repo.putSettings(app.state.settings);
+  const result=await app.runAutoBackupCheck();if(!result.created)throw Error(result.reason);
+  window.__archive=result.backup.archive;window.__archiveCount=app.state.projects.length;
+  const preview=await app.previewLongWavArchive(__archive);if(!preview.ok)throw Error(preview.error);
+  return{preview:preview.preview.projectCount,before:(await repo.list()).length,bytes:__archive.size};
+ });
+ assert.equal(archiveResult.preview,archiveResult.before);assert.ok(archiveResult.bytes>320);
+ await migrated.evaluate(()=>MusicStudio.goBackup());await migrated.waitForSelector('#archiveRestoreSettings');
+ await migrated.screenshot({path:`music-ai-archive-preview-${width}.png`,fullPage:true});
+ await migrated.locator('#archiveRestoreSettings').uncheck();
+ const recovered=await migrated.evaluate(()=>MusicStudio.restorePreviewedArchive());assert.equal(recovered.ok,true,recovered.error);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),archiveResult.before*2);
+ await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),archiveResult.before*2);
+ const savedArchive=await migrated.evaluate(async()=>{const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);await app.loadAutoBackups();const record=app.state.autoBackups[0];return{blob:record.archive instanceof Blob,size:record.archive.size}});
+ assert.equal(savedArchive.blob,true);assert.equal(savedArchive.size,archiveResult.bytes);
  await destination.close();
  assert.ok(expectedStorageErrors.length>0);
- assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,shutdownStopCommitReopen:true,jsonFlushesPendingEditor:true,backupRejectsPendingChanges:true,expectedStorageErrors,console:messages,external};
+ assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,shutdownStopCommitReopen:true,jsonFlushesPendingEditor:true,backupRejectsPendingChanges:true,archivePreviewAndAddOnlyRecovery:true,automaticBinaryBackupReopen:true,expectedStorageErrors,console:messages,external};
 }
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||undefined,args:['--autoplay-policy=no-user-gesture-required']});try{const results=[];for(const width of [1440,820,390])results.push(await verify(browser,base,width));fs.mkdirSync('verification',{recursive:true});fs.writeFileSync('verification/music-bundled-midi-browser.json',JSON.stringify({scope:'CONTROLLED_VIRTUAL_MIDI_CHROME_NOT_PHYSICAL_OR_WKWEBVIEW',results},null,2));console.log(JSON.stringify(results))}finally{await browser.close();server.close();fs.rmSync(root,{recursive:true,force:true})}})().catch(e=>{console.error(e);server.close();process.exitCode=1});
