@@ -41,6 +41,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-recording-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-harmony-mastering-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
@@ -49,6 +50,8 @@ jobs:
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-vocal-recording-browser.json
+            verification/music-vocal-recording-*.png
             verification/music-harmony-mastering-browser.json
             verification/music-harmony-mastering-*.png
             verification/music-long-master-*.png
