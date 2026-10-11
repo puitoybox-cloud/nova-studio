@@ -665,3 +665,4 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 }
 
 .music-original-files .music-auto-backup-row{flex-wrap:wrap}.music-original-files .music-auto-backup-row>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}.music-original-files label{min-width:0;max-width:100%}.music-original-files input[type=file]{max-width:100%;width:100%;box-sizing:border-box}
+@media(max-width:600px){.music-original-files .music-auto-backup-row>div{flex:0 1 auto}}
