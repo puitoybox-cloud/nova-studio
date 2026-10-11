@@ -33,7 +33,7 @@ Local Playwright launcher could not find an installed browser executable. Initia
 
 ## Formal 30-feature status and software remaining
 
-A0/B0/C30 retained, every No.1–30 C. The previous repository ledger is the mapping source; original specification PDF was not reread in this environment. No feature promotion or formal full-scope re-certification is established.
+A0/B0/C30 retained, every No.1–30 C. The previous repository ledger is the mapping source; original specification PDF (confirmed 2026-09-30) was reread in full: 5 pages / 166 lines, 2026-10-12 JST. No feature promotion or formal full-scope re-certification is established.
 
 Remaining software: formant-preserving pitch correction, explicit formant controls, vibrato analysis/adjustment, automatic microphone round-trip measurement, transport punch-in, cycle recording, lyric scrolling and capture accompaniment synchronization, native suspension/process-interruption recovery, approved local singing runtime/models/Japanese phonemizer/vocoder/license/bundling, final batch/Stem distribution and standalone production delivery obligations from the existing ledger. Existing correction/Comp/master paths are not counted as newly completed here.
 
@@ -42,3 +42,7 @@ AI singing source check (2026-10-12 JST): official OpenUtau Install/DiffSinger-s
 Physical-only checks: Intel Mac/iPad microphone permissions, native file-origin capture, headphone output/feedback/latency and audible quality, synchronization, suspension and process restart, Gatekeeper/notarization, touch/Japanese fonts, real storage pressure and Logic/Keystation interoperability.
 
 Safety: main and prior branches untouched; no user song/backups edited, destructive migration, force push, Ready/Merge/Auto Merge or Live Provider API. New Draft only.
+
+## Screenshot follow-up
+
+Visual inspection of the first successful CI screenshots found low-contrast inherited white advanced/Comp cards and unstyled white vocal input fields. Vocal details, Comp and inputs now use scoped dark surfaces; active summary/body/label/input/Comp heading contrast is measured >=4.5:1 by the real Chrome scenario at every width. Checkbox dimensions are compact. This is a display fix, not an extra production item in the ten-item count. Final validation is bound to the PR HEAD in its body.
