@@ -663,3 +663,5 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
   .music-midi-editor-page .music-part-tabs .music-part-tab-group{flex:0 0 auto}
   .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{width:92px;min-width:92px;flex:0 0 92px}
 }
+
+.music-original-files .music-auto-backup-row{flex-wrap:wrap}.music-original-files .music-auto-backup-row>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}.music-original-files label{min-width:0;max-width:100%}.music-original-files input[type=file]{max-width:100%;width:100%;box-sizing:border-box}
