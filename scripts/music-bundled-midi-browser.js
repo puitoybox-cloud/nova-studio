@@ -60,6 +60,21 @@ async function verify(browser,base,width){
  assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);
  await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');await page.waitForFunction(()=>MusicStudio.state.midiEditor?.midiData?.tracks.find(t=>t.id==='melody')?.notes.some(n=>n.pitch===69));
  assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ // Production shutdown uses Stop and awaits its IndexedDB commit before returning.
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.playheadTick=0;return MusicStudio.editorStartMidiRecording({skipCountIn:true})});
+ await page.waitForFunction(()=>MusicStudio.state.midiInput.recording);
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x90,77,100],timeStamp:performance.now()}));await page.waitForTimeout(60);
+ assert.equal((await page.evaluate(()=>MusicStudio.prepareForShutdown())).ok,true);
+ assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.recording),false);
+ await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');
+ assert.ok(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(t=>t.id==='melody').notes.some(n=>n.pitch===77)));
+ // JSON transfer flushes a direct pending editor edit, not an obsolete snapshot.
+ await page.evaluate(()=>MusicStudioEditor.addNote(MusicStudio.state.midiEditor,{pitch:74,startTick:0,durationTicks:120,velocity:90}));
+ assert.equal((await page.evaluate(()=>MusicStudio.exportBackup())).error,'backup-unsaved-changes');
+ const latestJSON=await page.evaluate(()=>MusicStudio.exportProject('virtual-midi'));
+ assert.ok(JSON.parse(latestJSON.text).midiData.tracks.find(t=>t.id==='melody').notes.some(n=>n.pitch===74));
+ assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.dirty),false);
+ assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
  // Explicit transfer into an isolated destination repository; no old-origin reads.
  const transfer=await page.evaluate(()=>JSON.stringify(MusicStudio.state.projects.find(p=>p.projectId==='virtual-midi')));
  const destination=await browser.newContext({viewport:{width,height:900}}),migrated=await destination.newPage();
@@ -87,6 +102,6 @@ async function verify(browser,base,width){
  assert.deepEqual(await migrated.evaluate(id=>MusicStudio.state.projects.find(p=>p.projectId===id).midiData.tracks,first.project.projectId),first.project.midiData.tracks);
  await destination.close();
  assert.ok(expectedStorageErrors.length>0);
- assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,expectedStorageErrors,console:messages,external};
+ assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,shutdownStopCommitReopen:true,jsonFlushesPendingEditor:true,backupRejectsPendingChanges:true,expectedStorageErrors,console:messages,external};
 }
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||undefined,args:['--autoplay-policy=no-user-gesture-required']});try{const results=[];for(const width of [1440,820,390])results.push(await verify(browser,base,width));fs.mkdirSync('verification',{recursive:true});fs.writeFileSync('verification/music-bundled-midi-browser.json',JSON.stringify({scope:'CONTROLLED_VIRTUAL_MIDI_CHROME_NOT_PHYSICAL_OR_WKWEBVIEW',results},null,2));console.log(JSON.stringify(results))}finally{await browser.close();server.close();fs.rmSync(root,{recursive:true,force:true})}})().catch(e=>{console.error(e);server.close();process.exitCode=1});

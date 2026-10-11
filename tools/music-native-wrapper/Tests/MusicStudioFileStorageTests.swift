@@ -62,4 +62,51 @@ final class MusicStudioFileStorageTests: XCTestCase {
         XCTAssertEqual(recovered as? String, "{\"trackId\":\"stable-track\",\"pitch\":64}")
         _ = try await second.webView.callAsyncJavaScript("return await new Promise((resolve,reject)=>{const r=indexedDB.deleteDatabase(name);r.onsuccess=()=>resolve(true);r.onerror=()=>reject(String(r.error));});", arguments: ["name": database], in: nil, contentWorld: .page)
     }
+    @MainActor func testCloseWaitsForPageSaveAndRefusesFailureOrMissingAPI() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let assets = root.appendingPathComponent("MusicStudioWeb")
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let html = """
+        <!doctype html><script>
+        window.fixture={saved:false,fail:false};
+        window.MusicStudio={prepareForShutdown:async()=>{
+          await new Promise(resolve=>setTimeout(resolve,80));
+          if(fixture.fail)return {ok:false}; fixture.saved=true;return {ok:true};
+        }};
+        </script><title>Disposable close fixture</title>
+        """
+        try Data(html.utf8).write(to: assets.appendingPathComponent("music-studio.html"))
+        let configuration = try XCTUnwrap(MusicStudioAppConfiguration.bundled(resourceURL: root))
+        let host = MusicStudioWebViewHost(configuration: configuration, platform: "mac")
+        defer { host.stop() }
+        var notReady: Bool?
+        host.prepareForClose { notReady = $0 }
+        XCTAssertEqual(notReady, false)
+        host.start()
+        for _ in 0..<200 {
+            if host.lifecycleState == "BROWSER_READY" { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
+        let saved = await withCheckedContinuation { continuation in
+            host.prepareForClose { continuation.resume(returning: $0) }
+        }
+        XCTAssertTrue(saved)
+        let observed = try await host.webView.evaluateJavaScript("fixture.saved")
+        XCTAssertEqual(observed as? Bool, true)
+        _ = try await host.webView.evaluateJavaScript("fixture.fail=true;fixture.saved=false")
+        let failed = await withCheckedContinuation { continuation in
+            host.prepareForClose { continuation.resume(returning: $0) }
+        }
+        XCTAssertFalse(failed)
+        XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
+        _ = try await host.webView.evaluateJavaScript("delete window.MusicStudio")
+        let missing = await withCheckedContinuation { continuation in
+            host.prepareForClose { continuation.resume(returning: $0) }
+        }
+        XCTAssertFalse(missing)
+        XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
+    }
+
 }

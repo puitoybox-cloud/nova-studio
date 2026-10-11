@@ -9,6 +9,9 @@ import WebKit
 
 @main
 struct MusicStudioApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MusicStudioTerminationDelegate.self) private var terminationDelegate
+    #endif
     init() {
         #if os(macOS)
         if let index = CommandLine.arguments.firstIndex(of: "--verify-file-storage-process") {
