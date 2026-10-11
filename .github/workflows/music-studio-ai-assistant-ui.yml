@@ -55,6 +55,7 @@ jobs:
             verification/music-vocal-edit-*.png
             verification/music-vocal-recording-browser.json
             verification/music-vocal-recording-*.png
+            verification/music-breath-gain-*.png
             verification/music-harmony-mastering-browser.json
             verification/music-harmony-mastering-*.png
             verification/music-long-master-*.png

@@ -670,3 +670,10 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-vocal-panel{margin-top:1rem}.music-vocal-panel article{border-top:1px solid #777;padding-top:1rem;margin-top:1rem}.music-vocal-panel form{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end}.music-vocal-panel label{display:flex;flex-direction:column;max-width:100%;min-width:0}.music-vocal-panel input,.music-vocal-panel select{max-width:100%;width:180px}.music-vocal-panel svg{display:block;max-width:100%}
 
 .music-vocal-advanced{margin-top:.75rem}.music-vocal-advanced summary{cursor:pointer;font-weight:600}.music-vocal-advanced input[type=checkbox]{width:auto}.music-vocal-candidate-list{max-height:220px;overflow:auto}.music-vocal-candidate-list label{display:flex;flex-direction:row;gap:.5rem}.music-vocal-comp{border-top:1px solid #777;margin-top:1rem;padding-top:1rem}.music-vocal-comp li{overflow-wrap:anywhere}.music-vocal-advanced table{width:100%;border-collapse:collapse}.music-vocal-advanced td{padding:.5rem;vertical-align:top}.music-vocal-panel svg{cursor:crosshair}.music-vocal-panel details{overflow-wrap:anywhere}
+
+/* Vocal controls use the same readable dark surfaces as the settings panel. */
+.music-vocal-panel .music-vocal-advanced,.music-vocal-panel .music-vocal-comp{padding:16px;border:1px solid #527085;border-radius:12px;background:#112031;color:#eef6ff}
+.music-vocal-panel :is(p,label,summary,h3,th,td){color:#eef6ff}
+.music-vocal-panel input:not([type=checkbox]),.music-vocal-panel select{min-height:42px;padding:8px 10px;border:1px solid #527085;border-radius:8px;background:#081524;color:#eef6ff;font:inherit}
+.music-vocal-panel input[type=checkbox]{width:18px;height:18px;min-height:18px;padding:0;margin:2px 5px 2px 0;flex:0 0 18px;accent-color:#7dd3fc}
+.music-vocal-panel .music-vocal-advanced :is(table,thead,tbody,tr,th,td){background:transparent}
