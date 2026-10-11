@@ -3,6 +3,9 @@ on:
   create:
   pull_request:
     paths:
+      - music-studio.js
+      - music-studio.css
+      - scripts/music-vocal-edit-browser.js
       - tools/music-native-wrapper/**
       - .github/workflows/music-native-file-import-offline.yml
       - verification/music-residual-ledger-20261010.json
