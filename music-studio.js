@@ -1699,7 +1699,7 @@
     const select=root.document?.querySelector('[data-work-project]'),projectId=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId,target=workActionTarget(id,projectId);
     if(!target||workspaceSaving||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
     if(projectId){workspaceProjectId=projectId;setLastProject(projectId)}
-    workspaceExpanded=false;
+    workspaceExpanded=false;const disclosure=root.document?.querySelector?.('[data-workspace]');if(disclosure)disclosure.open=false;
     const token=++workspaceNavigation;routeTo(target.route);
     if(target.selector&&root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{
       if(token!==workspaceNavigation||currentRoute()!==target.route)return;
