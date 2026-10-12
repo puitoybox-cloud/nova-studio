@@ -1493,7 +1493,7 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-ai-family-preview','./music-studio-ai-family-preview.js?v=1.0.2',()=>Boolean(window.MusicStudioAIFamilyPreview?.createFamilyPreview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-family-apply','./music-studio-ai-family-apply.js?v=1.0.6',()=>Boolean(window.MusicStudioAIFamilyApply?.createPlan)))
  .then(()=>loadMusicStudioScript('music-studio-ai-assistant-ui','./music-studio-ai-assistant-ui.js?v=1.0.0',()=>Boolean(window.MusicStudioAIAssistantUI?.createState)))
- .then(()=>loadMusicStudioScript('music-studio-ai-assistant-panel','./music-studio-ai-assistant-panel.js?v=1.0.16',()=>Boolean(window.MusicStudioAIAssistantPanel?.render)))
+ .then(()=>loadMusicStudioScript('music-studio-ai-assistant-panel','./music-studio-ai-assistant-panel.js?v=1.0.17',()=>Boolean(window.MusicStudioAIAssistantPanel?.render)))
  .then(()=>loadMusicStudioScript('music-studio-ingress','./music-studio-ingress.js?v=1.0.0',()=>Boolean(window.MusicStudioIngress?.create)))
  .then(()=>loadMusicStudioScript('music-studio-binary-boundary','./music-studio-binary-boundary.js?v=1.0.0',()=>Boolean(window.MusicStudioBinaryBoundary?.resolve)))
  .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.143',()=>window.MusicStudio?.ASSET_VERSION==='1.4.143'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))

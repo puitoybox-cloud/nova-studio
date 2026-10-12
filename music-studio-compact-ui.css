@@ -14,6 +14,9 @@
 .music-studio-shell :is(.music-feature-card,.music-status-summary>div) { min-height: 0; }
 .music-studio-shell :is(h1,h2,h3,h4,p) { margin-block: 6px; overflow-wrap: anywhere; }
 .music-studio-shell :is(.music-project-panel,.music-placeholder-panel) h1 { font-size: clamp(1.5rem,3vw,2rem); line-height: 1.25; }
+.music-studio-shell:not(.music-midi-editor-page) h1 { font-size: clamp(1.5rem,3vw,2rem); line-height: 1.25; }
+.music-studio-shell input[type=file] { background: #081421; color: #ecf4ff; border: 1px solid #526985; border-radius: 8px; min-width: 0; max-width: 100%; padding: 6px; }
+.music-studio-shell input[type=file]::file-selector-button { background: #142235; color: #ecf4ff; border: 1px solid #526985; border-radius: 6px; padding: 6px 10px; margin-right: 6px; font: inherit; }
 .music-studio-shell .music-section-heading { margin-bottom: 10px; gap: 10px; }
 .music-studio-shell .music-section-heading h2 { font-size: clamp(1.3rem,2.5vw,1.7rem); line-height: 1.3; }
 .music-studio-shell :is(.music-feature-grid,.music-form-grid,.music-status-summary) { gap: 10px; margin-block: 10px; }
@@ -40,6 +43,11 @@
 .music-studio-shell [data-vocal-lyrics] small { color: #bac9dc; }
 .music-studio-shell [data-vocal-lyrics] .is-current { color: #082032; background: #dff8ff; border-color: #a5f3fc; font-weight: 800; }
 .music-studio-shell [data-vocal-lyrics] .is-current small { color: #082032; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card { padding: 12px; min-height: 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card h2 { margin: 6px 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card p { margin: 6px 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-section-heading { padding-left: 0; margin-bottom: 10px; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-feature-grid { gap: 10px; }
 @media (max-width: 600px) {
   .music-studio-shell :is(.music-primary,.music-secondary) { min-height: 44px; }
   .music-studio-shell .music-vocal-panel form>label { flex-basis: 100%; }
