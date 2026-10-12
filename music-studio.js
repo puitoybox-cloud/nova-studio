@@ -2646,7 +2646,7 @@
 
 
   // Explicit audio routing. No synthetic MIDI sound or automatic take selection.
-  const finalExport={busy:false,generation:0,candidate:null,message:'',audio:null,url:null};
+  const finalExport={busy:false,generation:0,candidate:null,message:'',audio:null,url:null,playGeneration:0};
   const finalExportProof=new WeakMap();
   function finalSources(p){return[...(p.pcmMix?.assets||[]).map(a=>({key:'pcm:'+a.id,id:a.id,name:a.name,kind:'pcm'})),...(p.longWavAssets||[]).map(a=>({key:'wav:'+a.id,id:a.id,name:a.name,kind:a.vocalTake?'vocal':'wav'}))]}
   function finalPlan(p,input){
@@ -2656,7 +2656,7 @@
     if(!routes.some(r=>!r.muted))throw Error('final-all-muted');return{format:input.format,routes,targetLufs:input.targetLufs,ceilingDb:input.ceilingDb,includeMidi:input.includeMidi===true};
   }
   function finalInvalidate(){finalExport.abort?.(Error('final-invalidated'));finalExport.generation++;finalExport.candidate=null;finalStop()}
-  function finalStop(){finalExport.audio?.pause();if(finalExport.url)root.URL?.revokeObjectURL(finalExport.url);finalExport.audio=null;finalExport.url=null}
+  function finalStop(){const audio=finalExport.audio,url=finalExport.url;finalExport.audio=null;finalExport.url=null;finalExport.playGeneration++;if(audio){audio.onended=null;audio.pause();audio.removeAttribute?.('src');audio.load?.()}if(url)root.URL?.revokeObjectURL(url)}
   function finalCancel(){finalExport.abort?.(Error('final-export-cancelled'));finalExport.generation++;finalExport.candidate=null;finalExport.message='Cancel（候補を取り消しました）';finalStop();requestPaint()}
   async function finalSource(p,r,guard){
     guard();const s=finalSources(p).find(s=>s.key===r.key);let blob,startSeconds=r.startSeconds;
@@ -2696,7 +2696,10 @@
     if(finalExport.busy||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
     finalStop();finalExport.candidate=null;const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=++finalExport.generation;finalExport.busy=true;pcmEditor.busy=true;requestPaint();
     const guard=()=>{if(token!==finalExport.generation||repository!==target||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||archiveTransfer.busy||vocalBusy()||shutdownPromise)throw Error('final-cancelled-or-stale')};
-    try{guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[];for(const r of plan.routes.filter(r=>!r.muted))sources.push(await finalSource(p,r,guard));guard();
+    try{guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[],selected=plan.routes.filter(r=>!r.muted);
+      const estimatedFrames=Math.max(...selected.map(r=>{const s=finalSources(p).find(s=>s.key===r.key),a=s.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===s.id):p.longWavAssets.find(a=>a.id===s.id),frames=s.kind==='pcm'?a.original.channels[0].length:a.frames;if(!Number.isSafeInteger(frames)||frames<1)throw Error('final-source-metadata');return frames+Math.ceil(r.startSeconds*48000)}));
+      if(estimatedFrames*4*(selected.length+4)>480*1048576)throw Error('final-package-estimated-capacity');
+      for(const r of selected)sources.push(await finalSource(p,r,guard));guard();
       const frames=Math.max(...sources.map(s=>s.start+s.frames));if(frames*4*(sources.length+4)>480*1048576)throw Error('final-package-estimated-capacity');
       const before=await masterMeasure(finalChunks(sources,frames,guard),{guard});if(before.lufs===null)throw Error('final-silence-or-short');const gainDb=Math.min(plan.targetLufs-before.lufs,plan.ceilingDb-before.truePeakDb,24);if(gainDb< -24)throw Error('final-master-gain-range');
       const original=await finalWav(finalChunks(sources,frames,guard),guard); // fail closed if the user's pre-master mix clips
@@ -2712,7 +2715,8 @@
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }
   function finalCandidate(id){const c=finalExport.candidate,proof=c&&finalExportProof.get(c);if(!c||!proof||c.baseline!==proof.baseline||c.baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||proof.proof!==JSON.stringify({plan:c.plan,manifest:c.manifest})||proof.zip!==c.zip||proof.files.length!==c.files.length||proof.files.some((f,i)=>f!==c.files[i]))throw Error('final-preview-stale-or-modified');return c}
-  async function finalListen(id,name){try{const c=finalCandidate(id),file=c.files.find(f=>f.name===name);if(!file||!name.endsWith('.wav'))throw Error('final-audio-missing');pcmStop();longMixStop();vocalPlaybackStop();finalStop();const token=finalExport.generation;finalExport.url=root.URL.createObjectURL(file.blob);finalExport.audio=new root.Audio(finalExport.url);await finalExport.audio.play();if(token!==finalExport.generation){finalStop();return{ok:false,error:'final-listen-cancelled'}}finalExport.audio.onended=finalStop;return{ok:true}}catch(e){finalStop();finalExport.message=e.message;requestPaint();return{ok:false,error:e.message}}}
+  async function finalListen(id,name){let audio;try{const c=finalCandidate(id),file=c.files.find(f=>f.name===name);if(!file||!name.endsWith('.wav'))throw Error('final-audio-missing');pcmStop();longMixStop();vocalPlaybackStop();finalStop();const token=finalExport.generation,playToken=finalExport.playGeneration;finalExport.url=root.URL.createObjectURL(file.blob);audio=new root.Audio(finalExport.url);finalExport.audio=audio;await audio.play();if(token!==finalExport.generation||playToken!==finalExport.playGeneration||finalExport.audio!==audio)return{ok:false,error:'final-listen-cancelled'};audio.onended=()=>{if(finalExport.audio===audio&&playToken===finalExport.playGeneration)finalStop()};return{ok:true}}catch(e){if(audio&&finalExport.audio!==audio)return{ok:false,error:'final-listen-cancelled'};finalStop();finalExport.message=e.message;requestPaint();return{ok:false,error:e.message}}}
+
   async function finalSave(id){
     if(finalExport.busy||pcmEditor.busy||vocalBusy()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};finalExport.busy=true;pcmEditor.busy=true;const target=repository,token=finalExport.generation;requestPaint();
     try{const c=finalCandidate(id),guard=()=>{if(token!==finalExport.generation||repository!==target||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise||state.midiInput.recording||state.midiInput.starting)throw Error('final-save-stale');finalCandidate(id)};guard.registerAbort=a=>{finalExport.abort=a};guard.clearAbort=()=>{finalExport.abort=null};guard();const p=clone(state.projects.find(p=>p.projectId===id));p.finalExportPlan=clone(c.plan);p.finalExportHistory=[...(p.finalExportHistory||[]),{id:uuid(),createdAt:now(),status:'prepared',...clone(c.manifest)}].slice(-100);p.revision++;p.updatedAt=now();if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,id,p.revision);await target.compareAndPut(p,c.baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?p:x);c.baseline=JSON.stringify(p);finalExportProof.get(c).baseline=c.baseline;finalExport.message='Save（設定・作成履歴を保存しました）。ブラウザのダウンロード完了は確認できません。';return{ok:true,project:p};
