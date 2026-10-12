@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'tools/music-native-wrapper/**'
+      - 'scripts/music-final-export-browser.js'
       - 'scripts/music-vocal-transport-browser.js'
       - 'scripts/music-harmony-mastering-browser.js'
       - 'scripts/music-bundled-midi-browser.js'
@@ -44,6 +45,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y fonts-noto-cjk
           google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-final-export-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-ui-production-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-transport-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-edit-browser.js
@@ -56,6 +58,8 @@ jobs:
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-final-export-browser.json
+            verification/music-final-export-*.png
             verification/music-ui-production-browser.json
             verification/music-ui-*.png
             verification/music-vocal-transport-browser.json

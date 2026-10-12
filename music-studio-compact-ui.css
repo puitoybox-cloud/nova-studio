@@ -21,11 +21,11 @@
 .music-studio-shell .music-section-heading h2 { font-size: clamp(1.3rem,2.5vw,1.7rem); line-height: 1.3; }
 .music-studio-shell :is(.music-feature-grid,.music-form-grid,.music-status-summary) { gap: 10px; margin-block: 10px; }
 .music-studio-shell :is(.music-form-actions,.music-project-tools,.music-quick-nav,.music-placeholder-actions) { gap: 6px; margin-block: 10px; }
-.music-studio-shell :is(.music-primary,.music-secondary) { padding: var(--music-space-control-y) var(--music-space-control-x); min-height: 40px; line-height: 1.35; border-radius: 8px; white-space: normal; max-width: 100%; }
+.music-studio-shell :is(.music-primary,.music-secondary) { padding: var(--music-space-control-y) var(--music-space-control-x); min-height: 44px; line-height: 1.35; border-radius: 8px; white-space: normal; max-width: 100%; }
 .music-studio-shell :is(.music-form-grid label,.music-search,.music-vocal-panel label) { gap: var(--music-space-label); line-height: 1.4; }
 .music-studio-shell :is(.music-form-grid,.music-vocal-panel,.music-search) :is(input,select,textarea):not([type=checkbox]):not([type=range]) {
   padding: var(--music-space-control-y) var(--music-space-control-x);
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 8px;
   font: inherit;
   min-width: 0;
@@ -53,3 +53,21 @@
   .music-studio-shell .music-vocal-panel form>label { flex-basis: 100%; }
   .music-studio-shell :is(input,select,textarea) { font-size: 16px; }
 }
+/* Dense desktop spacing also supports iPad pointer/touch and large text. */
+.music-studio-shell :is(button,input:not([type=checkbox]):not([type=range]),select) { min-height: 44px; }
+.music-studio-shell :is(button,input,select,textarea) { font: inherit; }
+.music-studio-shell :is(.music-production-tools,.music-final-export) label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.music-studio-shell .music-final-routes { display: grid; gap: 6px; }
+.music-studio-shell .music-final-routes fieldset { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 12px; border: 1px solid #526985; min-width: 0; background: #0d1725; color: #ecf4ff; }
+.music-studio-shell .music-final-routes legend { color: #ecf4ff; }
+.music-studio-shell .music-final-export>details { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; }
+.music-studio-shell :is(.music-setting-section,.music-project-panel,.music-editor-popover) :is(input,select,textarea):not([type=checkbox]):not([type=range]) { background: #081421; color: #ecf4ff; border: 1px solid #526985; }
+.music-studio-shell .music-final-routes label { flex: 1 1 140px; }
+.music-studio-shell .music-final-routes :is(input,select) { width: 100%; min-width: 0; padding: 6px 10px; background: #081421; color: #ecf4ff; border: 1px solid #526985; border-radius: 8px; }
+.music-studio-shell .music-final-export input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
+.music-studio-shell .music-final-export label:has(input[type=checkbox]) { flex-direction: row; align-items: center; min-height: 44px; }
+.music-studio-shell summary { padding: 6px 0; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+.music-studio-shell :is(.music-final-export,.music-mix-help) summary { color: #ecf4ff; }
+.music-studio-shell .music-mix-help { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; margin-block: 6px; }
+.music-studio-shell summary:focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
+@media (max-width: 600px) { .music-studio-shell .music-final-routes label { flex-basis: 100%; } }
