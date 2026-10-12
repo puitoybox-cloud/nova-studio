@@ -93,3 +93,7 @@
 .music-studio-shell :is(.music-settings-nav,.music-quick-nav) a { min-height: 44px; display: inline-flex; align-items: center; padding: 6px 10px; line-height: 1.35; box-sizing: border-box; }
 .music-studio-shell :is(button,input,select,textarea,a):focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
 @media (max-width: 600px) { .music-studio-shell .music-work-action { width: 100%; } .music-studio-shell .music-work-action>button:first-child { flex: 1; } }
+
+.music-final-history-row { padding: 12px; margin-block: 4px; border: 1px solid #506075; border-radius: 8px; }
+.music-final-history-row p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.music-final-export [data-final-file] { max-width: 100%; }
