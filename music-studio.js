@@ -322,7 +322,7 @@
   }
   function routeTo(route){if(root.document?.body?.dataset.musicStudioStandalone==='true')root.location.hash=route;else if(typeof root.setView==='function')root.setView(route);else root.location.hash=route}
   function currentRoute(){return (root.location?.hash||`#${HOME_ROUTE}`).slice(1)||HOME_ROUTE}
-  function requestPaint(){if(root.document?.body?.dataset.musicStudioStandalone==='true')paintStandalone();else{root.render?.();restoreEditorPitchScroll()}}
+  function requestPaint(){const workspace=root.document?.querySelector?.('[data-workspace]');if(workspace)workspaceExpanded=workspace.open;if(root.document?.body?.dataset.musicStudioStandalone==='true')paintStandalone();else{root.render?.();restoreEditorPitchScroll()}}
   function statusBadge(status){return `<span class="music-status is-${status}">${STATUS_LABELS[status]}</span>`}
   function routeFor(item){return `${HOME_ROUTE}/${item.id}`}
   function navAction(item,standalone){if(item.action==='dream')return standalone?"location.href='./index.html#dream-architect'":"setView('dream-architect')";if(item.id==='midi-composer')return'MusicStudio.openMidiEditor()';return standalone?`location.hash='${routeFor(item)}'`:`setView('${routeFor(item)}')`}
