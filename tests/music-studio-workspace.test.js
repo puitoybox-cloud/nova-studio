@@ -43,3 +43,9 @@ test('navigation uses exact existing project routes and refuses recording or los
   assert.equal(app.openWorkAction('export'),true);assert.equal(window.location.hash,'music-studio/mixing/a%2Fb');
   app.state.midiInput.recording=true;assert.equal(app.openWorkAction('vocal'),false);assert.equal(window.location.hash,'music-studio/mixing/a%2Fb');
 });
+test('unsubmitted AI input blocks workspace changes and late typing is never repainted away',async()=>{
+  const {app,window}=load();let release,paints=0;const input={type:'text',value:'',defaultValue:''};
+  window.document={querySelectorAll:()=>[input],querySelector:()=>null};window.render=()=>{paints++};
+  input.value='未送信の歌詞';assert.equal((await app.setWorkMode('mix')).ok,false);assert.equal(app.openWorkAction('settings'),false);
+  input.value='';app.setRepository({putSettings:()=>new Promise(r=>{release=r})});const pending=app.setWorkMode('record'),before=paints;input.value='保存中に入力した相談';release();assert.equal((await pending).ok,true);assert.equal(paints,before);assert.equal(input.value,'保存中に入力した相談');
+});

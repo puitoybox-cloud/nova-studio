@@ -1666,7 +1666,8 @@
   const WORK_MODES={compose:'Compose（作曲）',record:'Record（録音）',mix:'Mix（ミックス）',finish:'Finish（仕上げ）'};
   let workspaceSaving=false,workspaceMessage='',workspaceNavigation=0,workspaceExpanded=false,workspaceProjectId='';
   function normalizeWorkspace(input){return {mode:Object.hasOwn(WORK_MODES,input?.mode)?input.mode:'compose',favorites:[...new Set((Array.isArray(input?.favorites)?input.favorites:[]).filter(id=>WORK_ACTIONS.some(a=>a.id===id)))].slice(0,WORK_ACTIONS.length)}}
-  function workspaceBusy(){return workspaceSaving||!state.loaded||state.dirty||state.midiEditor?.dirty||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.recording||state.midiInput.starting||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise}
+  function workspaceHasDraftInput(){return [...(root.document?.querySelectorAll?.('.music-ai-panel input,.music-ai-panel textarea')||[])].some(el=>['checkbox','radio'].includes(el.type)?el.checked!==el.defaultChecked:el.value!==el.defaultValue)}
+  function workspaceBusy(){return workspaceSaving||!state.loaded||state.dirty||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||state.midiEditor?.dirty||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.recording||state.midiInput.starting||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise}
   async function saveWorkspace(change){
     if(workspaceBusy())return {ok:false,error:'workspace-busy'};
     const target=repository,baseline=JSON.stringify(state.settings),next=preserveRestoreSettings(state.settings||defaultSettings());
@@ -1680,7 +1681,7 @@
       else if(state.settingsDraft)state.settingsDraft.workspace=clone(next.workspace);
       workspaceMessage='Saved（保存済み）';return {ok:true,workspace:clone(next.workspace)};
     }catch(error){workspaceMessage='保存できません：'+error.message;return {ok:false,error:error.message}}
-    finally{workspaceSaving=false;if(!state.dirty)requestPaint();else {const status=root.document?.querySelector('[data-work-status]');if(status)status.textContent=workspaceMessage}}
+    finally{workspaceSaving=false;if(!state.dirty&&!workspaceHasDraftInput())requestPaint();else {const status=root.document?.querySelector('[data-work-status]');if(status)status.textContent=workspaceMessage}}
   }
   function setWorkMode(mode){if(!Object.hasOwn(WORK_MODES,mode))return Promise.resolve({ok:false,error:'workspace-mode-invalid'});return saveWorkspace(w=>({...w,mode}))}
   function toggleFavorite(id){if(!WORK_ACTIONS.some(a=>a.id===id))return Promise.resolve({ok:false,error:'workspace-action-invalid'});return saveWorkspace(w=>({...w,favorites:w.favorites.includes(id)?w.favorites.filter(x=>x!==id):[...w.favorites,id]}))}
@@ -1696,7 +1697,7 @@
   }
   function openWorkAction(id){
     const select=root.document?.querySelector('[data-work-project]'),projectId=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId,target=workActionTarget(id,projectId);
-    if(!target||workspaceSaving||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
+    if(!target||workspaceSaving||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
     if(projectId){workspaceProjectId=projectId;setLastProject(projectId)}
     workspaceExpanded=false;
     const token=++workspaceNavigation;routeTo(target.route);
