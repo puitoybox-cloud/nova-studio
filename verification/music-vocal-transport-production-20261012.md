@@ -11,7 +11,7 @@ Based on actual Draft #403, HEAD bd11cf930eba7af2f1fb2cac6602189ff46fccc1, branc
 5. Finite 2–8-cycle recording commits each original WAV and metadata before requesting the next take. Save failures retain pending PCM and stop repetition. This is repeated-take recording with a storage gap, not gapless looping.
 6. Takes receive stable group IDs, numbered filenames, order and total metadata; UI displays group/order and existing per-take playback provides comparison. Original recordings are retained.
 7. Saved capture plans refill start/end/count-in/transport/cycle/accompaniment controls on fresh reopen and additive Full WAV Archive restore.
-8. Explicit Stop/Discard, permission failure, suspension and microphone interruption stop further cycles; armed Stop saves no preroll. Shared synth disposal does not close the caller-owned recording context.
+8. Explicit Stop/Discard, permission failure, suspension and microphone interruption stop further cycles; armed Stop saves no preroll. Mid-capture suspension/mute stops cycles and saves acquired PCM, as do device disconnects. Shared synth disposal does not close the caller-owned recording context.
 
 These are eight connected capabilities, not 20–30 completed items. Comp selection/render, vocal WAV export and authenticated additive Full WAV Archive are existing production paths now exercised with repeated takes; they are not counted as newly implemented features.
 
@@ -19,7 +19,7 @@ Physical microphone latency is unmeasured. No guessed input/output latency or au
 
 ## Validation before publishing
 
-- Full local Node: 2149 PASS before the final shared-context ownership test; final full run/CI count must supersede this preliminary value.
+- Full local Node: 2150 PASS before the final interruption-preservation test; final full run/CI count supersedes this preliminary value.
 - Local Python: 504 PASS / five preexisting dependency skips (509 executed). Existing subprocess/file ResourceWarnings are distinct from browser Console checks.
 - Local JavaScript syntax: 193 files PASS; final touched files rechecked; git diff --check PASS.
 - Focused tests cover sample-accurate scheduled gating, cancellation, tempo-map count-in/preroll, two actual PCM takes, ordered durable group metadata, fresh reopen, WAV export, Comp, byte-identical additive archive restore, quota rollback and preservation of existing MIDI.
@@ -28,7 +28,7 @@ Physical microphone latency is unmeasured. No guessed input/output latency or au
 
 ## Thirty-feature status and remaining software
 
-A0 / B0 / C30 is retained conservatively from the #403 feature ledger. No major feature is newly declared complete. The original specification PDF was not independently retrieved in this run; whole-spec current mapping and formal completion cannot be newly confirmed. The inherited per-feature ledger explicitly marks completeCurrentMappingVerified=false.
+A0 / B0 / C30 is retained conservatively from the #403 feature ledger. No major feature is newly declared complete. The original Music_Studio_最終機能仕様書_v1.pdf (confirmed 2026-09-30; current file modified 2026-09-30) was freshly read in full, all five pages / 166 lines, on 2026-10-12 JST. All thirty scopes were checked; whole-product production completion is still not established. The inherited per-feature ledger explicitly marks completeCurrentMappingVerified=false.
 
 Remaining software includes automatic physical roundtrip calibration with reliable probe detection/device matching, separate input/output evidence, compensated accompaniment, gapless loop recording, lyric scrolling, formant-preserving processing/vibrato, approved Intel singing model/runtime/voicebank/phonemizer/vocoder/license assets, final whole-song Master/Instrumental/Stem/MIDI batch packages and export history, and remaining standalone production/distribution obligations. Existing edited vocal export is not a full-song batch export.
 
