@@ -82,6 +82,8 @@
 .music-studio-shell .music-work-action { display: flex; gap: 4px; min-width: 0; }
 .music-studio-shell .music-work-star { min-width: 44px; flex-shrink: 0; }
 .music-studio-shell .music-workspace :is(button,select) { min-height: 44px !important; height: auto !important; max-height: none !important; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog,.music-feature-card,.music-recent,.music-project-list) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog) label { gap: 4px; line-height: 1.35; }
 .music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) { padding: 12px; box-sizing: border-box; }
 .music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) label { gap: 4px; line-height: 1.35; }
 .music-studio-shell.music-midi-editor-page :is(.music-editor-popover,.music-correction-popover) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; line-height: 1.35; }
