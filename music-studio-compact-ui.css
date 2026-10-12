@@ -74,6 +74,7 @@
 /* Shared controls keep compact text spacing and a separate touch-sized hit area. */
 .music-studio-shell .music-workspace { padding: 12px; margin-block: 6px; border: 1px solid #526985; border-radius: 8px; background: #0d1725; color: #ecf4ff; }
 .music-studio-shell .music-workspace summary { padding: 6px 0; line-height: 1.35; }
+.music-studio-shell.music-midi-editor-page .music-workspace { margin-left: 42px; }
 .music-studio-shell .music-work-controls { display: flex; flex-wrap: wrap; gap: 6px 10px; }
 .music-studio-shell .music-work-controls label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; min-width: 0; }
 .music-studio-shell .music-work-controls select { padding: 6px 10px; min-width: 0; width: 100%; border: 1px solid #526985; border-radius: 8px; background: #081421; color: #ecf4ff; }

@@ -1698,6 +1698,7 @@
     const select=root.document?.querySelector('[data-work-project]'),projectId=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId,target=workActionTarget(id,projectId);
     if(!target||workspaceSaving||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
     if(projectId){workspaceProjectId=projectId;setLastProject(projectId)}
+    workspaceExpanded=false;
     const token=++workspaceNavigation;routeTo(target.route);
     if(target.selector&&root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{
       if(token!==workspaceNavigation||currentRoute()!==target.route)return;
