@@ -58,7 +58,10 @@
 .music-studio-shell :is(button,input,select,textarea) { font: inherit; }
 .music-studio-shell :is(.music-production-tools,.music-final-export) label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .music-studio-shell .music-final-routes { display: grid; gap: 6px; }
-.music-studio-shell .music-final-routes fieldset { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 12px; border: 1px solid #526985; min-width: 0; }
+.music-studio-shell .music-final-routes fieldset { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 12px; border: 1px solid #526985; min-width: 0; background: #0d1725; color: #ecf4ff; }
+.music-studio-shell .music-final-routes legend { color: #ecf4ff; }
+.music-studio-shell .music-final-export>details { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; }
+.music-studio-shell :is(.music-setting-section,.music-project-panel,.music-editor-popover) :is(input,select,textarea):not([type=checkbox]):not([type=range]) { background: #081421; color: #ecf4ff; border: 1px solid #526985; }
 .music-studio-shell .music-final-routes label { flex: 1 1 140px; }
 .music-studio-shell .music-final-routes :is(input,select) { width: 100%; min-width: 0; padding: 6px 10px; background: #081421; color: #ecf4ff; border: 1px solid #526985; border-radius: 8px; }
 .music-studio-shell .music-final-export input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
