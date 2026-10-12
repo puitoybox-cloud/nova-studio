@@ -9,8 +9,8 @@
   function createSynth(options={}){
     const Context=options.AudioContext||root.AudioContext||root.webkitAudioContext,volume=clamp(options.volume??0.12,0.01,0.2);
     let context=null,master=null,noiseBuffer=null;const live=new Map(),playback=new Set(),preview=new Set(),metronome=new Set(),diagnostics={voiceCalls:0,oscillatorsCreated:0,noiseSourcesCreated:0,liveVoicesCreated:0,playbackVoicesCreated:0,previewVoicesCreated:0,bassVoicesCreated:0,drumVoicesCreated:0,metronomeClicks:0,soundPaths:{melody:0,bass:0,kick:0,snare:0,'closed-hat':0,'open-hat':0,tom:0,cymbal:0}};
-    function supported(){return typeof Context==='function'}
-    function ensure(){if(context)return context;if(!supported())return null;context=new Context();master=context.createGain();master.gain.setValueAtTime(volume,context.currentTime);master.connect(context.destination);return context}
+    function supported(){return Boolean(options.context?.createGain)||typeof Context==='function'}
+    function ensure(){if(context)return context;if(!supported())return null;context=options.context||new Context();master=context.createGain();master.gain.setValueAtTime(volume,context.currentTime);master.connect(context.destination);return context}
     async function unlock(){const ctx=ensure();if(!ctx)return false;if(ctx.state==='suspended')await ctx.resume();return true}
     function voice(pitch,velocity,start,stopAt=null,group=null,source='unknown'){
       const ctx=ensure();if(!ctx)return null;const oscillator=ctx.createOscillator(),gain=ctx.createGain(),peak=clamp(velocity,1,127)/127*.7;
@@ -43,7 +43,7 @@
     function playNotes(notes=[],timing={}){return playTracks([{id:'melody',part:'melody',channel:1,program:0,notes}],timing)}
     function previewNote(pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;voice(pitch,velocity,ctx.currentTime,ctx.currentTime+clamp(duration,.05,2),preview,'preview');return true}
     function previewTrackNote(part,pitch,velocity=100,duration=.35){const ctx=ensure();if(!ctx)return false;const start=ctx.currentTime,stop=start+clamp(duration,.05,2);if(part==='drums')return Boolean(drumVoice(pitch,velocity,start,stop,preview));if(part==='bass')return Boolean(bassVoice(pitch,velocity,start,stop,preview));return previewNote(pitch,velocity,duration)}
-    function dispose(){allNotesOff();stopPreview();stopPlayback();stopMetronome();context?.close?.();context=null;master=null;noiseBuffer=null}
+    function dispose(){allNotesOff();stopPreview();stopPlayback();stopMetronome();if(!options.context)context?.close?.();context=null;master?.disconnect?.();master=null;noiseBuffer=null}
     return{supported,unlock,noteOn,noteOff,allNotesOff,playTracks,playNotes,stopPreview,stopPlayback,metronomeClick,stopMetronome,previewTrackNote,previewNote,dispose,frequency,drumSoundPath,volume,get diagnostics(){return{...diagnostics,soundPaths:{...diagnostics.soundPaths}}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size+preview.size}};
   }
   root.MusicStudioAudio={createSynth,frequency,resolveTrackAudio};
