@@ -1452,7 +1452,7 @@ document.body.appendChild(dreamArchitectCoreScript);
 if(!document.querySelector('link[data-music-studio]')){
  const musicStudioStylesheet=document.createElement('link');
  musicStudioStylesheet.rel='stylesheet';
- musicStudioStylesheet.href='./music-studio.css?v=1.4.141';
+ musicStudioStylesheet.href='./music-studio.css?v=1.4.142';
  musicStudioStylesheet.dataset.musicStudio='true';
  document.head.appendChild(musicStudioStylesheet);
  const musicAIStylesheet=document.createElement('link');
@@ -1479,7 +1479,7 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-measure-locks','./music-studio-measure-locks.js?v=1.0.0',()=>window.MusicStudioMeasureLocks?.TRANSACTION_REVISION===1))
  .then(()=>loadMusicStudioScript('music-studio-external-song-import','./music-studio-external-song-import.js?v=1.0.0',()=>Boolean(window.MusicStudioExternalSongImport)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.3',()=>Boolean(window.MusicStudioMidiInput)))
- .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.13',()=>Boolean(window.MusicStudioAudio)))
+ .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.14',()=>Boolean(window.MusicStudioAudio)))
  .then(()=>loadMusicStudioScript('music-studio-playback','./music-studio-playback.js?v=1.0.1',()=>Boolean(window.MusicStudioPlayback)))
  .then(()=>loadMusicStudioScript('music-studio-scoped-midi-repair','./music-studio-scoped-midi-repair.js?v=1.0.1',()=>Boolean(window.MusicStudioScopedMidiRepair?.preview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-workflow','./music-studio-ai-workflow.js?v=1.0.0',()=>Boolean(window.MusicStudioAIWorkflow?.createWorkspace)))
@@ -1491,6 +1491,6 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-ai-assistant-panel','./music-studio-ai-assistant-panel.js?v=1.0.16',()=>Boolean(window.MusicStudioAIAssistantPanel?.render)))
  .then(()=>loadMusicStudioScript('music-studio-ingress','./music-studio-ingress.js?v=1.0.0',()=>Boolean(window.MusicStudioIngress?.create)))
  .then(()=>loadMusicStudioScript('music-studio-binary-boundary','./music-studio-binary-boundary.js?v=1.0.0',()=>Boolean(window.MusicStudioBinaryBoundary?.resolve)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.141',()=>window.MusicStudio?.ASSET_VERSION==='1.4.141'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))
- .then(()=>{if(typeof window.MusicStudioEditor.createCoordinatedSession!=='function')throw Error('coordinated-editor-unavailable');window.MusicStudioRuntime=Object.freeze({hostLoader:'1.5.67',stylesheet:'1.4.141',editor:window.MusicStudioEditor.ASSET_VERSION,studio:window.MusicStudio.ASSET_VERSION,reviewApi:typeof window.MusicStudioEditor.externalReviewTracks})})
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.142',()=>window.MusicStudio?.ASSET_VERSION==='1.4.142'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))
+ .then(()=>{if(typeof window.MusicStudioEditor.createCoordinatedSession!=='function')throw Error('coordinated-editor-unavailable');window.MusicStudioRuntime=Object.freeze({hostLoader:'1.5.67',stylesheet:'1.4.142',editor:window.MusicStudioEditor.ASSET_VERSION,studio:window.MusicStudio.ASSET_VERSION,reviewApi:typeof window.MusicStudioEditor.externalReviewTracks})})
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));
