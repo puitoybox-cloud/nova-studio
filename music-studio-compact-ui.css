@@ -71,3 +71,25 @@
 .music-studio-shell .music-mix-help { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; margin-block: 6px; }
 .music-studio-shell summary:focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
 @media (max-width: 600px) { .music-studio-shell .music-final-routes label { flex-basis: 100%; } }
+/* Shared controls keep compact text spacing and a separate touch-sized hit area. */
+.music-studio-shell .music-workspace { padding: 12px; margin-block: 6px; border: 1px solid #526985; border-radius: 8px; background: #0d1725; color: #ecf4ff; }
+.music-studio-shell .music-workspace summary { padding: 6px 0; line-height: 1.35; color: #ecf4ff !important; }
+.music-studio-shell.music-midi-editor-page .music-workspace { margin-left: 42px; }
+.music-studio-shell .music-work-controls { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.music-studio-shell .music-work-controls label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; min-width: 0; }
+.music-studio-shell .music-work-controls select { padding: 6px 10px; min-width: 0; width: 100%; border: 1px solid #526985; border-radius: 8px; background: #081421; color: #ecf4ff; }
+.music-studio-shell .music-work-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.music-studio-shell .music-work-action { display: flex; gap: 4px; min-width: 0; }
+.music-studio-shell .music-work-star { min-width: 44px; flex-shrink: 0; }
+.music-studio-shell .music-workspace :is(button,select) { min-height: 44px !important; height: auto !important; max-height: none !important; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog,.music-feature-card,.music-recent,.music-project-list) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog) label { gap: 4px; line-height: 1.35; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) { padding: 12px; box-sizing: border-box; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) label { gap: 4px; line-height: 1.35; }
+.music-studio-shell.music-midi-editor-page :is(.music-editor-popover,.music-correction-popover) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; line-height: 1.35; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) :is(select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea) { padding: 6px 10px; line-height: 1.35; min-width: 0; max-width: 100%; background: #081421; color: #ecf4ff; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) label:has(input:is([type=checkbox],[type=radio])) { min-height: 44px; align-items: center; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) input:is([type=checkbox],[type=radio]) { min-height: 20px; height: 20px; min-width: 20px; width: 20px; }
+.music-studio-shell :is(.music-settings-nav,.music-quick-nav) a { min-height: 44px; display: inline-flex; align-items: center; padding: 6px 10px; line-height: 1.35; box-sizing: border-box; }
+.music-studio-shell :is(button,input,select,textarea,a):focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
+@media (max-width: 600px) { .music-studio-shell .music-work-action { width: 100%; } .music-studio-shell .music-work-action>button:first-child { flex: 1; } }
