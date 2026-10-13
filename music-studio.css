@@ -676,4 +676,15 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-vocal-panel :is(p,label,summary,h3,th,td){color:#eef6ff}
 .music-vocal-panel input:not([type=checkbox]),.music-vocal-panel select{min-height:42px;padding:8px 10px;border:1px solid #527085;border-radius:8px;background:#081524;color:#eef6ff;font:inherit}
 .music-vocal-panel input[type=checkbox]{width:18px;height:18px;min-height:18px;padding:0;margin:2px 5px 2px 0;flex:0 0 18px;accent-color:#7dd3fc}
+/* Selected-take workspace retains the original editor and all source audio. */
+.music-vocal-workspace{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:12px;border:1px solid #527085;border-radius:8px;background:#112031}
+.music-vocal-workspace>label,.music-vocal-workspace form{flex:1 1 240px;min-width:0}
+.music-vocal-workspace label{gap:4px;line-height:1.35}
+.music-vocal-workspace :is(input,select){box-sizing:border-box;width:100%;min-height:44px;padding:6px 10px}
+.music-vocal-workspace button{min-height:44px;padding:6px 10px}
+.music-vocal-workspace>p{flex:1 1 100%;margin:0;font-size:.82rem;line-height:1.4}
+.music-vocal-comp-fold{margin-top:12px;padding:12px;border:1px solid #527085;border-radius:8px}
+.music-vocal-comp-fold>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.music-vocal-comp-fold .music-vocal-comp{margin-top:4px;padding:12px}
+@media(min-width:821px) and (orientation:landscape){.music-vocal-workspace{position:sticky;top:0;z-index:2}.music-vocal-panel article{margin-top:12px;padding-top:12px}.music-vocal-panel form{gap:4px 12px}.music-vocal-panel form label{gap:4px}}
 .music-vocal-panel .music-vocal-advanced :is(table,thead,tbody,tr,th,td){background:transparent}
