@@ -688,3 +688,68 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-vocal-comp-fold .music-vocal-comp{margin-top:4px;padding:12px}
 @media(min-width:821px) and (orientation:landscape){.music-vocal-workspace{position:sticky;top:0;z-index:2}.music-vocal-panel article{margin-top:12px;padding-top:12px}.music-vocal-panel form{gap:4px 12px}.music-vocal-panel form label{gap:4px}}
 .music-vocal-panel .music-vocal-advanced :is(table,thead,tbody,tr,th,td){background:transparent}
+/* Recording and project details remain accessible without dominating the editor. */
+.music-project-details,.music-vocal-help,.music-vocal-record-settings{margin:4px 0;border:1px solid #527085;border-radius:8px;padding:0 12px;background:#112031;color:#eef6ff}
+.music-studio-shell :is(.music-project-details,.music-vocal-help,.music-vocal-record-settings)>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#eef6ff;background:#112031}
+.music-vocal-record-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 12px;padding:12px 0}
+.music-vocal-record-grid>p{grid-column:1/-1}
+.music-vocal-panel>form{display:block}
+.music-vocal-record-actions,.music-vocal-take-step{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.music-vocal-panel :is(button,summary,select,input:not([type=checkbox])){min-height:44px;box-sizing:border-box;padding:6px 10px}
+.music-vocal-panel label{gap:4px}
+.music-vocal-panel .music-vocal-take-step{flex:0 1 auto}
+@media(min-width:821px) and (orientation:landscape){
+ .music-project-page:has(.music-vocal-panel){padding:8px 12px;margin:0 auto}
+ .music-project-page:has(.music-vocal-panel) .music-project-panel{padding:12px}
+ .music-project-page:has(.music-vocal-panel) .music-section-heading :is(p,h1){margin:4px 0}
+ .music-vocal-panel{margin-top:4px;padding:12px}
+ .music-vocal-panel>h2,.music-vocal-panel>p,.music-vocal-panel article>h3,.music-vocal-panel article>p{margin:4px 0;line-height:1.35}
+ .music-vocal-panel article form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-vocal-panel article form button{align-self:end}
+ .music-vocal-workspace{gap:4px 12px;padding:12px;position:static}
+ .music-vocal-workspace>p{font-size:.75rem}
+ .music-vocal-panel .music-form-actions{gap:4px}
+ .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:60dvh;overflow:auto;overscroll-behavior:contain}
+}
+.music-production-navigation{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.music-production-navigation button{min-height:44px;box-sizing:border-box;padding:6px 10px;flex:1 1 130px}
+.music-vocal-capture{margin:4px 0;border:1px solid #527085;border-radius:8px;padding:0 12px;background:#112031;color:#eef6ff}
+.music-studio-shell .music-vocal-capture>summary{min-height:44px;display:flex;align-items:center;background:#112031;color:#eef6ff;cursor:pointer}
+.music-vocal-capture>form{display:block}
+.music-vocal-focus-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:4px 0}
+.music-vocal-focus-heading h1{min-width:0;overflow-wrap:anywhere;font-size:1.25rem;margin:4px 0;line-height:1.35}
+.music-vocal-focused{padding:12px;min-height:0}
+.music-vocal-focused .music-vocal-panel{padding:12px;margin:4px 0}
+@media(min-width:821px) and (orientation:landscape){
+ .music-project-page:has(.music-vocal-panel){min-height:0}
+ .music-vocal-focused .music-vocal-panel article form{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .music-vocal-focused .music-vocal-panel article :is(input,select){width:100%}
+ .music-vocal-focused .music-vocal-panel article>p{font-size:.75rem}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 200px}
+ .music-vocal-focused .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:50dvh}
+}
+/* Landscape: keep the selected waveform/editor beside the recording/take dock. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-vocal-focused .music-vocal-panel:has(>article){display:grid;grid-template-columns:260px minmax(0,1fr);gap:4px 12px;align-items:start}
+ .music-vocal-focused .music-vocal-panel:has(>article)>*{grid-column:1;min-width:0}
+ .music-vocal-focused .music-vocal-panel>h2{grid-row:1;font-size:1.05rem}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-help{grid-row:2}
+ .music-vocal-focused .music-vocal-panel>[data-vocal-status]{grid-row:3}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-capture{grid-row:4}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-workspace{grid-row:5;padding:12px;gap:4px}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-comp-fold{grid-row:6}
+ .music-vocal-focused .music-vocal-panel>article{grid-column:2!important;margin:0;padding-top:4px}
+ .music-vocal-focused .music-vocal-panel>article:first-of-type{grid-row:1/span 7}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 100%}
+ .music-vocal-focused .music-vocal-workspace form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:end}
+ .music-vocal-focused .music-vocal-workspace form label{grid-column:1}
+ .music-vocal-focused .music-vocal-workspace form button{grid-column:2}
+ .music-vocal-focused .music-vocal-take-step{width:100%;flex:1 1 100%;margin:0}
+ .music-vocal-focused .music-vocal-take-step button{flex:1 1 0;min-width:0;font-size:.8rem;line-height:1.35}
+ .music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold):not([open]){padding:0 12px;margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article .music-form-actions{margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article form label{font-size:.8rem;line-height:1.35}
+ .music-vocal-focused .music-vocal-panel article form input{font-size:1rem}
+ .music-vocal-focused .music-vocal-panel .music-vocal-capture>form{display:block}
+}
+.music-vocal-focused label:has(input[type=checkbox]){min-height:44px;justify-content:center}

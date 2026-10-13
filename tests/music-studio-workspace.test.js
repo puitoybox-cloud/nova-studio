@@ -49,3 +49,8 @@ test('unsubmitted AI input blocks workspace changes and late typing is never rep
   input.value='未送信の歌詞';assert.equal((await app.setWorkMode('mix')).ok,false);assert.equal(app.openWorkAction('settings'),false);
   input.value='';app.setRepository({putSettings:()=>new Promise(r=>{release=r})});const pending=app.setWorkMode('record'),before=paints;input.value='保存中に入力した相談';release();assert.equal((await pending).ok,true);assert.equal(paints,before);assert.equal(input.value,'保存中に入力した相談');
 });
+
+test('focused vocal route reuses the saved project and guarded explicit-project navigation',async()=>{
+ const {app}=load();const p=app.makeProject({projectId:'a/b',projectName:'Vocal <song>'});app.state.projects=[p];app.state.loaded=true;
+ const before=JSON.stringify(p),target=app.workActionTarget('vocal',p.projectId);assert.equal(target.route,'music-studio/vocal/a%2Fb');assert.match(app.renderRoute(target.route),/music-vocal-focused/);assert.match(app.vocalFocusedView(p.projectId),/Vocal &lt;song&gt;/);assert.equal(JSON.stringify(p),before);assert.equal(app.openWorkAction('mix','missing'),false);app.vocal.phase='recording';assert.equal(app.openVocalSettings(p.projectId),false);app.vocal.phase='idle';assert.equal(app.openVocalSettings('missing'),false);assert.equal(app.openVocalSettings(p.projectId),true);
+});
