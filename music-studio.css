@@ -716,3 +716,15 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-vocal-capture{margin:4px 0;border:1px solid #527085;border-radius:8px;padding:0 12px;background:#112031;color:#eef6ff}
 .music-studio-shell .music-vocal-capture>summary{min-height:44px;display:flex;align-items:center;background:#112031;color:#eef6ff;cursor:pointer}
 .music-vocal-capture>form{display:block}
+.music-vocal-focus-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:4px 0}
+.music-vocal-focus-heading h1{min-width:0;overflow-wrap:anywhere;font-size:1.25rem;margin:4px 0;line-height:1.35}
+.music-vocal-focused{padding:12px;min-height:0}
+.music-vocal-focused .music-vocal-panel{padding:12px;margin:4px 0}
+@media(min-width:821px) and (orientation:landscape){
+ .music-project-page:has(.music-vocal-panel){min-height:0}
+ .music-vocal-focused .music-vocal-panel article form{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .music-vocal-focused .music-vocal-panel article :is(input,select){width:100%}
+ .music-vocal-focused .music-vocal-panel article>p{font-size:.75rem}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 200px}
+ .music-vocal-focused .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:50dvh}
+}

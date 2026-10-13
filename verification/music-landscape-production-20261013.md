@@ -10,6 +10,7 @@ Base: #409 / feature/music-ipad-recovery-production-v1 / fde6933fa5b8e83cf44f802
 - Comp segments can be moved earlier/later, retaining source edit snapshots. The new order changes actual WAV output, is one Undo/Redo unit, survives fresh reopen, can be saved as editable WAV, and recovers byte-identical after full archive restoration.
 - Manual capture latency now persists in the original recording plan and initializes the next capture after reopen. Old plans without this optional field remain valid; malformed values reject. This is NOT automatic physical latency measurement.
 - Project settings/reference imports and project management retain their original forms inside disclosures. The large home hero is omitted from actual project editing; home/list retain it. Recording help, detailed recording settings and Comp are folded. Once saved takes exist, capture controls fold while editing remains visible; active capture remains open.
+- The dedicated `/music-studio/vocal/:id` editing route reuses actual recorder/take/Comp operations, gives access to the original Project settings screen, and measures the focused screen separately. No recording or project data is cloned for this route. Project editor minimum height no longer forces an extra viewport below the menu.
 - A project-bound MIDI/Vocal/Mix/Mastering/AI navigation row reuses the existing guarded production routes and prevents stale global project selection from redirecting a click.
 - 4px label gaps, 6/10px button padding, 12px panel padding and 44px controls are applied to the affected Vocal scope. Advanced panels allow bounded internal scrolling. No fixed page overflow clipping is added: remaining overflow stays observable.
 
@@ -17,7 +18,7 @@ These are three durable production operations plus a scoped UI integration. The 
 
 ## Verification and limits
 
-Local final full Node after the final capture fold: 2194 PASS / failures 0 / skips 0. New Vocal suite: 38 PASS / failures 0. Python: 509 executed, 504 PASS, five existing unavailable dependency skips. All 198 tracked JavaScript syntax and whitespace checks passed; changed files rechecked after final edits.
+Local final full Node after the focused route and capture fold: 2195 PASS / failures 0 / skips 0. New Vocal suite: 38 PASS / failures 0. Python: 509 executed, 504 PASS, five existing unavailable dependency skips. All 198 tracked JavaScript syntax and whitespace checks passed; changed files rechecked after final edits.
 
 Local Chromium installation failed because the downloaded ZIP was invalid/truncated. Local browser PASS is not asserted. Draft CI runs the full existing real Chrome scenarios at 1440/820/390 and 1180x820, including capture/pause/resume, edited WAV, original MIDI retention, reopen and Full WAV Archive byte equality. Recording report now separately records the default compact screen's scrollHeight/scrollWidth/viewport and disclosure state before advanced panels open. Vertical/horizontal overflow must be read from this artifact; screenshots alone cannot prove one-screen completion. Swift 105 PASS and unsigned macOS/iPad builds on #409 are previous-head evidence only; this change requires new-head results.
 
@@ -63,3 +64,5 @@ A requires production binding + backend + policy + physical acceptance. B requir
 Safe next step: inspect new-head browser measurements and fix the remaining visible overflow; continue actual local production rendering/approved asset integration without claiming physical or policy acceptance.
 
 Safety: only a new Draft branch/PR. No main/other PR mutation, force push, Ready/Merge/Auto Merge, source-data deletion or Live Provider API. No external model or production binary download.
+
+Initial-head UI CI failed because an old scenario tried to select a now-folded recording setting without opening its disclosure. The scenario now opens the settings via actual visible UI; no assertions or scenarios were removed. Final-head CI must pass before transfer of any result.
