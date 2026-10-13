@@ -728,3 +728,28 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
  .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 200px}
  .music-vocal-focused .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:50dvh}
 }
+/* Landscape: keep the selected waveform/editor beside the recording/take dock. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-vocal-focused .music-vocal-panel:has(>article){display:grid;grid-template-columns:260px minmax(0,1fr);gap:4px 12px;align-items:start}
+ .music-vocal-focused .music-vocal-panel:has(>article)>*{grid-column:1;min-width:0}
+ .music-vocal-focused .music-vocal-panel>h2{grid-row:1;font-size:1.05rem}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-help{grid-row:2}
+ .music-vocal-focused .music-vocal-panel>[data-vocal-status]{grid-row:3}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-capture{grid-row:4}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-workspace{grid-row:5;padding:12px;gap:4px}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-comp-fold{grid-row:6}
+ .music-vocal-focused .music-vocal-panel>article{grid-column:2!important;margin:0;padding-top:4px}
+ .music-vocal-focused .music-vocal-panel>article:first-of-type{grid-row:1/span 7}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 100%}
+ .music-vocal-focused .music-vocal-workspace form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:end}
+ .music-vocal-focused .music-vocal-workspace form label{grid-column:1}
+ .music-vocal-focused .music-vocal-workspace form button{grid-column:2}
+ .music-vocal-focused .music-vocal-take-step{width:100%;flex:1 1 100%;margin:0}
+ .music-vocal-focused .music-vocal-take-step button{flex:1 1 0;min-width:0;font-size:.8rem;line-height:1.35}
+ .music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold):not([open]){padding:0 12px;margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article .music-form-actions{margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article form label{font-size:.8rem;line-height:1.35}
+ .music-vocal-focused .music-vocal-panel article form input{font-size:1rem}
+ .music-vocal-focused .music-vocal-panel .music-vocal-capture>form{display:block}
+}
+.music-vocal-focused label:has(input[type=checkbox]){min-height:44px;justify-content:center}

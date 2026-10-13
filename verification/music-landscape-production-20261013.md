@@ -18,7 +18,7 @@ These are three durable production operations plus a scoped UI integration. The 
 
 ## Verification and limits
 
-Local final full Node after the focused route and capture fold: 2195 PASS / failures 0 / skips 0. New Vocal suite: 38 PASS / failures 0. Python: 509 executed, 504 PASS, five existing unavailable dependency skips. All 198 tracked JavaScript syntax and whitespace checks passed; changed files rechecked after final edits.
+Local final full Node after the focused route and capture fold: 2196 PASS / failures 0 / skips 0. New Vocal suite: 38 PASS / failures 0. Python: 509 executed, 504 PASS, five existing unavailable dependency skips. All 198 tracked JavaScript syntax and whitespace checks passed; changed files rechecked after final edits.
 
 Local Chromium installation failed because the downloaded ZIP was invalid/truncated. Local browser PASS is not asserted. Draft CI runs the full existing real Chrome scenarios at 1440/820/390 and 1180x820, including capture/pause/resume, edited WAV, original MIDI retention, reopen and Full WAV Archive byte equality. Recording report now separately records the default compact screen's scrollHeight/scrollWidth/viewport and disclosure state before advanced panels open. Vertical/horizontal overflow must be read from this artifact; screenshots alone cannot prove one-screen completion. Swift 105 PASS and unsigned macOS/iPad builds on #409 are previous-head evidence only; this change requires new-head results.
 
@@ -66,3 +66,9 @@ Safe next step: inspect new-head browser measurements and fix the remaining visi
 Safety: only a new Draft branch/PR. No main/other PR mutation, force push, Ready/Merge/Auto Merge, source-data deletion or Live Provider API. No external model or production binary download.
 
 Initial-head UI CI failed because an old scenario tried to select a now-folded recording setting without opening its disclosure. The scenario now opens the settings via actual visible UI; no assertions or scenarios were removed. Final-head CI must pass before transfer of any result.
+
+Landscape follow-up: the focused selected-take screen places recording/take/Comp controls in a 260px dock beside the waveform/editor. All-take mode can remain taller; no editor is clipped or deleted. Closed advanced/Comp disclosures remove redundant outer padding; checkbox labels gain a 44px touch region. Final asset keys are synchronized to 1.4.149. New-head browser measurements and exact-head checks remain required.
+
+A successfully committed recording atomically selects the new take for editing; failed/quota-aborted recordings cannot change selection. No take is adopted to Mix by this editor selection. Explicit All remains available to view retained older takes. This prevents a completed multi-cycle capture from defaulting to a stack of all editors.
+
+Comp disclosure opening is tracked per project in the current UI session and retained across edits/Undo/Redo paints, without adding project/backup metadata. Browser operations explicitly open the visible Comp summary. Initial CI failures were disclosure visibility regressions in old scenarios; all original assertions remain.
