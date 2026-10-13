@@ -97,3 +97,21 @@
 .music-final-history-row { padding: 12px; margin-block: 4px; border: 1px solid #506075; border-radius: 8px; }
 .music-final-history-row p { margin: 0 0 4px; overflow-wrap: anywhere; }
 .music-final-export [data-final-file] { max-width: 100%; }
+/* Focused production overrides are loaded after the shared compact scale. */
+.music-studio-shell.music-vocal-focused>.music-vocal-focus-heading{position:static!important;inset:auto!important;background:#112031!important;color:#eef6ff;padding:0 12px;border:1px solid #527085;border-radius:8px;min-height:44px}
+.music-studio-shell.music-vocal-focused>.music-vocal-focus-heading h1{color:#eef6ff!important;font-size:1.25rem!important;line-height:1.35;margin:4px 0}
+.music-studio-shell.music-vocal-focused>.music-workspace:not([open]){padding:0 12px;margin:4px 0}
+.music-studio-shell.music-vocal-focused button:disabled{background:#243449;color:#aebdd0;border-color:#53657c;opacity:1}
+.music-studio-shell .music-vocal-name-settings,.music-studio-shell .music-vocal-lyrics-fold{flex:1 1 100%;width:100%;border:1px solid #527085;border-radius:8px;padding:0 12px;margin:4px 0;background:#112031;color:#eef6ff}
+.music-studio-shell :is(.music-vocal-name-settings,.music-vocal-lyrics-fold)>summary{display:flex;align-items:center;min-height:44px;color:#eef6ff;background:#112031}
+.music-studio-shell.music-vocal-focused .music-vocal-comp-fold{background:#112031;color:#eef6ff}
+body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;background-image:none!important}
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-vocal-focused .music-vocal-panel article form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px 12px;margin:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-panel article{padding:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-workspace form{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:4px;margin:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-workspace form button{font-size:.8rem}
+ .music-studio-shell.music-vocal-focused .music-vocal-lyrics-fold{grid-column:1;grid-row:7}
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-name-settings,.music-vocal-lyrics-fold)[open]{max-height:50dvh;overflow:auto;overscroll-behavior:contain}
+ .music-studio-shell.music-vocal-focused .music-vocal-panel>.music-vocal-capture>form{display:block;margin:4px 0}
+}
