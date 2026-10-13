@@ -115,3 +115,6 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
  .music-studio-shell.music-vocal-focused :is(.music-vocal-name-settings,.music-vocal-lyrics-fold)[open]{max-height:50dvh;overflow:auto;overscroll-behavior:contain}
  .music-studio-shell.music-vocal-focused .music-vocal-panel>.music-vocal-capture>form{display:block;margin:4px 0}
 }
+
+/* The home stylesheet's generic sticky nav must not overlay production tabs. */
+.music-studio-shell>.music-production-navigation{position:static!important;inset:auto!important;transform:none!important;z-index:auto!important}
