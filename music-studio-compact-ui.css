@@ -163,3 +163,33 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
 .music-master-focused .music-master-tools button[onclick*="productionSave"]{background:#dff9fc;color:#12395d;border-color:#5bc3d7}
 .music-master-focused .music-master-tools :is(input,select){background:#081421;color:#ecf4ff;border:1px solid #526985;border-radius:8px}
 .music-master-focused>.music-vocal-focus-heading>button[onclick*="pcmOpen"]{background:#dff9fc;color:#12395d;border:1px solid #5bc3d7;border-radius:8px}
+
+/* Long-WAV Mastering reuses its real chunked processing and explicit adoption. */
+.music-long-master-focused .music-long-master-panel{padding:12px;margin:4px 0;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+.music-long-master-focused .music-long-master-panel>h3{display:none}
+.music-long-master-focused .music-long-master-actions{display:flex;flex-wrap:wrap;gap:4px}
+.music-long-master-focused .music-master-tools .music-long-adopt{background:#dff9fc;color:#12395d;border-color:#5bc3d7}
+.music-long-master-focused .music-long-versions form{display:flex;flex-wrap:wrap;gap:4px;align-items:end}
+.music-long-master-focused .music-long-versions form label{flex:1;min-width:120px}
+.music-long-master-focused .music-long-master-panel form{margin:0}
+.music-long-master-focused .music-long-master-panel form button{margin:4px 4px 0 0}
+.music-long-master-focused .music-long-master-panel .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.music-studio-shell.music-long-master-focused .music-master-tools :is(.music-long-master-help,.music-long-master-history,.music-long-versions){align-self:start;min-height:0;padding:0!important;margin:0;background:#112031!important;color:#eef6ff;border:1px solid #527085;border-radius:8px;box-shadow:none}
+.music-studio-shell.music-long-master-focused .music-master-tools :is(.music-long-master-help,.music-long-master-history,.music-long-versions)>summary{min-height:44px;padding:6px 10px;margin:0;border-radius:8px}
+.music-studio-shell.music-long-master-focused .music-master-tools details[open]>:not(summary){margin:4px 10px}
+body.music-studio-page:has(.music-long-master-focused){background:#08111d!important;background-image:none!important}
+@media(min-width:821px) and (orientation:landscape){
+ .music-long-master-focused>.music-master-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-long-master-focused .music-master-tools>label{grid-column:1/3}
+ .music-long-master-focused .music-master-tools>[data-long-mix-status]{grid-column:3;font-size:.8rem;align-self:center}
+ .music-long-master-focused .music-long-master-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-long-master-focused .music-long-master-panel>.music-long-master-help{grid-column:1;grid-row:1}
+ .music-long-master-focused .music-long-master-panel>form{grid-column:2/4;grid-row:1}
+ .music-long-master-focused .music-long-master-panel>p{font-size:.8rem;line-height:1.35}
+ .music-long-master-focused .music-long-master-panel>p:last-child{grid-column:1/-1}
+ .music-long-master-focused .music-long-master-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ .music-long-master-focused .music-long-master-actions button{margin:0;min-height:44px}
+ .music-long-master-focused .music-long-master-history{grid-column:1}
+ .music-long-master-focused .music-long-versions{grid-column:2/4}
+ .music-long-master-focused details[open]{max-height:35dvh;overflow:auto;overscroll-behavior:contain}
+}
