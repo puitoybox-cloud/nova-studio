@@ -118,3 +118,17 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
 
 /* The home stylesheet's generic sticky nav must not overlay production tabs. */
 .music-studio-shell>.music-production-navigation{position:static!important;inset:auto!important;transform:none!important;z-index:auto!important}
+
+/* Focused PCM view neutralizes inherited form margins without clipping the page. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-mix-focused{min-height:0;padding:8px 12px;margin:0 auto}
+ .music-studio-shell.music-mix-focused>.music-project-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;padding:12px;margin:0;align-items:start}
+ .music-studio-shell.music-mix-focused>.music-project-panel>form{grid-column:auto;margin:0;min-width:0}
+ .music-studio-shell.music-mix-focused .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0 0 4px}
+ .music-studio-shell.music-mix-focused label{margin:0;gap:4px;line-height:1.25;font-size:.85rem}
+ .music-studio-shell.music-mix-focused :is(input,select,button){margin:0;min-height:44px;padding:6px 10px}
+ .music-studio-shell.music-mix-focused .music-form-actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0}
+ .music-studio-shell.music-mix-focused :is(h1,h2){font-size:1.15rem;line-height:1.25;margin:0}
+ .music-studio-shell.music-mix-focused summary{margin:0;padding:6px 10px;min-height:44px;box-sizing:border-box}
+ .music-studio-shell.music-mix-focused>.music-project-panel>p{margin:0;font-size:.78rem;line-height:1.3}
+}
