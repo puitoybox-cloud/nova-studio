@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.153';
+  const ASSET_VERSION='1.4.154';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -2706,11 +2706,11 @@
     try{masterTargets(target,ceiling);const guard=()=>{if(token!==productionPreview.generation||pcmEditor.projectId!==id||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)throw Error('master-comparison-stale')};
       const targets=[...new Set([Math.max(-36,target-2),target,Math.min(-5,target+2)])],rows=[];
       for(const value of targets){guard();const c=await masterPreview(p,assetId,value,ceiling,{guard});guard();rows.push(c)}
-      Object.assign(masterChoices,{projectId:id,assetId,baseline,rows});productionPreview.message='複数の実音声候補を測定しました。候補を選び、試聴してから採用してください。';return{ok:true,count:rows.length};
+      Object.assign(masterChoices,{projectId:id,assetId,baseline,rows,generation:token});productionPreview.message='複数の実音声候補を測定しました。候補を選び、試聴してから採用してください。';return{ok:true,count:rows.length};
     }catch(e){masterChoices.rows=[];productionPreview.message=e.message;return{ok:false,error:e.message}}finally{pcmEditor.busy=false;requestPaint()}
   }
   function masterChoose(id,index){
-    try{const p=state.projects.find(p=>p.projectId===id);if(pcmEditor.busy||pcmEditor.projectId!==id||masterChoices.projectId!==id||masterChoices.baseline!==JSON.stringify(p)||!Number.isInteger(index)||!masterChoices.rows[index])throw Error('master-comparison-stale');productionPreview.master=clone(masterChoices.rows[index]);requestPaint();return{ok:true}}
+    try{const p=state.projects.find(p=>p.projectId===id);if(pcmEditor.busy||pcmEditor.projectId!==id||masterChoices.projectId!==id||masterChoices.generation!==productionPreview.generation||masterChoices.baseline!==JSON.stringify(p)||!Number.isInteger(index)||!masterChoices.rows[index])throw Error('master-comparison-stale');productionPreview.master=clone(masterChoices.rows[index]);requestPaint();return{ok:true}}
     catch(e){productionPreview.message=e.message;requestPaint();return{ok:false,error:e.message}}
   }
   function masterCompareSubmit(event,id){event?.preventDefault?.();const f=event.currentTarget.elements;return masterCompare(id,f.assetId.value,Number(f.target.value),Number(f.ceiling.value))}
@@ -2723,7 +2723,7 @@
   function masterOpenFocused(id){if(workspaceBusy()||!state.projects.some(p=>p.projectId===id)||!guardLeave())return false;workspaceExpanded=false;routeTo(`${HOME_ROUTE}/mixing-master/${encodeURIComponent(id)}`);return true}
   function masterFocusedView(id){
     const p=state.projects.find(p=>p.projectId===id);if(!p)return'<main class="music-studio-shell"><p>曲を確認できません。</p></main>';
-    pcmMixView(id);const arg=JSON.stringify(id),h=s=>escapeHtml(s),original=productionView(id,p),at=original.indexOf('<h2 data-work-master>'),tail=original.slice(at,original.lastIndexOf('</section>')),valid=masterChoices.projectId===id&&masterChoices.baseline===JSON.stringify(p),c=productionPreview.master;
+    pcmMixView(id);const arg=JSON.stringify(id),h=s=>escapeHtml(s),original=productionView(id,p),at=original.indexOf('<h2 data-work-master>'),tail=original.slice(at,original.lastIndexOf('</section>')),valid=masterChoices.projectId===id&&masterChoices.generation===productionPreview.generation&&masterChoices.baseline===JSON.stringify(p),c=productionPreview.master;
     const choices=valid?masterChoices.rows.map((r,i)=>`<button onclick="${h(`MusicStudio.masterChoose(${arg},${i})`)}">${r.targetLufs} LUFS（候補${i+1}） · ${r.after.lufs?.toFixed(2)??'測定不可'} LUFS</button>`).join(''):'';
     const recipes=(p.pcmMix?.assets||[]).flatMap(a=>(a.masterRecipes||[]).map(r=>`<button onclick="${h(`MusicStudio.masterRecipeRecall(${arg},${JSON.stringify(a.id)},${JSON.stringify(r.id)})`)}">${escapeHtml(a.name)} · ${escapeHtml(r.name)} · ${r.targetLufs} LUFS（再作成・試聴）</button>`)).join('');
     let tools=tail;const saved=tools.indexOf('<h3>Saved masters');if(saved>=0)tools=tools.slice(0,saved)+`<details class="music-master-history"><summary>Saved masters（保存済みMaster）</summary>${tools.slice(saved)}</details>`;
