@@ -12,7 +12,7 @@ const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-lay
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.158');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.18');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.19');
   const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.6');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
@@ -112,4 +112,11 @@ test('primary landscape MIDI touch rows use 44px without hiding the timeline',()
   assert.match(css,/\.music-part-tabs\{\s*min-height:44px;height:44px/);
   assert.match(css,/\.music-part-tabs \.music-part-tab-group>button:not\(\.music-part-tab\)\{\s*width:44px/);
   assert.match(css,/\.music-editor-layout\{\s*height:calc\(50svh - 42px\)!important/);
+});
+
+test('lower MIDI dock uses scrollable 44px touch controls without hiding settings',()=>{
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom\{\s*overflow-x:auto;overflow-y:auto;overscroll-behavior:contain/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom :is\(button,select,input:not\(\[type=checkbox\]\):not\(\[type=radio\]\),textarea\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom \.music-partial-edit-provider textarea,/);
+  assert.match(css,/min-height:44px;height:auto;max-height:none/);
 });

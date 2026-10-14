@@ -120,3 +120,26 @@
    flex:0 0 calc(50svh - 42px)!important
  }
 }
+
+/* The lower MIDI control dock is independently scrollable. Do not force
+   20–28px targets on touch users to squeeze all advanced settings in view. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-editor-bottom{
+   overflow-x:auto;overflow-y:auto;overscroll-behavior:contain;
+   -webkit-overflow-scrolling:touch;scroll-padding:8px
+ }
+ .music-midi-editor-page .music-editor-bottom :is(button,select,input:not([type=checkbox]):not([type=radio]),textarea),
+ .music-midi-editor-page .music-assist-snap-controls :is(button,select),
+ .music-midi-editor-page .music-assist-quantize-controls :is(button,select){
+   box-sizing:border-box;min-height:44px;height:auto;max-height:none;
+   padding:6px 10px;font-size:.75rem;line-height:1.25
+ }
+ .music-midi-editor-page .music-editor-bottom .music-partial-edit-provider textarea,
+ .music-midi-editor-page .music-editor-bottom .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]),
+ .music-midi-editor-page .music-editor-bottom .music-edit-range input{
+   min-height:44px;height:auto;max-height:none;padding:6px 10px
+ }
+ .music-midi-editor-page .music-editor-bottom>section{
+   overflow:visible;min-width:0;align-self:start
+ }
+}
