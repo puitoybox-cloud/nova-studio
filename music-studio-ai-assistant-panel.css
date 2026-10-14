@@ -36,3 +36,7 @@
  .music-midi-editor-page .music-ai-candidates article{min-width:0}
  .music-midi-editor-page .music-ai-candidates article>div{flex-wrap:wrap}
 }
+
+.music-ai-note-review{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.music-ai-note-review button{min-height:44px;padding:6px 10px}
+.music-ai-note-review span{font-size:.75rem;overflow-wrap:anywhere}
