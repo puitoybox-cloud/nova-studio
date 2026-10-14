@@ -136,3 +136,7 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
 @media(min-width:821px) and (orientation:landscape){
  .music-studio-shell.music-mix-focused :is(.music-mix-help,.music-mix-advanced,.music-mix-history):not([open]){padding:0;border:0;margin:0}
 }
+
+.music-studio-shell.music-mix-focused>.music-project-panel{background:#112031;color:#eef6ff}
+.music-studio-shell.music-mix-focused label{color:#eef6ff}
+.music-studio-shell.music-mix-focused .music-mix-history>summary{background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
