@@ -78,3 +78,45 @@
  .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
  .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{flex-shrink:0}
 }
+
+/* iPad landscape: make primary MIDI transport and part selection genuinely
+   touchable rather than enlarging only their visible icons. Compensate for
+   the taller navigation rows inside the existing viewport budget. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-editor-topbar{
+   height:44px;min-height:44px;max-height:44px;flex:0 0 44px;
+   align-items:center;scroll-padding-inline:10px
+ }
+ .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary,
+ .music-midi-editor-page .music-editor-topbar .music-midi-input-menu>summary,
+ .music-midi-editor-page .music-editor-topbar>button{
+   box-sizing:border-box;height:44px;min-height:44px;max-height:44px;
+   padding:6px 10px;font-size:.75rem;display:inline-flex;align-items:center
+ }
+ .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
+ .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu,
+ .music-midi-editor-page .music-editor-topbar>.music-external-track-review-entry{
+   min-height:44px
+ }
+ .music-midi-editor-page .music-part-tabs{
+   min-height:44px;height:44px;flex:0 0 44px;align-items:center;
+   scroll-padding-inline:8px
+ }
+ .music-midi-editor-page .music-part-tabs button,
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab),
+ .music-midi-editor-page .music-history-controls>button{
+   box-sizing:border-box;height:44px;min-height:44px;max-height:44px;
+   padding:6px 10px;font-size:.74rem
+ }
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){
+   width:44px;min-width:44px;max-width:44px
+ }
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{
+   min-width:82px;width:auto
+ }
+ .music-midi-editor-page .music-editor-layout{
+   height:calc(50svh - 42px)!important;
+   max-height:calc(50svh - 42px)!important;
+   flex:0 0 calc(50svh - 42px)!important
+ }
+}
