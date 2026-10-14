@@ -12,7 +12,7 @@ const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-lay
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.158');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.17');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.18');
   const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.6');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
@@ -105,4 +105,11 @@ test('landscape MIDI topbar is horizontally reachable and reveals open menus',()
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{[^}]*overflow-x:auto/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar:has\(\.music-editor-menu\[open\]\)/);
   assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[\s\S]*flex-shrink:0/);
+});
+
+test('primary landscape MIDI touch rows use 44px without hiding the timeline',()=>{
+  assert.match(css,/\.music-editor-topbar\{\s*height:44px;min-height:44px;max-height:44px/);
+  assert.match(css,/\.music-part-tabs\{\s*min-height:44px;height:44px/);
+  assert.match(css,/\.music-part-tabs \.music-part-tab-group>button:not\(\.music-part-tab\)\{\s*width:44px/);
+  assert.match(css,/\.music-editor-layout\{\s*height:calc\(50svh - 42px\)!important/);
 });
