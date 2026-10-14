@@ -1361,7 +1361,26 @@
   function vocalInputChoices(p,preset={}){const choices=vocal.devices.map(d=>({...d})),ids=new Set(choices.map(d=>d.id));for(const r of vocalInputProfiles(p))if(!ids.has(r.deviceId)){choices.push({id:r.deviceId,name:r.name+' · Saved input（保存済み・接続を確認）'});ids.add(r.deviceId)}const previous=preset.inputCompensation?.deviceId;if(previous&&!['default','communications'].includes(previous)&&!ids.has(previous))choices.push({id:previous,name:'Previous input（前回入力・接続を確認）'});return choices}
   async function vocalRefreshInputs(){
     if(vocalBusy()||shutdownPromise)return{ok:false,error:'vocal-input-refresh-busy'};
-    try{if(!root.navigator?.mediaDevices?.enumerateDevices)throw Error('vocal-input-enumeration-unavailable');const devices=await root.navigator.mediaDevices.enumerateDevices();if(vocalBusy()||shutdownPromise)throw Error('vocal-input-refresh-stale');vocal.devices=devices.filter(x=>x.kind==='audioinput').map(x=>({id:x.deviceId,name:x.label||'Microphone（マイク）'}));vocal.message='Inputs（入力一覧を更新）。権限取得前は機器名を表示できない場合があります。';requestPaint();return{ok:true,devices:clone(vocal.devices)}}catch(e){vocal.message=e.message;requestPaint();return{ok:false,error:e.message}}
+    try{if(!root.navigator?.mediaDevices?.enumerateDevices)throw Error('vocal-input-enumeration-unavailable');const devices=await root.navigator.mediaDevices.enumerateDevices();if(vocalBusy()||shutdownPromise)throw Error('vocal-input-refresh-stale');vocal.devices=devices.filter(x=>x.kind==='audioinput').map(x=>({id:x.deviceId,name:x.label||'Microphone（マイク）'}));vocal.message='Inputs（入力一覧を更新）。権限取得前は機器名を表示できない場合があります。';
+      // Refresh only microphone choices: repainting the entire editor destroys pending
+      // latency/count-in/punch settings before the user starts or saves a take.
+      const selects=Array.from(root.document?.querySelectorAll?.('.music-vocal-record-settings select[name="device"]')||[]);
+      if(!selects.length)requestPaint();
+      else for(const select of selects){
+        const selected=select.value;
+        for(const device of vocal.devices){
+          if(!device.id)continue;
+          const existing=Array.from(select.options||[]).find(x=>x.value===device.id);
+          if(existing)existing.textContent=device.name;
+          else if(root.document?.createElement){const option=root.document.createElement('option');option.value=device.id;option.textContent=device.name;select.add(option)}
+        }
+        select.value=selected;
+      }
+      root.document?.querySelectorAll?.('[data-vocal-status]')?.forEach(x=>{x.textContent=vocal.message});
+      return{ok:true,devices:clone(vocal.devices)}}catch(e){vocal.message=e.message;
+      const statuses=Array.from(root.document?.querySelectorAll?.('[data-vocal-status]')||[]);
+      if(statuses.length)statuses.forEach(x=>{x.textContent=vocal.message});else requestPaint();
+      return{ok:false,error:e.message}}
   }
   function vocalInputProfileForm(button,id){const form=button.form;if(!form)return{ok:false,error:'vocal-input-profile-form-missing'};const f=new root.FormData(form),deviceId=String(f.get('device')||''),device=vocal.devices.find(x=>x.id===deviceId);return vocalInputProfileSave(id,deviceId,device?.name||'Microphone（マイク）',Number(f.get('latency')))}
   function vocalInputProfilesView(p){const rows=vocalInputProfiles(p),id=escapeHtml(p.projectId);return `<details class="music-vocal-input-profiles"><summary>Input compensation（入力別の手動補正）</summary><p>自動測定ではありません。録音設定で特定のマイクと補正msを選び「Save input」を押してください。既定入力は録音時に実際のdeviceIdが一致した場合だけ保存値を使います。機器IDが変わった場合は再設定してください。</p>${rows.map(r=>`<p>${escapeHtml(r.name)} / ${r.latencyMs} ms / Manual（手動）<button type="button" class="music-secondary" ${vocalBusy()?'disabled':''} onclick="${escapeHtml(`MusicStudio.vocalInputProfileRemove(${JSON.stringify(p.projectId)},${JSON.stringify(r.deviceId)})`)}">Remove（補正設定を削除）</button></p>`).join('')}</details>`}
