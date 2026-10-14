@@ -40,3 +40,13 @@
 .music-ai-note-review{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .music-ai-note-review button{min-height:44px;padding:6px 10px}
 .music-ai-note-review span{font-size:.75rem;overflow-wrap:anywhere}
+
+/* Keep drawer navigation available; long proposals scroll inside the body. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-ai-focus[open]{height:calc(100dvh - 24px);overflow:hidden;gap:6px}
+ .music-midi-editor-page .music-ai-focus[open]>:is(summary,header,nav){flex-shrink:0}
+ .music-midi-editor-page .music-ai-focus[open]>.music-ai-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:2px 4px 8px}
+ .music-midi-editor-page .music-ai-actions{position:sticky;top:0;z-index:1;background:#111a2b;padding:4px 0}
+ .music-midi-editor-page .music-ai-note-choice label{display:flex;align-items:center;min-height:44px;gap:6px}
+ .music-midi-editor-page .music-ai-note-choice input[type=checkbox]{width:24px;height:24px;flex-shrink:0}
+}

@@ -149,3 +149,14 @@ test('input enumeration never requests microphone permission, preserves saved op
 test('input profile updates replace only matching device; aliases and over-capacity imports fail closed',async()=>{
  const f=await setup(),a=f.a,id=f.p.projectId;for(const alias of ['default','communications'])assert.equal((await a.vocalInputProfileSave(id,alias,'Alias',10)).ok,false);await a.vocalInputProfileSave(id,'mic','Mic',10);await a.vocalInputProfileSave(id,'mic','Mic 2',20);const p=await f.repo.get(id);assert.equal(p.vocalInputProfiles.length,1);assert.equal(p.vocalInputProfiles[0].latencyMs,20);const rows=Array.from({length:33},(_,i)=>({...p.vocalInputProfiles[0],deviceId:'input-'+i}));assert.equal(a.validateProject({...p,vocalInputProfiles:rows}).valid,false);assert.equal((await a.vocalInputProfileRemove(id,'missing')).ok,false);
 });
+test('measured stereo file delay reaches capture, edited WAV, reopen and complete archive restore',async()=>{
+ const f=await setup(),a=f.a,id=f.p.projectId;capture(f);const rate=8000,left=Array(rate).fill(0),right=Array(rate).fill(0);let seed=1;
+ for(let i=2400;i<3200;i++){seed=seed*16807%2147483647;left[i]=(seed/2147483647-.5)*.4;right[i+73]=left[i]*.8}
+ const measured=await require('../music-studio-loopback').analyze({sampleRate:rate,channels:[left,right]},{yieldTask:async()=>{}});assert.equal(measured.latencyMs,9.125);
+ assert.equal((await a.vocalInputProfileSave(id,'mic','Measured and confirmed',measured.latencyMs)).ok,true);
+ assert.equal((await a.vocalStart(id,{deviceId:'mic',useInputProfile:true,startTick:480})).ok,true);assert.equal((await a.vocalStop()).ok,true);
+ const saved=await f.repo.get(id),asset=saved.longWavAssets[0];assert.equal(asset.vocalTake.recordingPlan.latencyMs,9.125);assert.equal(asset.vocalTake.edits[0].latencyMs,9.125);
+ const original=Buffer.from(await (await a.pcmLoadLongWav(id,asset.id)).arrayBuffer()),rendered=await a.vocalRender(id,asset.id);assert.equal(rendered.startSeconds,a.vocalPosition(saved,480)-.009125);
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal(fresh.a.state.projects[0].vocalInputProfiles[0].latencyMs,9.125);
+ const archive=await fresh.a.createLongWavArchive(),restored=await fresh.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0],take=copy.longWavAssets[0];assert.equal(copy.vocalInputProfiles[0].latencyMs,9.125);assert.equal(take.vocalTake.recordingPlan.latencyMs,9.125);assert.equal(Buffer.compare(original,Buffer.from(await (await fresh.a.pcmLoadLongWav(copy.projectId,take.id)).arrayBuffer())),0);
+});

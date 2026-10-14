@@ -26,3 +26,11 @@ test('empty AI note selection prevents unintended adopt and rejected review rema
  assert.match(source,/None（選択解除）/);
  assert.match(css,/\.music-ai-note-review button\{min-height:44px;padding:6px 10px\}/);
 });
+test('note review is keyed to proposal identity and survives panel removal without touching MIDI',()=>{
+ const w={console,JSON,Date,Math};w.window=w;vm.runInNewContext(source,w);const api=w.MusicStudioAIAssistantPanel;
+ const notes=[{value:'n1',checked:false},{value:'n2',checked:true}],fieldset={dataset:{requestId:'proposal-1'}},panel={dataset:{projectId:'song'},querySelector:()=>fieldset,querySelectorAll:()=>notes};
+ w.document={querySelectorAll:()=>[panel]};const record={};api._states.set('song',record);api.captureNoteReview('song');assert.equal(record.noteReviews.get('proposal-1').get('n1'),false);
+ fieldset.dataset.requestId='proposal-2';notes[0].checked=true;api.captureNoteReview('song');assert.equal(record.noteReviews.get('proposal-1').get('n1'),false);assert.equal(record.noteReviews.get('proposal-2').get('n1'),true);
+ api.selectAllNotes('song',false);assert.equal(record.noteReviews.get('proposal-2').get('n2'),false);
+ w.document.querySelectorAll=()=>[];api.captureNoteReview('song');assert.equal(record.noteReviews.size,2);
+});
