@@ -229,8 +229,8 @@ body.music-studio-page:has(.music-long-master-focused){background:#08111d!import
 /* Keep export controls and output audition side by side; advanced lists remain available in panels. */
 @media(min-width:821px) and (orientation:landscape){
  .music-studio-shell.music-export-focused>.music-workspace:not([open]){padding:0 12px;margin:4px 0}
- .music-studio-shell.music-export-focused>.music-final-export[open]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:12px;align-items:start}
- .music-studio-shell.music-export-focused>.music-final-export>summary{grid-column:1/-1}
+ .music-studio-shell.music-export-focused>.music-final-export{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:12px;align-items:start}
+ .music-studio-shell.music-export-focused>.music-final-export>h2{grid-column:1/-1;font-size:1.15rem;margin:0;min-height:44px;display:flex;align-items:center}
  .music-studio-shell.music-export-focused>.music-final-export>.music-export-help{grid-column:1;grid-row:2}
  .music-studio-shell.music-export-focused>.music-final-export>form{grid-column:1;grid-row:3/span 4;margin:0;min-width:0}
  .music-studio-shell.music-export-focused>.music-final-export>p:not([role=status]){grid-column:2;grid-row:2;margin:0;font-size:.85rem}
@@ -246,3 +246,6 @@ body.music-studio-page:has(.music-long-master-focused){background:#08111d!import
  .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery)[open]>summary{position:sticky;top:-12px;z-index:2;display:flex;justify-content:space-between;gap:12px;background:#112031;color:#eef6ff;border-bottom:1px solid #527085}
  .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery)[open]>summary::after{content:'Close（閉じる）';font-weight:600}
 }
+
+body.music-studio-page:has(.music-export-focused) #music-studio-app{display:block;min-height:0;margin:0;padding:0}
+main.music-studio-shell.music-export-focused{position:static;min-height:0;margin:0 auto;padding:8px 12px}
