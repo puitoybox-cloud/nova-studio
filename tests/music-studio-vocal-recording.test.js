@@ -122,7 +122,7 @@ test('input compensation persists by device, changes captured timing, reopens an
  let p=await f.repo.get(id),asset=p.longWavAssets[0];assert.equal(asset.vocalTake.recordingPlan.latencyMs,125);assert.equal(asset.vocalTake.recordingPlan.inputCompensation.method,'saved-manual');
  assert.equal(asset.vocalTake.edits[0].latencyMs,125);
  const r=await a.vocalRender(id,asset.id);assert.equal(r.startSeconds,a.vocalPosition(p,480)-.125);
- const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal(fresh.a.vocalInputProfiles(fresh.a.state.projects[0])[0].latencyMs,125);
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal(fresh.a.vocalInputProfiles(fresh.a.state.projects[0])[0].latencyMs,125);assert.match(fresh.a.vocalView(fresh.a.state.projects[0]),/value="mic" selected/);assert.match(fresh.a.vocalView(fresh.a.state.projects[0]),/保存済み・接続を確認/);
  const archive=await fresh.a.createLongWavArchive(),restored=await fresh.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);assert.equal(restored.projects[0].vocalInputProfiles[0].latencyMs,125);
  assert.equal((await fresh.a.vocalInputProfileRemove(id,'mic')).ok,true);assert.equal(fresh.a.vocalInputCompensation(fresh.a.state.projects.find(p=>p.projectId===id),{useInputProfile:true,latencyMs:10},'mic').latencyMs,10);
 });
