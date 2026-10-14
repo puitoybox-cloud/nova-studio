@@ -132,3 +132,7 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
  .music-studio-shell.music-mix-focused summary{margin:0;padding:6px 10px;min-height:44px;box-sizing:border-box}
  .music-studio-shell.music-mix-focused>.music-project-panel>p{margin:0;font-size:.78rem;line-height:1.3}
 }
+
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-mix-focused :is(.music-mix-help,.music-mix-advanced,.music-mix-history):not([open]){padding:0;border:0;margin:0}
+}
