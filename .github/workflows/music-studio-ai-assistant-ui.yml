@@ -81,7 +81,7 @@ jobs:
 
   vocal-layout:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,6 +97,7 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-layout-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-mix-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-master-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-master-workspace-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -104,6 +105,8 @@ jobs:
           path: |
             verification/music-master-workspace-browser.json
             verification/music-master-workspace-*.png
+            verification/music-long-master-workspace-browser.json
+            verification/music-long-master-workspace-*.png
             verification/music-mix-workspace-browser.json
             verification/music-mix-workspace-*.png
             verification/music-vocal-layout-browser.json
