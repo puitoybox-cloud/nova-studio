@@ -219,3 +219,9 @@ body.music-studio-page:has(.music-long-master-focused){background:#08111d!import
  .music-export-focused .music-export-sources[open]>summary::after{content:'Close（閉じる）';font-weight:600}
  .music-export-focused .music-final-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 }
+
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell>.music-production-navigation{flex-wrap:nowrap}
+ .music-studio-shell>.music-production-navigation button{flex:1 1 0;min-width:0;font-size:.82rem;white-space:nowrap;min-height:44px}
+ .music-studio-shell.music-vocal-focused:has([data-vocal-take]) .music-vocal-capture[open]{position:fixed;inset:12px;z-index:1099;box-sizing:border-box;width:auto;max-width:none;max-height:calc(100dvh - 24px);overflow:auto;padding:12px;margin:0;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:12px;box-shadow:0 8px 32px #000a}
+}
