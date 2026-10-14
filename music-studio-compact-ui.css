@@ -158,3 +158,8 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
  .music-master-focused .music-production-tools>p{font-size:.78rem;line-height:1.3}
 }
 .music-studio-shell.music-mix-focused .music-mix-history>summary{background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+
+.music-master-focused .music-master-tools button{background:#142235;color:#eef6ff;border:1px solid #527085;border-radius:8px;font-size:.9rem;line-height:1.25;margin-right:4px;margin-bottom:4px}
+.music-master-focused .music-master-tools button[onclick*="productionSave"]{background:#dff9fc;color:#12395d;border-color:#5bc3d7}
+.music-master-focused .music-master-tools :is(input,select){background:#081421;color:#ecf4ff;border:1px solid #526985;border-radius:8px}
+.music-master-focused>.music-vocal-focus-heading>button[onclick*="pcmOpen"]{background:#dff9fc;color:#12395d;border:1px solid #5bc3d7;border-radius:8px}
