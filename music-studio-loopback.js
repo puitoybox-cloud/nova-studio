@@ -44,15 +44,17 @@
    results.push(await analyze(pcm,options));
    options.guard?.();
   }
-  const sorted=results.map(x=>x.latencyMs).sort((a,b)=>a-b);
-  const median=sorted[Math.floor(sorted.length/2)];
-  const spreadMs=sorted.at(-1)-sorted[0];
-  // A single capture can be used as before, but multiple captures must agree
-  // before suggesting a common compensation amount.
+  const sorted=[...results].sort((a,b)=>a.latencyMs-b.latencyMs);
+  const middle=sorted[Math.floor(sorted.length/2)];
+  const spreadMs=sorted.at(-1).latencyMs-sorted[0].latencyMs;
+  // A batch represents one physical signal path. Comparing captures from
+  // different clock rates or opposite wiring polarity would mislead users.
+  if(results.some(x=>x.sampleRate!==middle.sampleRate))throw Error('loopback-batch-sample-rate-mismatch');
+  if(results.some(x=>x.inverted!==middle.inverted))throw Error('loopback-batch-polarity-mismatch');
   if(results.length>1&&spreadMs>5)throw Error('loopback-batch-disagreement');
-  return{...results[Math.floor(results.length/2)],format:'nova-stereo-loopback-consensus-v1',
-   latencyMs:Math.round(median*1000)/1000,measurementCount:results.length,
-   spreadMs:Math.round(spreadMs*1000)/1000,
+  options.guard?.();
+  return{...middle,format:'nova-stereo-loopback-consensus-v1',
+   measurementCount:results.length,spreadMs:Math.round(spreadMs*1000)/1000,
    correlation:Math.min(...results.map(x=>x.correlation))};
  }
  const api={analyze,analyzeBatch};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.MusicStudioLoopback=api;
