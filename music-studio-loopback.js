@@ -36,5 +36,24 @@
   if(Math.abs(best.lag)>=maxLag-step)throw Error('loopback-delay-out-of-range');
   return{format:'nova-stereo-loopback-measurement-v1',latencyMs:Math.round(best.lag/rate*1e6)/1000,lagFrames:best.lag,sampleRate:rate,frames:n,correlation:best.score,inverted:best.signed<0};
  }
- const api={analyze};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.MusicStudioLoopback=api;
+ async function analyzeBatch(recordings,options={}){
+  if(!Array.isArray(recordings)||recordings.length<1||recordings.length>3)throw Error('loopback-batch-count-invalid');
+  const results=[];
+  for(const pcm of recordings){
+   options.guard?.();
+   results.push(await analyze(pcm,options));
+   options.guard?.();
+  }
+  const sorted=results.map(x=>x.latencyMs).sort((a,b)=>a-b);
+  const median=sorted[Math.floor(sorted.length/2)];
+  const spreadMs=sorted.at(-1)-sorted[0];
+  // A single capture can be used as before, but multiple captures must agree
+  // before suggesting a common compensation amount.
+  if(results.length>1&&spreadMs>5)throw Error('loopback-batch-disagreement');
+  return{...results[Math.floor(results.length/2)],format:'nova-stereo-loopback-consensus-v1',
+   latencyMs:Math.round(median*1000)/1000,measurementCount:results.length,
+   spreadMs:Math.round(spreadMs*1000)/1000,
+   correlation:Math.min(...results.map(x=>x.correlation))};
+ }
+ const api={analyze,analyzeBatch};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.MusicStudioLoopback=api;
 })(typeof window!=='undefined'?window:globalThis);
