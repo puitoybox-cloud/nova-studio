@@ -12,7 +12,7 @@ const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-lay
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
   const base = html.indexOf('./music-studio.css?v=1.4.158');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.16');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.17');
   const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.6');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
@@ -98,4 +98,11 @@ test('Snap and Quantize controls retain the accepted compact layout', () => {
 
 test('iPad Piano Roll CSS does not globally disable WKWebView pinch gestures', () => {
   assert.doesNotMatch(css, /touch-action\s*:\s*none/);
+});
+
+// Coarse-pointer landscape MIDI toolbar must remain reachable when labels overflow.
+test('landscape MIDI topbar is horizontally reachable and reveals open menus',()=>{
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{[^}]*overflow-x:auto/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar:has\(\.music-editor-menu\[open\]\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[\s\S]*flex-shrink:0/);
 });
