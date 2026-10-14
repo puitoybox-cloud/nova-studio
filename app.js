@@ -1289,7 +1289,7 @@ function novaStudioPlaceholderView(config){
   return `<section class="studio-stage-panel" aria-labelledby="studio-stage-title-${esc(config.studioKey)}"><p class="eyebrow">Studio foundation</p><h2 id="studio-stage-title-${esc(config.studioKey)}">${esc(config.title)} 制作入口</h2><p>${esc(config.subtitle)}</p><p class="meta">既存機能と保存データを維持したまま、正式イラストと制作機能を接続できる共通Hero土台を準備しています。</p></section>`;
 }
 function isMusicEditorStudioRoute(route){
-  return route==='music-studio/midi-composer'||String(route||'').startsWith('music-studio/midi-editor/');
+  return route==='music-studio/midi-composer'||String(route||'').startsWith('music-studio/midi-editor/')||/^music-studio\/(?:vocal|mixing-workspace|mixing-master|mixing-long-master|mixing-export)\//.test(String(route||''));
 }
 function novaRenderStudioRoute(route,mainContent){
   const config=studioHeroConfigForRoute(route);
