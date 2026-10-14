@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.156';
+  const ASSET_VERSION='1.4.157';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1361,7 +1361,7 @@
     return{cursor:h.cursor,settings:h.settings.map(v=>longMixSettings(v,asset.sampleRate))};
   }
   function longMixVersionsValidate(asset){
-    const rows=asset.mixVersions??[],ids=new Set();
+    const rows=asset.mixVersions===undefined?[]:asset.mixVersions,ids=new Set();
     if(!Array.isArray(rows)||rows.length>32)throw Error('long-mix-versions-invalid');
     for(const row of rows){
       if(!row||typeof row.id!=='string'||!row.id||ids.has(row.id)||typeof row.name!=='string'||!row.name.trim()||row.name.length>80||/[\u0000-\u001f\u007f]/.test(row.name)||typeof row.createdAt!=='string'||!Number.isFinite(Date.parse(row.createdAt)))throw Error('long-mix-version-invalid');
@@ -2826,7 +2826,7 @@
   function longMasterCompareSubmit(button,id,assetId){const f=button.form.elements;return longMasterCompare(id,assetId,Number(f.target.value),Number(f.ceiling.value))}
   function longMasterSubmit(event,id,assetId){event?.preventDefault?.();const f=event.currentTarget.elements;return longMasterPreview(id,assetId,Number(f.target.value),Number(f.ceiling.value))}
   function longMasterWorkspaceState(p){
-    const w=p.longMasterWorkspace??{format:'nova-long-master-workspace-v1',selectedAssetId:''};
+    const w=p.longMasterWorkspace===undefined?{format:'nova-long-master-workspace-v1',selectedAssetId:''}:p.longMasterWorkspace;
     if(!w||Array.isArray(w)||w.format!=='nova-long-master-workspace-v1'||typeof w.selectedAssetId!=='string'||(w.selectedAssetId&&!(p.longWavAssets||[]).some(a=>a.id===w.selectedAssetId)))throw Error('long-master-workspace-invalid');
     return w;
   }
