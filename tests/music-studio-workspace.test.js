@@ -40,8 +40,8 @@ test('navigation uses exact existing project routes and refuses recording or los
   const {app,window}=load();app.state.projects=[app.makeProject({projectId:'a/b',projectName:'test'})];
   for(const id of ['midi','assistant','lyrics','vocal','mix','harmony','master','export'])assert.ok(app.workActionTarget(id,'a/b').route.includes('a%2Fb'));
   assert.equal(app.workActionTarget('evil','a/b'),null);assert.equal(app.workActionTarget('midi','missing'),null);
-  assert.equal(app.openWorkAction('export'),true);assert.equal(window.location.hash,'music-studio/mixing/a%2Fb');
-  app.state.midiInput.recording=true;assert.equal(app.openWorkAction('vocal'),false);assert.equal(window.location.hash,'music-studio/mixing/a%2Fb');
+  assert.equal(app.openWorkAction('export'),true);assert.equal(window.location.hash,'music-studio/mixing-export/a%2Fb');
+  app.state.midiInput.recording=true;assert.equal(app.openWorkAction('vocal'),false);assert.equal(window.location.hash,'music-studio/mixing-export/a%2Fb');
 });
 test('unsubmitted AI input blocks workspace changes and late typing is never repainted away',async()=>{
   const {app,window}=load();let release,paints=0;const input={type:'text',value:'',defaultValue:''};
