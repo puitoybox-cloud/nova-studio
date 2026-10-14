@@ -59,6 +59,9 @@ jobs:
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-input-profiles-browser.json
+            verification/music-export-workspace-browser.json
+            verification/music-export-workspace-*.png
             verification/music-workspace-browser.json
             verification/music-workspace-*.png
             verification/music-final-export-browser.json
@@ -98,6 +101,8 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-mix-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-master-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-master-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-input-profiles-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-export-workspace-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
