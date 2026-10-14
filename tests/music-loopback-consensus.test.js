@@ -35,3 +35,20 @@ test('recording UI connects selected WAV batch to guarded explicit application',
  assert.match(host,/music-studio-loopback\.js\?v=1\.0\.1/);
  assert.match(host,/MusicStudioLoopback\?\.analyzeBatch/);
 });
+
+test('median record preserves consistent measured lag frames',async()=>{
+ const result=await loopback.analyzeBatch([signal(80),signal(82),signal(81)]);
+ assert.equal(result.measurementCount,3);
+ assert.equal(result.sampleRate,8000);
+ assert.equal(result.lagFrames,81);
+ assert.ok(Math.abs(result.latencyMs-result.lagFrames*1000/result.sampleRate)<.001);
+});
+test('mixed channel polarity rejects a shared recording compensation',async()=>{
+ const negative=signal(81);for(let i=0;i<negative.channels[1].length;i++)negative.channels[1][i]*=-1;
+ await assert.rejects(()=>loopback.analyzeBatch([signal(80),negative]),/loopback-batch-polarity-mismatch/);
+});
+test('mixed capture sample rates are not combined as one calibration path',async()=>{
+ const higher=signal(80);higher.sampleRate=16000;
+ // Both records are still each within their own supported capture window.
+ await assert.rejects(()=>loopback.analyzeBatch([signal(80),higher]),/loopback-batch-sample-rate-mismatch/);
+});
