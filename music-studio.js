@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.159';
+  const ASSET_VERSION='1.4.160';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1408,18 +1408,20 @@
   }
   const vocalLoopbackForms=new WeakMap();
   async function vocalLoopbackFile(input){
-    const form=input.form,file=input.files?.[0],device=form?.elements?.device?.value;
-    if(!form||!file)return{ok:false,error:'loopback-file-required'};
+    const form=input.form,files=Array.from(input.files||[]),device=form?.elements?.device?.value;
+    if(!form||!files.length)return{ok:false,error:'loopback-file-required'};
+    if(files.length>3)return{ok:false,error:'loopback-batch-count-invalid'};
     const token={},status=form.querySelector('[data-loopback-status]'),apply=form.querySelector('[data-loopback-apply]');
     vocalLoopbackForms.set(form,{token});if(apply)apply.disabled=true;
     const guard=()=>{if(!form.isConnected||vocalLoopbackForms.get(form)?.token!==token||form.elements.device.value!==device||vocalBusy()||shutdownPromise)throw Error('loopback-analysis-stale')};
     try{
-      guard();if(file.size>16*1024*1024)throw Error('loopback-file-too-large');
+      guard();if(files.some(file=>file.size>16*1024*1024)||files.reduce((sum,file)=>sum+file.size,0)>32*1024*1024)throw Error('loopback-file-too-large');
       if(status)status.textContent='Analyzing（端末内で遅延を測定中）';
-      const bytes=await file.arrayBuffer();guard();
-      const result=await root.MusicStudioLoopback.analyze(pcmDecodeWav(bytes),{guard});guard();
+      const recordings=[];
+      for(const file of files){const bytes=await file.arrayBuffer();guard();recordings.push(pcmDecodeWav(bytes));guard()}
+      const result=await root.MusicStudioLoopback.analyzeBatch(recordings,{guard});guard();
       vocalLoopbackForms.set(form,{token,result,device});
-      if(status)status.textContent=`Measured（測定）${result.latencyMs} ms / correlation ${result.correlation.toFixed(3)}${result.inverted?' / 逆相':''}。採用前に入力機器を確認してください。`;
+      if(status)status.textContent=`Measured（測定）${result.latencyMs} ms / ${result.measurementCount}回 / spread ${result.spreadMs} ms / minimum correlation ${result.correlation.toFixed(3)}。採用前に入力機器を確認してください。`;
       if(apply)apply.disabled=false;return{ok:true,result};
     }catch(e){if(vocalLoopbackForms.get(form)?.token===token){vocalLoopbackForms.delete(form);if(status)status.textContent='測定できません：'+e.message}return{ok:false,error:e.message}}
     finally{input.value=''}
@@ -1434,7 +1436,7 @@
     form.querySelector('[data-loopback-status]').textContent='Applied（録音補正へ採用）。入力別に保持する場合は Save input を押してください。';
     button.disabled=true;vocalLoopbackForms.delete(form);return{ok:true,latencyMs:review.result.latencyMs};
   }
-  function vocalLoopbackView(disabled){return `<details class="music-vocal-loopback"><summary>Measure latency（遅延のファイル測定）</summary><p>同時に録ったステレオWAVの左に直接参照信号、右にマイク経路から戻った信号を入れてください。単発の短いノイズ信号を推奨。0.15〜10秒、非クリップ、最大±2000ms。通常の歌声だけでは測定できません。ブラウザが今使う機器の自動測定ではありません。</p><label>Loopback WAV（参照L・戻りR）<input type="file" accept=".wav,audio/wav" onchange="MusicStudio.vocalLoopbackFile(this)" ${disabled}></label><p role="status" aria-live="polite" data-loopback-status>ファイルは端末内で解析します。元音声は変更しません。</p><button type="button" class="music-secondary" data-loopback-apply disabled onclick="MusicStudio.vocalLoopbackApply(this)">Apply measured delay（測定値を録音補正へ）</button></details>`}
+  function vocalLoopbackView(disabled){return `<details class="music-vocal-loopback"><summary>Measure latency（遅延のファイル測定）</summary><p>同時に録ったステレオWAVの左に直接参照信号、右にマイク経路から戻った信号を入れてください。最大3本の独立した測定結果を照合でき、差が5msを超える場合は採用を防止します。単発の短いノイズ信号を推奨。0.15〜10秒、非クリップ、最大±2000ms。通常の歌声だけでは測定できません。ブラウザが今使う機器の自動測定ではありません。</p><label>Loopback WAV（参照L・戻りR）<input type="file" accept=".wav,audio/wav" multiple onchange="MusicStudio.vocalLoopbackFile(this)" ${disabled}></label><p role="status" aria-live="polite" data-loopback-status>ファイルは端末内で解析します。元音声は変更しません。</p><button type="button" class="music-secondary" data-loopback-apply disabled onclick="MusicStudio.vocalLoopbackApply(this)">Apply measured delay（測定値を録音補正へ）</button></details>`}
   async function vocalInputProfileForm(button,id){
     const form=button.form;if(!form)return{ok:false,error:'vocal-input-profile-form-missing'};
     const f=new root.FormData(form),deviceId=String(f.get('device')||''),device=vocal.devices.find(x=>x.id===deviceId);
