@@ -103,11 +103,18 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-master-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-input-profiles-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-export-workspace-browser.js
+      - name: PCM instrument MIDI storage and viewport
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-instrument-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-vocal-layout-verification
           path: |
+            verification/music-instrument-browser.json
+            verification/music-instrument-*.png
             verification/music-master-workspace-browser.json
             verification/music-master-workspace-*.png
             verification/music-long-master-workspace-browser.json
