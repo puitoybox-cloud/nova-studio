@@ -1484,7 +1484,7 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-measure-locks','./music-studio-measure-locks.js?v=1.0.0',()=>window.MusicStudioMeasureLocks?.TRANSACTION_REVISION===1))
  .then(()=>loadMusicStudioScript('music-studio-external-song-import','./music-studio-external-song-import.js?v=1.0.0',()=>Boolean(window.MusicStudioExternalSongImport)))
  .then(()=>loadMusicStudioScript('music-studio-midi-input','./music-studio-midi-input.js?v=1.4.3',()=>Boolean(window.MusicStudioMidiInput)))
- .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.16',()=>Boolean(window.MusicStudioAudio)))
+ .then(()=>loadMusicStudioScript('music-studio-audio','./music-studio-audio.js?v=1.4.17',()=>Boolean(window.MusicStudioAudio)))
  .then(()=>loadMusicStudioScript('music-studio-playback','./music-studio-playback.js?v=1.0.2',()=>Boolean(window.MusicStudioPlayback)))
  .then(()=>loadMusicStudioScript('music-studio-scoped-midi-repair','./music-studio-scoped-midi-repair.js?v=1.0.1',()=>Boolean(window.MusicStudioScopedMidiRepair?.preview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-workflow','./music-studio-ai-workflow.js?v=1.0.0',()=>Boolean(window.MusicStudioAIWorkflow?.createWorkspace)))
