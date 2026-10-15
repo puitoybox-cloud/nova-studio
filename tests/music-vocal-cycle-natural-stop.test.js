@@ -7,7 +7,7 @@ assert.ok(start>0&&end>start);
 function harness(){
  const clears=[],cycle={active:true,timer:99},recorder={state:'recording',stop(){this.state='inactive';this.calls=(this.calls||0)+1}};
  const vocal={phase:'recording',recorder,completion:Promise.resolve({ok:true}),stopPromise:null};
- const ctx={vocalCycle:cycle,vocal,root:{clearTimeout:n=>clears.push(n)},vocalMonitor:()=>{},vocalDiscard:()=>{},requestPaint:()=>{}};
+ const ctx={vocalCalibration:null,vocalCycle:cycle,vocal,root:{clearTimeout:n=>clears.push(n)},vocalMonitor:()=>{},vocalDiscard:()=>{},requestPaint:()=>{}};
  const stop=vm.runInNewContext('('+source.slice(start,end).trim()+')',ctx);
  return{stop,cycle,vocal,recorder,clears};
 }
