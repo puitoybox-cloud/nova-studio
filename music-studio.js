@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.160';
+  const ASSET_VERSION='1.4.161';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1123,7 +1123,7 @@
       recorder.ondataavailable=e=>{if(token!==vocal.generation)return;if(e.data?.size){bytes+=e.data.size;if(bytes>VOCAL_MAX_BYTES){failure=Error('vocal-encoded-limit-exceeded');vocalStop()}else chunks.push(e.data)}};
       recorder.onerror=e=>{failure=Error(e.error?.message||'vocal-capture-failed');vocalStop()};
       recorder.onarmed=()=>{if(!active()||recorder.state!=='recording')return;vocal.phase='armed';vocal.message='Count-in / Punch（録音待機中）・ヘッドホンを使用してください。';requestPaint()};
-      recorder.onstart=ack=>{if(plan.enabled&&ack?.atFrame!==vocal.scheduledFrame){failure=Error('vocal-transport-frame-mismatch');vocalStop();return}if(recorder.state!=='recording')return;if(!active()){vocalDiscard();return}vocal.phase='recording';vocal.startedAt=Date.now();vocal.pollInput?.();vocal.timer=plan.enabled?null:root.setTimeout?.(()=>vocalStop(),recordSeconds*1000);vocal.message='ボーカル録音中。Stopで保存します（1テイク最大120秒）。';requestPaint()};
+      recorder.onstart=ack=>{if(plan.enabled&&ack?.atFrame!==vocal.scheduledFrame){failure=Error('vocal-transport-frame-mismatch');vocalStop();return}if(recorder.state!=='recording')return;if(!active()){vocalDiscard();return}vocal.phase='recording';vocal.startedAt=Date.now();vocal.pollInput?.();vocal.timer=plan.enabled?null:root.setTimeout?.(()=>vocalStop(true),recordSeconds*1000);vocal.message='ボーカル録音中。Stopで保存します（1テイク最大120秒）。';requestPaint()};
       vocal.completion=new Promise(resolve=>{recorder.onstop=async()=>{let savedResult;vocal.finishing=true;vocalRelease();vocal.phase='stopping';requestPaint();try{
         if(failure)throw failure;if(!active())throw Error('vocal-recording-stale');if(!chunks.length)throw Error('vocal-recording-empty');
         const encoded=new Blob(chunks,{type:recorder.mimeType||chunks[0].type}),buffer=await context.decodeAudioData(await encoded.arrayBuffer());
@@ -1145,9 +1145,9 @@
   async function vocalResume(){
     if(vocal.phase!=='paused'||typeof vocal.recorder?.resume!=='function')return{ok:false,error:'vocal-resume-unavailable'};
     const token=vocal.generation,target=vocal.target,recorder=vocal.recorder,guard=()=>token===vocal.generation&&target===repository&&recorder===vocal.recorder&&vocal.phase==='paused'&&!state.dirty&&!midiEditorHasPendingChanges()&&vocal.baseline===JSON.stringify(state.projects.find(p=>p.projectId===vocal.projectId));
-    try{if(!guard())throw Error('vocal-resume-stale');await vocal.context.resume();if(!guard())throw Error('vocal-resume-stale');const elapsed=Number.isFinite(recorder.frames)?recorder.frames/vocal.context.sampleRate:vocal.elapsedSeconds,remaining=vocal.recordSeconds-elapsed;if(remaining<=0)return await vocalStop();recorder.resume();vocal.phase='recording';vocal.startedAt=Date.now();vocal.timer=root.setTimeout?.(()=>vocalStop(),remaining*1000);vocal.pollInput?.();vocal.message='ボーカル録音を再開しました。モニターはOFFです。';requestPaint();return{ok:true}}catch(e){vocal.message=e.message;requestPaint();return{ok:false,error:e.message}}
+    try{if(!guard())throw Error('vocal-resume-stale');await vocal.context.resume();if(!guard())throw Error('vocal-resume-stale');const elapsed=Number.isFinite(recorder.frames)?recorder.frames/vocal.context.sampleRate:vocal.elapsedSeconds,remaining=vocal.recordSeconds-elapsed;if(remaining<=0)return await vocalStop(true);recorder.resume();vocal.phase='recording';vocal.startedAt=Date.now();vocal.timer=root.setTimeout?.(()=>vocalStop(true),remaining*1000);vocal.pollInput?.();vocal.message='ボーカル録音を再開しました。モニターはOFFです。';requestPaint();return{ok:true}}catch(e){vocal.message=e.message;requestPaint();return{ok:false,error:e.message}}
   }
-  function vocalStop(){vocalCycle.active=false;root.clearTimeout?.(vocalCycle.timer);if(vocal.stopPromise)return vocal.stopPromise;if(vocal.phase==='permission'){vocalDiscard();return Promise.resolve({ok:false,error:'vocal-permission-cancelled'})}if(!vocal.recorder)return Promise.resolve({ok:!vocal.pending});vocal.phase='stopping';vocalMonitor(false);root.clearTimeout?.(vocal.meterTimer);root.clearTimeout?.(vocal.timer);if(vocal.recorder.state!=='inactive')vocal.recorder.stop();requestPaint();const promise=vocal.completion;vocal.stopPromise=promise;promise.finally(()=>{if(vocal.stopPromise===promise)vocal.stopPromise=null});return promise}
+  function vocalStop(naturalCompletion=false){if(!naturalCompletion){vocalCycle.active=false;root.clearTimeout?.(vocalCycle.timer);}if(vocal.stopPromise)return vocal.stopPromise;if(vocal.phase==='permission'){vocalDiscard();return Promise.resolve({ok:false,error:'vocal-permission-cancelled'})}if(!vocal.recorder)return Promise.resolve({ok:!vocal.pending});vocal.phase='stopping';vocalMonitor(false);root.clearTimeout?.(vocal.meterTimer);root.clearTimeout?.(vocal.timer);if(vocal.recorder.state!=='inactive')vocal.recorder.stop();requestPaint();const promise=vocal.completion;vocal.stopPromise=promise;promise.finally(()=>{if(vocal.stopPromise===promise)vocal.stopPromise=null});return promise}
   async function vocalSave(){
     if(!vocal.pending||vocal.phase==='saving')return{ok:false,error:'vocal-no-pending-take'};
     const target=vocal.target,id=vocal.projectId,baseline=vocal.baseline,token=vocal.generation,take=vocal.pending;
