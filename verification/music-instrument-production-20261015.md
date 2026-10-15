@@ -5,7 +5,7 @@ Parent: PR #427 / 48912060821046652cbde9adeff337f7140ae7bc. Main read as 552d56e
 ## Implementation
 
 - Bind an existing saved PCM asset to the selected exact MIDI Track with a manually declared root note.
-- Select or clear the binding through the compact Sound（音源）menu. PCM import remains in Mix; samples must be <=10 seconds, mono/stereo and unclipped after saved mix processing.
+- Select or clear the binding through the compact Sound（音源）disclosure inside the existing MIDI input menu (no added toolbar item). PCM import remains in Mix; samples must be <=10 seconds, mono/stereo and unclipped after saved mix processing.
 - Preserve source samples and MIDI note/program/channel identities; binding records only asset ID and root pitch.
 - Undo/Redo, normal autosave, explicit MIDI save, reopen and JSON backup restore retain the binding and source PCM.
 - Route actual BufferSource playback through velocity gain and master output, with semitone playback-rate transposition, natural sample end, note-off release and Stop cancellation.
