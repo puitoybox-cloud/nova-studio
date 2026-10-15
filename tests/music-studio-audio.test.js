@@ -241,3 +241,14 @@ test('appended cycle accompaniment retains all previously scheduled voices until
  synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.ok(synth.context.oscillators.every(n=>n.stopped.at(-1)<10.01));
  synth.playTracks(tracks,{startTime:13});synth.playTracks(tracks,{startTime:14});assert.equal(synth.playingVoices,1);
 });
+
+test('project PCM sample reaches actual BufferSource with transposition velocity and cancellation',()=>{
+  const audio=load(),ctx=new Context(),create=ctx.createBufferSource.bind(ctx);ctx.createBufferSource=()=>{const s=create();s.playbackRate=new Param();return s};
+  const synth=audio.createSynth({context:ctx}),pcm={sampleRate:8000,channels:[Array(8000).fill(.25)]};
+  synth.setSampleBank([{id:'piano',pcm}]);pcm.channels[0][0]=1;
+  const result=synth.playTracks([{id:'m',part:'melody',sampleInstrument:{assetId:'piano',rootPitch:60},notes:[{pitch:72,startTick:0,durationTicks:480,velocity:64}]}]);
+  assert.equal(result.noteCount,1);assert.equal(result.oscillatorCount,0);assert.equal(result.scheduledNotes[0].soundPath,'sample');assert.equal(ctx.bufferSources[0].playbackRate.value,2);assert.equal(ctx.bufferSources[0].buffer.getChannelData(0)[0],.25);assert.equal(synth.playingVoices,1);synth.stopPlayback();assert.equal(synth.playingVoices,0);
+  assert.equal(synth.noteOn(48,90,2,{assetId:'piano',rootPitch:60}),true);assert.equal(ctx.bufferSources.at(-1).playbackRate.value,.5);assert.equal(synth.noteOff(48,2),true);synth.dispose();
+});
+test('missing bound sample stays silent and reports missing instead of an oscillator fallback',()=>{const synth=load().createSynth({context:new Context()}),r=synth.playTracks([{sampleInstrument:{assetId:'missing',rootPitch:60},notes:[{pitch:60,startTick:0,durationTicks:480}]}]);assert.equal(r.noteCount,0);assert.equal(r.scheduledNotes[0].audible,false);assert.equal(r.scheduledNotes[0].soundPath,'missing-sample');assert.equal(r.oscillatorCount,0)});
+test('sample bank rejects clipped malformed oversized and duplicate input atomically',()=>{const synth=load().createSynth({context:new Context()}),good={id:'s',pcm:{sampleRate:8000,channels:[[.1,.2]]}};synth.setSampleBank([good]);for(const entries of [[good,good],[{id:'bad',pcm:{sampleRate:8000,channels:[[NaN]]}}],[{id:'bad',pcm:{sampleRate:8000,channels:[[1.1]]}}],[{id:'bad',pcm:{sampleRate:8000,channels:[Array(80001).fill(0)]}}]])assert.throws(()=>synth.setSampleBank(entries),/invalid-instrument/);});
