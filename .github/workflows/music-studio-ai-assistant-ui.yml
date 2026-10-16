@@ -107,12 +107,16 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/nova-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome
-        run: node scripts/music-instrument-browser.js
+        run: |
+          node scripts/music-instrument-browser.js
+          node scripts/music-multisample-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-vocal-layout-verification
           path: |
+            verification/music-multisample-browser.json
+            verification/music-multisample-*.png
             verification/music-instrument-browser.json
             verification/music-instrument-*.png
             verification/music-master-workspace-browser.json
