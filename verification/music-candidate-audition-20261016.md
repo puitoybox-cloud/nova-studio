@@ -10,7 +10,7 @@ All 175 prior Open Draft HEAD/base/mergeability, latest commits, changed filenam
 - Audition applies the exact candidate to a disposable session through the existing adoption checks; live MIDI, selection and Undo are unchanged.
 - Partial range audition uses the adoption range and clips playback at its exact boundaries. Tempo maps and sample bindings pass through the actual scheduler.
 - Stale note/range/instrument/source and locked candidate checks are reused from adoption. Missing or unmapped samples stop the audition and report failure.
-- A separate Web Audio synth isolates audition resources. Stop, normal transport, replacement audition, Preview/Apply/Cancel/Reject and tab changes release it.
+- A separate Web Audio synth isolates audition resources. Stop, normal transport, replacement audition, recording requests, route/shutdown, Preview/Apply/Cancel/Reject and tab changes release it.
 - Pending audio unlock is cancelled after Stop, edits, project/session changes or recording starts. MIDI and vocal busy states refuse audition.
 - Bounded audition: at most 4096 notes and 120 seconds; users select a shorter range when exceeding these limits.
 - Continuation now honors low/mid/high register for both generated additions and changes to existing notes. Previously its materializer hard-coded mid despite the saved recipe.
@@ -20,7 +20,7 @@ These are scoped working improvements, not 20–30 independent completed product
 
 ## Validation
 
-- Node: 2304/2304 PASS, 0 failures/skips (includes 9 new tests).
+- Node: 2306/2306 PASS, 0 failures/skips (includes 11 new tests).
 - All tracked JavaScript plus the new test: syntax PASS. Base diff whitespace PASS.
 - Python Helper suite: 509 run, 504 PASS / 5 existing dependency-unavailable skips.
 - Local Chrome absent. Browser installation failed in this environment. No local browser PASS claim.
@@ -34,3 +34,5 @@ Model composition runtime/weights, Japanese singing runtime/voicebank, verified 
 Conservatively retain the specification mapping in `verification/music-multisample-30-features-20261016.json`: No.1–30 C; A0/B0/C30. This scoped change does not certify the whole 30-feature specification. B requires only physical acceptance remaining, which has not been established for any complete major feature. Completion percentage cannot be confirmed.
 
 Saved recipe/candidate/Track/PCM compatibility and PR #427–#430 regression tests are retained. No main mutation, force push, Ready, Merge, Auto Merge or Live Provider API request.
+
+Initial CI exposed the browser fixture clicking the underlying Undo toolbar with the AI drawer open. The fixture now closes the drawer through its visible summary before clicking Undo. No forced clicks or hidden-control bypass. Final exact-head CI is reported in the PR.

@@ -38,6 +38,8 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     await page.getByRole('button',{name:'PreviewをApply',exact:true}).click();
     const adopted=await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes));
     assert.deepEqual(heard.notes.map(n=>n.pitch),adopted.map(n=>n.pitch));
+    // Close the AI drawer with its visible control before using the editor toolbar.
+    await page.locator('.music-ai-focus > summary').click();
     // Preserve the established sample/velocity coverage fixture for the remainder.
     await page.locator('.music-history-controls button').nth(0).click();
     await page.evaluate(()=>{MusicStudioAIAssistantPanel.setTab('multi-browser','assistant');document.querySelector('.music-ai-focus').open=false});
