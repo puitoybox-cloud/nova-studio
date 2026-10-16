@@ -65,3 +65,27 @@ test('score lists only linked takes, distinguishes changed scores and selects ex
  p=a.state.projects[0];p.musicalSettings.bpm=80;html=a.scoreVocalLinkedView(p,r);assert.match(html,/Previous score/);assert.doesNotMatch(html,/Current score/);
  const before=JSON.stringify(p);assert.equal((await a.openScoreVocalTake(id,'missing')).ok,false);assert.equal(JSON.stringify(a.state.projects[0]),before);
 });
+
+test('trimmed score import anchors selected PCM to score origin, preserves legacy timing and lyric ranges',async()=>{
+ const f=await scoreSetup(),a=f.a,id=f.p.projectId,r=await a.importScoreVocal(wav(8000),id,f.recordId,'first-note',{trimStartSeconds:.1,trimEndSeconds:.9,latencyMs:25});assert.equal(r.ok,true,r.error);
+ const asset=r.project.longWavAssets[0],rendered=await a.vocalRender(id,r.assetId);assert.equal(asset.vocalTake.scoreSource.trimOriginFrame,800);assert.equal(rendered.startSeconds,.475);
+ assert.equal(a.vocalTimeline(r.project,asset,'lead')[0].first,1000);
+ const legacy=structuredClone(r.project);delete legacy.longWavAssets[0].vocalTake.scoreSource.trimOriginFrame;a.state.projects=[legacy];assert.equal((await a.vocalRender(id,r.assetId)).startSeconds,.575);
+});
+test('timeline WAV includes exact leading silence and edited sample bytes, without storage changes',async()=>{
+ const f=await scoreSetup(),a=f.a,id=f.p.projectId,file=wav(8000),bytes=new Uint8Array(await file.arrayBuffer());for(let i=44;i<bytes.length;i+=2){bytes[i]=0;bytes[i+1]=32}const signal=new Blob([bytes]);signal.name='signal.wav';
+ const r=await a.importScoreVocal(signal,id,f.recordId,'first-note',{trimStartSeconds:.1,trimEndSeconds:.9,gainDb:-6,latencyMs:25});assert.equal(r.ok,true,r.error);
+ const before=JSON.stringify(await f.repo.get(id)),raw=await a.vocalRender(id,r.assetId),out=await a.vocalTimelineRender(id,r.assetId),actual=new Uint8Array(await out.blob.arrayBuffer()),payload=new Uint8Array(await raw.blob.arrayBuffer());
+ assert.equal(out.leadingFrames,3800);assert.equal(out.frames,10200);assert.equal(out.startSeconds,0);assert.equal(out.sourceStartSeconds,.475);assert.equal(new DataView(actual.buffer).getUint32(40,true),20400);assert.ok(actual.slice(44,44+7600).every(x=>x===0));assert.deepEqual(actual.slice(44+7600),payload.slice(44));assert.equal(JSON.stringify(await f.repo.get(id)),before);assert.match(a.scoreVocalLinkedView(r.project,r.project.syllableAssignments.at(-1)),/Timeline WAV/);
+ const restored=await a.restoreLongWavArchive(await a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0],again=await a.vocalTimelineRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);assert.equal(Buffer.compare(Buffer.from(await out.blob.arrayBuffer()),Buffer.from(await again.blob.arrayBuffer())),0);
+});
+test('score-zero and undo redo retain selected-origin timing, oversized timeline fails without allocation or writes',async()=>{
+ const f=await scoreSetup(),a=f.a,id=f.p.projectId,r=await a.importScoreVocal(wav(8000),id,f.recordId,'score-zero',{trimStartSeconds:.1,trimEndSeconds:.9});assert.equal(r.ok,true,r.error);assert.equal((await a.vocalTimelineRender(id,r.assetId)).leadingFrames,0);
+ assert.equal((await a.vocalEdit(id,r.assetId,null,-1)).ok,true);assert.equal((await a.vocalRender(id,r.assetId)).frames,8000);assert.equal((await a.vocalEdit(id,r.assetId,null,1)).ok,true);assert.equal((await a.vocalRender(id,r.assetId)).frames,6400);
+ assert.equal((await a.vocalEdit(id,r.assetId,{first:800,end:7200,startTick:100000000,gainDb:0,latencyMs:0})).ok,true);const before=JSON.stringify(await f.repo.get(id));await assert.rejects(a.vocalTimelineRender(id,r.assetId),/vocal-timeline-size-limit/);assert.equal(JSON.stringify(await f.repo.get(id)),before);
+ a.state.dirty=true;await assert.rejects(a.vocalTimelineRender(id,r.assetId),/vocal-timeline-busy/);
+});
+test('invalid saved trim origin fails project validation',async()=>{
+ const f=await scoreSetup(),r=await f.a.importScoreVocal(wav(800),f.p.projectId,f.recordId,'first-note');assert.equal(r.ok,true,r.error);
+ for(const value of [-1,.5,800,NaN,'0']){const p=structuredClone(r.project);p.longWavAssets[0].vocalTake.scoreSource.trimOriginFrame=value;assert.equal(f.a.validateProject(p).valid,false)}
+});
