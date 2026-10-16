@@ -68,9 +68,9 @@
   function continuationProposal(request,track,value){
     const ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id)),degrees=Array.isArray(value.phraseEvents)&&value.phraseEvents.length?value.phraseEvents.map(event=>event.degree):value.method==='answer'?[5,4,2,1]:value.method==='sequence'?[2,3,4,3,5,4,3,2]:[1,3,2,1,1,3,2,1];
     if(targets.length){
-      return{updates:targets.map((note,index)=>({...clone(note),pitch:degreePitch(value.key,degrees[index%degrees.length],'mid')})),adds:[],deleteNoteIds:[]};
+      return{updates:targets.map((note,index)=>({...clone(note),pitch:degreePitch(value.key,degrees[index%degrees.length],value.register||'mid')})),adds:[],deleteNoteIds:[]};
     }
-    return{updates:[],adds:phraseAdds(track,request.range,{...value,register:'mid'},84,`ai-cont-${value.variant||'A'}`),deleteNoteIds:[]};
+    return{updates:[],adds:phraseAdds(track,request.range,{...value,register:value.register||'mid'},84,`ai-cont-${value.variant||'A'}`),deleteNoteIds:[]};
   }
   function chordBassProposal(request,track,value){
     const progression=Array.isArray(value.progression)&&value.progression.length?value.progression:['C','F','G','C'],pitches=progression.map(chordRootPitch),ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id));
@@ -164,5 +164,22 @@
     if(applied?.applied!==true)throw Error(`candidate-apply-rejected:${applied?.reason||'protected'}`);
     return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId,selection:clone(subset.selection)};
   }
-  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,continuationSource,continuationSourceRows,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
+  // Apply to a disposable session so audition uses the same stale/lock/range
+  // checks and exact notes as adoption, without touching the editor or Undo.
+  function auditionPlan(session,core,bundle,measureRange=null){
+    if(bundle?.type!=='midi-preview')throw Error('midi-preview-required');
+    const copy=clone(session);
+    core.selectTrackById(copy,bundle.targetTrackId);
+    applyPreview(copy,core,bundle,measureRange);
+    const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
+    const track=core.getTrackById(copy.midiData.tracks,bundle.targetTrackId);
+    const notes=track.notes.filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).map(n=>{
+      const startTick=Math.max(n.startTick,range.startTick);
+      return{...clone(n),startTick,durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-startTick};
+    });
+    if(!notes.length)throw Error('audition-no-notes');
+    if(notes.length>4096)throw Error('audition-note-limit-select-shorter-range');
+    return{tracks:[{...clone(track),muted:false,solo:false,notes}],transport:{ppq:copy.midiData.ppq,bpm:copy.midiData.tempo,tempoMap:clone(copy.midiData.tempoMap||[]),startTick:range.startTick,endTick:range.endTick},mutates:false};
+  }
+  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,auditionPlan,continuationSource,continuationSourceRows,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
 })(typeof window!=='undefined'?window:globalThis);
