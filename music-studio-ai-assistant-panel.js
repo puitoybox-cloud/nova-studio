@@ -57,7 +57,9 @@
     return `<details class="music-ai-generation-controls"><summary>AI model（実モデル作曲・端末内）</summary><p>SkyTNT MIDIモデル / Apache-2.0。旋律A/B/Cを生成し、既存の試聴・部分採用・保存へ送ります。</p><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.generateLocalModel('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>${record.localModelBusy?'Generating（推論中）':'Generate model A/B/C（実モデルで生成）'}</button></details>`;
   }
   async function generateLocalModel(id){
-    const p=project(id),record=stateFor(p),session=app().state.midiEditor;
+    const p=project(id),session=app()?.state?.midiEditor;
+    if(!p||!session||session.projectId!==id)return{ok:false,reason:'midi-session-required'};
+    const record=stateFor(p);
     if(record.localModelBusy||root.location?.hostname!=='127.0.0.1')return;
     const signature=JSON.stringify(session?.midiData),workspace=JSON.stringify(record.state.workspace),range=JSON.stringify(session?.editRange),track=core().currentTrackId(session);
     const current=()=>project(id)===p&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&JSON.stringify(record.state.workspace)===workspace&&JSON.stringify(session.editRange)===range&&core().currentTrackId(session)===track;

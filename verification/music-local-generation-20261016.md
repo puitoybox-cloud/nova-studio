@@ -27,3 +27,5 @@ An initial full Node run found six stale version/no-fetch assertions; requests w
 - Conservative formal ledger retained **A0/B0/C30**, all No.1–30 C. This is not a fresh complete audit or a measured completion percentage; real scoped generation success does not establish full-feature A/B status. Twenty-to-thirty independent production completions are not claimed.
 
 No main/existing PR edits, Force push, Ready/Merge/Auto Merge, Live Provider API communication or saved-user-data deletion.
+
+Saved-head CI setup/build and real API generation passed. First real Chrome attempt exposed a fixture calling generation before the hash route created its MIDI session. The fixture now waits for the actual session; production API rejects missing/foreign sessions before dispatch. One regression verifies this case. Panel cache advanced to1.0.28. This failure is retained separately from final-head results.
