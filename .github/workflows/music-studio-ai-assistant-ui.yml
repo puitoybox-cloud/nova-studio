@@ -60,7 +60,6 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-candidate-import-browser.js
-          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-score-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -137,3 +136,24 @@ jobs:
             verification/music-mix-workspace-*.png
             verification/music-vocal-layout-browser.json
             verification/music-vocal-layout-*.png
+
+  lyrics-score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Japanese lyric score production and real download
+        run: |
+          node --test tests/music-studio-lyrics-score-export.test.js tests/music-studio-ai-midi-lyrics-score.test.js
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-score-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-lyrics-score-verification
+          path: verification/music-lyrics-score-browser.json
