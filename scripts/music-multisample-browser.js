@@ -39,7 +39,8 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     const adopted=await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes));
     assert.deepEqual(heard.notes.map(n=>n.pitch),adopted.map(n=>n.pitch));
     // Close the AI drawer with its visible control before using the editor toolbar.
-    await page.locator('.music-ai-focus > summary').click();
+    const drawerClose=page.locator('.music-ai-focus > summary');
+    if(await drawerClose.isVisible())await drawerClose.click();
     // Preserve the established sample/velocity coverage fixture for the remainder.
     await page.locator('.music-history-controls button').nth(0).click();
     await page.evaluate(()=>{MusicStudioAIAssistantPanel.setTab('multi-browser','assistant');document.querySelector('.music-ai-focus').open=false});
