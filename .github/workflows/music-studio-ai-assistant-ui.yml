@@ -17,6 +17,8 @@ on:
       - 'music-studio.html'
       - 'app.js'
       - 'tests/music-studio-ai-*.test.js'
+      - 'tests/music-ai-landscape-focus.test.js'
+      - 'tests/music-candidate-audition-review-stability.test.js'
       - 'scripts/music-studio-ai-assistant-browser-smoke.js'
       - '.github/workflows/music-studio-ai-assistant-ui.yml'
   workflow_dispatch:
