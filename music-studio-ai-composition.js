@@ -51,7 +51,7 @@
   }
   function chordsForKey(key,degrees){const parsed=parseKey(key);return degrees.map(degree=>degreeChord(parsed,degree));}
   function base(kind,index,context){
-    const variant=String.fromCharCode(65+index),seed=`${context.key}|${context.range.startMeasure}|${context.range.endMeasure}|${variant}`;
+    const variant=String.fromCharCode(65+index),seed=`${context.key}|${context.range.startMeasure}|${context.range.endMeasure}|${variant}${context.generation?'|'+JSON.stringify(context.generation):''}`;
     let hash=2166136261;for(const char of seed){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}
     const dependencies={melody:[],chord:[],section:[],arrangement:['section','chord'],continuation:['melody'],'lyrics-structure':['melody']}[kind]||[];
     return{version:VERSION,candidateMetadataVersion:1,kind,variant,synthetic:true,localOnly:true,key:context.key,source:context.source,range:clone(context.range),candidateFamily:{id:`local-family-${(hash>>>0).toString(16)}`,variant,key:context.key,range:clone(context.range),dependencies:dependencies.map(item=>({kind:item,candidateId:variant})),policy:'candidate-only'}};
@@ -311,10 +311,30 @@
     const family=base('lyrics-structure',index,context),lineCount=variants.syllableCounts.length,span=Math.max(1,context.range.endMeasure-context.range.startMeasure+1),lines=variants.syllableCounts.map((syllableCount,lineIndex)=>({line:lineIndex+1,syllableCount,stress:Array.from({length:syllableCount},(_,syllableIndex)=>syllableIndex===0||syllableIndex===syllableCount-1?'strong':'weak'),melodyPhraseSlot:lineIndex%2+1,measureSlot:context.range.startMeasure+Math.min(span-1,Math.floor(lineIndex*span/lineCount))}));
     return{...family,...variants,lineCount,syllableTarget:index===0?'short':index===1?'rising':'hook',lines,linkedMelodyCandidate:family.variant,melodyCandidateRef:{candidateId:family.variant,familyId:family.candidateFamily.id},summary:`${family.variant}: ${variants.section} / ${lineCount} lines / syllable+stress slots`,applyPolicy:'metadata-only'};
   }
+  function generationOptions(input={}){
+    const seed=input.seed??0,register=input.register??'mid';
+    if(!Number.isSafeInteger(seed)||seed<0||seed>999999||!['low-mid','mid','mid-high'].includes(register))throw Error('invalid-generation-options');
+    return{seed,register};
+  }
+  function generatedRecipe(value,context,index){
+    if(!context.generation)return value;
+    const settings=generationOptions(context.generation);value.generation=settings;
+    if(!['melody','continuation'].includes(value.kind))return value;
+    let state=(settings.seed+1+index*101)>>>0;const next=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state};
+    value.register=settings.register;
+    const events=value.phraseEvents.map((event,i)=>({...event,degree:i===0?event.degree:1+(event.degree-1+next()%3)%7,durationUnits:1+next()%4}));
+    // Retain the original cadence and phrase slots, vary the interior motif/rhythm only.
+    events[events.length-1].degree=value.phraseEvents.at(-1).degree;
+    value.phraseEvents=events;value.scaleDegrees=events.map(e=>e.degree);value.durationUnits=events.map(e=>e.durationUnits);
+    value.summary+=` / Local seed ${settings.seed} / ${settings.register}`;
+    return value;
+  }
   function candidateValues(kind,context=defaultContext()){
     if(!KINDS.has(kind))throw Error('unsupported-composition-kind');
+    if(context.generation)generationOptions(context.generation);
     const safe={...defaultContext(),...clone(context),range:{...defaultContext().range,...clone(context.range||{})}};
-    return[0,1,2].map(index=>kind==='melody'?melody(index,safe):kind==='chord'?chord(index,safe):kind==='section'?section(index,safe):kind==='arrangement'?arrangement(index,safe):kind==='continuation'?continuation(index,safe):lyrics(index,safe));
+    if(safe.generation)safe.generation=generationOptions(safe.generation);
+    return[0,1,2].map(index=>generatedRecipe(kind==='melody'?melody(index,safe):kind==='chord'?chord(index,safe):kind==='section'?section(index,safe):kind==='arrangement'?arrangement(index,safe):kind==='continuation'?continuation(index,safe):lyrics(index,safe),safe,index));
   }
   function detailLines(value){
     if(!value||!value.kind)return[];
@@ -326,5 +346,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
