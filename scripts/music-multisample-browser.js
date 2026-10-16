@@ -27,6 +27,22 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     await page.getByText('Local recipe（端末内の生成設定）',{exact:true}).click();await page.fill('#aiGenerationSeed','432');await page.selectOption('#aiGenerationRegister','low-mid');await page.getByRole('button',{name:'A/B/Cを生成',exact:true}).click();
     await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('multi-browser').state.workspace.candidateSets.at(-1)?.candidates[0].value.generation?.seed===432);
     const recipe=await page.evaluate(()=>structuredClone(MusicStudioAIAssistantPanel._states.get('multi-browser').state.workspace.candidateSets.at(-1).candidates[0].value));assert.equal(recipe.generation.register,'low-mid');
+    const original=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor));
+    await page.getByRole('button',{name:'MIDI Preview',exact:true}).first().click();
+    await page.evaluate(()=>{const a=MusicStudio,original=a.editorAuditionCandidate;a.editorAuditionCandidate=async(...args)=>{const result=await original(...args);window.auditionResult=result;return result}});
+    await page.getByRole('button',{name:'Listen（候補を試聴）',exact:true}).click();
+    await page.waitForFunction(()=>window.auditionResult?.ok);
+    const heard=await page.evaluate(()=>({notes:window.auditionResult.scheduledNotes,snapshot:JSON.stringify(MusicStudio.state.midiEditor)}));
+    assert.equal(heard.snapshot,original);assert.ok(heard.notes.length);assert.ok(heard.notes.every(n=>n.audible&&n.soundPath==='sample'));
+    await page.getByRole('button',{name:'Stop（試聴停止）',exact:true}).click();
+    await page.getByRole('button',{name:'PreviewをApply',exact:true}).click();
+    const adopted=await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes));
+    assert.deepEqual(heard.notes.map(n=>n.pitch),adopted.map(n=>n.pitch));
+    // Close the AI drawer with its visible control before using the editor toolbar.
+    const drawerClose=page.locator('.music-ai-focus > summary');
+    if(await drawerClose.isVisible())await drawerClose.click();
+    // Preserve the established sample/velocity coverage fixture for the remainder.
+    await page.locator('.music-history-controls button').nth(0).click();
     await page.evaluate(()=>{MusicStudioAIAssistantPanel.setTab('multi-browser','assistant');document.querySelector('.music-ai-focus').open=false});
     const result=await page.evaluate(async()=>{const a=MusicStudio;await a.saveMidiEditor();const repo=a.indexedDbRepository(),p=await repo.get('multi-browser'),track=p.midiData.tracks.find(t=>t.sampleInstrument),s=MusicStudioAudio.createSynth();await s.unlock();a.prepareInstruments(s,p);const playback=MusicStudioPlayback.schedulePlaybackTracks(s,p.midiData.tracks,{ppq:480,bpm:120});s.stopPlayback();s.dispose();const binding=structuredClone(track.sampleInstrument),library=structuredClone(p.instrumentLibrary),pcm=JSON.stringify(p.pcmMix),backup=a.backupObject(),target=a.memoryRepository();a.setRepository(target);const restored=await a.restoreBackup(backup,{settings:false,projects:true,safetyCopy:false});if(!restored.ok)throw Error('multisample restore failed');const read=await target.get('multi-browser');return{binding,restoredBinding:read.midiData.tracks.find(t=>t.sampleInstrument).sampleInstrument,library,restoredLibrary:read.instrumentLibrary,recipeSeed:read.aiWorkspace.candidateSets.at(-1).candidates[0].value.generation.seed,pcmEqual:JSON.stringify(read.pcmMix)===pcm,inventory:MusicStudioInstruments.inventory(read),notes:playback.scheduledNotes,width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight}});
     assert.deepEqual(result.binding,result.restoredBinding);assert.deepEqual(result.library,result.restoredLibrary);assert.equal(result.pcmEqual,true);assert.equal(result.recipeSeed,432);assert.equal(result.library.patches.length,2);assert.deepEqual(result.notes.map(n=>n.regionId),['zone-1','zone-3','zone-2']);assert.ok(result.notes.every(n=>n.audible&&n.soundPath==='sample'));assert.ok(result.scrollWidth<=width+1,JSON.stringify(result));if(width===1180)assert.ok(result.scrollHeight<=821,JSON.stringify(result));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await page.screenshot({path:`verification/music-multisample-${width}.png`,fullPage:true});report.push({width,result,errors,external});await context.close();
