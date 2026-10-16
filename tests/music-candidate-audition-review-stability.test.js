@@ -25,7 +25,7 @@ test('late first audition does not overwrite a newer audition',async()=>{
  assert.equal(h.repaints.length,1);
 });
 test('candidate controls retain local unsent drafts but reset does not resurrect them',()=>{
- assert.match(src,/preserveCandidateDrafts&&\^ai/);
+ assert.ok(src.includes('preserveCandidateDrafts&&/^ai'));
  assert.match(src,/data-candidate-edit/);
  assert.match(src,/refresh\(id,\{preserveCandidateDrafts:false\}\)/);
 });
