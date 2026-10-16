@@ -133,8 +133,9 @@
     }
     const track=targetTrack(session,core,kind,options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
     const proposals=kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
+    let instrumentSnapshot;if(track.sampleInstrument?.version===2){if(!root.MusicStudioInstruments)throw Error('instrument-module-unavailable');instrumentSnapshot=clone(track.sampleInstrument);const before=JSON.stringify(proposals);proposals.updates=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.updates);proposals.adds=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.adds);companion.instrumentFit={method:'octave-and-velocity',changed:before!==JSON.stringify(proposals),instrument:instrumentSnapshot.name};}
     const result=core.createPartialEditResult(request,proposals),preview=core.createPartialEditPreview(request,result);
-    return{version:VERSION,type:'midi-preview',candidateId:candidate.candidateId||value.variant||null,kind,targetTrackId:track.id,value,context:clone(context),request,result,preview,companion,mutates:false};
+    return{version:VERSION,type:'midi-preview',candidateId:candidate.candidateId||value.variant||null,kind,targetTrackId:track.id,value,context:clone(context),request,result,preview,companion,...(instrumentSnapshot?{instrumentSnapshot}:{}),mutates:false};
   }
   function selectionForRange(bundle,measureRange){
     if(!bundle||bundle.type!=='midi-preview')throw Error('midi-preview-required');
@@ -144,6 +145,7 @@
     return{startMeasure:start,endMeasure:end};
   }
   function narrowed(bundle,session,core,measureRange){
+    if(bundle?.instrumentSnapshot&&JSON.stringify(core.getTrackById(session.midiData.tracks,bundle.targetTrackId)?.sampleInstrument)!==JSON.stringify(bundle.instrumentSnapshot))throw Error('stale-candidate-instrument');
     if(!measureRange)return{result:bundle.result,preview:bundle.preview,selection:null};
     const selection=selectionForRange(bundle,measureRange),ticks=core.measureRangeToTicks(selection,session.midiData),inTicks=note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick,changes=bundle.result.changes;
     const originals=new Map((bundle.request.notes||[]).map(note=>[note.id,note])),contained=note=>note&&inTicks(note)&&note.startTick+note.durationTicks<=ticks.endTick;
