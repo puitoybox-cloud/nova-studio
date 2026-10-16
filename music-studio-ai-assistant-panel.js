@@ -23,7 +23,7 @@
   function candidateEditHtml(project,candidate){
     let edits;try{edits=materializer().previewEdits(candidate.value.previewEdits)}catch(error){return`<p role="alert">${esc(error.message)}</p>`}
     const call=esc(`MusicStudioAIAssistantPanel.editCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)})`),reset=esc(`MusicStudioAIAssistantPanel.editCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)},true)`);
-    return`<details><summary>Edit（候補を調整）</summary><div class="music-ai-range"><label>Transpose（半音）<input id="aiTranspose${candidate.candidateId}" type="number" min="-24" max="24" value="${edits.transpose}"></label><label>Velocity（強さ差）<input id="aiVelocity${candidate.candidateId}" type="number" min="-64" max="64" value="${edits.velocity}"></label><label>Length（音の長さ％）<input id="aiLength${candidate.candidateId}" type="number" min="25" max="200" value="${edits.lengthPercent}"></label></div><div class="music-ai-actions"><button class="music-secondary" onclick="${call}">調整をPreview</button><button class="music-secondary" onclick="${reset}">調整をリセット</button></div><small>原本への反映はApply。調整は保存対象です。</small></details>`;
+    return`<details data-candidate-edit="${esc(candidate.candidateId)}"><summary>Edit（候補を調整）</summary><div class="music-ai-range"><label>Transpose（半音）<input id="aiTranspose${candidate.candidateId}" type="number" min="-24" max="24" value="${edits.transpose}"></label><label>Velocity（強さ差）<input id="aiVelocity${candidate.candidateId}" type="number" min="-64" max="64" value="${edits.velocity}"></label><label>Length（音の長さ％）<input id="aiLength${candidate.candidateId}" type="number" min="25" max="200" value="${edits.lengthPercent}"></label></div><div class="music-ai-actions"><button class="music-secondary" onclick="${call}">調整をPreview</button><button class="music-secondary" onclick="${reset}">調整をリセット</button></div><small>原本への反映はApply。調整は保存対象です。</small></details>`;
   }
   function editCandidate(id,candidateId,reset=false){
     app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),set=activeCandidateSet(record),candidate=set?.candidates.find(c=>c.candidateId===candidateId);
@@ -35,7 +35,7 @@
       // Reuse adoption preflight to reject stale/locked targets before persisting edits.
       materializer().auditionPlan(session,core(),bundle,candidateSelection(candidateId));
       touch(id);candidate.value=next.value;record.candidatePreview=bundle;record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message=reset?'候補の調整をリセットしました。':'調整をPreviewしました。Listenで試聴し、Applyで採用できます。';
-    }catch(error){record.message=`候補調整拒否: ${error.message}`}refresh(id);
+    }catch(error){record.message=`候補調整拒否: ${error.message}`}refresh(id,{preserveCandidateDrafts:false});
   }
   function candidatePreviewHtml(bundle){const rows=[...composition().lyricsTimelineRows(bundle?.companion?.timeline),...composition().arrangementTimelineRows(bundle?.companion?.timeline),...materializer().continuationSourceRows(bundle?.companion?.sourcePreview)];return rows.length?`<section class="music-ai-status"><p>${bundle.type==='midi-preview'?esc(candidatePreviewText(bundle)):'Metadata Preview / 原本変更なし'}</p><ul>${rows.map(row=>`<li>${esc(row)}</li>`).join('')}</ul></section>`:`<p class="music-ai-status">${esc(candidatePreviewText(bundle))}</p>`}
   function familyPreviewHtml(project,record){
@@ -75,7 +75,7 @@
     event.preventDefault();event.stopPropagation();detail.open=false;
     detail.querySelector?.('summary')?.focus?.();return true;
   }
-  function refresh(id){
+  function refresh(id,{preserveCandidateDrafts=true}={}){
     const target=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===id),
       p=project(id),s=app()?.state.midiEditor;
     if(!target||!p||!s)return;
@@ -83,8 +83,9 @@
     // same tab is re-rendered. The persisted project and proposal results
     // remain controlled by their existing explicit preview/adoption paths.
     const drafts=Array.from(target.querySelectorAll?.('textarea[id],input[id],select[id]')||[])
-      .filter(node=>node.id==='musicAIInstruction'||node.id.startsWith('aiSong'))
+      .filter(node=>node.id==='musicAIInstruction'||node.id.startsWith('aiSong')||(preserveCandidateDrafts&&/^ai(?:Transpose|Velocity|Length)[a-zA-Z0-9_-]+$/.test(node.id)))
       .map(node=>({id:node.id,value:node.value}));
+    const editPanels=Array.from(target.querySelectorAll?.('details[data-candidate-edit]')||[]).filter(node=>node.open).map(node=>node.dataset.candidateEdit);
     captureNoteReview(id);
     const previousRequest=target.querySelector?.('.music-ai-note-choice')?.dataset?.requestId;
     const checkedNotes=new Map(Array.from(target.querySelectorAll?.('input[name="musicAINote"]')||[]).map(node=>[node.value,node.checked]));
@@ -94,6 +95,8 @@
       const node=Array.from(fresh?.querySelectorAll?.('textarea[id],input[id],select[id]')||[]).find(x=>x.id===draft.id);
       if(node&&typeof draft.value==='string')node.value=draft.value;
     }
+    for(const node of Array.from(fresh?.querySelectorAll?.('details[data-candidate-edit]')||[]))
+      if(editPanels.includes(node.dataset.candidateEdit))node.open=true;
     // Preserve users' note-by-note review choices on rejected adoption/error
     // repaints. Never auto-select a note that the user explicitly unchecked.
     for(const node of Array.from(fresh?.querySelectorAll?.('input[name="musicAINote"]')||[])){
@@ -228,13 +231,16 @@
   function previewCandidate(id,candidateId){app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor,set=activeCandidateSet(record),candidate=set?.candidates.find(item=>item.candidateId===candidateId);try{if(!candidate)throw Error('candidate-required');const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;if(!materializer())throw Error('candidate-preview-unavailable');const context=composition().createContext(p,session,core());record.candidatePreview=materializer().createPreview(session,core(),candidate,{project:p,context,measureRange:['section','lyrics-structure','arrangement'].includes(set.kind)?selection:null});record.message=candidatePreviewText(record.candidatePreview)}catch(error){record.message=`候補Preview拒否: ${error.message}`;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null}refresh(id)}
   async function auditionCandidate(id,candidateId){
     const p=project(id),record=stateFor(p),bundle=record.candidatePreview,session=app().state.midiEditor;
+    const generation=record.auditionGeneration=(record.auditionGeneration||0)+1;
+    const current=()=>states.get(id)===record&&project(id)===p&&app()?.state.midiEditor===session&&record.candidatePreview===bundle&&record.auditionGeneration===generation;
     try{
       if(!bundle||bundle.candidateId!==candidateId)throw Error('candidate-preview-required');
       const plan=materializer().auditionPlan(session,core(),bundle,candidateSelection(candidateId));
       const result=await app().editorAuditionCandidate(plan,session);
+      if(!current())return;
       record.message=result.ok?`候補${candidateId}を試聴中。MIDI原本は変更していません。`:`試聴停止: ${result.reason}`;
-    }catch(error){record.message=`候補試聴拒否: ${error.message}`}
-    if(project(id)&&app().state.midiEditor===session)refresh(id);
+    }catch(error){if(!current())return;record.message=`候補試聴拒否: ${error.message}`}
+    if(current())refresh(id);
   }
   function applyCandidatePreview(id,candidateId){app()?.editorStopCandidateAudition?.();const record=touch(id),bundle=record.candidatePreview,session=app().state.midiEditor,previousTrack=core().currentTrackId(session);try{const selection=candidateSelection(candidateId);if(!bundle||bundle.candidateId!==candidateId)throw Error('candidate-preview-required');if(previousTrack!==bundle.targetTrackId)core().selectTrackById(session,bundle.targetTrackId);const applied=materializer().applyPreview(session,core(),bundle,selection);ui().decideCandidate(record.state,candidateId,'adopt',selection?{measures:[selection.startMeasure,selection.endMeasure],mode:'midi-preview',targetTrackId:applied.targetTrackId}:{mode:'midi-preview',targetTrackId:applied.targetTrackId});record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message=selection?`${selection.startMeasure}–${selection.endMeasure}小節だけを${applied.targetTrackId}へ安全にApplyしました。`:`候補${candidateId}のPreviewを${applied.targetTrackId}へ安全にApplyしました。`;app().repaintEditor()}catch(error){if(previousTrack&&core().currentTrackId(session)!==previousTrack)core().selectTrackById(session,previousTrack);record.message=`候補Apply拒否: ${error.message}`;refresh(id)}}
   function cancelCandidatePreview(id){app()?.editorStopCandidateAudition?.();const record=stateFor(project(id));record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message='候補Previewを取り消しました。原本は変更していません。';refresh(id)}
