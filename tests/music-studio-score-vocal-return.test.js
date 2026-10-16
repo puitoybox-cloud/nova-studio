@@ -26,3 +26,17 @@ test('score download repaint keeps local file node, origin and disclosure scoped
   assert.equal(a.exportLyricsScore(f.p.projectId,f.recordId).ok,true);
   assert.equal(next.open,true);assert.equal(foreign.open,false);assert.equal(replaced,audio);assert.equal(audio.disabled,true);assert.equal(nextOrigin.value,'first-note');assert.equal(audio.files[0].name,'chosen.wav');
 });
+test('exported tempo, vocal timeline and returned WAV share project BPM despite stale MIDI metadata',async()=>{
+  const f=await scoreSetup(),a=f.a,p=f.p;p.musicalSettings.bpm=72;p.midiData.tempo=120;p.midiData.tempoMap=[{tick:0,bpm:120},{tick:720,bpm:90}];await f.repo.put(p);
+  const xml=a.lyricsScoreXML(p,f.recordId).text;assert.match(xml,/<sound tempo="72"/);assert.doesNotMatch(xml,/<sound tempo="120"/);
+  const timing=a.scoreVocalTiming(p,f.recordId,'first-note');assert.equal(timing.startTick,480);assert.ok(Math.abs(timing.startSeconds-60/72)<1e-12);assert.ok(Math.abs(timing.minimumDurationSeconds-(.5*60/72+.5*60/90))<1e-12);
+  const r=await a.importScoreVocal(wav(800),p.projectId,f.recordId,'first-note');assert.equal(r.ok,true,r.error);assert.equal((await a.vocalRender(p.projectId,r.assetId)).startSeconds,timing.startSeconds);
+});
+test('score lists only linked takes, distinguishes changed scores and selects exact take durably',async()=>{
+ const f=await scoreSetup(),a=f.a,id=f.p.projectId;
+ const one=await a.importScoreVocal(wav(800),id,f.recordId,'first-note'),two=await a.importScoreVocal(wav(800),id,f.recordId,'score-zero');assert.equal(two.ok,true);
+ let p=a.state.projects[0],r=p.syllableAssignments[0],html=a.scoreVocalLinkedView(p,r);assert.match(html,/Current score/);assert.match(html,/同期試聴/);assert.equal(a.scoreVocalLinkedView(p,{...r,id:'unrelated'}).includes('同期試聴'),false);
+ assert.equal((await a.openScoreVocalTake(id,one.assetId)).ok,true);assert.equal((await f.repo.get(id)).vocalWorkspace.selectedAssetId,one.assetId);
+ p=a.state.projects[0];p.musicalSettings.bpm=80;html=a.scoreVocalLinkedView(p,r);assert.match(html,/Previous score/);assert.doesNotMatch(html,/Current score/);
+ const before=JSON.stringify(p);assert.equal((await a.openScoreVocalTake(id,'missing')).ok,false);assert.equal(JSON.stringify(a.state.projects[0]),before);
+});
