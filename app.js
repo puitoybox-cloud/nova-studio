@@ -1457,7 +1457,7 @@ if(!document.querySelector('link[data-music-studio]')){
  document.head.appendChild(musicStudioStylesheet);
  const musicAIStylesheet=document.createElement('link');
  musicAIStylesheet.rel='stylesheet';
- musicAIStylesheet.href='./music-studio-ai-assistant-panel.css?v=1.0.4';
+ musicAIStylesheet.href='./music-studio-ai-assistant-panel.css?v=1.0.5';
  musicAIStylesheet.dataset.musicStudioAI='true';
  document.head.appendChild(musicAIStylesheet);
  const musicCompactStylesheet=document.createElement('link');
@@ -1490,11 +1490,11 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-scoped-midi-repair','./music-studio-scoped-midi-repair.js?v=1.0.1',()=>Boolean(window.MusicStudioScopedMidiRepair?.preview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-workflow','./music-studio-ai-workflow.js?v=1.0.0',()=>Boolean(window.MusicStudioAIWorkflow?.createWorkspace)))
  .then(()=>loadMusicStudioScript('music-studio-ai-composition','./music-studio-ai-composition.js?v=1.0.6',()=>Boolean(window.MusicStudioAIComposition?.candidateValues)))
- .then(()=>loadMusicStudioScript('music-studio-ai-candidate-preview','./music-studio-ai-candidate-preview.js?v=1.0.6',()=>Boolean(window.MusicStudioAICandidatePreview?.createPreview)))
+ .then(()=>loadMusicStudioScript('music-studio-ai-candidate-preview','./music-studio-ai-candidate-preview.js?v=1.0.7',()=>Boolean(window.MusicStudioAICandidatePreview?.createPreview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-family-preview','./music-studio-ai-family-preview.js?v=1.0.2',()=>Boolean(window.MusicStudioAIFamilyPreview?.createFamilyPreview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-family-apply','./music-studio-ai-family-apply.js?v=1.0.6',()=>Boolean(window.MusicStudioAIFamilyApply?.createPlan)))
  .then(()=>loadMusicStudioScript('music-studio-ai-assistant-ui','./music-studio-ai-assistant-ui.js?v=1.0.0',()=>Boolean(window.MusicStudioAIAssistantUI?.createState)))
- .then(()=>loadMusicStudioScript('music-studio-ai-assistant-panel','./music-studio-ai-assistant-panel.js?v=1.0.23',()=>Boolean(window.MusicStudioAIAssistantPanel?.render)))
+ .then(()=>loadMusicStudioScript('music-studio-ai-assistant-panel','./music-studio-ai-assistant-panel.js?v=1.0.24',()=>Boolean(window.MusicStudioAIAssistantPanel?.render)))
  .then(()=>loadMusicStudioScript('music-studio-ingress','./music-studio-ingress.js?v=1.0.0',()=>Boolean(window.MusicStudioIngress?.create)))
  .then(()=>loadMusicStudioScript('music-studio-binary-boundary','./music-studio-binary-boundary.js?v=1.0.0',()=>Boolean(window.MusicStudioBinaryBoundary?.resolve)))
  .then(()=>loadMusicStudioScript('music-studio-loopback','./music-studio-loopback.js?v=1.0.1',()=>Boolean(window.MusicStudioLoopback?.analyzeBatch)))

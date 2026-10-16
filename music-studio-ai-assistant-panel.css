@@ -4,7 +4,8 @@
 
 /* Existing desktop AI tools remain expanded. iPad landscape gets a bounded
    editing drawer without losing preview, history, or proposal controls. */
-.music-ai-focus>summary{display:none}
+.music-ai-focus>summary{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:6px 10px;font-weight:700;cursor:pointer;color:#eef6ff;background:#15243b;border-radius:8px}
+.music-ai-focus>summary span{font-size:.75rem;color:#c3d5e9}
 .music-ai-focus>header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 @media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
  .music-midi-editor-page .music-ai-panel{box-sizing:border-box;min-width:0;margin:4px 8px;padding:0;border-radius:9px}
