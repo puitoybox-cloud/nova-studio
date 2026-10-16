@@ -119,6 +119,26 @@
     if(source?.kind!=='continuation-source-preview')return[];
     return[`Continuation source: ${source.trackId} / M${source.range.startMeasure}-${source.range.endMeasure} / tick ${source.range.startTick}-${source.range.endTick} / ${source.noteCount} observed notes (limit ${source.observedNoteLimit}) / recorded fingerprint and intervals verified; generation rules unchanged`];
   }
+  function previewEdits(value){
+    if(value==null)return{transpose:0,velocity:0,lengthPercent:100};
+    if(typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!['transpose','velocity','lengthPercent'].includes(k)))throw Error('invalid-candidate-edits');
+    const result={transpose:value.transpose??0,velocity:value.velocity??0,lengthPercent:value.lengthPercent??100};
+    for(const [key,min,max] of [['transpose',-24,24],['velocity',-64,64],['lengthPercent',25,200]])if(!Number.isSafeInteger(result[key])||result[key]<min||result[key]>max)throw Error('invalid-candidate-edit:'+key);
+    return result;
+  }
+  function editProposals(proposals,range,settings,instrument){
+    const edits=previewEdits(settings),map=note=>{
+      const pitch=note.pitch+edits.transpose,velocity=note.velocity+edits.velocity;
+      if(pitch<0||pitch>127||velocity<1||velocity>127)throw Error('candidate-edit-midi-boundary');
+      const durationTicks=Math.max(1,Math.round(note.durationTicks*edits.lengthPercent/100));
+      if(note.startTick+durationTicks>range.endTick)throw Error('candidate-edit-range-boundary');
+      const next={...note,pitch,velocity,durationTicks};
+      // Explicit edits must sound as entered, rather than silently fitting an octave.
+      if(instrument){const fitted=root.MusicStudioInstruments.fitNotes(instrument,[next])[0];if(fitted.pitch!==pitch||fitted.velocity!==velocity)throw Error('candidate-edit-instrument-boundary')}
+      return next;
+    };
+    return{updates:proposals.updates.map(map),adds:proposals.adds.map(map),deleteNoteIds:[...proposals.deleteNoteIds]};
+  }
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
@@ -132,8 +152,9 @@
       return{version:VERSION,type:'metadata-preview',candidateId:candidate.candidateId||value.variant||null,kind,value,context:clone(context),companion,mutates:false};
     }
     const track=targetTrack(session,core,kind,options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
-    const proposals=kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
+    let proposals=kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
     let instrumentSnapshot;if(track.sampleInstrument?.version===2){if(!root.MusicStudioInstruments)throw Error('instrument-module-unavailable');instrumentSnapshot=clone(track.sampleInstrument);const before=JSON.stringify(proposals);proposals.updates=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.updates);proposals.adds=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.adds);companion.instrumentFit={method:'octave-and-velocity',changed:before!==JSON.stringify(proposals),instrument:instrumentSnapshot.name};}
+    if(value.previewEdits!=null)proposals=editProposals(proposals,request.range,value.previewEdits,instrumentSnapshot);
     const result=core.createPartialEditResult(request,proposals),preview=core.createPartialEditPreview(request,result);
     return{version:VERSION,type:'midi-preview',candidateId:candidate.candidateId||value.variant||null,kind,targetTrackId:track.id,value,context:clone(context),request,result,preview,companion,...(instrumentSnapshot?{instrumentSnapshot}:{}),mutates:false};
   }
@@ -181,5 +202,5 @@
     if(notes.length>4096)throw Error('audition-note-limit-select-shorter-range');
     return{tracks:[{...clone(track),muted:false,solo:false,notes}],transport:{ppq:copy.midiData.ppq,bpm:copy.midiData.tempo,tempoMap:clone(copy.midiData.tempoMap||[]),startTick:range.startTick,endTick:range.endTick},mutates:false};
   }
-  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,auditionPlan,continuationSource,continuationSourceRows,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
+  root.MusicStudioAICandidatePreview=Object.freeze({VERSION,previewEdits,auditionPlan,continuationSource,continuationSourceRows,degreePitch,chordRootPitch,companionPlan,createPreview,selectionForRange,previewSelection:narrowed,applyPreview});
 })(typeof window!=='undefined'?window:globalThis);
