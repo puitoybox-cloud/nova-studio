@@ -29,8 +29,8 @@
     return normalize(patch);
   }
   function coverage(binding,notes,availableIds){
-    const patch=expand(binding),available=new Set(availableIds),result={total:notes.length,mapped:0,unmapped:0,missing:0,issues:[]};
-    for(const note of notes){const region=select(patch,note.pitch,note.velocity);const status=!region?'unmapped':!available.has(region.assetId)?'missing':'mapped';result[status]++;if(status!=='mapped')result.issues.push({noteId:String(note.id),pitch:note.pitch,velocity:note.velocity,status,assetId:region?.assetId||null})}
+    const patch=expand(binding),available=new Set(availableIds),result={total:notes.length,mapped:0,unmapped:0,missing:0,issues:[],omitted:0};
+    for(const note of notes){let region=null;for(const r of patch.regions)if(note.pitch>=r.keyLow&&note.pitch<=r.keyHigh&&note.velocity>=r.velocityLow&&note.velocity<=r.velocityHigh&&(!region||Math.abs(note.pitch-r.rootPitch)<Math.abs(note.pitch-region.rootPitch)))region=r;const status=!region?'unmapped':!available.has(region.assetId)?'missing':'mapped';result[status]++;if(status!=='mapped'){if(result.issues.length<32)result.issues.push({noteId:String(note.id),pitch:note.pitch,velocity:note.velocity,status,assetId:region?.assetId||null});else result.omitted++}}
     return result;
   }
   function editPreset(value,id,operation,name,newId){
