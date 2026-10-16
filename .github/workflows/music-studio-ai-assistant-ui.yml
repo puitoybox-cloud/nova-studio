@@ -66,6 +66,7 @@ jobs:
           name: music-ai-assistant-ui-verification
           path: |
             verification/music-lyrics-score-browser.json
+            verification/music-score-vocal-return-browser.json
             verification/music-midi-candidate-import-browser.json
             verification/music-midi-candidate-import-*.png
             verification/music-input-profiles-browser.json
@@ -149,11 +150,14 @@ jobs:
           node-version: '22'
       - name: Japanese lyric score production and real download
         run: |
-          node --test tests/music-studio-lyrics-score-export.test.js tests/music-studio-ai-midi-lyrics-score.test.js
+          node --test tests/music-studio-lyrics-score-export.test.js tests/music-studio-ai-midi-lyrics-score.test.js tests/music-studio-score-vocal-return.test.js
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-score-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-score-vocal-return-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-lyrics-score-verification
-          path: verification/music-lyrics-score-browser.json
+          path: |
+            verification/music-lyrics-score-browser.json
+            verification/music-score-vocal-return-browser.json
