@@ -336,8 +336,32 @@
     if(safe.generation)safe.generation=generationOptions(safe.generation);
     return[0,1,2].map(index=>generatedRecipe(kind==='melody'?melody(index,safe):kind==='chord'?chord(index,safe):kind==='section'?section(index,safe):kind==='arrangement'?arrangement(index,safe):kind==='continuation'?continuation(index,safe):lyrics(index,safe),safe,index));
   }
+  // Bring an actual locally produced MIDI phrase into the existing candidate path.
+  // This reads output files only: origin/model/license claims cannot be inferred from MIDI.
+  function midiCandidate(bytes,file,context,index=0,ppq=480){
+    if(!Number.isSafeInteger(index)||index<0||index>2)throw Error('MIDI候補は最大3個です。');
+    if(!Number.isSafeInteger(ppq)||ppq<1||ppq>32767)throw Error('invalid-destination-ppq');
+    if(!file||!Number.isSafeInteger(file.size)||file.size<1||file.size>1048576||! /\.(mid|midi)$/i.test(file.name||''))throw Error('1 MB以下の.mid / .midiを選んでください。');
+    const length=bytes?.byteLength;if(length!==file.size)throw Error('MIDIサイズが一致しません。');
+    const parser=root.MusicStudioMidiParser;if(!parser)throw Error('midi-parser-unavailable');
+    const parsed=parser.parseMidiFile(bytes),n=parsed.normalized;
+    if(!parsed.validation.importable||parsed.trailingBytes||n.warnings.some(w=>['unfinished-note','orphan-note-off','zero-duration','after-eot','invalid-meta'].includes(w.code)))throw Error('MIDIに未完了または不正なイベントがあります。');
+    const tracks=n.tracks.filter(t=>t.notes.length);
+    if(tracks.length!==1||tracks[0].drumCandidate||tracks[0].channels.length!==1)throw Error('単一の旋律Track / Channelを書き出してください。');
+    const t=tracks[0];if(t.notes.length>4096)throw Error('MIDI候補は4096音までです。');
+    if(n.tracks.some(t=>t.controlChanges.length||t.pitchBends.length||t.unsupportedEvents.length))throw Error('CC / Pitch Bend等を含む候補は通常のMIDI Importを使ってください。');
+    const range=context?.range;
+    if(!Number.isSafeInteger(range?.startTick)||!Number.isSafeInteger(range?.endTick)||range.startTick<0||range.endTick<=range.startTick)throw Error('invalid-import-range');
+    const span=range.endTick-range.startTick,notes=t.notes.map(note=>{
+      const startTick=Math.round(note.startTick*ppq/n.ppq),endTick=Math.round((note.startTick+note.durationTicks)*ppq/n.ppq);
+      if(!Number.isSafeInteger(startTick)||!Number.isSafeInteger(endTick)||startTick<0||endTick<=startTick||endTick>span)throw Error('候補が選択範囲を超えるか、PPQ変換で音が短すぎます。');
+      return{pitch:note.pitch,startTick,durationTicks:endTick-startTick,velocity:note.velocity};
+    });
+    return{version:1,kind:'melody',variant:String.fromCharCode(65+index),synthetic:false,localOnly:true,source:'imported-midi-output',key:context.key,range:clone(range),importedMidi:{version:1,ppq,sourcePpq:n.ppq,fileName:text(file.name,120),fileSize:file.size,sourceTrack:text(t.name,120),originVerified:false,timingPolicy:'source-beats-at-project-tempo',notes},summary:`${String.fromCharCode(65+index)}: MIDI Import / ${notes.length} notes / ${text(file.name,120)}`,applyPolicy:'candidate-only'};
+  }
   function detailLines(value){
     if(!value||!value.kind)return[];
+    if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
     const family=`Family ${value.candidateFamily?.variant||value.variant}`;
     if(value.kind==='melody')return[`Key ${value.key}`,`Motif → answer / ${value.cadence}`,`Degrees ${value.scaleDegrees.join('–')}`,`Rhythm ${value.rhythm}`,family];
     if(value.kind==='chord')return[`Key ${value.key}`,value.progression.join(' → '),`Bass root-motion ${value.bassCandidate?.candidateId}`,`Melody alignment Preview only`,family];
@@ -346,5 +370,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

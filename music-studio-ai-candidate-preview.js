@@ -58,6 +58,17 @@
       return{id:uniqueId(track,prefix,index,startTick),pitch:degreePitch(value.key,event.degree,value.register),startTick,durationTicks,velocity:clamp(Math.round(velocity),1,127)};
     });
   }
+  function importedMidiProposal(request,track,value,session){
+    const data=value.importedMidi;
+    if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||data.notes.length<1||data.notes.length>4096)throw Error('invalid-imported-midi-candidate');
+    if(['startTick','endTick','startMeasure','endMeasure'].some(k=>value.range?.[k]!==request.range[k]))throw Error('stale-imported-midi-range');
+    const adds=data.notes.map((note,index)=>{
+      if(!Number.isSafeInteger(note.pitch)||note.pitch<0||note.pitch>127||!Number.isSafeInteger(note.velocity)||note.velocity<1||note.velocity>127||!Number.isSafeInteger(note.startTick)||note.startTick<0||!Number.isSafeInteger(note.durationTicks)||note.durationTicks<1||!Number.isSafeInteger(note.startTick+note.durationTicks)||note.startTick+note.durationTicks>request.range.endTick-request.range.startTick)throw Error('invalid-imported-midi-note');
+      const startTick=request.range.startTick+note.startTick;
+      return{...clone(note),startTick,id:uniqueId(track,`midi-candidate-${value.variant}`,index,startTick)};
+    });
+    return{updates:[],adds,deleteNoteIds:[]};
+  }
   function melodyProposal(request,track,value){
     const ids=new Set(request.targetNoteIds||[]),targets=(request.notes||[]).filter(note=>ids.has(note.id)),degrees=Array.isArray(value.scaleDegrees)&&value.scaleDegrees.length?value.scaleDegrees:[1,3,5,3,2,4,5,1];
     if(targets.length){
@@ -152,7 +163,7 @@
       return{version:VERSION,type:'metadata-preview',candidateId:candidate.candidateId||value.variant||null,kind,value,context:clone(context),companion,mutates:false};
     }
     const track=targetTrack(session,core,kind,options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
-    let proposals=kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
+    let proposals=value.source==='imported-midi-output'?importedMidiProposal(request,track,value,session):kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
     let instrumentSnapshot;if(track.sampleInstrument?.version===2){if(!root.MusicStudioInstruments)throw Error('instrument-module-unavailable');instrumentSnapshot=clone(track.sampleInstrument);const before=JSON.stringify(proposals);proposals.updates=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.updates);proposals.adds=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.adds);companion.instrumentFit={method:'octave-and-velocity',changed:before!==JSON.stringify(proposals),instrument:instrumentSnapshot.name};}
     if(value.previewEdits!=null)proposals=editProposals(proposals,request.range,value.previewEdits,instrumentSnapshot);
     const result=core.createPartialEditResult(request,proposals),preview=core.createPartialEditPreview(request,result);

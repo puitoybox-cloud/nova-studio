@@ -6,6 +6,7 @@ on:
     paths:
       - 'tools/music-native-wrapper/**'
       - 'scripts/music-final-export-browser.js'
+      - 'scripts/music-midi-candidate-import-browser.js'
       - 'scripts/music-vocal-transport-browser.js'
       - 'scripts/music-harmony-mastering-browser.js'
       - 'scripts/music-bundled-midi-browser.js'
@@ -56,11 +57,14 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-harmony-mastering-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-candidate-import-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-ai-assistant-ui-verification
           path: |
+            verification/music-midi-candidate-import-browser.json
+            verification/music-midi-candidate-import-*.png
             verification/music-input-profiles-browser.json
             verification/music-export-workspace-browser.json
             verification/music-export-workspace-*.png
