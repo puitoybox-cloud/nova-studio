@@ -13,3 +13,16 @@ test('origin is explicit; score-zero preserves leading silence and malformed or 
 test('stale score and dirty/recording projects reject audio; quota abort preserves metadata and binary',async()=>{const f=await scoreSetup(),a=f.a,id=f.p.projectId;a.state.dirty=true;assert.equal((await a.importScoreVocal(wav(800),id,f.recordId,'score-zero')).ok,false);a.state.dirty=false;a.state.midiInput.recording=true;assert.equal((await a.importScoreVocal(wav(800),id,f.recordId,'score-zero')).ok,false);a.state.midiInput.recording=false;a.state.projects[0].midiData.tracks[0].notes[0].pitch++;assert.equal((await a.importScoreVocal(wav(800),id,f.recordId,'score-zero')).ok,false);a.state.projects[0].midiData.tracks[0].notes[0].pitch--;f.indexedDB.fail();assert.equal((await a.importScoreVocal(wav(800),id,f.recordId,'score-zero')).ok,false);assert.equal((await f.repo.get(id)).longWavAssets,undefined);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0)});
 test('storage revision race and repository switch cannot publish an imported vocal',async()=>{for(const mode of ['revision','repository']){const f=await scoreSetup(),a=f.a,id=f.p.projectId,get=f.repo.get.bind(f.repo);f.repo.get=async key=>{const p=await get(key);if(mode==='revision'){p.revision++;await f.repo.put(p)}else a.setRepository(a.memoryRepository());return p};const r=await a.importScoreVocal(wav(800),id,f.recordId,'score-zero');assert.equal(r.ok,false);assert.equal((await get(id)).longWavAssets,undefined);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0)}});
 test('malformed saved score provenance is rejected on project validation',async()=>{const f=await scoreSetup(),r=await f.a.importScoreVocal(wav(800),f.p.projectId,f.recordId,'score-zero');assert.equal(r.ok,true);for(const source of [null,{format:'other'}, {...r.project.longWavAssets[0].vocalTake.scoreSource,origin:'guess'}]){const p=JSON.parse(JSON.stringify(r.project));p.longWavAssets[0].vocalTake.scoreSource=source;assert.equal(f.a.validateProject(p).valid,false)}});
+test('score download repaint keeps local file node, origin and disclosure scoped to exact score',async()=>{
+  const f=await scoreSetup(),a=f.a;let rendered=false,replaced;
+  const audio={disabled:false,files:[{name:'chosen.wav'}]},origin={value:'first-note'};
+  const nextAudio={disabled:true,replaceWith(node){replaced=node}},nextOrigin={value:''};
+  const key=JSON.stringify([f.p.projectId,f.recordId]);
+  const old={dataset:{scoreReturnKey:key},open:true,querySelector:s=>s==='[name=audio]'?audio:origin};
+  const next={dataset:{scoreReturnKey:key},open:false,querySelector:s=>s==='[name=audio]'?nextAudio:nextOrigin};
+  const foreign={dataset:{scoreReturnKey:JSON.stringify(['other',f.recordId])},open:false,querySelector(){throw Error('foreign score accessed')}};
+  f.w.document={body:{dataset:{}},querySelector(){return null},querySelectorAll(){return rendered?[next,foreign]:[old]}};
+  f.w.render=()=>{rendered=true};
+  assert.equal(a.exportLyricsScore(f.p.projectId,f.recordId).ok,true);
+  assert.equal(next.open,true);assert.equal(foreign.open,false);assert.equal(replaced,audio);assert.equal(audio.disabled,true);assert.equal(nextOrigin.value,'first-note');assert.equal(audio.files[0].name,'chosen.wav');
+});

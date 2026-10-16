@@ -8,6 +8,8 @@ on:
       - 'scripts/music-final-export-browser.js'
       - 'scripts/music-midi-candidate-import-browser.js'
       - 'scripts/music-lyrics-score-browser.js'
+      - 'scripts/music-score-vocal-return-browser.js'
+      - 'tests/music-studio-score-vocal-return.test.js'
       - 'scripts/music-vocal-transport-browser.js'
       - 'scripts/music-harmony-mastering-browser.js'
       - 'scripts/music-bundled-midi-browser.js'
