@@ -1457,7 +1457,7 @@ if(!document.querySelector('link[data-music-studio]')){
  document.head.appendChild(musicStudioStylesheet);
  const musicAIStylesheet=document.createElement('link');
  musicAIStylesheet.rel='stylesheet';
- musicAIStylesheet.href='./music-studio-ai-assistant-panel.css?v=1.0.4';
+ musicAIStylesheet.href='./music-studio-ai-assistant-panel.css?v=1.0.5';
  musicAIStylesheet.dataset.musicStudioAI='true';
  document.head.appendChild(musicAIStylesheet);
  const musicCompactStylesheet=document.createElement('link');
