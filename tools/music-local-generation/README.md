@@ -74,3 +74,8 @@ acceptance. PyPI CPython 3.12 metadata checked 2026-10-17 lists ONNX Runtime 1.2
 `macosx_13_0_x86_64`, NumPy 2.5.4 `macosx_10_13_x86_64` and Pillow 12.3.0
 `macosx_10_13_x86_64` wheels. This runtime therefore requires macOS 13+ on Intel; earlier
 macOS compatibility is not established. See https://pypi.org/pypi/onnxruntime/1.23.2/json .
+
+Sinsy 0.92 is locally modified during preparation: `lib/util/Configurations.cpp` uses
+`std::make_pair(key, value)` with deduced types for current Apple libc++ compatibility.
+Preparation verifies the upstream archive and exact patch context before modification;
+`notices/Sinsy-local-modifications.txt` records the change alongside upstream terms.
