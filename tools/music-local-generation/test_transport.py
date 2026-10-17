@@ -43,10 +43,12 @@ class Transport(unittest.TestCase):
         return cookie.split(';')[0]
 
     def test_pairing_and_revocation(self):
-        self.assertEqual(self.request('GET', '/__nova_generation/status')[0], 401)
+        status, _, data = self.request('GET', '/__nova_generation/status')
+        self.assertEqual(status, 401); self.assertIn('接続コード'.encode(), data); self.assertNotIn(b'secret-pair-code', data)
         self.assertEqual(self.request('GET', '/music-studio.html')[0], 401)
         self.assertEqual(self.request('POST', '/__nova_generation/pair', 'code=secret-pair-code', Origin='https://evil.example')[0], 403)
-        self.assertEqual(self.request('POST', '/__nova_generation/pair', 'code=wrong', Origin=self.origin)[0], 403)
+        status, _, data = self.request('POST', '/__nova_generation/pair', 'code=wrong', Origin=self.origin)
+        self.assertEqual(status, 403); self.assertIn(b'Code mismatch', data)
         cookie = self.pair()
         status, _, data = self.request('GET', '/__nova_generation/status', Cookie=cookie)
         self.assertEqual(status, 200); self.assertIn(b'https-paired', data)
