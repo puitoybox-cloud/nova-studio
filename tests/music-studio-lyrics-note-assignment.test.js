@@ -31,3 +31,17 @@ test('Cached project mutation before Apply fails closed even when repository bas
 test('AI workspace revision is rebound while candidate content remains intact',()=>{const f=fixture();f.w.MusicStudioAIWorkflow={validateWorkspace:()=>({ok:true})};f.p.aiWorkspace={projectId:'p',baseRevision:1,candidateSets:[{future:true}],future:{opaque:true}};const saved=f.app.adoptLyricsAssignment(f.p,f.app.lyricsAssignmentPreview(f.p,f.input));assert.equal(saved.aiWorkspace.baseRevision,2);assert.deepEqual(plain(saved.aiWorkspace.candidateSets),plain(f.p.aiWorkspace.candidateSets));assert.deepEqual(plain(saved.aiWorkspace.future),{opaque:true})});
 test('Malformed imported saved assignments render safely and cannot be overwritten as valid bindings',()=>{const f=fixture();f.p.syllableAssignments.push({format:'music-studio-lyrics-note-assignment',version:1,trackId:'lead',text:'<script>x</script>',assignments:[null,{noteId:'a',startTick:'<img src=x>',durationTicks:1}]});f.app.state.projects=[f.p];assert.equal(f.app.lyricsSavedRows(f.p)[0].stale,true);const html=f.app.lyricsAssignmentView('p');assert.ok(html.includes('&lt;img'));assert.doesNotMatch(html,/<img src=x>/);assert.throws(()=>f.app.adoptLyricsAssignment(f.p,f.app.lyricsAssignmentPreview(f.p,f.input)),/invalid-existing-lyrics-record/)});
 for(const [label,key] of [['typed drum','trackType'],['role drum','roleAssignment']])test(label+' cannot accept pitched lyrics',()=>{const f=fixture();f.p.midiData.tracks[0][key]=key==='trackType'?'midi-drums':'drums';assert.throws(()=>f.app.lyricsAssignmentPreview(f.p,f.input),/pitched-track/)});
+
+test('Per-note reading edit is preview-only, preserves multi-kana and guards stale project',()=>{
+ const f=fixture(),{app,p,input}=f;app.state.projects=[p];app.lyricsAssignmentView('p');app.lyricsEditor.input=input;app.lyricsEditor.preview=app.lyricsAssignmentPreview(p,input);
+ const before=JSON.stringify(p);assert.equal(app.editLyricsNoteToken('p',0,'きょう').ok,true);assert.equal(app.lyricsEditor.preview.assignments[0].token,'きょう');assert.equal(JSON.stringify(p),before);
+ assert.match(app.lyricsAssignmentView('p'),/音符1の読み/);
+ assert.equal(app.editLyricsNoteToken('p',0,'~').ok,false);assert.equal(app.lyricsEditor.preview.assignments[0].token,'きょう');
+ p.updatedAt='changed';assert.equal(app.editLyricsNoteToken('p',1,'あ').ok,false);assert.equal(app.lyricsEditor.preview.assignments[1].token,'み');
+});
+test('Japanese engine reading normalization is isolated and rejects unresolved kanji',()=>{
+ const {app,p,input}=fixture();const saved=app.adoptLyricsAssignment(p,app.lyricsAssignmentPreview(p,{...input,reading:'ｷｬ ン ~'})),record=saved.syllableAssignments.at(-1),before=JSON.stringify(saved);
+ const engine=app.japaneseVocalProject(saved,record.id);assert.equal(engine.syllableAssignments.at(-1).assignments[0].token,'きゃ');assert.equal(engine.syllableAssignments.at(-1).assignments[1].token,'ん');assert.equal(JSON.stringify(saved),before);
+ saved.syllableAssignments.at(-1).assignments[0].token='今日';assert.throws(()=>app.japaneseVocalProject(saved,record.id),/かな/);
+ assert.deepEqual(plain(app.kanaReadingTokens('ｷｬｯﾄｰﾝ')),['きゃ','っ','と','ー','ん']);
+});

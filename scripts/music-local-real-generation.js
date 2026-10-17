@@ -18,11 +18,14 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.candidateSets.at(-1).candidates.length,3);
  const scoreFixture=new Function('require',fs.readFileSync('tests/music-studio-score-vocal-return.test.js','utf8').split('\ntest(')[0]+'\nreturn scoreSetup;')(require),s=await scoreFixture();
  s.w.location.hostname='127.0.0.1';s.w.File=File;s.w.atob=atob;s.w.fetch=f.w.fetch;
- const sung=await s.a.generateLocalScoreVocal(s.p.projectId,s.recordId);assert.equal(sung.ok,true,sung.error);
+ let rangeProject=s.a.makeProject({projectId:s.p.projectId,projectName:'Range generation',bpm:90,midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'a',pitch:60,startTick:0,durationTicks:480},{id:'b',pitch:62,startTick:1920,durationTicks:480},{id:'c',pitch:64,startTick:2400,durationTicks:480}]}]}});
+ rangeProject=s.a.adoptLyricsAssignment(rangeProject,s.a.lyricsAssignmentPreview(rangeProject,{trackId:'lead',fromNote:1,toNote:3,text:'あい',reading:'ア イ ~'}));await s.repo.put(rangeProject);s.a.state.projects=[rangeProject];s.recordId=rangeProject.syllableAssignments[0].id;
+ const sung=await s.a.generateLocalScoreVocal(s.p.projectId,s.recordId,{startMeasure:2,endMeasure:2});assert.equal(sung.ok,true,sung.error);
+ const sourceInfo=sung.project.longWavAssets.find(a=>a.id===sung.assetId).vocalTake.scoreSource;assert.equal(sourceInfo.generationRange.startMeasure,2);assert.ok(!sourceInfo.scoreXML.includes('<text>あ</text>'));assert.ok(sourceInfo.scoreXML.includes('<text>い</text>'));
  const rendered=await s.a.vocalRender(s.p.projectId,sung.assetId);assert.ok(rendered.blob.size>44);
  const archive=await s.a.createLongWavArchive(),restored=await s.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
  const copy=restored.projects[0],again=await s.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);
  assert.deepEqual(Buffer.from(await again.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer()));
  const forbidden=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:'{}'});assert.equal(forbidden.status,403);
- console.log(JSON.stringify({realInference:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,foreignOriginRejected:true},null,2));
+ console.log(JSON.stringify({realInference:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
 }finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exitCode=1});
