@@ -66,3 +66,11 @@ Mach-O loader/architecture closure, production asset admission, reproducible Int
 Developer ID signing/notarization, certificate provisioning, Safari LAN permissions, listening
 quality and full-feature acceptance. Existing upstream notice files and asset licenses remain
 required; pairing does not change their terms.
+
+The `intel-mac-generation` CI job explicitly requires Darwin/x86_64, builds the fixed
+Sinsy/HTS sources, validates launcher prerequisites and executes real model/voice generation
+through Studio. It is separate from the unsigned Swift wrapper build and physical-device
+acceptance. PyPI CPython 3.12 metadata checked 2026-10-17 lists ONNX Runtime 1.23.2
+`macosx_13_0_x86_64`, NumPy 2.5.4 `macosx_10_13_x86_64` and Pillow 12.3.0
+`macosx_10_13_x86_64` wheels. This runtime therefore requires macOS 13+ on Intel; earlier
+macOS compatibility is not established. See https://pypi.org/pypi/onnxruntime/1.23.2/json .
