@@ -801,3 +801,19 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
  .music-lyrics-focused #musicLyricsForm :is(select,input,button){min-height:44px;box-sizing:border-box;padding:6px 10px}
  .music-lyrics-focused .music-track-table-wrap{max-height:220px;overflow:auto;overscroll-behavior:contain}
 }
+
+.music-lyrics-help>summary,.music-lyrics-saved>summary{min-height:44px;box-sizing:border-box;padding:6px 10px;display:flex;align-items:center;cursor:pointer}
+@media(min-width:1000px) and (max-height:900px) and (orientation:landscape){
+ .music-lyrics-focused .music-project-panel{position:relative}
+ .music-lyrics-focused .music-project-panel>h1{font-size:1.2rem;margin:4px 0}
+ .music-lyrics-focused #musicLyricsForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;align-items:start}
+ .music-lyrics-focused #musicLyricsForm>.music-form-grid{grid-column:1/-1}
+ .music-lyrics-focused #musicLyricsForm .music-form-grid>label{grid-column:span 2}
+ .music-lyrics-focused #musicLyricsForm .music-form-grid>.music-span-2{grid-column:span 3}
+ .music-lyrics-focused #musicLyricsForm textarea{min-height:56px;height:56px;resize:vertical}
+ .music-lyrics-focused #musicLyricsForm>button{min-height:44px;margin:0}
+ .music-lyrics-focused .music-project-panel>p{margin:4px 0;min-height:0}
+ .music-lyrics-focused .music-lyrics-help[open],.music-lyrics-focused .music-lyrics-saved[open]{position:fixed;inset:12px;z-index:1100;overflow:auto;overscroll-behavior:contain;padding:12px;background:#111a2b;color:#eef2ff;border:1px solid #67569a;border-radius:8px}
+ .music-lyrics-focused :is(.music-lyrics-help,.music-lyrics-saved)[open]>summary{position:sticky;top:-12px;background:#111a2b;z-index:2}
+ .music-lyrics-focused :is(.music-lyrics-help,.music-lyrics-saved)[open]>summary::after{content:'Close（閉じる）';margin-left:auto}
+}
