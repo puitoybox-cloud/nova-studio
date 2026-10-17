@@ -34,18 +34,23 @@ def prepare(destination):
     # Sinsy 0.92 predates current Apple libc++ forwarding-reference make_pair.
     # Deduce the types, preserving the exact string pair and insertion behavior.
     # The upstream archive remains SHA-256 locked; record this local modification.
-    source_file = dest / 'sinsy-0.92/lib/util/Configurations.cpp'
-    original = 'std::make_pair<std::string, std::string>(key, value)'
-    source_text = source_file.read_text()
-    if source_text.count(original) != 1: raise ValueError('Sinsy portability patch context mismatch')
-    source_file.write_text(source_text.replace(original, 'std::make_pair(key, value)'))
+    patches = {
+        'Configurations.cpp': ('std::make_pair<std::string, std::string>(key, value)', 'std::make_pair(key, value)'),
+        'MacronTable.cpp': ('std::make_pair<std::vector<std::string>, Result*>(pl, result)', 'std::make_pair(pl, result)'),
+        'PhonemeTable.cpp': ('std::make_pair<std::string, PhonemeList*>(st.at(0), pl)', 'std::make_pair(st.at(0), pl)'),
+    }
+    for name, (original, replacement) in patches.items():
+        source_file = dest / 'sinsy-0.92/lib/util' / name
+        source_text = source_file.read_text()
+        if source_text.count(original) != 1: raise ValueError('Sinsy portability patch context mismatch: ' + name)
+        source_file.write_text(source_text.replace(original, replacement))
     runtime = dest / 'runtime'
     for source, extra in [('hts_engine_API-1.10', []), ('sinsy-0.92', ['CXXFLAGS=-O2 -std=gnu++98', f'--with-hts-engine-header-path={runtime}/include', f'--with-hts-engine-library-path={runtime}/lib'])]:
         subprocess.run(['./configure', f'--prefix={runtime}', *extra], cwd=dest / source, check=True)
         subprocess.run(['make', '-j2'], cwd=dest / source, check=True)
         subprocess.run(['make', 'install'], cwd=dest / source, check=True)
     notices = dest / 'notices'; notices.mkdir()
-    (notices / 'Sinsy-local-modifications.txt').write_text('Project NOVA, 2026-10-17: Sinsy 0.92 lib/util/Configurations.cpp: deduce std::make_pair types for modern Apple libc++ compatibility. Upstream copyright and Modified BSD terms unchanged.\n')
+    (notices / 'Sinsy-local-modifications.txt').write_text('Project NOVA, 2026-10-17: Sinsy 0.92 lib/util/Configurations.cpp, MacronTable.cpp, PhonemeTable.cpp: deduce std::make_pair types for modern Apple libc++ compatibility. Upstream copyright and Modified BSD terms unchanged.\n')
     for p in (HERE / 'vendor').iterdir():
         if 'COPYING' in p.name or 'LICENSE' in p.name or 'README' in p.name: shutil.copy2(p, notices / p.name)
     print('Assets prepared. Start with explicit --weights, --sinsy, --dictionary and --voice paths; see README.')
