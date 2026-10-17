@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import struct
+import re
 from pathlib import Path
 
 
@@ -47,6 +48,33 @@ KEYS = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,
 STYLES = {'balanced': (1.0, .98, 20), 'gentle': (.8, .9, 12), 'varied': (1.15, .99, 32)}
 
 
+# Deliberately finite vocabulary. No language model or implicit genre guarantee.
+MOODS = {'優しい': 'gentle', '切ない': 'gentle', '明るい': 'varied',
+         'gentle': 'gentle', 'sad': 'gentle', 'bright': 'varied'}
+GENRES = {'ballad': 'gentle', 'バラード': 'gentle', 'pop': 'balanced', 'ポップ': 'balanced'}
+CHORDS = {'': (0,4,7), 'm': (0,3,7), '7': (0,4,7,10),
+          'maj7': (0,4,7,11), 'm7': (0,3,7,10), 'dim': (0,3,6), 'sus4': (0,5,7)}
+
+def interpret_request(description='', genre='', style='balanced', chords=''):
+    if not isinstance(description, str) or len(description) > 120: raise ValueError('invalid-description')
+    if not isinstance(genre, str) or genre not in ['', *GENRES]: raise ValueError('unsupported-genre')
+    words = [w for w in re.split(r'[\s、,]+', description.strip()) if w]
+    if any(w not in MOODS for w in words): raise ValueError('unsupported-description: use 優しい / 切ない / 明るい')
+    mapped = {MOODS[w] for w in words}
+    if len(mapped) > 1: raise ValueError('conflicting-moods')
+    selected = next(iter(mapped), GENRES.get(genre, style))
+    if selected not in STYLES: raise ValueError('unsupported-style')
+    if not isinstance(chords, str) or len(chords) > 256: raise ValueError('invalid-chords')
+    names = [n for n in re.split(r'[\s,|→]+', chords.strip()) if n]
+    if len(names) > 32: raise ValueError('too-many-chords')
+    parsed = []
+    for name in names:
+        match = re.fullmatch(r'([A-G](?:#|b)?)(maj7|m7|sus4|dim|m|7)?', name)
+        if not match or match[1] not in KEYS: raise ValueError('unsupported-chord: ' + name)
+        parsed.append({(KEYS[match[1]] + n) % 12 for n in CHORDS[match[2] or '']})
+    return selected, names, parsed
+
+
 def constraints(key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced'):
     if key is not None and (not isinstance(key, str) or key.removesuffix('m') not in KEYS): raise ValueError('unsupported-key')
     if type(pitch_min) is not int or type(pitch_max) is not int or not 0 <= pitch_min <= pitch_max <= 127: raise ValueError('invalid-pitch-range')
@@ -58,22 +86,28 @@ def constraints(key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4
     return allowed
 
 
-def constrain_score(score, *, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', bpm=72):
+def constrain_score(score, *, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', bpm=72, chord_sets=None):
     # Explicit postprocessing of real inference, never presented as model conditioning.
     allowed = constraints(key, pitch_min, pitch_max, numerator, denominator, style)
     changed = 0
+    chord_sets = chord_sets or []
+    measure_ticks = score[0] * 4 * numerator // denominator
+    chord_allowed = [[n for n in range(pitch_min, pitch_max+1) if n % 12 in chord] for chord in chord_sets]
+    if any(not notes for notes in chord_allowed): raise ValueError('no-chord-note-in-range')
     for track in score[1:]:
         track[:] = [e for e in track if e[0] not in ['set_tempo','time_signature','key_signature']]
         for event in track:
             if event[0] == 'note':
                 old = event[4]
-                event[4] = min(allowed, key=lambda n: (abs(n-old), n))
+                choices = chord_allowed[(event[1] // measure_ticks) % len(chord_allowed)] if chord_allowed else allowed
+                event[4] = min(choices, key=lambda n: (abs(n-old), n))
                 changed += int(old != event[4])
     score[1].extend([['set_tempo',0,round(60000000/bpm)], ['time_signature',0,numerator,denominator.bit_length()-1,24,8]])
     return changed
 
 
-def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced'):
+def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords=''):
+    style, chord_names, chord_sets = interpret_request(description, genre, style, chords)
     constraints(key, pitch_min, pitch_max, numerator, denominator, style)
     import numpy as np
     import onnxruntime as rt
@@ -103,10 +137,10 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
             score[i] = [e for e in track if e[1] < max_ticks]
             for e in score[i]:
                 if e[0] == 'note': e[2] = min(e[2], max_ticks - e[1])
-        adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm)
+        adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm, chord_sets=chord_sets)
         data, notes = midi_bytes(score); name = variant + '.mid'
         (output / name).write_bytes(data)
-        result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'method': 'model-sampling-and-explicit-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+        result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 

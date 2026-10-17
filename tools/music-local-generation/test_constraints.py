@@ -23,4 +23,22 @@ class Constraints(unittest.TestCase):
    with self.assertRaises(ValueError):constraints(**settings)
  def test_no_key_preserves_in_range(self):
   score=[480,[['note',0,480,0,61,80]]];self.assertEqual(constrain_score(score),0);self.assertEqual(score[1][0][4],61)
+
+class MoodChords(unittest.TestCase):
+ def test_explicit_interpretation_and_rejection(self):
+  from compose import interpret_request
+  self.assertEqual(interpret_request('優しい','ballad','balanced','C Am F G7')[:2],('gentle',['C','Am','F','G7']))
+  self.assertEqual(interpret_request('明るい')[0],'varied')
+  for args in [('unknown',),('優しい 明るい',),('', 'jazz'),('','','balanced','C/E')]:
+   with self.assertRaises(ValueError):interpret_request(*args)
+ def test_chord_timeline_and_source_durations(self):
+  from compose import interpret_request
+  chords=interpret_request(chords='C Am')[2]
+  score=[480,[['note',0,240,0,61,80],['note',1920,480,0,66,90],['note',3840,120,0,70,70]]]
+  constrain_score(score,pitch_min=60,pitch_max=72,chord_sets=chords)
+  notes=[e for e in score[1] if e[0]=='note']
+  self.assertEqual([(e[1],e[2],e[5]) for e in notes],[(0,240,80),(1920,480,90),(3840,120,70)])
+  for index,event in enumerate(notes): self.assertIn(event[4]%12,chords[index%2])
+  with self.assertRaises(ValueError):constrain_score([480,[['note',0,120,0,61,80]]],pitch_min=61,pitch_max=61,chord_sets=chords)
+
 if __name__=='__main__':unittest.main()

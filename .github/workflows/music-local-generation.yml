@@ -4,6 +4,9 @@ on:
     paths:
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-local-real-browser.js'
+      - 'tests/music-ai-landscape-focus.test.js'
+      - 'tests/music-studio-local-model.test.js'
       - 'music-studio-ai-assistant-panel.js'
       - 'music-studio.js'
       - '.github/workflows/music-local-generation.yml'

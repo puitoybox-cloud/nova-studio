@@ -7,3 +7,14 @@ test('missing local runtime reports failure and retains notes/candidate workspac
 test('model action without an open MIDI session fails before dispatch',async()=>{const f=fixture();f.w.location.hostname='127.0.0.1';f.a.state.midiEditor=null;let calls=0;f.a.localGenerationRequest=async()=>{calls++};assert.equal((await f.panel.generateLocalModel(f.p.projectId)).reason,'midi-session-required');assert.equal(calls,0)});
 
 test('paired host marker permits request from iPad URL and retains failure without mutation',async()=>{const f=fixture();f.w.location.hostname='192.168.1.20';f.w.__NOVA_GENERATION_HOST__=true;let calls=0;f.a.localGenerationRequest=async()=>{calls++;throw Error('mac-disconnected')};const before=JSON.stringify(f.s.midiData);await f.panel.generateLocalModel(f.p.projectId);assert.equal(calls,1);assert.equal(JSON.stringify(f.s.midiData),before);assert.match(f.panel._states.get(f.p.projectId).message,/mac-disconnected/)});
+
+test('explicit mood genre and chord settings reach the local engine without changing original MIDI',async()=>{
+ const f=fixture();f.w.location.hostname='127.0.0.1';
+ const fields={'#aiModelMood':'切ない','#aiModelGenre':'ballad','#aiModelChords':'Dm Gm A7 Dm','#aiModelRange':'57:77'};
+ f.w.document={querySelector:s=>({value:fields[s]||''}),querySelectorAll:()=>[]};
+ const before=JSON.stringify(f.s.midiData);let request;
+ f.a.localGenerationRequest=async(kind,body)=>{request={kind,body};throw Error('deliberate-offline')};
+ await f.panel.generateLocalModel(f.p.projectId);
+ assert.equal(request.kind,'compose');assert.equal(request.body.description,'切ない');assert.equal(request.body.genre,'ballad');assert.equal(request.body.chords,'Dm Gm A7 Dm');assert.equal(request.body.pitch_min,57);
+ assert.equal(JSON.stringify(f.s.midiData),before);assert.equal(f.panel._states.get(f.p.projectId).modelChords,'Dm Gm A7 Dm');
+});
