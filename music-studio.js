@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.178';
+  const ASSET_VERSION='1.4.179';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -418,7 +418,7 @@
     const tracks=(project.midiData?.tracks||[]).filter(t=>t.id===record.trackId),notes=tracks.length===1?tracks[0].notes||[]:[];
     return{...clone(record),stale:!Array.isArray(record.assignments)||record.assignments.some(a=>{if(!lyricsBindingValid(a))return true;const found=notes.filter(n=>n.id===a.noteId);return found.length!==1||['startTick','durationTicks','pitch'].some(k=>found[0][k]!==a[k])})};
   })}
-  function lyricsScoreXML(project,recordId){
+  function lyricsScoreXML(project,recordId,synthesisRange){
     if(!validateProject(project).valid)throw Error('invalid-score-project');
     const rows=lyricsSavedRows(project).filter(r=>r.id===recordId);
     if(rows.length!==1||rows[0].stale)throw Error('score-lyrics-stale-or-missing');
@@ -442,12 +442,16 @@
     for(const t of data.tempoMap||[]){const bpm=Number(t.bpm??(t.microsecondsPerQuarter>0?60000000/t.microsecondsPerQuarter:NaN));if(!Number.isSafeInteger(t.tick)||t.tick<0||!Number.isFinite(bpm)||bpm<20||bpm>400)throw Error('invalid-score-tempo');if(tempos.has(t.tick)&&t.tick!==0&&tempos.get(t.tick)!==bpm)throw Error('conflicting-score-tempo');if(t.tick!==0)tempos.set(t.tick,bpm)}
     if([...tempos.values()].some(b=>!Number.isFinite(b)||b<20||b>400))throw Error('invalid-score-tempo');
     const tempoList=[...tempos].sort((a,b)=>a[0]-b[0]),measures=[],parts=[],divisions=ppq*32,scaled=n=>{const value=n*32;if(!Number.isSafeInteger(value)||value<0)throw Error('invalid-score-tick');return value},pitch=n=>{const pc=n%12,step=['C','C','D','D','E','F','F','G','G','A','A','B'][pc],alter=[1,3,6,8,10].includes(pc)?'<alter>1</alter>':'';return`<pitch><step>${step}</step>${alter}<octave>${Math.floor(n/12)-1}</octave></pitch>`};
+    const firstMeasure=synthesisRange?.startMeasure??1,lastMeasure=synthesisRange?.endMeasure??last;
+    if(!Number.isSafeInteger(firstMeasure)||!Number.isSafeInteger(lastMeasure)||firstMeasure<1||lastMeasure<firstMeasure||lastMeasure>512||notes.some(n=>n.startTick<meter.tickAtMeasure(data,firstMeasure)||n.startTick+n.durationTicks>meter.tickAtMeasure(data,lastMeasure+1)))throw Error('invalid-synthesis-measure-range');
+    const rangeStart=meter.tickAtMeasure(data,firstMeasure);
     let noteIndex=0;
-    for(let number=1;number<=last;number++){
+    for(let number=firstMeasure;number<=lastMeasure;number++){
       const start=meter.tickAtMeasure(data,number),position=meter.positionAtTick(data,start),finish=position.measureEndTick;
       if(!Number.isFinite(finish)||finish<=start)throw Error('invalid-score-measure');
       // Truncated measures preserve exact-tick meter changes (A specification).
-      const implicit=finish-start<position.ticksPerMeasure,items=[`<attributes><divisions>${divisions}</divisions><time><beats>${position.numerator}</beats><beat-type>${position.denominator}</beat-type></time>${number===1?'<clef><sign>G</sign><line>2</line></clef>':''}</attributes>`];
+      const implicit=finish-start<position.ticksPerMeasure,items=[`<attributes><divisions>${divisions}</divisions><time><beats>${position.numerator}</beats><beat-type>${position.denominator}</beat-type></time>${number===firstMeasure?'<clef><sign>G</sign><line>2</line></clef>':''}</attributes>`];
+      if(number===firstMeasure&&rangeStart>0&&!tempos.has(rangeStart)){const inherited=tempoList.filter(([tick])=>tick<rangeStart).at(-1)[1];items.push(`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${inherited}</per-minute></metronome></direction-type><sound tempo="${inherited}"/></direction>`);}
       for(const [tick,bpm] of tempoList)if(tick>=start&&tick<finish)items.push(`<direction><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${bpm}</per-minute></metronome></direction-type><offset sound="yes">${scaled(tick-start)}</offset><sound tempo="${bpm}"/></direction>`);
       let cursor=start;
       while(cursor<finish){
@@ -462,7 +466,7 @@
       measures.push(`<measure number="${number}"${implicit?' implicit="yes"':''}>${items.join('')}</measure>`);
     }
     const text=`<?xml version="1.0" encoding="UTF-8"?>\n<score-partwise version="4.0"><work><work-title>${xml(project.songTitle||project.projectName)}</work-title></work><identification><creator type="software">Music Studio</creator></identification><part-list><score-part id="P1"><part-name>${xml(tracks[0].name||record.trackId)}</part-name></score-part></part-list><part id="P1">${measures.join('')}</part></score-partwise>`;
-    return{filename:`${safeFileName(project.projectName)}-vocal-score.musicxml`,text,source:{projectId:project.projectId,revision:project.revision,trackId:record.trackId,recordId},noteCount:notes.length,measureCount:last,parts,mutates:false,synthesisPerformed:false};
+    return{filename:`${safeFileName(project.projectName)}-vocal-score.musicxml`,text,source:{projectId:project.projectId,revision:project.revision,trackId:record.trackId,recordId},noteCount:notes.length,measureCount:lastMeasure-firstMeasure+1,parts,mutates:false,synthesisPerformed:false};
   }
   function scoreVocalTiming(project,recordId,origin='score-zero'){
     if(!['score-zero','first-note'].includes(origin))throw Error('score-vocal-origin-required');
@@ -496,6 +500,15 @@
   }
   async function inspectScoreVocal(file,project,recordId,origin,options={},guard=()=>{}){
     const timing=scoreVocalTiming(project,recordId,origin);
+    if(options.compactRange===true){
+      if(!options.localSinsy||!options.generationRange||origin!=='score-zero')throw Error('compact-vocal-range-binding-required');
+      const selected=vocalRangeProject(project,recordId,options.generationRange);
+      lyricsScoreXML(japaneseVocalProject(selected,recordId),recordId,options.generationRange);
+      timing.startTick=root.MusicStudioMeterMap.tickAtMeasure(project.midiData,options.generationRange.startMeasure);
+      timing.startSeconds=vocalPosition(project,timing.startTick);
+      timing.endSeconds=vocalPosition(project,root.MusicStudioMeterMap.tickAtMeasure(project.midiData,options.generationRange.endMeasure+1));
+      timing.minimumDurationSeconds=timing.endSeconds-timing.startSeconds;
+    }
     if(!file||typeof file.name!=='string'||!file.name.trim()||file.name.length>240||file.size>VOCAL_MAX_BYTES)throw Error('score-vocal-file-invalid');
     const blob=new Blob([file],{type:'audio/wav'});let frames=0,sampleRate=0,channels=0,clipped=0,peak=0;
     for await(const pcm of pcmDecodeWavStream(blob)){
@@ -591,17 +604,17 @@
     const p=state.projects.find(p=>p.projectId===id);if(!p||!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return{ok:false,error:'local-generation-host-required'};
     const baseline=JSON.stringify(p);
     try{
-      const score=lyricsScoreXML(japaneseVocalProject(vocalRangeProject(p,recordId,range),recordId),recordId);
+      const score=lyricsScoreXML(japaneseVocalProject(vocalRangeProject(p,recordId,range),recordId),recordId,range);
       const result=await localGenerationRequest('sing',{scoreXML:score.text});
       if(state.projects.find(p=>p.projectId===id)!==p||JSON.stringify(p)!==baseline)throw Error('score-changed-during-generation');
       const bytes=Uint8Array.from(root.atob(result.wavBase64),x=>x.charCodeAt(0)),file=new root.File([bytes],'Sinsy-NIT-SONG070-F001.wav',{type:'audio/wav'});
-      return await importScoreVocal(file,id,recordId,'score-zero',{generationRange:range,localSinsy:true});
+      return await importScoreVocal(file,id,recordId,'score-zero',{generationRange:range,localSinsy:true,compactRange:range!==undefined});
     }catch(error){notice(`歌声生成: ${error.message}`,'error');return{ok:false,error:error.message}}
   }
   function scoreVocalReturnView(id,record){
     const disabled=record.stale||vocalBusy()?' disabled':'';
     const project=state.projects.find(p=>p.projectId===id);let timing='';try{const t=scoreVocalTiming(project,record.id);timing=`<p>Score timing（楽譜の時刻）：最初の音符 ${t.firstNoteSeconds.toFixed(3)} 秒 / 最後の音符末尾 ${t.endSeconds.toFixed(3)} 秒。書出しソフトの冒頭休符の有無に合わせて開始位置を選択してください。</p>`}catch(_){}
-    return `${(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocal(${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Sinsy（端末内で歌声生成・取り込み）</button><div data-vocal-generation class="music-form-grid"><label>First bar（開始小節）<input name="startMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><label>Last bar（終了小節）<input name="endMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocalRange(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Generate range（選択小節を別テイク生成）</button><small>範囲内の歌詞音符だけを送ります。冒頭休符を含めて元の曲位置へ配置し、元の歌声は保持します。区間置換・自動クロスフェードは未対応です。</small></div><small>NIT SONG070 F001 / 名古屋工業大学 / CC BY 3.0。HMM歌声合成。</small>`:''}${timing}<form class="music-score-vocal-return music-form-grid" oninput="this.querySelector('[data-score-audio-report]').textContent='WAVを再確認してください。'" onsubmit="${escapeHtml(`MusicStudio.importScoreVocalForm(event,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"><p>対応する歌声ソフトで作成したWAVを選択してください。このフォームでは生成エンジンの実行・生成元の自動判定は行いません。</p><label>WAV（歌声音声・最大120秒）<input name="audio" type="file" accept="audio/wav,.wav" required${disabled}></label><label>Audio origin（音声の開始位置）<select name="origin" required${disabled}><option value="">選択してください</option><option value="score-zero">Score start（楽譜先頭・冒頭休符を含む）</option><option value="first-note">First note（最初の歌詞音符・冒頭休符なし）</option></select></label><details class="music-span-2"><summary>Import settings（取り込み時の編集）</summary><p>選択範囲の先頭を、選んだ楽譜開始位置へ配置します。元WAVは完全に保持し、編集画面で元に戻せます。</p><div class="music-form-grid"><label>Trim start（音声の開始秒）<input name="trimStart" type="number" min="0" max="120" step="0.001" value="0"${disabled}></label><label>Trim end（音声の終了秒・空欄は最後）<input name="trimEnd" type="number" min="0" max="120" step="0.001"${disabled}></label><label>Gain（音量 dB）<input name="gain" type="number" min="-24" max="12" step="0.1" value="0"${disabled}></label><label>Latency（前へ補正 ms）<input name="latency" type="number" min="-2000" max="2000" step="1" value="0"${disabled}></label></div></details><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.inspectScoreVocalForm(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Check WAV（保存前に確認）</button><p data-score-audio-report role="status">長さ・音量・楽譜との時間差を確認できます。生成元は判定しません。</p><label><input type="checkbox" name="editAfter"${disabled}>Open editor（保存後に編集画面へ）</label><button class="music-secondary"${disabled}>Import Vocal WAV（歌声を保存）</button><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction('vocal',${JSON.stringify(id)})`)}">Vocal（ボーカル編集）</button></form>`;
+    return `${(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocal(${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Sinsy（端末内で歌声生成・取り込み）</button><div data-vocal-generation class="music-form-grid"><label>First bar（開始小節）<input name="startMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><label>Last bar（終了小節）<input name="endMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocalRange(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Generate range（選択小節を別テイク生成）</button><small>範囲内の歌詞音符だけを送ります。選択小節内の休符だけを生成し、元の曲位置へ自動配置します。元の歌声を保持し、VocalのReplace measures（小節置換）で比較・採用できます。</small></div><small>NIT SONG070 F001 / 名古屋工業大学 / CC BY 3.0。HMM歌声合成。</small>`:''}${timing}<form class="music-score-vocal-return music-form-grid" oninput="this.querySelector('[data-score-audio-report]').textContent='WAVを再確認してください。'" onsubmit="${escapeHtml(`MusicStudio.importScoreVocalForm(event,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"><p>対応する歌声ソフトで作成したWAVを選択してください。このフォームでは生成エンジンの実行・生成元の自動判定は行いません。</p><label>WAV（歌声音声・最大120秒）<input name="audio" type="file" accept="audio/wav,.wav" required${disabled}></label><label>Audio origin（音声の開始位置）<select name="origin" required${disabled}><option value="">選択してください</option><option value="score-zero">Score start（楽譜先頭・冒頭休符を含む）</option><option value="first-note">First note（最初の歌詞音符・冒頭休符なし）</option></select></label><details class="music-span-2"><summary>Import settings（取り込み時の編集）</summary><p>選択範囲の先頭を、選んだ楽譜開始位置へ配置します。元WAVは完全に保持し、編集画面で元に戻せます。</p><div class="music-form-grid"><label>Trim start（音声の開始秒）<input name="trimStart" type="number" min="0" max="120" step="0.001" value="0"${disabled}></label><label>Trim end（音声の終了秒・空欄は最後）<input name="trimEnd" type="number" min="0" max="120" step="0.001"${disabled}></label><label>Gain（音量 dB）<input name="gain" type="number" min="-24" max="12" step="0.1" value="0"${disabled}></label><label>Latency（前へ補正 ms）<input name="latency" type="number" min="-2000" max="2000" step="1" value="0"${disabled}></label></div></details><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.inspectScoreVocalForm(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Check WAV（保存前に確認）</button><p data-score-audio-report role="status">長さ・音量・楽譜との時間差を確認できます。生成元は判定しません。</p><label><input type="checkbox" name="editAfter"${disabled}>Open editor（保存後に編集画面へ）</label><button class="music-secondary"${disabled}>Import Vocal WAV（歌声を保存）</button><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction('vocal',${JSON.stringify(id)})`)}">Vocal（ボーカル編集）</button></form>`;
   }
   function lyricsAssignmentView(id){
     const project=state.projects.find(p=>p.projectId===id);if(!project)return'<main class="music-studio-shell"><p>プロジェクトが見つかりません。</p></main>';

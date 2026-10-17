@@ -32,6 +32,13 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  const archive=await s.a.createLongWavArchive(),restored=await s.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
  const copy=restored.projects[0],again=await s.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);
  assert.deepEqual(Buffer.from(await again.blob.arrayBuffer()),replaced);
+ // Late-song inference must not synthesize the preceding 200 seconds of silence.
+ let late=s.a.makeProject({projectId:s.p.projectId,projectName:'Late range',bpm:120,midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'late',pitch:60,startTick:192000,durationTicks:480}]}]}});
+ late=s.a.adoptLyricsAssignment(late,s.a.lyricsAssignmentPreview(late,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await s.repo.put(late);s.a.state.projects=[late];
+ const lateSung=await s.a.generateLocalScoreVocal(late.projectId,late.syllableAssignments[0].id,{startMeasure:101,endMeasure:101});assert.equal(lateSung.ok,true,lateSung.error);
+ const lateRender=await s.a.vocalRender(late.projectId,lateSung.assetId);assert.equal(lateRender.startSeconds,200);assert.ok(lateRender.frames>0);assert.ok(lateRender.frames/lateSung.project.longWavAssets[0].sampleRate<120);
+ const lateCopy=await s.a.restoreLongWavArchive(await s.a.createLongWavArchive(),{settings:false});assert.equal(lateCopy.ok,true,lateCopy.error);const lateAgain=await s.a.vocalRender(lateCopy.projects[0].projectId,lateCopy.projects[0].vocalWorkspace.selectedAssetId);assert.equal(lateAgain.startSeconds,200);assert.deepEqual(Buffer.from(await lateAgain.blob.arrayBuffer()),Buffer.from(await lateRender.blob.arrayBuffer()));
+ console.log(JSON.stringify({lateRangeRealSinsy:true,measure:101,startSeconds:200,archiveByteEquality:true}));
  const forbidden=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:'{}'});assert.equal(forbidden.status,403);
  console.log(JSON.stringify({realInference:true,longBaseSeconds:180,longReplacementOutsideBytesUnchanged:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
 }finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exitCode=1});

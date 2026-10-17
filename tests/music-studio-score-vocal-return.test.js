@@ -134,3 +134,16 @@ test('window reader bounds every sample read and refuses excessive selection bef
 });
 
 test('replacement reports positive PCM16 saturation after candidate gain',async()=>{const f=await replacementSetup(),a=f.a,id=f.p.projectId,bytes=await wav(48000).arrayBuffer(),v=new DataView(bytes);for(let i=44;i<bytes.byteLength;i+=2)v.setInt16(i,32767,true);const file=Object.assign(new Blob([bytes]),{name:'loud.wav'}),candidate=await a.importScoreVocal(file,id,f.recordId,'score-zero',{generationRange:{startMeasure:2,endMeasure:2},localSinsy:true});assert.equal(candidate.ok,true,candidate.error);const r=await a.vocalReplacementRender(id,f.base.assetId,candidate.assetId,{gainDb:12,fadeMs:0});assert.ok(r.clipped>0);assert.equal(new DataView(await r.blob.slice(40044,40046).arrayBuffer()).getInt16(0,true),32767)});
+test('late compact Sinsy range inherits tempo, preserves full source binding and durable timeline through archive',async()=>{
+ const f=await setup(),a=f.a;let p=f.p;
+ p.midiData={ppq:480,tempo:120,tempoMap:[{tick:0,bpm:120},{tick:4800,bpm:90}],tracks:[{id:'lead',part:'melody',notes:[{id:'late',pitch:60,startTick:192000,durationTicks:480}]}]};
+ p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await f.repo.put(p);a.state.projects=[p];
+ const record=p.syllableAssignments.at(-1).id,range={startMeasure:101,endMeasure:101},selected=a.vocalRangeProject(p,record,range);
+ const score=a.lyricsScoreXML(selected,record,range);assert.equal(score.measureCount,1);assert.match(score.text,/<measure number="101"/);assert.doesNotMatch(score.text,/<measure number="1"/);assert.match(score.text,/<sound tempo="90"/);assert.doesNotMatch(score.text,/<sound tempo="120"/);
+ const imported=await a.importScoreVocal(wav(24000),p.projectId,record,'score-zero',{localSinsy:true,generationRange:range,compactRange:true});assert.equal(imported.ok,true,imported.error);
+ const asset=imported.project.longWavAssets[0];assert.equal(asset.vocalTake.edits[0].startTick,192000);assert.equal(asset.vocalTake.scoreSource.scoreXML,a.lyricsScoreXML(selected,record).text);
+ const rendered=await a.vocalRender(p.projectId,imported.assetId);assert.ok(rendered.startSeconds>120);assert.equal(rendered.frames,24000);
+ const fresh=fixture(),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);const restored=await fresh.a.restoreLongWavArchive(await a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0],again=await fresh.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);assert.equal(again.startSeconds,rendered.startSeconds);assert.equal(Buffer.compare(Buffer.from(await again.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer())),0);
+ assert.throws(()=>a.lyricsScoreXML(selected,record,{startMeasure:102,endMeasure:102}),/invalid-synthesis/);
+ assert.equal((await a.importScoreVocal(wav(800),p.projectId,record,'score-zero',{compactRange:true})).ok,false);
+});
