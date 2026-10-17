@@ -1,2 +1,4 @@
-
+launch.json
+.venv/
 __pycache__/
+*.pem

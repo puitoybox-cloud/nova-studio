@@ -72,6 +72,17 @@ def handler(options, port, token):
             value = cookie.get('__Host-nova')
             with auth_lock: return bool(value and sessions.get(value.value, 0) > time.monotonic())
         def log_message(self, *args): pass  # Never log pairing codes or session credentials.
+        def pairing_page(self, status=401, message='Macに表示中の接続コードを入力してください。再起動・別のブラウザで再接続した後は、再入力が必要です。'):
+            raw = ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                   '<title>Music Studio / Pair（接続）</title><style>body{font:16px system-ui;max-width:32rem;margin:24px auto;padding:0 12px}h1{font-size:22px;margin:8px 0}p{margin:8px 0}input,button{font:inherit;padding:8px;box-sizing:border-box}input{width:100%}button{margin-top:8px}</style>'
+                   '<h1>Mac engine（生成エンジン接続）</h1><p role="status">' + message + '</p>'
+                   '<form method="post" action="/__nova_generation/pair"><label>Pairing code（接続コード）'
+                   '<input name="code" type="password" autocomplete="off" required maxlength="128"></label><button>Connect（接続）</button></form>'
+                   '<p>Macを起動したまま使用してください。再接続後は同じURLから曲を開けます。</p>'
+                   '<p>端末・URLごとに保存領域が異なります。曲の移動にはFull Backup（完全バックアップ）を使用してください。</p></html>').encode()
+            self.send_response(status); self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw)
+
         def pair(self):
             if self.headers.get('Origin') != origin: return self.send_error(403)
             peer = self.client_address[0]; now = time.monotonic()
@@ -79,13 +90,13 @@ def handler(options, port, token):
                 previous, count = attempts.get(peer, (now, 0))
                 if now - previous > 60: previous, count = now, 0
                 attempts[peer] = (previous, count + 1)
-            if count >= 5: return self.send_error(429)
+            if count >= 5: return self.pairing_page(429, 'Too many attempts（試行回数の上限です）。1分後にMacのコードを確認して再接続してください。')
             try:
                 size = int(self.headers.get('Content-Length', '0'))
                 if not 0 < size <= 256: return self.send_error(413)
                 from urllib.parse import parse_qs
                 code = parse_qs(self.rfile.read(size).decode()).get('code', [''])[0]
-                if not secrets.compare_digest(code, pairing): return self.send_error(403)
+                if not secrets.compare_digest(code, pairing): return self.pairing_page(403, 'Code mismatch（接続コードが一致しません）。Macに現在表示されているコードを確認してください。')
             except (ValueError, UnicodeError): return self.send_error(400)
             session = secrets.token_urlsafe(32)
             with auth_lock:
@@ -103,10 +114,7 @@ def handler(options, port, token):
             self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw)
         def do_GET(self):
             if not self.allowed(): return self.send_error(403)
-            if not self.authenticated():
-                raw = '<meta name="viewport" content="width=device-width"><h1>Mac engine</h1><form method="post" action="/__nova_generation/pair"><label>Pairing code <input name="code" type="password" autocomplete="off" required maxlength="128"></label><button>Connect</button></form>'.encode()
-                self.send_response(401); self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw); return
+            if not self.authenticated(): return self.pairing_page()
             if self.path == '/__nova_generation/status':
                 return self.reply(200, {'token': token, 'composer': bool(options.weights), 'singer': bool(options.sinsy and options.dictionary and options.voice), 'localOnly': not remote, 'executionDevice': 'host', 'transport': 'https-paired' if remote else 'loopback'})
             # Never expose hidden files or runtime/model directories through static serving.

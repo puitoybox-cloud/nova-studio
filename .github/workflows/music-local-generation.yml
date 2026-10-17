@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: '22'
       - run: python tools/music-local-generation/test_transport.py
+      - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - name: Prepare fixed licensed development assets
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
@@ -63,6 +64,7 @@ jobs:
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
       - run: python tools/music-local-generation/test_transport.py
+      - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - name: Build fixed Sinsy and prepare model on Intel Mac
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"

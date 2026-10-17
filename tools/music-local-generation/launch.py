@@ -2,7 +2,6 @@
 import argparse
 import json
 import os
-import platform
 import signal
 import subprocess
 import sys
@@ -26,24 +25,32 @@ def paths(asset_root):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('assets', type=Path); p.add_argument('--port', type=int, default=8766)
+    p.add_argument('assets', type=Path, nargs='?'); p.add_argument('--config', type=Path); p.add_argument('--port', type=int, default=8766)
     p.add_argument('--lan-ip'); p.add_argument('--tls-cert', type=Path); p.add_argument('--tls-key', type=Path)
     p.add_argument('--check', action='store_true', help='Validate paths and CPU dependencies without starting')
     args = p.parse_args()
-    if not 1024 <= args.port <= 65535: p.error('port outside bounds')
-    resolved = paths(args.assets)
-    import onnxruntime
-    if 'CPUExecutionProvider' not in onnxruntime.get_available_providers(): raise RuntimeError('CPU provider unavailable')
-    # Verify the fixed weights and voice before opening a network listener.
-    from compose import digest
-    for name, lock in json.loads((HERE / 'model-lock.json').read_text())['files'].items():
-        if digest(resolved['weights'] / name) != lock['sha256']: raise ValueError('model identity mismatch: ' + name)
-    if digest(resolved['voice']) != json.loads((HERE / 'source-lock.json').read_text())['voiceFile']['sha256']:
-        raise ValueError('voice identity mismatch')
-    subprocess.run([str(resolved['sinsy']), '-h'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=True)
-    print(json.dumps({'system': platform.system(), 'architecture': platform.machine(), 'cpuProvider': True,
-                      'signedDistribution': False, 'assetsVerified': True}), flush=True)
+    if args.config:
+        if args.assets or any(getattr(args, k) for k in ('lan_ip', 'tls_cert', 'tls_key')) or args.port != 8766:
+            p.error('--config cannot be combined with connection overrides')
+        try:
+            settings = json.loads(args.config.read_text())
+            if not isinstance(settings, dict) or set(settings) - {'assets', 'port', 'lan_ip', 'tls_cert', 'tls_key'}:
+                raise ValueError('unknown config keys')
+            if not isinstance(settings.get('assets'), str) or not settings['assets']: raise ValueError('assets path required')
+            for name in ('assets', 'tls_cert', 'tls_key'):
+                if name not in settings: continue
+                if not isinstance(settings[name], str) or not settings[name]: raise ValueError(name + ' path required')
+                settings[name] = (args.config.resolve().parent / settings[name]).resolve()
+            if 'lan_ip' in settings and not isinstance(settings['lan_ip'], str): raise ValueError('lan_ip string required')
+            for key, value in settings.items(): setattr(args, key, value)
+        except (ValueError, OSError) as error: p.error('Config（起動設定）: ' + str(error))
+    if not args.assets: p.error('assets or --config required')
+    from diagnostics import diagnose
+    report = diagnose(args.assets, args.port, args.lan_ip, args.tls_cert, args.tls_key)
+    print(json.dumps(report, ensure_ascii=False), flush=True)
+    if not report['ok']: raise SystemExit(1)
     if args.check: return
+    resolved = paths(args.assets)
     command = [sys.executable, str(HERE / 'serve.py'), '--port', str(args.port)]
     for key, value in resolved.items(): command += ['--' + key, str(value)]
     for key in ('lan_ip', 'tls_cert', 'tls_key'):

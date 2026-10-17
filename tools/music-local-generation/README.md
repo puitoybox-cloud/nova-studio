@@ -79,3 +79,52 @@ Sinsy 0.92 is locally modified during preparation: `lib/util/Configurations.cpp`
 `std::make_pair` with deduced types for current Apple libc++ compatibility.
 Preparation verifies the upstream archive and exact patch context before modification;
 `notices/Sinsy-local-modifications.txt` records the change alongside upstream terms.
+
+## Macの起動設定と診断（2026-10-17）
+
+準備済みの資材を使う場合、`launch.example.json`を同じフォルダの`launch.json`へ
+コピーし、`assets`を資材の絶対パスへ変更します。専用Python環境をこのフォルダの
+`.venv`に置くと、`Start-Music-Engine.command`をFinderから開いて起動できます。
+それ以外はPATHの`python3`を使います。初回のPython導入・依存導入・モデル準備は
+READMEのSet upが必要です。このファイルは署名済みアプリではありません。
+macOSがブロックした場合のGatekeeper回避や管理者操作は自動実行しません。
+
+起動前にPython/macOS、固定依存バージョン、CPU provider、全モデルのSHA256、
+歌声音源、Sinsy実行、LAN/TLS設定、待受IP/ポートをまとめて診断します。
+失敗項目と日本語の対処をJSONで出力し、ひとつでも失敗するとサーバーを起動しません。
+`--check`でも同じ診断のみ実行できます。ポート確認後に別プロセスが取得した場合は
+実起動時のbindが最終判定です。診断は実推論、署名、端末の信頼設定の認定ではありません。
+
+### iPad接続用の証明書を明示生成
+
+Macの現在のプライベートIPv4を確認してから、リポジトリの外の新しい保存先を指定します。
+既存ファイルは上書きしません。外部通信、端末への信頼登録、管理者操作は行いません。
+
+```sh
+python tools/music-local-generation/prepare_tls.py /absolute/private/nova-tls --lan-ip 192.168.1.20
+```
+
+`ca.pem`が端末へ渡す公開CA証明書です。Macに表示されたSHA256指紋を照合してから、
+自分のMac/iPadでこのCAの信頼設定を明示的に行ってください。
+**`ca-key.pem`と`server-key.pem`はMacの非公開フォルダで保管し、iPadへ渡さないでください。**
+端末での信頼設定完了は自動確認できません。`TRUST.txt`にも指紋と注意を保存します。
+
+LAN用の`launch.json`例：
+
+```json
+{
+  "assets": "/absolute/path/nova-generation-assets",
+  "port": 8766,
+  "lan_ip": "192.168.1.20",
+  "tls_cert": "/absolute/private/nova-tls/server.pem",
+  "tls_key": "/absolute/private/nova-tls/server-key.pem"
+}
+```
+
+設定内の相対パスは設定ファイルの場所から解決します。未知の設定項目は拒否します。
+起動前に証明書と秘密鍵の一致、IP SAN、有効期間を確認します。サーバー証明書は30日、
+CAは365日です。IP変更や期限切れでは新しいフォルダへ再生成して設定と信頼を更新してください。
+証明書エラーはペアリング前に起きるため、ブラウザ内の機能では修復できません。
+警告を無視して接続せず、Macの起動診断、IPと証明書、端末の信頼設定を確認してください。
+接続拒否はIP/ポート/起動状態を確認し、ペアリング失効はMacに表示中のコードで再接続します。
+再起動・別ブラウザでの再ペアリングでは旧セッションは使えません。
