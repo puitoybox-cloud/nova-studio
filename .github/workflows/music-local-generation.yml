@@ -22,6 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python tools/music-local-generation/test_transport.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - name: Prepare fixed licensed development assets
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
@@ -46,3 +47,31 @@ jobs:
         with:
           name: music-local-real-generation
           path: verification/music-local-real-browser.json
+  intel-mac-generation:
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require Intel runtime
+        run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_transport.py
+      - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - name: Build fixed Sinsy and prepare model on Intel Mac
+        run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
+      - name: Verify actual launch prerequisites
+        run: python tools/music-local-generation/launch.py "$RUNNER_TEMP/nova-generation-assets" --check
+      - name: Real Intel CPU model and Japanese voice through Studio
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_SINSY: ${{ runner.temp }}/nova-generation-assets/runtime/bin/sinsy
+          NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
+          NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
+        run: node scripts/music-local-real-generation.js

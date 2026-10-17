@@ -29,3 +29,53 @@ The server binds only 127.0.0.1. Host, Origin and an unpredictable same-origin r
 ## Verification
 
 `node scripts/music-local-real-generation.js` requires `NOVA_MODEL_WEIGHTS`, `NOVA_SINSY`, `NOVA_SINSY_DICTIONARY`, `NOVA_SINSY_VOICE`, and a Python environment with the requirements. It starts the real host, drives existing app APIs with real CPU inference, partial MIDI application/save, real MusicXML→Sinsy WAV import and byte-identical full archive restore. It rejects a foreign Origin. This opt-in check never replaces missing models with fixtures. Browser/physical-device acceptance is separate.
+
+## Prepared runtime launcher and paired iPad transport (2026-10-17)
+
+After explicit setup, `python tools/music-local-generation/launch.py /absolute/assets --check`
+checks the fixed model/voice hashes, CPU provider, required directories and executable launch.
+Remove `--check` to start. Ctrl-C or SIGTERM stops the host and its owned synthesis process
+group. No automatic installation, administrator access, background login service or signed app
+is implied. Use an Intel-native Python environment on Intel Mac; this change has not been run
+on physical macOS. Missing libraries, wrong CPU binaries and missing assets fail before serving.
+
+For an optional private LAN connection, supply all three arguments:
+
+```sh
+python tools/music-local-generation/launch.py /absolute/assets \
+  --lan-ip 192.168.1.20 --tls-cert /absolute/server.pem --tls-key /absolute/server-key.pem
+```
+
+The certificate must cover that IP and be trusted on the iPad. Certificate provisioning and
+trust installation are not performed here. Use the HTTPS URL printed by the Mac and enter
+the separate pairing code shown in its terminal. Never put the code in the URL. Only one
+browser session is paired at a time; re-pairing revokes it. Sessions expire after eight hours;
+restarting the host invalidates all sessions and rotates credentials. Five pairing attempts
+per minute per client are allowed. Host/Origin/request-token checks remain in force; no CORS,
+public bind, plaintext LAN endpoint or external inference service is enabled.
+
+The served iPad browser sends composition/score requests to the **Mac host**, where ONNX/Sinsy
+run. MIDI editing, listening, Vocal editing and local IndexedDB saving remain browser tasks.
+The iPad does not run Sinsy or the Python ONNX runtime. Mac and iPad browser storage are separate:
+transfer existing work with the full backup/archive workflow. The host has to remain running;
+connection/asset failures preserve the current project and are reported in the existing UI.
+An HTTPS socket test is not physical Safari acceptance or a signed redistribution approval.
+
+Remaining distribution work: pinned Python/dependency wheels and their notices, complete
+Mach-O loader/architecture closure, production asset admission, reproducible Intel bundle,
+Developer ID signing/notarization, certificate provisioning, Safari LAN permissions, listening
+quality and full-feature acceptance. Existing upstream notice files and asset licenses remain
+required; pairing does not change their terms.
+
+The `intel-mac-generation` CI job explicitly requires Darwin/x86_64, builds the fixed
+Sinsy/HTS sources, validates launcher prerequisites and executes real model/voice generation
+through Studio. It is separate from the unsigned Swift wrapper build and physical-device
+acceptance. PyPI CPython 3.12 metadata checked 2026-10-17 lists ONNX Runtime 1.23.2
+`macosx_13_0_x86_64`, NumPy 2.5.4 `macosx_10_13_x86_64` and Pillow 12.3.0
+`macosx_10_13_x86_64` wheels. This runtime therefore requires macOS 13+ on Intel; earlier
+macOS compatibility is not established. See https://pypi.org/pypi/onnxruntime/1.23.2/json .
+
+Sinsy 0.92 is locally modified during preparation: `lib/util/Configurations.cpp`, `MacronTable.cpp` and `PhonemeTable.cpp` use
+`std::make_pair` with deduced types for current Apple libc++ compatibility.
+Preparation verifies the upstream archive and exact patch context before modification;
+`notices/Sinsy-local-modifications.txt` records the change alongside upstream terms.
