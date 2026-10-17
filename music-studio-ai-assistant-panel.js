@@ -17,7 +17,7 @@
   function candidateValuesForProject(kind,project,session,generation){const service=composition();if(!service)throw Error('ai-composition-unavailable');return service.candidateValues(kind,{...service.createContext(project,session,core()),...(generation?{generation}:{} )})}
   function activeCandidateSet(record){return record.state.workspace.candidateSets.find(item=>item.setId===record.state.activeCandidateSetId)||record.state.workspace.candidateSets.at(-1)||null}
   function captureGeneration(id,strict=false){const record=stateFor(project(id));try{const seed=value('#aiGenerationSeed').trim(),register=value('#aiGenerationRegister')||'mid';record.generation=seed===''?null:composition().generationOptions({seed:Number(seed),register});return record.generation}catch(error){record.message=`生成設定拒否: ${error.message}`;if(strict)throw error;return null}}
-  function generationControls(project,record,set){const g=record.generation===undefined?set?.candidates?.[0]?.value?.generation:record.generation;return`<details class="music-ai-generation-controls"><summary>Local recipe（端末内の生成設定）</summary><p>規則によるMelody / Continuation候補です。モデルによるAI作曲・歌声合成は未接続。Seedが空欄の場合は従来の候補を使います。</p><div class="music-ai-range"><label>Seed（再現番号）<input id="aiGenerationSeed" type="number" min="0" max="999999" step="1" value="${esc(g?.seed??'')}" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}"></label><label>Register（音域）<select id="aiGenerationRegister" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}">${[['mid','Mid（中央）'],['mid-high','High（高め）'],['low-mid','Low（低め）']].map(([id,title])=>`<option value="${id}" ${id===(g?.register||'mid')?'selected':''}>${title}</option>`).join('')}</select></label></div></details>`}
+  function generationControls(project,record,set){const g=record.generation===undefined?set?.candidates?.[0]?.value?.generation:record.generation;return`<details class="music-ai-generation-controls"><summary>Local recipe（端末内の生成設定）</summary><p>規則によるMelody / Continuation候補です。実モデル作曲は別の「AI model」から実行します。Seedが空欄の場合は従来の候補を使います。</p><div class="music-ai-range"><label>Seed（再現番号）<input id="aiGenerationSeed" type="number" min="0" max="999999" step="1" value="${esc(g?.seed??'')}" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}"></label><label>Register（音域）<select id="aiGenerationRegister" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}">${[['mid','Mid（中央）'],['mid-high','High（高め）'],['low-mid','Low（低め）']].map(([id,title])=>`<option value="${id}" ${id===(g?.register||'mid')?'selected':''}>${title}</option>`).join('')}</select></label></div></details>`}
   function candidateSelection(candidateId){const rawFrom=value(`#aiFrom${candidateId}`).trim(),rawTo=value(`#aiTo${candidateId}`).trim();if(!rawFrom&&!rawTo)return null;const from=Number(rawFrom),to=Number(rawTo);if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)throw Error('invalid-candidate-selection');return{startMeasure:from,endMeasure:to}}
   function candidatePreviewText(bundle){if(!bundle)return'';if(bundle.type==='metadata-preview')return'Metadata Preview / 原本変更なし'+(bundle.companion?.timeline?.segments||[]).map(part=>` / Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`).join('')+composition().lyricsTimelineRows(bundle.companion?.timeline).map(line=>` / ${line}`).join('');const changes=bundle.result?.changes||{updates:[],adds:[],deleteNoteIds:[]};return`MIDI Preview → ${bundle.targetTrackId} / 更新 ${changes.updates.length}・追加 ${changes.adds.length}・削除 ${changes.deleteNoteIds.length} / 原本変更なし${bundle.companion?.instrumentFit?` / Sample fit（音源の音域・強さ）: ${bundle.companion.instrumentFit.changed?'調整あり':'範囲内'}`:''}`}
   function candidateEditHtml(project,candidate){
@@ -54,23 +54,26 @@
   }
   function localModelControls(project,record){
     if(!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return'';
-    return `<details class="music-ai-generation-controls"><summary>AI model（実モデル作曲・端末内）</summary><p>SkyTNT MIDIモデル / Apache-2.0。旋律A/B/Cを生成し、既存の試聴・部分採用・保存へ送ります。</p><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.generateLocalModel('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>${record.localModelBusy?'Generating（推論中）':'Generate model A/B/C（実モデルで生成）'}</button></details>`;
+    return `<details class="music-ai-generation-controls"><summary>AI model（実モデル作曲・端末内）</summary><p>SkyTNT MIDIモデル / Apache-2.0。旋律A/B/Cを生成し、既存の試聴・部分採用・保存へ送ります。BPM・拍子・Keyは現在の曲を使います。Keyと音域は推論後の音符補正、曲調は推論のサンプリング設定です。</p><div class="music-ai-range"><label>Style（曲調・変化量）<select id="aiModelStyle" ${record.localModelBusy?'disabled':''}><option value="balanced" ${record.modelStyle==='balanced'?'selected':''}>Balanced（標準）</option><option value="gentle" ${record.modelStyle==='gentle'?'selected':''}>Gentle（控えめ）</option><option value="varied" ${record.modelStyle==='varied'?'selected':''}>Varied（変化多め）</option></select></label><label>Voice range（歌唱音域）<select id="aiModelRange" ${record.localModelBusy?'disabled':''}><option value="48:84" ${record.modelRange==='48:84'?'selected':''}>Wide（C3〜C6）</option><option value="57:77" ${record.modelRange==='57:77'?'selected':''}>Female guide（A3〜F5・目安）</option><option value="60:72" ${record.modelRange==='60:72'?'selected':''}>Narrow（C4〜C5）</option></select></label></div><small>歌いやすさには個人差があります。自由文の雰囲気指定・コード条件は未対応。</small><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.generateLocalModel('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>${record.localModelBusy?'Generating（推論中）':'Generate model A/B/C（実モデルで生成）'}</button></details>`;
   }
   async function generateLocalModel(id){
     const p=project(id),session=app()?.state?.midiEditor;
     if(!p||!session||session.projectId!==id)return{ok:false,reason:'midi-session-required'};
     const record=stateFor(p);
     if(record.localModelBusy||!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return;
+    const musicSignature=JSON.stringify(p.musicalSettings);
     const signature=JSON.stringify(session?.midiData),workspace=JSON.stringify(record.state.workspace),range=JSON.stringify(session?.editRange),track=core().currentTrackId(session);
-    const current=()=>project(id)===p&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&JSON.stringify(record.state.workspace)===workspace&&JSON.stringify(session.editRange)===range&&core().currentTrackId(session)===track;
+    const current=()=>project(id)===p&&JSON.stringify(p.musicalSettings)===musicSignature&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&JSON.stringify(record.state.workspace)===workspace&&JSON.stringify(session.editRange)===range&&core().currentTrackId(session)===track;
+    const modelStyle=value('#aiModelStyle')||'balanced',modelRange=(value('#aiModelRange')||'48:84').split(':').map(Number);
+    const seedText=value('#aiGenerationSeed').trim(),seed=seedText===''?72:Number(seedText);
+    record.modelStyle=modelStyle;record.modelRange=modelRange.join(':');
     record.localModelBusy=true;record.message='実モデル推論中です。';refresh(id);
     try{
-      const seedText=value('#aiGenerationSeed').trim(),seed=seedText===''?72:Number(seedText);
-      const result=await app().localGenerationRequest('compose',{seed,events:64,max_ticks:Math.floor((session.editRange?composition().createContext(p,session,core()).range.endTick-composition().createContext(p,session,core()).range.startTick:7680)*480/(session.midiData.ppq||480)),bpm:Math.round(session.midiData.tempo||p.bpm||72)});
+      const result=await app().localGenerationRequest('compose',{seed,events:64,max_ticks:Math.floor((session.editRange?composition().createContext(p,session,core()).range.endTick-composition().createContext(p,session,core()).range.startTick:7680)*480/(session.midiData.ppq||480)),bpm:Math.round(session.midiData.tempo||p.musicalSettings?.bpm||72),key:p.musicalSettings?.key||null,numerator:(session.midiData.timeSignature||p.musicalSettings?.timeSignature||{numerator:4}).numerator,denominator:(session.midiData.timeSignature||p.musicalSettings?.timeSignature||{denominator:4}).denominator,pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle});
       if(!current())return;
       if(result.model!=='skytnt/midi-model-tv2o-medium'||result.synthetic!==false||result.candidates?.length!==3)throw Error('invalid-model-result');
       const files=result.candidates.map(c=>{const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0));return new root.File([bytes],`${c.variant}-SkyTNT.mid`,{type:'audio/midi'})});
-      await importMidiCandidates(id,{files,value:''});
+      await importMidiCandidates(id,{files,value:''},result);
       if(current())record.message='実モデルA/B/Cを生成しました。Preview→Listen→Applyで採用できます。';
     }catch(error){if(current())record.message=`実モデル生成: ${error.message}`}
     finally{record.localModelBusy=false;if(project(id)===p&&states.get(id)===record&&app().state.midiEditor===session)refresh(id)}
@@ -156,7 +159,7 @@
   function value(selector){return root.document?.querySelector?.(selector)?.value||''}
   function previewSong(id){const record=touch(id),meter=value('#aiSongMeter').split('/').map(Number),tracks=value('#aiSongTracks').split(',').map(item=>item.trim()).filter(Boolean);try{ui().setNewSongDraft(record.state,{title:value('#aiSongTitle'),bpm:Number(value('#aiSongBpm')),numerator:meter[0],denominator:meter[1],key:value('#aiSongKey'),bars:Number(value('#aiSongBars')),mood:value('#aiSongMood'),genre:value('#aiSongGenre'),memo:value('#aiSongMemo'),tracks});ui().previewNewSong(record.state)}catch(error){record.message=`New Song Preview拒否: ${error.message}`}refresh(id)}
   async function confirmSong(id){const record=touch(id);try{const made=ui().confirmNewSong(record.state),created=await app().createAIProject(made);app().openMidiEditor(created.projectId)}catch(error){record.message=`新規作成拒否: ${error.message}`;refresh(id)}}
-  async function importMidiCandidates(id,input){
+  async function importMidiCandidates(id,input,modelResult=null){
     const files=Array.from(input?.files||[]);if(input)input.value='';if(!files.length)return;
     app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor;
     const token={};record.midiImportToken=token;
@@ -169,7 +172,9 @@
         const bytes=await files[i].arrayBuffer();if(!current())return;
         const v=composition().midiCandidate(bytes,files[i],context,i,session.midiData.ppq);
         const bundle=materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
-        materializer().auditionPlan(session,core(),bundle,null);values.push(v);
+        materializer().auditionPlan(session,core(),bundle,null);
+        if(modelResult){const source=modelResult.candidates[i];v.modelGeneration={model:modelResult.model,revision:modelResult.revision,seed:source.seed,constraints:clone(source.constraints||{}),adjustedNotes:source.adjustedNotes||0};v.summary+=` / ${source.constraints?.style||'balanced'} / ${source.constraints?.key||'Key自由'} / ${source.constraints?.pitchMin??48}–${source.constraints?.pitchMax??84} / ${v.importedMidi.notes.length}音 / 補正${source.adjustedNotes||0}音`;}
+        values.push(v);
       }
       if(!current())return;
       touch(id);ui().createCandidates(record.state,'melody',{range:clone(session.editRange),music:{key:context.key,mode:context.mode,source:'imported-midi-output'}},values,{adapter:'local-midi-output-import-v1',reason:'User supplied MIDI output; model and license origin unverified'});

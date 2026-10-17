@@ -43,7 +43,38 @@ def midi_bytes(score):
     return b'MThd' + struct.pack('>IHHH', 6, 1, len(tracks), score[0]) + b''.join(tracks), notes
 
 
-def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680):
+KEYS = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11}
+STYLES = {'balanced': (1.0, .98, 20), 'gentle': (.8, .9, 12), 'varied': (1.15, .99, 32)}
+
+
+def constraints(key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced'):
+    if key is not None and (not isinstance(key, str) or key.removesuffix('m') not in KEYS): raise ValueError('unsupported-key')
+    if type(pitch_min) is not int or type(pitch_max) is not int or not 0 <= pitch_min <= pitch_max <= 127: raise ValueError('invalid-pitch-range')
+    if type(numerator) is not int or not 1 <= numerator <= 12 or type(denominator) is not int or denominator not in [2,4,8,16]: raise ValueError('unsupported-meter')
+    if style not in STYLES: raise ValueError('unsupported-style')
+    scale = None if key is None else {(KEYS[key.removesuffix('m')] + n) % 12 for n in ([0,2,3,5,7,8,10] if key.endswith('m') else [0,2,4,5,7,9,11])}
+    allowed = [n for n in range(pitch_min, pitch_max+1) if scale is None or n % 12 in scale]
+    if not allowed: raise ValueError('no-scale-note-in-range')
+    return allowed
+
+
+def constrain_score(score, *, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', bpm=72):
+    # Explicit postprocessing of real inference, never presented as model conditioning.
+    allowed = constraints(key, pitch_min, pitch_max, numerator, denominator, style)
+    changed = 0
+    for track in score[1:]:
+        track[:] = [e for e in track if e[0] not in ['set_tempo','time_signature','key_signature']]
+        for event in track:
+            if event[0] == 'note':
+                old = event[4]
+                event[4] = min(allowed, key=lambda n: (abs(n-old), n))
+                changed += int(old != event[4])
+    score[1].extend([['set_tempo',0,round(60000000/bpm)], ['time_signature',0,numerator,denominator.bit_length()-1,24,8]])
+    return changed
+
+
+def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced'):
+    constraints(key, pitch_min, pitch_max, numerator, denominator, style)
     import numpy as np
     import onnxruntime as rt
     from vendor.midi_tokenizer import MIDITokenizer
@@ -65,16 +96,17 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680):
     prompt = np.asarray(prompt, dtype=np.int64)
     for index, variant in enumerate('ABC'):
         rows = list(prompt)
-        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16))):
+        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16))):
             rows.append(row[0])
         score = tokenizer.detokenize(rows)
         for i, track in enumerate(score[1:], 1):
             score[i] = [e for e in track if e[1] < max_ticks]
             for e in score[i]:
                 if e[0] == 'note': e[2] = min(e[2], max_ticks - e[1])
+        adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm)
         data, notes = midi_bytes(score); name = variant + '.mid'
         (output / name).write_bytes(data)
-        result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+        result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'method': 'model-sampling-and-explicit-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 
