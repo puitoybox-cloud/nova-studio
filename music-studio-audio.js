@@ -75,5 +75,37 @@
     function dispose(){allNotesOff();stopPreview();stopPlayback();stopMetronome();if(!options.context)context?.close?.();context=null;master?.disconnect?.();master=null;noiseBuffer=null;sampleBank.clear()}
     return{setSampleBank,previewInstrument,supported,unlock,noteOn,noteOff,allNotesOff,playTracks,playNotes,stopPreview,stopPlayback,metronomeClick,stopMetronome,previewTrackNote,previewNote,dispose,frequency,drumSoundPath,volume,get diagnostics(){return{...diagnostics,soundPaths:{...diagnostics.soundPaths}}},get context(){return context},get liveVoices(){return live.size},get playingVoices(){return playback.size+preview.size}};
   }
-  root.MusicStudioAudio={createSynth,frequency,resolveTrackAudio};
+  // Same instrument scheduler as live playback, rendered locally without microphone capture.
+  async function renderMidi(midi,entries=[],options={}){
+    const guard=options.guard||(()=>{}),Playback=root.MusicStudioPlayback;
+    guard();if(!Playback||!midi||!Array.isArray(midi.tracks))throw Error('midi-render-data-required');
+    const ppq=midi.ppq,tempo=midi.tempo;
+    if(!Number.isInteger(ppq)||ppq<24||ppq>9600||!Number.isFinite(tempo)||tempo<20||tempo>400)throw Error('midi-render-timing');
+    const tracks=Playback.activePlaybackTracks(midi.tracks),notes=tracks.flatMap(t=>t.notes);
+    if(!notes.length||notes.length>20000)throw Error('midi-render-note-capacity');
+    for(const n of notes)if(!Number.isSafeInteger(n.startTick)||n.startTick<0||!Number.isSafeInteger(n.durationTicks)||n.durationTicks<1||!Number.isSafeInteger(n.startTick+n.durationTicks)||!Number.isInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isInteger(n.velocity)||n.velocity<1||n.velocity>127)throw Error('midi-render-note-invalid');
+    const endTick=Math.max(...notes.map(n=>n.startTick+n.durationTicks)),seconds=Playback.tickDurationSeconds(0,endTick,ppq,midi.tempoMap,tempo);
+    if(!Number.isFinite(seconds)||seconds<=0||seconds>120)throw Error('midi-render-120-seconds-limit');
+    // Include complete one-shot playback after pitch shifting, or refuse an excessive tail.
+    let finish=seconds+.8;
+    for(const track of tracks)if(track.sampleInstrument)for(const note of track.notes){
+      const binding=track.sampleInstrument,region=binding.version===undefined?{...binding,releaseMs:15}:root.MusicStudioInstruments?.select(binding,note.pitch,note.velocity),entry=entries.find(e=>e.id===region?.assetId);
+      if(!region||!entry)throw Error('midi-render-missing-or-unmapped-sample');
+      const start=Playback.tickDurationSeconds(0,note.startTick,ppq,midi.tempoMap,tempo),end=Playback.tickDurationSeconds(0,note.startTick+note.durationTicks,ppq,midi.tempoMap,tempo),rate=2**((note.pitch-region.rootPitch)/12+(region.tuneCents||0)/1200),natural=start+((region.endSeconds??entry.pcm.channels[0].length/entry.pcm.sampleRate)-(region.startSeconds||0))/rate;
+      finish=Math.max(finish,region.oneShot?natural:Math.min(natural,end+(region.releaseMs??15)/1000));
+    }
+    const tail=finish-seconds;if(!Number.isFinite(tail)||tail>10)throw Error('midi-render-sample-tail-limit');
+    const frames=Math.ceil(finish*48000);
+    const Context=options.OfflineAudioContext||root.OfflineAudioContext||root.webkitOfflineAudioContext;
+    if(typeof Context!=='function')throw Error('offline-audio-unavailable');
+    const context=new Context(2,frames,48000),synth=createSynth({context,volume:.12});
+    try{
+      synth.setSampleBank(entries);const schedule=Playback.schedulePlaybackTracks(synth,tracks,{ppq,bpm:tempo,tempoMap:midi.tempoMap,startTick:0,startTime:0,leadSeconds:0});
+      if(!schedule.ok||schedule.noteCount!==notes.length||schedule.scheduledNotes.some(n=>!n.audible))throw Error('midi-render-missing-or-unmapped-sample');
+      guard();const buffer=await context.startRendering();guard();
+      if(buffer.sampleRate!==48000||buffer.numberOfChannels!==2||buffer.length!==frames)throw Error('midi-render-output-invalid');
+      return{buffer,frames,sampleRate:48000,channels:2,seconds,tail,noteCount:notes.length,trackIds:tracks.map(t=>t.id)};
+    }finally{synth.dispose()}
+  }
+  root.MusicStudioAudio={createSynth,frequency,resolveTrackAudio,renderMidi};
 })(typeof window!=='undefined'?window:globalThis);
