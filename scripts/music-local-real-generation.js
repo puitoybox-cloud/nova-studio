@@ -23,9 +23,15 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  const sung=await s.a.generateLocalScoreVocal(s.p.projectId,s.recordId,{startMeasure:2,endMeasure:2});assert.equal(sung.ok,true,sung.error);
  const sourceInfo=sung.project.longWavAssets.find(a=>a.id===sung.assetId).vocalTake.scoreSource;assert.equal(sourceInfo.generationRange.startMeasure,2);assert.ok(!sourceInfo.scoreXML.includes('<text>あ</text>'));assert.ok(sourceInfo.scoreXML.includes('<text>い</text>'));
  const rendered=await s.a.vocalRender(s.p.projectId,sung.assetId);assert.ok(rendered.blob.size>44);
+ const generatedAsset=s.a.state.projects[0].longWavAssets.find(a=>a.id===sung.assetId),frames=generatedAsset.sampleRate*180,channels=generatedAsset.channels;
+ const header=await rendered.blob.slice(0,44).arrayBuffer(),view=new DataView(header);view.setUint32(4,36+frames*channels*2,true);view.setUint32(40,frames*channels*2,true);
+ const longFile=Object.assign(new Blob([header,new Uint8Array(frames*channels*2)],{type:'audio/wav'}),{name:'long-original.wav'}),longBase=await s.a.importScoreVocal(longFile,s.p.projectId,s.recordId,'score-zero');assert.equal(longBase.ok,true,longBase.error);
+ const replacement=await s.a.vocalReplacementApply(s.p.projectId,longBase.assetId,sung.assetId,{fadeMs:10});assert.equal(replacement.ok,true,replacement.error);
+ const replaced=Buffer.from(await(await s.a.pcmLoadLongWav(s.p.projectId,replacement.assetId)).arrayBuffer()),dry=Buffer.from(await longFile.arrayBuffer()),first=Math.round(4*60/90*generatedAsset.sampleRate),last=Math.round(8*60/90*generatedAsset.sampleRate);
+ assert.deepEqual(replaced.subarray(0,44+first*channels*2),dry.subarray(0,44+first*channels*2));assert.deepEqual(replaced.subarray(44+last*channels*2),dry.subarray(44+last*channels*2));assert.ok(replaced.subarray(44+first*channels*2,44+last*channels*2).some(x=>x!==0));
  const archive=await s.a.createLongWavArchive(),restored=await s.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
  const copy=restored.projects[0],again=await s.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);
- assert.deepEqual(Buffer.from(await again.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer()));
+ assert.deepEqual(Buffer.from(await again.blob.arrayBuffer()),replaced);
  const forbidden=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:'{}'});assert.equal(forbidden.status,403);
- console.log(JSON.stringify({realInference:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
+ console.log(JSON.stringify({realInference:true,longBaseSeconds:180,longReplacementOutsideBytesUnchanged:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
 }finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exitCode=1});
