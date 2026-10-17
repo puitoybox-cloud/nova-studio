@@ -269,3 +269,10 @@ main.music-studio-shell.music-export-focused{position:static;min-height:0;margin
  }
  .music-studio-shell.music-vocal-focused [data-vocal-replacement] p {margin: 4px 0; line-height: 1.35;}
 }
+
+/* Keep generated MIDI audio controls consistent with the focused export workspace. */
+.music-export-focused>.music-midi-render{margin:4px 0;padding:4px 12px;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+.music-export-focused>.music-midi-render p{margin:4px 0}
+.music-export-focused>.music-midi-render button{min-height:44px;box-sizing:border-box;margin:2px;padding:6px 10px}
+.music-export-focused .music-export-sources{background:#0d1725;color:#eef6ff;border:1px solid #526985;border-radius:8px}
+.music-export-focused .music-export-sources>summary{color:#eef6ff}

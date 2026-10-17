@@ -1462,7 +1462,7 @@ if(!document.querySelector('link[data-music-studio]')){
  document.head.appendChild(musicAIStylesheet);
  const musicCompactStylesheet=document.createElement('link');
  musicCompactStylesheet.rel='stylesheet';
- musicCompactStylesheet.href='./music-studio-compact-ui.css?v=1.0.12';
+ musicCompactStylesheet.href='./music-studio-compact-ui.css?v=1.0.13';
  musicCompactStylesheet.dataset.musicStudioCompact='true';
  document.head.appendChild(musicCompactStylesheet);
 }
