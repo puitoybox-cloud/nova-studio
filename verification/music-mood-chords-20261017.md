@@ -1,0 +1,11 @@
+# 2026-10-17: finite mood/genre and chord projection
+
+Base #446 / 4ba4d5f6abd6da16d3d510275bd84c5dc302dc12. Main read via git ls-remote: 552d56eafddfd192970c09f7d6278696cf8775c3. Newest returned open Draft is #446. Full open-PR REST audit is being attempted separately; do not claim completion unless its snapshot has no errors.
+
+Production: local model controls send finite mood vocabulary (優しい/切ない/明るい, gentle/sad/bright), ballad/pop genre and up to 32 chord names. Unsupported text and conflicting moods fail explicitly. Mood overrides genre, then explicit sampling style. These are sampling presets, not semantic conditioning or a quality guarantee. Real model inference remains mandatory; no fallback notes.
+
+Chord projection uses major/minor/7/maj7/m7/dim/sus4 and sharp/flat roots. One chord per current meter measure, repeated from selected range start; chord at note onset determines closest in-range chord tone. Chords take priority over key scale, including chromatic chords. Durations, velocities, rests and note onsets remain unchanged. A/B/C retain separate seeds and the same requested conditions. Conditions are retained in existing candidate provenance / workspace storage. Existing preview/partial apply/Undo paths remain in use.
+
+Validation: Node full suite before final added request test 2371/2371 pass, no skip/failure; final added request dispatch test included in focused 9/9 pass. Python constraint/projection 6/6, real HTTPS transport 3/3, startup 4/4. node --check, Python compile and git diff --check pass. Real ONNX/Sinsy and four-size Chrome checks are CI-dependent and pending at publication. Existing scripts now exercise new controls and check per-measure chord-tone membership at 1440/820/390/1180x820. No local model assets or browser used to claim inference success.
+
+Not delivered: arbitrary prose comprehension, genuine learned genre/mood conditioning, natural Japanese pronunciation improvement, vocal region replacement/crossfade, signed production distribution or physical Mac/iPad acceptance. Twenty to thirty independent items are not completed. Formal 30 features conservatively remain A0/B0/C30; no new full-feature certification. No Ready/Merge/force push/Live Provider API.
