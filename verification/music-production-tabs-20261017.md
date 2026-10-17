@@ -63,3 +63,5 @@ A0/B0/C30 retained. No B promotion: routing and a transaction round-trip do not 
 7. iPad 1180×820: switch all eight tabs; check save/history access, input keyboard and dialogs. Record any document scrolling; all-editing-one-screen acceptance is still pending.
 
 No main mutation, Ready/Merge, force push, Live Provider API or unlicensed asset addition.
+
+First new-head browser CI passed all 8 tabs at all four sizes with Console error/warn 0 and no external requests. Existing focused Mix test found 5px vertical overflow at 1180×820 caused by added navigation padding; removed that padding while retaining 44px touch targets. Final-head CI must reverify the correction.
