@@ -58,6 +58,7 @@ def handler(options, port, token):
     sessions = {}
     pairing = getattr(options, 'pairing', None)
     attempts = {}
+    auth_lock = threading.Lock()
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs): super().__init__(*args, directory=str(ROOT), **kwargs)
         def setup(self):
@@ -69,14 +70,15 @@ def handler(options, port, token):
             try: cookie.load(self.headers.get('Cookie', ''))
             except Exception: return False
             value = cookie.get('__Host-nova')
-            return bool(value and sessions.get(value.value, 0) > time.monotonic())
+            with auth_lock: return bool(value and sessions.get(value.value, 0) > time.monotonic())
         def log_message(self, *args): pass  # Never log pairing codes or session credentials.
         def pair(self):
             if self.headers.get('Origin') != origin: return self.send_error(403)
             peer = self.client_address[0]; now = time.monotonic()
-            previous, count = attempts.get(peer, (now, 0))
-            if now - previous > 60: previous, count = now, 0
-            attempts[peer] = (previous, count + 1)
+            with auth_lock:
+                previous, count = attempts.get(peer, (now, 0))
+                if now - previous > 60: previous, count = now, 0
+                attempts[peer] = (previous, count + 1)
             if count >= 5: return self.send_error(429)
             try:
                 size = int(self.headers.get('Content-Length', '0'))
@@ -85,8 +87,10 @@ def handler(options, port, token):
                 code = parse_qs(self.rfile.read(size).decode()).get('code', [''])[0]
                 if not secrets.compare_digest(code, pairing): return self.send_error(403)
             except (ValueError, UnicodeError): return self.send_error(400)
-            sessions.clear()  # One paired browser; re-pair revokes the previous session.
-            session = secrets.token_urlsafe(32); sessions[session] = now + 8 * 3600
+            session = secrets.token_urlsafe(32)
+            with auth_lock:
+                sessions.clear()  # One paired browser; re-pair revokes the previous session.
+                sessions[session] = now + 8 * 3600
             self.send_response(303)
             self.send_header('Set-Cookie', f'__Host-nova={session}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=28800')
             self.send_header('Location', '/music-studio.html'); self.end_headers()
