@@ -1566,7 +1566,7 @@
   }
   async function vocalBlobMetadata(blob,asset,guard){
     const waveform=Array(240).fill(0);let frames=0,clipped=0;
-    for await(const pcm of pcmDecodeWavStream(blob)){guard();if(pcm.sampleRate!==asset.sampleRate||pcm.channels.length!==asset.channels)throw Error('vocal-pcm-metadata-mismatch');for(let i=0;i<pcm.channels[0].length;i++)for(const c of pcm.channels){const x=c[i];if(Math.abs(x)>=1)clipped++;const bin=Math.min(239,Math.floor((frames+i)*240/asset.frames));waveform[bin]=Math.max(waveform[bin],Math.abs(x))}frames+=pcm.channels[0].length;}
+    for await(const pcm of pcmDecodeWavStream(blob)){guard();if(pcm.sampleRate!==asset.sampleRate||pcm.channels.length!==asset.channels)throw Error('vocal-pcm-metadata-mismatch');for(let i=0;i<pcm.channels[0].length;i++)for(const c of pcm.channels){const x=c[i];if(x>=32767/32768||x<=-1)clipped++;const bin=Math.min(239,Math.floor((frames+i)*240/asset.frames));waveform[bin]=Math.max(waveform[bin],Math.abs(x))}frames+=pcm.channels[0].length;}
     guard();if(frames!==asset.frames)throw Error('vocal-pcm-frame-mismatch');return{blob,frames,sampleRate:asset.sampleRate,channels:asset.channels,waveform,clipped};
   }
   async function vocalReplacementRender(id,baseId,candidateId,options={}){

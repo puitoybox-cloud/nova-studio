@@ -132,3 +132,5 @@ test('window reader bounds every sample read and refuses excessive selection bef
  const before=reads;await assert.rejects(a.vocalReadWindow(file,asset,0,126*8000,()=>{}),/capacity/);assert.equal(reads,before);
  let calls=0;await assert.rejects(a.vocalReadWindow(file,asset,0,32000,()=>{if(++calls===3)throw Error('cancelled')}),/cancelled/);
 });
+
+test('replacement reports positive PCM16 saturation after candidate gain',async()=>{const f=await replacementSetup(),a=f.a,id=f.p.projectId,bytes=await wav(48000).arrayBuffer(),v=new DataView(bytes);for(let i=44;i<bytes.byteLength;i+=2)v.setInt16(i,32767,true);const file=Object.assign(new Blob([bytes]),{name:'loud.wav'}),candidate=await a.importScoreVocal(file,id,f.recordId,'score-zero',{generationRange:{startMeasure:2,endMeasure:2},localSinsy:true});assert.equal(candidate.ok,true,candidate.error);const r=await a.vocalReplacementRender(id,f.base.assetId,candidate.assetId,{gainDb:12,fadeMs:0});assert.ok(r.clipped>0);assert.equal(new DataView(await r.blob.slice(40044,40046).arrayBuffer()).getInt16(0,true),32767)});
