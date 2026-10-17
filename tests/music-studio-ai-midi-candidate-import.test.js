@@ -14,3 +14,32 @@ test('panel imports one to three real files atomically as independent candidates
 test('bad second file leaves all candidate sets and existing notes untouched',async()=>{const f=fixture();await f.panel.importMidiCandidates(f.p.projectId,{files:[f.file,{...f.file,name:'bad.mid',arrayBuffer:async()=>new Uint8Array(f.file.size).buffer}]});const r=f.panel._states.get(f.p.projectId);assert.equal(r.state.workspace.candidateSets.length,0);assert.match(r.message,/拒否/)});
 test('range changes and newer candidate generation discard asynchronous file completion',async()=>{for(const action of ['range','workspace','session']){const f=fixture();let resolve;const promise=f.panel.importMidiCandidates(f.p.projectId,{files:[{...f.file,arrayBuffer:()=>new Promise(r=>resolve=r)}]});if(action==='range')f.s.editRange={startMeasure:1,endMeasure:1};if(action==='workspace')f.panel._states.get(f.p.projectId).state.workspace.history.push({kind:'newer'});if(action==='session')f.a.state.midiEditor=f.core.createCoordinatedSession(f.p);resolve(f.data.buffer);await promise;assert.equal(f.panel._states.get(f.p.projectId).state.workspace.candidateSets.length,0)}});
 test('saved and backup restored candidates retain actual notes and provenance for reopen preview',async()=>{const f=fixture(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);await f.panel.importMidiCandidates(f.p.projectId,{files:[f.file]});const saved=await f.a.saveMidiEditor({silent:true});assert.equal(saved.ok,true);const stored=await repo.get(f.p.projectId),backup=f.a.backupObject(),w=load(),rr=w.MusicStudio.memoryRepository();w.MusicStudio.setRepository(rr);assert.equal((await w.MusicStudio.restoreBackup(backup,{settings:false,projects:true})).ok,true);const restored=await rr.get(f.p.projectId);assert.deepEqual(plain(restored.aiWorkspace),plain(stored.aiWorkspace));const s=w.MusicStudioEditor.createCoordinatedSession(restored),candidate=restored.aiWorkspace.candidateSets[0].candidates[0],bundle=w.MusicStudioAICandidatePreview.createPreview(s,w.MusicStudioEditor,candidate,{project:restored});assert.deepEqual(plain(bundle.result.changes.adds.map(n=>n.pitch)),[60,64])});
+test('real model request passes project music and chosen voice range; keeps generation facts through backup',async()=>{
+ const f=fixture();f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;
+ f.p.musicalSettings={...f.p.musicalSettings,key:'Dm',bpm:90,timeSignature:{numerator:6,denominator:8}};
+ f.s.midiData.tempo=90;f.s.midiData.timeSignature={numerator:6,denominator:8};
+ f.w.document={querySelector:selector=>({value:({'#aiModelStyle':'gentle','#aiModelRange':'57:77','#aiGenerationSeed':'81'})[selector]||''}),querySelectorAll:()=>[]};
+ let request;f.a.localGenerationRequest=async(kind,payload)=>{request={kind,payload};return{model:'skytnt/midi-model-tv2o-medium',revision:'fixed-test-revision',synthetic:false,candidates:['A','B','C'].map((variant,i)=>({variant,seed:81+i,midiBase64:Buffer.from(f.data).toString('base64'),adjustedNotes:2,constraints:{key:'Dm',pitchMin:57,pitchMax:77,style:'gentle'}}))}};
+ await f.panel.generateLocalModel(f.p.projectId);
+ assert.equal(request.kind,'compose');for(const [k,v] of Object.entries({key:'Dm',bpm:90,numerator:6,denominator:8,pitch_min:57,pitch_max:77,style:'gentle',seed:81}))assert.equal(request.payload[k],v,k);
+ const record=f.panel._states.get(f.p.projectId),set=record.state.workspace.candidateSets.at(-1);assert.ok(set,record.message);assert.equal(set.candidates.length,3);
+ assert.deepEqual(plain(set.candidates.map(c=>c.value.modelGeneration.seed)),[81,82,83]);assert.match(set.candidates[0].value.summary,/補正2音/);
+ const repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);
+ const backup=f.a.backupObject(),w=load(),rr=w.MusicStudio.memoryRepository();w.MusicStudio.setRepository(rr);assert.equal((await w.MusicStudio.restoreBackup(backup,{settings:false,projects:true})).ok,true);
+ const restored=await rr.get(f.p.projectId);assert.deepEqual(plain(restored.aiWorkspace.candidateSets.at(-1).candidates[0].value.modelGeneration),plain(set.candidates[0].value.modelGeneration));
+});
+test('kana splitter preserves Japanese compound sounds and rejects guessed readings',()=>{
+ const f=fixture();assert.deepEqual(plain(f.a.kanaReadingTokens('キャット きょう ~')),['きゃ','っ','と','きょ','う','~']);
+ assert.deepEqual(plain(f.a.kanaReadingTokens('か\u3099んばる')),['が','ん','ば','る']);
+ for(const reading of ['漢字','hello','~ き','ゃ','んゃ'])assert.throws(()=>f.a.kanaReadingTokens(reading));
+});
+test('saved lyrics reopen against current note timing without mutating old assignments or vocals',()=>{
+ const f=fixture();f.a.state.midiEditor=null;
+ f.p.midiData.tracks[0].notes=[{id:'one',pitch:60,startTick:0,durationTicks:480,velocity:80},{id:'two',pitch:62,startTick:480,durationTicks:480,velocity:80}];
+ const preview=f.a.lyricsAssignmentPreview(f.p,{trackId:'melody',fromNote:1,toNote:2,text:'きみ',reading:'き み'}),saved=f.a.adoptLyricsAssignment(f.p,preview);
+ f.a.state.projects=[saved];saved.midiData.tracks[0].notes[1].startTick=600;saved.midiData.tracks[0].notes[1].pitch=64;
+ const before=JSON.stringify(saved),id=saved.syllableAssignments[0].id,r=f.a.editSavedLyrics(saved.projectId,id);
+ assert.equal(r.ok,true);assert.equal(r.input.reading,'き み');assert.equal(JSON.stringify(saved),before);
+ const renewed=f.a.lyricsAssignmentPreview(saved,r.input);assert.equal(renewed.assignments[1].startTick,600);assert.equal(renewed.assignments[1].pitch,64);
+ saved.midiData.tracks[0].notes.pop();assert.equal(f.a.editSavedLyrics(saved.projectId,id).ok,false);
+});
