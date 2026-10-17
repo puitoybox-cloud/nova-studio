@@ -53,14 +53,14 @@
     return`<div class="music-ai-preview"><b>Family Apply Plan</b><span>${esc(preflight)}</span><ul>${rows}</ul><div class="music-ai-actions"><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.preflightFamilyApply('${esc(project.projectId)}')">Preflight</button>${pre?.ok?`<button class="music-primary" onclick="MusicStudioAIAssistantPanel.confirmFamilyApply('${esc(project.projectId)}')">Confirm Family Apply</button>`:''}<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelFamilyApply('${esc(project.projectId)}')">Cancel Plan</button></div><small>Confirm前はMIDI・candidate adoptionを変更しません。</small></div>`
   }
   function localModelControls(project,record){
-    if(root.location?.hostname!=='127.0.0.1')return'';
+    if(!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return'';
     return `<details class="music-ai-generation-controls"><summary>AI model（実モデル作曲・端末内）</summary><p>SkyTNT MIDIモデル / Apache-2.0。旋律A/B/Cを生成し、既存の試聴・部分採用・保存へ送ります。</p><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.generateLocalModel('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>${record.localModelBusy?'Generating（推論中）':'Generate model A/B/C（実モデルで生成）'}</button></details>`;
   }
   async function generateLocalModel(id){
     const p=project(id),session=app()?.state?.midiEditor;
     if(!p||!session||session.projectId!==id)return{ok:false,reason:'midi-session-required'};
     const record=stateFor(p);
-    if(record.localModelBusy||root.location?.hostname!=='127.0.0.1')return;
+    if(record.localModelBusy||!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return;
     const signature=JSON.stringify(session?.midiData),workspace=JSON.stringify(record.state.workspace),range=JSON.stringify(session?.editRange),track=core().currentTrackId(session);
     const current=()=>project(id)===p&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&JSON.stringify(record.state.workspace)===workspace&&JSON.stringify(session.editRange)===range&&core().currentTrackId(session)===track;
     record.localModelBusy=true;record.message='実モデル推論中です。';refresh(id);

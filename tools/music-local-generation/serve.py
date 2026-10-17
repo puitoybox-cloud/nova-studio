@@ -5,6 +5,10 @@ import argparse
 import base64
 import json
 import secrets
+import ssl
+import time
+import ipaddress
+from http.cookies import SimpleCookie
 import subprocess
 import tempfile
 import threading
@@ -48,10 +52,45 @@ def synthesize(xml, executable, dictionary, voice, directory):
 
 
 def handler(options, port, token):
-    origin = f'http://127.0.0.1:{port}'
+    origin = getattr(options, 'origin', None) or f'http://127.0.0.1:{port}'
+    remote = origin.startswith('https://')
+    authority = origin.split('://', 1)[1]
+    sessions = {}
+    pairing = getattr(options, 'pairing', None)
+    attempts = {}
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs): super().__init__(*args, directory=str(ROOT), **kwargs)
-        def allowed(self): return self.headers.get('Host') == f'127.0.0.1:{port}'
+        def setup(self):
+            super().setup(); self.connection.settimeout(15)
+        def allowed(self): return self.headers.get('Host') == authority
+        def authenticated(self):
+            if not remote: return True
+            cookie = SimpleCookie()
+            try: cookie.load(self.headers.get('Cookie', ''))
+            except Exception: return False
+            value = cookie.get('__Host-nova')
+            return bool(value and sessions.get(value.value, 0) > time.monotonic())
+        def log_message(self, *args): pass  # Never log pairing codes or session credentials.
+        def pair(self):
+            if self.headers.get('Origin') != origin: return self.send_error(403)
+            peer = self.client_address[0]; now = time.monotonic()
+            previous, count = attempts.get(peer, (now, 0))
+            if now - previous > 60: previous, count = now, 0
+            attempts[peer] = (previous, count + 1)
+            if count >= 5: return self.send_error(429)
+            try:
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 0 < size <= 256: return self.send_error(413)
+                from urllib.parse import parse_qs
+                code = parse_qs(self.rfile.read(size).decode()).get('code', [''])[0]
+                if not secrets.compare_digest(code, pairing): return self.send_error(403)
+            except (ValueError, UnicodeError): return self.send_error(400)
+            sessions.clear()  # One paired browser; re-pair revokes the previous session.
+            session = secrets.token_urlsafe(32); sessions[session] = now + 8 * 3600
+            self.send_response(303)
+            self.send_header('Set-Cookie', f'__Host-nova={session}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=28800')
+            self.send_header('Location', '/music-studio.html'); self.end_headers()
+
         def end_headers(self):
             self.send_header('Cache-Control', 'no-store'); self.send_header('X-Content-Type-Options', 'nosniff')
             super().end_headers()
@@ -60,18 +99,29 @@ def handler(options, port, token):
             self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw)
         def do_GET(self):
             if not self.allowed(): return self.send_error(403)
+            if not self.authenticated():
+                raw = '<meta name="viewport" content="width=device-width"><h1>Mac engine</h1><form method="post" action="/__nova_generation/pair"><label>Pairing code <input name="code" type="password" autocomplete="off" required maxlength="128"></label><button>Connect</button></form>'.encode()
+                self.send_response(401); self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw); return
             if self.path == '/__nova_generation/status':
-                return self.reply(200, {'token': token, 'composer': bool(options.weights), 'singer': bool(options.sinsy and options.dictionary and options.voice), 'localOnly': True})
+                return self.reply(200, {'token': token, 'composer': bool(options.weights), 'singer': bool(options.sinsy and options.dictionary and options.voice), 'localOnly': not remote, 'executionDevice': 'host', 'transport': 'https-paired' if remote else 'loopback'})
             # Never expose hidden files or runtime/model directories through static serving.
             from urllib.parse import unquote
             relative = unquote(self.path.split('?', 1)[0])
             resolved = Path(self.translate_path(self.path)).resolve()
             if not resolved.is_relative_to(ROOT): return self.send_error(403)
+            if relative.strip('/').split('/')[0] in {'tools', 'tests', 'verification', 'native', 'scripts'}: return self.send_error(403)
             if any(part.startswith('.') for part in relative.split('/') if part): return self.send_error(403)
+            if resolved.is_file() and resolved.suffix == '.html':
+                raw = resolved.read_bytes().replace(b'</head>', b'<script>window.__NOVA_GENERATION_HOST__=true;</script></head>')
+                self.send_response(200); self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(raw))); self.end_headers(); self.wfile.write(raw); return
             return super().do_GET()
+        def list_directory(self, path): return self.send_error(403)
         def do_HEAD(self): return self.send_error(405)
         def do_POST(self):
-            if not self.allowed() or self.headers.get('Origin') != origin or not secrets.compare_digest(self.headers.get('X-Nova-Generation', ''), token):
+            if self.allowed() and remote and self.path == '/__nova_generation/pair': return self.pair()
+            if not self.authenticated() or not self.allowed() or self.headers.get('Origin') != origin or not secrets.compare_digest(self.headers.get('X-Nova-Generation', ''), token):
                 return self.send_error(403)
             if self.path not in ['/__nova_generation/compose', '/__nova_generation/sing']: return self.send_error(404)
             try:
@@ -100,7 +150,36 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--port', type=int, default=8766); p.add_argument('--weights', type=Path)
     p.add_argument('--sinsy', type=Path); p.add_argument('--dictionary', type=Path); p.add_argument('--voice', type=Path)
+    p.add_argument('--lan-ip', help='Explicit private IPv4 address; HTTPS certificate required')
+    p.add_argument('--tls-cert', type=Path); p.add_argument('--tls-key', type=Path)
     options = p.parse_args()
+    bind = '127.0.0.1'
+    if options.lan_ip:
+        address = ipaddress.ip_address(options.lan_ip)
+        if address.version != 4 or not any(address in ipaddress.ip_network(network) for network in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16')) or address.is_loopback or address.is_unspecified or address.is_link_local: p.error('private LAN IPv4 required')
+        if not options.tls_cert or not options.tls_key: p.error('LAN requires certificate and key trusted by iPad')
+        bind = str(address); options.origin = f'https://{bind}:{options.port}'
+        options.pairing = secrets.token_urlsafe(24)
+    elif options.tls_cert or options.tls_key: p.error('TLS options require --lan-ip')
     if not 1024 <= options.port <= 65535: p.error('port outside bounds')
-    print(f'http://127.0.0.1:{options.port}/music-studio.html', flush=True)
-    ThreadingHTTPServer(('127.0.0.1', options.port), handler(options, options.port, secrets.token_urlsafe(32))).serve_forever()
+    class Server(ThreadingHTTPServer):
+        tls_context = None
+        def get_request(self):
+            connection, peer = super().get_request()
+            connection.settimeout(10)
+            if self.tls_context:
+                try: connection = self.tls_context.wrap_socket(connection, server_side=True)
+                except Exception:
+                    connection.close(); raise
+            return connection, peer
+    server = Server((bind, options.port), handler(options, options.port, secrets.token_urlsafe(32)))
+    server.daemon_threads = True
+    if options.lan_ip:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(options.tls_cert, options.tls_key)
+        server.tls_context = context
+        print('Pairing code (expires when host exits): ' + options.pairing, flush=True)
+    print(f'{getattr(options, "origin", None) or f"http://127.0.0.1:{options.port}"}/music-studio.html', flush=True)
+    try: server.serve_forever()
+    except KeyboardInterrupt: pass
+    finally: server.server_close()

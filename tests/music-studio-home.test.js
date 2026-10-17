@@ -208,9 +208,9 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.27/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.27/);
   assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.18/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.18/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.159/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.159/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.173/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.173/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.174/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.174/);
   assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.27'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.173'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.174'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
   assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.84',stylesheet:'1\.4\.159'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
