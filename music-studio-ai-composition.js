@@ -452,6 +452,36 @@
       return{symbol,root,pcs:intervals.map(i=>(root+i)%12)};
     });
   }
+  // Ordered voicings minimize total voice motion without crossing voices.
+  // This is deterministic orchestration, not additional model inference.
+  function performanceVoicing(pcs,low,high,previous){
+    const size=pcs.length,choices=Array.from({length:high-low+1},(_,i)=>low+i).filter(n=>pcs.includes(n%12));
+    let best=null,bestCost=Infinity;
+    function visit(start,pitches){
+      if(pitches.length===size){
+        if(new Set(pitches.map(n=>n%12)).size!==size)return;
+        const cost=pitches.reduce((sum,n,i)=>sum+Math.abs(n-(previous[i]??(size===1?36:52+i*5))),0)+(pitches.at(-1)-pitches[0]>19?12:0);
+        if(cost<bestCost){bestCost=cost;best=pitches.slice();}return;
+      }
+      for(let i=start;i<choices.length;i++)visit(i+1,[...pitches,choices[i]]);
+    }
+    visit(0,[]);if(!best)throw Error('ensemble-voicing-range');return best;
+  }
+  function drumPerformance(value,session,core,bar){
+    const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),ppq=session.midiData.ppq;
+    if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-ensemble-timing');
+    const density=value.ensemble.section?.density||'normal',variant=value.variant,notes=[],unit=Math.max(1,Math.round(ppq/2));
+    const endSection=value.ensemble.section?.range?.endMeasure,fill=density!=='sparse'&&bar===endSection;
+    for(let tick=span.startTick,step=0;tick<span.endTick;tick+=unit,step++){
+      const add=(pitch,velocity)=>notes.push({pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
+      if(density!=='sparse'||step%2===0)add(42,step%2?48:61);
+      // Kick and bass share the quarter/eighth pulse, regardless of hat density.
+      if(step===0||step%4===0||(density==='rich'&&variant==='B'&&step%4===3))add(36,step===0?91:82);
+      if(step%4===2)add(38,80);
+      if(fill&&tick>=Math.max(span.startTick+unit,span.endTick-ppq)&&step%2===1)add(variant==='C'?45:50,68+(step%3)*4);
+    }
+    return notes;
+  }
   function chordEnsembleNotes(value,source,session,core,role){
     const chords=ensembleChords(value.ensemble.chords||'');if(!chords.length)return null;
     const notes=[],ppq=session.midiData.ppq;
@@ -463,20 +493,17 @@
       const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(59,melodyPitches[0]-3):84;
       const low=role==='bass'?28:48,high=role==='bass'?55:Math.min(role==='strings'?79:84,ceiling);
       const pcs=role==='bass'?[chord.root]:chord.pcs;
-      const pitches=pcs.map((pc,i)=>{
-        const choices=Array.from({length:128},(_,n)=>n).filter(n=>n>=low&&n<=high&&n%12===pc);
-        const anchor=previous[i]??(role==='bass'?36:55+i*5);
-        return choices.sort((a,b)=>Math.abs(a-anchor)-Math.abs(b-anchor)||a-b)[0];
-      }).sort((a,b)=>a-b);previous.splice(0,previous.length,...pitches);
+      const pitches=performanceVoicing(pcs,low,high,previous);
+      previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
       const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'?ppq:ppq*2)*factor));
       for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
         if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
         const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);
-        const baseVelocity=(role==='strings'?58:role==='bass'?82:72)+(density==='sparse'?-12:density==='rich'?8:0),blend=Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity);
+        const baseVelocity=(role==='strings'?58:role==='bass'?82:68)+(density==='sparse'?-12:density==='rich'?8:0),blend=Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+(role==='strings'?voice*2:Math.floor((tick-span.startTick)/step)%2===0?2:-4);
         // Rich bass alternates chord root and fifth; first beat always anchors root.
-        let rendered=pitch;if(role==='bass'&&density==='rich'&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+7;if(rendered>55)rendered-=12;}
-        notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
+        let rendered=pitch;if(role==='bass'&&(density==='rich'||value.variant==='B')&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+((chord.pcs[2]-chord.root+12)%12);if(rendered>55)rendered-=12;}
+        notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:role==='piano'&&value.variant==='C'?0.7:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
         if(notes.length>4096)throw Error('ensemble-note-limit');
       }
     }
@@ -567,5 +594,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
