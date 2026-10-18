@@ -119,7 +119,11 @@
   }
   function validateEdit(before,after,core){
     const state=readState(before,core);
-    if(!equal(state,readState(after,core)))throw Error('edit-changed-lock-protection');
+    const nextState=readState(after,core),existingIds=new Set(state.tracks.map(t=>t.trackId));
+    // Appending a new instrument may only append empty protection. Existing
+    // track order and every existing lock remain byte-for-byte protected.
+    const added=nextState.tracks.filter(t=>!existingIds.has(t.trackId));
+    if(!equal(state,{...nextState,tracks:nextState.tracks.filter(t=>existingIds.has(t.trackId))})||added.some(t=>t.legacyMeasures.length||t.legacyRanges.length||t.rangeLocks.length||t.releaseRanges?.length))throw Error('edit-changed-lock-protection');
     // Normal note edits never move musical metadata as a side effect.
     for(const field of ['ppq','timeSignature','timeSignatureMap','tempoMap','keySignatureMap','markers'])if(!equal(before[field],after[field]))throw Error('edit-moved-musical-metadata');
     for(const track of tracks(before)){
