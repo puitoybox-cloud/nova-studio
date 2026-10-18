@@ -182,6 +182,7 @@
     const ensemble=value.ensemble,source=ensemble?.source;
     if(ensemble?.version!==1||ensemble.method!=='model-phrase-plus-rule-orchestration-v1'||source?.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-ensemble-source');
     if(JSON.stringify(source.range)!==JSON.stringify(value.range)||JSON.stringify(ensemble.roles)!==JSON.stringify(['piano','bass','strings','drums']))throw Error('invalid-ensemble');
+    const data=value.importedMidi;if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||!data.notes.length||data.notes.length>4096||data.notes.some(n=>!Number.isSafeInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isSafeInteger(n.velocity)||n.velocity<1||n.velocity>127||!Number.isSafeInteger(n.startTick)||n.startTick<0||!Number.isSafeInteger(n.durationTicks)||n.durationTicks<1||n.startTick+n.durationTicks>value.range.endTick-value.range.startTick))throw Error('invalid-ensemble-model-notes');
     const roles=measureRange?.roles||ensemble.roles;
     if(!Array.isArray(roles)||!roles.length||new Set(roles).size!==roles.length||roles.some(r=>!ensemble.roles.includes(r)))throw Error('invalid-ensemble-instruments');
     const from=measureRange?.startMeasure??value.range.startMeasure,to=measureRange?.endMeasure??value.range.endMeasure;
@@ -215,6 +216,7 @@
       const bundle=createPreview(copy,core,candidate);applyPreview(copy,core,bundle,selection);
       const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
     }
+    if(diff.reduce((sum,d)=>sum+d.notes,0)>4096)throw Error('ensemble-note-limit');
     if(!core.validateTrackRegistry(copy.midiData.tracks).ok)throw Error('invalid-ensemble-track-registry');
     return{midiData:copy.midiData,range,diff};
   }
