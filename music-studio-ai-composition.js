@@ -413,14 +413,47 @@
       return{trackId:track.id,name:track.name||track.id,channel:track.channel??null,program:track.program??null,noteCount:notes.length,minPitch:pitches[0]??null,maxPitch:pitches.at(-1)??null,medianPitch:median,notesPerQuarter:notes.length/Math.max(1,(range.endTick-range.startTick)/ppq),simultaneousStartRatio:polyphony,role,uncertainty,reasons,assignedRole:track.roleAssignment||track.part||'unassigned',method:'local-rules-v1',range:clone(range)};
     });
   }
-  function bindEnsemble(value,source){
+  // Explicit chord symbols drive local orchestration, never additional AI inference.
+  function ensembleChords(text){
+    if(typeof text!=='string'||text.length>256)throw Error('invalid-ensemble-chords');
+    const symbols=text.trim()?text.trim().split(/\s+/):[];
+    return symbols.map(symbol=>{
+      const m=/^([A-G](?:#|b)?)(m7|maj7|7|m|dim)?$/.exec(symbol);
+      if(!m||NOTE_PCS[m[1]]==null)throw Error('invalid-ensemble-chord: '+symbol);
+      const root=NOTE_PCS[m[1]],quality=m[2]||'',intervals=quality==='dim'?[0,3,6]:quality==='m'?[0,3,7]:quality==='m7'?[0,3,7,10]:quality==='7'?[0,4,7,10]:quality==='maj7'?[0,4,7,11]:[0,4,7];
+      return{symbol,root,pcs:intervals.map(i=>(root+i)%12)};
+    });
+  }
+  function chordEnsembleNotes(value,source,session,core,role){
+    const chords=ensembleChords(value.ensemble.chords||'');if(!chords.length)return null;
+    const notes=[],ppq=session.midiData.ppq,previous=[];
+    if(!Number.isSafeInteger(ppq)||ppq<1||!['piano','bass','strings'].includes(role))throw Error('invalid-ensemble-timing');
+    for(let bar=source.range.startMeasure;bar<=source.range.endMeasure;bar++){
+      const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),chord=chords[(bar-source.range.startMeasure)%chords.length];
+      const low=role==='bass'?28:role==='strings'?48:48,high=role==='bass'?55:role==='strings'?79:84;
+      const pcs=role==='bass'?[chord.root]:chord.pcs;
+      const pitches=pcs.map((pc,i)=>{
+        const choices=Array.from({length:128},(_,n)=>n).filter(n=>n>=low&&n<=high&&n%12===pc);
+        const anchor=previous[i]??(role==='bass'?36:55+i*5);
+        return choices.sort((a,b)=>Math.abs(a-anchor)-Math.abs(b-anchor)||a-b)[0];
+      }).sort((a,b)=>a-b);previous.splice(0,previous.length,...pitches);
+      const step=role==='strings'?span.endTick-span.startTick:role==='bass'?ppq:ppq*2;
+      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const pitch of pitches){
+        notes.push({pitch,startTick:tick-source.range.startTick,durationTicks:Math.min(step,span.endTick-tick),velocity:role==='strings'?58:role==='bass'?82:72});
+        if(notes.length>4096)throw Error('ensemble-note-limit');
+      }
+    }
+    return notes;
+  }
+  function bindEnsemble(value,source,chords=''){
+    ensembleChords(chords);
     if(!value?.importedMidi?.notes?.length)throw Error('ensemble-model-notes-required');
-    const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],method:'model-phrase-plus-rule-orchestration-v1'};
+    const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],chords,method:'model-phrase-plus-rule-orchestration-v1'};
     result.summary+=' / Ensemble（ピアノ・ベース・ストリングス・規則ドラム）';return result;
   }
   function detailLines(value){
     if(!value||!value.kind)return[];
-    if(value.ensemble)return['Piano: モデル出力を配置 / Bass・Strings: モデル出力の音高を規則で音域・密度調整','Drums: 拍子に沿う規則パターン。AIドラム推論ではありません。','元曲は保持。楽器・小節を選び、試聴してから一括採用。全パートの自然さは未受入。'];
+    if(value.ensemble)return[...(value.ensemble.chords?[`コード連動（規則処理）: ${value.ensemble.chords} / 根音ベース・和音ピアノ・近接声部ストリングス。1小節1コード。`]:[]),value.ensemble.chords?'Piano・Bass・Strings: 指定コードの規則伴奏。音高・リズムはAI推論ではありません。':'Piano: モデル出力を配置 / Bass・Strings: モデル出力の音高を規則で音域・密度調整','Drums: 拍子に沿う規則パターン。AIドラム推論ではありません。','元曲は保持。楽器・小節を選び、試聴してから一括採用。全パートの自然さは未受入。'];
     if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackまたは新規Piano/Bass/Strings。音色指定は規則処理。複数楽器一括生成・自由文の完全理解は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
     if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
     const family=`Family ${value.candidateFamily?.variant||value.variant}`;
@@ -431,5 +464,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
