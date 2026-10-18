@@ -373,18 +373,30 @@
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-remake-ppq');
     return source.notes.slice(0,64).map(n=>({pitch:n.pitch,velocity:n.velocity,startTick:Math.round((n.startTick-source.range.startTick)*480/ppq),durationTicks:Math.max(1,Math.round(n.durationTicks*480/ppq))}));
   }
-  function bindRemake(value,source,mode,amount=50,destinationTrackId=source.trackId){
+  // Instrument selection is explicit GM routing, never claimed as model inference.
+  function remakeNewTrack(session,role){
+    const presets={piano:{program:0,name:'Piano（ピアノ）'},bass:{program:32,name:'Bass（ベース）'},strings:{program:48,name:'Strings（ストリングス）'}};
+    const preset=presets[role];if(!preset)throw Error('unsupported-remake-instrument');
+    const tracks=session.midiData.tracks;
+    if(tracks.length>=64)throw Error('arrangement-track-limit');
+    const used=new Set(tracks.map(t=>t.channel)),channel=Array.from({length:16},(_,i)=>i+1).find(c=>c!==10&&!used.has(c));
+    if(!channel)throw Error('no-free-midi-channel');
+    let id=`arrange-${role}`,index=2;while(tracks.some(t=>t.id===id))id=`arrange-${role}-${index++}`;
+    return{id,name:preset.name,trackType:'midi-melodic',roleAssignment:role,role,channel,program:preset.program,muted:false,notes:[]};
+  }
+  function bindRemake(value,source,mode,amount=50,destinationTrackId=source.trackId,newTrack=null){
     if(!['revise','layer','delete'].includes(mode)||![25,50,100].includes(amount))throw Error('invalid-remake-operation');
     if(mode!=='delete'&&!value?.importedMidi)throw Error('remake-model-midi-required');
     const result=mode==='delete'?{version:1,kind:'melody',variant:'A',synthetic:true,localOnly:true,source:'structured-midi-delete',range:clone(source.range),summary:'Delete（選択Track・範囲の音符を削除する規則操作）',applyPolicy:'candidate-only'}:clone(value);
     if(typeof destinationTrackId!=='string'||!destinationTrackId||(mode!=='layer'&&destinationTrackId!==source.trackId))throw Error('invalid-remake-destination');
-    result.remake={...clone(source),mode,amount,destinationTrackId};
+    if(newTrack&&(mode!=='layer'||newTrack.id!==destinationTrackId||newTrack.notes?.length!==0))throw Error('invalid-remake-new-track');
+    result.remake={...clone(source),mode,amount,destinationTrackId,...(newTrack?{newTrack:clone(newTrack)}:{})};
     result.summary+=` / ${mode} / Track ${source.trackId} → ${destinationTrackId} / ${source.range.startMeasure}–${source.range.endMeasure}小節 / ${amount}%`;
     return result;
   }
   function detailLines(value){
     if(!value||!value.kind)return[];
-    if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackから選択。自由な日本語指示・自動楽器作成は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
+    if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackまたは新規Piano/Bass/Strings。音色指定は規則処理。複数楽器一括生成・自由文の完全理解は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
     if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
     const family=`Family ${value.candidateFamily?.variant||value.variant}`;
     if(value.kind==='melody')return[`Key ${value.key}`,`Motif → answer / ${value.cadence}`,`Degrees ${value.scaleDegrees.join('–')}`,`Rhythm ${value.rhythm}`,family];
@@ -394,5 +406,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

@@ -167,6 +167,17 @@
     };
     return{updates:proposals.updates.map(map),adds:proposals.adds.map(map),deleteNoteIds:[...proposals.deleteNoteIds]};
   }
+  function newTrackSession(session,core,value){
+    const source=value.remake,track=source?.newTrack;
+    if(!track||source.mode!=='layer'||source.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
+    const expected=requireComposition().remakeNewTrack(session,track.roleAssignment);
+    if(JSON.stringify(track)!==JSON.stringify(expected)||source.destinationTrackId!==track.id)throw Error('invalid-remake-new-track');
+    const copy=clone(session);copy.midiData.tracks.push(clone(track));
+    if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:track.id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
+    // Select only the disposable session; preserve the original editor state.
+    copy.selectedTrackId=track.id;copy.selectionTrackId=null;copy.selectedNoteId=null;copy.selectedNoteIds=[];
+    return copy;
+  }
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
@@ -178,6 +189,12 @@
     if(kind==='lyrics-structure'){companion.timeline=composition.lyricsTimeline(value,session,core,options.measureRange??null);companion.phraseSlots=clone(companion.timeline.slots)}
     if(!['melody','continuation','chord'].includes(kind)){
       return{version:VERSION,type:'metadata-preview',candidateId:candidate.candidateId||value.variant||null,kind,value,context:clone(context),companion,mutates:false};
+    }
+    if(value.remake?.newTrack&&!options.newTrackWorking){
+      const working=newTrackSession(session,core,value),inner=clone(candidate);
+      inner.value.remake.midiSignature=JSON.stringify(working.midiData);
+      const bundle=createPreview(working,core,inner,{...options,newTrackWorking:true});
+      bundle.value=value;bundle.newTrackBaseline=clone(session.midiData);return bundle;
     }
     const track=targetTrack(session,core,kind,value.remake?{...options,trackId:value.remake.destinationTrackId||value.remake.trackId,allowDrums:value.remake.mode==='delete'}:options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
     let proposals=value.remake?remakeProposal(request,track,value,session):value.source==='imported-midi-output'?importedMidiProposal(request,track,value,session):kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
@@ -208,6 +225,17 @@
   }
   function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
+    if(bundle.value?.remake?.newTrack){
+      if(JSON.stringify(bundle.newTrackBaseline)!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
+      const working=newTrackSession(session,core,bundle.value),inner=clone(bundle);
+      delete inner.value.remake.newTrack;delete inner.newTrackBaseline;
+      inner.value.remake.midiSignature=JSON.stringify(working.midiData);
+      applyPreview(working,core,inner,measureRange);
+      if(!core.getTrackById(working.midiData.tracks,bundle.targetTrackId)?.notes.length)throw Error('candidate-selection-has-no-new-notes');
+      const applied=core.applyAtomicMidiSnapshot(session,bundle.newTrackBaseline,working.midiData);
+      if(!applied?.applied)throw Error(`candidate-apply-rejected:${applied?.reason}`);
+      return{ok:true,applied:clone(applied),candidateId:bundle.candidateId,kind:bundle.kind,targetTrackId:bundle.targetTrackId,selection:measureRange?clone(measureRange):null};
+    }
     if(bundle.value?.remake&&bundle.value.remake.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
     if(bundle.kind==='continuation'){const source=continuationSource(bundle.value,session,core);if(JSON.stringify(source)!==JSON.stringify(bundle.companion?.sourcePreview))throw Error('stale-continuation-source-preview')}
     const subset=narrowed(bundle,session,core,measureRange),applied=core.applyPartialEditPreview(session,bundle.request,subset.result,subset.preview);
