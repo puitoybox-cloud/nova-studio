@@ -1489,7 +1489,7 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-playback','./music-studio-playback.js?v=1.0.2',()=>Boolean(window.MusicStudioPlayback)))
  .then(()=>loadMusicStudioScript('music-studio-scoped-midi-repair','./music-studio-scoped-midi-repair.js?v=1.0.1',()=>Boolean(window.MusicStudioScopedMidiRepair?.preview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-workflow','./music-studio-ai-workflow.js?v=1.0.0',()=>Boolean(window.MusicStudioAIWorkflow?.createWorkspace)))
- .then(()=>loadMusicStudioScript('music-studio-ai-composition','./music-studio-ai-composition.js?v=1.0.16',()=>Boolean(window.MusicStudioAIComposition?.candidateValues)))
+ .then(()=>loadMusicStudioScript('music-studio-ai-composition','./music-studio-ai-composition.js?v=1.0.17',()=>Boolean(window.MusicStudioAIComposition?.candidateValues)))
  .then(()=>loadMusicStudioScript('music-studio-ai-candidate-preview','./music-studio-ai-candidate-preview.js?v=1.0.18',()=>Boolean(window.MusicStudioAICandidatePreview?.createPreview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-family-preview','./music-studio-ai-family-preview.js?v=1.0.2',()=>Boolean(window.MusicStudioAIFamilyPreview?.createFamilyPreview)))
  .then(()=>loadMusicStudioScript('music-studio-ai-family-apply','./music-studio-ai-family-apply.js?v=1.0.6',()=>Boolean(window.MusicStudioAIFamilyApply?.createPlan)))

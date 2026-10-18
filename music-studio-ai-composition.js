@@ -460,7 +460,7 @@
     if(!Number.isSafeInteger(ppq)||ppq<1||!['piano','bass','strings'].includes(role))throw Error('invalid-ensemble-timing');
     for(let bar=source.range.startMeasure;bar<=source.range.endMeasure;bar++){
       const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),chord=chords[(bar-source.range.startMeasure)%chords.length];
-      const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(55,melodyPitches[0]-3):84;
+      const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(59,melodyPitches[0]-3):84;
       const low=role==='bass'?28:48,high=role==='bass'?55:Math.min(role==='strings'?79:84,ceiling);
       const pcs=role==='bass'?[chord.root]:chord.pcs;
       const pitches=pcs.map((pc,i)=>{
@@ -470,11 +470,13 @@
       }).sort((a,b)=>a-b);previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
       const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'?ppq:ppq*2)*factor));
-      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const pitch of pitches){
+      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
+        if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
+        const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);
         const baseVelocity=(role==='strings'?58:role==='bass'?82:72)+(density==='sparse'?-12:density==='rich'?8:0),blend=Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity);
         // Rich bass alternates chord root and fifth; first beat always anchors root.
         let rendered=pitch;if(role==='bass'&&density==='rich'&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+7;if(rendered>55)rendered-=12;}
-        notes.push({pitch:rendered,startTick:tick-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:0.9)),span.endTick-tick)),velocity:Math.max(1,Math.min(127,velocity))});
+        notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
         if(notes.length>4096)throw Error('ensemble-note-limit');
       }
     }
