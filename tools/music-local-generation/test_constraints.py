@@ -41,4 +41,17 @@ class MoodChords(unittest.TestCase):
   for index,event in enumerate(notes): self.assertIn(event[4]%12,chords[index%2])
   with self.assertRaises(ValueError):constrain_score([480,[['note',0,120,0,61,80]]],pitch_min=61,pitch_max=61,chord_sets=chords)
 
+class SourcePromptTests(unittest.TestCase):
+ def test_source_validation(self):
+  from compose import source_notes
+  self.assertEqual(source_notes([dict(pitch=60,velocity=80,startTick=120,durationTicks=240)],7680),[['note',120,240,0,60,80]])
+  for notes in [[],[dict(pitch=True,velocity=80,startTick=0,durationTicks=240)],[dict(pitch=128,velocity=80,startTick=0,durationTicks=240)],[dict(pitch=60,velocity=80,startTick=7670,durationTicks=240)],[dict(pitch=60,velocity=80,startTick=0,durationTicks=240,extra=1)]]:
+   with self.assertRaises(ValueError):source_notes(notes,7680)
+ def test_prompt_is_removed_and_new_notes_rebased(self):
+  from compose import remove_prompt_notes
+  prompt=[480,[['note',120,240,0,60,80],['note',480,240,0,64,80]]]
+  score=[480,[*prompt[1],['note',960,240,0,67,90],['note',1440,120,0,69,80]]]
+  self.assertEqual(remove_prompt_notes(score,prompt),[480,[['note',0,240,0,67,90],['note',480,120,0,69,80]]])
+  with self.assertRaises(ValueError):remove_prompt_notes([480,[*prompt[1]]],prompt)
+
 if __name__=='__main__':unittest.main()

@@ -16,6 +16,16 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  f.P.applyPreview(f.s,f.core,bundle,{startMeasure:2,endMeasure:2});assert.ok(f.core.currentTrack(f.s).notes.some(n=>n.id==='original'));
  const repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);
  const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.candidateSets.at(-1).candidates.length,3);
+ // Actual source-conditioned ONNX remake, preserving original rhythm and other tracks.
+ const m=fixture();m.w.location.hostname='127.0.0.1';m.w.File=File;m.w.atob=atob;m.w.fetch=f.w.fetch;
+ m.s.midiData.tracks[0].notes.push({id:'source-phrase',pitch:67,startTick:1920,durationTicks:480,velocity:87});
+ m.w.document={querySelector:s=>({value:({'#aiRemakeMode':'revise','#aiRemakeAmount':'100'})[s]||''}),querySelectorAll:()=>[]};
+ const baseline=JSON.stringify(m.s.midiData);await m.panel.generateLocalModel(m.p.projectId);
+ const mr=m.panel._states.get(m.p.projectId),ms=mr.state.workspace.candidateSets.at(-1);assert.ok(ms,mr.message);
+ assert.ok(ms.candidates.every(c=>c.value.remake?.mode==='revise'&&c.value.synthetic===false));assert.equal(JSON.stringify(m.s.midiData),baseline);
+ const mb=m.P.createPreview(m.s,m.core,ms.candidates[0],{project:m.p});assert.equal(mb.result.changes.updates[0].durationTicks,480);assert.equal(mb.result.changes.updates[0].velocity,87);
+ m.P.auditionPlan(m.s,m.core,mb);m.P.applyPreview(m.s,m.core,mb);m.core.undo(m.s);assert.equal(JSON.stringify(m.s.midiData),baseline);m.core.redo(m.s);
+ console.log(JSON.stringify({realSourceConditionedRemake:true,candidates:ms.candidates.map(c=>c.value.importedMidi.notes.length),timingAndVelocityPreserved:true,undoRedo:true}));
  const scoreFixture=new Function('require',fs.readFileSync('tests/music-studio-score-vocal-return.test.js','utf8').split('\ntest(')[0]+'\nreturn scoreSetup;')(require),s=await scoreFixture();
  s.w.location.hostname='127.0.0.1';s.w.File=File;s.w.atob=atob;s.w.fetch=f.w.fetch;
  let rangeProject=s.a.makeProject({projectId:s.p.projectId,projectName:'Range generation',bpm:90,midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'a',pitch:60,startTick:0,durationTicks:480},{id:'b',pitch:62,startTick:1920,durationTicks:480},{id:'c',pitch:64,startTick:2400,durationTicks:480}]}]}});

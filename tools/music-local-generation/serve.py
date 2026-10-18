@@ -147,7 +147,7 @@ def handler(options, port, token):
                             if not options.weights: raise ValueError('local model weights not configured')
                             for key in ['seed', 'events', 'bpm', 'max_ticks']:
                                 if type(data.get(key)) is not int: raise ValueError('integer settings required')
-                            result = compose(options.weights, Path(directory) / 'abc', **{k: data[k] for k in ['seed', 'events', 'bpm', 'max_ticks']}, **{k: data[k] for k in ['key', 'pitch_min', 'pitch_max', 'numerator', 'denominator', 'style', 'description', 'genre', 'chords'] if k in data})
+                            result = compose(options.weights, Path(directory) / 'abc', **{k: data[k] for k in ['seed', 'events', 'bpm', 'max_ticks']}, **{k: data[k] for k in ['key', 'pitch_min', 'pitch_max', 'numerator', 'denominator', 'style', 'description', 'genre', 'chords', 'sourceNotes'] if k in data})
                         else:
                             if not all([options.sinsy, options.dictionary, options.voice]): raise ValueError('local Sinsy assets not configured')
                             audio = synthesize(data.get('scoreXML'), options.sinsy, options.dictionary, options.voice, directory)
