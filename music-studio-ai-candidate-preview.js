@@ -62,10 +62,12 @@
     const data=value.importedMidi;
     if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||data.notes.length<1||data.notes.length>4096)throw Error('invalid-imported-midi-candidate');
     if(['startTick','endTick','startMeasure','endMeasure'].some(k=>value.range?.[k]!==request.range[k]))throw Error('stale-imported-midi-range');
+    const allocated=new Set(session.midiData.tracks.flatMap(t=>t.notes.map(n=>n.id)));
     const adds=data.notes.map((note,index)=>{
       if(!Number.isSafeInteger(note.pitch)||note.pitch<0||note.pitch>127||!Number.isSafeInteger(note.velocity)||note.velocity<1||note.velocity>127||!Number.isSafeInteger(note.startTick)||note.startTick<0||!Number.isSafeInteger(note.durationTicks)||note.durationTicks<1||!Number.isSafeInteger(note.startTick+note.durationTicks)||note.startTick+note.durationTicks>request.range.endTick-request.range.startTick)throw Error('invalid-imported-midi-note');
       const startTick=request.range.startTick+note.startTick;
-      return{...clone(note),startTick,id:uniqueId(track,`midi-candidate-${value.variant}`,index,startTick)};
+      const base=`midi-candidate-${value.variant}-${index+1}-${startTick}`;let id=base;for(let suffix=2;allocated.has(id);suffix++)id=`${base}-${suffix}`;allocated.add(id);
+      return{...clone(note),startTick,id};
     });
     return{updates:[],adds,deleteNoteIds:[]};
   }
@@ -209,7 +211,7 @@
         copy.midiData.tracks.push(track);if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
         diff.push({role,trackId:id,notes:notes.length,method:'meter-grid-rule'});continue;
       }
-      const instrument=requireComposition().remakeNewTrack(copy,role),part=clone(value);delete part.ensemble;part.variant=`${value.variant}-${role}`;
+      const instrument=requireComposition().remakeNewTrack(copy,role),part=clone(value);delete part.ensemble;part.variant=`${value.variant}-${role}-${instrument.id}`;
       const limits=role==='bass'?[28,55]:role==='strings'?[48,84]:[48,84];
       part.importedMidi.notes=part.importedMidi.notes.filter((n,i)=>role==='piano'||role==='strings'?true:i%2===0).map(n=>{
         let pitch=n.pitch;while(pitch<limits[0])pitch+=12;while(pitch>limits[1])pitch-=12;
