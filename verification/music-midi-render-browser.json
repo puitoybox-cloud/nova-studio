@@ -47,7 +47,9 @@
     },
     "metrics": {
       "overflow": false,
-      "height": 820
+      "height": 820,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
     },
     "errors": [],
     "external": []
@@ -100,7 +102,9 @@
     },
     "metrics": {
       "overflow": false,
-      "height": 820
+      "height": 820,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
     },
     "errors": [],
     "external": []
@@ -153,7 +157,9 @@
     },
     "metrics": {
       "overflow": false,
-      "height": 1190
+      "height": 1190,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
     },
     "errors": [],
     "external": []
@@ -206,7 +212,9 @@
     },
     "metrics": {
       "overflow": false,
-      "height": 1759
+      "height": 1759,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
     },
     "errors": [],
     "external": []
