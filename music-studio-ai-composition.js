@@ -363,7 +363,7 @@
   // only a bounded phrase is sent to the offline model.
   function remakeSource(session,core,options={}){
     const track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session));
-    if(!track||(core.resolveCoreTrackRole(track)==='drums'&&options.operation!=='delete'))throw Error('remake-melodic-track-required');
+    if(!track||((core.resolveCoreTrackRole(track)==='drums'||core.resolveTrackCapabilities?.(track)?.supportsDrumLabels)&&options.operation!=='delete'))throw Error('remake-melodic-track-required');
     const range=selectedRange(session,core),notes=track.notes.filter(n=>n.startTick>=range.startTick&&n.startTick<range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
     if(!notes.length||notes.length>(options.operation==='delete'?4096:256))throw Error(options.operation==='delete'?'削除候補は選択範囲の1〜4096音です。範囲を狭めてください。':'Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
     if(notes.some(n=>n.startTick+n.durationTicks>range.endTick))throw Error('remake-source-crosses-range');

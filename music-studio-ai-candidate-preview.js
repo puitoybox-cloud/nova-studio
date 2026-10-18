@@ -20,7 +20,7 @@
     const id=String(options.trackId||core.currentTrackId?.(session)||'');
     const track=core.getTrackById?.(session?.midiData?.tracks||[],id);
     if(!track)throw Error('target-track-required');
-    if(core.resolveCoreTrackRole?.(track)==='drums'&&!options.allowDrums)throw Error('melodic-track-required');
+    if((core.resolveCoreTrackRole?.(track)==='drums'||core.resolveTrackCapabilities?.(track)?.supportsDrumLabels)&&!options.allowDrums)throw Error('melodic-track-required');
     return track;
   }
   function keyInfo(label){
