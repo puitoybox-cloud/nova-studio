@@ -465,18 +465,21 @@
         const anchor=previous[i]??(role==='bass'?36:55+i*5);
         return choices.sort((a,b)=>Math.abs(a-anchor)-Math.abs(b-anchor)||a-b)[0];
       }).sort((a,b)=>a-b);previous.splice(0,previous.length,...pitches);
-      const step=role==='strings'?span.endTick-span.startTick:role==='bass'?ppq:ppq*2;
+      const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
+      const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'?ppq:ppq*2)*factor));
       for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const pitch of pitches){
-        notes.push({pitch,startTick:tick-source.range.startTick,durationTicks:Math.min(step,span.endTick-tick),velocity:role==='strings'?58:role==='bass'?82:72});
+        notes.push({pitch,startTick:tick-source.range.startTick,durationTicks:Math.min(step,span.endTick-tick),velocity:Math.max(1,(role==='strings'?58:role==='bass'?82:72)+(density==='sparse'?-12:density==='rich'?8:0))});
         if(notes.length>4096)throw Error('ensemble-note-limit');
       }
     }
     return notes;
   }
-  function bindEnsemble(value,source,chords=''){
+  function bindEnsemble(value,source,chords='',section=null){
     ensembleChords(chords);
     if(!value?.importedMidi?.notes?.length)throw Error('ensemble-model-notes-required');
-    const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],chords,method:'model-phrase-plus-rule-orchestration-v1'};
+    if(section?.targets&&(typeof section.targets!=='object'||Array.isArray(section.targets)||Object.entries(section.targets).some(([role,id])=>!['piano','bass','strings','drums'].includes(role)||typeof id!=='string'||id.length>200)||new Set(Object.values(section.targets).filter(Boolean)).size!==Object.values(section.targets).filter(Boolean).length))throw Error('invalid-section-targets');
+    if(section){if(!['intro','verse','prechorus','chorus','bridge','interlude','outro'].includes(section.name)||!['sparse','normal','rich'].includes(section.density)||!Array.isArray(section.roles)||!section.roles.length||new Set(section.roles).size!==section.roles.length||section.roles.some(r=>!['piano','bass','strings','drums'].includes(r)))throw Error('invalid-ensemble-section');}
+    const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],chords,...(section?{section:clone(section)}:{}),method:'model-phrase-plus-rule-orchestration-v1'};
     result.summary+=' / Ensemble（ピアノ・ベース・ストリングス・規則ドラム）';return result;
   }
   function detailLines(value){
