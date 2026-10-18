@@ -454,11 +454,14 @@
   }
   function chordEnsembleNotes(value,source,session,core,role){
     const chords=ensembleChords(value.ensemble.chords||'');if(!chords.length)return null;
-    const notes=[],ppq=session.midiData.ppq,previous=[];
+    const notes=[],ppq=session.midiData.ppq;
+    const target=core.getTrackById(session.midiData.tracks,value.ensemble.section?.targets?.[role]),prior=(target?.notes||[]).filter(n=>n.startTick<source.range.startTick).sort((a,b)=>b.startTick-a.startTick||a.pitch-b.pitch),lastStart=prior[0]?.startTick,previous=prior.filter(n=>n.startTick===lastStart).map(n=>n.pitch).sort((a,b)=>a-b);
+    const melody=session.midiData.tracks.find(t=>core.resolveCoreTrackRole(t)==='melody');
     if(!Number.isSafeInteger(ppq)||ppq<1||!['piano','bass','strings'].includes(role))throw Error('invalid-ensemble-timing');
     for(let bar=source.range.startMeasure;bar<=source.range.endMeasure;bar++){
       const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),chord=chords[(bar-source.range.startMeasure)%chords.length];
-      const low=role==='bass'?28:role==='strings'?48:48,high=role==='bass'?55:role==='strings'?79:84;
+      const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(59,melodyPitches[0]-3):84;
+      const low=role==='bass'?28:48,high=role==='bass'?55:Math.min(role==='strings'?79:84,ceiling);
       const pcs=role==='bass'?[chord.root]:chord.pcs;
       const pitches=pcs.map((pc,i)=>{
         const choices=Array.from({length:128},(_,n)=>n).filter(n=>n>=low&&n<=high&&n%12===pc);
@@ -467,8 +470,13 @@
       }).sort((a,b)=>a-b);previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
       const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'?ppq:ppq*2)*factor));
-      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const pitch of pitches){
-        notes.push({pitch,startTick:tick-source.range.startTick,durationTicks:Math.min(step,span.endTick-tick),velocity:Math.max(1,(role==='strings'?58:role==='bass'?82:72)+(density==='sparse'?-12:density==='rich'?8:0))});
+      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
+        if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
+        const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);
+        const baseVelocity=(role==='strings'?58:role==='bass'?82:72)+(density==='sparse'?-12:density==='rich'?8:0),blend=Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity);
+        // Rich bass alternates chord root and fifth; first beat always anchors root.
+        let rendered=pitch;if(role==='bass'&&density==='rich'&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+7;if(rendered>55)rendered-=12;}
+        notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
         if(notes.length>4096)throw Error('ensemble-note-limit');
       }
     }
@@ -482,8 +490,72 @@
     const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],chords,...(section?{section:clone(section)}:{}),method:'model-phrase-plus-rule-orchestration-v1'};
     result.summary+=' / Ensemble（ピアノ・ベース・ストリングス・規則ドラム）';return result;
   }
+  // Explicit section coverage; no inferred labels, gaps, or automatic adoption.
+  function wholeSongPlan(project,session,core,workspace){
+    const end=session.midiData.editor?.measureCount,settings=workspace?.sectionArrangements;
+    if(!Number.isSafeInteger(end)||end<1||end>256)throw Error('whole-song-limit-256-bars');
+    if(!Array.isArray(settings)||!settings.length)throw Error('全小節にSectionを設定してください。');
+    const ordered=clone(settings).sort((a,b)=>a.range.startMeasure-b.range.startMeasure),chunks=[];
+    let cursor=1;
+    for(const setting of ordered){
+      const r=setting.range;
+      if(!Number.isSafeInteger(r?.startMeasure)||!Number.isSafeInteger(r?.endMeasure)||r.startMeasure!==cursor||r.endMeasure<cursor||r.endMeasure>end)throw Error('Sectionの重複・空白・曲外範囲を修正してください。');
+      const actual=core.measureRangeToTicks(r,session.midiData);
+      if(actual.startTick!==r.startTick||actual.endTick!==r.endTick)throw Error('拍子変更後のSectionを再設定してください。');
+      bindEnsemble({importedMidi:{notes:[{}]},summary:''},{},'',setting);
+      // One bar per inference keeps meter/key/tempo changes bounded and auditable.
+      for(let bar=r.startMeasure;bar<=r.endMeasure;bar++){
+        const range=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),copy=clone(session);copy.editRange={startMeasure:bar,endMeasure:bar};
+        const context=createContext(project,copy,core),track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session)),source={version:1,trackId:track?.id,range:clone(range),midiSignature:JSON.stringify(session.midiData),notes:(track?.notes||[]).filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(0,64).map(n=>({...clone(n),startTick:Math.max(n.startTick,range.startTick),durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-Math.max(n.startTick,range.startTick)}))},meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,range.startTick);
+        const tempo=[...(session.midiData.tempoMap||[])].filter(e=>e.tick<=range.startTick).sort((a,b)=>a.tick-b.tick).at(-1);
+        const changes=[...(session.midiData.tempoMap||[]),...(session.midiData.keySignatureMap||[])].filter(e=>e.tick>range.startTick&&e.tick<range.endTick);
+        if(changes.length)throw Error('小節途中のテンポ・キー変更は全曲モデル生成未対応です。');
+        if(!track||core.isDrumTrack(track))throw Error('whole-song-melodic-source-required');
+        const review=workspace.harmonyReview;
+        if(review&&review.analysis?.midiSignature!==JSON.stringify(session.midiData))throw Error('コード確認を更新してください。');
+        const chord=review?.analysis?.rows?.find(row=>row.measure===bar)?.symbol||'';
+        ensembleChords(chord);
+        chunks.push({range,source,section:clone(setting),key:context.key,bpm:Math.round(tempo?.bpm||session.midiData.tempo||72),numerator:meter.numerator,denominator:meter.denominator,chords:chord,modelInputNotes:Math.min(64,source.notes.length)});
+      }
+      cursor=r.endMeasure+1;
+    }
+    if(cursor!==end+1)throw Error('全小節にSectionを設定してください。');
+    return{version:1,range:core.measureRangeToTicks({startMeasure:1,endMeasure:end},session.midiData),midiSignature:JSON.stringify(session.midiData),chunks,method:'sequential-bar-model-plus-rule-orchestration'};
+  }
+  function japaneseArrangement(instruction,workspace){
+    if(typeof instruction!=='string'||instruction.length>500)throw Error('invalid-arrangement-instruction');
+    const clauses=instruction.trim().split(/[。\n;；]+/).map(s=>s.trim()).filter(Boolean);
+    if(!clauses.length)throw Error('対応する定型指示を入力してください。');
+    const settings=clone(workspace.sectionArrangements||[]),changes=[];
+    for(const clause of clauses){
+      if(clause==='元のメロディーは変更しない'){changes.push('全曲編曲は伴奏のみ。元メロディーTrackは差し替え禁止。');continue;}
+      const match=/^(Aメロ|Bメロ|サビ|イントロ|間奏|アウトロ)(?:は|を|の)(静かに|豪華に|ベースだけ作り直す|ストリングスを追加する|もう少し切なく|ピアノ中心に)$/.exec(clause);
+      if(!match)throw Error('未対応・曖昧な指示です。対象Sectionと定型表現を指定してください。');
+      const name=({Aメロ:'verse',Bメロ:'prechorus',サビ:'chorus',イントロ:'intro',間奏:'interlude',アウトロ:'outro'})[match[1]],targets=settings.filter(s=>s.name===name);
+      if(!targets.length)throw Error('対象Sectionがありません。先に小節範囲を設定してください。');
+      for(const setting of targets){
+        const op=match[2];if(op==='静かに')setting.density='sparse';
+        else if(op==='豪華に')setting.density='rich';
+        else if(op==='ベースだけ作り直す'){if(!setting.targets?.bass)throw Error('既存Bassの差し替え先を設定してください。');setting.roles=['bass'];}
+        else if(op==='ストリングスを追加する'){setting.roles=['strings'];setting.targets={strings:''};}
+        else if(op==='もう少し切なく')setting.mood='切ない';
+        else if(op==='ピアノ中心に')setting.roles=['piano'];
+        changes.push(`M${setting.range.startMeasure}–${setting.range.endMeasure} ${match[1]}: ${op} / ${setting.density} / ${setting.roles.join(', ')}${setting.mood?' / '+setting.mood:''}`);
+      }
+    }
+    return{version:1,instruction,settings,changes,method:'finite-japanese-arrangement-commands',mutates:false};
+  }
+  function wholeSongCandidate(plan,parts,index){
+    if(!plan?.chunks?.length||parts.length!==plan.chunks.length||parts.some(p=>!p?.ensemble||p.ensemble.wholeSong))throw Error('incomplete-whole-song');
+    const value=clone(parts[0]);value.variant=String.fromCharCode(65+index);value.range=clone(plan.range);
+    value.ensemble.source.range=clone(plan.range);value.ensemble.source.midiSignature=plan.midiSignature;
+    value.ensemble.wholeSong={version:1,method:plan.method,parts:clone(parts)};
+    value.summary=`${value.variant}: Whole song（全曲） / ${parts.length}小節を順次モデル生成・規則編曲 / 元メロディー保持`;
+    return value;
+  }
   function detailLines(value){
     if(!value||!value.kind)return[];
+    if(value.ensemble?.wholeSong)return ['全曲候補 / 1小節ずつ順次モデル推論。各小節の選択Track先頭64音まで入力。',...value.ensemble.wholeSong.parts.map(p=>`M${p.range.startMeasure}: ${p.ensemble.section.name} / ${p.ensemble.section.density} / 入力${Math.min(64,p.ensemble.source.notes.length)}音 / ${p.ensemble.chords||'コード未指定'} / 伴奏・ドラムは規則補完`),'音楽品質・聴感は未受入。Preview→Listen→小節・楽器を指定してApply。'];
     if(value.ensemble)return[...(value.ensemble.chords?[`コード連動（規則処理）: ${value.ensemble.chords} / 根音ベース・和音ピアノ・近接声部ストリングス。1小節1コード。`]:[]),value.ensemble.chords?'Piano・Bass・Strings: 指定コードの規則伴奏。音高・リズムはAI推論ではありません。':'Piano: モデル出力を配置 / Bass・Strings: モデル出力の音高を規則で音域・密度調整','Drums: 拍子に沿う規則パターン。AIドラム推論ではありません。','元曲は保持。楽器・小節を選び、試聴してから一括採用。全パートの自然さは未受入。'];
     if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackまたは新規Piano/Bass/Strings。音色指定は規則処理。複数楽器一括生成・自由文の完全理解は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
     if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
@@ -495,5 +567,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

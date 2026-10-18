@@ -181,7 +181,37 @@
     if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     return copy;
   }
-  function ensembleSnapshot(session,core,value,measureRange=null){
+  function wholeSongSnapshot(session,core,value,selection){
+    const song=value.ensemble.wholeSong,signature=JSON.stringify(session.midiData);
+    if(song?.version!==1||song.method!=='sequential-bar-model-plus-rule-orchestration'||value.ensemble.source.midiSignature!==signature||!Array.isArray(song.parts)||!song.parts.length||song.parts.length>256)throw Error('stale-whole-song');
+    const from=selection?.startMeasure??value.range.startMeasure,to=selection?.endMeasure??value.range.endMeasure;
+    if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from)throw Error('invalid-whole-song-selection');
+    if(selection?.roles&&(!Array.isArray(selection.roles)||!selection.roles.length||selection.roles.some(r=>!['piano','bass','strings','drums'].includes(r))))throw Error('invalid-whole-song-roles');
+    let cursor=value.range.startMeasure;const copy=clone(session),diff=[],destinations={};
+    // Validate every part, including excluded bars, before calculating any result.
+    for(const part of song.parts){
+      const actual=core.measureRangeToTicks(part.range,session.midiData);
+      if(part.ensemble?.wholeSong||part.range.startMeasure!==cursor||part.range.endMeasure!==cursor||part.range.startTick!==actual.startTick||part.range.endTick!==actual.endTick||part.ensemble?.source?.midiSignature!==signature)throw Error('invalid-whole-song-part');
+      ensembleSnapshot(session,core,part,null,true);cursor++;
+    }
+    if(cursor!==value.range.endMeasure+1)throw Error('incomplete-whole-song');
+    for(const original of song.parts){
+      if(original.range.startMeasure<from||original.range.endMeasure>to)continue;
+      const part=clone(original),roles=selection?.roles?.filter(r=>part.ensemble.section.roles.includes(r));
+      if(roles&&!roles.length)continue;
+      const targets=part.ensemble.section.targets||{};
+      for(const role of part.ensemble.section.roles)if(!targets[role]&&destinations[role])targets[role]=destinations[role];
+      part.ensemble.section.targets=targets;part.ensemble.source.midiSignature=JSON.stringify(copy.midiData);
+      const result=ensembleSnapshot(copy,core,part,{startMeasure:part.range.startMeasure,endMeasure:part.range.endMeasure,...(roles?{roles}:{})},true);
+      copy.midiData=result.midiData;
+      for(const row of result.diff){if(!original.ensemble.section.targets?.[row.role])destinations[row.role]=row.replacedTrackId||row.trackId;diff.push({...row,measure:part.range.startMeasure});}
+    }
+    if(!diff.length)throw Error('whole-song-selection-empty');
+    root.MusicStudioMeasureLocks?.validateEdit(session.midiData,copy.midiData,core);
+    return{midiData:copy.midiData,range:core.measureRangeToTicks({startMeasure:from,endMeasure:to},session.midiData),diff};
+  }
+  function ensembleSnapshot(session,core,value,measureRange=null,allowProtectedBar=false){
+    if(value.ensemble?.wholeSong)return wholeSongSnapshot(session,core,value,measureRange);
     const ensemble=value.ensemble,source=ensemble?.source;
     if(ensemble?.version!==1||ensemble.method!=='model-phrase-plus-rule-orchestration-v1'||source?.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-ensemble-source');
     if(JSON.stringify(source.range)!==JSON.stringify(value.range)||JSON.stringify(ensemble.roles)!==JSON.stringify(['piano','bass','strings','drums']))throw Error('invalid-ensemble');
@@ -194,10 +224,12 @@
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from||to-from>255)throw Error('invalid-ensemble-range');
     const selection={startMeasure:from,endMeasure:to},range=core.measureRangeToTicks(selection,session.midiData),copy=clone(session),diff=[];
     if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
+    copy.editRange={startMeasure:source.range.startMeasure,endMeasure:source.range.endMeasure};
     for(const role of roles){
+      copy.editRange={startMeasure:source.range.startMeasure,endMeasure:source.range.endMeasure};
       if(role==='drums'){
         if(copy.midiData.tracks.length>=64)throw Error('arrangement-track-limit');
-        if(copy.midiData.tracks.some(t=>t.channel===10&&!core.isDrumTrack(t)))throw Error('drum-channel-conflict');
+        if(copy.midiData.tracks.some(t=>t.channel===10&&!(core.isDrumTrack(t)||core.resolveTrackCapabilities(t).supportsDrumLabels)))throw Error('drum-channel-conflict');
         let id='arrange-drums',suffix=2;while(copy.midiData.tracks.some(t=>t.id===id))id=`arrange-drums-${suffix++}`;
         const notes=[];for(let bar=from;bar<=to;bar++){
           const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},copy.midiData),ppq=copy.midiData.ppq||480;
@@ -228,11 +260,11 @@
     for(const item of diff){
       const targetId=targets[item.role];if(!targetId)continue;
       const original=core.getTrackById(session.midiData.tracks,targetId),generated=core.getTrackById(copy.midiData.tracks,item.trackId);
-      if(!original||core.resolveCoreTrackRole(original)==='melody'||(item.role==='drums')!==core.isDrumTrack(original))throw Error('invalid-section-replacement-target');
+      if(!original||core.resolveCoreTrackRole(original)==='melody'||(item.role==='drums')!==(core.isDrumTrack(original)||core.resolveTrackCapabilities(original).supportsDrumLabels))throw Error('invalid-section-replacement-target');
       const locks=root.MusicStudioMeasureLocks;if(!locks)throw Error('replacement-lock-service-required');
       const retained=original.notes.filter(n=>n.startTick<range.startTick||n.startTick+n.durationTicks>range.endTick||locks.isProtected(session.midiData,core,targetId,n));
       const additions=generated.notes.filter(n=>!locks.isProtected(session.midiData,core,targetId,n)&&!retained.some(r=>r.startTick<n.startTick+n.durationTicks&&r.startTick+r.durationTicks>n.startTick));
-      if(!additions.length)throw Error('no-editable-replacement-notes');
+      if(!additions.length){if(!allowProtectedBar)throw Error('no-editable-replacement-notes');retained.splice(0,retained.length,...original.notes);}
       const target=core.getTrackById(copy.midiData.tracks,targetId);target.notes=[...clone(retained),...clone(additions)].sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
       copy.midiData.tracks=copy.midiData.tracks.filter(t=>t.id!==item.trackId);
       if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks=copy.midiData.editor.measureLocks.tracks.filter(t=>t.trackId!==item.trackId);
