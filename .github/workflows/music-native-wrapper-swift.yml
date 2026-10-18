@@ -7,6 +7,10 @@ on:
       - agent/music-studio-current-main-build-verification
       - verification/music-studio-all-drafts-255
     paths:
+      - 'app.js'
+      - 'index.html'
+      - 'music-studio.html'
+      - 'music-studio-ai-*.js'
       - 'music-studio.js'
       - 'tools/music-native-wrapper/**'
       - 'tools/music-audio-pipeline/*.py'
@@ -14,6 +18,10 @@ on:
       - '.github/workflows/music-native-wrapper-swift.yml'
   pull_request:
     paths:
+      - 'app.js'
+      - 'index.html'
+      - 'music-studio.html'
+      - 'music-studio-ai-*.js'
       - 'music-studio.js'
       - 'tools/music-native-wrapper/**'
       - 'tools/music-audio-pipeline/*.py'

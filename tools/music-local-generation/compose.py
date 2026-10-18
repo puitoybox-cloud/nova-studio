@@ -106,7 +106,37 @@ def constrain_score(score, *, key=None, pitch_min=48, pitch_max=84, numerator=4,
     return changed
 
 
-def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords=''):
+def source_notes(value, max_ticks):
+    if value is None: return []
+    if not isinstance(value, list) or not 1 <= len(value) <= 64: raise ValueError('invalid-source-notes')
+    result = []
+    for note in value:
+        if not isinstance(note, dict) or set(note) != {'pitch', 'velocity', 'startTick', 'durationTicks'}: raise ValueError('invalid-source-note')
+        if any(type(v) is not int for v in note.values()): raise ValueError('invalid-source-note-integer')
+        if not 0 <= note['pitch'] <= 127 or not 1 <= note['velocity'] <= 127 or not 0 <= note['startTick'] < max_ticks or not 1 <= note['durationTicks'] <= max_ticks-note['startTick']: raise ValueError('invalid-source-note-boundary')
+        result.append(['note',note['startTick'],note['durationTicks'],0,note['pitch'],note['velocity']])
+    return sorted(result, key=lambda e: (e[1], e[4]))
+
+
+def remove_prompt_notes(score, prompt_score):
+    # Both scores use the same tokenizer Track/channel allocation. Prefix notes
+    # are removed by event order, never by pitch matching or a guessed timestamp.
+    for index, track in enumerate(score[1:], 1):
+        count = sum(e[0] == 'note' for e in prompt_score[index]) if index < len(prompt_score) else 0
+        kept = []
+        for e in track:
+            if e[0] == 'note' and count:
+                count -= 1
+            else: kept.append(e)
+        track[:] = kept
+    first = min((e[1] for track in score[1:] for e in track if e[0] == 'note'), default=None)
+    if first is None: raise ValueError('model produced no new source-conditioned notes')
+    for track in score[1:]:
+        for e in track: e[1] = max(0, e[1]-first)
+    return score
+
+
+def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords='', sourceNotes=None):
     style, chord_names, chord_sets = interpret_request(description, genre, style, chords)
     constraints(key, pitch_min, pitch_max, numerator, denominator, style)
     import numpy as np
@@ -115,6 +145,7 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     from vendor.onnx_generate import generate
     if type(max_ticks) is not int or not 120 <= max_ticks <= 122880: raise ValueError('invalid-range-ticks')
     if not 8 <= events <= 512 or not 30 <= bpm <= 300 or not 0 <= seed <= 2147483645: raise ValueError('generation settings outside bounds')
+    source = source_notes(sourceNotes, max_ticks)
     weights, output = Path(weights), Path(output)
     manifest = json.loads((Path(__file__).parent / 'model-lock.json').read_text())
     for name, expected in manifest['files'].items():
@@ -127,12 +158,18 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     output.mkdir(parents=True, exist_ok=False)
     result = {'format': 'nova-local-model-candidates', 'version': 1, 'model': manifest['model'], 'revision': manifest['revision'], 'license': 'Apache-2.0', 'runtime': rt.__version__, 'provider': 'CPUExecutionProvider', 'synthetic': False, 'maxTicks': max_ticks, 'postprocess': 'clip-to-selected-range', 'candidates': []}
     prompt = [[tokenizer.bos_id] + [tokenizer.pad_id] * 7, tokenizer.event2tokens(['set_tempo', 0, 0, 0, bpm]), tokenizer.event2tokens(['patch_change', 0, 0, 0, 0, 0])]
+    if source:
+        prompt = tokenizer.tokenize([480, [['set_tempo',0,round(60000000/bpm)], ['patch_change',0,0,0], *source]])
+        if prompt[-1][0] == tokenizer.eos_id: prompt = prompt[:-1]
+        result['sourceConditioning'] = {'method':'source-prefix-then-rebase-continuation', 'notes':len(source), 'limit':64, 'freeText':False}
     prompt = np.asarray(prompt, dtype=np.int64)
+    prompt_score = tokenizer.detokenize(prompt) if source else None
     for index, variant in enumerate('ABC'):
         rows = list(prompt)
         for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16))):
             rows.append(row[0])
         score = tokenizer.detokenize(rows)
+        if source: remove_prompt_notes(score, prompt_score)
         for i, track in enumerate(score[1:], 1):
             score[i] = [e for e in track if e[1] < max_ticks]
             for e in score[i]:
