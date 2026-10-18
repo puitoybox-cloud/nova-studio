@@ -18,5 +18,5 @@ test('landscape AI editor is bounded and touch-sized without hiding advanced can
  assert.match(css,/\.music-ai-panel :is\(button,select,input:not\(\[type=checkbox\]\):not\(\[type=radio\]\),textarea\)/);
  assert.match(css,/min-height:44px;padding:6px 10px/);
  assert.match(html,/music-studio-ai-assistant-panel\.css\?v=1\.0\.5/);
- assert.match(html,/music-studio-ai-assistant-panel\.js\?v=1\.0\.42/);
+ assert.match(html,/music-studio-ai-assistant-panel\.js\?v=1\.0\.43/);
 });

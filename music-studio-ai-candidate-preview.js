@@ -181,6 +181,19 @@
     if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     return copy;
   }
+  function performanceMetrics(plan){
+    return [...new Set(plan.diff.map(d=>d.role))].map(role=>{
+      const rows=plan.diff.filter(d=>d.role===role),ids=[...new Set(rows.map(d=>d.replacedTrackId||d.trackId))];
+      const notes=ids.flatMap(id=>{
+        const track=plan.midiData.tracks.find(t=>t.id===id);
+        return (track?.notes||[]).filter(n=>n.startTick>=plan.range.startTick&&n.startTick<plan.range.endTick);
+      }).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
+      let maxVoiceLeap=0,previous=[],lastTick=null,group=[];
+      function close(){if(previous.length===group.length)for(let i=0;i<group.length;i++)maxVoiceLeap=Math.max(maxVoiceLeap,Math.abs(group[i]-previous[i]));previous=group;group=[];}
+      for(const n of notes){if(lastTick!==null&&lastTick!==n.startTick)close();group.push(n.pitch);lastTick=n.startTick;}if(group.length)close();
+      return{role,notes:notes.length,pitchMin:notes.length?notes.reduce((v,n)=>Math.min(v,n.pitch),127):null,pitchMax:notes.length?notes.reduce((v,n)=>Math.max(v,n.pitch),0):null,maxVoiceLeap:role==='drums'?null:maxVoiceLeap,measures:rows.map(r=>r.measure).filter(Number.isInteger),method:'note-distribution-only'};
+    });
+  }
   function wholeSongSnapshot(session,core,value,selection){
     const song=value.ensemble.wholeSong,signature=JSON.stringify(session.midiData);
     if(song?.version!==1||song.method!=='sequential-bar-model-plus-rule-orchestration'||value.ensemble.source.midiSignature!==signature||!Array.isArray(song.parts)||!song.parts.length||song.parts.length>256)throw Error('stale-whole-song');
@@ -232,12 +245,7 @@
         if(copy.midiData.tracks.some(t=>t.channel===10&&!(core.isDrumTrack(t)||core.resolveTrackCapabilities(t).supportsDrumLabels)))throw Error('drum-channel-conflict');
         let id='arrange-drums',suffix=2;while(copy.midiData.tracks.some(t=>t.id===id))id=`arrange-drums-${suffix++}`;
         const notes=[];for(let bar=from;bar<=to;bar++){
-          const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},copy.midiData),ppq=copy.midiData.ppq||480;
-          // Quarter-note kick/snare with eighth hats, clipped at actual meter boundaries.
-          for(let tick=span.startTick,step=0;tick<span.endTick;tick+=Math.max(1,Math.round(ppq/(ensemble.section?.density==='sparse'?1:2))),step++){
-            const add=(pitch,velocity)=>notes.push({id:`${id}-${bar}-${step}-${pitch}`,pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
-            add(42,step%2?54:66);if(step%2===0)add(step%4===0?36:38,step%4===0?90:80);
-          }
+          for(const [index,note] of requireComposition().drumPerformance(value,copy,core,bar).entries())notes.push({...note,id:`${id}-${bar}-${index}`});
         }
         const track={id,name:'Rule drums（規則ドラム）',trackType:'midi-drums',roleAssignment:'drums',role:'drums',channel:10,program:null,muted:false,notes,generationProvenance:{method:'meter-grid-rule',model:null,variant:value.variant}};
         copy.midiData.tracks.push(track);if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
@@ -279,7 +287,7 @@
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
-    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.diff.flatMap(d=>core.getTrackById(plan.midiData.tracks,d.replacedTrackId||d.trackId)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff},mutates:false};}
+    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.diff.flatMap(d=>core.getTrackById(plan.midiData.tracks,d.replacedTrackId||d.trackId)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff,performance:performanceMetrics(plan)},mutates:false};}
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
     if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);
