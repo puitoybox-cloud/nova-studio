@@ -394,8 +394,33 @@
     result.summary+=` / ${mode} / Track ${source.trackId} → ${destinationTrackId} / ${source.range.startMeasure}–${source.range.endMeasure}小節 / ${amount}%`;
     return result;
   }
+  // Role hints are local rules, never calibrated probabilities or automatic assignments.
+  function analyzeInstrumentRoles(session,core){
+    const range=selectedRange(session,core),ppq=session.midiData.ppq||480;
+    return(session.midiData.tracks||[]).map(track=>{
+      const notes=(track.notes||[]).filter(n=>Number.isFinite(n.pitch)&&n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick);
+      const pitches=notes.map(n=>n.pitch).sort((a,b)=>a-b),median=pitches.length?pitches[Math.floor(pitches.length/2)]:null;
+      const reasons=[],scores={melody:0,bass:0,harmony:0,drums:0};
+      if(core.isDrumTrack?.(track)||track.channel===10){scores.drums+=10;reasons.push('Drum channel/type（打楽器チャンネル・種別）')}
+      if(Number.isInteger(track.program)&&track.program>=32&&track.program<=39){scores.bass+=5;reasons.push('GM bass（GMベース音色）')}
+      if(Number.isInteger(track.program)&&track.program>=48&&track.program<=55){scores.harmony+=4;reasons.push('GM strings（GMストリングス音色）')}
+      if(median!==null&&median<48){scores.bass+=3;reasons.push('Low register（低音域）')}
+      const starts=new Map();for(const n of notes)starts.set(n.startTick,(starts.get(n.startTick)||0)+1);
+      const polyphony=starts.size?[...starts.values()].filter(n=>n>1).length/starts.size:0;
+      if(polyphony>=0.3){scores.harmony+=4;reasons.push('Simultaneous notes（同時発音）')}
+      if(notes.length&&polyphony<0.1&&median>=48){scores.melody+=2;reasons.push('Single-note upper line（中高音の単音列）')}
+      const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]),role=ranked[0][1]?ranked[0][0]:'unknown',uncertainty=!notes.length||ranked[0][1]-ranked[1][1]<3?'high':'medium';
+      return{trackId:track.id,name:track.name||track.id,channel:track.channel??null,program:track.program??null,noteCount:notes.length,minPitch:pitches[0]??null,maxPitch:pitches.at(-1)??null,medianPitch:median,notesPerQuarter:notes.length/Math.max(1,(range.endTick-range.startTick)/ppq),simultaneousStartRatio:polyphony,role,uncertainty,reasons,assignedRole:track.roleAssignment||track.part||'unassigned',method:'local-rules-v1',range:clone(range)};
+    });
+  }
+  function bindEnsemble(value,source){
+    if(!value?.importedMidi?.notes?.length)throw Error('ensemble-model-notes-required');
+    const result=clone(value);result.ensemble={version:1,source:clone(source),roles:['piano','bass','strings','drums'],method:'model-phrase-plus-rule-orchestration-v1'};
+    result.summary+=' / Ensemble（ピアノ・ベース・ストリングス・規則ドラム）';return result;
+  }
   function detailLines(value){
     if(!value||!value.kind)return[];
+    if(value.ensemble)return['Piano: モデル出力を配置 / Bass・Strings: モデル出力の音高を規則で音域・密度調整','Drums: 拍子に沿う規則パターン。AIドラム推論ではありません。','元曲は保持。楽器・小節を選び、試聴してから一括採用。全パートの自然さは未受入。'];
     if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackまたは新規Piano/Bass/Strings。音色指定は規則処理。複数楽器一括生成・自由文の完全理解は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
     if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
     const family=`Family ${value.candidateFamily?.variant||value.variant}`;
@@ -406,5 +431,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
