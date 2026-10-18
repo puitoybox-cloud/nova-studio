@@ -87,7 +87,7 @@
       "formal": "C",
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
-      "unclosedRequirementOrEvidence": "選択メロディー固定で既存の別Trackへモデル候補を追加可能。複数楽器同時再生成・ドラム・自動楽器Track作成・編曲品質の全要件は未完了。",
+      "unclosedRequirementOrEvidence": "既存単一/複数パートの明示再生成・差し替え、新規Track、規則ドラムは存在。全曲複数Sectionの一括モデル生成、演奏表現・音色・音楽的品質と全要件受入は未完了。",
       "newScope": "Persisted confirmed/corrected chords and locks with atomic workspace history; section range/density/instrument/target settings; explicit partial part replacement with original/lock/boundary preservation. Model inference and rule orchestration distinguished. Intra-bar chords, musical acceptance and full production closure remain incomplete.",
       "physicalProcedure": "メロディ固定で単一/複数楽器だけ再生成し、対象外Track保持を確認。"
     },
