@@ -176,11 +176,56 @@
     if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:track.id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
     // Select only the disposable session; preserve the original editor state.
     copy.selectedTrackId=track.id;copy.selectionTrackId=null;copy.selectedNoteId=null;copy.selectedNoteIds=[];
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     return copy;
+  }
+  function ensembleSnapshot(session,core,value,measureRange=null){
+    const ensemble=value.ensemble,source=ensemble?.source;
+    if(ensemble?.version!==1||ensemble.method!=='model-phrase-plus-rule-orchestration-v1'||source?.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-ensemble-source');
+    if(JSON.stringify(source.range)!==JSON.stringify(value.range)||JSON.stringify(ensemble.roles)!==JSON.stringify(['piano','bass','strings','drums']))throw Error('invalid-ensemble');
+    const data=value.importedMidi;if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||!data.notes.length||data.notes.length>4096||data.notes.some(n=>!Number.isSafeInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isSafeInteger(n.velocity)||n.velocity<1||n.velocity>127||!Number.isSafeInteger(n.startTick)||n.startTick<0||!Number.isSafeInteger(n.durationTicks)||n.durationTicks<1||n.startTick+n.durationTicks>value.range.endTick-value.range.startTick))throw Error('invalid-ensemble-model-notes');
+    const roles=measureRange?.roles||ensemble.roles;
+    if(!Array.isArray(roles)||!roles.length||new Set(roles).size!==roles.length||roles.some(r=>!ensemble.roles.includes(r)))throw Error('invalid-ensemble-instruments');
+    const from=measureRange?.startMeasure??value.range.startMeasure,to=measureRange?.endMeasure??value.range.endMeasure;
+    if(!Number.isInteger(from)||!Number.isInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from||to-from>255)throw Error('invalid-ensemble-range');
+    const selection={startMeasure:from,endMeasure:to},range=core.measureRangeToTicks(selection,session.midiData),copy=clone(session),diff=[];
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
+    for(const role of roles){
+      if(role==='drums'){
+        if(copy.midiData.tracks.length>=64)throw Error('arrangement-track-limit');
+        if(copy.midiData.tracks.some(t=>t.channel===10&&!core.isDrumTrack(t)))throw Error('drum-channel-conflict');
+        let id='arrange-drums',suffix=2;while(copy.midiData.tracks.some(t=>t.id===id))id=`arrange-drums-${suffix++}`;
+        const notes=[];for(let bar=from;bar<=to;bar++){
+          const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},copy.midiData),ppq=copy.midiData.ppq||480;
+          // Quarter-note kick/snare with eighth hats, clipped at actual meter boundaries.
+          for(let tick=span.startTick,step=0;tick<span.endTick;tick+=Math.max(1,Math.round(ppq/2)),step++){
+            const add=(pitch,velocity)=>notes.push({id:`${id}-${bar}-${step}-${pitch}`,pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
+            add(42,step%2?54:66);if(step%2===0)add(step%4===0?36:38,step%4===0?90:80);
+          }
+        }
+        const track={id,name:'Rule drums（規則ドラム）',trackType:'midi-drums',roleAssignment:'drums',role:'drums',channel:10,program:null,muted:false,notes,generationProvenance:{method:'meter-grid-rule',model:null,variant:value.variant}};
+        copy.midiData.tracks.push(track);if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
+        diff.push({role,trackId:id,notes:notes.length,method:'meter-grid-rule'});continue;
+      }
+      const instrument=requireComposition().remakeNewTrack(copy,role),part=clone(value);delete part.ensemble;part.variant=`${value.variant}-${role}`;
+      const limits=role==='bass'?[28,55]:role==='strings'?[48,84]:[48,84];
+      part.importedMidi.notes=part.importedMidi.notes.filter((n,i)=>role==='piano'||role==='strings'?true:i%2===0).map(n=>{
+        let pitch=n.pitch;while(pitch<limits[0])pitch+=12;while(pitch>limits[1])pitch-=12;
+        return{...n,pitch,velocity:Math.min(n.velocity||80,role==='strings'?64:role==='bass'?90:100)};
+      });
+      const binding={...clone(source),midiSignature:JSON.stringify(copy.midiData)};
+      const candidate={candidateId:value.variant,value:requireComposition().bindRemake(part,binding,'layer',100,instrument.id,instrument)};
+      const bundle=createPreview(copy,core,candidate);applyPreview(copy,core,bundle,selection);
+      const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
+    }
+    if(diff.reduce((sum,d)=>sum+d.notes,0)>4096)throw Error('ensemble-note-limit');
+    if(!core.validateTrackRegistry(copy.midiData.tracks).ok)throw Error('invalid-ensemble-track-registry');
+    return{midiData:copy.midiData,range,diff};
   }
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
+    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.midiData.tracks.slice(session.midiData.tracks.length).flatMap(t=>t.notes),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff},mutates:false};}
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
     if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);
@@ -225,6 +270,7 @@
   }
   function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
+    if(bundle.value?.ensemble){const plan=ensembleSnapshot(session,core,bundle.value,measureRange),applied=core.applyAtomicMidiSnapshot(session,session.midiData,plan.midiData);if(!applied.applied)throw Error(`ensemble-apply-rejected:${applied.reason}`);return{ok:true,applied,targetTrackId:bundle.targetTrackId,diff:plan.diff};}
     if(bundle.value?.remake?.newTrack){
       if(JSON.stringify(bundle.newTrackBaseline)!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
       const working=newTrackSession(session,core,bundle.value),inner=clone(bundle);
@@ -247,11 +293,12 @@
   function auditionPlan(session,core,bundle,measureRange=null){
     if(bundle?.type!=='midi-preview')throw Error('midi-preview-required');
     const copy=clone(session);
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     core.selectTrackById(copy,bundle.targetTrackId);
     applyPreview(copy,core,bundle,measureRange);
     const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
     const selected=core.getTrackById(copy.midiData.tracks,bundle.targetTrackId);
-    const tracks=(bundle.value.remake?copy.midiData.tracks:[selected]).map(track=>{
+    const tracks=(bundle.value.remake||bundle.value.ensemble?copy.midiData.tracks:[selected]).map(track=>{
       const notes=track.notes.filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).map(n=>{
         const startTick=Math.max(n.startTick,range.startTick);
         return{...clone(n),startTick,durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-startTick};
