@@ -62,10 +62,12 @@
     const data=value.importedMidi;
     if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||data.notes.length<1||data.notes.length>4096)throw Error('invalid-imported-midi-candidate');
     if(['startTick','endTick','startMeasure','endMeasure'].some(k=>value.range?.[k]!==request.range[k]))throw Error('stale-imported-midi-range');
+    const allocated=new Set(session.midiData.tracks.flatMap(t=>t.notes.map(n=>n.id)));
     const adds=data.notes.map((note,index)=>{
       if(!Number.isSafeInteger(note.pitch)||note.pitch<0||note.pitch>127||!Number.isSafeInteger(note.velocity)||note.velocity<1||note.velocity>127||!Number.isSafeInteger(note.startTick)||note.startTick<0||!Number.isSafeInteger(note.durationTicks)||note.durationTicks<1||!Number.isSafeInteger(note.startTick+note.durationTicks)||note.startTick+note.durationTicks>request.range.endTick-request.range.startTick)throw Error('invalid-imported-midi-note');
       const startTick=request.range.startTick+note.startTick;
-      return{...clone(note),startTick,id:uniqueId(track,`midi-candidate-${value.variant}`,index,startTick)};
+      const base=`midi-candidate-${value.variant}-${index+1}-${startTick}`;let id=base;for(let suffix=2;allocated.has(id);suffix++)id=`${base}-${suffix}`;allocated.add(id);
+      return{...clone(note),startTick,id};
     });
     return{updates:[],adds,deleteNoteIds:[]};
   }
@@ -184,7 +186,9 @@
     if(ensemble?.version!==1||ensemble.method!=='model-phrase-plus-rule-orchestration-v1'||source?.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-ensemble-source');
     if(JSON.stringify(source.range)!==JSON.stringify(value.range)||JSON.stringify(ensemble.roles)!==JSON.stringify(['piano','bass','strings','drums']))throw Error('invalid-ensemble');
     const data=value.importedMidi;if(value.kind!=='melody'||data?.version!==1||data.ppq!==session.midiData.ppq||!Array.isArray(data.notes)||!data.notes.length||data.notes.length>4096||data.notes.some(n=>!Number.isSafeInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isSafeInteger(n.velocity)||n.velocity<1||n.velocity>127||!Number.isSafeInteger(n.startTick)||n.startTick<0||!Number.isSafeInteger(n.durationTicks)||n.durationTicks<1||n.startTick+n.durationTicks>value.range.endTick-value.range.startTick))throw Error('invalid-ensemble-model-notes');
-    const roles=measureRange?.roles||ensemble.roles;
+    const allowed=ensemble.section?.roles||ensemble.roles;
+    if(ensemble.section)requireComposition().bindEnsemble(value,source,ensemble.chords||'',ensemble.section);
+    const roles=(measureRange?.roles||allowed).filter(role=>allowed.includes(role));
     if(!Array.isArray(roles)||!roles.length||new Set(roles).size!==roles.length||roles.some(r=>!ensemble.roles.includes(r)))throw Error('invalid-ensemble-instruments');
     const from=measureRange?.startMeasure??value.range.startMeasure,to=measureRange?.endMeasure??value.range.endMeasure;
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from||to-from>255)throw Error('invalid-ensemble-range');
@@ -198,7 +202,7 @@
         const notes=[];for(let bar=from;bar<=to;bar++){
           const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},copy.midiData),ppq=copy.midiData.ppq||480;
           // Quarter-note kick/snare with eighth hats, clipped at actual meter boundaries.
-          for(let tick=span.startTick,step=0;tick<span.endTick;tick+=Math.max(1,Math.round(ppq/2)),step++){
+          for(let tick=span.startTick,step=0;tick<span.endTick;tick+=Math.max(1,Math.round(ppq/(ensemble.section?.density==='sparse'?1:2))),step++){
             const add=(pitch,velocity)=>notes.push({id:`${id}-${bar}-${step}-${pitch}`,pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
             add(42,step%2?54:66);if(step%2===0)add(step%4===0?36:38,step%4===0?90:80);
           }
@@ -207,7 +211,7 @@
         copy.midiData.tracks.push(track);if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
         diff.push({role,trackId:id,notes:notes.length,method:'meter-grid-rule'});continue;
       }
-      const instrument=requireComposition().remakeNewTrack(copy,role),part=clone(value);delete part.ensemble;part.variant=`${value.variant}-${role}`;
+      const instrument=requireComposition().remakeNewTrack(copy,role),part=clone(value);delete part.ensemble;part.variant=`${value.variant}-${role}-${instrument.id}`;
       const limits=role==='bass'?[28,55]:role==='strings'?[48,84]:[48,84];
       part.importedMidi.notes=part.importedMidi.notes.filter((n,i)=>role==='piano'||role==='strings'?true:i%2===0).map(n=>{
         let pitch=n.pitch;while(pitch<limits[0])pitch+=12;while(pitch>limits[1])pitch-=12;
@@ -218,8 +222,24 @@
       const binding={...clone(source),midiSignature:JSON.stringify(copy.midiData)};
       const candidate={candidateId:value.variant,value:requireComposition().bindRemake(part,binding,'layer',100,instrument.id,instrument)};
       const bundle=createPreview(copy,core,candidate);applyPreview(copy,core,bundle,selection);
-      const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={chords:value.ensemble.chords||null,orchestration:chordNotes?'explicit-chord-rules-v1':null,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
+      const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={section:clone(value.ensemble.section||null),chords:value.ensemble.chords||null,orchestration:chordNotes?'explicit-chord-rules-v1':null,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
     }
+    const targets=ensemble.section?.targets||{};
+    for(const item of diff){
+      const targetId=targets[item.role];if(!targetId)continue;
+      const original=core.getTrackById(session.midiData.tracks,targetId),generated=core.getTrackById(copy.midiData.tracks,item.trackId);
+      if(!original||core.resolveCoreTrackRole(original)==='melody'||(item.role==='drums')!==core.isDrumTrack(original))throw Error('invalid-section-replacement-target');
+      const locks=root.MusicStudioMeasureLocks;if(!locks)throw Error('replacement-lock-service-required');
+      const retained=original.notes.filter(n=>n.startTick<range.startTick||n.startTick+n.durationTicks>range.endTick||locks.isProtected(session.midiData,core,targetId,n));
+      const additions=generated.notes.filter(n=>!locks.isProtected(session.midiData,core,targetId,n)&&!retained.some(r=>r.startTick<n.startTick+n.durationTicks&&r.startTick+r.durationTicks>n.startTick));
+      if(!additions.length)throw Error('no-editable-replacement-notes');
+      const target=core.getTrackById(copy.midiData.tracks,targetId);target.notes=[...clone(retained),...clone(additions)].sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
+      copy.midiData.tracks=copy.midiData.tracks.filter(t=>t.id!==item.trackId);
+      if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks=copy.midiData.editor.measureLocks.tracks.filter(t=>t.trackId!==item.trackId);
+      if(copy.midiData.editor?.trackStates)delete copy.midiData.editor.trackStates[item.trackId];
+      item.replacedTrackId=targetId;item.notes=additions.length;item.removed=original.notes.length-retained.length;
+    }
+    root.MusicStudioMeasureLocks?.validateEdit(session.midiData,copy.midiData,core);
     if(diff.reduce((sum,d)=>sum+d.notes,0)>4096)throw Error('ensemble-note-limit');
     if(!core.validateTrackRegistry(copy.midiData.tracks).ok)throw Error('invalid-ensemble-track-registry');
     return{midiData:copy.midiData,range,diff};
@@ -227,7 +247,7 @@
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
-    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.midiData.tracks.slice(session.midiData.tracks.length).flatMap(t=>t.notes),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff},mutates:false};}
+    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.diff.flatMap(d=>core.getTrackById(plan.midiData.tracks,d.replacedTrackId||d.trackId)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff},mutates:false};}
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
     if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);
