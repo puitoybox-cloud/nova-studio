@@ -209,3 +209,29 @@ test('bounded PCM recording result saves, reopens and restores the original enco
  const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();const bytes=await fresh.a.pcmLoadLongWav(f.p.projectId,asset.id);assert.deepEqual(Buffer.from(await bytes.arrayBuffer()),Buffer.from(await wav.blob.arrayBuffer()));
  const archive=await fresh.a.createLongWavArchive(),restored=await fresh.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects.find(p=>p.longWavAssets?.length),copyBytes=await fresh.a.pcmLoadLongWav(copy.projectId,copy.longWavAssets[0].id);assert.deepEqual(Buffer.from(await copyBytes.arrayBuffer()),Buffer.from(await wav.blob.arrayBuffer()));
 });
+
+test('explicit eight-minute worklet budget preserves ordered frames across pause and exact natural stop',()=>{
+ let Processor;let count=0,last;class Base{constructor(){this.port={postMessage(v){if(v.type==='pcm'){assert.ok(v.samples.length<=4096);count+=v.samples.length;assert.ok(v.samples.every(x=>Math.abs(x-.25)<1e-9))}last=v}}}}
+ vm.runInNewContext(fs.readFileSync('music-studio-vocal-worklet.js','utf8'),{AudioWorkletProcessor:Base,Float32Array,sampleRate:8000,registerProcessor(_,type){Processor=type}});
+ const p=new Processor({processorOptions:{maxFrames:8000*600}});p.port.onmessage({data:'start'});const block=new Float32Array(128).fill(.25);
+ for(let i=0;i<100;i++)p.process([[block]]);p.port.onmessage({data:'pause'});const paused=p.frames;for(let i=0;i<20;i++)p.process([[block]]);assert.equal(p.frames,paused);p.port.onmessage({data:'resume'});
+ while(!p.stopped)p.process([[block]]);assert.equal(count,8000*480);assert.equal(p.frames,count);assert.equal(last.type,'stopped');assert.equal(last.frames,count);
+});
+test('eight-minute PCM take streams trim and gain, reopens, publishes to Mix and restores exact bytes',async()=>{
+ const f=await setup(),a=f.a,rate=8000,frames=rate*480;
+ const header=a.pcmEncodeWav({sampleRate:rate,channels:[[0]]}).slice(0,44),v=new DataView(header);v.setUint32(4,36+frames*2,true);v.setUint32(40,frames*2,true);
+ const samples=new Int16Array(frames).fill(4096),blob=new Blob([header,samples]),take=await a.vocalCapturedWav(blob);
+ assert.equal(take.frames,frames);assert.equal(a.vocalRecordingWindow(f.p,0),480);
+ Object.assign(a.vocal,{pending:{...take,name:'Eight minutes.wav',captureMime:'audio/wav',startTick:0,latencyMs:0},projectId:f.p.projectId,target:f.repo,baseline:JSON.stringify(f.p),phase:'pending'});
+ const saved=await a.vocalSave();assert.equal(saved.ok,true,saved.error);const id=saved.assetId;
+ assert.equal((await a.vocalEdit(f.p.projectId,id,{first:rate,end:frames-1,gainDb:-6,startTick:480,latencyMs:25})).ok,true);
+ assert.equal((await a.vocalEdit(f.p.projectId,id,null,-1)).ok,true);assert.equal((await a.vocalEdit(f.p.projectId,id,null,1)).ok,true);
+ const fresh=fixture(f.indexedDB),b=fresh.a;b.setRepository(b.indexedDbRepository());await b.refresh();const rendered=await b.vocalRender(f.p.projectId,id);assert.equal(rendered.frames,frames-rate-1);
+ const published=await b.vocalPublishForMix(f.p.projectId,id);assert.equal(published.ok,true,published.error);
+ const archive=await b.createLongWavArchive(),restored=await b.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
+ const copy=restored.projects.find(p=>p.longWavAssets?.some(x=>x.vocalTake)),asset=copy.longWavAssets.find(x=>x.vocalTake),original=await b.pcmLoadLongWav(copy.projectId,asset.id);
+ assert.deepEqual(Buffer.from(await original.arrayBuffer()),Buffer.from(await blob.arrayBuffer()));const rerender=await b.vocalRender(copy.projectId,asset.id);assert.deepEqual(Buffer.from(await rerender.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer()));
+});
+test('insufficient storage refuses recording before capture starts and releases microphone',async()=>{
+ const f=await setup(),c=capture(f);f.w.AudioContext.prototype.sampleRate=8000;f.w.navigator.storage={estimate:async()=>({quota:1000,usage:999})};const before=JSON.stringify(await f.repo.get(f.p.projectId));const result=await f.a.vocalStart(f.p.projectId);assert.equal(result.ok,false,JSON.stringify({result,message:f.a.vocal.message,nav:!!f.w.navigator.storage}));assert.match(result.error,/storage-capacity/);assert.ok(c.stopped>0);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+});
