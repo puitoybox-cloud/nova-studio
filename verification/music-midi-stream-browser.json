@@ -1,8 +1,8 @@
 {
   "continuity": {
     "frames": 3799411,
-    "maxError": 7.450580596923828e-9,
-    "boundaryError": 0,
+    "maxError": 1.4901161193847656e-8,
+    "boundaryError": 1.862645149230957e-9,
     "peak": 0.08781807869672775,
     "progress": [
       0,
@@ -11,6 +11,15 @@
       1
     ],
     "cancelled": true
+  },
+  "capacity": {
+    "seconds": 480,
+    "frames": 23078400,
+    "peak": 0.05288267135620117,
+    "renderedWindows": 3,
+    "progressWindows": 17,
+    "maxContextFrames": 1440000,
+    "maxContextPCMBytes": 11520000
   },
   "production": {
     "seconds": 130,

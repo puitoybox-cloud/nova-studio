@@ -256,3 +256,21 @@ test('seeking past a one-shot sample end is silent without a missing-material wa
 function renderFixture(){const w={};w.window=w;for(const f of ['music-studio-playback.js','music-studio-instruments.js','music-studio-audio.js'])vm.runInNewContext(fs.readFileSync(f,'utf8'),w);class Offline extends Context{constructor(ch,length,rate){super();this.currentTime=0;this.state='suspended';this.sampleRate=rate;this.length=length;this.numberOfChannels=ch;Offline.last=this}async startRendering(){this.rendered=true;return{length:this.length,sampleRate:this.sampleRate,numberOfChannels:this.numberOfChannels,getChannelData:()=>new Float32Array(this.length)}}}const midi={ppq:480,tempo:120,tempoMap:[{tick:480,bpm:60}],tracks:[{id:'melody',part:'melody',notes:[{id:'n',pitch:60,startTick:480,durationTicks:480,velocity:90}]}]};return{w,Offline,midi}}
 test('offline MIDI render reuses actual scheduler at zero, tempo changes, 48kHz and release tail',async()=>{const {w,Offline,midi}=renderFixture(),r=await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline});assert.equal(r.seconds,1.5);assert.equal(r.frames,Math.ceil(2.3*48000));assert.equal(r.noteCount,1);assert.equal(Offline.last.oscillators[0].started[0],.5);assert.equal(Offline.last.oscillators[0].stopped[0],1.63);assert.equal(Offline.last.rendered,true)});
 test('offline MIDI render rejects capacity, invalid notes, muted-only data, missing samples and cancellation',async()=>{for(const kind of ['long','invalid','muted','missing','cancel']){const {w,Offline,midi}=renderFixture();if(kind==='long')midi.tracks[0].notes[0].durationTicks=480*121;if(kind==='invalid')midi.tracks[0].notes[0].velocity=128;if(kind==='muted')midi.tracks[0].muted=true;if(kind==='missing')midi.tracks[0].sampleInstrument={assetId:'absent',rootPitch:60};let count=0;await assert.rejects(w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline,guard(){if(kind==='cancel'&&++count===3)throw Error('cancelled')}}),/limit|invalid|capacity|missing|cancelled/)}});
+
+test('streaming MIDI preserves leading and interior silence frames with bounded windows',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];midi.tracks[0].notes=[{pitch:60,velocity:90,startTick:480*61,durationTicks:480}];
+ const progress=[],r=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline,onProgress:p=>progress.push(p.ratio)});let frames=0;
+ for await(const chunk of r.chunks){assert.equal(chunk.sampleRate,48000);assert.equal(chunk.channels.length,2);assert.ok(chunk.channels[0].length<=16384);assert.equal(chunk.channels[0].length,chunk.channels[1].length);frames+=chunk.channels[0].length}
+ assert.equal(frames,r.frames);assert.equal(r.seconds,31);assert.deepEqual(progress,[0,1440000/r.frames,1]);assert.ok(Offline.last.length<=150*48000+128);
+});
+test('streaming MIDI preflight accepts eight minute timeline but refuses excessive voices or duration',()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];midi.tracks[0].notes=[{pitch:60,velocity:90,startTick:480*959,durationTicks:480}];
+ assert.equal(w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}).seconds,480);
+ midi.tracks[0].notes[0].startTick+=480;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/480-seconds-limit/);
+ midi.tracks[0].notes[0]={pitch:60,velocity:90,startTick:0,durationTicks:480*241};assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/voice-span-limit/);
+});
+test('microsecond tempo events are normalized for both offline MIDI render paths',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[{tick:480,microsecondsPerQuarter:1000000}];
+ const short=await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline}),stream=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline});
+ assert.equal(short.seconds,1.5);assert.equal(stream.seconds,short.seconds);let frames=0;for await(const chunk of stream.chunks)frames+=chunk.channels[0].length;assert.equal(frames,short.frames);
+});

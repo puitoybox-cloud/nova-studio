@@ -102,7 +102,7 @@
     return{tracks,notes,ppq,tempo,seconds,tail,frames,sampleRate:48000,channels:2,noteCount:notes.length,trackIds:tracks.map(t=>t.id)};
   }
   async function renderMidi(midi,entries=[],options={}){
-    const guard=options.guard||(()=>{}),Playback=root.MusicStudioPlayback,plan=midiRenderPlan(midi,entries,options),{tracks,notes,ppq,tempo,seconds,tail,frames}=plan;
+    const guard=options.guard||(()=>{}),Playback=root.MusicStudioPlayback; midi={...midi,tempoMap:Playback.normalizeTempoMap(midi?.tempoMap,midi?.tempo)};const plan=midiRenderPlan(midi,entries,options),{tracks,notes,ppq,tempo,seconds,tail,frames}=plan;
     if(seconds>120)throw Error('midi-render-120-seconds-limit');
     const Context=options.OfflineAudioContext||root.OfflineAudioContext||root.webkitOfflineAudioContext;
     if(typeof Context!=='function')throw Error('offline-audio-unavailable');
@@ -119,7 +119,9 @@
   // sliced only on the absolute 48kHz grid; no seek/retrigger or window fades.
   // A 120s voice-span limit bounds preroll and refuses pathological sustains.
   function renderMidiStream(midi,entries=[],options={}){
-    const plan=midiRenderPlan(midi,entries,options),guard=options.guard||(()=>{}),Playback=root.MusicStudioPlayback;
+    const guard=options.guard||(()=>{}),Playback=root.MusicStudioPlayback;
+    midi={...midi,tempoMap:Playback.normalizeTempoMap(midi?.tempoMap,midi?.tempo)};
+    const plan=midiRenderPlan(midi,entries,options);
     const Context=options.OfflineAudioContext||root.OfflineAudioContext||root.webkitOfflineAudioContext;
     if(typeof Context!=='function')throw Error('offline-audio-unavailable');
     const spans=plan.tracks.map(track=>({track,notes:track.notes.map(note=>{

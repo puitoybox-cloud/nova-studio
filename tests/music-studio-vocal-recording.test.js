@@ -192,3 +192,20 @@ test('refused continuous session releases cycle ownership and direct unowned cap
  const f=await setup(),a=f.a;let requests=0;capture(f);f.w.navigator.mediaDevices.getUserMedia=async()=>{requests++;throw Error('unexpected')};a.state.dirty=true;const refused=await a.vocalCycleStart(f.p.projectId,{endTick:96,cycles:3,gapless:true});assert.equal(refused.ok,false);assert.equal(a.vocalCycle.active,false);a.state.dirty=false;assert.equal(a.vocalBusy(),false);
  const direct=await a.vocalStart(f.p.projectId,{endTick:96,cycles:3,gapless:true});assert.equal(direct.ok,false);assert.equal(direct.error,'vocal-gapless-session-required');assert.equal(requests,0);
 });
+
+test('captured PCM inspection and gapless split retain exact frame bytes with bounded reads',async()=>{
+ const {a}=fixture(),frames=16001,channels=[Float32Array.from({length:frames},(_,i)=>.2*Math.sin(i*.11))],original=a.vocalWav(channels,8000),reads=[];
+ const bounded={size:original.blob.size,slice(first,end){reads.push(end-first);return original.blob.slice(first,end)}};
+ const inspected=await a.vocalCapturedWav(bounded);assert.equal(inspected.frames,frames);assert.equal(inspected.sampleRate,8000);assert.ok(Math.max(...reads)<=32768);assert.equal(inspected.waveform.length,240);
+ const template={cycle:{groupId:'exact-group',index:1,total:3},recordingPlan:{gapless:true}},parts=await a.vocalCapturedTakes({...inspected,blob:original.blob},8000,3,template);
+ assert.deepEqual(Array.from(parts,p=>p.frames),[8000,8000,1]);const actual=Buffer.concat(await Promise.all(parts.map(async p=>Buffer.from(await p.blob.slice(44).arrayBuffer()))));assert.deepEqual(actual,Buffer.from(await original.blob.slice(44).arrayBuffer()));assert.equal(parts[2].cycle.index,3);
+ let cancelled=false;await assert.rejects(a.vocalCapturedWav(original.blob,()=>{if(cancelled)throw Error('cancel');cancelled=true}),/cancel/);
+ const bad=await original.blob.arrayBuffer();new DataView(bad).setUint32(40,0,true);await assert.rejects(a.vocalCapturedWav(new Blob([bad])),/format/);
+});
+test('bounded PCM recording result saves, reopens and restores the original encoded audio',async()=>{
+ const f=await setup(),a=f.a,wav=a.vocalWav([Float32Array.from({length:80001},(_,i)=>.12*Math.sin(i*.03))],8000),take=await a.vocalCapturedWav(wav.blob);
+ Object.assign(a.vocal,{pending:{...take,name:'PCM-direct.wav',captureMime:'audio/wav',startTick:0,latencyMs:120},projectId:f.p.projectId,target:f.repo,baseline:JSON.stringify(f.p),phase:'pending'});
+ const saved=await a.vocalSave();assert.equal(saved.ok,true,saved.error);const asset=saved.project.longWavAssets[0];assert.equal(asset.vocalTake.edits[0].latencyMs,120);
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();const bytes=await fresh.a.pcmLoadLongWav(f.p.projectId,asset.id);assert.deepEqual(Buffer.from(await bytes.arrayBuffer()),Buffer.from(await wav.blob.arrayBuffer()));
+ const archive=await fresh.a.createLongWavArchive(),restored=await fresh.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects.find(p=>p.longWavAssets?.length),copyBytes=await fresh.a.pcmLoadLongWav(copy.projectId,copy.longWavAssets[0].id);assert.deepEqual(Buffer.from(await copyBytes.arrayBuffer()),Buffer.from(await wav.blob.arrayBuffer()));
+});
