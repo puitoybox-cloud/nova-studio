@@ -1,0 +1,50 @@
+{
+  "continuity": {
+    "frames": 3799411,
+    "maxError": 7.450580596923828e-9,
+    "boundaryError": 0,
+    "peak": 0.08781807869672775,
+    "progress": [
+      0,
+      0.3790061143687798,
+      0.7580122287375596,
+      1
+    ],
+    "cancelled": true
+  },
+  "production": {
+    "seconds": 130,
+    "frames": 6278401,
+    "bytes": 25113648,
+    "hash": "91564432a9fd520e0a2e9c432860b4767c3dbcc8fc1a4f746103cda45111a7ac",
+    "files": [
+      {
+        "name": "Master.wav",
+        "bytes": 25113648
+      },
+      {
+        "name": "Mix.wav",
+        "bytes": 25113648
+      },
+      {
+        "name": "Instrumental.wav",
+        "bytes": 25113648
+      },
+      {
+        "name": "Instrument-1.wav",
+        "bytes": 25113648
+      },
+      {
+        "name": "Song.mid",
+        "bytes": 161
+      },
+      {
+        "name": "Manifest.json",
+        "bytes": 1875
+      }
+    ],
+    "archiveBytes": 25120205
+  },
+  "errors": [],
+  "external": []
+}

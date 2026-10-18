@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.184';
+  const ASSET_VERSION='1.4.185';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -3516,9 +3516,11 @@
     const guard=()=>{if(target!==repository||token!==pcmEditor.generation||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||vocalBusy()||archiveTransfer.busy||shutdownPromise)throw Error('midi-render-cancelled-or-stale')};
     try{
       guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-render-storage-conflict');
-      const result=await root.MusicStudioAudio.renderMidi(clone(p.midiData),instrumentEntries(p),{guard});
+      const audio=root.MusicStudioAudio,onProgress=progress=>{guard();pcmEditor.message=`Rendering MIDI（演奏音を音声化） ${Math.floor(progress.ratio*100)}%`;requestPaint()};
+      const result=await (audio.renderMidiStream||audio.renderMidi)(clone(p.midiData),instrumentEntries(p),{guard,onProgress});
+      if(root.navigator?.storage?.estimate){const estimate=await root.navigator.storage.estimate();guard();const available=estimate.quota-estimate.usage;if(Number.isFinite(available)&&available<result.frames*4+1048576)throw Error('midi-render-storage-capacity')}
       async function* chunks(){for(let at=0;at<result.frames;at+=16384){guard();yield{sampleRate:48000,channels:[0,1].map(c=>Array.from(result.buffer.getChannelData(c).subarray(at,Math.min(at+16384,result.frames))))};if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0))}}
-      const blob=await finalWav(chunks(),guard),hashes=await longWavDigest(blob);guard();
+      const blob=await finalWav(result.chunks||chunks(),guard);pcmEditor.message='Saving MIDI audio（音声を保存しています）';requestPaint();const hashes=await longWavDigest(blob);guard();
       const assetId=uuid(),updated=clone(p),name=`MIDI Render（演奏音） r${p.revision}.wav`;
       updated.longWavAssets=[...(updated.longWavAssets||[]),{id:assetId,name,size:blob.size,frames:result.frames,sampleRate:48000,channels:2,hashes,midiRender:{sourceRevision:p.revision,trackIds:result.trackIds,noteCount:result.noteCount,seconds:result.seconds,tail:result.tail}}];
       updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);
@@ -3530,7 +3532,7 @@
     }catch(error){pcmEditor.message='音声化できません：'+error.message;return{ok:false,error:error.message}}
     finally{pcmEditor.busy=false;requestPaint()}
   }
-  function midiRenderView(p){return `<details class="music-midi-render"${midiRenderPanel.open?' open':''} ontoggle="if(this.isConnected)MusicStudio.midiRenderPanel.open=this.open"><summary>MIDI Audio（演奏音をMixへ）</summary><p>保存済みMIDIを現在の簡易音源・指定サンプルで音声化します。120秒・2万音符まで、48 kHz。Muteを反映し、Solo・ループは反映しません。元MIDIと既存音声は保持。古い音声化と重複しないようExportのSourcesで選択してください。</p><button type="button" class="music-secondary"${pcmEditor.busy?' disabled':''} onclick="${escapeHtml(`MusicStudio.midiRenderForMix(${JSON.stringify(p.projectId)})`)}">Render / Save（音声化・保存）</button><button type="button" class="music-secondary" onclick="MusicStudio.pcmCancel()">Cancel Render（音声化を取消）</button><p role="status">${escapeHtml(pcmEditor.message)}</p></details>`}
+  function midiRenderView(p){return `<details class="music-midi-render"${midiRenderPanel.open?' open':''} ontoggle="if(this.isConnected)MusicStudio.midiRenderPanel.open=this.open"><summary>MIDI Audio（演奏音をMixへ）</summary><p>保存済みMIDIを現在の簡易音源・指定サンプルで音声化します。8分・2万音符まで、48 kHz。30秒ずつ処理し、1音の余韻を含む長さは120秒まで。Muteを反映し、Solo・ループは反映しません。元MIDIと既存音声は保持。古い音声化と重複しないようExportのSourcesで選択してください。</p><button type="button" class="music-secondary"${pcmEditor.busy?' disabled':''} onclick="${escapeHtml(`MusicStudio.midiRenderForMix(${JSON.stringify(p.projectId)})`)}">Render / Save（音声化・保存）</button><button type="button" class="music-secondary" onclick="MusicStudio.pcmCancel()">Cancel Render（音声化を取消）</button><p role="status">${escapeHtml(pcmEditor.message)}</p></details>`}
   function finalSources(p){return[...(p.pcmMix?.assets||[]).map(a=>({key:'pcm:'+a.id,id:a.id,name:a.name,kind:'pcm'})),...(p.longWavAssets||[]).map(a=>({key:'wav:'+a.id,id:a.id,name:a.name,kind:a.vocalTake?'vocal':'wav'}))]}
   function finalPlan(p,input){
     if(!input||input.format!=='nova-final-export-plan-v1'||!Array.isArray(input.routes)||input.routes.length<1||input.routes.length>32)throw Error('final-route-count');

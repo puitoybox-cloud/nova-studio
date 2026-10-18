@@ -113,6 +113,7 @@ jobs:
           sudo apt-get install -y fonts-noto-cjk
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-production-tabs-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-render-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-stream-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-layout-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-mix-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-master-workspace-browser.js
@@ -143,6 +144,7 @@ jobs:
             verification/music-mix-workspace-*.png
             verification/music-production-tabs-browser.json
             verification/music-midi-render-browser.json
+            verification/music-midi-stream-browser.json
             verification/music-production-tabs-*.png
             verification/music-vocal-layout-browser.json
             verification/music-vocal-layout-*.png
