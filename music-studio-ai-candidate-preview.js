@@ -176,6 +176,7 @@
     if(copy.midiData.editor?.measureLocks)copy.midiData.editor.measureLocks.tracks.push({trackId:track.id,legacyMeasures:[],legacyRanges:[],rangeLocks:[]});
     // Select only the disposable session; preserve the original editor state.
     copy.selectedTrackId=track.id;copy.selectionTrackId=null;copy.selectedNoteId=null;copy.selectedNoteIds=[];
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     return copy;
   }
   function ensembleSnapshot(session,core,value,measureRange=null){
@@ -188,6 +189,7 @@
     const from=measureRange?.startMeasure??value.range.startMeasure,to=measureRange?.endMeasure??value.range.endMeasure;
     if(!Number.isInteger(from)||!Number.isInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from||to-from>255)throw Error('invalid-ensemble-range');
     const selection={startMeasure:from,endMeasure:to},range=core.measureRangeToTicks(selection,session.midiData),copy=clone(session),diff=[];
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     for(const role of roles){
       if(role==='drums'){
         if(copy.midiData.tracks.length>=64)throw Error('arrangement-track-limit');
@@ -291,6 +293,7 @@
   function auditionPlan(session,core,bundle,measureRange=null){
     if(bundle?.type!=='midi-preview')throw Error('midi-preview-required');
     const copy=clone(session);
+    if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     core.selectTrackById(copy,bundle.targetTrackId);
     applyPreview(copy,core,bundle,measureRange);
     const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
