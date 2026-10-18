@@ -213,10 +213,12 @@
         let pitch=n.pitch;while(pitch<limits[0])pitch+=12;while(pitch>limits[1])pitch-=12;
         return{...n,pitch,velocity:Math.min(n.velocity||80,role==='strings'?64:role==='bass'?90:100)};
       });
+      const chordNotes=requireComposition().chordEnsembleNotes(value,source,copy,core,role);
+      if(chordNotes)part.importedMidi.notes=chordNotes;
       const binding={...clone(source),midiSignature:JSON.stringify(copy.midiData)};
       const candidate={candidateId:value.variant,value:requireComposition().bindRemake(part,binding,'layer',100,instrument.id,instrument)};
       const bundle=createPreview(copy,core,candidate);applyPreview(copy,core,bundle,selection);
-      const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
+      const added=core.getTrackById(copy.midiData.tracks,instrument.id);added.generationProvenance={chords:value.ensemble.chords||null,orchestration:chordNotes?'explicit-chord-rules-v1':null,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration',variant:value.variant,model:clone(value.modelGeneration||null),sourceTrackId:source.trackId};diff.push({role,trackId:instrument.id,notes:added.notes.length,method:chordNotes?'explicit-chord-rules-v1':role==='piano'?'model-output-octave-fit':'model-pitches-rule-orchestration'});
     }
     if(diff.reduce((sum,d)=>sum+d.notes,0)>4096)throw Error('ensemble-note-limit');
     if(!core.validateTrackRegistry(copy.midiData.tracks).ok)throw Error('invalid-ensemble-track-registry');
