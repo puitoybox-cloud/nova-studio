@@ -361,11 +361,11 @@
   }
   // Immutable source binding: all notes and metadata remain in the project;
   // only a bounded phrase is sent to the offline model.
-  function remakeSource(session,core){
+  function remakeSource(session,core,options={}){
     const track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session));
-    if(!track||core.resolveCoreTrackRole(track)==='drums')throw Error('remake-melodic-track-required');
+    if(!track||(core.resolveCoreTrackRole(track)==='drums'&&options.operation!=='delete'))throw Error('remake-melodic-track-required');
     const range=selectedRange(session,core),notes=track.notes.filter(n=>n.startTick>=range.startTick&&n.startTick<range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
-    if(!notes.length||notes.length>256)throw Error('Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
+    if(!notes.length||notes.length>(options.operation==='delete'?4096:256))throw Error(options.operation==='delete'?'削除候補は選択範囲の1〜4096音です。範囲を狭めてください。':'Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
     if(notes.some(n=>n.startTick+n.durationTicks>range.endTick))throw Error('remake-source-crosses-range');
     return{version:1,trackId:track.id,range:clone(range),notes:clone(notes),midiSignature:JSON.stringify(session.midiData)};
   }
@@ -373,17 +373,18 @@
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-remake-ppq');
     return source.notes.slice(0,64).map(n=>({pitch:n.pitch,velocity:n.velocity,startTick:Math.round((n.startTick-source.range.startTick)*480/ppq),durationTicks:Math.max(1,Math.round(n.durationTicks*480/ppq))}));
   }
-  function bindRemake(value,source,mode,amount=50){
+  function bindRemake(value,source,mode,amount=50,destinationTrackId=source.trackId){
     if(!['revise','layer','delete'].includes(mode)||![25,50,100].includes(amount))throw Error('invalid-remake-operation');
     if(mode!=='delete'&&!value?.importedMidi)throw Error('remake-model-midi-required');
     const result=mode==='delete'?{version:1,kind:'melody',variant:'A',synthetic:true,localOnly:true,source:'structured-midi-delete',range:clone(source.range),summary:'Delete（選択Track・範囲の音符を削除する規則操作）',applyPolicy:'candidate-only'}:clone(value);
-    result.remake={...clone(source),mode,amount};
-    result.summary+=` / ${mode} / Track ${source.trackId} / ${source.range.startMeasure}–${source.range.endMeasure}小節 / ${amount}%`;
+    if(typeof destinationTrackId!=='string'||!destinationTrackId||(mode!=='layer'&&destinationTrackId!==source.trackId))throw Error('invalid-remake-destination');
+    result.remake={...clone(source),mode,amount,destinationTrackId};
+    result.summary+=` / ${mode} / Track ${source.trackId} → ${destinationTrackId} / ${source.range.startMeasure}–${source.range.endMeasure}小節 / ${amount}%`;
     return result;
   }
   function detailLines(value){
     if(!value||!value.kind)return[];
-    if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を同じTrackへ重ねる候補・元音符保持','他Track・Tempo・Meterを保持。自由な日本語指示・自動楽器追加は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
+    if(value.remake)return[`Track ${value.remake.trackId} / M${value.range.startMeasure}–${value.range.endMeasure}`,value.remake.mode==='delete'?'規則による削除候補・AI判断ではありません':value.remake.mode==='revise'?`モデル出力の音高を元音符へ対応・変更対象 ${value.remake.amount}%（時刻・長さ・強さを保持）`:'モデル出力を指定Trackへ追加する候補・元音符保持','Tempo・Meterを保持。追加先は既存Trackから選択。自由な日本語指示・自動楽器作成は未対応。', 'Preview → Listen → Apply。未採用の元音符は保存データに残ります。'];
     if(value.source==='imported-midi-output')return[`File ${value.importedMidi?.fileName||''}`,`Notes ${value.importedMidi?.notes?.length||0}`,`Source PPQ ${value.importedMidi?.sourcePpq} → ${value.importedMidi?.ppq}`, '拍位置を保持・Projectのテンポ/拍子/音源を使用', '生成モデル・素材ライセンスはMIDIから確認できません'];
     const family=`Family ${value.candidateFamily?.variant||value.variant}`;
     if(value.kind==='melody')return[`Key ${value.key}`,`Motif → answer / ${value.cadence}`,`Degrees ${value.scaleDegrees.join('–')}`,`Rhythm ${value.rhythm}`,family];

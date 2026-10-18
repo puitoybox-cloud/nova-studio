@@ -23,6 +23,7 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  const baseline=JSON.stringify(m.s.midiData);await m.panel.generateLocalModel(m.p.projectId);
  const mr=m.panel._states.get(m.p.projectId),ms=mr.state.workspace.candidateSets.at(-1);assert.ok(ms,mr.message);
  assert.ok(ms.candidates.every(c=>c.value.remake?.mode==='revise'&&c.value.synthetic===false));assert.equal(JSON.stringify(m.s.midiData),baseline);
+ const layer=m.C.bindRemake(ms.candidates[0].value,m.C.remakeSource(m.s,m.core),'layer',100,'bass'),lb=m.P.createPreview(m.s,m.core,{candidateId:'A',value:layer},{project:m.p});assert.equal(lb.targetTrackId,'bass');assert.ok(lb.result.changes.adds.length>0);
  const mb=m.P.createPreview(m.s,m.core,ms.candidates[0],{project:m.p});assert.equal(mb.result.changes.updates[0].durationTicks,480);assert.equal(mb.result.changes.updates[0].velocity,87);
  m.P.auditionPlan(m.s,m.core,mb);m.P.applyPreview(m.s,m.core,mb);m.core.undo(m.s);assert.equal(JSON.stringify(m.s.midiData),baseline);m.core.redo(m.s);
  console.log(JSON.stringify({realSourceConditionedRemake:true,candidates:ms.candidates.map(c=>c.value.importedMidi.notes.length),timingAndVelocityPreserved:true,undoRedo:true}));

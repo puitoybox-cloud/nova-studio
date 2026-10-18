@@ -20,7 +20,7 @@
     const id=String(options.trackId||core.currentTrackId?.(session)||'');
     const track=core.getTrackById?.(session?.midiData?.tracks||[],id);
     if(!track)throw Error('target-track-required');
-    if(core.resolveCoreTrackRole?.(track)==='drums')throw Error('melodic-track-required');
+    if(core.resolveCoreTrackRole?.(track)==='drums'&&!options.allowDrums)throw Error('melodic-track-required');
     return track;
   }
   function keyInfo(label){
@@ -69,14 +69,17 @@
     });
     return{updates:[],adds,deleteNoteIds:[]};
   }
+  function coreTrackForRemake(session,id){const tracks=session.midiData.tracks.filter(t=>t.id===id);if(tracks.length!==1)throw Error('remake-source-track-required');return tracks[0]}
   function remakeProposal(request,track,value,session){
     const source=value.remake;
-    if(source?.version!==1||source.trackId!==track.id||source.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
+    if(source?.version!==1||(source.destinationTrackId||source.trackId)!==track.id||source.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
     if(JSON.stringify(source.range)!==JSON.stringify(value.range)||!['revise','layer','delete'].includes(source.mode)||![25,50,100].includes(source.amount))throw Error('invalid-remake-operation');
-    const observed=track.notes.filter(n=>n.startTick>=source.range.startTick&&n.startTick<source.range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
+    const sourceTrack=coreTrackForRemake(session,source.trackId);
+    const observed=sourceTrack.notes.filter(n=>n.startTick>=source.range.startTick&&n.startTick<source.range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
     if(JSON.stringify(observed)!==JSON.stringify(source.notes))throw Error('stale-remake-notes');
     const editable=new Set(request.targetNoteIds),targets=observed.filter(n=>editable.has(n.id));
-    if(!targets.length)throw Error('remake-editable-notes-required');
+    if(source.mode!=='layer'&&!targets.length)throw Error('remake-editable-notes-required');
+    if(source.mode==='layer')return importedMidiProposal(request,track,value,session);
     if(source.mode==='delete')return{updates:[],adds:[],deleteNoteIds:targets.map(n=>n.id)};
     const generated=importedMidiProposal(request,track,value,session).adds;
     if(source.mode==='layer')return{updates:[],adds:generated,deleteNoteIds:[]};
@@ -176,7 +179,7 @@
     if(!['melody','continuation','chord'].includes(kind)){
       return{version:VERSION,type:'metadata-preview',candidateId:candidate.candidateId||value.variant||null,kind,value,context:clone(context),companion,mutates:false};
     }
-    const track=targetTrack(session,core,kind,value.remake?{...options,trackId:value.remake.trackId}:options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
+    const track=targetTrack(session,core,kind,value.remake?{...options,trackId:value.remake.destinationTrackId||value.remake.trackId,allowDrums:value.remake.mode==='delete'}:options),range=safeRange(value,session),request=core.createPartialEditRequest(session,{trackId:track.id,range});
     let proposals=value.remake?remakeProposal(request,track,value,session):value.source==='imported-midi-output'?importedMidiProposal(request,track,value,session):kind==='melody'?melodyProposal(request,track,value):kind==='continuation'?continuationProposal(request,track,value):chordBassProposal(request,track,value);
     let instrumentSnapshot;if(track.sampleInstrument?.version===2){if(!root.MusicStudioInstruments)throw Error('instrument-module-unavailable');instrumentSnapshot=clone(track.sampleInstrument);const before=JSON.stringify(proposals);proposals.updates=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.updates);proposals.adds=root.MusicStudioInstruments.fitNotes(instrumentSnapshot,proposals.adds);companion.instrumentFit={method:'octave-and-velocity',changed:before!==JSON.stringify(proposals),instrument:instrumentSnapshot.name};}
     if(value.previewEdits!=null)proposals=editProposals(proposals,request.range,value.previewEdits,instrumentSnapshot);
@@ -205,6 +208,7 @@
   }
   function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
+    if(bundle.value?.remake&&bundle.value.remake.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
     if(bundle.kind==='continuation'){const source=continuationSource(bundle.value,session,core);if(JSON.stringify(source)!==JSON.stringify(bundle.companion?.sourcePreview))throw Error('stale-continuation-source-preview')}
     const subset=narrowed(bundle,session,core,measureRange),applied=core.applyPartialEditPreview(session,bundle.request,subset.result,subset.preview);
     if(applied?.applied!==true)throw Error(`candidate-apply-rejected:${applied?.reason||'protected'}`);
