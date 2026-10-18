@@ -413,6 +413,34 @@
       return{trackId:track.id,name:track.name||track.id,channel:track.channel??null,program:track.program??null,noteCount:notes.length,minPitch:pitches[0]??null,maxPitch:pitches.at(-1)??null,medianPitch:median,notesPerQuarter:notes.length/Math.max(1,(range.endTick-range.startTick)/ppq),simultaneousStartRatio:polyphony,role,uncertainty,reasons,assignedRole:track.roleAssignment||track.part||'unassigned',method:'local-rules-v1',range:clone(range)};
     });
   }
+  // Duration-weighted pitch-class matching. Scores are heuristic, not probabilities.
+  function analyzeChords(session,core){
+    const range=selectedRange(session,core),roles=analyzeInstrumentRoles(session,core);
+    if(range.endMeasure-range.startMeasure>=64)throw Error('chord-analysis-limit-64-bars');
+    const names=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+    const vocabulary=names.flatMap(name=>['','m','7','m7','maj7','dim'].map(q=>ensembleChords(name+q)[0]));
+    const rows=[];
+    for(let bar=range.startMeasure;bar<=range.endMeasure;bar++){
+      const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),weights=Array(12).fill(0);
+      for(const track of session.midiData.tracks||[]){
+        const hint=roles.find(r=>r.trackId===track.id);
+        if(hint?.role==='drums'||track.channel===10)continue;
+        const role=track.roleAssignment||track.part||hint?.role;
+        const weight=role==='melody'||role==='vocal'?0.25:role==='bass'?0.8:1;
+        for(const n of track.notes||[]){
+          if(!Number.isInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isFinite(n.startTick)||!Number.isFinite(n.durationTicks)||n.durationTicks<=0)continue;
+          const overlap=Math.max(0,Math.min(span.endTick,n.startTick+n.durationTicks)-Math.max(span.startTick,n.startTick));
+          weights[n.pitch%12]+=overlap*weight;
+        }
+      }
+      const total=weights.reduce((a,b)=>a+b,0),distinct=weights.filter(w=>w>0).length;
+      const ranked=vocabulary.map(c=>({...c,score:total?c.pcs.reduce((sum,pc)=>sum+weights[pc],0)/total-0.15*c.pcs.filter(pc=>weights[pc]===0).length-0.025*(c.pcs.length-3):0})).sort((a,b)=>b.score-a.score||a.pcs.length-b.pcs.length||a.symbol.localeCompare(b.symbol));
+      const best=ranked[0],margin=best.score-ranked[1].score;
+      const known=total>0&&distinct>=3&&best.score>=0.75&&margin>=0.04;
+      rows.push({measure:bar,startTick:span.startTick,endTick:span.endTick,symbol:known?best.symbol:null,root:known?best.root:null,confidence:known&&margin>=0.15?'high':known?'medium':'unknown',score:best.score,margin,candidates:total?ranked.slice(0,3):[],method:'duration-pitch-class-rules-v1'});
+    }
+    return{method:'duration-pitch-class-rules-v1',range:clone(range),midiSignature:JSON.stringify(session.midiData),rows};
+  }
   // Explicit chord symbols drive local orchestration, never additional AI inference.
   function ensembleChords(text){
     if(typeof text!=='string'||text.length>256)throw Error('invalid-ensemble-chords');
@@ -464,5 +492,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
