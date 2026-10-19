@@ -168,7 +168,15 @@
     };
     try{
       // Validate all restored responses before issuing another request or publishing anything.
-      for(let n=0;n<checkpoint.results.length;n++)decode(checkpoint.results[n],n).forEach((v,i)=>parts[i].push(v));
+      for(let n=0;n<checkpoint.results.length;n++){
+        if(!current())return;
+        decode(checkpoint.results[n],n).forEach((v,i)=>parts[i].push(v));
+        if((n+1)%4===0){
+          record.message=`Restoring（保存済み小節を確認中） ${n+1}/${checkpoint.results.length}。未生成小節の推論前に検証します。`;refresh(id);
+          await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve());
+          if(!current())return;
+        }
+      }
       record.state.workspace.wholeSongCheckpoint=clone(checkpoint);record.pending=true;
       for(let n=checkpoint.results.length;n<plan.chunks.length;n++){
         if(!current())return;const chunk=plan.chunks[n];token.requestId='whole_'+(root.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));record.message=`Whole song（全曲） 完了${n}/${plan.chunks.length}小節・残り${plan.chunks.length-n}小節 / 元曲保持`;refresh(id);
