@@ -456,7 +456,7 @@
       if(plan.silent){app().editorStopCandidateAudition();record.message=source==='original'?'Original（元MIDI）の選択範囲は無音です。':'この候補の選択範囲は無音です。削除対象を確認してApplyできます。';refresh(id);return;}
       const result=await app().editorAuditionCandidate(plan,session);
       if(!current())return;
-      record.message=result.ok?`${source==='original'?'Original（元MIDI）':`候補${candidateId}`}を同じ小節範囲・テンポで試聴中。MIDI原本は変更していません。`:`試聴停止: ${result.reason}`;
+      record.message=result.ok?(source==='original'?'Original（元MIDI）を同じ小節範囲・テンポで試聴中。MIDI原本は変更していません。':`候補${candidateId}を試聴中。MIDI原本は変更していません。`):`試聴停止: ${result.reason}`;
     }catch(error){if(!current())return;record.message=`候補試聴拒否: ${error.message}`}
     if(current())refresh(id);
   }
