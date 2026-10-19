@@ -311,3 +311,25 @@ test('individual MIDI stem passes exact selection to renderer and persists prove
  assert.equal((await f.a.midiRenderForMix(f.p.projectId,'missing')).ok,false);
  const r=await f.a.midiRenderForMix(f.p.projectId,'melody');assert.equal(r.ok,true,r.error);assert.deepEqual(Array.from(selected),['melody']);assert.equal(r.project.longWavAssets[0].midiRender.stemTrackId,'melody');assert.equal(JSON.stringify(r.project.midiData),before);
 });
+
+test('batch stems serialize durable writes and retain completed assets on cancellation or failure',async()=>{
+ for(const mode of ['success','cancel','failure']){
+  const f=await renderSetup();f.p.midiData.tracks.push({...JSON.parse(JSON.stringify(f.p.midiData.tracks[0])),id:'bass',name:'Bass'});await f.repo.put(f.p);
+  const before=JSON.stringify(f.p.midiData),render=f.w.MusicStudioAudio.renderMidi;let calls=0,active=0,maxActive=0;
+  f.w.MusicStudioAudio.renderMidi=async(m,e,o)=>{calls++;active++;maxActive=Math.max(maxActive,active);try{if(calls===2){if(mode==='cancel')f.a.pcmCancel();if(mode==='failure')throw Error('render-failed')}return await render(m,e,o)}finally{active--}};
+  const r=await f.a.midiRenderStems(f.p.projectId,['melody','bass']);assert.equal(r.ok,mode==='success',r.error);assert.equal(maxActive,1);assert.equal(r.completed.length,mode==='success'?2:1);
+  const saved=await f.repo.get(f.p.projectId);assert.equal(saved.longWavAssets.length,r.completed.length);assert.equal(JSON.stringify(saved.midiData),before);
+  for(const entry of r.completed)assert.equal((await f.a.pcmLoadLongWav(f.p.projectId,entry.assetId)).size,192044);
+  assert.equal(f.a.pcmEditor.busy,false);
+ }
+});
+test('batch stem invalid selections do not render or change storage',async()=>{
+ const f=await renderSetup(),before=JSON.stringify(await f.repo.get(f.p.projectId));for(const ids of [[],['melody','melody'],['missing'],null])assert.equal((await f.a.midiRenderStems(f.p.projectId,ids)).ok,false);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+});
+test('saved stem-only ZIP preserves exact WAV bytes without rendering Mix or Master',async()=>{
+ const f=await renderSetup();const r=await f.a.midiRenderStems(f.p.projectId,['melody']);assert.equal(r.ok,true,r.error);
+ const before=JSON.stringify(await f.repo.get(f.p.projectId)),result=await f.a.midiStemZip(f.p.projectId,r.completed.map(x=>x.assetId));assert.equal(result.ok,true,result.error);
+ const bytes=Buffer.from(await result.zip.arrayBuffer()),n=bytes.readUInt16LE(26),size=bytes.readUInt32LE(18),original=await f.a.pcmLoadLongWav(f.p.projectId,r.completed[0].assetId);
+ assert.equal(bytes.readUInt32LE(0),0x04034b50);assert.equal(bytes.subarray(30,30+n).toString(),'Stem-1.wav');assert.deepEqual(bytes.subarray(30+n,30+n+size),Buffer.from(await original.arrayBuffer()));assert.equal(result.files.length,1);assert.equal(result.completion,'prepared');assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+ assert.equal((await f.a.midiStemZip(f.p.projectId,[])).ok,false);assert.equal((await f.a.midiStemZip(f.p.projectId,['missing'])).ok,false);
+});
