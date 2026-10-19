@@ -34,7 +34,11 @@ class ComposerJobs:
             if entry['started'] or entry['cancelled'].is_set():
                 raise ValueError('compose-request-cancelled-or-reused')
             entry['started'] = entry['running'] = True
+            deadline = time.monotonic() + 240
         def check():
+            if time.monotonic() >= deadline:
+                entry['cancelled'].set()
+                raise ValueError('compose-request-deadline-exceeded')
             if entry['cancelled'].is_set():
                 raise ValueError('compose-request-cancelled')
         return check

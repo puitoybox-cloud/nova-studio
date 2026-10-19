@@ -162,7 +162,7 @@
         if(c.variant!==String.fromCharCode(65+i)||typeof c.midiBase64!=='string'||c.midiBase64.length>1400000)throw Error('invalid-whole-song-variant');
         const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0)),file={name:c.variant+'-whole.mid',size:bytes.length};
         let v=composition().midiCandidate(bytes,file,{key:chunk.key,range:chunk.range},i,session.midiData.ppq);
-        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range)};
+        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range),...(result.performance?{performance:clone(result.performance)}:{})};
         return composition().bindEnsemble(v,chunk.source,chunk.chords,chunk.section);
       });
     };

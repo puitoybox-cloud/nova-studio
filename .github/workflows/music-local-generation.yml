@@ -4,6 +4,7 @@ on:
     paths:
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
@@ -17,7 +18,7 @@ on:
 jobs:
   real-generation:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python tools/music-local-generation/test_generation_budget.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
@@ -43,6 +45,10 @@ jobs:
           NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
           NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
         run: node scripts/music-local-real-generation.js
+      - name: Real 480-second whole-song A/B/C with checkpoint backup and Resume
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+        run: node scripts/music-local-real-whole-song.js
       - name: Real browser model and voice at four sizes
         env:
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
@@ -56,7 +62,9 @@ jobs:
         if: always()
         with:
           name: music-local-real-generation
-          path: verification/music-local-real-browser.json
+          path: |
+            verification/music-local-real-browser.json
+            verification/music-local-real-whole-song.json
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 20
@@ -72,6 +80,7 @@ jobs:
           node-version: '22'
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_generation_budget.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
