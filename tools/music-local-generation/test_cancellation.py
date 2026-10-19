@@ -1,5 +1,6 @@
 """Cancellation contracts, without substituting these tests for real inference."""
 import unittest
+from unittest.mock import patch
 from cancellation import ComposerJobs
 from compose import compose
 
@@ -22,6 +23,16 @@ class Cancellation(unittest.TestCase):
         self.assertEqual(len(jobs.jobs), 1024)
         for key in [None, '', 'short', '../outside/' * 3]:
             with self.assertRaisesRegex(ValueError, 'invalid-compose-request-id'): jobs.cancel(key)
+
+    def test_abandoned_request_expires_between_model_steps(self):
+        jobs = ComposerJobs()
+        with patch('cancellation.time.monotonic', return_value=100):
+            check = jobs.begin('whole_deadline_test_123')
+            check()
+        with patch('cancellation.time.monotonic', return_value=340):
+            with self.assertRaisesRegex(ValueError, 'deadline-exceeded'): check()
+        jobs.finish('whole_deadline_test_123')
+        with self.assertRaisesRegex(ValueError, 'reused'): jobs.begin('whole_deadline_test_123')
 
     def test_cancelled_composition_does_not_import_or_open_model(self):
         def cancelled(): raise ValueError('test-cancelled')

@@ -89,3 +89,23 @@ test('failed completed-candidate save preserves full durable checkpoint and in-m
  f.a.saveMidiEditor=options=>++saves===5?Promise.resolve({ok:false,error:Error('quota')}):originalSave(options);mock(f);await f.panel.generateWholeSong(f.p.projectId,false,true);
  assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);assert.equal(f.record.pending,true);assert.equal((await repo.get(f.p.projectId)).aiWorkspace.wholeSongCheckpoint.results.length,4);assert.match(f.record.message,/保存に失敗/);
 });
+
+test('whole-song runtime measurements survive candidate save and full backup reopen',async()=>{
+ const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);mock(f);
+ const request=f.a.localGenerationRequest;
+ const performance={elapsedSeconds:1.25,loadSeconds:0.2,sessionReused:true,onnxCalls:{base:12,token:85},memoryAfter:{processPeakRssBytes:123456,peakScope:'host-process-lifetime'}};
+ f.a.localGenerationRequest=async(...args)=>({...await request(...args),performance});
+ await f.panel.generateWholeSong(f.p.projectId,false,true);
+ const g=setup(),rr=g.a.memoryRepository();g.a.setRepository(rr);assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
+ const restored=await rr.get(f.p.projectId),candidate=restored.aiWorkspace.candidateSets.at(-1).candidates[0];
+ assert.deepEqual(plain(candidate.value.ensemble.wholeSong.parts.map(p=>p.modelGeneration.performance)),Array.from({length:4},()=>performance));
+ assert.match(f.C.detailLines(candidate.value).join('\n'),/A\/B\/C total.*1\.25s.*12\+85 calls/);
+});
+test('pause during final whole-song preview validation retains all bars and resumes without inference',async()=>{
+ const f=setup();mock(f);const timer=f.w.setTimeout;let paused=false;
+ f.w.setTimeout=(callback,delay)=>{if(!paused&&f.record.message.startsWith('Finalizing')){paused=true;f.panel.stopWholeSong(f.p.projectId)}return timer(callback,delay)};
+ await f.panel.generateWholeSong(f.p.projectId,false,false);
+ assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,4);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.equal(f.record.localModelBusy,false);
+ f.w.setTimeout=timer;let calls=0;mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,true,false);
+ assert.equal(calls,0);assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);
+});

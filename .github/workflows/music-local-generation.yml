@@ -4,6 +4,7 @@ on:
     paths:
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
@@ -17,7 +18,7 @@ on:
 jobs:
   real-generation:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,6 +35,7 @@ jobs:
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
       - name: Prepare fixed licensed development assets
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
       - name: Real CPU model and Japanese HMM singing through Studio
@@ -43,6 +45,12 @@ jobs:
           NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
           NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
         run: node scripts/music-local-real-generation.js
+      - name: Real 480-second whole-song A/B/C with checkpoint backup and Resume
+        env:
+          NOVA_WHOLE_SONG_REPORT: ${{ runner.temp }}/music-local-real-whole-song-ci.json
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+        run: node scripts/music-local-real-whole-song.js
       - name: Real browser model and voice at four sizes
         env:
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
@@ -56,7 +64,9 @@ jobs:
         if: always()
         with:
           name: music-local-real-generation
-          path: verification/music-local-real-browser.json
+          path: |
+            verification/music-local-real-browser.json
+            ${{ runner.temp }}/music-local-real-whole-song-ci.json
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 20
@@ -78,6 +88,7 @@ jobs:
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
       - name: Build fixed Sinsy and prepare model on Intel Mac
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
       - name: Verify actual launch prerequisites

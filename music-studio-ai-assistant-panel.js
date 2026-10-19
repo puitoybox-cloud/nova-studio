@@ -162,7 +162,7 @@
         if(c.variant!==String.fromCharCode(65+i)||typeof c.midiBase64!=='string'||c.midiBase64.length>1400000)throw Error('invalid-whole-song-variant');
         const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0)),file={name:c.variant+'-whole.mid',size:bytes.length};
         let v=composition().midiCandidate(bytes,file,{key:chunk.key,range:chunk.range},i,session.midiData.ppq);
-        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range)};
+        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range),...(result.performance?{performance:clone(result.performance)}:{})};
         return composition().bindEnsemble(v,chunk.source,chunk.chords,chunk.section);
       });
     };
@@ -189,7 +189,13 @@
       }
       if(!current())return;
       const values=parts.map((list,i)=>composition().wholeSongCandidate(plan,list,i));
-      for(const v of values)materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
+      for(const v of values){
+        if(!current())return;
+        record.message=`Finalizing（全曲候補を検証中） ${v.variant} / A・B・C。完了済み小節は保存されています。`;refresh(id);
+        await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve());
+        if(!current())return;
+        materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
+      }
       if(!current())return;
       touch(id);ui().createCandidates(record.state,'melody',{range:clone(plan.range)},values,{adapter:'local-whole-song-model-v1',reason:'Sequential bar inference with explicit section rule orchestration; original melody preserved'});
       delete record.state.workspace.wholeSongCheckpoint;
