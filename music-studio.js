@@ -274,20 +274,32 @@
       tx.onabort=()=>{guard?.clearAbort?.();reject(failure||tx.error||Error('lyrics-save-aborted'))};tx.onerror=()=>abort(tx.error||Error('lyrics-save-failed'));tx.oncomplete=()=>{guard?.clearAbort?.();resolve(clone(value))};
       const get=store.get(value.projectId);get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{guard?.();if(JSON.stringify(get.result)!==baseline)throw Error('stale-lyrics-assignment-storage');const put=store.put(value);put.onerror=()=>abort(put.error);put.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}catch(e){abort(e)}};
     }))}
-    // Persist owned byte chunks instead of transient browser Blob backing files.
-    // Old Blob records remain readable; materialization is bounded to one input WAV.
+    // Store bounded, detached Blob nodes in IndexedDB. Reopening these nodes uses
+    // the database's durable backing rather than retransferring a WAV of raw bytes
+    // into the browser Blob service on every read.
     async function encodeLongBinary(record,guard){
       guard();if(record.blob.size<=4*1048576)return record;
-      const parts=[];for(let at=0;at<record.blob.size;at+=1048576){guard();parts.push(new Uint8Array(await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer()));guard()}
-      return{id:record.id,format:'nova-long-binary-chunks-v1',size:record.blob.size,type:record.blob.type,parts,hashes:record.hashes};
+      const parts=[];for(let at=0;at<record.blob.size;at+=1048576){
+        guard();const bytes=await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer();guard();
+        const node=new Blob([bytes]);
+        // Complete the entire bounded transfer before queuing the durable write.
+        if((await node.arrayBuffer()).byteLength!==bytes.byteLength)throw Error('long-wav-binary-chunks-invalid');
+        guard();parts.push(node);
+      }
+      return{id:record.id,format:'nova-long-binary-blobs-v2',size:record.blob.size,type:record.blob.type,parts,hashes:record.hashes};
     }
     async function getLongWav(id){
       const record=await request('longWavBinaries','readonly',store=>store.get(id));
       if(!record||record.blob)return record;
-      if(record.format!=='nova-long-binary-chunks-v1'||!Number.isSafeInteger(record.size)||record.size<1||!Array.isArray(record.parts)||record.parts.some((p,i)=>!ArrayBuffer.isView(p)||p.BYTES_PER_ELEMENT!==1||p.byteLength<1||p.byteLength>1048576||(i<record.parts.length-1&&p.byteLength!==1048576))||record.parts.reduce((size,p)=>size+p.byteLength,0)!==record.size)throw Error('long-wav-binary-chunks-invalid');
-      // Blob construction queues browser transport. Complete each bounded node before
-      // publishing a composite, so repeated reads cannot accumulate pending WAV-sized transfers.
-      const nodes=[];for(const part of record.parts){const node=new Blob([part]);await node.slice(0,1).arrayBuffer();nodes.push(node)}
+      const legacy=record.format==='nova-long-binary-chunks-v1',durable=record.format==='nova-long-binary-blobs-v2';
+      const partSize=p=>legacy?p.byteLength:p.size;
+      if((!legacy&&!durable)||!Number.isSafeInteger(record.size)||record.size<1||!Array.isArray(record.parts)||record.parts.some((p,i)=>
+        (legacy?(!ArrayBuffer.isView(p)||p.BYTES_PER_ELEMENT!==1):!['[object Blob]','[object File]'].includes(Object.prototype.toString.call(p)))||partSize(p)<1||partSize(p)>1048576||(i<record.parts.length-1&&partSize(p)!==1048576))||record.parts.reduce((size,p)=>size+partSize(p),0)!==record.size)throw Error('long-wav-binary-chunks-invalid');
+      // Legacy byte records remain readable without rewriting the source record.
+      const nodes=[];for(const part of record.parts){
+        if(durable){nodes.push(part);continue}
+        const node=new Blob([part]);await node.arrayBuffer();nodes.push(node);
+      }
       return{id:record.id,hashes:record.hashes,blob:new Blob(nodes,{type:record.type||'application/octet-stream'})};
     }
     // Binary and project metadata become visible in the same IndexedDB commit.

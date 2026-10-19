@@ -335,8 +335,8 @@ test('saved stem-only ZIP preserves exact WAV bytes without rendering Mix or Mas
 });
 test('large durable records own bounded byte chunks; corruption fails and legacy Blob remains readable',async()=>{
  const f=await setup(),file=wav(2100000),r=await f.a.pcmImportLongFile(file,f.p.projectId);assert.equal(r.ok,true,r.error);
- const store=f.indexedDB.stores.get('longWavBinaries'),record=store.get(r.assetId);assert.equal(record.format,'nova-long-binary-chunks-v1');assert.equal(record.blob,undefined);assert.equal(record.parts.reduce((sum,p)=>sum+p.byteLength,0),file.size);assert.ok(record.parts.every(p=>p.byteLength<=1048576));
- record.parts[0][60]^=1;await assert.rejects(f.a.pcmLoadLongWav(f.p.projectId,r.assetId),/corrupt/);record.parts[0][60]^=1;
+ const store=f.indexedDB.stores.get('longWavBinaries'),record=store.get(r.assetId);assert.equal(record.format,'nova-long-binary-blobs-v2');assert.equal(record.blob,undefined);assert.equal(record.parts.reduce((sum,p)=>sum+p.size,0),file.size);assert.ok(record.parts.every(p=>p.size<=1048576));
+ const first=record.parts[0],bad=new Uint8Array(await first.arrayBuffer());bad[60]^=1;record.parts[0]=new Blob([bad]);await assert.rejects(f.a.pcmLoadLongWav(f.p.projectId,r.assetId),/corrupt/);record.parts[0]=first;
  const blob=await f.a.pcmLoadLongWav(f.p.projectId,r.assetId);store.set(r.assetId,{id:r.assetId,blob,hashes:record.hashes});assert.deepEqual(Buffer.from(await (await f.a.pcmLoadLongWav(f.p.projectId,r.assetId)).arrayBuffer()),Buffer.from(await file.arrayBuffer()));
 });
 test('malformed chunk lengths fail closed without rewriting saved metadata',async()=>{
@@ -346,6 +346,11 @@ test('malformed chunk lengths fail closed without rewriting saved metadata',asyn
 test('large durable reconstruction bounds each raw-byte Blob transport to one MiB',async()=>{
  const f=await setup(),file=wav(2100000),saved=await f.a.pcmImportLongFile(file,f.p.projectId);assert.equal(saved.ok,true,saved.error);
  let largest=0;f.w.Blob=class extends Blob{constructor(parts,options){const raw=parts.reduce((n,p)=>n+(ArrayBuffer.isView(p)?p.byteLength:0),0);largest=Math.max(largest,raw);assert.ok(raw<=1048576,'raw Blob transport must stay bounded');super(parts,options)}};
+ // Exercise the pre-v2 byte format as well as durable Blob nodes.
+ const record=f.indexedDB.stores.get('longWavBinaries').get(saved.assetId);
+ const durableParts=record.parts;
  await f.repo.close();const repo=f.a.indexedDbRepository();f.a.setRepository(repo);const blob=await f.a.pcmLoadLongWav(f.p.projectId,saved.assetId);
- assert.equal(largest,1048576);assert.deepEqual(Buffer.from(await blob.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+ assert.equal(largest,0,'durable reopen must not retransmit any raw WAV bytes');assert.deepEqual(Buffer.from(await blob.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+ record.format='nova-long-binary-chunks-v1';record.parts=await Promise.all(durableParts.map(async p=>new Uint8Array(await p.arrayBuffer())));
+ const legacy=await f.a.pcmLoadLongWav(f.p.projectId,saved.assetId);assert.equal(largest,1048576);assert.deepEqual(Buffer.from(await legacy.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
 });
