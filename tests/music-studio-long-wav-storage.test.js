@@ -342,3 +342,10 @@ test('large durable records own bounded byte chunks; corruption fails and legacy
 test('malformed chunk lengths fail closed without rewriting saved metadata',async()=>{
  const f=await setup(),r=await f.a.pcmImportLongFile(wav(2100000),f.p.projectId),record=f.indexedDB.stores.get('longWavBinaries').get(r.assetId),baseline=JSON.stringify(await f.repo.get(f.p.projectId));record.parts.pop();await assert.rejects(f.a.pcmLoadLongWav(f.p.projectId,r.assetId),/chunks-invalid/);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),baseline);
 });
+
+test('large durable reconstruction bounds each raw-byte Blob transport to one MiB',async()=>{
+ const f=await setup(),file=wav(2100000),saved=await f.a.pcmImportLongFile(file,f.p.projectId);assert.equal(saved.ok,true,saved.error);
+ let largest=0;f.w.Blob=class extends Blob{constructor(parts,options){const raw=parts.reduce((n,p)=>n+(ArrayBuffer.isView(p)?p.byteLength:0),0);largest=Math.max(largest,raw);assert.ok(raw<=1048576,'raw Blob transport must stay bounded');super(parts,options)}};
+ await f.repo.close();const repo=f.a.indexedDbRepository();f.a.setRepository(repo);const blob=await f.a.pcmLoadLongWav(f.p.projectId,saved.assetId);
+ assert.equal(largest,1048576);assert.deepEqual(Buffer.from(await blob.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+});
