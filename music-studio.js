@@ -3342,7 +3342,9 @@
   async function masterMeasure(chunks,options={}){
     const filter=(b,a)=>{let z1=0,z2=0;return x=>{const y=b[0]*x+z1;z1=b[1]*x-a[0]*y+z2;z2=b[2]*x-a[1]*y;return y}};
     const ring=new Float64Array(19200),blocks=[];let sum=0,frames=0,count=0,peak=0,tp=0,clipping=0,filters=[],history=[];
-    const trueSample=(c,x)=>{const h=history[c];h.pop();h.unshift(x);for(let phase=0;phase<4;phase++){let y=0;for(let j=0;j<12;j++)y+=h[j]*MASTER_FIR[j][phase];tp=Math.max(tp,Math.abs(y))}};
+    const trueSample=(c,x)=>{const h=history[c];for(let j=11;j>0;j--)h[j]=h[j-1];h[0]=x;
+      // Keep each FIR phase's summation order while sharing history/coefficient reads.
+      let a=0,b=0,d=0,e=0;for(let j=0;j<12;j++){const v=h[j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
     for await(const pcm of chunks){options.guard?.();const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
       if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>Array(12).fill(0))}
       if(count!==pcm.channels.length)throw Error('master-format-changed');
