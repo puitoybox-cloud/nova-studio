@@ -285,7 +285,7 @@
       const record=await request('longWavBinaries','readonly',store=>store.get(id));
       if(!record||record.blob)return record;
       if(record.format!=='nova-long-binary-chunks-v1'||!Number.isSafeInteger(record.size)||record.size<1||!Array.isArray(record.parts)||record.parts.some((p,i)=>!ArrayBuffer.isView(p)||p.BYTES_PER_ELEMENT!==1||p.byteLength<1||p.byteLength>1048576||(i<record.parts.length-1&&p.byteLength!==1048576))||record.parts.reduce((size,p)=>size+p.byteLength,0)!==record.size)throw Error('long-wav-binary-chunks-invalid');
-      return{id:record.id,hashes:record.hashes,blob:new Blob(record.parts,{type:record.type||'application/octet-stream'})};
+      return{id:record.id,hashes:record.hashes,blob:new Blob(record.parts.map(part=>new Blob([part])),{type:record.type||'application/octet-stream'})};
     }
     // Binary and project metadata become visible in the same IndexedDB commit.
     async function putLongWav(item,record,baseline,guard){record=await encodeLongBinary(record,guard);guard();return database.then(db=>new Promise((resolve,reject)=>{
