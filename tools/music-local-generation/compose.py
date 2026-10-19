@@ -4,6 +4,8 @@ import hashlib
 import json
 import struct
 import re
+import time
+from model_runtime import load_runtime
 from pathlib import Path
 
 
@@ -137,6 +139,7 @@ def remove_prompt_notes(score, prompt_score):
 
 
 def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords='', sourceNotes=None, cancel=None):
+    started = time.perf_counter()
     if cancel: cancel()
     style, chord_names, chord_sets = interpret_request(description, genre, style, chords)
     constraints(key, pitch_min, pitch_max, numerator, denominator, style)
@@ -149,14 +152,10 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     source = source_notes(sourceNotes, max_ticks)
     weights, output = Path(weights), Path(output)
     manifest = json.loads((Path(__file__).parent / 'model-lock.json').read_text())
-    for name, expected in manifest['files'].items():
-        if cancel: cancel()
-        if digest(weights / name) != expected['sha256']: raise ValueError('model identity mismatch: ' + name)
-    config = json.loads((weights / 'config.json').read_text())
+    (models, config), reused = load_runtime(weights, manifest, digest, rt, cancel)
+    load_seconds = time.perf_counter() - started
     tokenizer = MIDITokenizer('v2'); tokenizer.set_optimise_midi(True)
     if config['tokenizer'] != tokenizer.to_dict(): raise ValueError('tokenizer configuration mismatch')
-    opt = rt.SessionOptions(); opt.intra_op_num_threads = 2; opt.inter_op_num_threads = 1
-    models = [rt.InferenceSession(str(weights / ('model_' + n + '.onnx')), sess_options=opt, providers=['CPUExecutionProvider']) for n in ['base', 'token']]
     output.mkdir(parents=True, exist_ok=False)
     result = {'format': 'nova-local-model-candidates', 'version': 1, 'model': manifest['model'], 'revision': manifest['revision'], 'license': 'Apache-2.0', 'runtime': rt.__version__, 'provider': 'CPUExecutionProvider', 'synthetic': False, 'maxTicks': max_ticks, 'postprocess': 'clip-to-selected-range', 'candidates': []}
     prompt = [[tokenizer.bos_id] + [tokenizer.pad_id] * 7, tokenizer.event2tokens(['set_tempo', 0, 0, 0, bpm]), tokenizer.event2tokens(['patch_change', 0, 0, 0, 0, 0])]
@@ -166,10 +165,11 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
         result['sourceConditioning'] = {'method':'source-prefix-then-rebase-continuation', 'notes':len(source), 'limit':64, 'freeText':False}
     prompt = np.asarray(prompt, dtype=np.int64)
     prompt_score = tokenizer.detokenize(prompt) if source else None
+    inference_counts = {'base': 0, 'token': 0}
     for index, variant in enumerate('ABC'):
         if cancel: cancel()
         rows = list(prompt)
-        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel):
+        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel, metrics=inference_counts):
             rows.append(row[0])
         score = tokenizer.detokenize(rows)
         if source: remove_prompt_notes(score, prompt_score)
@@ -182,6 +182,7 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
         (output / name).write_bytes(data)
         result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     if cancel: cancel()
+    result['performance'] = {'sessionReused': reused, 'loadSeconds': load_seconds, 'elapsedSeconds': time.perf_counter()-started, 'onnxCalls': inference_counts, 'midiBytes': sum(c['byteLength'] for c in result['candidates'])}
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 

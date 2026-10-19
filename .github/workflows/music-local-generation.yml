@@ -28,6 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
       - run: python tools/music-local-generation/test_transport.py
@@ -71,6 +72,7 @@ jobs:
           node-version: '22'
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
       - run: python tools/music-local-generation/test_transport.py
