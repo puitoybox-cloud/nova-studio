@@ -276,7 +276,7 @@
     }))}
     // Binary and project metadata become visible in the same IndexedDB commit.
     function putLongWav(item,record,baseline,guard){return database.then(db=>new Promise((resolve,reject)=>{
-      const tx=db.transaction([STORE_NAME,'longWavBinaries'],'readwrite');let failure=null;
+      const tx=db.transaction([STORE_NAME,'longWavBinaries'],'readwrite',{durability:'strict'});let failure=null;
       const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
       tx.onabort=()=>reject(failure||tx.error||Error('long-wav-save-aborted'));
       tx.onerror=()=>abort(tx.error||Error('long-wav-save-failed'));
@@ -290,7 +290,7 @@
     }))}
     // Add-only recovery: metadata, original binaries and settings commit together.
     function restoreLongArchive(projects,records,settings,guard,baselineSettings){return database.then(db=>new Promise((resolve,reject)=>{
-      guard();const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite');let failure;
+      guard();const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite',{durability:'strict'});let failure;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
       const timer=root.setTimeout?.(()=>abort(Error('archive-transaction-timeout')),30000);
       const done=()=>root.clearTimeout?.(timer);
