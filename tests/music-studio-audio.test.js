@@ -284,3 +284,11 @@ test('microsecond tempo events are normalized for both offline MIDI render paths
  midi.tracks[0].muted=true;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],options),/track-selection/);
  midi.totalTick=-1;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/total-tick/);
  });
+test('every stem includes another instruments longer one-shot tail on the same frame grid',()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];
+ midi.tracks.push({id:'sample',part:'bass',sampleInstrument:{assetId:'s',rootPitch:60,oneShot:true},notes:[{pitch:60,velocity:80,startTick:480,durationTicks:480}]});
+ const entries=[{id:'s',pcm:{sampleRate:8000,channels:[Array(32000).fill(.1)]}}],original=JSON.stringify(midi);
+ const full=w.MusicStudioAudio.renderMidiStream(midi,entries,{OfflineAudioContext:Offline});
+ for(const id of ['sample','melody']){const stem=w.MusicStudioAudio.renderMidiStream(midi,entries,{OfflineAudioContext:Offline,trackIds:[id]});assert.equal(stem.frames,full.frames);assert.equal(stem.frames,216000);assert.deepEqual(Array.from(stem.trackIds),[id])}
+ assert.equal(JSON.stringify(midi),original);
+});

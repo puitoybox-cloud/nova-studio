@@ -3568,7 +3568,7 @@
       guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');
       const files=[];
       for(const [i,a]of assets.entries()){guard();pcmEditor.message=`Packaging Stems（楽器別WAVをまとめています） ${i+1}/${assets.length}`;requestPaint();files.push({name:`Stem-${i+1}.wav`,blob:await pcmLoadLongWav(id,a.id)})}
-      const zip=await finalZip(files,guard);guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');
+      const zip=await finalZip(files,guard,progress=>{guard();pcmEditor.message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;requestPaint()});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');
       if(download){if(!root.document||!root.URL?.createObjectURL)throw Error('midi-stem-export-download-unavailable');const url=root.URL.createObjectURL(zip);try{const link=root.document.createElement('a');link.href=url;link.download='Stems.zip';root.document.body.appendChild(link);link.click();link.remove()}finally{root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000)}}
       pcmEditor.message=`Stem ZIP ${zip.size} bytes。${download?'ブラウザへ保存を依頼しました（完了未確認）。':'作成しました。'}`;
       return{ok:true,zip,files,completion:download?'browser-download-requested':'prepared'};
@@ -3638,10 +3638,15 @@
     const pieces=[];let frames=0;for await(const chunk of chunks){guard();pieces.push(pcmEncodeWav(chunk).slice(44));frames+=chunk.channels[0].length;if(frames*4>0xffffffff-36)throw Error('final-wav-size')}
     const header=pcmEncodeWav({sampleRate:48000,channels:[[0],[0]]}).slice(0,44),v=new DataView(header);v.setUint32(4,36+frames*4,true);v.setUint32(40,frames*4,true);return new Blob([header,...pieces],{type:'audio/wav'});
   }
-  async function finalZip(files,guard=()=>{}){
+  const zipCrcTable=Uint32Array.from({length:256},(_,value)=>{let crc=value;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);return crc>>>0});
+  async function finalZip(files,guard=()=>{},onProgress=()=>{}){
     if(files.length>64)throw Error('final-package-file-limit');const local=[],central=[];let offset=0;const names=new Set();
+    // Include both directories and EOCD before reading any large binary.
+    const total=files.reduce((size,file)=>size+file.blob.size+76+2*file.name.length,22);
+    if(!Number.isSafeInteger(total)||total>512*1048576)throw Error('final-package-512mib-limit');
+    const totalBytes=files.reduce((size,file)=>size+file.blob.size,0);let completedBytes=0;
     for(const file of files){guard();if(!/^[A-Za-z0-9_.-]+$/.test(file.name)||names.has(file.name)||file.blob.size>0xffffffff)throw Error('final-package-name-or-size');names.add(file.name);let crc=0xffffffff;
-      for(let at=0;at<file.blob.size;at+=65536){guard();if(at%1048576===0&&root.setTimeout)await new Promise(r=>root.setTimeout(r,0));guard();const bytes=new Uint8Array(await file.blob.slice(at,at+65536).arrayBuffer());for(const b of bytes){crc^=b;for(let k=0;k<8;k++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}}crc=(crc^0xffffffff)>>>0;
+      for(let at=0;at<file.blob.size;at+=65536){guard();if(at%1048576===0&&root.setTimeout)await new Promise(r=>root.setTimeout(r,0));guard();const bytes=new Uint8Array(await file.blob.slice(at,at+65536).arrayBuffer());for(let i=0;i<bytes.length;i++)crc=(crc>>>8)^zipCrcTable[(crc^bytes[i])&255];completedBytes+=bytes.length;onProgress({completedBytes,totalBytes,ratio:totalBytes?completedBytes/totalBytes:1});guard()}crc=(crc^0xffffffff)>>>0;
       const name=Uint8Array.from(file.name,c=>c.charCodeAt(0)),header=new Uint8Array(30+name.length),v=new DataView(header.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(12,33,true);v.setUint32(14,crc,true);v.setUint32(18,file.blob.size,true);v.setUint32(22,file.blob.size,true);v.setUint16(26,name.length,true);header.set(name,30);
       const dir=new Uint8Array(46+name.length),d=new DataView(dir.buffer);d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint16(14,33,true);d.setUint32(16,crc,true);d.setUint32(20,file.blob.size,true);d.setUint32(24,file.blob.size,true);d.setUint16(28,name.length,true);d.setUint32(42,offset,true);dir.set(name,46);central.push(dir);local.push(header,file.blob);offset+=header.length+file.blob.size;if(offset>512*1048576)throw Error('final-package-512mib-limit');
     }
@@ -3665,7 +3670,7 @@
       for(const [i,s]of sources.entries())files.push({name:`${s.role==='vocal'?'Vocal':'Instrument'}-${i+1}.wav`,blob:await finalWav(finalChunks([s],frames,guard),guard)});
       if(plan.includeMidi){const summary=midiExportSummary(p);if(!summary.validation.ok)throw Error('final-midi-invalid: '+summary.validation.errors.join(' '));files.push({name:'Song.mid',blob:root.MusicStudioMidi.createMidiBlob(root.MusicStudioMidi.createMidiFile(summary.input).bytes)})}
       const manifest={format:'nova-final-package-v1',projectId:id,sourceRevision:p.revision,plan,frames,sampleRate:48000,channels:2,gainDb,before,after,peakLimited:gainDb<plan.targetLufs-before.lufs-.01,audioScope:'Explicit selected rendered audio; MIDI exported separately, no MIDI-to-audio synthesis',files:files.map(f=>({name:f.name,size:f.blob.size}))};
-      files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard);guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');
+      files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();pcmEditor.message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;requestPaint()});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');
       files.forEach(Object.freeze);Object.freeze(files);const candidate={baseline,plan,manifest,files,zip};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }

@@ -95,7 +95,7 @@
     if(!Number.isFinite(seconds)||seconds<=0||seconds>480)throw Error('midi-render-480-seconds-limit');
     // Include complete one-shot playback after pitch shifting, or refuse an excessive tail.
     let finish=seconds+.8;
-    for(const track of tracks)if(track.sampleInstrument)for(const note of track.notes){
+    for(const track of active)if(track.sampleInstrument)for(const note of track.notes){
       const binding=track.sampleInstrument,region=binding.version===undefined?{...binding,releaseMs:15}:root.MusicStudioInstruments?.select(binding,note.pitch,note.velocity),entry=entries.find(e=>e.id===region?.assetId);
       if(!region||!entry)throw Error('midi-render-missing-or-unmapped-sample');
       const start=Playback.tickDurationSeconds(0,note.startTick,ppq,midi.tempoMap,tempo),end=Playback.tickDurationSeconds(0,note.startTick+note.durationTicks,ppq,midi.tempoMap,tempo),rate=2**((note.pitch-region.rootPitch)/12+(region.tuneCents||0)/1200),natural=start+((region.endSeconds??entry.pcm.channels[0].length/entry.pcm.sampleRate)-(region.startSeconds||0))/rate;
