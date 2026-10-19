@@ -500,7 +500,7 @@
       for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
         if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
         const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);
-        const baseVelocity=(role==='strings'?58:role==='bass'?82:68)+(density==='sparse'?-12:density==='rich'?8:0),blend=Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+(role==='strings'?voice*2:Math.floor((tick-span.startTick)/step)%2===0?2:-4);
+        const baseVelocity=(role==='strings'?58:role==='bass'?82:68)+(density==='sparse'?-12:density==='rich'?8:0),blend=role==='strings'?0.35:Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+(role==='strings'?voice*2:Math.floor((tick-span.startTick)/step)%2===0?2:-4);
         // Rich bass alternates chord root and fifth; first beat always anchors root.
         let rendered=pitch;if(role==='bass'&&(density==='rich'||value.variant==='B')&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+((chord.pcs[2]-chord.root+12)%12);if(rendered>55)rendered-=12;}
         notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:role==='piano'&&value.variant==='C'?0.7:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
@@ -523,7 +523,7 @@
     if(!Number.isSafeInteger(end)||end<1||end>256)throw Error('whole-song-limit-256-bars');
     if(!Array.isArray(settings)||!settings.length)throw Error('全小節にSectionを設定してください。');
     const ordered=clone(settings).sort((a,b)=>a.range.startMeasure-b.range.startMeasure),chunks=[];
-    let cursor=1;
+    let cursor=1;const midiSignature=JSON.stringify(session.midiData);
     for(const setting of ordered){
       const r=setting.range;
       if(!Number.isSafeInteger(r?.startMeasure)||!Number.isSafeInteger(r?.endMeasure)||r.startMeasure!==cursor||r.endMeasure<cursor||r.endMeasure>end)throw Error('Sectionの重複・空白・曲外範囲を修正してください。');
@@ -532,14 +532,14 @@
       bindEnsemble({importedMidi:{notes:[{}]},summary:''},{},'',setting);
       // One bar per inference keeps meter/key/tempo changes bounded and auditable.
       for(let bar=r.startMeasure;bar<=r.endMeasure;bar++){
-        const range=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),copy=clone(session);copy.editRange={startMeasure:bar,endMeasure:bar};
-        const context=createContext(project,copy,core),track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session)),source={version:1,trackId:track?.id,range:clone(range),midiSignature:JSON.stringify(session.midiData),notes:(track?.notes||[]).filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(0,64).map(n=>({...clone(n),startTick:Math.max(n.startTick,range.startTick),durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-Math.max(n.startTick,range.startTick)}))},meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,range.startTick);
+        const range=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),copy={...session,editRange:{startMeasure:bar,endMeasure:bar}};
+        const context=createContext(project,copy,core),track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session)),source={version:1,trackId:track?.id,range:clone(range),midiSignature:midiSignature,notes:(track?.notes||[]).filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(0,64).map(n=>({...clone(n),startTick:Math.max(n.startTick,range.startTick),durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-Math.max(n.startTick,range.startTick)}))},meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,range.startTick);
         const tempo=[...(session.midiData.tempoMap||[])].filter(e=>e.tick<=range.startTick).sort((a,b)=>a.tick-b.tick).at(-1);
         const changes=[...(session.midiData.tempoMap||[]),...(session.midiData.keySignatureMap||[])].filter(e=>e.tick>range.startTick&&e.tick<range.endTick);
         if(changes.length)throw Error('小節途中のテンポ・キー変更は全曲モデル生成未対応です。');
         if(!track||core.isDrumTrack(track))throw Error('whole-song-melodic-source-required');
         const review=workspace.harmonyReview;
-        if(review&&review.analysis?.midiSignature!==JSON.stringify(session.midiData))throw Error('コード確認を更新してください。');
+        if(review&&review.analysis?.midiSignature!==midiSignature)throw Error('コード確認を更新してください。');
         const chord=review?.analysis?.rows?.find(row=>row.measure===bar)?.symbol||'';
         ensembleChords(chord);
         chunks.push({range,source,section:clone(setting),key:context.key,bpm:Math.round(tempo?.bpm||session.midiData.tempo||72),numerator:meter.numerator,denominator:meter.denominator,chords:chord,modelInputNotes:Math.min(64,source.notes.length)});
@@ -547,7 +547,7 @@
       cursor=r.endMeasure+1;
     }
     if(cursor!==end+1)throw Error('全小節にSectionを設定してください。');
-    return{version:1,range:core.measureRangeToTicks({startMeasure:1,endMeasure:end},session.midiData),midiSignature:JSON.stringify(session.midiData),chunks,method:'sequential-bar-model-plus-rule-orchestration'};
+    return{version:1,range:core.measureRangeToTicks({startMeasure:1,endMeasure:end},session.midiData),midiSignature:midiSignature,chunks,method:'sequential-bar-model-plus-rule-orchestration'};
   }
   function japaneseArrangement(instruction,workspace){
     if(typeof instruction!=='string'||instruction.length>500)throw Error('invalid-arrangement-instruction');
@@ -576,7 +576,10 @@
     if(!plan?.chunks?.length||parts.length!==plan.chunks.length||parts.some(p=>!p?.ensemble||p.ensemble.wholeSong))throw Error('incomplete-whole-song');
     const value=clone(parts[0]);value.variant=String.fromCharCode(65+index);value.range=clone(plan.range);
     value.ensemble.source.range=clone(plan.range);value.ensemble.source.midiSignature=plan.midiSignature;
-    value.ensemble.wholeSong={version:1,method:plan.method,parts:clone(parts)};
+    // Store the original MIDI signature once, rather than once per bar.
+    // Readers hydrate this reference only after checking the parent signature.
+    const compact=parts.map(part=>{const p=clone(part);if(p.ensemble.source.midiSignature!==plan.midiSignature)throw Error('stale-whole-song-part');delete p.ensemble.source.midiSignature;return p;});
+    value.ensemble.wholeSong={version:2,method:plan.method,parts:compact};
     value.summary=`${value.variant}: Whole song（全曲） / ${parts.length}小節を順次モデル生成・規則編曲 / 元メロディー保持`;
     return value;
   }

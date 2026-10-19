@@ -196,13 +196,15 @@
   }
   function wholeSongSnapshot(session,core,value,selection){
     const song=value.ensemble.wholeSong,signature=JSON.stringify(session.midiData);
-    if(song?.version!==1||song.method!=='sequential-bar-model-plus-rule-orchestration'||value.ensemble.source.midiSignature!==signature||!Array.isArray(song.parts)||!song.parts.length||song.parts.length>256)throw Error('stale-whole-song');
+    if(![1,2].includes(song?.version)||song.method!=='sequential-bar-model-plus-rule-orchestration'||value.ensemble.source.midiSignature!==signature||!Array.isArray(song.parts)||!song.parts.length||song.parts.length>256)throw Error('stale-whole-song');
     const from=selection?.startMeasure??value.range.startMeasure,to=selection?.endMeasure??value.range.endMeasure;
     if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||from<value.range.startMeasure||to>value.range.endMeasure||to<from)throw Error('invalid-whole-song-selection');
     if(selection?.roles&&(!Array.isArray(selection.roles)||!selection.roles.length||selection.roles.some(r=>!['piano','bass','strings','drums'].includes(r))))throw Error('invalid-whole-song-roles');
     let cursor=value.range.startMeasure;const copy=clone(session),diff=[],destinations={};
     // Validate every part, including excluded bars, before calculating any result.
-    for(const part of song.parts){
+    for(const stored of song.parts){
+      const part=clone(stored);
+      if(song.version===2){if(!part.ensemble?.source||Object.hasOwn(part.ensemble.source,'midiSignature'))throw Error('invalid-whole-song-reference');part.ensemble.source.midiSignature=signature;}
       const actual=core.measureRangeToTicks(part.range,session.midiData);
       if(part.ensemble?.wholeSong||part.range.startMeasure!==cursor||part.range.endMeasure!==cursor||part.range.startTick!==actual.startTick||part.range.endTick!==actual.endTick||part.ensemble?.source?.midiSignature!==signature)throw Error('invalid-whole-song-part');
       ensembleSnapshot(session,core,part,null,true);cursor++;
@@ -220,6 +222,18 @@
       for(const row of result.diff){if(!original.ensemble.section.targets?.[row.role])destinations[row.role]=row.replacedTrackId||row.trackId;diff.push({...row,measure:part.range.startMeasure});}
     }
     if(!diff.length)throw Error('whole-song-selection-empty');
+    // Tie only newly rendered common tones. Existing notes (including crossing
+    // and locked notes) are never merged, shortened, or re-identified.
+    const stringIds=[...new Set(diff.filter(d=>d.role==='strings').map(d=>d.replacedTrackId||d.trackId))];
+    for(const id of stringIds){
+      const track=core.getTrackById(copy.midiData.tracks,id),existing=new Set((core.getTrackById(session.midiData.tracks,id)?.notes||[]).map(n=>n.id)),last=new Map(),remove=new Set();
+      for(const note of track.notes.slice().sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch)){
+        const previous=last.get(note.pitch),editable=!existing.has(note.id)&&!root.MusicStudioMeasureLocks?.isProtected(copy.midiData,core,id,note);
+        if(editable&&previous&&previous.startTick+previous.durationTicks===note.startTick&&Math.abs(previous.velocity-note.velocity)<=8){previous.durationTicks+=note.durationTicks;remove.add(note.id);}
+        else if(editable)last.set(note.pitch,note);else last.delete(note.pitch);
+      }
+      track.notes=track.notes.filter(n=>!remove.has(n.id));
+    }
     root.MusicStudioMeasureLocks?.validateEdit(session.midiData,copy.midiData,core);
     return{midiData:copy.midiData,range:core.measureRangeToTicks({startMeasure:from,endMeasure:to},session.midiData),diff};
   }
@@ -287,7 +301,7 @@
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
-    if(value.ensemble){const plan=ensembleSnapshot(session,core,value);return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:plan.diff.flatMap(d=>core.getTrackById(plan.midiData.tracks,d.replacedTrackId||d.trackId)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff,performance:performanceMetrics(plan)},mutates:false};}
+    if(value.ensemble){const plan=ensembleSnapshot(session,core,value),ids=[...new Set(plan.diff.map(d=>d.replacedTrackId||d.trackId))];return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:ids.flatMap(id=>core.getTrackById(plan.midiData.tracks,id)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff,performance:performanceMetrics(plan)},mutates:false};}
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
     if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);

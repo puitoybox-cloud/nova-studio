@@ -8,6 +8,9 @@ on:
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
       - 'music-studio-ai-assistant-panel.js'
+      - 'music-studio-ai-composition.js'
+      - 'music-studio-ai-candidate-preview.js'
+      - 'tests/music-studio-long-song-continuity.test.js'
       - 'music-studio.js'
       - '.github/workflows/music-local-generation.yml'
   workflow_dispatch:
