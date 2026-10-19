@@ -277,6 +277,7 @@
     // Persist owned byte chunks instead of transient browser Blob backing files.
     // Old Blob records remain readable; materialization is bounded to one input WAV.
     async function encodeLongBinary(record,guard){
+      guard();if(record.blob.size<=4*1048576)return record;
       const parts=[];for(let at=0;at<record.blob.size;at+=1048576){guard();parts.push(new Uint8Array(await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer()));guard()}
       return{id:record.id,format:'nova-long-binary-chunks-v1',size:record.blob.size,type:record.blob.type,parts,hashes:record.hashes};
     }
