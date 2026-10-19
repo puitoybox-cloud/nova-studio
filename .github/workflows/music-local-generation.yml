@@ -29,13 +29,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python tools/music-local-generation/test_generation_budget.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
       - name: Prepare fixed licensed development assets
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
       - name: Real CPU model and Japanese HMM singing through Studio
@@ -80,13 +80,13 @@ jobs:
           node-version: '22'
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
-      - run: python tools/music-local-generation/test_generation_budget.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
       - name: Build fixed Sinsy and prepare model on Intel Mac
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
       - name: Verify actual launch prerequisites
