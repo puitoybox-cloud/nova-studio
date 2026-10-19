@@ -20,3 +20,12 @@ test('original comparison uses the same bounded transport and never adopts candi
  e.addNote(s,{pitch:67,startTick:0,durationTicks:480,velocity:80});
  assert.throws(()=>m.auditionPlan(s,e,bundle,range,{source:'original'}),/stale|rejected/);
 });
+
+test('new layer destination can compare original before that track exists',()=>{
+ const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],f=new Function('require',source+'\nreturn fixture();')(require);
+ f.s.midiData.tracks[0].notes[0].startTick=1920;
+ const value=f.C.midiCandidate(f.data,f.file,f.context,0,480),instrument=f.C.remakeNewTrack(f.s,'strings');
+ const layer=f.C.bindRemake(value,f.C.remakeSource(f.s,f.core),'layer',100,instrument.id,instrument),bundle=f.P.createPreview(f.s,f.core,{candidateId:'A',value:layer},{project:f.p}),before=plain(f.s);
+ const original=f.P.auditionPlan(f.s,f.core,bundle,null,{source:'original'}),candidate=f.P.auditionPlan(f.s,f.core,bundle);
+ assert.equal(original.tracks.some(t=>t.id===instrument.id),false);assert.equal(candidate.tracks.some(t=>t.id===instrument.id),true);assert.deepEqual(plain(original.transport),plain(candidate.transport));assert.deepEqual(plain(f.s),before);
+});

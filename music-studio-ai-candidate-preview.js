@@ -375,7 +375,8 @@
     applyPreview(copy,core,bundle,measureRange);
     const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
     const data=options.source==='original'?session.midiData:copy.midiData;
-    const selected=core.getTrackById(data.tracks,bundle.targetTrackId);
+    const selected=core.getTrackById(data.tracks,bundle.targetTrackId)||core.getTrackById(data.tracks,bundle.value.remake?.trackId);
+    if(!selected)throw Error('audition-source-track-missing');
     const tracks=(bundle.value.remake||bundle.value.ensemble?data.tracks:[selected]).map(track=>{
       const notes=track.notes.filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).map(n=>{
         const startTick=Math.max(n.startTick,range.startTick);
