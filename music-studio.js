@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.186';
+  const ASSET_VERSION='1.4.187';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -562,11 +562,11 @@
     if(result.ok&&editAfter)openWorkAction('vocal',id);
     return result;
   }
-  async function localGenerationRequest(kind,payload){
-    if(!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)||!['compose','sing'].includes(kind))throw Error('local-generation-host-required');
-    const statusResponse=await root.fetch('/__nova_generation/status');if(!statusResponse.ok)throw Error('local-generation-host-required');
-    const status=await statusResponse.json();if(!(kind==='compose'?status.composer:status.singer))throw Error('local-generation-assets-not-configured');
-    const response=await root.fetch(`/__nova_generation/${kind}`,{method:'POST',headers:{'Content-Type':'application/json','X-Nova-Generation':status.token},body:JSON.stringify(payload)});
+  async function localGenerationRequest(kind,payload,options={}){
+    if(!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)||!['compose','sing','cancel-compose'].includes(kind))throw Error('local-generation-host-required');
+    const statusResponse=await root.fetch('/__nova_generation/status',{signal:options.signal});if(!statusResponse.ok)throw Error('local-generation-host-required');
+    const status=await statusResponse.json();if(!(kind==='sing'?status.singer:status.composer))throw Error('local-generation-assets-not-configured');
+    const response=await root.fetch(`/__nova_generation/${kind}`,{method:'POST',headers:{'Content-Type':'application/json','X-Nova-Generation':status.token},body:JSON.stringify(payload),signal:options.signal});
     const result=await response.json();if(!response.ok)throw Error(result.error||'local-generation-failed');return result;
   }
   function vocalRangeProject(project,recordId,range){

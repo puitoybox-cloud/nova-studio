@@ -24,6 +24,7 @@ class Transport(unittest.TestCase):
         self.port = self.server.server_address[1]
         self.origin = f'https://127.0.0.1:{self.port}'
         options = SimpleNamespace(origin=self.origin, pairing='secret-pair-code', weights=None, sinsy=None, dictionary=None, voice=None)
+        self.options = options
         self.server.RequestHandlerClass = handler(options, self.port, 'request-token')
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.load_cert_chain(cert, key)
         self.server.socket = context.wrap_socket(self.server.socket, server_side=True)
@@ -65,6 +66,52 @@ class Transport(unittest.TestCase):
     def test_pairing_throttle(self):
         for _ in range(5): self.assertEqual(self.request('POST', '/__nova_generation/pair', 'code=wrong', Origin=self.origin)[0], 403)
         self.assertEqual(self.request('POST', '/__nova_generation/pair', 'code=secret-pair-code', Origin=self.origin)[0], 429)
+
+    def test_authenticated_cancellation_and_delayed_compose(self):
+        import json
+        cookie = self.pair()
+        body = json.dumps({'requestId': 'whole_transport_cancel_123'})
+        headers = {'Cookie': cookie, 'Origin': self.origin, 'X-Nova-Generation': 'request-token'}
+        self.assertEqual(self.request('POST', '/__nova_generation/cancel-compose', body, Cookie=cookie, Origin=self.origin)[0], 403)
+        status, _, data = self.request('POST', '/__nova_generation/cancel-compose', body, **headers)
+        self.assertEqual(status, 200); self.assertIn(b'cancellationRequested', data)
+        status, _, data = self.request('POST', '/__nova_generation/compose', body, **headers)
+        self.assertEqual(status, 422); self.assertIn(b'cancelled-or-reused', data)
+        self.assertEqual(self.request('POST', '/__nova_generation/cancel-compose', '{}', **headers)[0], 422)
+        self.assertEqual(self.request('POST', '/__nova_generation/compose', json.dumps({'requestId':{}}), **headers)[0], 422)
+        status, _, data = self.request('POST', '/__nova_generation/compose', '{}', **headers)
+        self.assertEqual(status, 422); self.assertNotIn(b'generation-busy', data)
+
+    def test_active_cancel_releases_generation_lock(self):
+        import json
+        from unittest.mock import patch
+        self.options.weights = Path(self.tmp.name)
+        cookie = self.pair()
+        headers = {'Cookie': cookie, 'Origin': self.origin, 'X-Nova-Generation': 'request-token'}
+        started, completed = threading.Event(), threading.Event()
+        response = []
+        def blocked(*args, cancel=None, **kwargs):
+            started.set()
+            try:
+                for _ in range(300):
+                    cancel()
+                    if completed.wait(.01): break
+                raise RuntimeError('test inference did not cancel')
+            finally: completed.set()
+        body = json.dumps({'requestId':'whole_active_socket_123', 'seed':72, 'events':64, 'bpm':72, 'max_ticks':1920})
+        with patch('serve.compose', blocked):
+            worker = threading.Thread(target=lambda: response.append(self.request('POST', '/__nova_generation/compose', body, **headers)))
+            worker.start()
+            try:
+                self.assertTrue(started.wait(2))
+                status, _, _ = self.request('POST', '/__nova_generation/cancel-compose', json.dumps({'requestId':'whole_active_socket_123'}), **headers)
+                self.assertEqual(status, 200); worker.join(2)
+                self.assertFalse(worker.is_alive()); self.assertEqual(response[0][0], 422)
+                self.assertIn(b'compose-request-cancelled', response[0][2])
+            finally:
+                completed.set(); worker.join(3)
+        status, _, data = self.request('POST', '/__nova_generation/compose', '{}', **headers)
+        self.assertEqual(status, 422); self.assertNotIn(b'generation-busy', data)
 
     def test_launcher_missing_assets(self):
         with self.assertRaises(FileNotFoundError): paths(self.tmp.name)

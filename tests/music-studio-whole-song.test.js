@@ -15,3 +15,49 @@ test('bar plan follows immediate partial-bar meter boundaries and tempo/key even
 test('whole song replacing explicit bass keeps locked and crossing notes exactly',()=>{const f=setup();const bass=f.core.getTrackById(f.s.midiData.tracks,'bass');bass.notes=[{id:'protected-bass',pitch:40,startTick:1920,durationTicks:240,velocity:90,locked:true},{id:'cross-bass',pitch:43,startTick:3700,durationTicks:400,velocity:80}];for(const section of f.record.state.workspace.sectionArrangements){section.roles=['bass'];section.targets={bass:'bass'};}const before=plain(f.s.midiData),b=f.P.createPreview(f.s,f.core,make(f));f.P.applyPreview(f.s,f.core,b);assert.equal(f.s.midiData.tracks.length,3);for(const note of before.tracks[1].notes)assert.deepEqual(plain(f.s.midiData.tracks[1].notes.find(n=>n.id===note.id)),note);assert.deepEqual(plain(f.s.midiData.tracks[0]),before.tracks[0]);});
 test('low melody cannot remove all valid voicing choices for accidental chords',()=>{const f=setup();for(const n of f.s.midiData.tracks[0].notes)n.pitch=59;const c=make(f);for(const part of c.value.ensemble.wholeSong.parts)part.ensemble.chords='Ebm';assert.doesNotThrow(()=>f.P.createPreview(f.s,f.core,c));});
 test('chord-conditioned A/B/C keep distinct explicit piano rule performances',()=>{const f=setup(),rendered=[];for(let index=0;index<3;index++){const c=make(f,index),b=f.P.createPreview(f.s,f.core,c),plan=f.P.auditionPlan(f.s,f.core,b,{startMeasure:1,endMeasure:2,roles:['piano']});rendered.push(JSON.stringify(plan.tracks.find(t=>t.id.startsWith('arrange-piano')).notes.map(n=>[n.pitch,n.startTick,n.durationTicks])));}assert.equal(new Set(rendered).size,3);});
+
+test('pause retains complete bars; resume skips them and publishes no partial candidates',async()=>{
+ const f=setup(),before=plain(f.s.midiData);let calls=0;
+ mock(f,()=>{if(++calls===2)f.panel.stopWholeSong(f.p.projectId)});
+ await f.panel.generateWholeSong(f.p.projectId);
+ assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,1);
+ assert.equal(f.record.state.workspace.candidateSets.length,0);
+ f.panel.setTab(f.p.projectId,'candidates');assert.match(f.panel.render(f.p,f.s,f.core),/Resume（続きから再開）/);
+ calls=0;mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,true);
+ assert.equal(calls,3);assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);
+ assert.equal(f.record.state.workspace.wholeSongCheckpoint,undefined);assert.deepEqual(plain(f.s.midiData),before);
+});
+test('failed bar is retried; malformed restored results and changed conditions issue no requests',async()=>{
+ for(const change of ['midi','section','track','music','revision','bytes']){
+  const f=setup();let calls=0;mock(f,()=>{if(++calls===2)throw Error('connection-lost')});await f.panel.generateWholeSong(f.p.projectId);
+  assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,1);
+  if(change==='midi')f.s.midiData.tracks[0].notes[0].velocity++;
+  if(change==='section')f.record.state.workspace.sectionArrangements[0].density='rich';
+  if(change==='track')f.core.selectTrackById(f.s,'bass');
+  if(change==='music')f.p.musicalSettings.key='D';
+  if(change==='revision')f.record.state.workspace.wholeSongCheckpoint.revision='other-model';
+  if(change==='bytes')f.record.state.workspace.wholeSongCheckpoint.results[0].candidates[0].midiBase64='AAAA';
+  calls=0;mock(f,()=>calls++);const before=plain(f.record.state.workspace.candidateSets);
+  await f.panel.generateWholeSong(f.p.projectId,true);assert.equal(calls,0,change);assert.deepEqual(plain(f.record.state.workspace.candidateSets),before);
+ }
+});
+test('checkpoint saves, reopens and restores through full backup before successful resume/adoption',async()=>{
+ const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);
+ let calls=0;mock(f,()=>{if(++calls===3)throw Error('offline')});await f.panel.generateWholeSong(f.p.projectId);
+ await f.panel.saveWholeSongCheckpoint(f.p.projectId);assert.match(f.record.message,/Checkpoint saved/);
+ const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.wholeSongCheckpoint.results.length,2);
+ const g=setup(),rr=g.a.memoryRepository();g.a.setRepository(rr);
+ assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
+ const restored=await rr.get(f.p.projectId);g.a.state.projects=[restored];g.a.state.midiEditor=g.core.createCoordinatedSession(restored);g.panel.render(restored,g.a.state.midiEditor,g.core);
+ let resumed=0;mock(g,()=>resumed++);await g.panel.generateWholeSong(restored.projectId,true);
+ const record=g.panel._states.get(restored.projectId);assert.equal(resumed,2,record.message);
+ const candidate=record.state.workspace.candidateSets.at(-1).candidates[0];const before=plain(g.a.state.midiEditor.midiData);
+ g.P.applyPreview(g.a.state.midiEditor,g.core,g.P.createPreview(g.a.state.midiEditor,g.core,candidate),{startMeasure:3,endMeasure:4,roles:['bass']});
+ const after=plain(g.a.state.midiEditor.midiData);g.core.undo(g.a.state.midiEditor);assert.deepEqual(plain(g.a.state.midiEditor.midiData),before);g.core.redo(g.a.state.midiEditor);assert.deepEqual(plain(g.a.state.midiEditor.midiData),after);
+});
+test('new generation does not overwrite a paused job; explicit discard keeps source and candidates',async()=>{
+ const f=setup();let calls=0;mock(f,()=>{if(++calls===2)throw Error('offline')});await f.panel.generateWholeSong(f.p.projectId);
+ const checkpoint=plain(f.record.state.workspace.wholeSongCheckpoint),before=plain(f.s.midiData);
+ calls=0;mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId);assert.equal(calls,0);assert.deepEqual(plain(f.record.state.workspace.wholeSongCheckpoint),checkpoint);
+ f.panel.clearWholeSongCheckpoint(f.p.projectId);assert.equal(f.record.state.workspace.wholeSongCheckpoint,undefined);assert.deepEqual(plain(f.s.midiData),before);
+});

@@ -65,7 +65,7 @@ def apply_io_binding(model: rt.InferenceSession, inputs, outputs, batch_size, pa
     return io_binding
 
 def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98, top_k=20,
-             disable_patch_change=False, disable_control_change=False, disable_channels=None, generator=None):
+             disable_patch_change=False, disable_control_change=False, disable_channels=None, generator=None, cancel=None):
     tokenizer = model[2]
     if disable_channels is not None:
         disable_channels = [tokenizer.parameter_ids["channel"][c] for c in disable_channels]
@@ -104,6 +104,7 @@ def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98
     past_len = 0
     with bar:
         while cur_len < max_len:
+            if cancel: cancel()
             end = [False] * batch_size
             model0_inputs["x"] = rt.OrtValue.ortvalue_from_numpy(input_tensor[:, past_len:], device_type=device)
             model0_outputs["hidden"] = rt.OrtValue.ortvalue_from_shape_and_type(
@@ -161,6 +162,7 @@ def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98
                 )
                 io_binding = apply_io_binding(model[1], model1_inputs, model1_outputs, batch_size, i, i+1)
                 io_binding.synchronize_inputs()
+                if cancel: cancel()
                 model[1].run_with_iobinding(io_binding)
                 io_binding.synchronize_outputs()
                 logits = model1_outputs["y"].numpy()
