@@ -10,3 +10,22 @@ for(const action of ['stop','edit','switch'])test(`pending audio unlock cannot p
 test('missing sample fails closed and MIDI recording cannot start an audition',async()=>{const{w,a,e,m,s,bundle}=setup(),fake=audio(w,{missing:true}),plan=m.auditionPlan(s,e,bundle);await assert.rejects(a.editorAuditionCandidate(plan,s),/sample/);assert.equal(fake.runs[0].disposed,1);a.state.midiInput.recording=true;await assert.rejects(a.editorAuditionCandidate(plan,s),/busy/);assert.equal(fake.runs.length,1)});
 
 for(const kind of ['MIDI','vocal'])test(`${kind} recording request releases a running audition before admission`,async()=>{const{w,a,e,m,s,bundle}=setup(),fake=audio(w);await a.editorAuditionCandidate(m.auditionPlan(s,e,bundle),s);if(kind==='MIDI'){a.state.midiInput.stopping=true;await a.editorStartMidiRecording()}else{a.state.dirty=true;await a.vocalStart('audition')}assert.equal(fake.runs[0].disposed,1)});
+
+test('original comparison uses the same bounded transport and never adopts candidate notes',()=>{
+ const{e,m,s,bundle}=setup(),before=plain(s),range={startMeasure:1,endMeasure:1};
+ const candidate=m.auditionPlan(s,e,bundle,range),original=m.auditionPlan(s,e,bundle,range,{source:'original'});
+ assert.deepEqual(plain(original.transport),plain(candidate.transport));assert.equal(original.silent,true);
+ assert.equal(original.tracks[0].notes.length,0);assert.ok(candidate.tracks[0].notes.length);assert.deepEqual(plain(s),before);
+ assert.throws(()=>m.auditionPlan(s,e,bundle,range,{source:'invalid'}),/invalid-audition-source/);
+ e.addNote(s,{pitch:67,startTick:0,durationTicks:480,velocity:80});
+ assert.throws(()=>m.auditionPlan(s,e,bundle,range,{source:'original'}),/stale|rejected/);
+});
+
+test('new layer destination can compare original before that track exists',()=>{
+ const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],f=new Function('require',source+'\nreturn fixture();')(require);
+ f.s.midiData.tracks[0].notes[0].startTick=1920;
+ const value=f.C.midiCandidate(f.data,f.file,f.context,0,480),instrument=f.C.remakeNewTrack(f.s,'strings');
+ const layer=f.C.bindRemake(value,f.C.remakeSource(f.s,f.core),'layer',100,instrument.id,instrument),bundle=f.P.createPreview(f.s,f.core,{candidateId:'A',value:layer},{project:f.p}),before=plain(f.s);
+ const original=f.P.auditionPlan(f.s,f.core,bundle,null,{source:'original'}),candidate=f.P.auditionPlan(f.s,f.core,bundle);
+ assert.equal(original.tracks.some(t=>t.id===instrument.id),false);assert.equal(candidate.tracks.some(t=>t.id===instrument.id),true);assert.deepEqual(plain(original.transport),plain(candidate.transport));assert.deepEqual(plain(f.s),before);
+});

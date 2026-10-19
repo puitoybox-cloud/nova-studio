@@ -109,3 +109,14 @@ test('pause during final whole-song preview validation retains all bars and resu
  f.w.setTimeout=timer;let calls=0;mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,true,false);
  assert.equal(calls,0);assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);
 });
+
+test('Pause during restored checkpoint validation yields before inference and preserves every saved bar',async()=>{
+ const f=setup();mock(f);const timer=f.w.setTimeout;let paused=false;
+ f.w.setTimeout=(callback,delay)=>{if(!paused&&f.record.message.startsWith('Finalizing')){paused=true;f.panel.stopWholeSong(f.p.projectId)}return timer(callback,delay)};
+ await f.panel.generateWholeSong(f.p.projectId,false,false);
+ const checkpoint=plain(f.record.state.workspace.wholeSongCheckpoint),original=plain(f.s.midiData);assert.equal(checkpoint.results.length,4);
+ let calls=0;mock(f,()=>calls++);f.w.setTimeout=(callback,delay)=>{if(f.record.message.startsWith('Restoring'))f.panel.stopWholeSong(f.p.projectId);return timer(callback,delay)};
+ await f.panel.generateWholeSong(f.p.projectId,true,false);
+ assert.equal(calls,0);assert.deepEqual(plain(f.record.state.workspace.wholeSongCheckpoint),checkpoint);assert.deepEqual(plain(f.s.midiData),original);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.equal(f.record.localModelBusy,false);
+ f.w.setTimeout=timer;await f.panel.generateWholeSong(f.p.projectId,true,false);assert.equal(calls,0);assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);
+});

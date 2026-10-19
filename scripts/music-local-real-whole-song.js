@@ -23,6 +23,7 @@ function attach(f,pause){
  assert.equal(record.state.workspace.wholeSongCheckpoint?.results.length,72,record.message);
  assert.equal(JSON.stringify(f.s.midiData),before);
  const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.wholeSongCheckpoint.results.length,72);
+ const midpointBackup=f.a.backupObject();
  report.midpointCheckpointBytes=Buffer.byteLength(JSON.stringify(stored.aiWorkspace.wholeSongCheckpoint));
  const g=fixture(),rr=g.a.memoryRepository();g.a.setRepository(rr);
  assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
@@ -31,6 +32,7 @@ function attach(f,pause){
  const r=g.panel._states.get(restored.projectId),set=r.state.workspace.candidateSets.at(-1);assert.ok(set,r.message);assert.equal(set.candidates.length,3);assert.equal(report.measurements.length,144);assert.equal(JSON.stringify(g.a.state.midiEditor.midiData),before);
  report.generatedNotes=set.candidates.map(c=>({variant:c.value.variant,notes:c.value.ensemble.wholeSong.parts.reduce((n,p)=>n+p.importedMidi.notes.length,0)}));
  const saved=await rr.get(restored.projectId);assert.equal(saved.aiWorkspace.wholeSongCheckpoint,undefined);report.savedProjectBytes=Buffer.byteLength(JSON.stringify(saved));
+ if(process.env.NOVA_WHOLE_SONG_FIXTURE)fs.writeFileSync(process.env.NOVA_WHOLE_SONG_FIXTURE,JSON.stringify({testedCommit:report.testedCommit,sourceMidi:JSON.parse(before),midpointBackup,project:saved}));
  report.completed=true;report.backupReopenResume=true;report.originalMidiUnchanged=true;
 }catch(error){report.error=error.stack;process.exitCode=1;}finally{
  report.elapsedSeconds=(performance.now()-started)/1000;

@@ -366,15 +366,18 @@
   }
   // Apply to a disposable session so audition uses the same stale/lock/range
   // checks and exact notes as adoption, without touching the editor or Undo.
-  function auditionPlan(session,core,bundle,measureRange=null){
+  function auditionPlan(session,core,bundle,measureRange=null,options={}){
+    if(options.source!==undefined&&!['original','candidate'].includes(options.source))throw Error('invalid-audition-source');
     if(bundle?.type!=='midi-preview')throw Error('midi-preview-required');
     const copy=clone(session);
     if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     core.selectTrackById(copy,bundle.targetTrackId);
     applyPreview(copy,core,bundle,measureRange);
     const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
-    const selected=core.getTrackById(copy.midiData.tracks,bundle.targetTrackId);
-    const tracks=(bundle.value.remake||bundle.value.ensemble?copy.midiData.tracks:[selected]).map(track=>{
+    const data=options.source==='original'?session.midiData:copy.midiData;
+    const selected=core.getTrackById(data.tracks,bundle.targetTrackId)||core.getTrackById(data.tracks,bundle.value.remake?.trackId);
+    if(!selected)throw Error('audition-source-track-missing');
+    const tracks=(bundle.value.remake||bundle.value.ensemble?data.tracks:[selected]).map(track=>{
       const notes=track.notes.filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).map(n=>{
         const startTick=Math.max(n.startTick,range.startTick);
         return{...clone(n),startTick,durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-startTick};
@@ -382,7 +385,7 @@
       return{...clone(track),...(track.id===selected.id?{muted:false,solo:false}:{}),notes};
     });
     const count=tracks.reduce((n,t)=>n+t.notes.length,0);
-    if(!count&&!bundle.value.remake)throw Error('audition-no-notes');
+    if(!count&&!bundle.value.remake&&options.source!=='original')throw Error('audition-no-notes');
     if(count>4096)throw Error('audition-note-limit-select-shorter-range');
     return{tracks,transport:{ppq:copy.midiData.ppq,bpm:copy.midiData.tempo,tempoMap:clone(copy.midiData.tempoMap||[]),startTick:range.startTick,endTick:range.endTick},silent:!count,mutates:false};
   }

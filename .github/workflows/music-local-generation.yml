@@ -6,6 +6,7 @@ on:
       - 'scripts/music-local-real-generation.js'
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
+      - 'scripts/music-long-indexeddb-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
       - 'music-studio-ai-assistant-panel.js'
@@ -48,6 +49,7 @@ jobs:
       - name: Real 480-second whole-song A/B/C with checkpoint backup and Resume
         env:
           NOVA_WHOLE_SONG_REPORT: ${{ runner.temp }}/music-local-real-whole-song-ci.json
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
         run: node scripts/music-local-real-whole-song.js
@@ -60,6 +62,13 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-real-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
+      - name: Real long candidates through IndexedDB and browser restart
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
+          NOVA_LONG_IDB_REPORT: ${{ runner.temp }}/music-long-indexeddb-browser.json
+        run: NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-indexeddb-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -67,6 +76,7 @@ jobs:
           path: |
             verification/music-local-real-browser.json
             ${{ runner.temp }}/music-local-real-whole-song-ci.json
+            ${{ runner.temp }}/music-long-indexeddb-browser.json
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 20
