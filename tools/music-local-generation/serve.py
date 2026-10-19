@@ -16,6 +16,7 @@ import wave
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from compose import compose, digest
+from cancellation import ComposerJobs
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCK = threading.Lock()
@@ -56,6 +57,7 @@ def handler(options, port, token):
     remote = origin.startswith('https://')
     authority = origin.split('://', 1)[1]
     sessions = {}
+    composer_jobs = ComposerJobs()
     pairing = getattr(options, 'pairing', None)
     attempts = {}
     auth_lock = threading.Lock()
@@ -135,25 +137,33 @@ def handler(options, port, token):
             if self.allowed() and remote and self.path == '/__nova_generation/pair': return self.pair()
             if not self.authenticated() or not self.allowed() or self.headers.get('Origin') != origin or not secrets.compare_digest(self.headers.get('X-Nova-Generation', ''), token):
                 return self.send_error(403)
-            if self.path not in ['/__nova_generation/compose', '/__nova_generation/sing']: return self.send_error(404)
+            if self.path not in ['/__nova_generation/compose', '/__nova_generation/sing', '/__nova_generation/cancel-compose']: return self.send_error(404)
             try:
                 size = int(self.headers.get('Content-Length', '0'))
                 if not 0 < size <= 1100000: return self.send_error(413)
                 data = json.loads(self.rfile.read(size))
+                if self.path.endswith('/cancel-compose'):
+                    composer_jobs.cancel(data.get('requestId'))
+                    return self.reply(200, {'cancellationRequested': True, 'method': 'cooperative-between-model-steps'})
+                request_id = data.get('requestId') if self.path.endswith('/compose') else None
                 if not LOCK.acquire(blocking=False): return self.reply(409, {'error': 'generation-busy'})
                 try:
+                    cancel = composer_jobs.begin(request_id) if request_id is not None else None
                     with tempfile.TemporaryDirectory(prefix='nova-generation-') as directory:
                         if self.path.endswith('/compose'):
                             if not options.weights: raise ValueError('local model weights not configured')
                             for key in ['seed', 'events', 'bpm', 'max_ticks']:
                                 if type(data.get(key)) is not int: raise ValueError('integer settings required')
-                            result = compose(options.weights, Path(directory) / 'abc', **{k: data[k] for k in ['seed', 'events', 'bpm', 'max_ticks']}, **{k: data[k] for k in ['key', 'pitch_min', 'pitch_max', 'numerator', 'denominator', 'style', 'description', 'genre', 'chords', 'sourceNotes'] if k in data})
+                            result = compose(options.weights, Path(directory) / 'abc', cancel=cancel, **{k: data[k] for k in ['seed', 'events', 'bpm', 'max_ticks']}, **{k: data[k] for k in ['key', 'pitch_min', 'pitch_max', 'numerator', 'denominator', 'style', 'description', 'genre', 'chords', 'sourceNotes'] if k in data})
                         else:
                             if not all([options.sinsy, options.dictionary, options.voice]): raise ValueError('local Sinsy assets not configured')
                             audio = synthesize(data.get('scoreXML'), options.sinsy, options.dictionary, options.voice, directory)
                             result = {'engine': 'Sinsy 0.92 HMM', 'voice': 'NIT SONG070 F001 0.90', 'license': 'CC-BY-3.0', 'wavBase64': base64.b64encode(audio).decode()}
                     return self.reply(200, result)
-                finally: LOCK.release()
+                finally:
+                    try:
+                        if request_id is not None: composer_jobs.finish(request_id)
+                    finally: LOCK.release()
             except Exception as error: return self.reply(422, {'error': str(error)[:400]})
     return Handler
 

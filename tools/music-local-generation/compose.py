@@ -136,7 +136,8 @@ def remove_prompt_notes(score, prompt_score):
     return score
 
 
-def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords='', sourceNotes=None):
+def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords='', sourceNotes=None, cancel=None):
+    if cancel: cancel()
     style, chord_names, chord_sets = interpret_request(description, genre, style, chords)
     constraints(key, pitch_min, pitch_max, numerator, denominator, style)
     import numpy as np
@@ -149,6 +150,7 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     weights, output = Path(weights), Path(output)
     manifest = json.loads((Path(__file__).parent / 'model-lock.json').read_text())
     for name, expected in manifest['files'].items():
+        if cancel: cancel()
         if digest(weights / name) != expected['sha256']: raise ValueError('model identity mismatch: ' + name)
     config = json.loads((weights / 'config.json').read_text())
     tokenizer = MIDITokenizer('v2'); tokenizer.set_optimise_midi(True)
@@ -165,8 +167,9 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     prompt = np.asarray(prompt, dtype=np.int64)
     prompt_score = tokenizer.detokenize(prompt) if source else None
     for index, variant in enumerate('ABC'):
+        if cancel: cancel()
         rows = list(prompt)
-        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16))):
+        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel):
             rows.append(row[0])
         score = tokenizer.detokenize(rows)
         if source: remove_prompt_notes(score, prompt_score)
@@ -178,6 +181,7 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
         data, notes = midi_bytes(score); name = variant + '.mid'
         (output / name).write_bytes(data)
         result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+    if cancel: cancel()
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 
