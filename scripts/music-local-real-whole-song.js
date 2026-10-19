@@ -2,7 +2,7 @@
 // Requires licensed local weights. Never substitutes a mock model.
 const fs=require('node:fs'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
 const fixture=new Function('require',fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0]+'\nreturn fixture;')(require);
-const base='http://127.0.0.1:8768',report={version:1,completed:false,fixture:true,seconds:480,bars:144,bpm:72,ppq:480,sourceNotes:576,measurements:[]},started=performance.now();
+const base='http://127.0.0.1:8768',report={testedCommit:process.env.NOVA_TESTED_HEAD||null,version:1,completed:false,fixture:true,seconds:480,bars:144,bpm:72,ppq:480,sourceNotes:576,measurements:[]},started=performance.now();
 const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/serve.py','--port','8768','--weights',process.env.NOVA_MODEL_WEIGHTS||'/missing-model'],{stdio:['ignore','pipe','inherit']});
 function attach(f,pause){
  f.w.location.hostname='127.0.0.1';f.w.atob=atob;
@@ -37,5 +37,5 @@ function attach(f,pause){
  report.onnxCalls=report.measurements.reduce((a,p)=>({base:a.base+p.onnxCalls.base,token:a.token+p.onnxCalls.token}),{base:0,token:0});
  report.midiBytes=report.measurements.reduce((n,p)=>n+p.midiBytes,0);
  report.processPeakRssBytes=report.measurements.length?Math.max(...report.measurements.map(p=>p.memoryAfter.processPeakRssBytes)):null;report.memoryScope='Python host process lifetime';
- fs.writeFileSync('verification/music-local-real-whole-song.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));server.kill('SIGTERM');
+ fs.writeFileSync(process.env.NOVA_WHOLE_SONG_REPORT||'verification/music-local-real-whole-song.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));server.kill('SIGTERM');
 }})();

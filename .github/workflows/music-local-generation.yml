@@ -47,6 +47,8 @@ jobs:
         run: node scripts/music-local-real-generation.js
       - name: Real 480-second whole-song A/B/C with checkpoint backup and Resume
         env:
+          NOVA_WHOLE_SONG_REPORT: ${{ runner.temp }}/music-local-real-whole-song-ci.json
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
         run: node scripts/music-local-real-whole-song.js
       - name: Real browser model and voice at four sizes
@@ -64,7 +66,7 @@ jobs:
           name: music-local-real-generation
           path: |
             verification/music-local-real-browser.json
-            verification/music-local-real-whole-song.json
+            ${{ runner.temp }}/music-local-real-whole-song-ci.json
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 20
