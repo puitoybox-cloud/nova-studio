@@ -274,8 +274,20 @@
       tx.onabort=()=>{guard?.clearAbort?.();reject(failure||tx.error||Error('lyrics-save-aborted'))};tx.onerror=()=>abort(tx.error||Error('lyrics-save-failed'));tx.oncomplete=()=>{guard?.clearAbort?.();resolve(clone(value))};
       const get=store.get(value.projectId);get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{guard?.();if(JSON.stringify(get.result)!==baseline)throw Error('stale-lyrics-assignment-storage');const put=store.put(value);put.onerror=()=>abort(put.error);put.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}catch(e){abort(e)}};
     }))}
+    // Persist owned byte chunks instead of transient browser Blob backing files.
+    // Old Blob records remain readable; materialization is bounded to one input WAV.
+    async function encodeLongBinary(record,guard){
+      const parts=[];for(let at=0;at<record.blob.size;at+=1048576){guard();parts.push(new Uint8Array(await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer()));guard()}
+      return{id:record.id,format:'nova-long-binary-chunks-v1',size:record.blob.size,type:record.blob.type,parts,hashes:record.hashes};
+    }
+    async function getLongWav(id){
+      const record=await request('longWavBinaries','readonly',store=>store.get(id));
+      if(!record||record.blob)return record;
+      if(record.format!=='nova-long-binary-chunks-v1'||!Number.isSafeInteger(record.size)||record.size<1||!Array.isArray(record.parts)||record.parts.some((p,i)=>!ArrayBuffer.isView(p)||p.BYTES_PER_ELEMENT!==1||p.byteLength<1||p.byteLength>1048576||(i<record.parts.length-1&&p.byteLength!==1048576))||record.parts.reduce((size,p)=>size+p.byteLength,0)!==record.size)throw Error('long-wav-binary-chunks-invalid');
+      return{id:record.id,hashes:record.hashes,blob:new Blob(record.parts,{type:record.type||'application/octet-stream'})};
+    }
     // Binary and project metadata become visible in the same IndexedDB commit.
-    function putLongWav(item,record,baseline,guard){return database.then(db=>new Promise((resolve,reject)=>{
+    async function putLongWav(item,record,baseline,guard){record=await encodeLongBinary(record,guard);guard();return database.then(db=>new Promise((resolve,reject)=>{
       const tx=db.transaction([STORE_NAME,'longWavBinaries'],'readwrite',{durability:'strict'});let failure=null;
       const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
       tx.onabort=()=>reject(failure||tx.error||Error('long-wav-save-aborted'));
@@ -289,7 +301,7 @@
       }catch(e){abort(e)}};
     }))}
     // Add-only recovery: metadata, original binaries and settings commit together.
-    function restoreLongArchive(projects,records,settings,guard,baselineSettings){return database.then(db=>new Promise((resolve,reject)=>{
+    async function restoreLongArchive(projects,records,settings,guard,baselineSettings){const encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard()}records=encoded;return database.then(db=>new Promise((resolve,reject)=>{
       guard();const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite',{durability:'strict'});let failure;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
       const timer=root.setTimeout?.(()=>abort(Error('archive-transaction-timeout')),30000);
@@ -303,7 +315,7 @@
         if(settings)watch(tx.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
       }catch(e){abort(e)}};
     }))}
-    return{kind:'indexeddb',restoreLongArchive,putLongWav,getLongWav(id){return request('longWavBinaries','readonly',store=>store.get(id))},compareAndPut,restoreMetadata,async close(){(await database).close()},async list(){return request(STORE_NAME,'readonly',store=>store.getAll())},async get(id){return request(STORE_NAME,'readonly',store=>store.get(id))},async put(item){await request(STORE_NAME,'readwrite',store=>store.put(clone(item)));return clone(item)},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async putAutoBackup(value){const record=clone({...value,archive:undefined});if(value.archive){if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');record.archive=value.archive}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
+    return{kind:'indexeddb',restoreLongArchive,putLongWav,getLongWav,compareAndPut,restoreMetadata,async close(){(await database).close()},async list(){return request(STORE_NAME,'readonly',store=>store.getAll())},async get(id){return request(STORE_NAME,'readonly',store=>store.get(id))},async put(item){await request(STORE_NAME,'readwrite',store=>store.put(clone(item)));return clone(item)},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async putAutoBackup(value){const record=clone({...value,archive:undefined});if(value.archive){if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');record.archive=value.archive}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
   function setRepository(next){cancelBackupRestore();repository=next}
