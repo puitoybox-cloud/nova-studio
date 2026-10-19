@@ -1,0 +1,29 @@
+{
+  "referenceCommit": "4250cc10225eca95e785243b31eba78dfebdb13b",
+  "rows": [
+    {
+      "kind": "tone",
+      "identical": true,
+      "oldMs": 78.031465,
+      "newMs": 59.251333999999986
+    },
+    {
+      "kind": "impulse",
+      "identical": true,
+      "oldMs": 66.50748799999997,
+      "newMs": 59.304168000000004
+    },
+    {
+      "kind": "noise",
+      "identical": true,
+      "oldMs": 62.42095699999999,
+      "newMs": 50.54294900000002
+    },
+    {
+      "kind": "silence",
+      "identical": true,
+      "oldMs": 61.35494599999993,
+      "newMs": 46.206413999999995
+    }
+  ]
+}

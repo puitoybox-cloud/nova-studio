@@ -206,11 +206,11 @@ test('Music Studio dependencies load sequentially without querying detached scri
   assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.4/);
   assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.3/);
   assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.27/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.27/);
-  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.20/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.20/);
+  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.21/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.21/);
   assert.match(hostSource,/music-studio\.css\?v=1\.4\.160/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.160/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.187/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.187/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.188/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.188/);
   assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.27'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.187'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.188'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
   assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.90',stylesheet:'1\.4\.159'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);

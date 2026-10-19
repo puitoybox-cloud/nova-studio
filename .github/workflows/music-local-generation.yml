@@ -7,6 +7,7 @@ on:
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
       - 'scripts/music-long-indexeddb-browser.js'
+      - 'scripts/music-long-production-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
       - 'music-studio-ai-assistant-panel.js'
@@ -69,6 +70,12 @@ jobs:
           NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
           NOVA_LONG_IDB_REPORT: ${{ runner.temp }}/music-long-indexeddb-browser.json
         run: NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-indexeddb-browser.js
+      - name: Real eight-minute MIDI through WAV Mix Master Export and archive recovery
+        env:
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
+          NOVA_LONG_PRODUCTION_REPORT: ${{ runner.temp }}/music-long-production-browser.json
+        run: NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-production-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -77,6 +84,7 @@ jobs:
             verification/music-local-real-browser.json
             ${{ runner.temp }}/music-local-real-whole-song-ci.json
             ${{ runner.temp }}/music-long-indexeddb-browser.json
+            ${{ runner.temp }}/music-long-production-browser.json
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 20

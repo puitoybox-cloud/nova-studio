@@ -274,3 +274,13 @@ test('microsecond tempo events are normalized for both offline MIDI render paths
  const short=await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline}),stream=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline});
  assert.equal(short.seconds,1.5);assert.equal(stream.seconds,short.seconds);let frames=0;for await(const chunk of stream.chunks)frames+=chunk.channels[0].length;assert.equal(frames,short.frames);
 });
+
+ test('stems preserve full song rests and tempo changes without scheduling another instrument',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.totalTick=4800;midi.tracks.push({id:'bass',part:'bass',notes:[{pitch:36,velocity:80,startTick:2400,durationTicks:480}]});
+ const original=JSON.stringify(midi),options={OfflineAudioContext:Offline,trackIds:['melody']},stem=w.MusicStudioAudio.renderMidiStream(midi,[],options),full=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline});
+ assert.equal(stem.seconds,9.5);assert.equal(stem.frames,full.frames);assert.deepEqual(Array.from(stem.trackIds),['melody']);assert.equal(stem.noteCount,1);
+ let frames=0;for await(const chunk of stem.chunks)frames+=chunk.channels[0].length;assert.equal(frames,full.frames);assert.equal(JSON.stringify(midi),original);
+ for(const trackIds of [[],['missing'],['melody','melody'],'melody'])assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{...options,trackIds}),/track-selection/);
+ midi.tracks[0].muted=true;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],options),/track-selection/);
+ midi.totalTick=-1;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/total-tick/);
+ });

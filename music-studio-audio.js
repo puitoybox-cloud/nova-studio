@@ -84,10 +84,14 @@
     guard();if(!Playback||!midi||!Array.isArray(midi.tracks))throw Error('midi-render-data-required');
     const ppq=midi.ppq,tempo=midi.tempo;
     if(!Number.isInteger(ppq)||ppq<24||ppq>9600||!Number.isFinite(tempo)||tempo<20||tempo>400)throw Error('midi-render-timing');
-    const tracks=Playback.activePlaybackTracks(midi.tracks),notes=tracks.flatMap(t=>t.notes);
+    const active=Playback.activePlaybackTracks(midi.tracks);
+    if(options.trackIds!==undefined&&(!Array.isArray(options.trackIds)||!options.trackIds.length||new Set(options.trackIds).size!==options.trackIds.length||options.trackIds.some(id=>typeof id!=='string'||!active.some(t=>t.id===id))))throw Error('midi-render-invalid-track-selection');
+    const tracks=options.trackIds?active.filter(t=>options.trackIds.includes(t.id)):active,notes=tracks.flatMap(t=>t.notes);
     if(!notes.length||notes.length>20000)throw Error('midi-render-note-capacity');
     for(const n of notes)if(!Number.isSafeInteger(n.startTick)||n.startTick<0||!Number.isSafeInteger(n.durationTicks)||n.durationTicks<1||!Number.isSafeInteger(n.startTick+n.durationTicks)||!Number.isInteger(n.pitch)||n.pitch<0||n.pitch>127||!Number.isInteger(n.velocity)||n.velocity<1||n.velocity>127)throw Error('midi-render-note-invalid');
-    const endTick=Math.max(...notes.map(n=>n.startTick+n.durationTicks)),seconds=Playback.tickDurationSeconds(0,endTick,ppq,midi.tempoMap,tempo);
+    if(midi.totalTick!==undefined&&(!Number.isSafeInteger(midi.totalTick)||midi.totalTick<0))throw Error('midi-render-invalid-total-tick');
+    // Stems share the complete active song timeline, including declared final rests.
+    const endTick=Math.max(midi.totalTick||0,...active.flatMap(t=>t.notes).map(n=>n.startTick+n.durationTicks)),seconds=Playback.tickDurationSeconds(0,endTick,ppq,midi.tempoMap,tempo);
     if(!Number.isFinite(seconds)||seconds<=0||seconds>480)throw Error('midi-render-480-seconds-limit');
     // Include complete one-shot playback after pitch shifting, or refuse an excessive tail.
     let finish=seconds+.8;
