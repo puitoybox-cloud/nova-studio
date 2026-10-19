@@ -333,3 +333,12 @@ test('saved stem-only ZIP preserves exact WAV bytes without rendering Mix or Mas
  assert.equal(bytes.readUInt32LE(0),0x04034b50);assert.equal(bytes.subarray(30,30+n).toString(),'Stem-1.wav');assert.deepEqual(bytes.subarray(30+n,30+n+size),Buffer.from(await original.arrayBuffer()));assert.equal(result.files.length,1);assert.equal(result.completion,'prepared');assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
  assert.equal((await f.a.midiStemZip(f.p.projectId,[])).ok,false);assert.equal((await f.a.midiStemZip(f.p.projectId,['missing'])).ok,false);
 });
+test('large durable records own bounded byte chunks; corruption fails and legacy Blob remains readable',async()=>{
+ const f=await setup(),file=wav(2100000),r=await f.a.pcmImportLongFile(file,f.p.projectId);assert.equal(r.ok,true,r.error);
+ const store=f.indexedDB.stores.get('longWavBinaries'),record=store.get(r.assetId);assert.equal(record.format,'nova-long-binary-chunks-v1');assert.equal(record.blob,undefined);assert.equal(record.parts.reduce((sum,p)=>sum+p.byteLength,0),file.size);assert.ok(record.parts.every(p=>p.byteLength<=1048576));
+ record.parts[0][60]^=1;await assert.rejects(f.a.pcmLoadLongWav(f.p.projectId,r.assetId),/corrupt/);record.parts[0][60]^=1;
+ const blob=await f.a.pcmLoadLongWav(f.p.projectId,r.assetId);store.set(r.assetId,{id:r.assetId,blob,hashes:record.hashes});assert.deepEqual(Buffer.from(await (await f.a.pcmLoadLongWav(f.p.projectId,r.assetId)).arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+});
+test('malformed chunk lengths fail closed without rewriting saved metadata',async()=>{
+ const f=await setup(),r=await f.a.pcmImportLongFile(wav(2100000),f.p.projectId),record=f.indexedDB.stores.get('longWavBinaries').get(r.assetId),baseline=JSON.stringify(await f.repo.get(f.p.projectId));record.parts.pop();await assert.rejects(f.a.pcmLoadLongWav(f.p.projectId,r.assetId),/chunks-invalid/);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),baseline);
+});

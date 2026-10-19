@@ -1,0 +1,32 @@
+name: Eight minute durable MIDI stems
+on:
+  pull_request:
+    paths:
+      - 'music-studio.js'
+      - 'music-studio-audio.js'
+      - 'scripts/music-eight-minute-stems-browser.js'
+      - '.github/workflows/music-eight-minute-stems.yml'
+  workflow_dispatch:
+jobs:
+  stems:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/stem-browser" playwright
+      - name: Actual eight minute four stems, ZIP and full archive restore
+        env:
+          NODE_PATH: ${{ runner.temp }}/stem-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: /usr/bin/time -v node scripts/music-eight-minute-stems-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eight-minute-stems-${{ github.event.pull_request.head.sha || github.sha }}
+          path: verification/music-eight-minute-stems-browser.json
