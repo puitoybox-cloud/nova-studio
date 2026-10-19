@@ -5,7 +5,12 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
 (async()=>{try{
  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error('host exited '+code)))});
  const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],fixture=new Function('require',source+'\nreturn fixture;')(require),f=fixture();
- f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;f.w.fetch=(url,options={})=>fetch(base+url,{...options,headers:{...options.headers,...(options.method==='POST'?{Origin:base}:{})}});
+ const measurements=[];
+ f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;f.w.fetch=async(url,options={})=>{
+  const response=await fetch(base+url,{...options,headers:{...options.headers,...(options.method==='POST'?{Origin:base}:{})}});
+  if(url.endsWith('/compose')&&response.ok)measurements.push((await response.clone().json()).performance);
+  return response;
+ };
  f.p.musicalSettings={...f.p.musicalSettings,key:'Dm',bpm:90};f.s.midiData.tempo=90;
  f.w.document={querySelector:selector=>({value:({'#aiModelStyle':'gentle','#aiModelRange':'57:77','#aiModelMood':'優しい','#aiModelGenre':'ballad','#aiModelChords':'Dm Gm A7 Dm'})[selector]||''}),querySelectorAll:()=>[]};
  await f.panel.generateLocalModel(f.p.projectId);
@@ -26,6 +31,9 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  const layer=m.C.bindRemake(ms.candidates[0].value,m.C.remakeSource(m.s,m.core),'layer',100,'bass'),lb=m.P.createPreview(m.s,m.core,{candidateId:'A',value:layer},{project:m.p});assert.equal(lb.targetTrackId,'bass');assert.ok(lb.result.changes.adds.length>0);
  const mb=m.P.createPreview(m.s,m.core,ms.candidates[0],{project:m.p});assert.equal(mb.result.changes.updates[0].durationTicks,480);assert.equal(mb.result.changes.updates[0].velocity,87);
  m.P.auditionPlan(m.s,m.core,mb);m.P.applyPreview(m.s,m.core,mb);m.core.undo(m.s);assert.equal(JSON.stringify(m.s.midiData),baseline);m.core.redo(m.s);
+ assert.equal(measurements.length,2);assert.equal(measurements[0].sessionReused,false);assert.equal(measurements[1].sessionReused,true);
+ assert.ok(measurements.every(p=>p.onnxCalls.base>0&&p.onnxCalls.token>0&&p.midiBytes>0&&p.elapsedSeconds>=p.loadSeconds));
+ console.log(JSON.stringify({realModelRuntimeMeasurements:measurements,requestStateReused:false}));
  console.log(JSON.stringify({realSourceConditionedRemake:true,candidates:ms.candidates.map(c=>c.value.importedMidi.notes.length),timingAndVelocityPreserved:true,undoRedo:true}));
  const scoreFixture=new Function('require',fs.readFileSync('tests/music-studio-score-vocal-return.test.js','utf8').split('\ntest(')[0]+'\nreturn scoreSetup;')(require),s=await scoreFixture();
  s.w.location.hostname='127.0.0.1';s.w.File=File;s.w.atob=atob;s.w.fetch=f.w.fetch;

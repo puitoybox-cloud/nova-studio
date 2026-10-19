@@ -65,7 +65,7 @@ def apply_io_binding(model: rt.InferenceSession, inputs, outputs, batch_size, pa
     return io_binding
 
 def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98, top_k=20,
-             disable_patch_change=False, disable_control_change=False, disable_channels=None, generator=None, cancel=None):
+             disable_patch_change=False, disable_control_change=False, disable_channels=None, generator=None, cancel=None, metrics=None):
     tokenizer = model[2]
     if disable_channels is not None:
         disable_channels = [tokenizer.parameter_ids["channel"][c] for c in disable_channels]
@@ -113,6 +113,7 @@ def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98
                 device_type=device)
             io_binding = apply_io_binding(model[0], model0_inputs, model0_outputs, batch_size, past_len, cur_len)
             io_binding.synchronize_inputs()
+            if metrics is not None: metrics['base'] += 1
             model[0].run_with_iobinding(io_binding)
             io_binding.synchronize_outputs()
 
@@ -163,6 +164,7 @@ def generate(model, prompt=None, batch_size=1, max_len=512, temp=1.0, top_p=0.98
                 io_binding = apply_io_binding(model[1], model1_inputs, model1_outputs, batch_size, i, i+1)
                 io_binding.synchronize_inputs()
                 if cancel: cancel()
+                if metrics is not None: metrics['token'] += 1
                 model[1].run_with_iobinding(io_binding)
                 io_binding.synchronize_outputs()
                 logits = model1_outputs["y"].numpy()

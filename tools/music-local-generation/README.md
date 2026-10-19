@@ -128,3 +128,21 @@ CAは365日です。IP変更や期限切れでは新しいフォルダへ再生�
 警告を無視して接続せず、Macの起動診断、IPと証明書、端末の信頼設定を確認してください。
 接続拒否はIP/ポート/起動状態を確認し、ペアリング失効はMacに表示中のコードで再接続します。
 再起動・別ブラウザでの再ペアリングでは旧セッションは使えません。
+
+### Sequential whole-song runtime reuse (2026-10-19)
+
+The host retains at most one SHA-256-verified ONNX base/token session pair.
+Unchanged local model files reuse those sessions across bar requests. Seeds,
+prompts, sampling generators, token KV buffers and candidate results are fresh
+for every request. File inode/device/size/mtime/ctime or manifest changes invalidate
+the cache and require full hash verification; failure never falls back to stale
+sessions. Restart the host to release the retained model memory. Cancellation is
+checked before reuse and between session loads, but cannot interrupt one ONNX
+session construction or one running inference call.
+
+Each successful compose response includes `performance`: `sessionReused`,
+`loadSeconds` (including request validation), `elapsedSeconds` (through MIDI
+serialization), actual base/token `onnxCalls`, and summed raw `midiBytes`.
+Counts measure ONNX invocations, not output notes. Timing excludes HTTP transfer
+and checkpoint/backup serialization. These measurements do not assert a speedup,
+peak memory, eight-minute completion or musical quality.
