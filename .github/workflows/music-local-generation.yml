@@ -6,6 +6,7 @@ on:
       - 'scripts/music-local-real-generation.js'
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
+      - 'scripts/music-long-indexeddb-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
       - 'tests/music-studio-local-model.test.js'
       - 'music-studio-ai-assistant-panel.js'
