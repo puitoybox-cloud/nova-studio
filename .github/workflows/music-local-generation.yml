@@ -64,6 +64,7 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
       - name: Real long candidates through IndexedDB and browser restart
         env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
           NOVA_LONG_IDB_REPORT: ${{ runner.temp }}/music-long-indexeddb-browser.json
