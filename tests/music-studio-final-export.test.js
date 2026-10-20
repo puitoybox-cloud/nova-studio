@@ -44,3 +44,22 @@ test('invalid compact selection cannot silently change package contents or weake
 });
 
 test('PCM preview never publishes an in-place edit during its final storage read even with a frozen clock',async()=>{const f=fixture();f.w.performance={now:()=>0};let reads=0;const get=f.repo.get.bind(f.repo);f.repo.get=async id=>{const result=await get(id);if(++reads===2)f.a.state.projects[0].pcmMix.assets[0].gains[0]=1;return result};const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,false);assert.match(r.error,/stale/);assert.equal(f.a.finalExport.candidate,null);assert.equal((await get('p')).pcmMix.assets[0].gains[0],0)});
+
+test('quiet multistem export uses measured headroom above 24 dB; Retry preserves the resulting WAV',async()=>{
+ const f=fixture();for(const a of f.p.pcmMix.assets)a.original.channels[0]=a.original.channels[0].map(x=>x*.025);await f.repo.put(f.p);
+ const r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:true});assert.equal(r.ok,true,r.error);const c=r.candidate;assert.ok(c.manifest.gainDb>24);assert.equal(c.manifest.targetReached,true);assert.equal(c.manifest.after.clippingSamples,0);assert.ok(Math.abs(c.manifest.after.lufs+18)<.1);
+ const expected=await c.files[0].blob.arrayBuffer();assert.equal((await f.a.finalSave('p')).ok,true);const q=await f.repo.get('p');assert.equal((await f.a.finalReplay('p',q.finalExportHistory[0].id)).ok,true);assert.deepEqual(await f.a.finalExport.candidate.files[0].blob.arrayBuffer(),expected);
+});
+
+test('explicit master bus compression changes only Master and preserves original Mix/Stem and stored retry',async()=>{
+ const f=fixture(),plainResult=await f.a.finalPreview('p',f.plan);assert.equal(plainResult.ok,true,plainResult.error);const originals=new Map(await Promise.all(plainResult.candidate.files.filter(x=>x.name.endsWith('.wav')&&x.name!=='Master.wav').map(async x=>[x.name,Buffer.from(await x.blob.arrayBuffer())])));
+ const plan={...f.plan,masterCompressor:{thresholdDb:-50,ratio:4,attackMs:.1,releaseMs:100}},r=await f.a.finalPreview('p',plan);assert.equal(r.ok,true,r.error);assert.ok(r.candidate.manifest.masterInput.lufs<r.candidate.manifest.before.lufs);assert.equal(r.candidate.manifest.after.clippingSamples,0);assert.ok(r.candidate.manifest.after.truePeakDb<=-.998);
+ for(const [name,bytes]of originals)assert.deepEqual(Buffer.from(await r.candidate.files.find(x=>x.name===name).blob.arrayBuffer()),bytes);
+ const master=Buffer.from(await r.candidate.files[0].blob.arrayBuffer());assert.equal((await f.a.finalSave('p')).ok,true);const q=await f.repo.get('p');assert.deepEqual(plain(q.finalExportPlan.masterCompressor),plan.masterCompressor);assert.match(f.a.finalView(q),/name="masterDynamics" type="checkbox" checked/);
+ assert.equal((await f.a.finalReplay('p',q.finalExportHistory[0].id)).ok,true);assert.deepEqual(Buffer.from(await f.a.finalExport.candidate.files[0].blob.arrayBuffer()),master);
+ const dst=fixture();dst.a.setRepository(dst.a.memoryRepository());assert.equal((await dst.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);const copy=dst.a.state.projects[0];assert.deepEqual(plain(copy.finalExportPlan.masterCompressor),plan.masterCompressor);assert.equal((await dst.a.finalPreview(copy.projectId,copy.finalExportPlan)).ok,true);assert.deepEqual(Buffer.from(await dst.a.finalExport.candidate.files[0].blob.arrayBuffer()),master);
+});
+test('invalid master dynamics fail closed; explicit bypass remains compatible with old export plans',async()=>{
+ for(const c of [null,{},'on',{thresholdDb:-20,ratio:21,attackMs:10,releaseMs:100}]){const f=fixture(),before=JSON.stringify(f.p),r=await f.a.finalPreview('p',{...f.plan,masterCompressor:c});assert.equal(r.ok,false);assert.equal(JSON.stringify(await f.repo.get('p')),before);assert.equal(f.a.finalExport.candidate,null)}
+ const f=fixture(),old=f.a.finalPlan(f.p,f.plan),bypass=f.a.finalPlan(f.p,{...f.plan,masterCompressor:{thresholdDb:-20,ratio:1,attackMs:10,releaseMs:100}});assert.deepEqual(plain(bypass),plain(old));
+});

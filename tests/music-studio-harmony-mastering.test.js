@@ -28,3 +28,17 @@ test('actual CAS transaction completion is awaited; cancellation aborts staged h
 test('IndexedDB quota failure retains harmony candidate and original project',async()=>{const f=await indexedHarmony();f.db.control.failPut=true;assert.equal((await f.a.productionSave('p','harmony')).ok,false);assert.deepEqual(plain(await f.repo.get('p')),plain(f.p));assert.ok(f.a.productionPreview.harmony);f.db.control.failPut=false;assert.equal((await f.a.productionSave('p','harmony')).ok,true)});
 
 test('candidate forms retain the actual selected Key, note range and mastering target',async()=>{const f=await ready(true);f.a.productionPreview.harmony=f.a.harmonyPreview(f.p,{...f.input,fromNote:2,toNote:3,steps:4,low:60,high:96});f.a.productionPreview.master=await f.a.masterPreview(f.p,f.p.pcmMix.assets[0].id,-18,-3);const html=f.a.productionView('p',f.p);assert.match(html,/name="first" type="number" value="2"/);assert.match(html,/name="last" type="number" value="3"/);assert.match(html,/<option value="4" selected>/);assert.match(html,/value="-18" required/);assert.match(html,/value="-3" required/)});
+
+test('quiet PCM master can exceed 24 dB without touching channel gain and survives save/backup',async()=>{
+ const f=await ready();f.p=f.a.pcmImport(f.p,tone(.001),'quiet.wav');await f.repo.put(f.p);f.a.state.projects=[f.p];const id=f.p.pcmMix.assets[0].id,c=await f.a.masterPreview(f.p,id,-18,-1);
+ assert.ok(c.gainDb>40,c.gainDb);assert.equal(c.targetReached,true);assert.equal(c.gainLimited,false);assert.equal(c.after.clippingSamples,0);assert.ok(c.after.truePeakDb<=-1+.002);
+ f.a.productionPreview.master=c;assert.equal((await f.a.productionSave('p','master')).ok,true);const q=await f.repo.get('p');assert.equal(q.pcmMix.assets[0].gains[0],0);assert.deepEqual(plain(q.pcmMix.assets[0].original),tone(.001));
+ const d=fixture();d.a.setRepository(d.a.memoryRepository());assert.equal((await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);assert.deepEqual(plain(d.a.state.projects[0].pcmMix),plain(q.pcmMix));
+});
+test('master plan distinguishes peak protection from bounded gain and rejects nonfinite measurements',()=>{
+ const {a}=fixture();let p=a.masterGainPlan({lufs:-65,truePeakDb:-60},-18,-1);assert.equal(p.gainDb,47);assert.equal(p.peakLimited,false);assert.equal(p.gainLimited,false);
+ p=a.masterGainPlan({lufs:-40,truePeakDb:-10},-18,-1);assert.equal(p.gainDb,9);assert.equal(p.peakLimited,true);
+ p=a.masterGainPlan({lufs:-65,truePeakDb:-60},-18,-1,30);assert.equal(p.gainDb,30);assert.equal(p.gainLimited,true);assert.equal(p.peakLimited,false);
+ for(const before of [{lufs:null,truePeakDb:-10},{lufs:-20,truePeakDb:NaN},{lufs:Infinity,truePeakDb:0}])assert.throws(()=>a.masterGainPlan(before,-18,-1));
+ assert.throws(()=>a.masterGainPlan({lufs:-20,truePeakDb:0},-18,-1,'0'));assert.throws(()=>a.masterGainPlan({lufs:-20,truePeakDb:0},-18,-1,61));
+});
