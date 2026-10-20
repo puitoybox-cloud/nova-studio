@@ -3445,6 +3445,23 @@
     masterPostGain(current+gainDb);
     return{gainDb,requested,peakLimited:peakRoom<requested-.01,gainLimited:60-current<Math.min(requested,peakRoom)-.01};
   }
+  async function masterConverge(gainDb,targetLufs,ceilingDb,render,measure,options={}){
+    let output,after,passes=0;
+    for(;passes<(options.exactSettings?1:3);passes++){
+      options.guard?.();masterPostGain(gainDb);output=await render(gainDb);options.guard?.();after=await measure(output);options.guard?.();
+      if(!Number.isFinite(after.lufs)||!Number.isFinite(after.truePeakDb))throw Error('master-output-loudness-unavailable');
+      const gap=targetLufs-after.lufs,room=ceilingDb-after.truePeakDb;
+      if(options.exactSettings||Math.abs(gap)<=.1&&room>=-.002&&!after.clippingSamples)break;
+      // Absolute gating can admit more quiet blocks after gain. Correct from the
+      // encoded output, always rendering again from the unchanged source/DSP.
+      const correction=Math.min(gap,room-.002,60-gainDb);
+      if(passes===2||Math.abs(correction)<.005||gainDb+correction< -60)break;
+      gainDb+=correction;
+    }
+    if(after.clippingSamples||after.truePeakDb>ceilingDb+.002)throw Error('master-output-ceiling-exceeded');
+    const targetReached=Math.abs(after.lufs-targetLufs)<=.1;
+    return{output,after,gainDb,passes:passes+1,targetReached,peakLimited:!targetReached&&after.truePeakDb>=ceilingDb-.05,gainLimited:!targetReached&&gainDb>=59.995};
+  }
   function masterOutputGain(pcm,gainDb){
     pcmValidate(pcm);const factor=10**(masterPostGain(gainDb)/20);
     const out={sampleRate:pcm.sampleRate,channels:pcm.channels.map(c=>c.map(v=>v*factor))};pcmValidate(out);return out;
@@ -3454,10 +3471,8 @@
     const asset=pcmMixValidate(project.pcmMix).assets.find(a=>a.id===assetId);if(!asset)throw Error('master-asset-missing');
     const source=pcmRenderAsset(asset),before=await masterMeasure([source],options);options.guard?.();if(before.lufs===null)throw Error('master-loudness-unavailable-silence-or-short');
     // Preserve dynamics: gain is capped by measured true peak, never hard clipping.
-    const {gainDb,peakLimited,gainLimited}=masterGainPlan(before,targetLufs,ceilingDb);
-    const output=masterOutputGain(source,gainDb),buffer=pcmEncodeWav(output),quantized=pcmDecodeWav(buffer),after=await masterMeasure([quantized],options);options.guard?.();
-    if(after.truePeakDb>ceilingDb+.002||after.clippingSamples)throw Error('master-output-ceiling-exceeded');
-    return{format:'nova-master-preview-v1',baseline:JSON.stringify(project),assetId,targetLufs,ceilingDb,gainDb,before,after,peakLimited,gainLimited,targetReached:Math.abs(after.lufs-targetLufs)<=.1,output:quantized};
+    const initial=masterGainPlan(before,targetLufs,ceilingDb),result=await masterConverge(initial.gainDb,targetLufs,ceilingDb,gain=>pcmDecodeWav(pcmEncodeWav(masterOutputGain(source,gain))),pcm=>masterMeasure([pcm],options),options);
+    return{format:'nova-master-preview-v1',baseline:JSON.stringify(project),assetId,targetLufs,ceilingDb,before,...result};
   }
   // Measure the saved long-WAV DSP path and actual quantized result in bounded chunks.
   const longMasterProof=new WeakMap();
@@ -3477,13 +3492,13 @@
       const before=await masterMeasure(pcmRenderLongWav(source,saved),{guard,progress});if(before.lufs===null)throw Error('master-loudness-unavailable-silence-or-short');
       const current=masterPostGain(saved.postGainDb),gain=masterGainPlan(before,targetLufs,ceilingDb,current);
       // Normalize after compression: do not change its detector/input or dynamics.
-      const settings=longMixSettings(options.versionSettings||{...saved,postGainDb:current+gain.gainDb},48000);
-      const result=await pcmRenderLongWavBlob(source,settings,16384,{guard,progress});guard();
-      const after=await masterMeasure(pcmDecodeWavStream(result.blob),{guard,progress});guard();
-      if(after.truePeakDb>ceilingDb+.002||after.clippingSamples)throw Error('master-output-ceiling-exceeded');
+      let settings=longMixSettings(options.versionSettings||{...saved,postGainDb:current+gain.gainDb},48000);
+      const corrected=await masterConverge(masterPostGain(settings.postGainDb),targetLufs,ceilingDb,g=>pcmRenderLongWavBlob(source,{...settings,postGainDb:g},16384,{guard,progress}),r=>masterMeasure(pcmDecodeWavStream(r.blob),{guard,progress}),{guard,exactSettings:!!options.versionSettings});
+      settings=longMixSettings({...settings,postGainDb:corrected.gainDb},48000);
+      const result=corrected.output,after=corrected.after;guard();
       if(after.frames!==asset.frames||after.channels!==asset.channels||result.sampleRate!==48000)throw Error('long-master-output-mismatch');
       if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-master-storage-conflict');guard();
-      const mastering={format:'nova-long-master-result-v1',sourceAssetId:assetId,targetLufs,ceilingDb,gainDb:masterPostGain(settings.postGainDb)-current,before,after,peakLimited:after.lufs<targetLufs-.1&&after.truePeakDb>ceilingDb-.1,gainLimited:!options.versionSettings&&gain.gainLimited,targetReached:Math.abs(after.lufs-targetLufs)<=.1};
+      const mastering={format:'nova-long-master-result-v1',sourceAssetId:assetId,targetLufs,ceilingDb,gainDb:masterPostGain(settings.postGainDb)-current,before,after,peakLimited:corrected.peakLimited,gainLimited:corrected.gainLimited,targetReached:corrected.targetReached,passes:corrected.passes};
       const candidate={ok:true,...result,baseline,assetId,name:asset.name,settings,mastering};
       longMasterProof.set(candidate,JSON.stringify({baseline,assetId,settings,mastering}));longMix.candidate=candidate;
       pcmEditor.message='長時間Master候補を作成しました。A/B比較後に保存してください。';return candidate;
@@ -3734,17 +3749,17 @@
       finalCheckCapacity(estimatedFrames,selected.length,plan);
       for(const [index,r] of selected.entries()){stage(`Preparing sources（音声素材を準備中） ${index+1}/${selected.length}`);sources.push(await finalSource(p,r,guard))}guard();
       const frames=Math.max(...sources.map(s=>s.start+s.frames));finalCheckCapacity(frames,sources.length,plan);
-      stage('Measuring mix（曲全体の音量を測定中）');const before=await masterMeasure(finalChunks(sources,frames,guard),{guard});if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=plan.masterCompressor?await masterMeasure(finalMasterChunks(sources,frames,guard,plan.masterCompressor),{guard}):before;const {gainDb,peakLimited,gainLimited}=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
+      stage('Measuring mix（曲全体の音量を測定中）');const before=await masterMeasure(finalChunks(sources,frames,guard),{guard});if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=plan.masterCompressor?await masterMeasure(finalMasterChunks(sources,frames,guard,plan.masterCompressor),{guard}):before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
       stage('Rendering mix（Mix音声を作成中）');const original=await finalWav(finalChunks(sources,frames,guard),guard); // fail closed if the user's pre-master mix clips
-      stage('Rendering master（Master音声を作成・検査中）');const master=await finalWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,gainDb),guard),after=await masterMeasure(pcmDecodeWavStream(master),{guard});
-      if(after.clippingSamples||after.truePeakDb>plan.ceilingDb+.002)throw Error('final-master-ceiling');
+      stage('Rendering master（Master音声を作成・検査中）');const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard),blob=>masterMeasure(pcmDecodeWavStream(blob),{guard}),{guard});
+      const master=corrected.output,after=corrected.after,gainDb=corrected.gainDb,peakLimited=corrected.peakLimited,gainLimited=corrected.gainLimited;
       const files=[{name:'Master.wav',blob:master},{name:'Mix.wav',blob:original}];
       if(!plan.mixMasterOnly){stage('Rendering stems（Instrumental・Stemを作成中）');
       for(const [role,name]of [['instrument','Instrumental.wav'],['vocal','Vocal-Stem.wav']]){const group=sources.filter(s=>s.role===role);if(group.length)files.push({name,blob:await finalWav(finalChunks(group,frames,guard),guard)})}
       for(const [i,s]of sources.entries())files.push({name:`${s.role==='vocal'?'Vocal':'Instrument'}-${i+1}.wav`,blob:await finalWav(finalChunks([s],frames,guard),guard)});
       }
       if(plan.includeMidi){const summary=midiExportSummary(p);if(!summary.validation.ok)throw Error('final-midi-invalid: '+summary.validation.errors.join(' '));files.push({name:'Song.mid',blob:root.MusicStudioMidi.createMidiBlob(root.MusicStudioMidi.createMidiFile(summary.input).bytes)})}
-      const manifest={format:'nova-final-package-v1',projectId:id,sourceRevision:p.revision,plan,frames,sampleRate:48000,channels:2,gainDb,before,...(plan.masterCompressor?{masterInput}:{}),after,peakLimited,gainLimited,targetReached:Math.abs(after.lufs-plan.targetLufs)<=.1,audioScope:'Explicit selected rendered audio; MIDI exported separately, no MIDI-to-audio synthesis',files:files.map(f=>({name:f.name,size:f.blob.size}))};
+      const manifest={format:'nova-final-package-v1',projectId:id,sourceRevision:p.revision,plan,frames,sampleRate:48000,channels:2,gainDb,before,...(plan.masterCompressor?{masterInput}:{}),after,peakLimited,gainLimited,targetReached:corrected.targetReached,passes:corrected.passes,audioScope:'Explicit selected rendered audio; MIDI exported separately, no MIDI-to-audio synthesis',files:files.map(f=>({name:f.name,size:f.blob.size}))};
       files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');guard(true);
       files.forEach(Object.freeze);Object.freeze(files);const candidate={baseline,plan,manifest,files,zip};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}

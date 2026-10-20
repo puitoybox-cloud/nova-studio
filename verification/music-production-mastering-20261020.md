@@ -23,3 +23,7 @@ Remaining: independent loudness/true-peak standards conformance and listening qu
 Next priority: finish original-spec requirement closure in a feature with only a small concrete software residual, including standalone runtime/connection and recovery. Do not spend the next increment on more listening fixtures.
 
 The eight-minute acceptance submits the real Export form, including bus controls, and verifies that those controls exist at all four widths. Intermediate-head CI is not attributed to the final head.
+
+## Encoded-output correction
+
+The 4226690 acoustic eight-minute run correctly failed its target requirement: -18.17338499 LUFS at -2.23740809 dBTP, clipping 0. The absolute loudness gate admits additional quiet blocks after amplification; a single pre-gain measurement does not guarantee the requested encoded-output LUFS. No tolerance was weakened. Short PCM, long Master and final bus now re-render from the unchanged source/DSP using measured output feedback, at most three passes, with 0.1 LU target tolerance and the existing 0.002 dB ceiling tolerance. Bounds, cancellation/stale guards and clipping rejection remain active on every pass. Exact saved version recall remains one-pass to preserve its settings. A real quiet PCM fixture with changing absolute gate membership reproduces the issue and passes after more than one render. Full corrected-source Node and new exact-head CI results are pending until explicitly recorded in the PR.

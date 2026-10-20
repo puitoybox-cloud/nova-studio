@@ -42,3 +42,8 @@ test('master plan distinguishes peak protection from bounded gain and rejects no
  for(const before of [{lufs:null,truePeakDb:-10},{lufs:-20,truePeakDb:NaN},{lufs:Infinity,truePeakDb:0}])assert.throws(()=>a.masterGainPlan(before,-18,-1));
  assert.throws(()=>a.masterGainPlan({lufs:-20,truePeakDb:0},-18,-1,'0'));assert.throws(()=>a.masterGainPlan({lufs:-20,truePeakDb:0},-18,-1,61));
 });
+
+test('encoded-output correction reaches target when absolute loudness gating changes after normalization',async()=>{
+ const f=await ready(),pcm={sampleRate:48000,channels:[Array.from({length:192000},(_,i)=>(i<48000?.0005:.0003)*Math.sin(2*Math.PI*997*i/48000))]};f.p=f.a.pcmImport(f.p,pcm,'gated-quiet.wav');
+ const c=await f.a.masterPreview(f.p,f.p.pcmMix.assets[0].id,-18,-1);assert.equal(c.targetReached,true);assert.ok(Math.abs(c.after.lufs+18)<=.1,c.after.lufs);assert.ok(c.passes>1,c.passes);assert.equal(c.after.clippingSamples,0);assert.ok(c.after.truePeakDb<=-.998);assert.deepEqual(plain(f.p.pcmMix.assets[0].original),pcm);
+});
