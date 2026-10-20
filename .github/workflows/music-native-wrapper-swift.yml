@@ -7,6 +7,7 @@ on:
       - agent/music-studio-current-main-build-verification
       - verification/music-studio-all-drafts-255
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'app.js'
       - 'index.html'
       - 'music-studio.html'

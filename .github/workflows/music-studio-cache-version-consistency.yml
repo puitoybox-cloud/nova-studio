@@ -6,6 +6,7 @@ on:
       - verification/music-studio-baseline-combined
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'index.html'
       - 'tests/music-studio-external-song-import.test.js'
       - 'tests/music-studio-home.test.js'

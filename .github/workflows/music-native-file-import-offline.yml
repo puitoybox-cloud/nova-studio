@@ -3,6 +3,7 @@ on:
   create:
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - music-studio.js
       - music-studio.css
       - scripts/music-vocal-edit-browser.js

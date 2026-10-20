@@ -2,6 +2,7 @@ name: NOVA downloadable AI listening samples
 on:
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'scripts/music-listening-*.js'
       - '.github/workflows/music-listening.yml'
   workflow_dispatch:

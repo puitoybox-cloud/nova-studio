@@ -2,6 +2,7 @@ name: Music Studio read-only dependencies
 on:
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'tools/music-audio-pipeline/*.py'
       - 'scripts/music-local-lifecycle*'
       - 'tests/music-studio-runtime-bootstrap.test.js'
