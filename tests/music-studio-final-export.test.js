@@ -30,3 +30,15 @@ test('ZIP CRC progress permits cancellation inside a file and a clean retry',asy
  await assert.rejects(a.finalZip(files,()=>{if(cancelled)throw Error('cancelled')},p=>{progress.push(p.completedBytes);cancelled=true}),/cancelled/);
  assert.deepEqual(progress,[65536]);const done=[];const zip=await a.finalZip(files,()=>{},p=>done.push(p));assert.equal(done.at(-1).ratio,1);assert.equal(done.at(-1).completedBytes,150000);assert.equal(zip.size,150108);
 });
+test('explicit Master/Mix-only export keeps the same audio and preserves selection through save, backup and retry',async()=>{
+ const f=fixture(),original=JSON.stringify(f.p.pcmMix),full=await f.a.finalPreview('p',f.plan);assert.equal(full.ok,true,full.error);
+ const expected=await full.candidate.files[0].blob.arrayBuffer(),r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:true});assert.equal(r.ok,true,r.error);
+ assert.deepEqual(plain(r.candidate.files.map(x=>x.name)),['Master.wav','Mix.wav','Manifest.json']);assert.deepEqual(await r.candidate.files[0].blob.arrayBuffer(),expected);
+ assert.equal((await f.a.finalSave('p')).ok,true);const stored=await f.repo.get('p');assert.equal(stored.finalExportPlan.mixMasterOnly,true);assert.equal(JSON.stringify(stored.pcmMix),original);
+ const g=fixture();g.a.setRepository(g.a.memoryRepository());assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);const copy=g.a.state.projects[0];assert.equal(copy.finalExportPlan.mixMasterOnly,true);assert.equal((await g.a.finalReplay(copy.projectId,copy.finalExportHistory[0].id)).ok,true);assert.deepEqual(plain(g.a.finalExport.candidate.files.map(x=>x.name)),['Master.wav','Mix.wav','Manifest.json']);
+ assert.match(f.a.finalView(stored),/name="mixMasterOnly" type="checkbox" checked/);
+});
+test('invalid compact selection cannot silently change package contents or weaken clipping protection',async()=>{
+ for(const value of ['true',1,null,{}]){const f=fixture();const r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:value});assert.equal(r.ok,false);assert.match(r.error,/final-output-selection/)}
+ const f=fixture();for(const a of f.p.pcmMix.assets)a.original.channels[0]=a.original.channels[0].map(x=>x*100);await f.repo.put(f.p);const r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:true});assert.equal(r.ok,false);assert.match(r.error,/clipping/);
+});
