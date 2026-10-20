@@ -255,3 +255,12 @@ test('stream render rejects clipping and never returns partial final Blob',async
  await assert.rejects(a.pcmRenderLongWavBlob(file,{gainDb:12},2),/wav-clipping-requires-lower-gain/);
  await assert.rejects(a.pcmRenderLongWavBlob(file,{compressor:{ratio:0,thresholdDb:-12,attackMs:1,releaseMs:50}},2),/invalid-pcm-compressor/);
 });
+
+test('read-ahead keeps PCM order across non-aligned windows with bounded encoded reads',async()=>{
+ const a=fixture().a,frames=600001,header=Buffer.from(a.pcmEncodeWav({sampleRate:48000,channels:[[0],[0]]})).subarray(0,44),raw=Buffer.alloc(44+frames*4);
+ header.copy(raw);raw.writeUInt32LE(raw.length-8,4);raw.writeUInt32LE(frames*4,40);
+ for(let i=0;i<frames;i++){raw.writeInt16LE(i%65536-32768,44+i*4);raw.writeInt16LE(32767-i%65536,46+i*4)}
+ const blob=new Blob([raw]),reads=[];const file={size:blob.size,slice(start,end){reads.push([start,end]);return blob.slice(start,end)},arrayBuffer(){throw Error('whole-file forbidden')}};
+ let at=0;for await(const pcm of a.pcmDecodeWavStream(file,30001)){assert.ok(pcm.channels[0].length<=30001);for(let i=0;i<pcm.channels[0].length;i++,at++){assert.equal(pcm.channels[0][i],(at%65536-32768)/32768);assert.equal(pcm.channels[1][i],(32767-at%65536)/32768)}}
+ assert.equal(at,frames);assert.equal(reads.filter(([start])=>start>=44).length,3);assert.ok(reads.every(([start,end])=>end-start<=1048576));
+});

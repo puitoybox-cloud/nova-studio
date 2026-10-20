@@ -123,7 +123,7 @@ test('proposals track measured amplitude and dynamics, without hardcoded setting
 test('analysis >2M frames only reads bounded slices and rejects a mid-analysis cancellation',async()=>{
  const f=await setup(),{a,p,repo}=f,raw=await wav(2100000).arrayBuffer(),view=new DataView(raw);for(let i=0;i<2100000;i++)view.setInt16(44+i*2,Math.round(10000*Math.sin(2*Math.PI*100*i/8000)),true);const file=new Blob([raw]);file.name='nonzero-long.wav';const r=await a.pcmImportLongFile(file,p.projectId),get=repo.getLongWav;let max=0,reads=0;
  repo.getLongWav=async id=>{const rec=await get(id),blob=rec.blob,slice=blob.slice.bind(blob);blob.arrayBuffer=()=>{throw Error('whole-read-forbidden')};blob.slice=(start,end)=>{max=Math.max(max,end-start);reads++;return slice(start,end)};return rec};
- const result=await a.longMixAnalyze(p.projectId,r.assetId);assert.equal(result.ok,true,result.error);assert.equal(result.before.frames,2100000);assert.ok(max<=1048576);assert.ok(reads>400);assert.equal(result.proposals[0].after.clippingSamples,0);
+ const result=await a.longMixAnalyze(p.projectId,r.assetId);assert.equal(result.ok,true,result.error);assert.equal(result.before.frames,2100000);assert.ok(max<=1048576);assert.ok(reads>0&&reads<100);assert.equal(result.proposals[0].after.clippingSamples,0);
  const before=JSON.stringify(await repo.get(p.projectId));repo.getLongWav=async id=>{const rec=await get(id),slice=rec.blob.slice.bind(rec.blob);let n=0;rec.blob.slice=(...args)=>{if(++n===12)a.longMixCancel();return slice(...args)};return rec};assert.equal((await a.longMixAnalyze(p.projectId,r.assetId)).ok,false);assert.equal(a.longMix.proposals,null);assert.equal(JSON.stringify(await repo.get(p.projectId)),before);
 });
 test('measured selection stale/conflict/quota/cancel never saves unreviewed settings',async()=>{
@@ -400,4 +400,12 @@ for(const phase of ['read','transaction'])test('archive forced boundary rejects 
  if(phase==='read'){const slice=archive.slice.bind(archive);let reads=0;archive.slice=(...args)=>{const part=slice(...args);if(++reads===3)dst.a.state.projects[0].productionNotes='new unsaved value';return part}}
  else{const restore=dst.repo.restoreLongArchive.bind(dst.repo);dst.repo.restoreLongArchive=async(...args)=>{dst.a.state.projects[0].productionNotes='new unsaved value';return restore(...args)}}
  const r=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,false);assert.match(r.error,/state-conflict/);assert.equal(JSON.stringify(await dst.repo.list()),before);assert.equal(dst.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(dst.a.state.projects[0].productionNotes,'new unsaved value');
+});
+
+for(const mode of ['mix','master'])test(`long ${mode} rejects in-place change at publication with frozen clock`,async()=>{
+ const f=await setup(),{a,p,repo}=f,r=await a.pcmImportLongFile(Object.assign(new Blob([a.pcmEncodeWav({sampleRate:48000,channels:[Array.from({length:24000},(_,i)=>.1*Math.sin(i*.1))]})]),{name:'48k.wav'}),p.projectId);f.w.performance={now:()=>0};
+ const original=JSON.stringify(await repo.get(p.projectId)),get=repo.get.bind(repo);let reads=0;
+ repo.get=async id=>{const v=await get(id);if(++reads===4)a.state.projects[0].productionNotes='changed during final read';return v};
+ const result=mode==='master'?await a.longMasterPreview(p.projectId,r.assetId,-18,-1):await a.longMixRender(p.projectId,r.assetId,{gainDb:0,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-18,ratio:1,attackMs:10,releaseMs:100}});
+ assert.equal(result.ok,false);assert.match(result.error,/stale/);assert.equal(JSON.stringify(await get(p.projectId)),original);assert.equal(a.longMix.candidate,null);
 });

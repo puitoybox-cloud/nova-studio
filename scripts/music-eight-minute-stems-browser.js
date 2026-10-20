@@ -44,6 +44,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   if(JSON.stringify(mix.candidate.files.map(x=>x.name))!==JSON.stringify(['Master.wav','Mix.wav','Song.mid','Manifest.json']))throw Error('compact package files');
   if(saved.hq&&!mix.candidate.manifest.targetReached)throw Error('acoustic compressed master missed target: '+JSON.stringify(mix.candidate.manifest.after));
   if(!mix.candidate.manifest.targetReached&&!mix.candidate.manifest.peakLimited)throw Error('unexplained master loudness shortfall');
+  console.log('Stem metrics '+JSON.stringify({mixPerformance:mix.candidate.performance}));
   const master=mix.candidate.files[0].blob,masterHash=await hash(master),mastering=mix.candidate.manifest.after,masterBytes=master.size,masterZipBytes=mix.candidate.zip.size;
   if(mix.candidate.manifest.frames!==assets[0].frames||mastering.clippingSamples||mastering.truePeakDb>-.998)throw Error('master length or clipping');
   await timed('save-four-stem-mix-plan',()=>a.finalSave(p.projectId));
@@ -53,9 +54,10 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   retry.zip=null;retry.files=null;a.openWorkAction('export',copy.projectId);await new Promise(r=>setTimeout(r,50));
   if(copy.finalExportPlan?.mixMasterOnly!==true)throw Error('restored compact setting missing');
   const again=await timed('restored-four-stem-mix-master',()=>a.finalPreview(copy.projectId,copy.finalExportPlan));
+  console.log('Stem metrics '+JSON.stringify({restoredMixPerformance:again.candidate.performance}));
   if(await hash(again.candidate.files[0].blob)!==masterHash)throw Error('restored master changed');
 
-  return{steps,assets:hashes,masterBytes,masterZipBytes,mastering,masterPlan:mixPlan,restoredMasterEqual:true,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
+  return{steps,assets:hashes,masterHash,masterBytes,masterZipBytes,mastering,masterPlan:mixPlan,restoredMasterEqual:true,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
  },saved);
  report.layout=[];for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});const view=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,compactOption:!!document.querySelector('[name=mixMasterOnly]'),masterDynamics:!!document.querySelector('[name=masterDynamics]')}));if(view.overflow||!view.compactOption||!view.masterDynamics)throw Error('export layout');report.layout.push(view)}
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
