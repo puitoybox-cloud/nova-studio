@@ -354,3 +354,5 @@ test('large durable reconstruction bounds each raw-byte Blob transport to one Mi
  record.format='nova-long-binary-chunks-v1';record.parts=await Promise.all(durableParts.map(async p=>new Uint8Array(await p.arrayBuffer())));
  const legacy=await f.a.pcmLoadLongWav(f.p.projectId,saved.assetId);assert.equal(largest,1048576);assert.deepEqual(Buffer.from(await legacy.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
 });
+
+test('MIDI PCM render rejects a nested edit before binary publication when the check clock does not advance',async()=>{const f=await renderSetup();f.w.performance={now:()=>0};f.w.MusicStudioAudio.renderMidi=async()=>{f.a.state.projects[0].midiData.tracks[0].notes[0].velocity=11;return{buffer:{getChannelData:()=>new Float32Array(48000).fill(.01)},frames:48000,sampleRate:48000,channels:2,seconds:1,tail:0,noteCount:1,trackIds:['melody']}};const result=await f.a.midiRenderForMix(f.p.projectId);assert.equal(result.ok,false);assert.match(result.error,/stale/);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0)});
