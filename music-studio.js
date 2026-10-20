@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.193';
+  const ASSET_VERSION='1.4.194';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -116,13 +116,14 @@
       fileReferences:Array.isArray(input.fileReferences)?clone(input.fileReferences):[],integrations:{dreamArchitect:[],novaStudio:[],logicPro:[]},
       legacy:{sourceFormat:null,sourceVersion:null,extensions:{}},createdAt:input.createdAt||timestamp,updatedAt:input.updatedAt||timestamp
     };
-    const preserve=['sections','chordProgressions','melodies','instruments','midiAssets','audioAssets','lyrics','syllableAssignments','soundSelections','plugins','mixNotes','masteringNotes','productionHistory','integrations','legacy','midiData','importSource','aiWorkspace','pcmMix','finalExportPlan','finalExportHistory','finalExportDeliveries','vocalWorkspace','longWavAssets','longMasterWorkspace','vocalInputProfiles','instrumentLibrary'];
+    const preserve=['sections','chordProgressions','melodies','instruments','midiAssets','audioAssets','lyrics','syllableAssignments','soundSelections','plugins','mixNotes','masteringNotes','productionHistory','integrations','legacy','midiData','importSource','aiWorkspace','pcmMix','finalExportPlan','finalExportHistory','finalExportDeliveries','vocalWorkspace','longWavAssets','longMasterWorkspace','vocalInputProfiles','instrumentLibrary','songVersions','vocalReplacement','vocalComp'];
     preserve.forEach(key=>{if(input[key]!=null)project[key]=clone(input[key])});
     return project;
   }
   function validateProject(value){
     const errors=[];
     if(!value||typeof value!=='object'||Array.isArray(value))return{valid:false,errors:['JSONのルートがオブジェクトではありません。']};
+    if(value.songVersions!==undefined)try{versionValidate(value)}catch(e){errors.push(e.message)}
     if(value.format!==FORMAT)errors.push(`形式は ${FORMAT} である必要があります。`);
     if(value.vocalInputProfiles!==undefined)try{vocalInputProfiles(value)}catch(e){errors.push(e.message)}
     if(value.vocalWorkspace!==undefined)try{vocalWorkspace(value)}catch(e){errors.push(e.message)}
@@ -147,6 +148,103 @@
     if(Array.isArray(value.longWavAssets))for(const asset of value.longWavAssets){if(asset?.vocalTake)try{vocalHistory(asset)}catch(e){errors.push(e.message)}if(asset?.mixVersions!==undefined)try{longMixVersionsValidate(asset)}catch(e){errors.push(e.message)}}
     for(const field of ['createdAt','updatedAt'])if(typeof value[field]!=='string'||Number.isNaN(Date.parse(value[field])))errors.push(`${field}はISO 8601日時である必要があります。`);
     return{valid:errors.length===0,errors};
+  }
+  // Explicit song checkpoints are separate from autosave and the MIDI edit stack.
+  // Snapshots never contain this ledger, so archives have a bounded, flat graph.
+  const VERSION_FORMAT='nova-song-checkpoints-v1';
+  const VERSION_GROUPS={
+    music:['musicalSettings','sections','chordProgressions','melodies','instruments','midiAssets','lyrics','syllableAssignments','soundSelections','plugins','midiData','importSource','aiWorkspace','instrumentLibrary'],
+    audio:['audioAssets','fileReferences','pcmMix','longWavAssets','vocalWorkspace','vocalReplacement','vocalComp','vocalInputProfiles','longMasterWorkspace','mixNotes','masteringNotes','finalExportPlan'],
+    notes:['productionNotes'],
+    details:['projectName','songTitle','purpose','status']
+  };
+  const versionPanel={open:false,busy:false,preview:null,message:'',generation:0,abort:null};
+  const versionProof=new WeakMap();
+  function versionSnapshot(p){const s=clone(p);delete s.songVersions;return s}
+  function versionSnapshots(p){const v=p.songVersions;if(!v)return[];return[...v.checkpoints.map(c=>c.snapshot),...v.operations.flatMap(o=>[o.before,o.after])]}
+  function versionValidate(p){
+    const v=p.songVersions;if(v===undefined)return;
+    if(v?.format!==VERSION_FORMAT||!Array.isArray(v.checkpoints)||v.checkpoints.length>32||!Array.isArray(v.operations)||v.operations.length>32||!Array.isArray(v.path)||v.path.length>32||!Number.isInteger(v.cursor)||v.cursor<0||v.cursor>v.path.length)throw Error('checkpoint-ledger-invalid');
+    const ids=new Set();
+    for(const item of [...v.checkpoints,...v.operations]){if(typeof item.id!=='string'||!item.id||ids.has(item.id)||typeof item.createdAt!=='string'||Number.isNaN(Date.parse(item.createdAt)))throw Error('checkpoint-entry-invalid');ids.add(item.id)}
+    if(v.operations.some(o=>!Array.isArray(o.groups)||!o.groups.length||new Set(o.groups).size!==o.groups.length||o.groups.some(k=>!Object.hasOwn(VERSION_GROUPS,k))||!v.checkpoints.some(c=>c.id===o.checkpointId)))throw Error('checkpoint-operation-invalid');
+    if(v.checkpoints.some(c=>c.sourceRevision!==c.snapshot?.revision||typeof c.name!=='string'||!c.name.trim()||c.name.length>120))throw Error('checkpoint-name-invalid');
+    if(new Set(v.path).size!==v.path.length||v.path.some(id=>!v.operations.some(o=>o.id===id)))throw Error('checkpoint-path-invalid');
+    for(const s of versionSnapshots(p)){
+      if(!s||Object.hasOwn(s,'songVersions')||s.projectId!==p.projectId||!validateProject(s).valid)throw Error('checkpoint-snapshot-invalid');
+      const preflight=restorePreflight({format:BACKUP_FORMAT,version:BACKUP_VERSION,projects:[s]},{settings:false});
+      if(preflight.errors.some(e=>!e.endsWith('long-wav-binary-backup-not-supported')))throw Error('checkpoint-snapshot-data-invalid');
+    }
+    if(pcmJsonBytes(p)>PCM_JSON_LIMIT)throw Error('checkpoint-project-capacity');
+  }
+  function versionLedger(p){versionValidate(p);return clone(p.songVersions||{format:VERSION_FORMAT,checkpoints:[],operations:[],path:[],cursor:0})}
+  function versionRebind(p,suffix=''){for(const s of versionSnapshots(p)){s.projectId=p.projectId;if(suffix)s.projectName+=suffix;if(s.aiWorkspace)s.aiWorkspace=rebindAIWorkspace(s.aiWorkspace,s.projectId,s.revision)}return p}
+  function versionContent(p){const s=versionSnapshot(p);delete s.revision;delete s.updatedAt;delete s.createdAt;delete s.projectId;delete s.finalExportHistory;delete s.finalExportDeliveries;if(s.aiWorkspace){delete s.aiWorkspace.baseRevision;delete s.aiWorkspace.updatedAt}return JSON.stringify(s)}
+  function versionTouch(p){p.revision++;p.updatedAt=now();if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);return p}
+  function versionCapture(p,name){
+    const v=versionLedger(p);name=String(name||'').trim();if(!name||name.length>120)throw Error('checkpoint-name-invalid');if(v.checkpoints.length>=32)throw Error('checkpoint-capacity-backup-required');
+    const next=clone(p);v.checkpoints.push({id:uuid(),name,createdAt:now(),sourceRevision:p.revision,snapshot:versionSnapshot(p)});next.songVersions=v;versionTouch(next);versionValidate(next);return next;
+  }
+  function versionCompare(p,checkpointId){
+    const c=versionLedger(p).checkpoints.find(c=>c.id===checkpointId);if(!c)throw Error('checkpoint-not-found');
+    const groups=Object.entries(VERSION_GROUPS).map(([key,fields])=>({key,fields:fields.filter(f=>JSON.stringify(p[f])!==JSON.stringify(c.snapshot[f]))}));
+    return{id:c.id,name:c.name,createdAt:c.createdAt,sourceRevision:c.sourceRevision,groups};
+  }
+  function versionCompose(p,checkpointId,groups){
+    const v=versionLedger(p),c=v.checkpoints.find(c=>c.id===checkpointId);
+    if(!c||!Array.isArray(groups)||!groups.length||new Set(groups).size!==groups.length||groups.some(k=>!Object.hasOwn(VERSION_GROUPS,k)))throw Error('checkpoint-selection-invalid');
+    // MIDI, lyrics, AI candidates and sound bindings move together. Cross-domain
+    // adoption is refused when its source dependency domain has changed.
+    const comparable=(p,f)=>{const v=p[f]===undefined?undefined:clone(p[f]);if(f==='aiWorkspace'&&v){delete v.baseRevision;delete v.updatedAt}return JSON.stringify(v)};
+    const same=key=>VERSION_GROUPS[key].every(f=>comparable(p,f)===comparable(c.snapshot,f));
+    if(groups.includes('music')&&!groups.includes('audio')&&!same('audio')||groups.includes('audio')&&!groups.includes('music')&&!same('music'))throw Error('checkpoint-select-music-and-audio-together');
+    const next=clone(p);for(const key of groups)for(const field of VERSION_GROUPS[key]){if(Object.hasOwn(c.snapshot,field))next[field]=clone(c.snapshot[field]);else delete next[field]}
+    if(versionContent(next)===versionContent(p))throw Error('checkpoint-no-changes');
+    if(v.operations.length>=32)throw Error('checkpoint-history-capacity-backup-required');
+    // Abandoned redo branches remain in operations and in complete backups.
+    const entry={id:uuid(),createdAt:now(),checkpointId,groups:clone(groups),before:versionSnapshot(p),after:versionSnapshot(next)};
+    v.operations.push(entry);v.path=v.path.slice(0,v.cursor);v.path.push(entry.id);v.cursor=v.path.length;next.songVersions=v;versionTouch(next);versionValidate(next);return next;
+  }
+  function versionStep(p,direction){
+    if(![-1,1].includes(direction))throw Error('checkpoint-history-direction');
+    const v=versionLedger(p),index=direction<0?v.cursor-1:v.cursor;if(index<0||index>=v.path.length)throw Error('checkpoint-history-boundary');
+    const op=v.operations.find(o=>o.id===v.path[index]),expected=direction<0?op.after:op.before;
+    if(versionContent(p)!==versionContent(expected))throw Error('checkpoint-history-conflict');
+    const s=direction<0?op.before:op.after,next={...clone(s),revision:p.revision,createdAt:p.createdAt,songVersions:v};for(const field of ['finalExportHistory','finalExportDeliveries']){if(p[field]!==undefined)next[field]=clone(p[field]);else delete next[field]}v.cursor+=direction;versionTouch(next);versionValidate(next);return next;
+  }
+  function versionCancel(){versionPanel.generation++;versionPanel.abort?.(Error('checkpoint-cancelled'));versionPanel.preview=null;versionPanel.message='Checkpoint（操作を取り消しました）';requestPaint()}
+  async function versionCommit(id,change,options={}){
+    if(versionPanel.busy)return{ok:false,error:'checkpoint-busy'};
+    const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=versionPanel.generation;
+    const guard=()=>{if(options.signal?.aborted||token!==versionPanel.generation||repository!==target||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.stopping||state.midiInput.countingIn||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||finalExport.busy||shutdownPromise)throw Error('checkpoint-unsaved-busy-or-stale')};
+    guard.registerAbort=a=>{versionPanel.abort=a};guard.clearAbort=()=>{versionPanel.abort=null};
+    versionPanel.open=true;versionPanel.busy=true;requestPaint();const cancel=()=>versionPanel.abort?.(Error('checkpoint-cancelled'));options.signal?.addEventListener?.('abort',cancel,{once:true});
+    try{
+      guard();if(!p||!target.compareAndPut)throw Error('checkpoint-atomic-storage-required');
+      const next=change(p);guard();const check=validateProject(next);if(!check.valid)throw Error(check.errors.join(';'));
+      // Authenticate every retained checkpoint/history binary before publication.
+      archiveValidateProjects([next]);
+      for(const s of [next,...versionSnapshots(next)]){if(root.MusicStudioInstruments?.inventory(s).some(a=>a.missing))throw Error('checkpoint-instrument-dependency-missing')}
+      editorStopMelody(false);pcmStop();longMixStop();vocalPlaybackStop();
+      const binaries=[...new Map(archiveBinaries(next).map(a=>[a.id,a])).values()];
+      for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt')}
+      await archiveCapacity(pcmJsonBytes(next),guard);guard();await target.compareAndPut(next,baseline,guard);
+      state.projects=state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
+      versionPanel.preview=null;finalInvalidate();versionPanel.message='Checkpoint（保存しました。元データと履歴は保持しています）';return{ok:true,project:next};
+    }catch(e){versionPanel.message='Checkpoint：'+e.message;return{ok:false,error:e.message}}finally{options.signal?.removeEventListener?.('abort',cancel);versionPanel.busy=false;versionPanel.abort=null;requestPaint()}
+  }
+  async function versionSave(id,name,options){return versionCommit(id,p=>versionCapture(p,name),options)}
+  function versionPreview(id,checkpointId,groups){
+    try{const p=state.projects.find(p=>p.projectId===id);if(!p)throw Error('checkpoint-project-missing');const next=versionCompose(p,checkpointId,groups),preview={projectId:id,checkpointId,groups:clone(groups),comparison:versionCompare(p,checkpointId)};versionProof.set(preview,{baseline:JSON.stringify(p),next,proof:JSON.stringify(preview)});versionPanel.preview=preview;versionPanel.message='Compare（変更範囲を確認して採用してください）';requestPaint();return{ok:true,preview}}
+    catch(e){versionPanel.preview=null;versionPanel.message=e.message;requestPaint();return{ok:false,error:e.message}}
+  }
+  async function versionApply(id,options){const preview=versionPanel.preview,proof=preview&&versionProof.get(preview);return versionCommit(id,p=>{if(!proof||preview.projectId!==id||proof.baseline!==JSON.stringify(p)||proof.proof!==JSON.stringify(preview))throw Error('checkpoint-preview-stale');return clone(proof.next)},options)}
+  async function versionUndoRedo(id,direction,options){return versionCommit(id,p=>versionStep(p,direction),options)}
+  function versionSubmit(event,id){event.preventDefault();return versionSave(id,event.currentTarget.elements.checkpointName.value)}
+  function versionPreviewSubmit(event,id){event.preventDefault();const f=event.currentTarget;return versionPreview(id,f.elements.checkpointId.value,Array.from(f.querySelectorAll('[name=checkpointGroup]:checked'),x=>x.value))}
+  function versionView(p){
+    let v;try{v=versionLedger(p)}catch(e){return`<p role="alert">${escapeHtml(e.message)}</p>`}const id=JSON.stringify(p.projectId),h=escapeHtml,disabled=versionPanel.busy?' disabled':'',preview=versionPanel.preview?.projectId===p.projectId?versionPanel.preview:null;
+    return`<details class="music-project-details music-song-versions"${versionPanel.open?' open':''} ontoggle="MusicStudio.versionPanel.open=this.open"><summary>Checkpoints（曲の比較・部分採用）</summary><p>通常保存・自動保存とは別の明示的な候補版です。音楽・音声は依存関係をまとめて採用します。元曲を任意の過去状態へ巻き戻す操作ではありません。各32件まで。上限時は完全Backupを保存してください。</p><form onsubmit="${h(`MusicStudio.versionSubmit(event,${id})`)}"><label>Name（チェックポイント名）<input name="checkpointName" maxlength="120" required${disabled}></label><button class="music-primary"${disabled}>Create（候補版を保存）</button></form>${v.checkpoints.length?`<form onsubmit="${h(`MusicStudio.versionPreviewSubmit(event,${id})`)}"><label>Checkpoint（候補版）<select name="checkpointId"${disabled}>${v.checkpoints.map(c=>`<option value="${h(c.id)}">${h(c.name)} · ${h(c.createdAt)} · r${h(c.sourceRevision)}</option>`).join('')}</select></label><fieldset${disabled}><legend>Parts（採用する部分）</legend>${[['music','Music（MIDI・コード・歌詞・AI候補・音源設定）'],['audio','Audio / Mix（音声・編集・Mix・Master設定）'],['notes','Notes（制作メモ）'],['details','Details（曲名・目的・状態）']].map(([key,label])=>`<label style="display:block;min-height:44px"><input type="checkbox" name="checkpointGroup" value="${key}">${label}</label>`).join('')}</fieldset><button class="music-secondary"${disabled}>Compare（比較する）</button></form>`:''}${preview?`<p>Candidate（候補）: ${h(preview.comparison.name)}</p><ul>${preview.comparison.groups.filter(g=>preview.groups.includes(g.key)).map(g=>`<li>${h(g.key)}: ${h(g.fields.join(', ')||'変更なし')}</li>`).join('')}</ul><button class="music-primary"${disabled} onclick="${h(`MusicStudio.versionApply(${id})`)}">Adopt（選択部分を採用・保存）</button>`:''}<div class="music-form-actions"><button class="music-secondary"${disabled||v.cursor===0?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},-1)`)}">Undo adoption（部分採用を戻す）</button><button class="music-secondary"${disabled||v.cursor===v.path.length?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},1)`)}">Redo adoption（部分採用をやり直す）</button><button class="music-secondary" onclick="MusicStudio.versionCancel()">Cancel（取消）</button></div><p role="status">${h(versionPanel.message)}</p></details>`;
   }
   function rebindAIWorkspace(value,projectId,revision){if(!value)return null;const copy=clone(value);copy.projectId=projectId;copy.baseRevision=revision;copy.updatedAt=now();return copy}
 
@@ -190,7 +288,7 @@
           }
         }
       }
-      if(p.longWavAssets?.length)errors.push(`${prefix}: long-wav-binary-backup-not-supported`);
+      if(p.longWavAssets?.length||versionSnapshots(p).some(s=>s.longWavAssets?.length))errors.push(`${prefix}: long-wav-binary-backup-not-supported`);
       const identities=new Map(),assets=[];
       for(const field of ['midiAssets','audioAssets','fileReferences']){
         if(p[field]!==undefined&&!Array.isArray(p[field])){errors.push(`${prefix}: malformed-${field}`);continue}
@@ -226,7 +324,7 @@
     for(const source of sources){const incoming=clone(source);if(used.has(incoming.projectId)){
       let candidate;for(let attempt=0;attempt<100;attempt++){candidate=uuid();if(!used.has(candidate))break;candidate=null}if(!candidate)throw Error('restore-id-collision');
       incoming.projectId=candidate;incoming.projectName=`${incoming.projectName}（復元）`;incoming.createdAt=now();if(incoming.aiWorkspace)incoming.aiWorkspace=rebindAIWorkspace(incoming.aiWorkspace,incoming.projectId,incoming.revision);
-    }used.add(incoming.projectId);incoming.updatedAt=now();items.push(incoming)}return items;
+    }versionRebind(incoming,incoming.projectId!==source.projectId?'（復元）':'');used.add(incoming.projectId);incoming.updatedAt=now();items.push(incoming)}return items;
   }
   function assertRestoreCurrent(control){const reason=control?.reason?.();if(reason)throw Error(reason)}
   let restoreOperation=null;
@@ -268,7 +366,7 @@
       }catch(error){if(transaction)abort(error);else finish(error)}
     }))}
     function compareAndPut(item,baseline,guard){const value=clone(item);return database.then(db=>new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE_NAME,'readwrite'),store=tx.objectStore(STORE_NAME);let failure=null;
+      const tx=db.transaction(STORE_NAME,'readwrite',{durability:'strict'}),store=tx.objectStore(STORE_NAME);let failure=null;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){guard?.clearAbort?.();reject(failure)}};
       guard?.registerAbort?.(abort);
       tx.onabort=()=>{guard?.clearAbort?.();reject(failure||tx.error||Error('lyrics-save-aborted'))};tx.onerror=()=>abort(tx.error||Error('lyrics-save-failed'));tx.oncomplete=()=>{guard?.clearAbort?.();resolve(clone(value))};
@@ -399,7 +497,7 @@
   function createView(){const d=state.settings?.projectDefaults||defaultSettings().projectDefaults;const project=makeProject({projectName:'',bpm:d.bpm,timeSignature:d.timeSignature,key:d.key,status:d.status,purpose:d.purpose,productionNotes:d.notes});return `<main class="music-studio-shell music-project-page" aria-labelledby="musicCreateTitle">${flowNavigation('プロジェクト一覧','MusicStudio.goProjects()','プロジェクト一覧','MusicStudio.goProjects()')}${noticeView()}<section class="music-project-panel"><p class="music-kicker">New project（新規プロジェクト）</p><h1 id="musicCreateTitle">新しい音楽プロジェクト</h1><p class="music-lead">入力内容はMusic Studio専用領域へ保存されます。</p><form id="musicProjectForm" oninput="MusicStudio.markDirty()" onsubmit="MusicStudio.submitCreate(event)">${formFields(project)}<div class="music-form-actions"><button class="music-primary" type="submit">作成して保存</button><button class="music-secondary" type="button" onclick="MusicStudio.cancelEdit()">キャンセル</button><span class="music-save-state" data-dirty="${state.dirty}" aria-live="polite">${state.dirty?'未保存の変更があります':'未変更'}</span></div></form></section></main>`}
   function projectRow(project){return `<article class="music-project-row"><div><h2>${escapeHtml(project.projectName)}</h2><p>${escapeHtml(project.songTitle||'曲名未設定')} · ${escapeHtml(PROJECT_STATUS_LABELS[project.status]||project.status)} · BPM ${escapeHtml(project.musicalSettings?.bpm)} · ${escapeHtml(project.musicalSettings?.key||'キー未設定')}</p><small>最終更新：${formatDate(project.updatedAt)}</small></div><button class="music-primary" onclick="MusicStudio.openProject('${escapeHtml(project.projectId)}')">開く</button></article>`}
   function listView(){const query=state.search.trim().toLocaleLowerCase('ja');const items=state.projects.filter(project=>!query||[project.projectName,project.songTitle,project.purpose].some(value=>String(value||'').toLocaleLowerCase('ja').includes(query))).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));return `<main class="music-studio-shell music-project-page" aria-labelledby="musicProjectsTitle">${flowNavigation('Music Studioホーム','MusicStudio.goHome()','新しい音楽プロジェクト','MusicStudio.goNew()')}${noticeView()}<section class="music-project-panel"><div class="music-section-heading"><div><p class="music-kicker">Projects（プロジェクト一覧）</p><h1 id="musicProjectsTitle">音楽プロジェクト</h1></div><button class="music-primary" onclick="MusicStudio.goNew()">＋ 新規作成</button></div><label class="music-search" for="musicProjectSearch">プロジェクトを検索<input id="musicProjectSearch" type="search" value="${escapeHtml(state.search)}" placeholder="プロジェクト名・曲名・使用作品" oninput="MusicStudio.searchProjects(this.value)"></label><div class="music-project-list">${state.loaded?(items.map(projectRow).join('')||`<div class="music-empty"><p>${query?'検索条件に一致するプロジェクトはありません。':'プロジェクトはまだありません。'}</p><button class="music-primary" onclick="MusicStudio.goNew()">最初のプロジェクトを作る</button></div>`):'<p class="music-empty">プロジェクトを読み込んでいます…</p>'}</div><div class="music-import-box"><label for="musicProjectImport">JSONから読み込む<input id="musicProjectImport" type="file" accept="application/json,.json" onchange="MusicStudio.importFile(this.files[0]);this.value=''" hidden></label><button class="music-secondary" onclick="document.querySelector('#musicProjectImport').click()">JSONを読み込む</button><p>既存データを消さず、Version 1形式を新規または複製として追加します。</p></div></section></main>`}
-  function editView(id){const project=state.projects.find(item=>item.projectId===id);if(!project)return `<main class="music-studio-shell music-project-page">${flowNavigation('プロジェクト一覧','MusicStudio.goProjects()','Music Studioホーム','MusicStudio.goHome()')}<div class="music-empty"><h1>プロジェクトが見つかりません</h1><p>削除済みか、URLが正しくない可能性があります。</p><button class="music-primary" onclick="MusicStudio.goProjects()">一覧へ戻る</button></div></main>`;return `<main class="music-studio-shell music-project-page" aria-labelledby="musicEditTitle">${flowNavigation('プロジェクト一覧','MusicStudio.goProjects()','Melody制作',`MusicStudio.openPart('${escapeHtml(project.projectId)}','melody')`)}${noticeView()}<section class="music-project-panel"><div class="music-section-heading"><div><p class="music-kicker">Project（プロジェクト）</p><h1 id="musicEditTitle">${escapeHtml(project.projectName)}</h1><p>作成：${formatDate(project.createdAt)} / 更新：${formatDate(project.updatedAt)} / Revision ${project.revision}</p></div></div><details class="music-project-details"><summary>Project settings（曲の設定）</summary><form id="musicProjectForm" oninput="MusicStudio.markDirty()" onsubmit="MusicStudio.submitEdit(event,'${escapeHtml(project.projectId)}')">${formFields(project)}<div class="music-form-actions"><button class="music-primary" type="submit">変更を保存</button><button class="music-secondary" type="button" onclick="MusicStudio.cancelEdit('${escapeHtml(project.projectId)}')">キャンセル</button><span class="music-save-state" data-dirty="${state.dirty}">${state.dirty?'未保存の変更があります':'保存済み'}</span></div></form>${referenceFilesView(project)}</details>${vocalView(project)}<details class="music-project-details"><summary>Project tools（読み込み・バックアップ・管理）</summary><div class="music-project-tools"><button class="music-primary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','melody')">Melody制作を開く</button><button class="music-secondary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','drums')">Drums制作を開く</button><button class="music-secondary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','bass')">Bass制作を開く</button><button class="music-secondary" onclick="MusicStudio.openMidiEditor('${escapeHtml(project.projectId)}')">共通MIDIエディター</button><button class="music-secondary" onclick="MusicStudio.openLogicPro('${escapeHtml(project.projectId)}')">MIDI読み込み・Logic Pro</button><button class="music-secondary" onclick="MusicStudio.pcmOpen('${escapeHtml(project.projectId)}')">Mix / Gain（音声の音量処理）</button><button class="music-secondary" onclick="MusicStudio.openLyricsAssignment('${escapeHtml(project.projectId)}')">Lyrics / Notes（歌詞割付）</button><button class="music-secondary" onclick="MusicStudio.duplicateProject('${escapeHtml(project.projectId)}')">複製</button><button class="music-secondary" onclick="MusicStudio.exportProject('${escapeHtml(project.projectId)}')">JSON書き出し</button><button class="music-danger" onclick="MusicStudio.askDelete('${escapeHtml(project.projectId)}')">このプロジェクトを削除</button></div></details></section></main>`}
+  function editView(id){const project=state.projects.find(item=>item.projectId===id);if(!project)return `<main class="music-studio-shell music-project-page">${flowNavigation('プロジェクト一覧','MusicStudio.goProjects()','Music Studioホーム','MusicStudio.goHome()')}<div class="music-empty"><h1>プロジェクトが見つかりません</h1><p>削除済みか、URLが正しくない可能性があります。</p><button class="music-primary" onclick="MusicStudio.goProjects()">一覧へ戻る</button></div></main>`;return `<main class="music-studio-shell music-project-page" aria-labelledby="musicEditTitle">${flowNavigation('プロジェクト一覧','MusicStudio.goProjects()','Melody制作',`MusicStudio.openPart('${escapeHtml(project.projectId)}','melody')`)}${noticeView()}<section class="music-project-panel"><div class="music-section-heading"><div><p class="music-kicker">Project（プロジェクト）</p><h1 id="musicEditTitle">${escapeHtml(project.projectName)}</h1><p>作成：${formatDate(project.createdAt)} / 更新：${formatDate(project.updatedAt)} / Revision ${project.revision}</p></div></div><details class="music-project-details"><summary>Project settings（曲の設定）</summary><form id="musicProjectForm" oninput="MusicStudio.markDirty()" onsubmit="MusicStudio.submitEdit(event,'${escapeHtml(project.projectId)}')">${formFields(project)}<div class="music-form-actions"><button class="music-primary" type="submit">変更を保存</button><button class="music-secondary" type="button" onclick="MusicStudio.cancelEdit('${escapeHtml(project.projectId)}')">キャンセル</button><span class="music-save-state" data-dirty="${state.dirty}">${state.dirty?'未保存の変更があります':'保存済み'}</span></div></form>${referenceFilesView(project)}</details>${versionView(project)}${vocalView(project)}<details class="music-project-details"><summary>Project tools（読み込み・バックアップ・管理）</summary><div class="music-project-tools"><button class="music-primary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','melody')">Melody制作を開く</button><button class="music-secondary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','drums')">Drums制作を開く</button><button class="music-secondary" onclick="MusicStudio.openPart('${escapeHtml(project.projectId)}','bass')">Bass制作を開く</button><button class="music-secondary" onclick="MusicStudio.openMidiEditor('${escapeHtml(project.projectId)}')">共通MIDIエディター</button><button class="music-secondary" onclick="MusicStudio.openLogicPro('${escapeHtml(project.projectId)}')">MIDI読み込み・Logic Pro</button><button class="music-secondary" onclick="MusicStudio.pcmOpen('${escapeHtml(project.projectId)}')">Mix / Gain（音声の音量処理）</button><button class="music-secondary" onclick="MusicStudio.openLyricsAssignment('${escapeHtml(project.projectId)}')">Lyrics / Notes（歌詞割付）</button><button class="music-secondary" onclick="MusicStudio.duplicateProject('${escapeHtml(project.projectId)}')">複製</button><button class="music-secondary" onclick="MusicStudio.exportProject('${escapeHtml(project.projectId)}')">JSON書き出し</button><button class="music-danger" onclick="MusicStudio.askDelete('${escapeHtml(project.projectId)}')">このプロジェクトを削除</button></div></details></section></main>`}
   // Explicit reading tokens map to existing note identities; no text/model inference.
   const LYRICS_ASSIGNMENT_FORMAT='music-studio-lyrics-note-assignment';
   const lyricsEditor={projectId:null,input:null,preview:null,busy:false,message:''};
@@ -1080,8 +1178,8 @@
       }
     }return result;
   }
-  function archiveBinaries(project){return[...(project.longWavAssets||[]),...referenceBinaries(project)]}
-  function hasArchiveFiles(project){return Boolean(project.longWavAssets?.length||REFERENCE_FIELDS.some(k=>project[k]?.length))}
+  function archiveBinaries(project){return[project,...versionSnapshots(project)].flatMap(p=>[...(p.longWavAssets||[]),...referenceBinaries(p)])}
+  function hasArchiveFiles(project){return [project,...versionSnapshots(project)].some(p=>Boolean(p.longWavAssets?.length||REFERENCE_FIELDS.some(k=>p[k]?.length)))}
   async function retainReferenceFile(projectId,field,index,file){
     if(!file)return{ok:false,cancelled:true};
     if(archiveTransfer.busy||pcmEditor.busy)return{ok:false,error:'reference-transfer-busy'};
@@ -1131,8 +1229,9 @@
   function archiveValidateProjects(projects){
     if(!Array.isArray(projects))throw Error('archive-projects-invalid');
     const ids=new Set(),assets=new Map();
-    for(const p of projects){
-      if(!validateProject(p).valid||ids.has(p.projectId))throw Error('archive-project-invalid');ids.add(p.projectId);
+    for(const original of projects){
+      for(const p of [original,...versionSnapshots(original)]){
+      if(!validateProject(p).valid||p===original&&ids.has(p.projectId))throw Error('archive-project-invalid');ids.add(p.projectId);
       // Never claim a full archive when external referenced bytes are absent.
       const references=referenceBinaries(p);for(const b of references){const identity=JSON.stringify([b.size,b.hashes,'reference']);if(assets.has(b.id)&&assets.get(b.id)!==identity)throw Error('archive-shared-asset-conflict');assets.set(b.id,identity)}
       if(p.longWavAssets!==undefined&&!Array.isArray(p.longWavAssets))throw Error('archive-assets-invalid');
@@ -1141,6 +1240,7 @@
         if(!a||typeof a.id!=='string'||!a.id||!Number.isSafeInteger(a.size)||a.size<44||!Array.isArray(a.hashes)||a.hashes.length!==Math.ceil(a.size/1048576)||a.hashes.some(h=>typeof h!=='string'||! /^[a-f0-9]{64}$/.test(h)))throw Error('archive-asset-invalid');
         const identity=JSON.stringify([a.size,a.hashes,a.frames,a.sampleRate,a.channels]);
         if(assets.has(a.id)&&assets.get(a.id)!==identity)throw Error('archive-shared-asset-conflict');assets.set(a.id,identity);
+      }
       }
     }
   }
@@ -1173,6 +1273,14 @@
       }
     };
   }
+  async function archiveCapacity(bytes,guard=()=>{}){
+    if(!Number.isSafeInteger(bytes)||bytes<0)throw Error('archive-capacity-invalid');
+    const estimate=await root.navigator?.storage?.estimate?.();guard();
+    if(!estimate||!Number.isFinite(estimate.quota)||!Number.isFinite(estimate.usage))return{status:'unavailable',requiredBytes:bytes};
+    const available=Math.max(0,estimate.quota-estimate.usage),required=Math.ceil(bytes*1.1);
+    if(required>available)throw Error('archive-insufficient-storage');
+    return{status:'estimated',requiredBytes:required,availableBytes:available};
+  }
   async function restoreLongWavArchive(file,options={}){
     if(archiveTransfer.busy)return{ok:false,error:'archive-transfer-busy'};
     const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
@@ -1189,6 +1297,7 @@
       archiveValidateProjects(manifest.projects);
       const expected=[...new Map(manifest.projects.flatMap(p=>archiveBinaries(p)).map(a=>[a.id,a])).values()];
       if(expected.length!==manifest.entries.length)throw Error('archive-binary-count');
+      const capacity=await archiveCapacity(expected.reduce((n,a)=>n+a.size,0)+length,guard);guard();
       const records=[],mapping=new Map();let offset=12+length;
       for(let i=0;i<expected.length;i++){
         guard();const a=expected[i],entry=manifest.entries[i];
@@ -1203,6 +1312,7 @@
       if(offset!==file.size)throw Error('archive-trailing-bytes');
       // New identities prevent overwriting songs, even when restoring on the source device.
       const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=uuid();p.projectName+='（復元）';p.updatedAt=now();
+        versionRebind(p,'（復元）');const restored=p;for(const p of [restored,...versionSnapshots(restored)]){p.projectId=restored.projectId;
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
         const remapPlan=plan=>plan?{...plan,routes:plan.routes.map(r=>({...r,key:r.key.startsWith('wav:')?'wav:'+(mapping.get(r.key.slice(4))||r.key.slice(4)):r.key}))}:plan;
         p.finalExportPlan=remapPlan(p.finalExportPlan);
@@ -1211,9 +1321,10 @@
         if(p.finalExportHistory)p.finalExportHistory=p.finalExportHistory.map(h=>({...h,projectId:p.projectId,plan:remapPlan(h.plan)}));
         p.masteringNotes=(p.masteringNotes||[]).map(n=>n.format==='nova-long-master-result-v1'?{...n,sourceAssetId:mapping.get(n.sourceAssetId)||n.sourceAssetId}:n);
         for(const field of REFERENCE_FIELDS)p[field]=(p[field]||[]).map(r=>({...r,binary:{...r.binary,id:mapping.get(r.binary.id)}}));
-        if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);return p});
+        if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);}
+        return p});
       if(projects.some(p=>!validateProject(p).valid))throw Error('archive-remapped-project-invalid');
-      if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,size:file.size,settingsIncluded:true};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
+      if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,size:file.size,settingsIncluded:true,capacity};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
       guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings);
       // Success is emitted only after the single transaction completes.
       state.projects=[...state.projects,...projects];if(options.settings!==false){state.settings=preserveRestoreSettings(manifest.settings);state.settingsDraft=clone(state.settings)}archiveTransfer.preview=null;configureAutosave();
@@ -3225,7 +3336,7 @@
     if(repository!==target)return{ok:false,reason:'repository-changed'};
     return{ok:true};
   }
-  async function duplicateProject(id){const ready=await flushProjectForTransfer(id);if(!ready.ok){notice('変更を保存してから複製してください。','error');return ready}try{const source=await repository.get(id);if(!source)return;const timestamp=now(),projectId=uuid();const duplicate={...clone(source),projectId,projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp,...(source.aiWorkspace?{aiWorkspace:rebindAIWorkspace(source.aiWorkspace,projectId,1)}:{})};await repository.put(duplicate);setLastProject(duplicate.projectId);await refresh();notice('元のプロジェクトを変更せず複製しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(duplicate.projectId)}`)}catch(error){console.error(error);notice('複製できませんでした。','error')}}
+  async function duplicateProject(id){const ready=await flushProjectForTransfer(id);if(!ready.ok){notice('変更を保存してから複製してください。','error');return ready}try{const source=await repository.get(id);if(!source)return;const timestamp=now(),projectId=uuid();const duplicate={...clone(source),projectId,projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp,...(source.aiWorkspace?{aiWorkspace:rebindAIWorkspace(source.aiWorkspace,projectId,1)}:{})};versionRebind(duplicate,'（コピー）');if(!validateProject(duplicate).valid)throw Error('duplicate-checkpoint-invalid');await repository.put(duplicate);setLastProject(duplicate.projectId);await refresh();notice('元のプロジェクトを変更せず複製しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(duplicate.projectId)}`)}catch(error){console.error(error);notice('複製できませんでした。','error')}}
   async function askDelete(id){const project=await repository.get(id);if(!project)return;const confirmed=root.confirm?.(`「${project.projectName}」を削除しますか？\nこの操作はこのプロジェクトだけに影響します。`)??false;if(!confirmed){notice('削除をキャンセルしました。','info');return}try{cancelScheduledSave();await repository.delete(id);if(getLastProject()===id)setLastProject('');state.dirty=false;await refresh();notice('プロジェクトを削除しました。ほかのプロジェクトは変更していません。','success');routeTo(PROJECTS_ROUTE)}catch(error){console.error(error);notice('削除できませんでした。','error')}}
   function safeFileName(name,maxLength=120,fallback='music-project'){const safe=String(name||'').normalize('NFKC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/[\s_-]+/g,'-').replace(/^[.\s-]+|[.\s-]+$/g,'').slice(0,maxLength);return safe||String(fallback||'music-project').normalize('NFKC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').slice(0,maxLength)||'music-project'}
   function fileNameTemplateErrors(template){const tokens=String(template||'').match(/\{[^}]+\}/g)||[];const allowed=new Set(['{projectName}','{songTitle}','{date}','{time}','{version}','{type}']);return [...new Set(tokens.filter(token=>!allowed.has(token)))].map(token=>`未対応トークン ${token} は使用できません。`)}
@@ -3246,6 +3357,8 @@
       }
       incoming.updatedAt=now();incoming.revision=Math.max(1,Number(incoming.revision)||1);
       if(duplicated&&incoming.aiWorkspace)incoming.aiWorkspace=rebindAIWorkspace(parsed.aiWorkspace,incoming.projectId,incoming.revision);
+      versionRebind(incoming,duplicated&&incoming.songVersions?.checkpoints?.[0]?.snapshot.projectId!==incoming.projectId?'（読み込み）':'');
+      if(!validateProject(incoming).valid)throw Error('import-checkpoint-invalid');
       guard();
       try{await target.compareAndPut(incoming,undefined,guard)}catch(error){
         guard();if(error.message==='stale-lyrics-assignment-storage')continue;throw error;
@@ -3283,7 +3396,8 @@
     const metadata=restorePreflight(value);
     if(!root.MusicStudioBinaryBoundary)return{binaryComplete:false,fullBackupComplete:false,scope:'metadata-only',states:['unverified'],metadata};
     const binary=await root.MusicStudioBinaryBoundary.completeness(value,options);
-    return{...binary,metadata,fullBackupComplete:metadata.ok&&binary.binaryComplete};
+    const checkpointFiles=value?.projects?.some(p=>versionSnapshots(p).some(hasArchiveFiles));
+    return{...binary,metadata,fullBackupComplete:metadata.ok&&binary.binaryComplete&&!checkpointFiles,...(checkpointFiles?{checkpointFilesRequireFullArchive:true}: {})};
   }
   async function previewBackupText(text){let parsed;try{parsed=JSON.parse(text)}catch(_){return{ok:false,message:'バックアップJSONが壊れているため読み込めません。'}}const validation=validateBackup(parsed);if(!validation.valid)return{ok:false,message:`バックアップを読み込めません：${validation.errors.join(' ')}`};cancelBackupRestore();state.backupPreview=clone(parsed);requestPaint();return{ok:true,backup:parsed,warnings:validation.warnings,message:`バックアップを検証しました。内容を確認して復元してください。${validation.warnings.length?` 警告：${validation.warnings.join(' ')}`:''}`}}
   async function previewBackupFile(file,options={}){if(!file)return;try{const input=await guardedJsonFile(file,options);input.guard();const result=await previewBackupText(input.text);notice(result.message,result.ok?'success':'error');return result}catch(error){notice('バックアップファイルを読み込めません：'+error.message,'error');return{ok:false,message:error.message}}}
@@ -3938,6 +4052,7 @@
   api.openProject=function(id){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`);return true};
   Object.assign(api,{setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,workActionTarget,openWorkAction,workspaceView});
   Object.assign(api,{editorLoadAcoustic,editorAdoptInstrument,editorAutoMapInstrument,instrumentEditPreset,instrumentDuplicatePreset,instrumentEntries,prepareInstruments,instrumentMenu,editorSetInstrument,instrumentAdvancedMenu,editorAddInstrumentRegion,editorEditInstrumentRegion,editorRemoveInstrumentRegion,editorLoadInstrumentPreset,editorAuditionInstrument,instrumentSavePreset,instrumentRenameAsset,instrumentOpenMix,instrumentProjectCommit});
+  Object.assign(api,{archiveCapacity,versionRebind,versionPanel,versionSnapshot,versionSnapshots,versionValidate,versionCapture,versionCompare,versionCompose,versionStep,versionCancel,versionCommit,versionSave,versionPreview,versionApply,versionUndoRedo,versionSubmit,versionPreviewSubmit,versionView});
   root.MusicStudio=api;
   if(root.document){for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
 })(typeof window!=='undefined'?window:globalThis);
