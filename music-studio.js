@@ -3659,7 +3659,13 @@
     if(s.kind==='pcm'&&p.pcmMix.assets.find(a=>a.id===s.id).original.sampleRate!==48000)throw Error('final-48khz-required');
     if(s.kind==='pcm'){blob=new Blob([pcmEncodeWav(pcmRenderAsset(p.pcmMix.assets.find(a=>a.id===s.id)))],{type:'audio/wav'})}
     else if(s.kind==='vocal'){const result=await vocalRender(p.projectId,s.id);blob=result.blob;startSeconds+=result.startSeconds}
-    else{const a=p.longWavAssets.find(a=>a.id===s.id),h=longMixHistory(a);blob=(await pcmRenderLongWavBlob(await pcmLoadLongWav(p.projectId,s.id),h.settings[h.cursor],16384,{guard})).blob}
+    else{const a=p.longWavAssets.find(a=>a.id===s.id),h=longMixHistory(a),settings=h.settings[h.cursor],source=await pcmLoadLongWav(p.projectId,s.id);
+      // Reuse authenticated durable bytes for a bypassed channel strip. Four
+      // eight-minute stems otherwise allocate four redundant 92 MB WAVs before
+      // the mixer even starts. Decoding below still validates every frame.
+      const bypass=settings.gainDb===0&&settings.eq.gainDb===0&&settings.compressor.ratio===1&&(!settings.spatial||(settings.spatial.balance===0&&settings.spatial.width===1));
+      blob=bypass?source:(await pcmRenderLongWavBlob(source,settings,16384,{guard})).blob;
+    }
     guard();let frames=0;for await(const chunk of pcmDecodeWavStream(blob)){guard();if(chunk.sampleRate!==48000)throw Error('final-48khz-required');frames+=chunk.channels[0].length}
     const start=Math.round(startSeconds*48000);if(start+frames>48000*3600)throw Error('final-one-hour-limit');return{...r,start,frames,blob,name:s.name};
   }

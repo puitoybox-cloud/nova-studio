@@ -356,3 +356,20 @@ test('large durable reconstruction bounds each raw-byte Blob transport to one Mi
 });
 
 test('MIDI PCM render rejects a nested edit before binary publication when the check clock does not advance',async()=>{const f=await renderSetup();f.w.performance={now:()=>0};f.w.MusicStudioAudio.renderMidi=async()=>{f.a.state.projects[0].midiData.tracks[0].notes[0].velocity=11;return{buffer:{getChannelData:()=>new Float32Array(48000).fill(.01)},frames:48000,sampleRate:48000,channels:2,seconds:1,tail:0,noteCount:1,trackIds:['melody']}};const result=await f.a.midiRenderForMix(f.p.projectId);assert.equal(result.ok,false);assert.match(result.error,/stale/);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0)});
+
+
+test('final export reuses a bypassed durable stem and still applies explicit channel processing',async()=>{
+ const {a,p,repo}=await setup();
+ const pcm={sampleRate:48000,channels:[Array.from({length:24000},(_,i)=>.1*Math.sin(2*Math.PI*997*i/48000))]};
+ const file=new Blob([a.pcmEncodeWav(pcm)],{type:'audio/wav'});file.name='Stem.wav';
+ const imported=await a.pcmImportLongFile(file,p.projectId);assert.equal(imported.ok,true,imported.error);
+ const plan={format:'nova-final-export-plan-v1',routes:[{key:'wav:'+imported.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,mixMasterOnly:true};
+ const first=await a.finalPreview(p.projectId,plan);assert.equal(first.ok,true,first.error);
+ const raw=a.pcmDecodeWav(await first.candidate.files.find(x=>x.name==='Mix.wav').blob.arrayBuffer());
+ for(let i=0;i<24000;i+=97)assert.equal(raw.channels[0][i],Math.round(pcm.channels[0][i]*32768)/32768);
+ a.finalCancel();const changed=await repo.get(p.projectId);changed.longWavAssets[0].mixHistory={cursor:0,settings:[{gainDb:-6,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-12,ratio:1,attackMs:10,releaseMs:100}}]};await repo.put(changed);a.state.projects=[changed];
+ const edited=await a.finalPreview(p.projectId,plan);assert.equal(edited.ok,true,edited.error);
+ const quieter=a.pcmDecodeWav(await edited.candidate.files.find(x=>x.name==='Mix.wav').blob.arrayBuffer());
+ assert.ok(Math.abs(a.pcmAnalyze(quieter).peak/a.pcmAnalyze(raw).peak-10**(-6/20))<.001);
+ assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,imported.assetId)).arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+});
