@@ -13,6 +13,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
  await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('checkpoint-song');window.__originalBinary=p.longWavAssets[0].id;p.productionNotes='Edited notes';p.longWavAssets=[];p.revision++;await r.put(p);a.state.projects=[p];a.openProject(p.projectId)});
  for(const width of [1440,1180,820,390]){
   await page.setViewportSize({width,height:820});await page.locator('.music-song-versions').evaluate(e=>e.open=true);await page.locator('[name=checkpointGroup][value=notes]').check();await page.locator('.music-song-versions button').filter({hasText:'Compare（'}).click();await page.waitForFunction(()=>MusicStudio.versionPanel.preview!==null);
+  assert.equal(await page.locator('[name=checkpointGroup][value=notes]').isChecked(),true,'preview retains selected part');
   const overflow=await page.locator('.music-song-versions').evaluate(e=>e.scrollWidth>e.clientWidth+2);assert.equal(overflow,false,`checkpoint panel overflow ${width}`);await page.locator('.music-song-versions').screenshot({path:`verification/music-checkpoint-${width}.png`});report.viewports.push({width,height:820,overflow});
  }
  await page.locator('.music-song-versions button').filter({hasText:'Adopt（'}).click();await page.waitForFunction(()=>!MusicStudio.versionPanel.busy&&MusicStudio.state.projects[0].productionNotes==='Original notes');
