@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.192';
+  const ASSET_VERSION='1.4.193';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -867,8 +867,18 @@
     if(fmt.align!==bytes*fmt.channels||fmt.byteRate!==fmt.rate*fmt.align||
        data.size%fmt.align!==0||data.size<fmt.align)throw Error('invalid-wav-stream-alignment');
     const frames=data.size/fmt.align;
+    // Read ahead at most 1 MiB of encoded audio while retaining the public PCM
+    // chunk limit. Blob/IndexedDB-backed files otherwise perform thousands of
+    // small asynchronous reads on every analysis/render pass.
+    const readFrames=Math.max(framesPerChunk,Math.floor(1048576/fmt.align));
+    let buffered=null,bufferFirst=0,bufferFrames=0;
     for(let first=0;first<frames;first+=framesPerChunk){
-      const count=Math.min(framesPerChunk,frames-first),view=await read(data.start+first*fmt.align,count*fmt.align);
+      const count=Math.min(framesPerChunk,frames-first);
+      if(!buffered||first+count>bufferFirst+bufferFrames){
+        bufferFirst=first;bufferFrames=Math.min(readFrames,frames-first);
+        buffered=await read(data.start+first*fmt.align,bufferFrames*fmt.align);
+      }
+      const view=new DataView(buffered.buffer,buffered.byteOffset+(first-bufferFirst)*fmt.align,count*fmt.align);
       const pcm={sampleRate:fmt.rate,channels:Array.from({length:fmt.channels},()=>Array(count))};
       for(let i=0;i<count;i++)for(let c=0;c<fmt.channels;c++){
         const at=i*fmt.align+c*bytes;
@@ -1135,20 +1145,20 @@
     }
   }
   async function createLongWavArchive(options={}){
-    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=()=>{archiveGuard(target,options.signal);if(JSON.stringify([state.projects,state.settings])!==baseline)throw Error('archive-state-conflict')};guard();
+    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,archiveTransfer.generation,baseline);guard(true);
     if(target.kind!=='indexeddb'||!target.getLongWav)throw Error('archive-durable-storage-required');
-    const projects=await target.list();guard();archiveValidateProjects(projects);
+    const projects=await target.list();guard(true);archiveValidateProjects(projects);
     const storedSettings=await target.getSettings(),settings=preserveRestoreSettings(storedSettings||state.settings||defaultSettings()),parts=[],entries=[],packed=new Set();
     for(const p of projects)for(const a of archiveBinaries(p)){
       guard();if(packed.has(a.id))continue;packed.add(a.id);const record=await target.getLongWav(a.id);
       if(!record?.blob||record.blob.size!==a.size||JSON.stringify(record.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(a.hashes))throw Error('archive-binary-corrupt-or-missing');
       guard();parts.push(record.blob);entries.push({id:a.id,size:a.size});
     }
-    if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard();
+    if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard(true);
     const manifest=new Blob([JSON.stringify({format:LONG_ARCHIVE_FORMAT,projects,settings,entries})]);
     if(manifest.size>PCM_JSON_LIMIT)throw Error('archive-manifest-capacity');
     const header=new ArrayBuffer(12),v=new DataView(header);v.setUint32(0,0x4e4f5641);v.setUint32(4,1,true);v.setUint32(8,manifest.size,true);
-    return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
+    guard(true);return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
   }
   function archiveStateGuard(target,signal,token,baseline){
     let last=-Infinity;
@@ -1256,14 +1266,15 @@
     }catch(e){pcmEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}
     finally{pcmEditor.busy=false;requestPaint()}
   }
-  async function pcmLoadLongWav(id,assetId){
+  async function pcmLoadLongWav(id,assetId,guard=()=>{}){
+    guard();
     const target=repository,project=await target.get(id),asset=project?.longWavAssets?.find(a=>a.id===assetId);
     if(!asset||!target.getLongWav)throw Error('long-wav-asset-missing');
     longMixHistory(asset);
     const record=await target.getLongWav(assetId);
-    if(!record?.blob||record.blob.size!==asset.size||JSON.stringify(record.hashes)!==JSON.stringify(asset.hashes)||JSON.stringify(await longWavDigest(record.blob))!==JSON.stringify(asset.hashes))throw Error('long-wav-corrupt-or-missing');
+    if(!record?.blob||record.blob.size!==asset.size||JSON.stringify(record.hashes)!==JSON.stringify(asset.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(asset.hashes))throw Error('long-wav-corrupt-or-missing');
     if(repository!==target||JSON.stringify(await target.get(id))!==JSON.stringify(project))throw Error('long-wav-stale-read');
-    return record.blob;
+    guard();return record.blob;
   }
   async function pcmDownloadLongOriginal(id,assetId){
     try{const blob=await pcmLoadLongWav(id,assetId),project=await repository.get(id),asset=project.longWavAssets.find(a=>a.id===assetId);
@@ -1987,13 +1998,13 @@
     const target=repository,baseline=JSON.stringify(state.projects.find(p=>p.projectId===id)),token=longMix.generation;
     pcmEditor.busy=true;longMixStop();requestPaint();
     try{
-      const guard=()=>{if(options.signal?.aborted||token!==longMix.generation||target!==repository||pcmEditor.projectId!==id||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('long-mix-cancelled-or-stale')};guard();
+      const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(options.signal?.aborted||token!==longMix.generation||target!==repository||pcmEditor.projectId!==id||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('long-mix-cancelled-or-stale')};guard();
       const project=await target.get(id);guard();if(JSON.stringify(project)!==baseline)throw Error('long-mix-storage-conflict');
       const asset=project.longWavAssets?.find(a=>a.id===assetId);if(!asset)throw Error('long-mix-asset-missing');
-      const checked=longMixSettings(settings,asset.sampleRate),source=await pcmLoadLongWav(id,assetId);guard();
+      const checked=longMixSettings(settings,asset.sampleRate),source=await pcmLoadLongWav(id,assetId,guard);guard();
       const result=await pcmRenderLongWavBlob(source,checked,16384,{guard,progress:frames=>{pcmEditor.message=`長時間WAV処理 ${frames} / ${asset.frames} frames`;const status=root.document?.querySelector('[data-long-mix-status]');if(status)status.textContent=pcmEditor.message}});
       guard();if(result.frames!==asset.frames||result.channels!==asset.channels||result.sampleRate!==asset.sampleRate)throw Error('long-mix-output-mismatch');
-      if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-mix-storage-conflict');guard();
+      if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-mix-storage-conflict');guard(true);
       return{ok:true,...result,baseline,assetId,settings:checked,name:asset.name};
     }catch(e){pcmEditor.message='処理できません：'+e.message;return{ok:false,error:e.message}}
     finally{pcmEditor.busy=false;requestPaint()}
@@ -2295,7 +2306,7 @@
       const guard=()=>{if(options.signal?.aborted||token!==longMix.generation||repository!==target||pcmEditor.projectId!==id||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('mix-analysis-cancelled-or-stale')};guard();
       const p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('mix-analysis-storage-conflict');
       const asset=p.longWavAssets?.find(a=>a.id===assetId);if(!asset)throw Error('long-mix-asset-missing');
-      const source=await pcmLoadLongWav(id,assetId);guard();const h=longMixHistory(asset),saved=h.settings[h.cursor];
+      const source=await pcmLoadLongWav(id,assetId,guard);guard();const h=longMixHistory(asset),saved=h.settings[h.cursor];
       const progress=frames=>{pcmEditor.message=`音声分析 ${frames} / ${asset.frames} frames`;const el=root.document?.querySelector('[data-long-mix-status]');if(el)el.textContent=pcmEditor.message};
       const original=await mixMeasure(pcmDecodeWavStream(source),{guard,progress});
       if(original.frames!==asset.frames||original.sampleRate!==asset.sampleRate||original.channels!==asset.channels)throw Error('mix-analysis-asset-mismatch');
@@ -3384,23 +3395,33 @@
     [.014892578125,.0330810546875,.029296875,.010986328125],
     [-.00830078125,-.0189208984375,-.0291748046875,.001708984375]
   ];
-  async function masterMeasure(chunks,options={}){
+  function masterMeter(){
     const filter=(b,a)=>{let z1=0,z2=0;return x=>{const y=b[0]*x+z1;z1=b[1]*x-a[0]*y+z2;z2=b[2]*x-a[1]*y;return y}};
     const ring=new Float64Array(19200),blocks=[];let sum=0,frames=0,count=0,peak=0,tp=0,clipping=0,filters=[],history=[];
-    const trueSample=(c,x)=>{const h=history[c];for(let j=11;j>0;j--)h[j]=h[j-1];h[0]=x;
+    const trueSample=(c,x)=>{const state=history[c],h=state.samples;const head=state.head=(state.head+11)%12;h[head]=h[head+12]=x;
       // Keep each FIR phase's summation order while sharing history/coefficient reads.
-      let a=0,b=0,d=0,e=0;for(let j=0;j<12;j++){const v=h[j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
-    for await(const pcm of chunks){options.guard?.();const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
-      if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>Array(12).fill(0))}
+      let a=0,b=0,d=0,e=0;for(let j=0;j<12;j++){const v=h[head+j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
+    const push=pcm=>{const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
+      if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>({samples:Array(24).fill(0),head:0}))}
       if(count!==pcm.channels.length)throw Error('master-format-changed');
       for(let i=0;i<n;i++){let energy=0;for(let c=0;c<count;c++){const x=pcm.channels[c][i];peak=Math.max(peak,Math.abs(x));if(Math.abs(x)>=1)clipping++;trueSample(c,x);const y=filters[c][1](filters[c][0](x));energy+=y*y}const at=frames%19200;sum+=energy-ring[at];ring[at]=energy;frames++;if(frames>=19200&&(frames-19200)%4800===0)blocks.push(Math.max(0,sum/19200))}
-      options.guard?.();options.progress?.(frames);if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
-    }
-    if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
+      return frames;
+    };
+    // Each meter owns independent filter, gate and FIR history.
+    const finish=()=>{if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
     const loud=x=>x>0?-.691+10*Math.log10(x):null,mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
     const absolute=blocks.filter(x=>loud(x)!==null&&loud(x)>-70),relative=absolute.length?loud(mean(absolute))-10:null;
     const gated=absolute.filter(x=>loud(x)>relative),lufs=gated.length?loud(mean(gated)):null;
     return{method:'ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate',frames,channels:count,sampleRate:48000,lufs,peak,peakDb:peak?20*Math.log10(peak):null,truePeak:tp,truePeakDb:tp?20*Math.log10(tp):null,clippingSamples:clipping,blocks:blocks.length,gatedBlocks:gated.length};
+    };
+    return{push,finish};
+  }
+  async function masterMeasure(chunks,options={}){
+    const meter=masterMeter();
+    for await(const pcm of chunks){options.guard?.();const frames=meter.push(pcm);
+      options.guard?.();options.progress?.(frames);if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
+    }
+    return meter.finish();
   }
   const productionPreview={master:null,harmony:null,generation:0,message:''};
   const masterChoices={projectId:null,assetId:null,baseline:null,rows:[]};
@@ -3496,12 +3517,12 @@
     if(pcmEditor.busy||archiveTransfer.busy)return{ok:false,error:'production-busy'};
     const baseline=JSON.stringify(state.projects.find(p=>p.projectId===id)),target=repository,token=++longMix.generation;
     longMix.candidate=null;longMixStop();pcmEditor.busy=true;requestPaint();
-    const guard=()=>{if(options.signal?.aborted||token!==longMix.generation||repository!==target||pcmEditor.projectId!==id||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('long-master-cancelled-or-stale')};
+    const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(options.signal?.aborted||token!==longMix.generation||repository!==target||pcmEditor.projectId!==id||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('long-master-cancelled-or-stale')};
     const progress=frames=>{guard();pcmEditor.message=`Mastering ${frames} frames`;const el=root.document?.querySelector('[data-long-mix-status]');if(el)el.textContent=pcmEditor.message};
     try{
       masterTargets(targetLufs,ceilingDb);guard();const p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('long-master-storage-conflict');
       const asset=p.longWavAssets?.find(a=>a.id===assetId);if(!asset)throw Error('long-master-asset-missing');if(asset.sampleRate!==48000)throw Error('master-48khz-required');
-      const source=await pcmLoadLongWav(id,assetId);guard();const h=longMixHistory(asset),saved=h.settings[h.cursor];
+      const source=await pcmLoadLongWav(id,assetId,guard);guard();const h=longMixHistory(asset),saved=h.settings[h.cursor];
       const before=await masterMeasure(pcmRenderLongWav(source,saved),{guard,progress});if(before.lufs===null)throw Error('master-loudness-unavailable-silence-or-short');
       const current=masterPostGain(saved.postGainDb),gain=masterGainPlan(before,targetLufs,ceilingDb,current);
       // Normalize after compression: do not change its detector/input or dynamics.
@@ -3510,7 +3531,7 @@
       settings=longMixSettings({...settings,postGainDb:corrected.gainDb},48000);
       const result=corrected.output,after=corrected.after;guard();
       if(after.frames!==asset.frames||after.channels!==asset.channels||result.sampleRate!==48000)throw Error('long-master-output-mismatch');
-      if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-master-storage-conflict');guard();
+      if(JSON.stringify(await target.get(id))!==baseline)throw Error('long-master-storage-conflict');guard(true);
       const mastering={format:'nova-long-master-result-v1',sourceAssetId:assetId,targetLufs,ceilingDb,gainDb:masterPostGain(settings.postGainDb)-current,before,after,peakLimited:corrected.peakLimited,gainLimited:corrected.gainLimited,targetReached:corrected.targetReached,passes:corrected.passes};
       const candidate={ok:true,...result,baseline,assetId,name:asset.name,settings,mastering};
       longMasterProof.set(candidate,JSON.stringify({baseline,assetId,settings,mastering}));longMix.candidate=candidate;
@@ -3633,7 +3654,7 @@
   }
   // Bounded snapshot checks during expensive PCM loops; publication always
   // performs a fresh full comparison. Cancellation and dirty flags stay immediate.
-  function audioProjectSnapshot(id,baseline){let last=-Infinity;return(force=false)=>{const clock=root.performance?.now?.()??Date.now();if(force===true||clock-last>=50){if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return false;last=root.performance?.now?.()??Date.now()}return true}}
+  function audioProjectSnapshot(id,baseline){let last=-Infinity;return(force=false)=>{const clock=root.performance?.now?.()??Date.now();if(force===true||clock<last||clock-last>=50){if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return false;last=root.performance?.now?.()??Date.now()}return true}}
   async function midiStemZip(id,assetIds,download=false){
     if(midiStemBatch||workspaceBusy()||lyricsEditor.busy||finalExport.busy||shutdownPromise)return{ok:false,error:'midi-stem-export-busy'};
     const p=state.projects.find(p=>p.projectId===id),target=repository,token=pcmEditor.generation,baseline=JSON.stringify(p);
@@ -3708,7 +3729,7 @@
     if(s.kind==='pcm'&&p.pcmMix.assets.find(a=>a.id===s.id).original.sampleRate!==48000)throw Error('final-48khz-required');
     if(s.kind==='pcm'){blob=new Blob([pcmEncodeWav(pcmRenderAsset(p.pcmMix.assets.find(a=>a.id===s.id)))],{type:'audio/wav'})}
     else if(s.kind==='vocal'){const result=await vocalRender(p.projectId,s.id);blob=result.blob;startSeconds+=result.startSeconds}
-    else{const a=p.longWavAssets.find(a=>a.id===s.id),h=longMixHistory(a),settings=h.settings[h.cursor],source=await pcmLoadLongWav(p.projectId,s.id);
+    else{const a=p.longWavAssets.find(a=>a.id===s.id),h=longMixHistory(a),settings=h.settings[h.cursor],source=await pcmLoadLongWav(p.projectId,s.id,guard);
       // Reuse authenticated durable bytes for a bypassed channel strip. Four
       // eight-minute stems otherwise allocate four redundant 92 MB WAVs before
       // the mixer even starts. Decoding below still validates every frame.
@@ -3734,6 +3755,26 @@
     const header=pcmEncodeWav({sampleRate:48000,channels:[[0],[0]]}).slice(0,44),v=new DataView(header);v.setUint32(4,36+frames*4,true);v.setUint32(40,frames*4,true);return new Blob([header,...pieces],{type:'audio/wav'});
   }
   const zipCrcTable=Uint32Array.from({length:256},(_,value)=>{let crc=value;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);return crc>>>0});
+  // Measure and encode the same bounded stream once. For final Master
+  // acceptance, measure the actual quantized PCM16 bytes before assembling Blob
+  // pieces, rather than reading the entire encoded Blob back in a second pass.
+  // Optional independent raw/compressed meters share source traversal only.
+  async function finalMeasuredWav(chunks,guard,encoded=false,compressor=null){
+    const pieces=[];let frames=0,buffered;
+    const secondary=compressor?masterMeter():null;
+    const queue={[Symbol.iterator](){return this},next(){if(!buffered)throw Error('master-bus-source-not-ready');const value=buffered;buffered=null;return{value,done:false}}};
+    const processor=secondary?pcmProcessChunks(queue,{sampleRate:48000,channelCount:2,compressor}):null;
+    async function* measured(){for await(const chunk of chunks){
+      guard();const wav=pcmEncodeWav(chunk);pieces.push(wav.slice(44));
+      frames+=chunk.channels[0].length;if(frames*4>0xffffffff-36)throw Error('final-wav-size');
+      if(secondary){buffered=chunk;const out=processor.next();if(out.done)throw Error('master-bus-unexpected-end');secondary.push(out.value)}
+      yield encoded?pcmDecodeWav(wav):chunk;
+    }}
+    const metrics=await masterMeasure(measured(),{guard});guard();
+    const header=pcmEncodeWav({sampleRate:48000,channels:[[0],[0]]}).slice(0,44),v=new DataView(header);
+    v.setUint32(4,36+frames*4,true);v.setUint32(40,frames*4,true);
+    return{blob:new Blob([header,...pieces],{type:'audio/wav'}),metrics,...(secondary?{masterInput:secondary.finish()}:{})};
+  }
   async function finalZip(files,guard=()=>{},onProgress=()=>{}){
     if(files.length>64)throw Error('final-package-file-limit');const local=[],central=[];let offset=0;const names=new Set();
     // Include both directories and EOCD before reading any large binary.
@@ -3757,15 +3798,16 @@
     if(finalExport.busy||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
     finalStop();finalExport.candidate=null;const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=++finalExport.generation;finalExport.busy=true;pcmEditor.busy=true;requestPaint();
     const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(token!==finalExport.generation||repository!==target||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||archiveTransfer.busy||vocalBusy()||shutdownPromise)throw Error('final-cancelled-or-stale')};
-    try{guard();const stage=message=>{guard();finalExport.message=message;requestPaint()};stage('Preparing sources（音声素材を準備中）');if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[],selected=plan.routes.filter(r=>!r.muted);
+    const started=root.performance?.now?.()??Date.now(),phaseMs={};let phase=null,phaseStart=started;
+    const clock=()=>root.performance?.now?.()??Date.now(),finishPhase=()=>{const t=clock();if(phase)phaseMs[phase]=(phaseMs[phase]||0)+Math.max(0,t-phaseStart);phaseStart=t};
+    try{guard();const stage=message=>{guard();finishPhase();phase=message.replace(/（.*$/,'');finalExport.message=message;requestPaint()};stage('Preparing sources（音声素材を準備中）');if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[],selected=plan.routes.filter(r=>!r.muted);
       const estimatedFrames=Math.max(...selected.map(r=>{const s=finalSources(p).find(s=>s.key===r.key),a=s.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===s.id):p.longWavAssets.find(a=>a.id===s.id),frames=s.kind==='pcm'?a.original.channels[0].length:a.frames;if(!Number.isSafeInteger(frames)||frames<1)throw Error('final-source-metadata');return frames+Math.ceil(r.startSeconds*48000)}));
       finalCheckCapacity(estimatedFrames,selected.length,plan);
       for(const [index,r] of selected.entries()){stage(`Preparing sources（音声素材を準備中） ${index+1}/${selected.length}`);sources.push(await finalSource(p,r,guard))}guard();
       const frames=Math.max(...sources.map(s=>s.start+s.frames));finalCheckCapacity(frames,sources.length,plan);
-      stage('Measuring mix（曲全体の音量を測定中）');const before=await masterMeasure(finalChunks(sources,frames,guard),{guard});if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=plan.masterCompressor?await masterMeasure(finalMasterChunks(sources,frames,guard,plan.masterCompressor),{guard}):before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
-      stage('Rendering mix（Mix音声を作成中）');const original=await finalWav(finalChunks(sources,frames,guard),guard); // fail closed if the user's pre-master mix clips
-      stage('Rendering master（Master音声を作成・検査中）');const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard),blob=>masterMeasure(pcmDecodeWavStream(blob),{guard}),{guard});
-      const master=corrected.output,after=corrected.after,gainDb=corrected.gainDb,peakLimited=corrected.peakLimited,gainLimited=corrected.gainLimited;
+      stage('Measuring and rendering mix（元Mixの作成・音量測定中）');const prepared=await finalMeasuredWav(finalChunks(sources,frames,guard),guard,false,plan.masterCompressor),before=prepared.metrics,original=prepared.blob;if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=prepared.masterInput||before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
+      stage('Rendering master（Master音声を作成・検査中）');const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalMeasuredWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard,true),result=>result.metrics,{guard});
+      const master=corrected.output.blob,after=corrected.after,gainDb=corrected.gainDb,peakLimited=corrected.peakLimited,gainLimited=corrected.gainLimited;
       const files=[{name:'Master.wav',blob:master},{name:'Mix.wav',blob:original}];
       if(!plan.mixMasterOnly){stage('Rendering stems（Instrumental・Stemを作成中）');
       for(const [role,name]of [['instrument','Instrumental.wav'],['vocal','Vocal-Stem.wav']]){const group=sources.filter(s=>s.role===role);if(group.length)files.push({name,blob:await finalWav(finalChunks(group,frames,guard),guard)})}
@@ -3774,7 +3816,7 @@
       if(plan.includeMidi){const summary=midiExportSummary(p);if(!summary.validation.ok)throw Error('final-midi-invalid: '+summary.validation.errors.join(' '));files.push({name:'Song.mid',blob:root.MusicStudioMidi.createMidiBlob(root.MusicStudioMidi.createMidiFile(summary.input).bytes)})}
       const manifest={format:'nova-final-package-v1',projectId:id,sourceRevision:p.revision,plan,frames,sampleRate:48000,channels:2,gainDb,before,...(plan.masterCompressor?{masterInput}:{}),after,peakLimited,gainLimited,targetReached:corrected.targetReached,passes:corrected.passes,audioScope:'Explicit selected rendered audio; MIDI exported separately, no MIDI-to-audio synthesis',files:files.map(f=>({name:f.name,size:f.blob.size}))};
       files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');guard(true);
-      files.forEach(Object.freeze);Object.freeze(files);const candidate={baseline,plan,manifest,files,zip};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
+      files.forEach(Object.freeze);Object.freeze(files);finishPhase();const candidate={baseline,plan,manifest,files,zip,performance:{totalMs:Math.max(0,clock()-started),phaseMs}};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }
   function finalCandidate(id){const c=finalExport.candidate,proof=c&&finalExportProof.get(c);if(!c||!proof||c.baseline!==proof.baseline||c.baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||proof.proof!==JSON.stringify({plan:c.plan,manifest:c.manifest})||proof.zip!==c.zip||proof.files.length!==c.files.length||proof.files.some((f,i)=>f!==c.files[i]))throw Error('final-preview-stale-or-modified');return c}

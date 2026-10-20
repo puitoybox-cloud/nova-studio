@@ -63,3 +63,21 @@ test('invalid master dynamics fail closed; explicit bypass remains compatible wi
  for(const c of [null,{},'on',{thresholdDb:-20,ratio:21,attackMs:10,releaseMs:100}]){const f=fixture(),before=JSON.stringify(f.p),r=await f.a.finalPreview('p',{...f.plan,masterCompressor:c});assert.equal(r.ok,false);assert.equal(JSON.stringify(await f.repo.get('p')),before);assert.equal(f.a.finalExport.candidate,null)}
  const f=fixture(),old=f.a.finalPlan(f.p,f.plan),bypass=f.a.finalPlan(f.p,{...f.plan,masterCompressor:{thresholdDb:-20,ratio:1,attackMs:10,releaseMs:100}});assert.deepEqual(plain(bypass),plain(old));
 });
+
+test('shared raw and compressed bus meters equal independent continuous measurements',async()=>{
+ const f=fixture(),compressor={thresholdDb:-40,ratio:4,attackMs:.1,releaseMs:100};
+ const r=await f.a.finalPreview('p',{...f.plan,masterCompressor:compressor,mixMasterOnly:true});assert.equal(r.ok,true,r.error);
+ const frames=30000,channels=[Array(frames).fill(0),Array(frames).fill(0)];
+ for(const [i,asset]of f.p.pcmMix.assets.entries()){
+  const pcm=f.a.pcmDecodeWav(f.a.pcmEncodeWav(f.a.pcmRenderAsset(asset))),start=Math.round(f.plan.routes[i].startSeconds*48000),gain=10**(f.plan.routes[i].gainDb/20);
+  for(let at=0;at<pcm.channels[0].length;at++)for(let c=0;c<2;c++)channels[c][at+start]+=pcm.channels[0][at]*gain;
+ }
+ const chunks=[];for(let at=0;at<frames;at+=16384)chunks.push({sampleRate:48000,channels:channels.map(c=>c.slice(at,at+16384))});
+ assert.deepEqual(plain(r.candidate.manifest.before),plain(await f.a.masterMeasure(chunks)));
+ assert.deepEqual(plain(r.candidate.manifest.masterInput),plain(await f.a.masterMeasure(f.a.pcmProcessChunks(chunks,{sampleRate:48000,channelCount:2,compressor}))));
+});
+test('cancellation while metering both buses cannot publish partial audio or settings',async()=>{
+ const f=fixture(),original=JSON.stringify(f.p);f.w.setTimeout=resolve=>{f.a.finalCancel();resolve()};
+ const r=await f.a.finalPreview('p',{...f.plan,masterCompressor:{thresholdDb:-40,ratio:4,attackMs:.1,releaseMs:100}});
+ assert.equal(r.ok,false);assert.match(r.error,/cancelled/);assert.equal(f.a.finalExport.candidate,null);assert.equal(JSON.stringify(await f.repo.get('p')),original);
+});
