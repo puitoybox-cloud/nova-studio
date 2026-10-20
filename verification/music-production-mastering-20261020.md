@@ -21,3 +21,5 @@ Focused initial regressions: 146/146 PASS. Bus-specific preservation/backup/retr
 Remaining: independent loudness/true-peak standards conformance and listening quality, full original-spec evidence closure across all 30, native signing/notarization/distribution, HTTPS connection acceptance, long archive restore performance, and physical Mac/iPad acceptance. Gain-only mode still respects peak ceiling and cannot guarantee every arbitrary target. Optional compression is explicit and may alter dynamics; it is not a guarantee of perceptual quality. Existing saved projects should be reopened with this or a newer runtime to interpret additive postGainDb/masterCompressor metadata.
 
 Next priority: finish original-spec requirement closure in a feature with only a small concrete software residual, including standalone runtime/connection and recovery. Do not spend the next increment on more listening fixtures.
+
+The eight-minute acceptance submits the real Export form, including bus controls, and verifies that those controls exist at all four widths. Intermediate-head CI is not attributed to the final head.
