@@ -3585,7 +3585,7 @@
   }
   // Bounded snapshot checks during expensive PCM loops; publication always
   // performs a fresh full comparison. Cancellation and dirty flags stay immediate.
-  function audioProjectSnapshot(id,baseline){let last=-Infinity;return(force=false)=>{const clock=root.performance?.now?.()??Date.now();if(force===true||clock-last>=50){if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return false;last=clock}return true}}
+  function audioProjectSnapshot(id,baseline){let last=-Infinity;return(force=false)=>{const clock=root.performance?.now?.()??Date.now();if(force===true||clock-last>=50){if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return false;last=root.performance?.now?.()??Date.now()}return true}}
   async function midiStemZip(id,assetIds,download=false){
     if(midiStemBatch||workspaceBusy()||lyricsEditor.busy||finalExport.busy||shutdownPromise)return{ok:false,error:'midi-stem-export-busy'};
     const p=state.projects.find(p=>p.projectId===id),target=repository,token=pcmEditor.generation,baseline=JSON.stringify(p);
