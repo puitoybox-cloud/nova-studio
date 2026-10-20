@@ -19,6 +19,7 @@ def stage(destination):
     # as direct HTML links. No provider/model assets are downloaded.
     files = [name for name in tracked if ('/' not in name or name.startswith('assets/')) and
              Path(name).suffix.lower() in {'.js', '.css', '.png', '.jpeg', '.jpg', '.svg', '.webp', '.gif', '.woff', '.woff2'}]
+    files.extend(name for name in tracked if name.startswith('assets/music-acoustic-v1/') and Path(name).suffix.lower() in {'.wav', '.json', '.md', '.txt'})
     files.append('music-studio.html')
     html = (ROOT / 'music-studio.html').read_text()
     for reference in re.findall(r'(?:src|href)="\./([^"?]+)', html):

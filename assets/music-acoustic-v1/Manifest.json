@@ -1,0 +1,265 @@
+{
+  "id": "nova-acoustic-v1",
+  "version": 1,
+  "date": "2026-10-20",
+  "roles": {
+    "piano": {
+      "name": "Acoustic piano（実楽器サンプル）",
+      "regions": [
+        {
+          "id": "piano-36",
+          "assetId": "nova-acoustic-v1-piano-36",
+          "file": "piano-36.wav",
+          "sha256": "4cf0de25856bc401eff43e562703b58daff2923ae023e4bb7e43d33620efd894",
+          "bytes": 144078,
+          "rootPitch": 36,
+          "keyLow": 0,
+          "keyHigh": 42,
+          "attackMs": 3,
+          "releaseMs": 200,
+          "gainDb": 0
+        },
+        {
+          "id": "piano-48",
+          "assetId": "nova-acoustic-v1-piano-48",
+          "file": "piano-48.wav",
+          "sha256": "5a44d90fdf175326fc9e7d9f08d1cafe7caf8d88a7a44f8e94ffdaa15765f477",
+          "bytes": 144078,
+          "rootPitch": 48,
+          "keyLow": 43,
+          "keyHigh": 54,
+          "attackMs": 3,
+          "releaseMs": 200,
+          "gainDb": 0
+        },
+        {
+          "id": "piano-60",
+          "assetId": "nova-acoustic-v1-piano-60",
+          "file": "piano-60.wav",
+          "sha256": "15643318c092f9046ec054e6c84d9f75d95e6fccd65bbe18b4564b5b5331b329",
+          "bytes": 144078,
+          "rootPitch": 60,
+          "keyLow": 55,
+          "keyHigh": 66,
+          "attackMs": 3,
+          "releaseMs": 200,
+          "gainDb": 0
+        },
+        {
+          "id": "piano-72",
+          "assetId": "nova-acoustic-v1-piano-72",
+          "file": "piano-72.wav",
+          "sha256": "6525450e5a4ae8ca5748eee7e39ed778a2e150e3a302dfc978779260a1702999",
+          "bytes": 144078,
+          "rootPitch": 72,
+          "keyLow": 67,
+          "keyHigh": 78,
+          "attackMs": 3,
+          "releaseMs": 200,
+          "gainDb": 0
+        },
+        {
+          "id": "piano-84",
+          "assetId": "nova-acoustic-v1-piano-84",
+          "file": "piano-84.wav",
+          "sha256": "f4867feab0e31d9c921b48aae3928da8234c02d096daf12e22408f50b86aee8b",
+          "bytes": 144078,
+          "rootPitch": 84,
+          "keyLow": 79,
+          "keyHigh": 127,
+          "attackMs": 3,
+          "releaseMs": 200,
+          "gainDb": 0
+        }
+      ]
+    },
+    "bass": {
+      "name": "Acoustic bass（実楽器サンプル）",
+      "regions": [
+        {
+          "id": "bass-24",
+          "assetId": "nova-acoustic-v1-bass-24",
+          "file": "bass-24.wav",
+          "sha256": "e8bfb6c6637bbbdacda98e739f56f0b9c895b148168d6d43fa754015d0592c0d",
+          "bytes": 144078,
+          "rootPitch": 24,
+          "keyLow": 0,
+          "keyHigh": 30,
+          "attackMs": 3,
+          "releaseMs": 100,
+          "gainDb": -3
+        },
+        {
+          "id": "bass-36",
+          "assetId": "nova-acoustic-v1-bass-36",
+          "file": "bass-36.wav",
+          "sha256": "5a7ad63bc57f795e9151c85e65a5013c74582936c6dae4c2f785c3f0d8bd8d6e",
+          "bytes": 144078,
+          "rootPitch": 36,
+          "keyLow": 31,
+          "keyHigh": 42,
+          "attackMs": 3,
+          "releaseMs": 100,
+          "gainDb": -3
+        },
+        {
+          "id": "bass-48",
+          "assetId": "nova-acoustic-v1-bass-48",
+          "file": "bass-48.wav",
+          "sha256": "b5c87bea549932fd2fc6a4081157911555944264afd32f45c7f93f61bd3f7ad5",
+          "bytes": 144078,
+          "rootPitch": 48,
+          "keyLow": 43,
+          "keyHigh": 127,
+          "attackMs": 3,
+          "releaseMs": 100,
+          "gainDb": -3
+        }
+      ]
+    },
+    "strings": {
+      "name": "Acoustic strings（実楽器サンプル）",
+      "regions": [
+        {
+          "id": "strings-48",
+          "assetId": "nova-acoustic-v1-strings-48",
+          "file": "strings-48.wav",
+          "sha256": "ed3cadef11d7804ab022f6783c16617635956282a5d4a0c42fd7ee8b8273aa46",
+          "bytes": 150266,
+          "rootPitch": 48,
+          "keyLow": 0,
+          "keyHigh": 54,
+          "attackMs": 80,
+          "releaseMs": 350,
+          "gainDb": -6
+        },
+        {
+          "id": "strings-60",
+          "assetId": "nova-acoustic-v1-strings-60",
+          "file": "strings-60.wav",
+          "sha256": "c1aac22b73819b079b520eda759308e11ae0d403549ffc0759a6bd7072875e33",
+          "bytes": 150266,
+          "rootPitch": 60,
+          "keyLow": 55,
+          "keyHigh": 66,
+          "attackMs": 80,
+          "releaseMs": 350,
+          "gainDb": -6
+        },
+        {
+          "id": "strings-72",
+          "assetId": "nova-acoustic-v1-strings-72",
+          "file": "strings-72.wav",
+          "sha256": "951b51ca9315a8b4654af4d5240411fa16200acfc72308157db078275c49c1cd",
+          "bytes": 150266,
+          "rootPitch": 72,
+          "keyLow": 67,
+          "keyHigh": 127,
+          "attackMs": 80,
+          "releaseMs": 350,
+          "gainDb": -6
+        }
+      ]
+    },
+    "drums": {
+      "name": "Acoustic kit（実録音ドラム）",
+      "regions": [
+        {
+          "id": "drums-36",
+          "assetId": "nova-acoustic-v1-drums-36",
+          "file": "drums-36.wav",
+          "sha256": "3f2acd51164e268896085977183969acc902f0cc14137eb0514b4efbcba46881",
+          "bytes": 96078,
+          "rootPitch": 36,
+          "keyLow": 36,
+          "keyHigh": 36,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v5_rr1_Sum.wav",
+          "sourceSha256": "642aaf3375eaff1307973f7de3ccbf74d18e71fb3cf9412e021b08fc3bf1981c",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
+        },
+        {
+          "id": "drums-38",
+          "assetId": "nova-acoustic-v1-drums-38",
+          "file": "drums-38.wav",
+          "sha256": "3b1125ae976f1a2ccf4cc625836025f7f33250ad3db523076dade7635f3d3a90",
+          "bytes": 48078,
+          "rootPitch": 38,
+          "keyLow": 38,
+          "keyHigh": 38,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%201/Snare2_HitSN_v5_rr1_Mid.wav",
+          "sourceSha256": "6ec8445cb207df8f1178d8c3894f47969fd53fb2b81c404317e466de4598dc3e",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
+        },
+        {
+          "id": "drums-42",
+          "assetId": "nova-acoustic-v1-drums-42",
+          "file": "drums-42.wav",
+          "sha256": "69f1a0749c18aa6d84f4157b08e6228beb8ad84d2c3010bfb0b165e7bb482158",
+          "bytes": 24078,
+          "rootPitch": 42,
+          "keyLow": 42,
+          "keyHigh": 42,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitC_v3_rr1_Mid.wav",
+          "sourceSha256": "b65ca06ea4f8b5209fc8d98912094be1212911f21e01bd949cc9960db049d37c",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
+        },
+        {
+          "id": "drums-46",
+          "assetId": "nova-acoustic-v1-drums-46",
+          "file": "drums-46.wav",
+          "sha256": "a17a06cb7957df0fd5e8aa576ea39dfc3f6d39acf80436d088801147f8f2610d",
+          "bytes": 96078,
+          "rootPitch": 46,
+          "keyLow": 46,
+          "keyHigh": 46,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitO_rr1_Mid.wav",
+          "sourceSha256": "fa492ec14cc6924b43ad5fcf9e9a0f406d926998835bde2eb5847cd15ad25be7",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "role": "piano",
+      "owner": "Frank Wen / MIDI.js soundfont contributors",
+      "license": "CC-BY-3.0-US (rendered samples); upstream Fluid MIT",
+      "url": "https://github.com/gleitz/midi-js-soundfonts/blob/044fab8e1456bfafc5776e86dfd6bb8697149aef/FluidR3_GM/acoustic_grand_piano-mp3.js",
+      "sourceSha256": "00eebe0214c12ff8f32c47c2f7ac92ef352800e868ab0f883b80854486ac4ca6"
+    },
+    {
+      "role": "bass",
+      "owner": "Frank Wen / MIDI.js soundfont contributors",
+      "license": "CC-BY-3.0-US (rendered samples); upstream Fluid MIT",
+      "url": "https://github.com/gleitz/midi-js-soundfonts/blob/044fab8e1456bfafc5776e86dfd6bb8697149aef/FluidR3_GM/acoustic_bass-mp3.js",
+      "sourceSha256": "7b6d656613f2b8e2e73526317543a491c630bd5dab4426c54dae55f67dfd1e91"
+    },
+    {
+      "role": "strings",
+      "owner": "Frank Wen / MIDI.js soundfont contributors",
+      "license": "CC-BY-3.0-US (rendered samples); upstream Fluid MIT",
+      "url": "https://github.com/gleitz/midi-js-soundfonts/blob/044fab8e1456bfafc5776e86dfd6bb8697149aef/FluidR3_GM/string_ensemble_1-mp3.js",
+      "sourceSha256": "8571395f4c42a989a63e0aed48ad9d79f0ac1a822ff2afd7cb356191be8fd4a2"
+    }
+  ]
+}
