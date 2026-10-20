@@ -2,7 +2,9 @@ name: NOVA acoustic AI listening samples
 on:
   pull_request:
     paths:
-      - 'scripts/music-listening-*.js'
+      - 'scripts/music-listening-*'
+      - 'tools/music-local-generation/prepare.py'
+      - 'tools/music-local-generation/test_prepare_download.py'
       - 'music-studio-acoustic.js'
       - 'assets/music-acoustic-v1/**'
       - '.github/workflows/music-hq-listening.yml'
@@ -79,10 +81,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: node --test
-      - run: node --check scripts/music-listening-generation.js && node --check scripts/music-listening-browser.js
+      - run: git ls-files -z '*.js' | xargs -0 -n1 node --check
       - run: git diff --check
       - run: python -m unittest discover -s tools/music-audio-pipeline
       - run: python tools/music-local-generation/test_constraints.py
+      - run: python tools/music-local-generation/test_prepare_download.py
 
   acoustic-eight-minute:
     runs-on: ubuntu-24.04
