@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.195';
+  const ASSET_VERSION='1.4.196';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -199,6 +199,9 @@
     const same=key=>VERSION_GROUPS[key].every(f=>comparable(p,f)===comparable(c.snapshot,f));
     if(groups.includes('music')&&!groups.includes('audio')&&!same('audio')||groups.includes('audio')&&!groups.includes('music')&&!same('music'))throw Error('checkpoint-select-music-and-audio-together');
     const next=clone(p);for(const key of groups)for(const field of VERSION_GROUPS[key]){if(Object.hasOwn(c.snapshot,field))next[field]=clone(c.snapshot[field]);else delete next[field]}
+    // A recalled workspace is bound to the current revision before the immutable
+    // adoption-after snapshot is recorded, as well as to the published revision.
+    if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,next.projectId,next.revision);
     if(versionContent(next)===versionContent(p))throw Error('checkpoint-no-changes');
     if(v.operations.length>=32)throw Error('checkpoint-history-capacity-backup-required');
     // Abandoned redo branches remain in operations and in complete backups.

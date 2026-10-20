@@ -23,7 +23,7 @@ No.23 バックアップ・復旧・移行:
 - New project IDs, WAV IDs, route keys, selected takes/masters and result references are remapped inside snapshots too. Checkpoint names and adoption branches survive restoration.
 - Metadata-only restore rejects historical-only long-WAV dependencies; completeness inspection cannot claim a complete backup for historical reference files.
 - Restore estimates free capacity before reading all binary bodies; checkpoint commit estimates metadata capacity before CAS. Missing estimate support is explicitly unavailable. Estimates cannot guarantee the next write; transaction abort remains authoritative for quota races.
-- UI/source cache identities updated together to1.4.195.
+- UI/source cache identities updated together to1.4.196.
 
 This is one integrated checkpoint/recovery implementation, not20–30 independently completed major features. The other28 functions receive regression checks; no separate original-spec requirement is claimed closed for them.
 
@@ -35,7 +35,7 @@ All30 original required-content entries and previous residuals are in music-chec
 
 ## Verification state at initial publication
 
-- New checkpoint semantics:8/8 local Node tests passed (explicit version/partial adoption/undo/redo, branches, conflicts, cancellation, quota, stale proof, identity migration, malformed old data/capacity).
+- New checkpoint semantics:9/9 local Node tests passed (explicit version/partial adoption/undo/redo, branches, conflicts, cancellation, quota, stale proof, identity migration, malformed old data/capacity).
 - Local real IndexedDB transaction model (fake-indexeddb, not a browser/device): historical-only WAV → complete archive → additive restore → adoption undo → restored Music/Audio adoption → exact original WAV load PASS.
 - Python audio pipeline:509 run /504 pass /5 existing skips.
 - Full Node and all-JS syntax /git diff checks are running/final results to be updated. An initial full run found stale cache assertions; all entry identity assertions were updated, not disabled.
@@ -45,3 +45,5 @@ All30 original required-content entries and previous residuals are in music-chec
 Next: validate this exact-head recovery workflow, then close finer checkpoint composition/A-B and old dependency migration; Cloud Sync service and policy decisions stay explicit residuals. Physical Mac/iPad acceptance belongs to Tia. Draft only; no Ready/Merge/main/old-PR changes, force push or original-data/backups deletion.
 
 UI follow-up: preserve the selected parts/checkpoint after comparison, invalidate adoption proof on selection edits, use readable dark-surface labels/checkbox rows and human field names; browser CI installs Japanese fonts. Earlier 5547136 checkpoint browser run passed and its artifact SHA256a36c724da1246fd8c3699eb85f0d2232a9ba9144766f5ac4dc515d1543107535 was verified and screenshots reviewed; it is not final follow-up evidence.
+
+AI follow-up: a restored Music group must rebind AI workspace baseRevision before capturing adoption-after history, not only when publishing the new project revision. A controlled AI A/B/C checkpoint + complete recovery experiment exposed a safe rejection from the mismatched historical revision; now fixed. The committed AI regression verifies candidate values, retained notes, every snapshot revision, additive restore and Undo/Redo. The controlled full-IDB model also verifies AI candidates + historical-only MIDI/WAV + restored re-edit/save/Mix/Master/ZIP. Prior-head CI results remain prior-head evidence.
