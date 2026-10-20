@@ -3583,6 +3583,9 @@
     }catch(error){pcmEditor.message=`Stem保存 ${completed.length}/${trackIds.length}。保存済み成果は保持しました：${error.message}`;return{ok:false,error:error.message,completed}}
     finally{if(midiStemBatch===owner)midiStemBatch=null;requestPaint()}
   }
+  // Bounded snapshot checks during expensive PCM loops; publication always
+  // performs a fresh full comparison. Cancellation and dirty flags stay immediate.
+  function audioProjectSnapshot(id,baseline){let last=-Infinity;return(force=false)=>{const clock=root.performance?.now?.()??Date.now();if(force===true||clock-last>=50){if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return false;last=clock}return true}}
   async function midiStemZip(id,assetIds,download=false){
     if(midiStemBatch||workspaceBusy()||lyricsEditor.busy||finalExport.busy||shutdownPromise)return{ok:false,error:'midi-stem-export-busy'};
     const p=state.projects.find(p=>p.projectId===id),target=repository,token=pcmEditor.generation,baseline=JSON.stringify(p);
@@ -3592,12 +3595,12 @@
     const estimated=22+assets.reduce((n,a,i)=>n+a.size+76+2*(`Stem-${i+1}.wav`.length),0);
     if(!Number.isSafeInteger(estimated)||estimated>512*1048576)return{ok:false,error:'midi-stem-export-512mib-limit'};
     pcmEditor.busy=true;
-    const guard=()=>{if(target!==repository||token!==pcmEditor.generation||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||shutdownPromise)throw Error('midi-stem-export-cancelled-or-stale')};
+    const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(target!==repository||token!==pcmEditor.generation||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||shutdownPromise)throw Error('midi-stem-export-cancelled-or-stale')};
     try{
       guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');
       const files=[];
       for(const [i,a]of assets.entries()){guard();pcmEditor.message=`Packaging Stems（楽器別WAVをまとめています） ${i+1}/${assets.length}`;requestPaint();files.push({name:`Stem-${i+1}.wav`,blob:await pcmLoadLongWav(id,a.id)})}
-      const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');
+      const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-stem-export-storage-conflict');guard(true);
       if(download){if(!root.document||!root.URL?.createObjectURL)throw Error('midi-stem-export-download-unavailable');const url=root.URL.createObjectURL(zip);try{const link=root.document.createElement('a');link.href=url;link.download='Stems.zip';root.document.body.appendChild(link);link.click();link.remove()}finally{root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000)}}
       pcmEditor.message=`Stem ZIP ${zip.size} bytes。${download?'ブラウザへ保存を依頼しました（完了未確認）。':'作成しました。'}`;
       return{ok:true,zip,files,completion:download?'browser-download-requested':'prepared'};
@@ -3611,7 +3614,7 @@
     if(!p||!validateProject(p).valid||state.dirty||midiEditorHasPendingChanges())return{ok:false,error:'midi-render-save-first'};
     if(target.kind!=='indexeddb'||typeof target.putLongWav!=='function')return{ok:false,error:'long-wav-durable-storage-required'};
     pcmEditor.busy=true;pcmEditor.message='Rendering MIDI（演奏音を音声化しています）';requestPaint();
-    const guard=()=>{if(target!==repository||token!==pcmEditor.generation||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||vocalBusy()||archiveTransfer.busy||shutdownPromise)throw Error('midi-render-cancelled-or-stale')};
+    const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(target!==repository||token!==pcmEditor.generation||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||vocalBusy()||archiveTransfer.busy||shutdownPromise)throw Error('midi-render-cancelled-or-stale')};
     try{
       guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('midi-render-storage-conflict');
       if(trackId!==null&&(typeof trackId!=='string'||!p.midiData.tracks.some(t=>t.id===trackId)))throw Error('midi-render-invalid-track-selection');
@@ -3624,7 +3627,7 @@
       updated.longWavAssets=[...(updated.longWavAssets||[]),{id:assetId,name,size:blob.size,frames:result.frames,sampleRate:48000,channels:2,hashes,midiRender:{sourceRevision:p.revision,trackIds:result.trackIds,noteCount:result.noteCount,seconds:result.seconds,tail:result.tail,...(trackId===null?{}:{stemTrackId:trackId})}}];
       updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);
       if(!validateProject(updated).valid)throw Error('midi-render-invalid-project');
-      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,guard);guard();
+      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,()=>guard(true));guard(true);
       state.projects=state.projects.map(v=>v.projectId===id?updated:v);finalInvalidate();
       pcmEditor.message='MIDI演奏音を保存しました。Mix・Long Mastering・ExportのSourcesで選択できます。完全復元にはFull WAV Archiveを使ってください。';
       return{ok:true,project:updated,assetId};
@@ -3692,7 +3695,7 @@
   async function finalPreview(id,input){
     if(finalExport.busy||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
     finalStop();finalExport.candidate=null;const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=++finalExport.generation;finalExport.busy=true;pcmEditor.busy=true;requestPaint();
-    const guard=()=>{if(token!==finalExport.generation||repository!==target||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||archiveTransfer.busy||vocalBusy()||shutdownPromise)throw Error('final-cancelled-or-stale')};
+    const snapshot=audioProjectSnapshot(id,baseline),guard=(force=false)=>{if(token!==finalExport.generation||repository!==target||!snapshot(force)||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||archiveTransfer.busy||vocalBusy()||shutdownPromise)throw Error('final-cancelled-or-stale')};
     try{guard();const stage=message=>{guard();finalExport.message=message;requestPaint()};stage('Preparing sources（音声素材を準備中）');if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[],selected=plan.routes.filter(r=>!r.muted);
       const estimatedFrames=Math.max(...selected.map(r=>{const s=finalSources(p).find(s=>s.key===r.key),a=s.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===s.id):p.longWavAssets.find(a=>a.id===s.id),frames=s.kind==='pcm'?a.original.channels[0].length:a.frames;if(!Number.isSafeInteger(frames)||frames<1)throw Error('final-source-metadata');return frames+Math.ceil(r.startSeconds*48000)}));
       finalCheckCapacity(estimatedFrames,selected.length,plan);
@@ -3709,7 +3712,7 @@
       }
       if(plan.includeMidi){const summary=midiExportSummary(p);if(!summary.validation.ok)throw Error('final-midi-invalid: '+summary.validation.errors.join(' '));files.push({name:'Song.mid',blob:root.MusicStudioMidi.createMidiBlob(root.MusicStudioMidi.createMidiFile(summary.input).bytes)})}
       const manifest={format:'nova-final-package-v1',projectId:id,sourceRevision:p.revision,plan,frames,sampleRate:48000,channels:2,gainDb,before,after,peakLimited:gainDb<plan.targetLufs-before.lufs-.01,audioScope:'Explicit selected rendered audio; MIDI exported separately, no MIDI-to-audio synthesis',files:files.map(f=>({name:f.name,size:f.blob.size}))};
-      files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');
+      files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');guard(true);
       files.forEach(Object.freeze);Object.freeze(files);const candidate={baseline,plan,manifest,files,zip};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }

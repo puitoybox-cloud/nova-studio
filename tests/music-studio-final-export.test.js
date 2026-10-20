@@ -42,3 +42,5 @@ test('invalid compact selection cannot silently change package contents or weake
  for(const value of ['true',1,null,{}]){const f=fixture();const r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:value});assert.equal(r.ok,false);assert.match(r.error,/final-output-selection/)}
  const f=fixture();for(const a of f.p.pcmMix.assets)a.original.channels[0]=a.original.channels[0].map(x=>x*100);await f.repo.put(f.p);const r=await f.a.finalPreview('p',{...f.plan,mixMasterOnly:true});assert.equal(r.ok,false);assert.match(r.error,/clipping/);
 });
+
+test('PCM preview never publishes an in-place edit during its final storage read even with a frozen clock',async()=>{const f=fixture();f.w.performance={now:()=>0};let reads=0;const get=f.repo.get.bind(f.repo);f.repo.get=async id=>{const result=await get(id);if(++reads===2)f.a.state.projects[0].pcmMix.assets[0].gains[0]=1;return result};const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,false);assert.match(r.error,/stale/);assert.equal(f.a.finalExport.candidate,null);assert.equal((await get('p')).pcmMix.assets[0].gains[0],0)});
