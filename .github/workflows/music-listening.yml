@@ -46,3 +46,21 @@ jobs:
           path: |
             verification/listening/
             verification/music-listening-generation.json
+  software-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test
+      - run: node --check scripts/music-listening-generation.js && node --check scripts/music-listening-browser.js
+      - run: git diff --check
+      - run: python -m unittest discover -s tools/music-audio-pipeline
+      - run: python tools/music-local-generation/test_constraints.py
