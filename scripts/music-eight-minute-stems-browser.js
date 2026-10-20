@@ -31,8 +31,25 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   for(const asset of assets){const blob=await timed('reopen-read-'+asset.name,()=>a.pcmLoadLongWav(p.projectId,asset.id));await timed('play-'+asset.name,async()=>{const url=URL.createObjectURL(blob),audio=new Audio(url);try{await Promise.race([audio.play(),new Promise((_,reject)=>setTimeout(()=>reject(Error('saved stem playback timed out')),15000))]);await new Promise(r=>setTimeout(r,100));if(audio.currentTime<=0)throw Error('playback did not advance')}finally{audio.pause();audio.removeAttribute('src');audio.load();URL.revokeObjectURL(url)}});let peak=0;for(let at=44;at<blob.size;at+=1048576){const v=new DataView(await blob.slice(at,Math.min(blob.size,at+1048576)).arrayBuffer());for(let i=0;i<v.byteLength;i+=2)peak=Math.max(peak,Math.abs(v.getInt16(i,true)/32768))}if(peak<.0001||peak>=1||asset.frames!==assets[0].frames||asset.midiRender.seconds!==480)throw Error('audio invalid');hashes.push({id:asset.id,bytes:blob.size,frames:asset.frames,peak,chunkSha256:await hash(blob)})}
   const packaged=await timed('zip-four-saved-stems',()=>a.midiStemZip(p.projectId,assets.map(x=>x.id)));await timed('verify-zip-bytes-and-crc',()=>verifyZip(packaged.zip));
   const zipBytes=packaged.zip.size;console.log('Stem metrics '+JSON.stringify({zipBytes}));packaged.zip=null;packaged.files=null;
+  // All four independent saved sources enter the production mixer simultaneously.
+  a.openWorkAction('export',p.projectId);await new Promise(r=>setTimeout(r,50));
+  const mixPlan={format:'nova-final-export-plan-v1',routes:assets.map(x=>({key:'wav:'+x.id,role:'instrument',startSeconds:0,gainDb:-3,muted:false})),targetLufs:-18,ceilingDb:-1,includeMidi:true,mixMasterOnly:true};
+  const rejected=await a.finalPreview(p.projectId,{...mixPlan,mixMasterOnly:false});if(rejected.ok||rejected.error!=='final-package-estimated-capacity')throw Error('legacy package preflight changed');
+  const mix=await timed('eight-minute-four-stem-mix-master',()=>a.finalPreview(p.projectId,mixPlan));
+  if(JSON.stringify(mix.candidate.files.map(x=>x.name))!==JSON.stringify(['Master.wav','Mix.wav','Song.mid','Manifest.json']))throw Error('compact package files');
+  const master=mix.candidate.files[0].blob,masterHash=await hash(master),mastering=mix.candidate.manifest.after,masterBytes=master.size,masterZipBytes=mix.candidate.zip.size;
+  if(mix.candidate.manifest.frames!==assets[0].frames||mastering.clippingSamples||mastering.truePeakDb>-.998)throw Error('master length or clipping');
+  await timed('save-four-stem-mix-plan',()=>a.finalSave(p.projectId));
+  console.log('Stem metrics '+JSON.stringify({masterBytes,masterZipBytes,mastering}));a.finalCancel();mix.candidate=null;
   const archive=await timed('full-archive',()=>a.createLongWavArchive());console.log('Stem metrics '+JSON.stringify({archiveBytes:archive.size}));const restored=await timed('restore-full-archive',()=>a.restoreLongWavArchive(archive));const copy=restored.projects.find(x=>x.projectId!==p.projectId);if(!copy||JSON.stringify(copy.midiData)!==original)throw Error('restore MIDI');for(let i=0;i<4;i++)if(await hash(await timed('restored-read-'+i,()=>a.pcmLoadLongWav(copy.projectId,copy.longWavAssets[i].id)))!==hashes[i].chunkSha256)throw Error('restore audio changed');
   const retry=await timed('restored-stems-zip',()=>a.midiStemZip(copy.projectId,copy.longWavAssets.map(x=>x.id)));if(retry.zip.size!==zipBytes)throw Error('restore ZIP size');await timed('verify-restored-zip-bytes-and-crc',()=>verifyZip(retry.zip));
-  return{steps,assets:hashes,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
- },saved);assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
+  retry.zip=null;retry.files=null;a.openWorkAction('export',copy.projectId);await new Promise(r=>setTimeout(r,50));
+  if(copy.finalExportPlan?.mixMasterOnly!==true)throw Error('restored compact setting missing');
+  const again=await timed('restored-four-stem-mix-master',()=>a.finalPreview(copy.projectId,copy.finalExportPlan));
+  if(await hash(again.candidate.files[0].blob)!==masterHash)throw Error('restored master changed');
+
+  return{steps,assets:hashes,masterBytes,masterZipBytes,mastering,restoredMasterEqual:true,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
+ },saved);
+ report.layout=[];for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});const view=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,compactOption:!!document.querySelector('[name=mixMasterOnly]')}));if(view.overflow||!view.compactOption)throw Error('export layout');report.layout.push(view)}
+ assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
  }catch(error){report.failure=String(error);throw error}finally{clearInterval(memoryTimer);sampleMemory();fs.writeFileSync(path.join(root,'verification/music-eight-minute-stems-browser.json'),JSON.stringify(report,null,2));await browser?.close();fs.rmSync(profile,{recursive:true,force:true});await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});
