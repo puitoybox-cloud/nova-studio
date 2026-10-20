@@ -235,6 +235,42 @@
           "sourceSha256": "fa492ec14cc6924b43ad5fcf9e9a0f406d926998835bde2eb5847cd15ad25be7",
           "owner": "Versilian Studios LLC / Sam Gossner",
           "license": "CC0-1.0"
+        },
+        {
+          "id": "drums-45",
+          "assetId": "nova-acoustic-v1-drums-45",
+          "file": "drums-45.wav",
+          "sha256": "2c6a55201806343a5fc4c0719fb6ca9de40d1cf3a6e5b9d910cd05cc35f76bd2",
+          "bytes": 48078,
+          "rootPitch": 45,
+          "keyLow": 45,
+          "keyHigh": 45,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Membranophones/Struck%20Membranophones/Tom%202/Stick/TomL_HitS_v3_rr1_Mid.wav",
+          "sourceSha256": "bdc312f2f4c799cb43319a7aa0e664bf6194c6f8b14151051b375968df55eab4",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
+        },
+        {
+          "id": "drums-50",
+          "assetId": "nova-acoustic-v1-drums-50",
+          "file": "drums-50.wav",
+          "sha256": "958d4decef8f1c54478c7a853ee7dbbb05fe6b889445b9f0dc97aebaf8216122",
+          "bytes": 48078,
+          "rootPitch": 50,
+          "keyLow": 50,
+          "keyHigh": 50,
+          "attackMs": 0,
+          "releaseMs": 100,
+          "gainDb": -3,
+          "oneShot": true,
+          "source": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Membranophones/Struck%20Membranophones/Tom%201/Stick/TomH_HitS_v3_rr1_Mid.wav",
+          "sourceSha256": "40bd5cf904ed20eb8e7bba6298e356b66cedd313b4f459c5a5884c054bf447a4",
+          "owner": "Versilian Studios LLC / Sam Gossner",
+          "license": "CC0-1.0"
         }
       ]
     }
