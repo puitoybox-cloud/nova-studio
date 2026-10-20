@@ -1,0 +1,39 @@
+name: Music song checkpoints and complete recovery
+on:
+  pull_request:
+    paths:
+      - 'music-studio.js'
+      - 'music-studio.html'
+      - 'tests/music-song-checkpoints.test.js'
+      - 'scripts/music-song-checkpoints-browser.js'
+      - '.github/workflows/music-song-checkpoints.yml'
+permissions:
+  contents: read
+jobs:
+  checkpoint-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/music-song-checkpoints.test.js
+      - name: Japanese UI fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+      - run: npm install --prefix "$RUNNER_TEMP/checkpoint-browser" playwright
+      - name: Browser UI, restart and complete recovery
+        env:
+          NODE_PATH: ${{ runner.temp }}/checkpoint-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/music-song-checkpoints-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-song-checkpoint-recovery
+          path: |
+            verification/music-song-checkpoints-browser.json
+            verification/music-checkpoint-*.png
