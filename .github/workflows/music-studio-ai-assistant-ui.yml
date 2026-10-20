@@ -4,6 +4,7 @@ on:
     branches: ['checkpoint/music-resume-20261002-late']
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'tools/music-native-wrapper/**'
       - 'scripts/music-final-export-browser.js'
       - 'scripts/music-midi-candidate-import-browser.js'
