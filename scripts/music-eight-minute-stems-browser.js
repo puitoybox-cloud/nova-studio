@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   let p=a.makeProject({projectId:'eight-minute-stems',projectName:'Eight minute four stems',bpm:72,midiData:{ppq:480,tempo:72,totalTick:276480,tempoMap:[],timeSignature:{numerator:4,denominator:4},editor:{measureCount:144},tracks}});if(!a.validateProject(p).valid)throw Error('fixture invalid');await repo.put(p);a.state.projects=[p];if(hq){a.openMidiEditor(p.projectId);await new Promise(r=>setTimeout(r,50));for(const role of ['piano','bass','strings','drums']){MusicStudioEditor.selectTrackById(a.state.midiEditor,role);await timed('load-acoustic-'+role,()=>MusicStudioAcoustic.install(role));}p=a.state.projects.find(x=>x.projectId===p.projectId);}a.openWorkAction('export',p.projectId);await new Promise(r=>setTimeout(r,30));const original=JSON.stringify(p.midiData);
   const batch=await timed('render-and-durable-save-four-stems',()=>a.midiRenderStems(p.projectId,tracks.map(t=>t.id)));if(batch.completed.length!==4)throw Error('batch incomplete');
   await timed('verify-saved-before-close',async()=>{for(const asset of a.state.projects.find(x=>x.projectId===p.projectId).longWavAssets)await a.pcmLoadLongWav(p.projectId,asset.id)});
-  await repo.close();return{steps,projectId:p.projectId,original};
+  await repo.close();return{steps,projectId:p.projectId,original,hq};
  },process.env.NOVA_HQ==='1');
  const restartStart=performance.now();await browser.close();page=await launch();await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);saved.steps.push({name:'browser-process-exit-and-restart',ms:performance.now()-restartStart});
  report.result=await page.evaluate(async saved=>{
@@ -33,10 +33,17 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   const zipBytes=packaged.zip.size;console.log('Stem metrics '+JSON.stringify({zipBytes}));packaged.zip=null;packaged.files=null;
   // All four independent saved sources enter the production mixer simultaneously.
   a.openWorkAction('export',p.projectId);await new Promise(r=>setTimeout(r,50));
-  const mixPlan={format:'nova-final-export-plan-v1',routes:assets.map(x=>({key:'wav:'+x.id,role:'instrument',startSeconds:0,gainDb:-3,muted:false})),targetLufs:-18,ceilingDb:-1,includeMidi:true,mixMasterOnly:true};
+  const mixPlan={format:'nova-final-export-plan-v1',routes:assets.map(x=>({key:'wav:'+x.id,role:'instrument',startSeconds:0,gainDb:-3,muted:false})),targetLufs:-18,ceilingDb:-1,includeMidi:true,mixMasterOnly:true,...(saved.hq?{masterCompressor:{thresholdDb:-48,ratio:6,attackMs:.1,releaseMs:100}}:{})};
   const rejected=await a.finalPreview(p.projectId,{...mixPlan,mixMasterOnly:false});if(rejected.ok||rejected.error!=='final-package-estimated-capacity')throw Error('legacy package preflight changed');
-  const mix=await timed('eight-minute-four-stem-mix-master',()=>a.finalPreview(p.projectId,mixPlan));
+  // Exercise the actual production form, including optional dynamics, not only its API.
+  const form=document.querySelector('.music-final-export form');if(!form)throw Error('production export form missing');
+  for(const row of form.querySelectorAll('[data-final-route]')){const route=mixPlan.routes.find(r=>r.key===row.dataset.finalRoute);row.querySelector('[name=enabled]').checked=!!route;if(route){row.querySelector('[name=role]').value=route.role;row.querySelector('[name=start]').value=route.startSeconds;row.querySelector('[name=gain]').value=route.gainDb;row.querySelector('[name=muted]').checked=false}}
+  const fields=form.elements;fields.target.value=-18;fields.ceiling.value=-1;fields.midi.checked=true;fields.mixMasterOnly.checked=true;fields.masterDynamics.checked=!!saved.hq;
+  if(saved.hq){fields.masterThreshold.value=-48;fields.masterRatio.value=6;fields.masterAttack.value=.1;fields.masterRelease.value=100;form.querySelector('.music-master-dynamics').open=true}
+  const mix=await timed('eight-minute-four-stem-mix-master',()=>a.finalSubmit({preventDefault(){},target:form},p.projectId));
   if(JSON.stringify(mix.candidate.files.map(x=>x.name))!==JSON.stringify(['Master.wav','Mix.wav','Song.mid','Manifest.json']))throw Error('compact package files');
+  if(saved.hq&&!mix.candidate.manifest.targetReached)throw Error('acoustic compressed master missed target: '+JSON.stringify(mix.candidate.manifest.after));
+  if(!mix.candidate.manifest.targetReached&&!mix.candidate.manifest.peakLimited)throw Error('unexplained master loudness shortfall');
   const master=mix.candidate.files[0].blob,masterHash=await hash(master),mastering=mix.candidate.manifest.after,masterBytes=master.size,masterZipBytes=mix.candidate.zip.size;
   if(mix.candidate.manifest.frames!==assets[0].frames||mastering.clippingSamples||mastering.truePeakDb>-.998)throw Error('master length or clipping');
   await timed('save-four-stem-mix-plan',()=>a.finalSave(p.projectId));
@@ -48,8 +55,8 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   const again=await timed('restored-four-stem-mix-master',()=>a.finalPreview(copy.projectId,copy.finalExportPlan));
   if(await hash(again.candidate.files[0].blob)!==masterHash)throw Error('restored master changed');
 
-  return{steps,assets:hashes,masterBytes,masterZipBytes,mastering,restoredMasterEqual:true,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
+  return{steps,assets:hashes,masterBytes,masterZipBytes,mastering,masterPlan:mixPlan,restoredMasterEqual:true,zipBytes,archiveBytes:archive.size,quota:await navigator.storage.estimate(),nonDestructive:true,zipBytesMatch:true,restoreBytesMatch:true};
  },saved);
- report.layout=[];for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});const view=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,compactOption:!!document.querySelector('[name=mixMasterOnly]')}));if(view.overflow||!view.compactOption)throw Error('export layout');report.layout.push(view)}
+ report.layout=[];for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});const view=await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,compactOption:!!document.querySelector('[name=mixMasterOnly]'),masterDynamics:!!document.querySelector('[name=masterDynamics]')}));if(view.overflow||!view.compactOption||!view.masterDynamics)throw Error('export layout');report.layout.push(view)}
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
  }catch(error){report.failure=String(error);throw error}finally{clearInterval(memoryTimer);sampleMemory();fs.writeFileSync(path.join(root,'verification/music-eight-minute-stems-browser.json'),JSON.stringify(report,null,2));await browser?.close();fs.rmSync(profile,{recursive:true,force:true});await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});

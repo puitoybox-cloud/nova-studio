@@ -372,3 +372,32 @@ test('final export reuses a bypassed durable stem and still applies explicit cha
  assert.ok(Math.abs(a.pcmAnalyze(quieter).peak/a.pcmAnalyze(raw).peak-10**(-6/20))<.001);
  assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,imported.assetId)).arrayBuffer()),Buffer.from(await file.arrayBuffer()));
 });
+
+test('quiet long Master normalizes after compression and keeps input settings through undo/reopen/archive',async()=>{
+ const f=await masterSetup(48000,.001),{a,p,assetId}=f;const settings=a.longMixHistory(a.state.projects[0].longWavAssets[0]).settings[0];settings.gainDb=6;settings.compressor={thresholdDb:-60,ratio:4,attackMs:10,releaseMs:100};
+ assert.equal((await a.longMixPreview(p.projectId,assetId,settings)).ok,true);assert.equal((await a.longMixSave(p.projectId,assetId)).ok,true);
+ const c=await a.longMasterPreview(p.projectId,assetId,-18,-1);assert.equal(c.ok,true,c.error);assert.ok(c.settings.postGainDb>24);assert.equal(c.settings.gainDb,6);assert.deepEqual(JSON.parse(JSON.stringify(c.settings.compressor)),settings.compressor);assert.equal(c.mastering.targetReached,true);
+ const before=await a.masterMeasure(a.pcmRenderLongWav(await a.pcmLoadLongWav(p.projectId,assetId),settings));assert.ok(Math.abs(c.mastering.after.lufs-before.lufs-c.settings.postGainDb)<.05);assert.equal(c.mastering.after.clippingSamples,0);
+ const expected=Buffer.from(await c.blob.arrayBuffer());assert.equal((await a.longMixSave(p.projectId,assetId)).ok,true);const saved=await f.repo.get(p.projectId);assert.ok(saved.longWavAssets[0].mixHistory.settings.at(-1).postGainDb>24);
+ assert.equal((await a.longMixSave(p.projectId,assetId,-1)).ok,true);assert.equal((await a.longMixSave(p.projectId,assetId,1)).ok,true);assert.deepEqual(Buffer.from(await (await a.longMixExport(p.projectId,assetId)).blob.arrayBuffer()),expected);
+ const archive=await a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const q=restored.projects[0];dst.a.pcmMixView(q.projectId);assert.deepEqual(Buffer.from(await (await dst.a.longMixExport(q.projectId,q.longWavAssets[0].id)).blob.arrayBuffer()),expected);
+});
+test('post-master gain is validated without widening legacy input gain; export cannot bypass it',async()=>{
+ const f=await masterSetup(),{a,p,assetId}=f,s=a.longMixHistory(a.state.projects[0].longWavAssets[0]).settings[0];
+ for(const value of [null,'1',NaN,Infinity,-61,61])assert.throws(()=>a.longMixSettings({...s,postGainDb:value},48000),/master-gain/);
+ assert.throws(()=>a.longMixSettings({...s,gainDb:25},48000),/long-mix-gain/);assert.equal(JSON.stringify(a.longMixSettings(s,48000)),JSON.stringify(s));
+ assert.equal((await a.longMixPreview(p.projectId,assetId,{...s,postGainDb:-6})).ok,true);assert.equal((await a.longMixSave(p.projectId,assetId)).ok,true);
+ const r=await a.finalPreview(p.projectId,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:false,mixMasterOnly:true});assert.equal(r.ok,true,r.error);const measured=await a.masterMeasure(a.pcmDecodeWavStream(r.candidate.files.find(x=>x.name==='Mix.wav').blob));assert.ok(Math.abs(measured.lufs-(-23.01-6+3.0103))<.06,measured.lufs);
+});
+
+test('archive restore bounds metadata serialization during chunk reads and still commits exact bytes',async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(120000),src.p.projectId);const archive=await src.a.createLongWavArchive(),dst=await setup();dst.w.performance={now:()=>0};let reads=0;
+ Object.defineProperty(dst.a.state.projects[0],'productionNotes',{enumerable:true,configurable:true,get(){reads++;return 'unchanged'}});
+ const r=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,true,r.error);assert.ok(reads<20,reads);assert.equal((await dst.repo.list()).length,2);assert.equal((await dst.a.pcmLoadLongWav(r.projects[0].projectId,r.projects[0].longWavAssets[0].id)).size,240044);
+});
+for(const phase of ['read','transaction'])test('archive forced boundary rejects in-place edits with frozen clock during '+phase,async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(120000),src.p.projectId);const archive=await src.a.createLongWavArchive(),dst=await setup(),before=JSON.stringify(await dst.repo.list());dst.w.performance={now:()=>0};
+ if(phase==='read'){const slice=archive.slice.bind(archive);let reads=0;archive.slice=(...args)=>{const part=slice(...args);if(++reads===3)dst.a.state.projects[0].productionNotes='new unsaved value';return part}}
+ else{const restore=dst.repo.restoreLongArchive.bind(dst.repo);dst.repo.restoreLongArchive=async(...args)=>{dst.a.state.projects[0].productionNotes='new unsaved value';return restore(...args)}}
+ const r=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,false);assert.match(r.error,/state-conflict/);assert.equal(JSON.stringify(await dst.repo.list()),before);assert.equal(dst.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(dst.a.state.projects[0].productionNotes,'new unsaved value');
+});
