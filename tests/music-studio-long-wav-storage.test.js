@@ -409,3 +409,17 @@ for(const mode of ['mix','master'])test(`long ${mode} rejects in-place change at
  const result=mode==='master'?await a.longMasterPreview(p.projectId,r.assetId,-18,-1):await a.longMixRender(p.projectId,r.assetId,{gainDb:0,eq:{frequency:1000,gainDb:0,q:1},compressor:{thresholdDb:-18,ratio:1,attackMs:10,releaseMs:100}});
  assert.equal(result.ok,false);assert.match(result.error,/stale/);assert.equal(JSON.stringify(await get(p.projectId)),original);assert.equal(a.longMix.candidate,null);
 });
+
+test('archive creation bounds repeated live metadata reads while preserving all authenticated bytes',async()=>{
+ const f=await setup(),{a,p}=f;await a.pcmImportLongFile(wav(),p.projectId);f.w.performance={now:()=>0};
+ let reads=0;Object.defineProperty(a.state.projects[0],'productionNotes',{enumerable:true,configurable:true,get(){reads++;return ''}});
+ const archive=await a.createLongWavArchive();assert.ok(reads<=8,`metadata read ${reads} times`);
+ const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const r=await dst.a.restoreLongWavArchive(archive);assert.equal(r.ok,true,r.error);
+ const source=await a.pcmLoadLongWav(p.projectId,a.state.projects[0].longWavAssets[0].id),copy=await dst.a.pcmLoadLongWav(r.projects[0].projectId,r.projects[0].longWavAssets[0].id);
+ assert.deepEqual(Buffer.from(await copy.arrayBuffer()),Buffer.from(await source.arrayBuffer()));
+});
+for(const mode of ['state','cancel'])test(`archive creation frozen-clock ${mode} during hashing cannot publish a backup`,async()=>{
+ const f=await setup(),{a,p,repo}=f;await a.pcmImportLongFile(wav(),p.projectId);const before=JSON.stringify(await repo.list()),get=repo.getLongWav.bind(repo);f.w.performance={now:()=>0};
+ repo.getLongWav=async id=>{const rec=await get(id),slice=rec.blob.slice.bind(rec.blob);let reads=0;rec.blob.slice=(...args)=>{const part=slice(...args),read=part.arrayBuffer.bind(part);part.arrayBuffer=async()=>{const bytes=await read();if(++reads===2){if(mode==='state')a.state.projects[0].productionNotes='in-place edit';else a.cancelArchiveTransfer()}return bytes};return part};return rec};
+ await assert.rejects(a.createLongWavArchive(),mode==='state'?/state-conflict/:/cancelled/);assert.equal(JSON.stringify(await repo.list()),before);
+});

@@ -1145,20 +1145,20 @@
     }
   }
   async function createLongWavArchive(options={}){
-    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=()=>{archiveGuard(target,options.signal);if(JSON.stringify([state.projects,state.settings])!==baseline)throw Error('archive-state-conflict')};guard();
+    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,archiveTransfer.generation,baseline);guard(true);
     if(target.kind!=='indexeddb'||!target.getLongWav)throw Error('archive-durable-storage-required');
-    const projects=await target.list();guard();archiveValidateProjects(projects);
+    const projects=await target.list();guard(true);archiveValidateProjects(projects);
     const storedSettings=await target.getSettings(),settings=preserveRestoreSettings(storedSettings||state.settings||defaultSettings()),parts=[],entries=[],packed=new Set();
     for(const p of projects)for(const a of archiveBinaries(p)){
       guard();if(packed.has(a.id))continue;packed.add(a.id);const record=await target.getLongWav(a.id);
       if(!record?.blob||record.blob.size!==a.size||JSON.stringify(record.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(a.hashes))throw Error('archive-binary-corrupt-or-missing');
       guard();parts.push(record.blob);entries.push({id:a.id,size:a.size});
     }
-    if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard();
+    if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard(true);
     const manifest=new Blob([JSON.stringify({format:LONG_ARCHIVE_FORMAT,projects,settings,entries})]);
     if(manifest.size>PCM_JSON_LIMIT)throw Error('archive-manifest-capacity');
     const header=new ArrayBuffer(12),v=new DataView(header);v.setUint32(0,0x4e4f5641);v.setUint32(4,1,true);v.setUint32(8,manifest.size,true);
-    return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
+    guard(true);return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
   }
   function archiveStateGuard(target,signal,token,baseline){
     let last=-Infinity;

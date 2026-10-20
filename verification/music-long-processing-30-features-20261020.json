@@ -238,7 +238,7 @@
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
       "unclosedRequirementOrEvidence": "完全WAV Archiveは実装済み。全旧依存ファイル移行の受入と採用済みCloud Syncの暗号化/競合/Offline設計実装が未完了。",
-      "newScope": "Bounded WAV read-ahead; unchanged encoded audio measurement; single-pass raw Mix measurement/encoding; long Mix/Master exact publication guards and hashing cancellation. Full original requirement closure remains unproven.",
+      "newScope": "Bounded WAV read-ahead; unchanged encoded audio measurement; single-pass raw Mix measurement/encoding; long Mix/Master exact publication guards and hashing cancellation. Full original requirement closure remains unproven. Full archive creation now bounds repeated live metadata serialization, with immediate cancellation and exact forced comparisons before publication. All binary hashes are recomputed; frozen-clock in-place edit/cancel regressions preserve stored songs.",
       "physicalProcedure": "Full WAV Archiveを別保存先へ復元しMIDI/音声hash・旧データを照合。"
     },
     {

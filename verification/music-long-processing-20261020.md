@@ -39,3 +39,11 @@ The controlled intermediate-HEAD CPU/Blob run (9ec7c39) identified Mix creation/
 Two new regressions independently reconstruct offset source audio and compare raw/compressed measurements exactly, and cancel while both buses are being measured to prove zero candidate/settings publication. Both pass. Full final suite and final exact-head acceptance must be attributed to the follow-up HEAD, not 9ec7c39.
 
 Controlled intermediate CPU/Blob run, separate fresh sequential processes without concurrent local checks: 79.856 s before /77.975 s after; MaxRSS655,840 /619,904 KiB. Decode read calls1413 /93. Mix/Master SHA256 and raw/encoded metrics exactly equal. This is not final shared-meter performance or the acoustic browser acceptance and is not a universal speed/memory guarantee.
+
+## Full archive creation
+
+No.23 complete archive creation now reuses the bounded live-state comparison guard already used by recovery. Cancel/dirty/repository/generation guards still run on every binary hash chunk. Exact state comparisons are forced after project-list acquisition, after stored project/settings conflict checks, and after manifest creation immediately before returning the Blob. A frozen/backwards clock cannot bypass these publication checks. Every original SHA256 is still recomputed; the binary format, all original parts, and strict add-only restore transaction remain unchanged.
+
+Three new creation regressions pass: bounded live metadata serialization with byte-identical complete recovery, in-place edit during hashing with frozen clock, and cancellation during hashing without backup publication or changes to stored songs. No arbitrary checksum cache or unsafe dependency omission.
+
+The final shared-Mix CPU kernel (1b16518, unchanged by this archive-only follow-up) was measured in fresh sequential local processes with no concurrent local checks: 480.8 seconds/four sources, 86.611 s baseline /54.956 s shared-meter output; exact Mix/Master SHA256 and all raw/encoded metrics equal. After phases: sources6.543 s /Mix encode and both meters22.869 s /Master encode and encoded measurement24.512 s /ZIP1.031 s. This remains a memory-repository CPU/Blob test, not the browser's acoustic archive/restore acceptance or a device-independent acceleration guarantee. Final exact-head CI is authoritative for the full pipeline.
