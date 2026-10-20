@@ -31,3 +31,11 @@ Local Chromium and Swift are unavailable. Real ONNX/Sinsy, native builds, browse
 No.18 general music-quality closure; No.19 independent standards conformance and full mastering requirements; No.21 complete distribution checks/formats; No.22 named checkpoints and version partial merge; No.23 complete dependency migration and approved Cloud Sync architecture/implementation; other original feature residuals in ledger. Storage transactions, archive format and original binary retention are unchanged. No new recovery durability or B promotion is asserted.
 
 Next: use the same-runner acoustic phase evidence to target the remaining largest production bottleneck, then close a concrete original-spec residual in save/version/recovery. Draft only; no main/prior-PR changes, Ready/Merge, force push, Live Provider or deletion of original data/backups.
+
+## Shared pre/post-compression measurement
+
+The controlled intermediate-HEAD CPU/Blob run (9ec7c39) identified Mix creation/measurement as 43.130 s, compared with Master rendering/measurement 26.181 s. A follow-up keeps independent bounded raw/compressed loudness-meter state and feeds both from the same raw Mix chunks. Original Mix encoding also consumes these chunks. It eliminates the additional four-Stem read/mix traversal used solely to measure compressed Master input, without changing the compressor state or either meter's floating-point operation order. No additional full-song PCM cache is retained.
+
+Two new regressions independently reconstruct offset source audio and compare raw/compressed measurements exactly, and cancel while both buses are being measured to prove zero candidate/settings publication. Both pass. Full final suite and final exact-head acceptance must be attributed to the follow-up HEAD, not 9ec7c39.
+
+Controlled intermediate CPU/Blob run, separate fresh sequential processes without concurrent local checks: 79.856 s before /77.975 s after; MaxRSS655,840 /619,904 KiB. Decode read calls1413 /93. Mix/Master SHA256 and raw/encoded metrics exactly equal. This is not final shared-meter performance or the acoustic browser acceptance and is not a universal speed/memory guarantee.

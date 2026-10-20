@@ -3395,23 +3395,33 @@
     [.014892578125,.0330810546875,.029296875,.010986328125],
     [-.00830078125,-.0189208984375,-.0291748046875,.001708984375]
   ];
-  async function masterMeasure(chunks,options={}){
+  function masterMeter(){
     const filter=(b,a)=>{let z1=0,z2=0;return x=>{const y=b[0]*x+z1;z1=b[1]*x-a[0]*y+z2;z2=b[2]*x-a[1]*y;return y}};
     const ring=new Float64Array(19200),blocks=[];let sum=0,frames=0,count=0,peak=0,tp=0,clipping=0,filters=[],history=[];
     const trueSample=(c,x)=>{const state=history[c],h=state.samples;const head=state.head=(state.head+11)%12;h[head]=h[head+12]=x;
       // Keep each FIR phase's summation order while sharing history/coefficient reads.
       let a=0,b=0,d=0,e=0;for(let j=0;j<12;j++){const v=h[head+j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
-    for await(const pcm of chunks){options.guard?.();const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
+    const push=pcm=>{const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
       if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>({samples:Array(24).fill(0),head:0}))}
       if(count!==pcm.channels.length)throw Error('master-format-changed');
       for(let i=0;i<n;i++){let energy=0;for(let c=0;c<count;c++){const x=pcm.channels[c][i];peak=Math.max(peak,Math.abs(x));if(Math.abs(x)>=1)clipping++;trueSample(c,x);const y=filters[c][1](filters[c][0](x));energy+=y*y}const at=frames%19200;sum+=energy-ring[at];ring[at]=energy;frames++;if(frames>=19200&&(frames-19200)%4800===0)blocks.push(Math.max(0,sum/19200))}
-      options.guard?.();options.progress?.(frames);if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
-    }
-    if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
+      return frames;
+    };
+    // Each meter owns independent filter, gate and FIR history.
+    const finish=()=>{if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
     const loud=x=>x>0?-.691+10*Math.log10(x):null,mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
     const absolute=blocks.filter(x=>loud(x)!==null&&loud(x)>-70),relative=absolute.length?loud(mean(absolute))-10:null;
     const gated=absolute.filter(x=>loud(x)>relative),lufs=gated.length?loud(mean(gated)):null;
     return{method:'ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate',frames,channels:count,sampleRate:48000,lufs,peak,peakDb:peak?20*Math.log10(peak):null,truePeak:tp,truePeakDb:tp?20*Math.log10(tp):null,clippingSamples:clipping,blocks:blocks.length,gatedBlocks:gated.length};
+    };
+    return{push,finish};
+  }
+  async function masterMeasure(chunks,options={}){
+    const meter=masterMeter();
+    for await(const pcm of chunks){options.guard?.();const frames=meter.push(pcm);
+      options.guard?.();options.progress?.(frames);if(root.setTimeout)await new Promise(r=>root.setTimeout(r,0));
+    }
+    return meter.finish();
   }
   const productionPreview={master:null,harmony:null,generation:0,message:''};
   const masterChoices={projectId:null,assetId:null,baseline:null,rows:[]};
@@ -3748,17 +3758,22 @@
   // Measure and encode the same bounded stream once. For final Master
   // acceptance, measure the actual quantized PCM16 bytes before assembling Blob
   // pieces, rather than reading the entire encoded Blob back in a second pass.
-  async function finalMeasuredWav(chunks,guard,encoded=false){
-    const pieces=[];let frames=0;
+  // Optional independent raw/compressed meters share source traversal only.
+  async function finalMeasuredWav(chunks,guard,encoded=false,compressor=null){
+    const pieces=[];let frames=0,buffered;
+    const secondary=compressor?masterMeter():null;
+    const queue={[Symbol.iterator](){return this},next(){if(!buffered)throw Error('master-bus-source-not-ready');const value=buffered;buffered=null;return{value,done:false}}};
+    const processor=secondary?pcmProcessChunks(queue,{sampleRate:48000,channelCount:2,compressor}):null;
     async function* measured(){for await(const chunk of chunks){
       guard();const wav=pcmEncodeWav(chunk);pieces.push(wav.slice(44));
       frames+=chunk.channels[0].length;if(frames*4>0xffffffff-36)throw Error('final-wav-size');
+      if(secondary){buffered=chunk;const out=processor.next();if(out.done)throw Error('master-bus-unexpected-end');secondary.push(out.value)}
       yield encoded?pcmDecodeWav(wav):chunk;
     }}
     const metrics=await masterMeasure(measured(),{guard});guard();
     const header=pcmEncodeWav({sampleRate:48000,channels:[[0],[0]]}).slice(0,44),v=new DataView(header);
     v.setUint32(4,36+frames*4,true);v.setUint32(40,frames*4,true);
-    return{blob:new Blob([header,...pieces],{type:'audio/wav'}),metrics};
+    return{blob:new Blob([header,...pieces],{type:'audio/wav'}),metrics,...(secondary?{masterInput:secondary.finish()}:{})};
   }
   async function finalZip(files,guard=()=>{},onProgress=()=>{}){
     if(files.length>64)throw Error('final-package-file-limit');const local=[],central=[];let offset=0;const names=new Set();
@@ -3790,7 +3805,7 @@
       finalCheckCapacity(estimatedFrames,selected.length,plan);
       for(const [index,r] of selected.entries()){stage(`Preparing sources（音声素材を準備中） ${index+1}/${selected.length}`);sources.push(await finalSource(p,r,guard))}guard();
       const frames=Math.max(...sources.map(s=>s.start+s.frames));finalCheckCapacity(frames,sources.length,plan);
-      stage('Measuring and rendering mix（元Mixの作成・音量測定中）');const prepared=await finalMeasuredWav(finalChunks(sources,frames,guard),guard),before=prepared.metrics,original=prepared.blob;if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=plan.masterCompressor?await masterMeasure(finalMasterChunks(sources,frames,guard,plan.masterCompressor),{guard}):before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
+      stage('Measuring and rendering mix（元Mixの作成・音量測定中）');const prepared=await finalMeasuredWav(finalChunks(sources,frames,guard),guard,false,plan.masterCompressor),before=prepared.metrics,original=prepared.blob;if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=prepared.masterInput||before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
       stage('Rendering master（Master音声を作成・検査中）');const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalMeasuredWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard,true),result=>result.metrics,{guard});
       const master=corrected.output.blob,after=corrected.after,gainDb=corrected.gainDb,peakLimited=corrected.peakLimited,gainLimited=corrected.gainLimited;
       const files=[{name:'Master.wav',blob:master},{name:'Mix.wav',blob:original}];
