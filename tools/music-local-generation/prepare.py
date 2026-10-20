@@ -8,16 +8,30 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+import urllib.error
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
 def download(url, path, expected):
-    with urllib.request.urlopen(url, timeout=120) as response, path.open('xb') as target:
-        shutil.copyfileobj(response, target)
-    with path.open('rb') as stream:
-        actual = hashlib.file_digest(stream, 'sha256').hexdigest()
-    if actual != expected: raise ValueError('download identity mismatch: ' + path.name)
+    path = Path(path)
+    partial = path.with_name(path.name + '.partial')
+    if path.exists(): raise FileExistsError(path)
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=45) as response, partial.open('wb') as target:
+                shutil.copyfileobj(response, target)
+            with partial.open('rb') as stream:
+                actual = hashlib.file_digest(stream, 'sha256').hexdigest()
+            if actual != expected: raise ValueError('download identity mismatch: ' + path.name)
+            partial.replace(path)
+            return
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == 2: raise
+            time.sleep(2 ** attempt)
+        finally:
+            partial.unlink(missing_ok=True)
 
 
 def prepare(destination):
