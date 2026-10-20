@@ -389,3 +389,15 @@ test('post-master gain is validated without widening legacy input gain; export c
  assert.equal((await a.longMixPreview(p.projectId,assetId,{...s,postGainDb:-6})).ok,true);assert.equal((await a.longMixSave(p.projectId,assetId)).ok,true);
  const r=await a.finalPreview(p.projectId,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:false,mixMasterOnly:true});assert.equal(r.ok,true,r.error);const measured=await a.masterMeasure(a.pcmDecodeWavStream(r.candidate.files.find(x=>x.name==='Mix.wav').blob));assert.ok(Math.abs(measured.lufs-(-23.01-6+3.0103))<.06,measured.lufs);
 });
+
+test('archive restore bounds metadata serialization during chunk reads and still commits exact bytes',async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(120000),src.p.projectId);const archive=await src.a.createLongWavArchive(),dst=await setup();dst.w.performance={now:()=>0};let reads=0;
+ Object.defineProperty(dst.a.state.projects[0],'productionNotes',{enumerable:true,configurable:true,get(){reads++;return 'unchanged'}});
+ const r=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,true,r.error);assert.ok(reads<20,reads);assert.equal((await dst.repo.list()).length,2);assert.equal((await dst.a.pcmLoadLongWav(r.projects[0].projectId,r.projects[0].longWavAssets[0].id)).size,240044);
+});
+for(const phase of ['read','transaction'])test('archive forced boundary rejects in-place edits with frozen clock during '+phase,async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(120000),src.p.projectId);const archive=await src.a.createLongWavArchive(),dst=await setup(),before=JSON.stringify(await dst.repo.list());dst.w.performance={now:()=>0};
+ if(phase==='read'){const slice=archive.slice.bind(archive);let reads=0;archive.slice=(...args)=>{const part=slice(...args);if(++reads===3)dst.a.state.projects[0].productionNotes='new unsaved value';return part}}
+ else{const restore=dst.repo.restoreLongArchive.bind(dst.repo);dst.repo.restoreLongArchive=async(...args)=>{dst.a.state.projects[0].productionNotes='new unsaved value';return restore(...args)}}
+ const r=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,false);assert.match(r.error,/state-conflict/);assert.equal(JSON.stringify(await dst.repo.list()),before);assert.equal(dst.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(dst.a.state.projects[0].productionNotes,'new unsaved value');
+});

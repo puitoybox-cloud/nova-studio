@@ -317,16 +317,16 @@
       }catch(e){abort(e)}};
     }))}
     // Add-only recovery: metadata, original binaries and settings commit together.
-    async function restoreLongArchive(projects,records,settings,guard,baselineSettings){const encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard()}records=encoded;return database.then(db=>new Promise((resolve,reject)=>{
-      guard();const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite',{durability:'strict'});let failure;
+    async function restoreLongArchive(projects,records,settings,guard,baselineSettings){const encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard(true)}records=encoded;return database.then(db=>new Promise((resolve,reject)=>{
+      guard(true);const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite',{durability:'strict'});let failure;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
       const timer=root.setTimeout?.(()=>abort(Error('archive-transaction-timeout')),30000);
       const done=()=>root.clearTimeout?.(timer);
       tx.onabort=()=>{done();reject(failure||tx.error||Error('archive-restore-aborted'))};
       tx.onerror=()=>abort(tx.error||Error('archive-restore-failed'));
       tx.oncomplete=()=>{done();failure?reject(failure):resolve(projects)};
-      const watch=r=>{r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard()}catch(e){abort(e)}}};
-      const check=tx.objectStore(SETTINGS_STORE_NAME).get(SETTINGS_ID);check.onerror=()=>abort(check.error);check.onsuccess=()=>{try{guard();if(JSON.stringify(check.result)!==baselineSettings)throw Error('archive-settings-conflict');for(const p of projects)watch(tx.objectStore(STORE_NAME).add(clone(p)));
+      const watch=r=>{r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard(true)}catch(e){abort(e)}}};
+      const check=tx.objectStore(SETTINGS_STORE_NAME).get(SETTINGS_ID);check.onerror=()=>abort(check.error);check.onsuccess=()=>{try{guard(true);if(JSON.stringify(check.result)!==baselineSettings)throw Error('archive-settings-conflict');for(const p of projects)watch(tx.objectStore(STORE_NAME).add(clone(p)));
         for(const r of records)watch(tx.objectStore('longWavBinaries').add(r));
         if(settings)watch(tx.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
       }catch(e){abort(e)}};
@@ -1150,10 +1150,23 @@
     const header=new ArrayBuffer(12),v=new DataView(header);v.setUint32(0,0x4e4f5641);v.setUint32(4,1,true);v.setUint32(8,manifest.size,true);
     return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
   }
+  function archiveStateGuard(target,signal,token,baseline){
+    let last=-Infinity;
+    return(force=false)=>{
+      archiveGuard(target,signal);if(token!==archiveTransfer.generation)throw Error('archive-cancelled');
+      const clock=root.performance?.now?.()??Date.now();
+      // Bound repeated multi-megabyte metadata serialization during chunk reads.
+      // Transaction/publication boundaries always force an exact comparison.
+      if(force===true||clock<last||clock-last>=50){
+        if(JSON.stringify([state.projects,state.settings])!==baseline)throw Error('archive-state-conflict');
+        last=root.performance?.now?.()??Date.now();
+      }
+    };
+  }
   async function restoreLongWavArchive(file,options={}){
     if(archiveTransfer.busy)return{ok:false,error:'archive-transfer-busy'};
     const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
-    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=()=>{archiveGuard(target,options.signal);if(token!==archiveTransfer.generation)throw Error('archive-cancelled');if(JSON.stringify([state.projects,state.settings])!==baseline)throw Error('archive-state-conflict')};
+    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,token,baseline);
     try{
       guard();if(target.kind!=='indexeddb'||!target.restoreLongArchive)throw Error('archive-durable-storage-required');
       const baselineSettings=JSON.stringify(await target.getSettings());guard();
@@ -1190,8 +1203,8 @@
         for(const field of REFERENCE_FIELDS)p[field]=(p[field]||[]).map(r=>({...r,binary:{...r.binary,id:mapping.get(r.binary.id)}}));
         if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);return p});
       if(projects.some(p=>!validateProject(p).valid))throw Error('archive-remapped-project-invalid');
-      if(options.previewOnly){guard();archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,size:file.size,settingsIncluded:true};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
-      guard();await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings);
+      if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,size:file.size,settingsIncluded:true};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
+      guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings);
       // Success is emitted only after the single transaction completes.
       state.projects=[...state.projects,...projects];if(options.settings!==false){state.settings=preserveRestoreSettings(manifest.settings);state.settingsDraft=clone(state.settings)}archiveTransfer.preview=null;configureAutosave();
       notice('元ファイル・プロジェクト・設定の復元が完了しました。既存曲は保持しています。','success');
