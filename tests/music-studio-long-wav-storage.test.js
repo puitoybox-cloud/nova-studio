@@ -357,7 +357,6 @@ test('large durable reconstruction bounds each raw-byte Blob transport to one Mi
 
 test('MIDI PCM render rejects a nested edit before binary publication when the check clock does not advance',async()=>{const f=await renderSetup();f.w.performance={now:()=>0};f.w.MusicStudioAudio.renderMidi=async()=>{f.a.state.projects[0].midiData.tracks[0].notes[0].velocity=11;return{buffer:{getChannelData:()=>new Float32Array(48000).fill(.01)},frames:48000,sampleRate:48000,channels:2,seconds:1,tail:0,noteCount:1,trackIds:['melody']}};const result=await f.a.midiRenderForMix(f.p.projectId);assert.equal(result.ok,false);assert.match(result.error,/stale/);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0)});
 
-
 test('final export reuses a bypassed durable stem and still applies explicit channel processing',async()=>{
  const {a,p,repo}=await setup();
  const pcm={sampleRate:48000,channels:[Array.from({length:24000},(_,i)=>.1*Math.sin(2*Math.PI*997*i/48000))]};
