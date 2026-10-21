@@ -2670,10 +2670,15 @@
     const actions=WORK_ACTIONS.filter(a=>aliases[a.id].test(value)).map(a=>a.id);
     return actions.length?{ok:true,actions}:{ok:false,error:'navigation-request-unrecognized',actions:[]};
   }
+  function openRequestedWorkAction(action,expectedProjectId){
+    const select=root.document?.querySelector('[data-work-project]'),current=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId||'';
+    if(current!==expectedProjectId)return false;
+    return openWorkAction(action,expectedProjectId);
+  }
   function previewWorkRequest(event){
     event?.preventDefault?.();const form=event?.target,text=form?.elements?.request?.value,result=resolveWorkRequest(text),output=form?.querySelector?.('[data-work-request-result]');
     const select=root.document?.querySelector('[data-work-project]'),id=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId;
-    if(output)output.innerHTML=result.ok?result.actions.map(action=>{const a=WORK_ACTIONS.find(a=>a.id===action);return `<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction(${JSON.stringify(action)},${JSON.stringify(id||'')})`)}"${workActionTarget(action,id)?'':' disabled'}>${escapeHtml(a.label)}を開く</button>`}).join(''):'対応する画面を確認できません。操作名を一つ入力してください。';
+    if(output)output.innerHTML=result.ok?result.actions.map(action=>{const a=WORK_ACTIONS.find(a=>a.id===action);return `<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openRequestedWorkAction(${JSON.stringify(action)},${JSON.stringify(id||'')})`)}"${workActionTarget(action,id)?'':' disabled'}>${escapeHtml(a.label)}を開く</button>`}).join(''):'対応する画面を確認できません。操作名を一つ入力してください。';
     return result;
   }
   function workActionTarget(id,projectId){
@@ -4205,7 +4210,7 @@
   api.focusMusicStudio=focusMusicStudio;
   api.goDreamArchitect=goDreamArchitect;
   api.openProject=function(id){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`);return true};
-  Object.assign(api,{setWorkRequestText(value){workspaceRequestText=String(value||'').slice(0,240)},setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,setWorkActionVisible,resolveWorkRequest,previewWorkRequest,workActionTarget,openWorkAction,workspaceView});
+  Object.assign(api,{setWorkRequestText(value){workspaceRequestText=String(value||'').slice(0,240)},setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,setWorkActionVisible,resolveWorkRequest,previewWorkRequest,openRequestedWorkAction,workActionTarget,openWorkAction,workspaceView});
   Object.assign(api,{editorLoadAcoustic,editorAdoptInstrument,editorAutoMapInstrument,instrumentEditPreset,instrumentDuplicatePreset,instrumentEntries,prepareInstruments,instrumentMenu,editorSetInstrument,instrumentAdvancedMenu,editorAddInstrumentRegion,editorEditInstrumentRegion,editorRemoveInstrumentRegion,editorLoadInstrumentPreset,editorAuditionInstrument,instrumentSavePreset,instrumentRenameAsset,instrumentOpenMix,instrumentProjectCommit});
   Object.assign(api,{inspectStoredDependencies,archiveCapacity,versionTimeline,recoverMissingBinary,recoverMissingBinarySubmit,binaryRecoveryView,versionRangeCompose,versionRebind,versionPanel,versionSnapshot,versionSnapshots,versionValidate,versionCapture,versionCompare,versionCompose,versionStep,versionCancel,versionCommit,versionSave,versionPreview,versionApply,versionUndoRedo,versionSubmit,versionPreviewSubmit,versionSelectionChanged,versionView});
   root.MusicStudio=api;

@@ -86,3 +86,10 @@ test('failed visibility storage keeps published settings; typed navigation text 
  assert.equal((await app.setWorkActionVisible('mix',false)).ok,false);assert.equal(JSON.stringify(app.state.settings),before);
  app.setWorkRequestText('歌詞 <test>');assert.match(app.workspaceView(),/value="歌詞 &lt;test&gt;"/);
 });
+
+
+test('screen discovery buttons reject a changed project selection',()=>{
+ const {app,window}=load();app.state.projects=[app.makeProject({projectId:'first'}),app.makeProject({projectId:'second'})];app.setWorkProject('first');
+ app.setWorkProject('second');assert.equal(app.openRequestedWorkAction('midi','first'),false);assert.equal(window.location.hash,'#music-studio');
+ assert.equal(app.openRequestedWorkAction('midi','second'),true);assert.equal(window.location.hash,'music-studio/midi-editor/second');
+});
