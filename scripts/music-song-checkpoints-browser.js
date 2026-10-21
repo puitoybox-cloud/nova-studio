@@ -44,5 +44,29 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
  report.finished=await page.evaluate(async(original)=>{const a=MusicStudio,r=a.indexedDbRepository(),all=await r.list(),p=all.find(p=>p.songVersions?.fork?.sourceProjectId==='checkpoint-song');if(!p)throw Error('finished copy missing');if(JSON.stringify(await r.get('checkpoint-song'))!==original)throw Error('original finished overwritten');if(p.productionNotes!=='Original notes'||!p.longWavAssets.length||p.songVersions.sessions[0].endNote!=='完成版を記録'||!p.songVersions.sessions[0].endedAt)throw Error('finished/session data lost');if(p.songVersions.days[0].note!=='完成版を保存した日')throw Error('daily note lost');if(p.aiWorkspace.baseRevision!==p.revision)throw Error('AI binding');const archive=await a.createLongWavArchive();const result=await a.restoreLongWavArchive(archive,{settings:false});if(!result.ok)throw Error(result.error);const copies=(await r.list()).filter(x=>x.songVersions?.fork?.sourceProjectId==='checkpoint-song');if(copies.length<2||copies.some(x=>!a.validateProject(x).valid))throw Error('finished archive restore');return{restart:true,immutableSource:true,editableCopy:true,aiBinding:true,historicalWav:true,sessionAndDailyNote:true,completeArchiveRestore:true}},original);
  await page.evaluate(()=>MusicStudio.openProject('range-song'));
  report.dependencyVerified=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');const result=await a.inspectStoredDependencies('range-song');if(!result.ok||result.report.rows.some(x=>x.status!=='verified'))throw Error('verification failed');if(p.lyrics.versions[0].text!=='保持する歌詞'||p.chordProgressions[0].chords[0]!=='C')throw Error('linked text changed');p.fileReferences.push({name:'legacy.wav'});p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);const legacy=await a.inspectStoredDependencies(p.projectId);if(!legacy.ok||!legacy.report.rows.some(x=>x.status==='unverified-legacy')||!legacy.report.rows.some(x=>x.status==='verified'))throw Error('mixed legacy inspection');return{verified:true,unassignedLyricsRetained:true,legacyReported:true}});
+ // Controlled HTTP cancellation race; real Sinsy output is checked in the
+ // separate real-generation workflow, not replaced by this transport probe.
+ const cancellations=[];let pendingRoute;
+ await page.route('**/__nova_generation/status',r=>r.fulfill({json:{token:'browser-cancel',singer:true,composer:false}}));
+ await page.route('**/__nova_generation/sing',r=>{pendingRoute=r});
+ await page.route('**/__nova_generation/cancel-sing',r=>{cancellations.push(r.request().postDataJSON());return r.fulfill({json:{cancellationRequested:true}})});
+ report.singingCancellation=[];
+ for(const width of [1440,1180,820,390]){
+   await page.setViewportSize({width,height:820});
+   await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository();let p=a.makeProject({projectId:'cancel-singing-'+innerWidth,projectName:'Singing cancellation',midiData:{ppq:480,tempo:120,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480}]}]}});p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await r.put(p);await a.refresh();a.openLyricsAssignment(p.projectId);window.__singBaseline=JSON.stringify(p);window.__singId=p.projectId;window.__singResult=null;});
+   pendingRoute=null;
+   await page.locator('[data-score-return-key]').first().evaluate(e=>e.open=true);
+   await page.getByRole('button',{name:'Sinsy（端末内で歌声生成・取り込み）',exact:true}).click();
+   await page.waitForFunction(()=>document.body.textContent.includes('Cancel singing'));
+   await page.getByRole('button',{name:'Cancel singing（歌声生成を中断）',exact:true}).screenshot({path:`verification/music-checkpoint-singing-cancel-${width}.png`});
+   // Preserve the result without awaiting the network request in page.evaluate.
+   await page.getByRole('button',{name:'Cancel singing（歌声生成を中断）',exact:true}).click();
+   await page.waitForFunction(()=>!document.body.textContent.includes('Cancel singing'));
+   if(pendingRoute)await pendingRoute.abort().catch(()=>{});
+   await page.waitForTimeout(100);
+   const preserved=await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get(window.__singId))===window.__singBaseline);
+   assert.equal(preserved,true);report.singingCancellation.push({width,height:820,originalPreserved:preserved});
+ }
+ assert.equal(cancellations.length,4);assert.equal(new Set(cancellations.map(c=>c.requestId)).size,4);
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
  }finally{await browser?.close();server.close();fs.rmSync(profile,{recursive:true,force:true});fs.writeFileSync('verification/music-song-checkpoints-browser.json',JSON.stringify(report,null,2)+'\n')}})().catch(e=>{console.error(e);process.exitCode=1});
