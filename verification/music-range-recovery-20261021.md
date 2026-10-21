@@ -19,11 +19,11 @@ New Draft #481 stacks on #480. Ordinary shell push had no credentials and did no
 
 ## Verification
 
-Local initial complete Node run: 2526/2528, two failures were stale escaped cache-version expectations. Corrected expectations: related 45/45 PASS; subsequent complete Node 2529/2529 PASS, failure/skip0,112.318s, before the final timeline-only rendering addition. Final full rerun follows that addition.
+Local initial complete Node run: 2526/2528, two failures were stale escaped cache-version expectations. Corrected expectations: related 45/45 PASS; subsequent complete Node 2529/2529 PASS, failure/skip0,112.318s, before the final timeline-only rendering addition. Timeline-final complete local rerun:2529/2529 PASS, failure/skip0,136.410s. The subsequent fieldset contrast-only correction is covered by final-head browser CI.
 
 Focused checkpoint/range/recovery tests 13/13 PASS: other track/outside retention, exact mid-bar meter, boundary/lock/dependency/identity rejection, durable Undo/Redo and additive restore, exact historical-only binary repair, wrong bytes/cancel/quota rejection, idempotent retry. Python audio pipeline509 run /504 PASS /5 existing skips; generation Python36/36 PASS. Python source unchanged.
 
-Exact first #481 HEAD 1a92fe6180960786336bb5473ba2936d4b141a42 checkpoint-recovery CI39562390307 SUCCESS: existing historical WAV/UI/restart/recovery plus new actual form range adoption at1440/1180/820/390, historical-only missing original-file selection, wrong-file rejection, original bytes and complete rebackup/restore. Final-head CI must be checked independently; earlier passes are not attributed to later commits.
+Exact first #481 HEAD 1a92fe6180960786336bb5473ba2936d4b141a42 checkpoint-recovery CI39562390307 SUCCESS: existing historical WAV/UI/restart/recovery plus new actual form range adoption at1440/1180/820/390, historical-only missing original-file selection, wrong-file rejection, original bytes and complete rebackup/restore. Artifact12327729049 downloaded and SHA256332fef7da53db1893f0fce4ede53a56d315c3bb0a1f6e1da055bcd0a1b5aaf7a verified; report HEAD matches that first head, completed=true, Console errors/warnings and external requests empty. Range1440/1180 screenshots inspected: low-contrast fieldset found and corrected to the existing dark palette; final-head browser CI reruns all four widths. Final-head CI must be checked independently; earlier passes are not attributed to later commits.
 
 Physical Mac/iPad, Swift/Xcode and local Chrome are not available in this container. Required native/Swift, real ONNX/Sinsy, eight-minute Stem/Mix/Master/Export and browser acceptance run in exact-head GitHub CI. Pending or unavailable evidence is never counted successful.
 
