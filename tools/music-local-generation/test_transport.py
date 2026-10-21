@@ -113,6 +113,47 @@ class Transport(unittest.TestCase):
         status, _, data = self.request('POST', '/__nova_generation/compose', '{}', **headers)
         self.assertEqual(status, 422); self.assertNotIn(b'generation-busy', data)
 
+    def test_singer_cancel_before_arrival_is_separate_from_composer(self):
+        import json
+        cookie = self.pair()
+        headers = {'Cookie': cookie, 'Origin': self.origin, 'X-Nova-Generation': 'request-token'}
+        body = json.dumps({'requestId':'sing_transport_pending_123'})
+        self.assertEqual(self.request('POST','/__nova_generation/cancel-sing',body,Cookie=cookie,Origin=self.origin)[0],403)
+        status, _, data = self.request('POST','/__nova_generation/cancel-sing',body,**headers)
+        self.assertEqual(status,200);self.assertIn(b'terminate-owned-process-group',data)
+        status, _, data = self.request('POST','/__nova_generation/sing',body,**headers)
+        self.assertEqual(status,422);self.assertIn(b'sing-request-cancelled-or-reused',data)
+        status, _, data = self.request('POST','/__nova_generation/compose',body,**headers)
+        self.assertEqual(status,422);self.assertNotIn(b'cancelled',data)
+        for value in ('[]','null','{}'):
+            self.assertEqual(self.request('POST','/__nova_generation/cancel-sing',value,**headers)[0],422)
+
+    def test_active_singer_cancel_releases_shared_generation_lock(self):
+        import json
+        from unittest.mock import patch
+        self.options.sinsy = self.options.voice = self.options.dictionary = Path(self.tmp.name)
+        cookie = self.pair()
+        headers = {'Cookie': cookie, 'Origin': self.origin, 'X-Nova-Generation': 'request-token'}
+        started, done = threading.Event(), threading.Event(); responses=[]
+        def synthesize(*args, cancel=None):
+            started.set()
+            while not done.wait(.01): cancel()
+            return b''
+        body=json.dumps({'requestId':'sing_socket_active_123','scoreXML':'unused-control-test'})
+        with patch('serve.synthesize',synthesize):
+            thread=threading.Thread(target=lambda:responses.append(self.request('POST','/__nova_generation/sing',body,**headers)))
+            thread.start()
+            try:
+                self.assertTrue(started.wait(2))
+                self.assertEqual(self.request('POST','/__nova_generation/compose','{}',**headers)[0],409)
+                self.assertEqual(self.request('POST','/__nova_generation/cancel-sing',json.dumps({'requestId':'sing_socket_active_123'}),**headers)[0],200)
+                thread.join(2);self.assertFalse(thread.is_alive());self.assertIn(b'sing-request-cancelled',responses[0][2])
+            finally: done.set();thread.join(3)
+        status, _, data=self.request('POST','/__nova_generation/compose','{}',**headers)
+        self.assertEqual(status,422);self.assertNotIn(b'generation-busy',data)
+        status, _, data=self.request('POST','/__nova_generation/sing',body,**headers)
+        self.assertEqual(status,422);self.assertIn(b'cancelled-or-reused',data)
+
     def test_launcher_missing_assets(self):
         with self.assertRaises(FileNotFoundError): paths(self.tmp.name)
 

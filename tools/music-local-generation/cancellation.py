@@ -5,20 +5,22 @@ import time
 
 
 class ComposerJobs:
-    def __init__(self):
+    def __init__(self, kind="compose", timeout=240):
+        self.kind = kind
+        self.timeout = timeout
         self.lock = threading.Lock()
         self.jobs = {}
 
     def _entry(self, request_id):
         if not isinstance(request_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,80}', request_id):
-            raise ValueError('invalid-compose-request-id')
+            raise ValueError(f'invalid-{self.kind}-request-id')
         now = time.monotonic()
         for key, entry in list(self.jobs.items()):
             if not entry['running'] and entry['expires'] < now:
                 del self.jobs[key]
         if request_id not in self.jobs:
             if len(self.jobs) >= 1024:
-                raise ValueError('compose-request-registry-full')
+                raise ValueError(f'{self.kind}-request-registry-full')
             self.jobs[request_id] = {'cancelled': threading.Event(), 'running': False, 'started': False, 'expires': now + 600}
         return self.jobs[request_id]
 
@@ -32,15 +34,15 @@ class ComposerJobs:
         with self.lock:
             entry = self._entry(request_id)
             if entry['started'] or entry['cancelled'].is_set():
-                raise ValueError('compose-request-cancelled-or-reused')
+                raise ValueError(f'{self.kind}-request-cancelled-or-reused')
             entry['started'] = entry['running'] = True
-            deadline = time.monotonic() + 240
+            deadline = time.monotonic() + self.timeout
         def check():
             if time.monotonic() >= deadline:
                 entry['cancelled'].set()
-                raise ValueError('compose-request-deadline-exceeded')
+                raise ValueError(f'{self.kind}-request-deadline-exceeded')
             if entry['cancelled'].is_set():
-                raise ValueError('compose-request-cancelled')
+                raise ValueError(f'{self.kind}-request-cancelled')
         return check
 
     def finish(self, request_id):
