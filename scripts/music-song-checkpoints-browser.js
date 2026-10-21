@@ -55,6 +55,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    await page.setViewportSize({width,height:820});
    await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository();let p=a.makeProject({projectId:'cancel-singing-'+innerWidth,projectName:'Singing cancellation',midiData:{ppq:480,tempo:120,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480}]}]}});p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await r.put(p);await a.refresh();a.openLyricsAssignment(p.projectId);window.__singBaseline=JSON.stringify(p);window.__singId=p.projectId;window.__singResult=null;});
    pendingRoute=null;
+   await page.locator('[data-score-return-key]').first().evaluate(e=>e.open=true);
    await page.getByRole('button',{name:'Sinsy（端末内で歌声生成・取り込み）',exact:true}).click();
    await page.waitForFunction(()=>document.body.textContent.includes('Cancel singing'));
    await page.getByRole('button',{name:'Cancel singing（歌声生成を中断）',exact:true}).screenshot({path:`verification/music-checkpoint-singing-cancel-${width}.png`});
