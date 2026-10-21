@@ -10,6 +10,36 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 
+def run_engine(command):
+    """Keep the engine owned until its process group is stopped and reaped."""
+    child = subprocess.Popen(command, start_new_session=True, cwd=HERE)
+    stopped = [False]
+    def stop(signum, frame):
+        stopped[0] = True
+        try: os.killpg(child.pid, signal.SIGTERM)
+        except ProcessLookupError: pass
+    previous = {s: signal.signal(s, stop) for s in (signal.SIGINT, signal.SIGTERM)}
+    try:
+        while True:
+            try: return child.wait(timeout=.2)
+            except subprocess.TimeoutExpired:
+                if stopped[0]: break
+        return child.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        return 128 + signal.SIGTERM
+    finally:
+        stop(None, None)
+        try: child.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try: os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
+            child.wait()
+        finally:
+            try: os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
+            for sig, callback in previous.items(): signal.signal(sig, callback)
+
+
 def paths(asset_root):
     root = Path(asset_root).resolve(strict=True)
     result = {'weights': root / 'weights', 'sinsy': root / 'runtime/bin/sinsy',
@@ -55,14 +85,7 @@ def main():
     for key, value in resolved.items(): command += ['--' + key, str(value)]
     for key in ('lan_ip', 'tls_cert', 'tls_key'):
         if getattr(args, key): command += ['--' + key.replace('_', '-'), str(getattr(args, key))]
-    child = subprocess.Popen(command, start_new_session=True)
-    def stop(signum, frame):
-        if child.poll() is None: os.killpg(child.pid, signal.SIGTERM)
-    previous = {s: signal.signal(s, stop) for s in (signal.SIGINT, signal.SIGTERM)}
-    try: returncode = child.wait()
-    finally:
-        stop(None, None)
-        for sig, callback in previous.items(): signal.signal(sig, callback)
+    returncode = run_engine(command)
     if returncode: raise SystemExit(returncode)
 
 
