@@ -69,6 +69,20 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
         if digest(candidate) != expected: raise ValueError('SHA256 mismatch: ' + relative)
     for name, lock in json.loads((HERE / 'model-lock.json').read_text())['files'].items():
         check('model:' + name, lambda n=name, h=lock['sha256']: verified('weights/' + n, h), '固定モデルが不足または不一致です。新しい別フォルダへprepare.pyで準備してください。')
+    def models():
+        # Provider availability and byte identity alone do not establish that
+        # these graphs can actually be opened by the installed native runtime.
+        # Use a disposable process so the launcher does not retain a second
+        # model pair while the serving process loads its production sessions.
+        command = [sys.executable, str(HERE / 'verify_model_load.py'), str(root / 'weights')]
+        result = subprocess.run(command, cwd=HERE, timeout=180, capture_output=True, text=True)
+        if result.returncode:
+            raise ValueError('ONNX model load failed: ' + result.stderr[-1000:])
+    if all(c['ok'] for c in checks if c['id'].startswith(('model:', 'dependency:')) or c['id'] == 'cpu-provider'):
+        check('model-load', models, 'ONNXモデルの互換性・CPU実行環境・空きメモリを確認してください。')
+    else:
+        checks.append({'id': 'model-load', 'ok': False, 'error': 'Model load blocked by failed asset/runtime checks',
+                       'remedy': '先にモデルと固定依存関係の診断エラーを解消してください。'})
     voice = 'hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice'
     check('voice', lambda: verified(voice, json.loads((HERE / 'source-lock.json').read_text())['voiceFile']['sha256']), '固定の許諾済み歌声音源をprepare.pyで準備してください。')
     def sinsy():
@@ -85,5 +99,6 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
         check('listen-address', available, 'IPがこのMacに属するか、別のエンジンが同じポートで起動していないか確認してください。')
     return {'ok': all(c['ok'] for c in checks), 'system': platform.system(), 'architecture': platform.machine(),
             'signedDistribution': False, 'deviceTrustVerified': False,
+            'modelsLoaded': next(c['ok'] for c in checks if c['id'] == 'model-load'),
             'assetsVerified': all(c['ok'] for c in checks if c['id'].startswith(('asset-', 'model:', 'voice', 'sinsy-'))),
             'cpuProvider': next(c['ok'] for c in checks if c['id'] == 'cpu-provider'), 'checks': checks}
