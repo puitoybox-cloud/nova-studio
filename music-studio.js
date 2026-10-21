@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.197';
+  const ASSET_VERSION='1.4.198';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -201,7 +201,11 @@
       let a=p[field],b=source[field];if(field==='aiWorkspace'&&a&&b){a=clone(a);b=clone(b);delete a.baseRevision;delete b.baseRevision;delete a.updatedAt;delete b.updatedAt}
       if(!same(a,b))throw Error('checkpoint-range-dependency-conflict:'+field);
     }
-    if(p.aiWorkspace||p.vocalWorkspace||p.lyrics?.length||p.syllableAssignments?.length||p.melodies?.length||p.chordProgressions?.length)throw Error('checkpoint-range-linked-score-use-bundle');
+    // Identical text-only lyrics and harmonic context do not bind note IDs.
+    // Assigned scores, rendered vocals and AI workspaces still require a bundle.
+    for(const field of ['aiWorkspace','vocalWorkspace','syllableAssignments','melodies']){
+      const value=p[field];if(Array.isArray(value)?value.length:Boolean(value))throw Error('checkpoint-range-linked-score-use-bundle:'+field);
+    }
     const current=p.midiData,old=source.midiData;
     if(!Array.isArray(current?.tracks)||!Array.isArray(old?.tracks))throw Error('checkpoint-range-midi-missing');
     const metadata=data=>{const x=clone(data);delete x.tracks;return x};
@@ -226,7 +230,7 @@
     const retained=a[0].notes.filter(n=>!inside(n)),adopted=b[0].notes.filter(inside),notes=[...retained,...clone(adopted)].sort((x,y)=>x.startTick-y.startTick||String(x.id).localeCompare(String(y.id)));
     if(notes.some(n=>typeof n.id!=='string'||!n.id)||new Set(notes.map(n=>n.id)).size!==notes.length)throw Error('checkpoint-range-note-identity-conflict');
     const next=clone(p);next.midiData.tracks.find(t=>t.id===scope.trackId).notes=notes;
-    return{next,impact:{...clone(scope),...range,removedNotes:a[0].notes.filter(inside).length,adoptedNotes:adopted.length,retainedNotes:retained.length}};
+    return{next,impact:{...clone(scope),...range,removedNotes:a[0].notes.filter(inside).length,adoptedNotes:adopted.length,retainedNotes:retained.length,retainedDependencies:['lyrics','chordProgressions',...VERSION_GROUPS.audio].filter(f=>p[f]!==undefined)}};
   }
   function versionCompose(p,checkpointId,groups,scope){
     const v=versionLedger(p),c=v.checkpoints.find(c=>c.id===checkpointId);
@@ -294,7 +298,7 @@
   }
   function versionView(p){
     let v;try{v=versionLedger(p)}catch(e){return`<p role="alert">${escapeHtml(e.message)}</p>`}const id=JSON.stringify(p.projectId),h=escapeHtml,disabled=versionPanel.busy?' disabled':'',preview=versionPanel.preview?.projectId===p.projectId?versionPanel.preview:null,draft=versionPanel.draft?.projectId===p.projectId?versionPanel.draft:null;
-    return`<details class="music-project-details music-song-versions"${versionPanel.open?' open':''} ontoggle="MusicStudio.versionPanel.open=this.open"><summary>Checkpoints（曲の比較・部分採用）</summary><p>通常保存・自動保存とは別の明示的な候補版です。音楽・音声は依存関係をまとめて採用します。元曲を任意の過去状態へ巻き戻す操作ではありません。各32件まで。上限時は完全Backupを保存してください。</p><form onsubmit="${h(`MusicStudio.versionSubmit(event,${id})`)}"><label style="color:#eef6ff">Name（チェックポイント名）<input name="checkpointName" maxlength="120" required${disabled}></label><button class="music-primary"${disabled}>Create（候補版を保存）</button></form>${v.checkpoints.length?`<form onchange="${h(`MusicStudio.versionSelectionChanged(event,${id})`)}" onsubmit="${h(`MusicStudio.versionPreviewSubmit(event,${id})`)}"><label style="color:#eef6ff">Checkpoint（候補版）<select name="checkpointId"${disabled}>${v.checkpoints.map(c=>`<option value="${h(c.id)}"${draft?.checkpointId===c.id?' selected':''}>${h(c.name)} · ${h(c.createdAt)} · r${h(c.sourceRevision)}</option>`).join('')}</select></label><fieldset style="background:#12283a;color:#eef6ff;border:1px solid #5f7f9f;border-radius:12px;padding:12px"${disabled}><legend style="color:#eef6ff">Parts（採用する部分）</legend>${[['music','Music（MIDI・コード・歌詞・AI候補・音源設定）'],['audio','Audio / Mix（音声・編集・Mix・Master設定）'],['notes','Notes（制作メモ）'],['details','Details（曲名・目的・状態）']].map(([key,label])=>`<label style="display:flex;align-items:center;gap:8px;min-height:44px;color:#eef6ff"><input type="checkbox" style="width:18px;min-height:18px;flex:0 0 18px" name="checkpointGroup" value="${key}"${draft?.groups.includes(key)?' checked':''}>${label}</label>`).join('')}</fieldset><fieldset style="background:#12283a;color:#eef6ff;border:1px solid #5f7f9f;border-radius:12px;padding:12px"${disabled}><legend style="color:#eef6ff">Track / Measures（トラック・小節範囲）</legend><label style="color:#eef6ff">Track（全体またはトラック）<select name="checkpointTrack"><option value="">Bundle（選択グループ全体）</option>${(p.midiData?.tracks||[]).map(t=>`<option value="${h(t.id)}"${draft?.scope?.trackId===t.id?' selected':''}>${h(t.name||t.part||t.id)}</option>`).join('')}</select></label><label style="color:#eef6ff">From（開始小節）<input name="checkpointStart" type="number" min="1" max="10000" value="${h(draft?.scope?.startMeasure||1)}"></label><label style="color:#eef6ff">To（終了小節・含む）<input name="checkpointEnd" type="number" min="1" max="10000" value="${h(draft?.scope?.endMeasure||1)}"></label><p>範囲採用はMusicだけを選択してください。拍子・音源・コード等の依存が異なる場合、歌詞・AI候補が結び付く場合、小節境界をまたぐ音符や保護音符がある場合は採用を止めます。</p></fieldset><button class="music-secondary"${disabled}>Compare（比較する）</button></form>`:''}${preview?`<p>Candidate（候補）: ${h(preview.comparison.name)}</p>${preview.impact?`<p>Range（変更範囲）: ${h(preview.impact.trackId)} · ${h(preview.impact.startMeasure)}–${h(preview.impact.endMeasure)}小節 · tick ${h(preview.impact.startTick)}–${h(preview.impact.endTick)} · 置換 ${h(preview.impact.removedNotes)}音符 / 採用 ${h(preview.impact.adoptedNotes)}音符 / 範囲外保持 ${h(preview.impact.retainedNotes)}音符。その他のトラック・設定を保持します。</p>`:''}<ul>${preview.comparison.groups.filter(g=>preview.groups.includes(g.key)).map(g=>`<li>${h({music:'Music（音楽）',audio:'Audio / Mix（音声）',notes:'Notes（メモ）',details:'Details（曲情報）'}[g.key])}: ${h(g.fields.map(f=>VERSION_FIELD_LABELS[f]||'その他の設定').join('、')||'変更なし')}</li>`).join('')}</ul><button class="music-primary"${disabled} onclick="${h(`MusicStudio.versionApply(${id})`)}">Adopt（選択部分を採用・保存）</button>`:''}<div class="music-form-actions"><button class="music-secondary"${disabled||v.cursor===0?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},-1)`)}">Undo adoption（部分採用を戻す）</button><button class="music-secondary"${disabled||v.cursor===v.path.length?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},1)`)}">Redo adoption（部分採用をやり直す）</button><button class="music-secondary" onclick="MusicStudio.versionCancel()">Cancel（取消）</button></div><p role="status">${h(versionPanel.message)}</p>${versionTimeline(p)}${binaryRecoveryView(p)}</details>`;
+    return`<details class="music-project-details music-song-versions"${versionPanel.open?' open':''} ontoggle="MusicStudio.versionPanel.open=this.open"><summary>Checkpoints（曲の比較・部分採用）</summary><p>通常保存・自動保存とは別の明示的な候補版です。音楽・音声は依存関係をまとめて採用します。元曲を任意の過去状態へ巻き戻す操作ではありません。各32件まで。上限時は完全Backupを保存してください。</p><form onsubmit="${h(`MusicStudio.versionSubmit(event,${id})`)}"><label style="color:#eef6ff">Name（チェックポイント名）<input name="checkpointName" maxlength="120" required${disabled}></label><button class="music-primary"${disabled}>Create（候補版を保存）</button></form>${v.checkpoints.length?`<form onchange="${h(`MusicStudio.versionSelectionChanged(event,${id})`)}" onsubmit="${h(`MusicStudio.versionPreviewSubmit(event,${id})`)}"><label style="color:#eef6ff">Checkpoint（候補版）<select name="checkpointId"${disabled}>${v.checkpoints.map(c=>`<option value="${h(c.id)}"${draft?.checkpointId===c.id?' selected':''}>${h(c.name)} · ${h(c.createdAt)} · r${h(c.sourceRevision)}</option>`).join('')}</select></label><fieldset style="background:#12283a;color:#eef6ff;border:1px solid #5f7f9f;border-radius:12px;padding:12px"${disabled}><legend style="color:#eef6ff">Parts（採用する部分）</legend>${[['music','Music（MIDI・コード・歌詞・AI候補・音源設定）'],['audio','Audio / Mix（音声・編集・Mix・Master設定）'],['notes','Notes（制作メモ）'],['details','Details（曲名・目的・状態）']].map(([key,label])=>`<label style="display:flex;align-items:center;gap:8px;min-height:44px;color:#eef6ff"><input type="checkbox" style="width:18px;min-height:18px;flex:0 0 18px" name="checkpointGroup" value="${key}"${draft?.groups.includes(key)?' checked':''}>${label}</label>`).join('')}</fieldset><fieldset style="background:#12283a;color:#eef6ff;border:1px solid #5f7f9f;border-radius:12px;padding:12px"${disabled}><legend style="color:#eef6ff">Track / Measures（トラック・小節範囲）</legend><label style="color:#eef6ff">Track（全体またはトラック）<select name="checkpointTrack"><option value="">Bundle（選択グループ全体）</option>${(p.midiData?.tracks||[]).map(t=>`<option value="${h(t.id)}"${draft?.scope?.trackId===t.id?' selected':''}>${h(t.name||t.part||t.id)}</option>`).join('')}</select></label><label style="color:#eef6ff">From（開始小節）<input name="checkpointStart" type="number" min="1" max="10000" value="${h(draft?.scope?.startMeasure||1)}"></label><label style="color:#eef6ff">To（終了小節・含む）<input name="checkpointEnd" type="number" min="1" max="10000" value="${h(draft?.scope?.endMeasure||1)}"></label><p>範囲採用はMusicだけを選択してください。拍子・音源・コード等の依存が異なる場合、歌詞の音符割当・歌声・AI候補が結び付く場合、小節境界をまたぐ音符や保護音符がある場合は採用を止めます。</p></fieldset><button class="music-secondary"${disabled}>Compare（比較する）</button></form>`:''}${preview?`<p>Candidate（候補）: ${h(preview.comparison.name)}</p>${preview.impact?`<p>Range（変更範囲）: ${h(preview.impact.trackId)} · ${h(preview.impact.startMeasure)}–${h(preview.impact.endMeasure)}小節 · tick ${h(preview.impact.startTick)}–${h(preview.impact.endTick)} · 置換 ${h(preview.impact.removedNotes)}音符 / 採用 ${h(preview.impact.adoptedNotes)}音符 / 範囲外保持 ${h(preview.impact.retainedNotes)}音符。その他のトラック・設定を保持します。関連データ保持：${h((preview.impact.retainedDependencies||[]).map(f=>VERSION_FIELD_LABELS[f]||f).join('、'))}。</p>`:''}<ul>${preview.comparison.groups.filter(g=>preview.groups.includes(g.key)).map(g=>`<li>${h({music:'Music（音楽）',audio:'Audio / Mix（音声）',notes:'Notes（メモ）',details:'Details（曲情報）'}[g.key])}: ${h(g.fields.map(f=>VERSION_FIELD_LABELS[f]||'その他の設定').join('、')||'変更なし')}</li>`).join('')}</ul><button class="music-primary"${disabled} onclick="${h(`MusicStudio.versionApply(${id})`)}">Adopt（選択部分を採用・保存）</button>`:''}<div class="music-form-actions"><button class="music-secondary"${disabled||v.cursor===0?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},-1)`)}">Undo adoption（部分採用を戻す）</button><button class="music-secondary"${disabled||v.cursor===v.path.length?' disabled':''} onclick="${h(`MusicStudio.versionUndoRedo(${id},1)`)}">Redo adoption（部分採用をやり直す）</button><button class="music-secondary" onclick="MusicStudio.versionCancel()">Cancel（取消）</button></div><p role="status">${h(versionPanel.message)}</p>${versionTimeline(p)}${binaryRecoveryView(p)}</details>`;
   }
   function rebindAIWorkspace(value,projectId,revision){if(!value)return null;const copy=clone(value);copy.projectId=projectId;copy.baseRevision=revision;copy.updatedAt=now();return copy}
 
@@ -1294,6 +1298,59 @@
       }
     }
   }
+  function recoveryBinaries(p){
+    // Legacy references without authenticated bytes remain visible and untouched.
+    // They must not prevent repair of an independently authenticated source.
+    if(!validateProject(p).valid)throw Error('reference-project-invalid');
+    const snapshots=[p,...versionSnapshots(p)].map(snapshot=>{
+      const copy=versionSnapshot(snapshot);
+      for(const field of REFERENCE_FIELDS){
+        if(copy[field]!==undefined&&!Array.isArray(copy[field]))throw Error('reference-list-invalid');
+        if(copy[field])copy[field]=copy[field].filter(r=>r?.binary);
+      }
+      return copy;
+    });
+    // Validate shared identities across the flattened snapshots as one graph.
+    // Different project IDs only prevent the validator's duplicate-project rule;
+    // no persisted snapshot or reference is rebound here.
+    snapshots.forEach((snapshot,i)=>{snapshot.projectId='recovery-inspection-'+i;if(snapshot.aiWorkspace)snapshot.aiWorkspace=rebindAIWorkspace(snapshot.aiWorkspace,snapshot.projectId,snapshot.revision)});
+    archiveValidateProjects(snapshots);return snapshots.flatMap(archiveBinaries);
+  }
+  const dependencyReports=new Map();
+  // Read bytes from durable storage, including history-only references. A failed
+  // or cancelled scan never publishes a partial healthy report or changes a song.
+  async function inspectStoredDependencies(projectId,options={}){
+    if(archiveTransfer.busy||versionPanel.busy)return{ok:false,error:'reference-transfer-busy'};
+    const target=repository,p=state.projects.find(p=>p.projectId===projectId),baseline=JSON.stringify(p),token=++archiveTransfer.generation;
+    const guard=()=>{archiveGuard(target,options.signal);if(token!==archiveTransfer.generation||versionPanel.busy||JSON.stringify(state.projects.find(p=>p.projectId===projectId))!==baseline)throw Error('reference-inspection-stale')};
+    dependencyReports.delete(projectId);archiveTransfer.busy=true;requestPaint();
+    try{
+      guard();if(!p||!target.getLongWav)throw Error('reference-durable-storage-required');
+      if(target.get&&JSON.stringify(await target.get(projectId))!==baseline)throw Error('reference-inspection-storage-conflict');guard();
+      const rows=[],known=new Map(),snapshots=[p,...versionSnapshots(p)];
+      for(let si=0;si<snapshots.length;si++){
+        const snapshot=snapshots[si],location=si===0?'current':'history:'+si;
+        for(const field of REFERENCE_FIELDS)for(const [index,r] of (snapshot[field]||[]).entries()){
+          if(!r?.binary)rows.push({id:null,name:r?.name||r?.fileName||field,status:'unverified-legacy',locations:[location+':'+field+':'+index]});
+        }
+        // Validate each descriptor independently so one legacy reference does not
+        // hide authenticated dependencies elsewhere in the project/history.
+        for(const b of [...(snapshot.longWavAssets||[]),...REFERENCE_FIELDS.flatMap(f=>(snapshot[f]||[]).filter(r=>r?.binary).flatMap(r=>referenceBinaries({[f]:[r]})))]){
+          if(!b||typeof b.id!=='string'||!Number.isSafeInteger(b.size)||!Array.isArray(b.hashes)||b.hashes.length!==Math.ceil(b.size/1048576)||b.hashes.some(h=>typeof h!=='string'||!/^[a-f0-9]{64}$/.test(h)))throw Error('reference-inspection-descriptor-invalid');
+          const identity=JSON.stringify([b.size,b.hashes]),prior=known.get(b.id);
+          if(prior){prior.locations.push(location);if(prior.identity!==identity)prior.status='identity-conflict';continue}
+          const row={id:b.id,name:b.name||b.id,size:b.size,hashes:clone(b.hashes),identity,locations:[location],status:'pending'};known.set(b.id,row);rows.push(row);
+        }
+      }
+      for(const row of known.values()){
+        guard();if(row.status==='identity-conflict')continue;
+        const record=await target.getLongWav(row.id);guard();
+        row.status=!record?'missing':!record.blob||record.blob.size!==row.size||JSON.stringify(record.hashes)!==JSON.stringify(row.hashes)?'corrupt':JSON.stringify(await longWavDigest(record.blob,guard))===JSON.stringify(row.hashes)?'verified':'corrupt';guard();
+      }
+      if(target.get&&JSON.stringify(await target.get(projectId))!==baseline)throw Error('reference-inspection-storage-conflict');
+      const report={checkedAt:now(),rows:rows.map(({identity,...row})=>row),baseline};guard();dependencyReports.set(projectId,report);return{ok:true,report};
+    }catch(e){notice('依存ファイルを確認できません：'+e.message,'error');return{ok:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
+  }
   // Restore an absent historical dependency using authenticated original bytes.
   // Snapshots and descriptors stay immutable; no guessed path or sound fallback.
   async function recoverMissingBinary(projectId,binaryId,file,options={}){
@@ -1304,7 +1361,7 @@
     archiveTransfer.busy=true;requestPaint();
     try{
       guard();if(!p||target.kind!=='indexeddb'||!target.putLongWav||!target.getLongWav)throw Error('reference-durable-storage-required');
-      archiveValidateProjects([p]);const descriptor=archiveBinaries(p).find(a=>a.id===binaryId);if(!descriptor)throw Error('reference-recovery-unknown');
+      const descriptor=recoveryBinaries(p).find(a=>a.id===binaryId);if(!descriptor)throw Error('reference-recovery-unknown');
       if(file.size!==descriptor.size||typeof file.slice!=='function')throw Error('reference-recovery-size');
       const hashes=await longWavDigest(file,guard);guard();if(JSON.stringify(hashes)!==JSON.stringify(descriptor.hashes))throw Error('reference-recovery-hash');
       const existing=await target.getLongWav(binaryId);guard();
@@ -1318,9 +1375,10 @@
   }
   function recoverMissingBinarySubmit(event,projectId){const f=event.currentTarget;return recoverMissingBinary(projectId,f.elements.recoveryBinary.value,f.elements.recoveryFile.files?.[0]).finally(()=>{f.elements.recoveryFile.value=''})}
   function binaryRecoveryView(p){
-    let list;try{archiveValidateProjects([p]);list=[...new Map(archiveBinaries(p).map(a=>[a.id,a])).values()]}catch(e){return`<p>Dependency recovery（依存ファイル復旧）: ${escapeHtml(e.message)}。識別情報のない旧参照は元のファイル欄から明示的に再選択してください。</p>`}
-    if(!list.length)return'';const h=escapeHtml,id=JSON.stringify(p.projectId);
-    return`<details class="music-project-details"><summary>Recover source（履歴の元ファイルを復旧）</summary><p>現在の曲・過去候補版・部分採用履歴が参照するファイルを選べます。欠落した本体だけを復旧し、サイズとSHA-256が一致しないファイルは拒否します。既存本体は置換しません。</p><form onsubmit="event.preventDefault();${h(`MusicStudio.recoverMissingBinarySubmit(event,${id})`)}"><label>Source（依存ファイル）<select name="recoveryBinary">${list.map(a=>`<option value="${h(a.id)}">${h(a.name||a.id)} · ${h(a.size)} bytes</option>`).join('')}</select></label><label>Original file（元ファイル）<input type="file" name="recoveryFile" required></label><button class="music-secondary"${archiveTransfer.busy||versionPanel.busy?' disabled':''}>Recover（照合して復旧）</button></form></details>`;
+    const report=dependencyReports.get(p.projectId),fresh=report?.baseline===JSON.stringify(p),h=escapeHtml,id=JSON.stringify(p.projectId),inspection=`<button class="music-secondary"${archiveTransfer.busy||versionPanel.busy?' disabled':''} onclick="${h(`MusicStudio.inspectStoredDependencies(${id})`)}">Check dependencies（本体・履歴を照合）</button><button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">Cancel（取消）</button>${fresh?`<p>Checked（照合日時）: ${h(report.checkedAt)}</p><ul>${report.rows.map(r=>`<li>${h(r.name)} · ${h({'verified':'一致','missing':'欠落・元ファイルを再指定','corrupt':'破損・既存本体を保護','identity-conflict':'識別情報が衝突','unverified-legacy':'旧参照・本体未照合'}[r.status])} · ${h(r.locations.join('、'))}</li>`).join('')}</ul>`:report?'<p>曲が変わりました。再照合してください。</p>':''}`;
+    let list;try{list=[...new Map(recoveryBinaries(p).map(a=>[a.id,a])).values()]}catch(e){return`${inspection}<p>Dependency recovery（依存ファイル復旧）: ${escapeHtml(e.message)}。識別情報のない旧参照は元のファイル欄から明示的に再選択してください。</p>`}
+    if(!list.length)return inspection;
+    return`<details class="music-project-details"><summary>Recover source（履歴の元ファイルを復旧）</summary>${inspection}<p>現在の曲・過去候補版・部分採用履歴が参照するファイルを選べます。欠落した本体だけを復旧し、サイズとSHA-256が一致しないファイルは拒否します。既存本体は置換しません。</p><form onsubmit="event.preventDefault();${h(`MusicStudio.recoverMissingBinarySubmit(event,${id})`)}"><label>Source（依存ファイル）<select name="recoveryBinary">${list.map(a=>`<option value="${h(a.id)}">${h(a.name||a.id)} · ${h(a.size)} bytes</option>`).join('')}</select></label><label>Original file（元ファイル）<input type="file" name="recoveryFile" required></label><button class="music-secondary"${archiveTransfer.busy||versionPanel.busy?' disabled':''}>Recover（照合して復旧）</button></form></details>`;
   }
   async function createLongWavArchive(options={}){
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,archiveTransfer.generation,baseline);guard(true);
@@ -4130,7 +4188,7 @@
   api.openProject=function(id){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`);return true};
   Object.assign(api,{setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,workActionTarget,openWorkAction,workspaceView});
   Object.assign(api,{editorLoadAcoustic,editorAdoptInstrument,editorAutoMapInstrument,instrumentEditPreset,instrumentDuplicatePreset,instrumentEntries,prepareInstruments,instrumentMenu,editorSetInstrument,instrumentAdvancedMenu,editorAddInstrumentRegion,editorEditInstrumentRegion,editorRemoveInstrumentRegion,editorLoadInstrumentPreset,editorAuditionInstrument,instrumentSavePreset,instrumentRenameAsset,instrumentOpenMix,instrumentProjectCommit});
-  Object.assign(api,{archiveCapacity,versionTimeline,recoverMissingBinary,recoverMissingBinarySubmit,binaryRecoveryView,versionRangeCompose,versionRebind,versionPanel,versionSnapshot,versionSnapshots,versionValidate,versionCapture,versionCompare,versionCompose,versionStep,versionCancel,versionCommit,versionSave,versionPreview,versionApply,versionUndoRedo,versionSubmit,versionPreviewSubmit,versionSelectionChanged,versionView});
+  Object.assign(api,{inspectStoredDependencies,archiveCapacity,versionTimeline,recoverMissingBinary,recoverMissingBinarySubmit,binaryRecoveryView,versionRangeCompose,versionRebind,versionPanel,versionSnapshot,versionSnapshots,versionValidate,versionCapture,versionCompare,versionCompose,versionStep,versionCancel,versionCommit,versionSave,versionPreview,versionApply,versionUndoRedo,versionSubmit,versionPreviewSubmit,versionSelectionChanged,versionView});
   root.MusicStudio=api;
   if(root.document){for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
 })(typeof window!=='undefined'?window:globalThis);
