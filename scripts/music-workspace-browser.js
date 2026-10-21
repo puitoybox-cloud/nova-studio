@@ -6,18 +6,27 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
 (async()=>{let browser;try{
   await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
   browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});
-  for(const width of [1440,820,390]){
-    const context=await browser.newContext({viewport:{width,height:1000}}),errors=[],external=[];let page=await context.newPage();
+  for(const width of [1440,1180,820,390]){
+    const context=await browser.newContext({viewport:{width,height:width===1180?820:1000}}),errors=[],external=[];let page=await context.newPage();
     const monitor=p=>{p.on('console',m=>{if(['error','warning'].includes(m.type()))errors.push(m.text())});p.on('pageerror',e=>errors.push(e.message))};monitor(page);
     await context.route('**/*',r=>{if(r.request().url().startsWith(base+'/')||/^(data:|blob:)/.test(r.request().url()))return r.continue();external.push(r.request().url());return r.abort()});
     await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);
     await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'workspace-song',projectName:'制作モードの曲',midiData:{ppq:480,tracks:[{id:'lead',part:'melody',name:'Melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}}),repo=a.indexedDbRepository();a.setRepository(repo);await repo.put(p);a.state.projects=[p];a.goHome()});
     await page.locator('[data-workspace]>summary').click();await page.locator('[data-work-mode]').selectOption('finish');await page.waitForFunction(()=>MusicStudio.state.settings.workspace.mode==='finish');await page.getByRole('button',{name:'Export（最終書き出し）のお気に入り追加',exact:true}).click();await page.waitForFunction(()=>MusicStudio.state.settings.workspace.favorites.includes('export'));
     assert.equal(await page.locator('[data-workspace]').getAttribute('open')!==null,true);
+    await page.evaluate(async()=>{const r=await MusicStudio.setWorkActionVisible('export',false);if(!r.ok)throw Error(r.error)});
+    assert.equal(await page.getByRole('button',{name:'Export（最終書き出し）',exact:true}).count(),0);
+
     const saved=await page.evaluate(async()=>{const a=MusicStudio,original=JSON.stringify(a.state.projects[0]),archive=await a.createLongWavArchive(),r=await a.restoreLongWavArchive(archive,{settings:true});if(!r.ok)throw Error(r.error);if(JSON.stringify(a.state.projects[0])!==original)throw Error('song-mutated');return a.state.settings.workspace});
-    assert.deepEqual(saved,{mode:'finish',favorites:['export']});
+    assert.deepEqual(saved,{hidden:['export'],mode:'finish',favorites:['export']});
     await page.close();page=await context.newPage();monitor(page);await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);assert.deepEqual(await page.evaluate(()=>MusicStudio.state.settings.workspace),saved);
-    await page.locator('[data-workspace]>summary').click();await page.locator('[data-work-project]').selectOption('workspace-song');await page.getByRole('button',{name:'Export（最終書き出し）',exact:true}).first().click();await page.waitForSelector('.music-final-export');await page.waitForFunction(()=>document.activeElement?.matches('.music-final-export'));
+    await page.locator('[data-workspace]>summary').click();await page.locator('[data-work-project]').selectOption('workspace-song');
+    const beforeRequestHash=await page.evaluate(()=>location.hash);
+    await page.locator('[data-work-request] input').fill('書き出しの画面を開きたい');
+    await page.getByRole('button',{name:'Find（画面候補を表示）',exact:true}).click();
+    assert.equal(await page.locator('[data-work-request-result] button').count(),1);
+    assert.equal(await page.evaluate(()=>location.hash),beforeRequestHash);
+    await page.locator('[data-work-request-result] button').click();await page.waitForSelector('.music-final-export');await page.waitForFunction(()=>document.activeElement?.matches('.music-final-export'));
     const routes=['music-studio','music-studio/recent-projects','music-studio/new-project','music-studio/project/workspace-song','music-studio/vocal/workspace-song','music-studio/settings','music-studio/backup','music-studio/lyrics-notes/workspace-song','music-studio/mixing/workspace-song','music-studio/midi-editor/workspace-song'];const screens=[];
     const metrics=()=>page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,small:[...document.querySelectorAll('[data-workspace] button,[data-workspace] select,.music-editor-popover button,.music-correction-popover button')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().height<43.9).map(e=>e.textContent),labels:[...document.querySelectorAll('[data-workspace] label')].map(e=>getComputedStyle(e).gap)}));
     for(let i=0;i<routes.length;i++){
