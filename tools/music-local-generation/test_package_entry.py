@@ -22,7 +22,7 @@ class PackageEntry(unittest.TestCase):
             with self.assertRaises(FileNotFoundError): web_root(code)
             web = contents / 'Resources/MusicStudioWeb'
             web.mkdir(); (web / 'music-studio.html').write_text('fixture')
-            self.assertEqual(web_root(code), web)
+            self.assertEqual(web_root(code), web.resolve(strict=True))
             (web / 'music-studio.html').unlink()
             (web / 'music-studio.html').symlink_to(HERE / 'serve.py')
             with self.assertRaises(ValueError): web_root(code)

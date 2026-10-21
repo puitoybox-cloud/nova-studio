@@ -5,11 +5,11 @@ import json
 import platform
 import socket
 import ssl
-import subprocess
 import sys
 import time
 from pathlib import Path
 from compose import digest
+from startup_process import probe
 
 HERE = Path(__file__).resolve().parent
 
@@ -76,9 +76,7 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
         # model pair while the serving process loads its production sessions.
         from python_child import command as child_command
         command = child_command('verify_model_load.py', root / 'weights')
-        result = subprocess.run(command, cwd=HERE, timeout=180, capture_output=True, text=True)
-        if result.returncode:
-            raise ValueError('ONNX model load failed: ' + result.stderr[-1000:])
+        probe(command, timeout=180)
     if all(c['ok'] for c in checks if c['id'].startswith(('model:', 'dependency:')) or c['id'] == 'cpu-provider'):
         check('model-load', models, 'ONNXモデルの互換性・CPU実行環境・空きメモリを確認してください。')
     else:
@@ -88,7 +86,7 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
     check('voice', lambda: verified(voice, json.loads((HERE / 'source-lock.json').read_text())['voiceFile']['sha256']), '固定の許諾済み歌声音源をprepare.pyで準備してください。')
     def sinsy():
         resolved = paths(root)
-        subprocess.run([str(resolved['sinsy']), '-h'], timeout=10, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        probe([str(resolved['sinsy']), '-h'], timeout=10)
     check('sinsy-execution', sinsy, 'Sinsyの実行権限・CPU互換・共有ライブラリを確認してください。')
     bind = None
     try: bind = transport(lan_ip, tls_cert, tls_key, port)
