@@ -2636,10 +2636,10 @@
     {id:'settings',label:'Settings（設定）',mode:'all'}
   ];
   const WORK_MODES={compose:'Compose（作曲）',record:'Record（録音）',mix:'Mix（ミックス）',finish:'Finish（仕上げ）'};
-  let workspaceSaving=false,workspaceMessage='',workspaceNavigation=0,workspaceExpanded=false,workspaceProjectId='';
-  function normalizeWorkspace(input){return {mode:Object.hasOwn(WORK_MODES,input?.mode)?input.mode:'compose',favorites:[...new Set((Array.isArray(input?.favorites)?input.favorites:[]).filter(id=>WORK_ACTIONS.some(a=>a.id===id)))].slice(0,WORK_ACTIONS.length)}}
+  let workspaceSaving=false,workspaceMessage='',workspaceNavigation=0,workspaceExpanded=false,workspaceProjectId='',workspaceRequestText='';
+  function normalizeWorkspace(input){const hidden=[...new Set((Array.isArray(input?.hidden)?input.hidden:[]).filter(id=>WORK_ACTIONS.some(a=>a.id===id)))];return {...(hidden.length?{hidden}:{}),mode:Object.hasOwn(WORK_MODES,input?.mode)?input.mode:'compose',favorites:[...new Set((Array.isArray(input?.favorites)?input.favorites:[]).filter(id=>WORK_ACTIONS.some(a=>a.id===id)))].slice(0,WORK_ACTIONS.length)}}
   function workspaceHasDraftInput(){return [...(root.document?.querySelectorAll?.('.music-ai-panel input,.music-ai-panel textarea')||[])].some(el=>['checkbox','radio'].includes(el.type)?el.checked!==el.defaultChecked:el.value!==el.defaultValue)}
-  function workspaceBusy(){return workspaceSaving||!state.loaded||state.dirty||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||state.midiEditor?.dirty||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.recording||state.midiInput.starting||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise}
+  function workspaceBusy(){return finalExport.busy||lyricsEditor.busy||state.midiInput.countingIn||state.midiInput.stopping||workspaceSaving||!state.loaded||state.dirty||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||state.midiEditor?.dirty||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.recording||state.midiInput.starting||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise}
   async function saveWorkspace(change){
     if(workspaceBusy())return {ok:false,error:'workspace-busy'};
     const target=repository,baseline=JSON.stringify(state.settings),next=preserveRestoreSettings(state.settings||defaultSettings());
@@ -2657,6 +2657,25 @@
   }
   function setWorkMode(mode){if(!Object.hasOwn(WORK_MODES,mode))return Promise.resolve({ok:false,error:'workspace-mode-invalid'});return saveWorkspace(w=>({...w,mode}))}
   function toggleFavorite(id){if(!WORK_ACTIONS.some(a=>a.id===id))return Promise.resolve({ok:false,error:'workspace-action-invalid'});return saveWorkspace(w=>({...w,favorites:w.favorites.includes(id)?w.favorites.filter(x=>x!==id):[...w.favorites,id]}))}
+  function setWorkActionVisible(id,visible){
+    if(!WORK_ACTIONS.some(a=>a.id===id)||typeof visible!=='boolean')return Promise.resolve({ok:false,error:'workspace-action-invalid'});
+    return saveWorkspace(w=>({...w,hidden:visible?(w.hidden||[]).filter(x=>x!==id):[...(w.hidden||[]),id]}));
+  }
+  // Navigation only: bounded local aliases, never an AI operation or provider request.
+  function resolveWorkRequest(text){
+    if(typeof text!=='string'||!text.trim()||text.length>240)return {ok:false,error:'navigation-request-invalid',actions:[]};
+    const value=text.normalize('NFKC').toLowerCase();
+    if(/(?:しない|しなく|開かない|不要|しないで|don't|do not|https?:|javascript:|<|>)/.test(value))return {ok:false,error:'navigation-request-unsupported',actions:[]};
+    const aliases={midi:/(?:midi|ピアノロール|音符|演奏編集)/,lyrics:/(?:lyrics|歌詞|発音|仮歌)/,assistant:/(?:assistant|アシスタント|作曲相談|編曲)/,vocal:/(?:vocal|ボーカル|録音|テイク)/,mix:/(?:\bmix\b|ミックス|音量調整|\beq\b|コンプレッサー)/,harmony:/(?:harmony|ハーモニー|ハモリ)/,master:/(?:master|マスタリング|仕上げ)/,export:/(?:export|書き出し|書出し|エクスポート)/,backup:/(?:backup|バックアップ|復元)/,settings:/(?:settings|設定)/};
+    const actions=WORK_ACTIONS.filter(a=>aliases[a.id].test(value)).map(a=>a.id);
+    return actions.length?{ok:true,actions}:{ok:false,error:'navigation-request-unrecognized',actions:[]};
+  }
+  function previewWorkRequest(event){
+    event?.preventDefault?.();const form=event?.target,text=form?.elements?.request?.value,result=resolveWorkRequest(text),output=form?.querySelector?.('[data-work-request-result]');
+    const select=root.document?.querySelector('[data-work-project]'),id=select?select.value:workspaceProjectId||selectedMidiProject()?.projectId;
+    if(output)output.innerHTML=result.ok?result.actions.map(action=>{const a=WORK_ACTIONS.find(a=>a.id===action);return `<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction(${JSON.stringify(action)},${JSON.stringify(id||'')})`)}"${workActionTarget(action,id)?'':' disabled'}>${escapeHtml(a.label)}を開く</button>`}).join(''):'対応する画面を確認できません。操作名を一つ入力してください。';
+    return result;
+  }
   function workActionTarget(id,projectId){
     if(id==='backup')return {route:BACKUP_ROUTE};if(id==='settings')return {route:SETTINGS_ROUTE};
     if(!state.projects.some(p=>p.projectId===projectId))return null;
@@ -2674,7 +2693,7 @@
   }
   function openWorkAction(id,explicitProjectId){
     const select=root.document?.querySelector('[data-work-project]'),projectId=explicitProjectId||(select?select.value:workspaceProjectId||selectedMidiProject()?.projectId),target=workActionTarget(id,projectId);
-    if(!target||workspaceSaving||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||lyricsEditor.busy||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
+    if(!target||finalExport.busy||state.midiInput.countingIn||state.midiInput.stopping||workspaceSaving||workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId))||lyricsEditor.busy||pcmEditor.busy||archiveTransfer.busy||shutdownPromise||!guardLeave())return false;
     if(projectId){workspaceProjectId=projectId;setLastProject(projectId)}
     workspaceExpanded=false;const disclosure=root.document?.querySelector?.('[data-workspace]');if(disclosure)disclosure.open=false;
     const token=++workspaceNavigation;routeTo(target.route);
@@ -2711,8 +2730,8 @@
   }
   function workspaceView(){
     const w=normalizeWorkspace(state.settings?.workspace),busy=workspaceBusy(),project=state.projects.find(p=>p.projectId===workspaceProjectId)||selectedMidiProject(),disabled=busy?' disabled':'';
-    const rows=WORK_ACTIONS.filter(a=>a.mode===w.mode||a.mode==='all'),buttons=items=>items.map(a=>`<div class="music-work-action"><button type="button" class="music-secondary" onclick="MusicStudio.openWorkAction('${a.id}')"${workspaceSaving||(!project&&!['backup','settings'].includes(a.id))?' disabled':''}>${a.label}</button><button type="button" class="music-secondary music-work-star" aria-label="${escapeHtml(a.label)}のお気に入り${w.favorites.includes(a.id)?'解除':'追加'}" aria-pressed="${w.favorites.includes(a.id)}" onclick="MusicStudio.toggleFavorite('${a.id}')"${disabled}>${w.favorites.includes(a.id)?'★':'☆'}</button></div>`).join('');
-    return `<details class="music-workspace" data-workspace${workspaceExpanded?' open':''} ontoggle="if(this.isConnected)MusicStudio.setWorkspaceExpanded(this.open)"><summary>Workspace（制作モード・お気に入り） · ${WORK_MODES[w.mode]}</summary><div class="music-work-controls"><label>Mode（制作段階）<select data-work-mode onchange="MusicStudio.setWorkMode(this.value)"${disabled}>${Object.entries(WORK_MODES).map(([id,label])=>option(id,w.mode,label)).join('')}</select></label><label>Project（対象の曲）<select data-work-project onchange="MusicStudio.setWorkProject(this.value)">${option('',project?.projectId||'','曲を選択')}${state.projects.map(p=>option(p.projectId,project?.projectId,p.projectName)).join('')}</select></label></div><p>編集画面を開いて作業します。AI候補は各画面で試聴・比較し、必要な部分だけ採用できます。</p><div class="music-work-actions">${buttons(rows)}</div><h3>Favorites（お気に入り）</h3><div class="music-work-actions">${buttons(w.favorites.map(id=>WORK_ACTIONS.find(a=>a.id===id)))||'<p>☆でよく使う機能を登録できます。</p>'}</div><p role="status" data-work-status>${escapeHtml(workspaceMessage|| (busy?'保存・録音・編集中は設定の変更を待ってください。':'制作モードとお気に入りは端末内に保存します。'))}</p></details>`;
+    const hidden=new Set(w.hidden||[]),rows=WORK_ACTIONS.filter(a=>!hidden.has(a.id)&&(a.mode===w.mode||a.mode==='all')),buttons=items=>items.map(a=>`<div class="music-work-action"><button type="button" class="music-secondary" onclick="MusicStudio.openWorkAction('${a.id}')"${workspaceSaving||(!project&&!['backup','settings'].includes(a.id))?' disabled':''}>${a.label}</button><button type="button" class="music-secondary music-work-star" aria-label="${escapeHtml(a.label)}のお気に入り${w.favorites.includes(a.id)?'解除':'追加'}" aria-pressed="${w.favorites.includes(a.id)}" onclick="MusicStudio.toggleFavorite('${a.id}')"${disabled}>${w.favorites.includes(a.id)?'★':'☆'}</button></div>`).join('');
+    return `<details class="music-workspace" data-workspace${workspaceExpanded?' open':''} ontoggle="if(this.isConnected)MusicStudio.setWorkspaceExpanded(this.open)"><summary>Workspace（制作モード・お気に入り） · ${WORK_MODES[w.mode]}</summary><div class="music-work-controls"><label>Mode（制作段階）<select data-work-mode onchange="MusicStudio.setWorkMode(this.value)"${disabled}>${Object.entries(WORK_MODES).map(([id,label])=>option(id,w.mode,label)).join('')}</select></label><label>Project（対象の曲）<select data-work-project onchange="MusicStudio.setWorkProject(this.value)">${option('',project?.projectId||'','曲を選択')}${state.projects.map(p=>option(p.projectId,project?.projectId,p.projectName)).join('')}</select></label></div><p>編集画面を開いて作業します。AI候補は各画面で試聴・比較し、必要な部分だけ採用できます。</p><div class="music-work-actions">${buttons(rows)}</div><details data-work-visibility><summary>Visible actions（表示する操作）</summary><p>非表示にしても機能・曲・お気に入りは保持します。</p>${WORK_ACTIONS.map(a=>`<label><input type="checkbox" ${hidden.has(a.id)?'':'checked'} onchange="MusicStudio.setWorkActionVisible('${a.id}',this.checked)"${disabled}>${a.label}</label>`).join('')}</details><form data-work-request onsubmit="MusicStudio.previewWorkRequest(event)"><label>Open a screen（文章で画面を探す）<input name="request" maxlength="240" value="${escapeHtml(workspaceRequestText)}" oninput="MusicStudio.setWorkRequestText(this.value)" placeholder="歌詞の画面を開きたい" required></label><button class="music-secondary" type="submit">Find（画面候補を表示）</button><p>端末内で操作名を照合します。ボタンで画面を開き、編集・生成・復元は各画面で実行します。</p><div data-work-request-result role="status"></div></form><h3>Favorites（お気に入り）</h3><div class="music-work-actions">${buttons(w.favorites.filter(id=>!hidden.has(id)).map(id=>WORK_ACTIONS.find(a=>a.id===id)))||'<p>☆でよく使う機能を登録できます。</p>'}</div><p role="status" data-work-status>${escapeHtml(workspaceMessage|| (busy?'保存・録音・編集中は設定の変更を待ってください。':'制作モードとお気に入りは端末内に保存します。'))}</p></details>`;
   }
   function checked(value){return value?' checked':''}
   function option(value,current,label=value){return `<option value="${escapeHtml(value)}"${String(value)===String(current)?' selected':''}>${escapeHtml(label)}</option>`}
@@ -4186,7 +4205,7 @@
   api.focusMusicStudio=focusMusicStudio;
   api.goDreamArchitect=goDreamArchitect;
   api.openProject=function(id){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;setLastProject(id);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(id)}`);return true};
-  Object.assign(api,{setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,workActionTarget,openWorkAction,workspaceView});
+  Object.assign(api,{setWorkRequestText(value){workspaceRequestText=String(value||'').slice(0,240)},setWorkProject(id){if(state.projects.some(p=>p.projectId===id)||id==='')workspaceProjectId=id},setWorkspaceExpanded(open){workspaceExpanded=Boolean(open)},normalizeWorkspace,setWorkMode,toggleFavorite,setWorkActionVisible,resolveWorkRequest,previewWorkRequest,workActionTarget,openWorkAction,workspaceView});
   Object.assign(api,{editorLoadAcoustic,editorAdoptInstrument,editorAutoMapInstrument,instrumentEditPreset,instrumentDuplicatePreset,instrumentEntries,prepareInstruments,instrumentMenu,editorSetInstrument,instrumentAdvancedMenu,editorAddInstrumentRegion,editorEditInstrumentRegion,editorRemoveInstrumentRegion,editorLoadInstrumentPreset,editorAuditionInstrument,instrumentSavePreset,instrumentRenameAsset,instrumentOpenMix,instrumentProjectCommit});
   Object.assign(api,{inspectStoredDependencies,archiveCapacity,versionTimeline,recoverMissingBinary,recoverMissingBinarySubmit,binaryRecoveryView,versionRangeCompose,versionRebind,versionPanel,versionSnapshot,versionSnapshots,versionValidate,versionCapture,versionCompare,versionCompose,versionStep,versionCancel,versionCommit,versionSave,versionPreview,versionApply,versionUndoRedo,versionSubmit,versionPreviewSubmit,versionSelectionChanged,versionView});
   root.MusicStudio=api;
