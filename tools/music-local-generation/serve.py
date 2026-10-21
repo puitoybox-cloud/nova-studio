@@ -18,7 +18,8 @@ from compose import compose, digest
 from cancellation import ComposerJobs
 from synthesis_process import run_synthesis
 
-ROOT = Path(__file__).resolve().parents[2]
+from package_paths import web_root
+ROOT = web_root(Path(__file__).resolve().parent)
 LOCK = threading.Lock()
 
 

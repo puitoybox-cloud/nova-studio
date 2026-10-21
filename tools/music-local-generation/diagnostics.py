@@ -74,7 +74,8 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
         # these graphs can actually be opened by the installed native runtime.
         # Use a disposable process so the launcher does not retain a second
         # model pair while the serving process loads its production sessions.
-        command = [sys.executable, str(HERE / 'verify_model_load.py'), str(root / 'weights')]
+        from python_child import command as child_command
+        command = child_command('verify_model_load.py', root / 'weights')
         result = subprocess.run(command, cwd=HERE, timeout=180, capture_output=True, text=True)
         if result.returncode:
             raise ValueError('ONNX model load failed: ' + result.stderr[-1000:])

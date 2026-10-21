@@ -38,6 +38,7 @@ jobs:
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_verify_model_load.py
       - run: python tools/music-local-generation/test_launch_lifecycle.py
+      - run: python tools/music-local-generation/test_package_entry.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - run: python tools/music-local-generation/test_generation_budget.py
@@ -110,6 +111,7 @@ jobs:
       - run: python tools/music-local-generation/test_transport.py
       - run: python tools/music-local-generation/test_verify_model_load.py
       - run: python tools/music-local-generation/test_launch_lifecycle.py
+      - run: python tools/music-local-generation/test_package_entry.py
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - run: python tools/music-local-generation/test_generation_budget.py

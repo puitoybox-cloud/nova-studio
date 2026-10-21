@@ -81,7 +81,8 @@ def main():
     if not report['ok']: raise SystemExit(1)
     if args.check: return
     resolved = paths(args.assets)
-    command = [sys.executable, str(HERE / 'serve.py'), '--port', str(args.port)]
+    from python_child import command as child_command
+    command = child_command('serve.py', '--port', str(args.port))
     for key, value in resolved.items(): command += ['--' + key, str(value)]
     for key in ('lan_ip', 'tls_cert', 'tls_key'):
         if getattr(args, key): command += ['--' + key.replace('_', '-'), str(getattr(args, key))]
