@@ -21,10 +21,11 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
     assert.deepEqual(saved,{hidden:['export'],mode:'finish',favorites:['export']});
     await page.close();page=await context.newPage();monitor(page);await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);assert.deepEqual(await page.evaluate(()=>MusicStudio.state.settings.workspace),saved);
     await page.locator('[data-workspace]>summary').click();await page.locator('[data-work-project]').selectOption('workspace-song');
+    const beforeRequestHash=await page.evaluate(()=>location.hash);
     await page.locator('[data-work-request] input').fill('書き出しの画面を開きたい');
     await page.getByRole('button',{name:'Find（画面候補を表示）',exact:true}).click();
     assert.equal(await page.locator('[data-work-request-result] button').count(),1);
-    assert.equal(await page.evaluate(()=>location.hash),'#music-studio');
+    assert.equal(await page.evaluate(()=>location.hash),beforeRequestHash);
     await page.locator('[data-work-request-result] button').click();await page.waitForSelector('.music-final-export');await page.waitForFunction(()=>document.activeElement?.matches('.music-final-export'));
     const routes=['music-studio','music-studio/recent-projects','music-studio/new-project','music-studio/project/workspace-song','music-studio/vocal/workspace-song','music-studio/settings','music-studio/backup','music-studio/lyrics-notes/workspace-song','music-studio/mixing/workspace-song','music-studio/midi-editor/workspace-song'];const screens=[];
     const metrics=()=>page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,small:[...document.querySelectorAll('[data-workspace] button,[data-workspace] select,.music-editor-popover button,.music-correction-popover button')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().height<43.9).map(e=>e.textContent),labels:[...document.querySelectorAll('[data-workspace] label')].map(e=>getComputedStyle(e).gap)}));
