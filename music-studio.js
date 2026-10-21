@@ -212,7 +212,11 @@
     if(!same(trackMeta(a[0]),trackMeta(b[0])))throw Error('checkpoint-range-track-settings-conflict');
     const range=root.MusicStudioMeterMap.rangeToTicks(current,scope.startMeasure,scope.endMeasure);
     const editor=current.editor||{};
-    if(editor.measureLocks||editor.lockedMeasures?.length||Object.values(editor.trackStates||{}).some(x=>x.lockedMeasures?.length)||Object.values(editor.parts||{}).some(x=>x.lockedMeasures?.length))throw Error('checkpoint-range-measure-lock-use-editor');
+    if(editor.measureLocks||editor.lockedMeasures?.length||Object.values(editor.trackStates||{}).some(x=>x.lockedMeasures?.length)||Object.values(editor.parts||{}).some(x=>x.lockedMeasures?.length)){
+      if(!root.MusicStudioMeasureLocks?.protectedRanges||!root.MusicStudioEditor)throw Error('checkpoint-range-measure-lock-use-editor');
+      let protectedRanges;try{protectedRanges=root.MusicStudioMeasureLocks.protectedRanges(current,root.MusicStudioEditor,scope.trackId)}catch(e){throw Error('checkpoint-range-lock-context:'+e.message)}
+      if(protectedRanges.some(r=>r.startTick<range.endTick&&r.endTick>range.startTick))throw Error('checkpoint-range-measure-lock-use-editor');
+    }
     if(a[0].locked||b[0].locked)throw Error('checkpoint-range-locked-track');
     const inside=n=>n.startTick>=range.startTick&&n.startTick<range.endTick;
     for(const track of [a[0],b[0]])for(const n of track.notes){
