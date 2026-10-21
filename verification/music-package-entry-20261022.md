@@ -26,7 +26,7 @@ Existing unsigned_app/unsigned_generation assembly and externally approved graph
 
 ## Local validation
 
-Generation Python: 51 tests PASS, including four new real subprocess/path regressions. Fixture paths are not AI/Mach-O acceptance. Audio Python result and complete Node result are recorded in the final PR after their processes finish. Existing audio ResourceWarnings were observed; no claim of warning-free Python execution. node --check and git diff --check results recorded separately.
+Generation Python: 51 tests PASS, including four new real subprocess/path regressions. Fixture paths are not AI/Mach-O acceptance. Audio Python: 509 run, 504 PASS, 5 existing skips. Full node --test: 2551 PASS, 0 fail/skip. All 256 JavaScript files pass node --check; changed Python compilation, Helper shell syntax and git diff --check PASS. Existing audio ResourceWarnings were observed; no claim of warning-free Python execution. node --check and git diff --check results recorded separately.
 
 ## Unresolved mandatory work
 
@@ -39,3 +39,4 @@ Before B: supply and approve a relocatable Intel Python/ONNX/numpy/Pillow/Sinsy/
 Last known formal count remains A0/B0/C30; no promotion. The September 30 original specification was not re-read here; the October 21 repository ledger is prior evidence only.
 
 Signing/notarization not performed. Remaining user-controlled inputs: authorized Developer ID Application signing identity/private key in Keychain, Team ID and approved notarytool profile/credentials. None acquired, used, committed or changed. Hardened Runtime/entitlements and nested signing must be validated against the final actual Python/native library tree; no blanket disable-library-validation entitlement added. Physical Intel Mac/iPad, LAN address and certificate trust acceptance remain with Tia.
+
