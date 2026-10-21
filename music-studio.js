@@ -1303,7 +1303,7 @@
     // They must not prevent repair of an independently authenticated source.
     if(!validateProject(p).valid)throw Error('reference-project-invalid');
     const snapshots=[p,...versionSnapshots(p)].map(snapshot=>{
-      const copy=versionSnapshot(snapshot);
+      const copy={...snapshot};delete copy.songVersions;
       for(const field of REFERENCE_FIELDS){
         if(copy[field]!==undefined&&!Array.isArray(copy[field]))throw Error('reference-list-invalid');
         if(copy[field])copy[field]=copy[field].filter(r=>r?.binary);
@@ -1313,7 +1313,7 @@
     // Validate shared identities across the flattened snapshots as one graph.
     // Different project IDs only prevent the validator's duplicate-project rule;
     // no persisted snapshot or reference is rebound here.
-    snapshots.forEach((snapshot,i)=>{snapshot.projectId='recovery-inspection-'+i;if(snapshot.aiWorkspace)snapshot.aiWorkspace=rebindAIWorkspace(snapshot.aiWorkspace,snapshot.projectId,snapshot.revision)});
+    snapshots.forEach((snapshot,i)=>{snapshot.projectId='recovery-inspection-'+i;if(snapshot.aiWorkspace)snapshot.aiWorkspace={...snapshot.aiWorkspace,projectId:snapshot.projectId}});
     archiveValidateProjects(snapshots);return snapshots.flatMap(archiveBinaries);
   }
   const dependencyReports=new Map();
