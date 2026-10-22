@@ -27,3 +27,9 @@ The local host is Linux x86_64 with no Swift or Chrome executable; native/UI/gen
 The original Music_Studio_最終機能仕様書_v1.pdf (2026-09-30), Library ID libfile_fea4127fde5c81919fee8296d5c7647d, was read fully (5 pages, 166 lines). Formal No.24 is diagnostics/safe repair, not Japanese vocals. All 30 formal names and C judgments are retained in music-native-integration-30-features-20261022.json: A0/B0/C30, no feature promoted on tests alone.
 
 Main and prior PR refs remain unchanged. No force push, Ready/Merge, new sound/model acquisition, new demo song or original-data deletion.
+
+## Explicit persistence acceptance conditions
+
+The full Intel run at 7ea0929fc6ccee6f1993361427fffb2ae1ea1b5d (job 119865844879) still failed its initial default model generation after bounded retries. The imported project's default selected range is one bar (1,920 ticks); local request-contract inspection confirms seed 72 / balanced / C / no style text. This short-range generation-quality residual is NOT resolved or certified.
+
+To exercise the independent save/restart/recovery contract, the same native test now explicitly selects four bars and the existing gentle/ballad controls with C F G C, seed 72, pitch range 57–77. The source MIDI file and all original notes remain intact. The report includes these exact generation settings. No generation, failure assertion, save, restart, backup or recovery step is removed. A successful run under these settings must not be described as fixing the default one-bar generation residual.

@@ -6,6 +6,15 @@ const assert=(ok,message)=>{if(!ok)throw Error(message)};
 const wait=async check=>{for(let n=0;n<600;n++){if(check())return;await new Promise(r=>setTimeout(r,50))}throw Error('native editor deadline')};
 const to64=async blob=>{const bytes=new Uint8Array(await blob.arrayBuffer());let text='';for(let n=0;n<bytes.length;n+=32768)text+=String.fromCharCode(...bytes.subarray(n,n+32768));return btoa(text)};
 const from64=text=>new Blob([Uint8Array.from(atob(text),c=>c.charCodeAt(0))]);
+// Persistence acceptance uses explicit four-bar generation controls. The default
+// one-bar empty-output failure remains a separate, documented production residual.
+const generationSettings={startMeasure:1,endMeasure:4,style:'gentle',genre:'ballad',chords:'C F G C',seed:72};
+function configureGeneration(id){
+ MusicStudioAIAssistantPanel.setTab(id,'candidates');
+ for(const [selector,value] of Object.entries({'#aiRemakeMode':'new','#aiModelStyle':'gentle','#aiModelRange':'57:77','#aiModelGenre':'ballad','#aiModelChords':'C F G C','#aiGenerationSeed':'72'})){
+  const field=document.querySelector(selector);assert(field,'native generation control missing: '+selector);field.value=value;
+ }
+}
 const messages=[],external=[];
 for(const name of ['warn','error']){const original=console[name].bind(console);console[name]=(...args)=>{messages.push(name+':'+args.map(String).join(' '));original(...args)}}
 addEventListener('error',e=>messages.push(e.message));addEventListener('unhandledrejection',e=>messages.push(String(e.reason)));
@@ -18,6 +27,7 @@ if(input.phase==='write'){
  const parsed=MusicStudioMidiParser.parseMidiFile(Uint8Array.from(atob(input.midi),c=>c.charCodeAt(0)));
  assert(parsed.validation.importable,'existing MIDI fixture rejected');
  const midi=MusicStudioMidiParser.convertParsedMidiToProjectData(parsed);
+ midi.editor={...(midi.editor||{}),measureCount:Math.max(4,midi.editor?.measureCount||0),editRange:{startMeasure:1,endMeasure:4}};
  const lead=midi.tracks.find(t=>t.notes.length&&t.part!=='drums');assert(lead,'fixture melodic track required');
  lead.part='melody';
  p=await a.createAIProject({projectInput:{projectId:id,projectName:'Native lifecycle acceptance',bpm:midi.tempo,key:'C'},midiData:midi});
@@ -26,7 +36,7 @@ if(input.phase==='write'){
  const session=a.state.midiEditor;core.selectPart(session,'melody');
  core.addNote(session,{pitch:67,startTick:1920,durationTicks:480,velocity:83});session.midiData.tempo=96;session.dirty=true;
  assert((await a.saveMidiEditor({silent:true})).ok,'edited song save failed');
- MusicStudioAIAssistantPanel.setTab(id,'candidates');
+ configureGeneration(id);
  await MusicStudioAIAssistantPanel.generateLocalModel(id);
  assert((await a.saveMidiEditor({silent:true})).ok,'AI workspace save failed');
  p=await repo.get(id);assert(p.aiWorkspace?.candidateSets?.some(s=>s.candidates.length),'real ONNX candidates missing: '+MusicStudioAIAssistantPanel._states.get(id)?.message);
@@ -61,7 +71,7 @@ if(input.phase==='write'){
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);core.selectPart(a.state.midiEditor,'melody');
  core.addNote(a.state.midiEditor,{pitch:71,startTick:2880,durationTicks:240,velocity:70});assert((await a.saveMidiEditor({silent:true})).ok,'restored edit save failed');
  const candidatesBefore=(await repo.get(id)).aiWorkspace.candidateSets.length;
- MusicStudioAIAssistantPanel.setTab(id,'candidates');await MusicStudioAIAssistantPanel.generateLocalModel(id);assert((await a.saveMidiEditor({silent:true})).ok,'restored AI save failed');
+ configureGeneration(id);await MusicStudioAIAssistantPanel.generateLocalModel(id);assert((await a.saveMidiEditor({silent:true})).ok,'restored AI save failed');
  assert((await repo.get(id)).aiWorkspace.candidateSets.length>candidatesBefore,'restored AI did not generate a new candidate set');
  const render=await a.midiRenderForMix(id);assert(render.ok,'restored MIDI audio render failed');
  const output=await a.finalPreview(id,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+render.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:true});
@@ -73,6 +83,6 @@ assert((await a.prepareForShutdown()).ok,'page save gate refused');
 p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await a.pcmLoadLongWav(id,asset.id));
 const archive=input.phase==='read'?await to64(await a.createLongWavArchive()):null;
 assert(messages.length===0,'console errors/warnings: '+messages.join(';'));assert(external.length===0,'Live Provider/external request attempted');
-return {phase:input.phase,id,expected:JSON.stringify(p),audio,archive,origin:location.origin,console:messages,external,revision:p.revision,noteCount:p.midiData.tracks.reduce((n,t)=>n+t.notes.length,0),physicalAcceptance:false};
+return {phase:input.phase,id,generationSettings,expected:JSON.stringify(p),audio,archive,origin:location.origin,console:messages,external,revision:p.revision,noteCount:p.midiData.tracks.reduce((n,t)=>n+t.notes.length,0),physicalAcceptance:false};
 
 }

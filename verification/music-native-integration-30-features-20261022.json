@@ -54,7 +54,7 @@
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
       "unclosedRequirementOrEvidence": "実ONNX経路は存在。文章/歌詞から構成・楽器編成まで含む実用候補の全要件適合が未認定。",
-      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending.",
+      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending. The default one-bar C/balanced sample still produced no audible notes on Intel after retries; this production quality residual remains open. Native persistence acceptance uses explicit four-bar gentle/ballad controls, without certifying the default path.",
       "physicalProcedure": "文章/歌詞・曲調指定から候補を生成し、採用後の編成/音楽品質を確認。",
       "requiredContent": "文章または歌詞からBPM、Key、コード、メロディ、構成、楽器編成の候補を作成",
       "classification": "backend/runtime foundation"
@@ -90,7 +90,7 @@
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
       "unclosedRequirementOrEvidence": "全セクション展開・指定時間版・選択再生成の品質と全要件適合が未認定。",
-      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending.",
+      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending. The default one-bar C/balanced sample still produced no audible notes on Intel after retries; this production quality residual remains open. Native persistence acceptance uses explicit four-bar gentle/ballad controls, without certifying the default path.",
       "physicalProcedure": "続き/2番/Intro/Outro/指定時間を生成し、対象外音符保持を照合。",
       "requiredContent": "曲の続き、2番、ラスサビ、Intro/Interlude/Outro、指定時間版、部分再生成",
       "classification": "backend/runtime foundation"
@@ -102,7 +102,7 @@
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
       "unclosedRequirementOrEvidence": "既存単一/複数パートの明示再生成・差し替え、新規Track、規則ドラムは存在。全曲複数Sectionの一括モデル生成、演奏表現・音色・音楽的品質と全要件受入は未完了。",
-      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending.",
+      "newScope": "Real ONNX empty output now triggers at most three deterministic real-model samples per variant; actual seed/requested seed/attempt count retained in result. Cancellation and other failures propagate; no synthetic fallback. Actual native rerun pending. The default one-bar C/balanced sample still produced no audible notes on Intel after retries; this production quality residual remains open. Native persistence acceptance uses explicit four-bar gentle/ballad controls, without certifying the default path.",
       "physicalProcedure": "メロディ固定で単一/複数楽器だけ再生成し、対象外Track保持を確認。",
       "requiredContent": "伴奏全体、単一/複数Trackだけを再生成。メロディ固定や選択範囲固定に対応",
       "classification": "backend/runtime foundation"

@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix='nova-native-acceptance-') as tmp:
                     pass
                 else:
                     raise RuntimeError('Owned engine survived full app exit')
-                results.append({k: prior[k] for k in ('phase', 'id', 'origin', 'revision', 'noteCount', 'console', 'external')})
+                results.append({k: prior[k] for k in ('phase', 'id', 'origin', 'revision', 'noteCount', 'console', 'external', 'generationSettings')})
                 results[-1].update(pid=child.pid, saveGatedExit=True, engineStopped=True)
             finally:
                 if child.poll() is None:
