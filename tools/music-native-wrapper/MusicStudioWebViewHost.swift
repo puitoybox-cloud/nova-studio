@@ -388,7 +388,10 @@ private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
 /// Shared by the Swift Package and Xcode app entrypoints.
 public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelegate {
     private var preparing = false
-    public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+    public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        guard let resources = Bundle.main.resourceURL else { return false }
+        return FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path)
+    }
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !preparing else { return .terminateCancel }
         preparing = true
