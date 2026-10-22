@@ -7,6 +7,7 @@ final class MusicStudioFileStorageTests: XCTestCase {
         let url = URL(string: "https://puitoybox-cloud.github.io/nova-studio/music-studio.html")!
         let host = MusicStudioWebViewHost(configuration: MusicStudioAppConfiguration(startURL: url), platform: "mac")
         XCTAssertTrue(host.webView.uiDelegate === host)
+        XCTAssertFalse(host.allowsDownload(requestURL: URL(string: "blob:https://puitoybox-cloud.github.io/test"), sourceURL: url, isMainFrame: true))
         XCTAssertFalse(host.allowsFileSelection(frameURL: url, isMainFrame: true))
         XCTAssertFalse(host.allowsFileSelection(frameURL: nil, isMainFrame: true))
         XCTAssertFalse(host.allowsFileSelection(frameURL: URL(string: "https://example.com"), isMainFrame: true))
@@ -89,6 +90,10 @@ final class MusicStudioFileStorageTests: XCTestCase {
             try await Task.sleep(nanoseconds: 100_000_000)
         }
         XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
+        XCTAssertTrue(host.allowsDownload(requestURL: URL(string: "blob:null/test"), sourceURL: configuration.startURL, isMainFrame: true))
+        XCTAssertFalse(host.allowsDownload(requestURL: URL(string: "https://example.com/export.wav"), sourceURL: configuration.startURL, isMainFrame: true))
+        XCTAssertFalse(host.allowsDownload(requestURL: URL(string: "blob:null/test"), sourceURL: configuration.startURL, isMainFrame: false))
+        XCTAssertFalse(host.allowsDownload(requestURL: URL(string: "blob:null/test"), sourceURL: URL(string: "https://example.com"), isMainFrame: true))
         let saved = await withCheckedContinuation { continuation in
             host.prepareForClose { continuation.resume(returning: $0) }
         }

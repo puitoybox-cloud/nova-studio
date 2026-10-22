@@ -72,8 +72,13 @@ def main():
     interrupted = [False]
     def interrupt(signum, frame):
         interrupted[0] = True
-        if ui is not None and ui.poll() is None: ui.terminate()
-        if engine is not None and engine.poll() is None: engine.terminate()
+        # The native SIGTERM handler routes through NSApplication's asynchronous
+        # save-on-terminate delegate. Keep the engine available until that editor
+        # actually exits; a failed save may cancel termination and retain edits.
+        if ui is not None and ui.poll() is None:
+            ui.terminate()
+        elif engine is not None and engine.poll() is None:
+            engine.terminate()
     old = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
         engine = subprocess.Popen([str(CONTENTS / 'Helpers/MusicStudioEngine'), '--port', '8765'],

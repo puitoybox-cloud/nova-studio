@@ -81,3 +81,25 @@ test('cancellation while metering both buses cannot publish partial audio or set
  const r=await f.a.finalPreview('p',{...f.plan,masterCompressor:{thresholdDb:-40,ratio:4,attackMs:.1,releaseMs:100}});
  assert.equal(r.ok,false);assert.match(r.error,/cancelled/);assert.equal(f.a.finalExport.candidate,null);assert.equal(JSON.stringify(await f.repo.get('p')),original);
 });
+
+
+test('handoff manifest records exact bytes, WAV specification and MIDI source correspondence',async()=>{
+ const f=fixture();f.p.musicalSettings.key='Dm';f.p.midiData={ppq:960,tempo:90,timeSignature:{numerator:7,denominator:8},tempoMap:[{tick:0,bpm:90}],tracks:[{id:'track-a',name:'Piano',channel:1,notes:[]}]};await f.repo.put(f.p);
+ const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,true,r.error);const m=r.candidate.manifest;
+ assert.equal(m.bitDepth,16);assert.equal(m.handoff.musicalSettings.key,'Dm');assert.equal(m.handoff.timeline.ppq,960);assert.equal(m.handoff.midi.file,null);assert.equal(m.handoff.stems[1].sourceStartFrame,6000);
+ for(const file of r.candidate.files.filter(x=>x.name.endsWith('.wav'))){const row=m.files.find(x=>x.name===file.name),bytes=Buffer.from(await file.blob.arrayBuffer());let crc=0xffffffff;for(const x of bytes){crc^=x;for(let k=0;k<8;k++)crc=crc>>>1^((crc&1)?0xedb88320:0)}assert.equal(row.checksum.value,((crc^0xffffffff)>>>0).toString(16).padStart(8,'0'));assert.equal(row.audio.frames,m.frames);assert.equal(row.audio.startFrame,0);assert.equal(row.audio.sampleRate,48000);assert.equal(row.audio.bitDepth,16);assert.equal(row.audio.channels,2)}
+ const manifest=JSON.parse(await r.candidate.files.at(-1).blob.text());assert.deepEqual(manifest,plain(m));
+});
+test('returned MIDI differences count duplicate notes and disclose PPQ mismatch without inferred track matching',()=>{
+ const {a}=fixture(),n={pitch:60,startTick:0,durationTicks:480,velocity:90},before={ppq:480,tracks:[{channel:1,notes:[n,n]}]},after={ppq:960,tracks:[{channel:1,notes:[n,{...n,velocity:80}]}]};const d=a.logicMidiDifference(before,after);assert.equal(d.added,1);assert.equal(d.removed,1);assert.equal(d.timingComparable,false);assert.equal(JSON.stringify(before.tracks[0].notes[0]),JSON.stringify(n));
+});
+test('handoff maps rendered MIDI stems to stable track ids and validates generated WAV bytes',async()=>{
+ const {a,p}=fixture();p.longWavAssets=[{id:'asset-a',midiRender:{trackIds:['piano-a','strings-b']}}];const h=a.finalHandoff(p,[{key:'wav:asset-a',name:'Duet',role:'instrument',start:120,frames:240}],480);assert.deepEqual(plain(h.stems[0].midiTrackIds),['piano-a','strings-b']);assert.equal(h.stems[0].file,'Instrument-1.wav');
+ await assert.rejects(a.finalFileRecord({name:'Bad.wav',blob:new Blob([new Uint8Array(44)])}),/final-wav-integrity/);
+});
+
+test('Logic WAV return atomically forks audio with source correspondence; quota never changes original',async()=>{
+ const f=fixture(),before=JSON.stringify(await f.repo.get('p')),bytes=f.a.pcmEncodeWav({sampleRate:48000,channels:[Array.from({length:480},(_,i)=>.01*Math.sin(i))]}),file={name:'Logic-Return.wav',size:bytes.byteLength,arrayBuffer:async()=>bytes};
+ const r=await f.a.logicImportAudioReturn(file,'p');assert.equal(r.ok,true,r.error);assert.notEqual(r.project.projectId,'p');assert.equal(JSON.stringify(await f.repo.get('p')),before);assert.equal(r.project.integrations.logicPro.at(-1).kind,'audio-return');assert.equal(r.project.pcmMix.assets.at(-1).name,file.name);assert.equal(r.project.integrations.logicPro.at(-1).sourceRevision,f.p.revision);
+ const g=fixture(),original=JSON.stringify(await g.repo.get('p'));g.repo.compareAndFork=async()=>{throw Error('quota')};assert.equal((await g.a.logicImportAudioReturn(file,'p')).ok,false);assert.equal((await g.repo.list()).length,1);assert.equal(JSON.stringify(await g.repo.get('p')),original);
+});

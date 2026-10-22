@@ -21,6 +21,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
     public static let activeHosts = NSHashTable<MusicStudioWebViewHost>.weakObjects()
     private weak var guardedWindow: NSWindow?
     private var windowCloseGuard: MusicStudioWindowCloseGuard?
+    private var activeDownloads: [WKDownload] = []
     #endif
 
     public init(configuration: MusicStudioAppConfiguration, platform: String) {
@@ -198,6 +199,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
     public func prepareForClose(completion: @escaping (Bool) -> Void) {
         guard lifecycleState == "BROWSER_READY", !closePreparationInFlight,
               let url = webView.url, configuration.allows(url) else { completion(false); return }
+        #if os(macOS)
+        guard activeDownloads.isEmpty else { completion(false); return }
+        #endif
         closePreparationInFlight = true
         var completed = false
         let finish: (Bool) -> Void = { [weak self] ok in
@@ -285,8 +289,36 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             decisionHandler(.cancel)
             return
         }
+        #if os(macOS)
+        if navigationAction.shouldPerformDownload,
+           allowsDownload(requestURL: url, sourceURL: navigationAction.sourceFrame.request.url,
+                          isMainFrame: navigationAction.sourceFrame.isMainFrame) {
+            decisionHandler(.download); return
+        }
+        #endif
         decisionHandler(configuration.allows(url) ? .allow : .cancel)
     }
+
+    /// Only explicit blob downloads from the approved main document may open a
+    /// destination picker. The page cannot choose a filesystem destination.
+    public func allowsDownload(requestURL: URL?, sourceURL: URL?, isMainFrame: Bool) -> Bool {
+        guard lifecycleState == "BROWSER_READY", isMainFrame,
+              let sourceURL, configuration.allows(sourceURL),
+              let requestURL, requestURL.scheme == "blob" else { return false }
+        let value = requestURL.absoluteString
+        if configuration.startURL.isFileURL { return value.hasPrefix("blob:null/") }
+        guard let components = URLComponents(url: configuration.startURL, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme, let host = components.host else { return false }
+        let port = components.port.map { ":\($0)" } ?? ""
+        return value.hasPrefix("blob:\(scheme)://\(host)\(port)/")
+    }
+
+    #if os(macOS)
+    public func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        activeDownloads.append(download)
+        download.delegate = self
+    }
+    #endif
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         ownedLifecycle?.fail()
@@ -355,6 +387,32 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
 }
 
 #if os(macOS)
+extension MusicStudioWebViewHost: WKDownloadDelegate {
+    public func download(_ download: WKDownload, decideDestinationUsing response: URLResponse,
+                         suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
+        guard activeDownloads.contains(where: { $0 === download }), lifecycleState == "BROWSER_READY" else {
+            completionHandler(nil); return
+        }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = URL(fileURLWithPath: suggestedFilename).lastPathComponent
+        panel.canCreateDirectories = true
+        panel.begin { [weak self] result in
+            guard result == .OK, let self, self.lifecycleState == "BROWSER_READY" else {
+                completionHandler(nil); return
+            }
+            completionHandler(panel.url)
+        }
+    }
+    public func downloadDidFinish(_ download: WKDownload) {
+        activeDownloads.removeAll { $0 === download }
+    }
+    public func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        activeDownloads.removeAll { $0 === download }
+    }
+}
+#endif
+
+#if os(macOS)
 private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
     private weak var host: MusicStudioWebViewHost?
     private weak var previous: NSWindowDelegate?
@@ -388,6 +446,16 @@ private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
 /// Shared by the Swift Package and Xcode app entrypoints.
 public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelegate {
     private var preparing = false
+    private var terminationSignal: DispatchSourceSignal?
+    public func applicationDidFinishLaunching(_ notification: Notification) {
+        // Package launcher shutdown must use the same save gate as Cmd-Q.
+        // A storage failure cancels termination and leaves the engine/editor alive.
+        signal(SIGTERM, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        source.setEventHandler { NSApplication.shared.terminate(nil) }
+        terminationSignal = source
+        source.resume()
+    }
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         guard let resources = Bundle.main.resourceURL else { return false }
         return FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path)
