@@ -12,12 +12,15 @@ import platform
 import plistlib
 import shutil
 import subprocess
+import sys
 import tarfile
 
 from prepare import download, prepare
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / 'tools/music-audio-pipeline'))
+from package_macho import package_image_routes
 PYTHON_URL = ('https://github.com/astral-sh/python-build-standalone/releases/download/20261021/'
               'cpython-3.12.15%2B20261021-x86_64-apple-darwin-pgo%2Blto-full.tar.zst')
 PYTHON_SHA = '14dd4aea2051903a788519ca56328c3f9932fb505a57400d81fea4abe2870fc7'
@@ -163,6 +166,12 @@ def build(work, output):
     run('/usr/bin/clang', '-arch', 'x86_64', '-mmacosx-version-min=13.0', '-Wall', '-Wextra',
         HERE / 'native_launcher.c', '-o', contents / 'MacOS' / original)
     native = relocate(contents)
+    (contents / 'Resources/Notices/NOVA-native-modifications.txt').write_text(
+        'Project NOVA, 2026-10-22. Internal unsigned Intel candidate.\n'
+        'Native files below were selected for x86_64 where universal, app-relative '
+        'load/install/rpath routes were adjusted where necessary, and invalidated '
+        'upstream signatures were removed. Upstream terms/notices are retained. '
+        'This notice is not release-policy approval.\n' + '\n'.join(native) + '\n')
     files = files_manifest(contents)
     report = {'format': 'NOVA_INTEL_PACKAGE_CANDIDATE', 'version': 1,
               'buildRevision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
@@ -190,6 +199,13 @@ def relocate(contents):
             continue
         arch = subprocess.check_output(['/usr/bin/lipo', '-archs', str(path)], text=True).split()
         if 'x86_64' not in arch: raise ValueError('Non-Intel native image: ' + str(path))
+        if len(arch) > 1:
+            # The locked protobuf wheel contains both Intel and ARM slices.
+            # Use one actual target slice before otool/install_name processing.
+            temporary = path.with_name(path.name + '.intel-thin')
+            run('/usr/bin/lipo', '-thin', 'x86_64', path, '-output', temporary)
+            temporary.chmod(path.stat().st_mode & 0o777)
+            temporary.replace(path)
         images.append(path)
     by_name = {}
     for image in images:
@@ -201,11 +217,14 @@ def relocate(contents):
             if target in images and alias.name not in by_name:
                 by_name[alias.name] = [target]
     for image in images:
-        lines = subprocess.check_output(['/usr/bin/otool', '-L', str(image)], text=True).splitlines()[1:]
-        for line in lines:
-            dep = line.strip().split(' (')[0]
+        # Existing bounded parser distinguishes LC_ID_DYLIB (the image's own
+        # identity) from LC_LOAD_* dependencies. otool -L lists both together.
+        routes = package_image_routes(image, 'x86_64')
+        if routes['fileType'] not in (2, 6, 8): raise ValueError('Unsupported runtime Mach-O type')
+        if routes['dynamicLinker'] not in (None, '/usr/lib/dyld'):
+            raise ValueError('External native dynamic linker')
+        for dep in routes['commands']:
             if dep.startswith(('/usr/lib/', '/System/Library/')): continue
-            # Existing @loader_path / @rpath routes must resolve inside the package.
             if dep.startswith('@loader_path/'):
                 resolved = (image.parent / dep[len('@loader_path/'):]).resolve(strict=True)
             else:
@@ -215,24 +234,18 @@ def relocate(contents):
             resolved.relative_to(contents.resolve())
             new = '@loader_path/' + os.path.relpath(resolved, image.parent)
             if dep != new: run('/usr/bin/install_name_tool', '-change', dep, new, image)
-        commands = subprocess.check_output(['/usr/bin/otool', '-l', str(image)], text=True).splitlines()
-        for index, line in enumerate(commands):
-            if line.strip() == 'cmd LC_RPATH':
-                entry = commands[index + 2].strip()
-                if not entry.startswith('path '): raise ValueError('Malformed native rpath')
-                route = entry[5:].rsplit(' (offset ', 1)[0]
-                if route.startswith('/') and not route.startswith(('/usr/lib/', '/System/Library/')):
-                    run('/usr/bin/install_name_tool', '-delete_rpath', route, image)
-        ids = subprocess.check_output(['/usr/bin/otool', '-D', str(image)], text=True).splitlines()[1:]
-        if ids: run('/usr/bin/install_name_tool', '-id', '@loader_path/' + image.name, image)
-        # Relocation invalidates upstream ad-hoc signatures. This Intel candidate
-        # is explicitly unsigned; final nested Developer ID signing is separate.
-        final = subprocess.check_output(['/usr/bin/otool', '-L', str(image)], text=True).splitlines()[1:]
-        for line in final:
-            dep = line.strip().split(' (')[0]
+        for route in routes['rpaths']:
+            if route.startswith('/') and not route.startswith(('/usr/lib/', '/System/Library/')):
+                run('/usr/bin/install_name_tool', '-delete_rpath', route, image)
+        if routes['installName'] is not None:
+            run('/usr/bin/install_name_tool', '-id', '@loader_path/' + image.name, image)
+        final = package_image_routes(image, 'x86_64')
+        for dep in final['commands']:
             if dep.startswith(('/usr/lib/', '/System/Library/')): continue
             if not dep.startswith('@loader_path/'): raise ValueError('Unclosed native load path: ' + dep)
             (image.parent / dep[len('@loader_path/'):]).resolve(strict=True).relative_to(contents.resolve())
+        # Relocation invalidates upstream ad-hoc signatures. This Intel candidate
+        # is explicitly unsigned; final nested Developer ID signing is separate.
         signature_commands = subprocess.check_output(['/usr/bin/otool', '-l', str(image)], text=True)
         if 'cmd LC_CODE_SIGNATURE' in signature_commands:
             run('/usr/bin/codesign', '--remove-signature', image)

@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     slash = strrchr(resolved, '/'); if (!slash) return 70; *slash = 0;
     int n = snprintf(python, sizeof(python), "%s/Frameworks/Python/bin/python3", resolved);
     int m = snprintf(entry, sizeof(entry), "%s/Resources/MusicStudioEngine/code/%s", resolved, NOVA_BOOT_SCRIPT);
-    if (n < 0 || m < 0 || n >= sizeof(python) || m >= sizeof(entry)) return 70;
+    if (n < 0 || m < 0 || (size_t)n >= sizeof(python) || (size_t)m >= sizeof(entry)) return 70;
     char **args = calloc((size_t)argc + 4, sizeof(char *));
     if (!args) return 70;
     args[0] = python; args[1] = "-I"; args[2] = "-B"; args[3] = entry;
