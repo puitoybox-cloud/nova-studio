@@ -30,6 +30,13 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
 
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.websiteDataStore = .default()
+        #if NOVA_NATIVE_ACCEPTANCE && os(macOS)
+        // CI-only profiles: never compiled into the normal release build.
+        if #available(macOS 14.0, *), let raw = ProcessInfo.processInfo.environment["NOVA_NATIVE_ACCEPTANCE_STORE"],
+           let identifier = UUID(uuidString: raw) {
+            webConfiguration.websiteDataStore = WKWebsiteDataStore(forIdentifier: identifier)
+        }
+        #endif
         webConfiguration.defaultWebpagePreferences.allowsContentJavaScript = true
         webConfiguration.userContentController.addUserScript(
             WKUserScript(
@@ -236,6 +243,32 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             }
     }
 
+    #if NOVA_NATIVE_ACCEPTANCE && os(macOS)
+    // A separately compiled CI candidate can exercise the real app WebView across
+    // process exits. Normal candidates contain no script-file execution hook.
+    private func runNativeAcceptance() {
+        let environment = ProcessInfo.processInfo.environment
+        guard let scriptPath = environment["NOVA_NATIVE_ACCEPTANCE_SCRIPT"],
+              let resultPath = environment["NOVA_NATIVE_ACCEPTANCE_RESULT"] else { return }
+        do {
+            let script = try String(contentsOfFile: scriptPath, encoding: .utf8)
+            guard script.utf8.count <= 32 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+            webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
+                do {
+                    let value = try result.get()
+                    guard let report = value as? [String: Any] else { throw CocoaError(.coderInvalidValue) }
+                    let data = try JSONSerialization.data(withJSONObject: report, options: [.sortedKeys])
+                    try data.write(to: URL(fileURLWithPath: resultPath), options: .atomic)
+                    self?.packageLifecycleEvent("NATIVE_ACCEPTANCE_COMPLETE")
+                } catch {
+                    self?.packageLifecycleEvent("NATIVE_ACCEPTANCE_FAILED")
+                    fputs("Native acceptance failed: \(error)\n", stderr)
+                }
+            }
+        } catch { packageLifecycleEvent("NATIVE_ACCEPTANCE_FAILED") }
+    }
+    #endif
+
     private func packageLifecycleEvent(_ event: String) {
         #if os(macOS)
         guard let resources = Bundle.main.resourceURL,
@@ -394,6 +427,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             webView.callAsyncJavaScript("for(let i=0;i<300;i++){if(window.MusicStudio?.state?.loaded===true&&typeof window.MusicStudio.prepareForShutdown==='function')return true;await new Promise(resolve=>setTimeout(resolve,100));}return false;", arguments: [:], in: nil, in: .page) { [weak self] result in
                 if case .success(let ready) = result, ready as? Bool == true {
                     self?.packageLifecycleEvent("NATIVE_SAVE_API_READY")
+                    #if NOVA_NATIVE_ACCEPTANCE
+                    self?.runNativeAcceptance()
+                    #endif
                 } else { self?.packageLifecycleEvent("NATIVE_SAVE_API_UNAVAILABLE") }
             }
         }

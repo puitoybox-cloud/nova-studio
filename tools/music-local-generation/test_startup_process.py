@@ -7,7 +7,8 @@ import sys
 import tempfile
 import time
 import unittest
-from startup_process import probe
+from startup_process import probe, _terminate_group, _live_group_members
+from unittest.mock import Mock, patch
 
 
 class StartupProcessTests(unittest.TestCase):
@@ -51,6 +52,44 @@ class StartupProcessTests(unittest.TestCase):
                 self.assertFalse(marker.exists())
             finally:
                 if child.poll() is None: child.kill(); child.wait()
+
+
+class CleanupOwnershipTests(unittest.TestCase):
+    def child(self):
+        child = Mock(pid=12345)
+        child.poll.return_value = 0
+        return child
+
+    def test_permission_race_only_accepts_no_live_members(self):
+        child = self.child()
+        with patch('startup_process._live_group_members', side_effect=[[12345], [], [], [], []]), \
+             patch('startup_process.os.killpg', side_effect=PermissionError) as kill:
+            _terminate_group(child)
+        kill.assert_called_once_with(child.pid, signal.SIGTERM)
+        child.wait.assert_called()
+
+    def test_permission_failure_with_live_members_propagates_and_reaps(self):
+        child = self.child()
+        with patch('startup_process._live_group_members', return_value=[12345]), \
+             patch('startup_process.os.killpg', side_effect=PermissionError):
+            with self.assertRaises(PermissionError):
+                _terminate_group(child)
+        child.wait.assert_called_once_with(timeout=5)
+
+    def test_process_table_failure_is_not_success(self):
+        child = self.child()
+        with patch('startup_process._live_group_members', side_effect=OSError('unavailable')):
+            with self.assertRaises(OSError):
+                _terminate_group(child)
+        child.wait.assert_called_once_with(timeout=5)
+
+    def test_zombie_only_group_never_receives_signal(self):
+        child = self.child()
+        with patch('startup_process._live_group_members', return_value=[]), \
+             patch('startup_process.os.killpg') as kill:
+            _terminate_group(child)
+        kill.assert_not_called()
+        child.wait.assert_called()
 
 
 if __name__ == '__main__': unittest.main()
