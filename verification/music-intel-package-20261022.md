@@ -1,0 +1,31 @@
+# Intel package production connection — 2026-10-22 JST
+
+## Implementation and limits
+
+Based on Draft #488, 391c48eaa85a4e4aa62dc1d4b018cfc59574dde6. Main and existing PR branches are read only. New Draft #489 contains this work. Original specification Music_Studio_最終機能仕様書_v1.pdf, 2026-09-30, current Library file libfile_fea4127fde5c81919fee8296d5c7647d: read all five pages/166 lines. All 30 original-number requirements compared in adjacent ledger. A0/B0/C30; no formal B promotion, percentage or 20–30 independent improvement claim.
+
+The assembler performs real build-time acquisition and .app assembly, not runtime installation or developer fallback. It obtains the immutable Intel CPython standalone full archive (3.12.15, release 20261021), validates its upstream SHA256, safely extracts it, requires target metadata and complete declared Python license texts, and stages its actual install tree in Frameworks/Python. Ten wheel files (49,086,302 bytes) are explicitly version/hash locked, wheel-only, with exact installed notice-byte validation and a supplementary upstream Flatbuffers license (absent from its wheel). Python archive: 57,540,409 bytes, SHA256 14dd4aea2051903a788519ca56328c3f9932fb505a57400d81fea4abe2870fc7. A truncated first local download was rejected; the retry matches the release SHA256SUMS. These are acquired bytes, not evidence of Mac execution on this Linux host.
+
+Existing prepare.py obtains the two real ONNX graphs, fixed model config, builds fixed Sinsy/HTS sources and copies dictionary/CC BY voice/notices. Both graph sizes and hashes are checked. The existing native web staging preserves all piano/bass/strings/drums samples and notices. No new music or sample asset is authored.
+
+An x86_64/macOS 13 native shim execs only packaged isolated Python. Its parent launcher verifies the complete inventory, launches the packaged Helper, waits for exact owned stdout readiness, and starts the existing native wrapper at the stable loopback origin. It waits for normal native exit, then terminates/waits for the owned engine. Existing native save-on-close remains in use; last-window close requests app termination. Engine failure does not kill an editor with unsaved work. Strict/handoff startup cannot be bypassed with the candidate marker. Forced OS kill/power loss, full native quit/relaunch and multiple-window acceptance remain unverified.
+
+The assembler resolves internal Mach-O dependencies to @loader_path, rejects missing/ambiguous external non-Apple dependencies, validates x86_64, and applies ad-hoc signatures after relocation. Apple /usr/lib and /System/Library routes are system candidates, not independent runtime-policy certification. Ad-hoc signatures are not Developer ID signing or notarization. Compiler-only Python .o/.a files are excluded. Every ordinary file's size/hash/executable mode and every internal symlink target is recorded; missing, changed, extra or escaping paths reject startup. This inventory does not replace a trusted signature: coordinated manifest-plus-file tampering requires Developer ID/canonical trust closure.
+
+Only a completed build/check renames the new .incomplete directory to the candidate .app; existing outputs are never overwritten. CI relocates it to a spaced path, invokes its Helper for actual ONNX/Sinsy generation twice with no developer asset overrides, waits for shutdown between runs, and uses the same package with Chrome UI at 1440/820/390/1180x820. Real-generation scripts retain existing partial adoption, durable archive and byte-equality assertions. ZIP bytes/hash and detailed app inventory are recorded only if preceding steps succeed. Pending steps are not successful evidence.
+
+## Distribution blockers
+
+The resulting bundle is an internal unsigned candidate, not an approved distributable release. Binary upload/publication is disabled. NumPy's actual Intel wheel retains GCC runtime/exception and LGPL libquadmath notices; exact corresponding-source/relinking compliance is not closed. Pillow/ONNX transitive notice materials are retained, but full redistribution obligations are not certified. No unreviewed assets are admitted to a formal release. Source/license closure must be completed before distribution eligibility.
+
+Developer ID Application certificate/private key, owner-approved identity, and notarization credentials (App Store Connect API key or supported keychain profile) are absent. None were requested, stored or used. Full nested signing order, Hardened Runtime entitlements and notarization/stapling acceptance remain to implement/verify; no signed/notarized claim. The new shim and embedded Python/native libraries require the same eventual nested signing workflow.
+
+The native launcher currently starts local loopback only. Existing explicit Helper LAN-IP/IP-SAN TLS/certificate arguments remain; automatic native HTTPS configuration and actual iPad trust/reconnection/network/touch acceptance remain open. No service/auth/payment/storage choice was made.
+
+No.11 still requires the full natural-language partial-revision contract. No.25 still requires complete offline/policy/native/runtime acceptance, Apple Silicon and production optimization coverage. Other 28 retain their own residuals in the adjacent ledger. Packaging shared files does not complete those feature-specific obligations.
+
+## Verification at report creation
+
+Local full Node: 2551 PASS, failure/skip 0 (Node 24.19.0). All 256 existing JS syntax checks passed; changed drivers rechecked. Audio Python: 509 run, 504 PASS, 5 existing skips; inherited ResourceWarnings observed. Generation final full suite: 67 PASS, including real child readiness/reaping and package integrity/assembly guards. Swift/Xcode/Intel runtime/Chrome are not available locally. Exact-head CI, app byte size/SHA, actual package-origin AI and native save/relaunch remain pending until explicitly recorded in the PR. Earlier-head results must not be attributed to later HEADs.
+
+Start snapshot: all 235 Open/233 Draft metadata states; every Draft mergeability/latest commit/full changed-file list/check-run snapshot fetched with zero API errors or incomplete file pages. No later checkpoint than #488 was found. No main/old PR writes, force push, Ready/Merge or Live Provider communication.

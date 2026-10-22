@@ -208,10 +208,24 @@ def relocate(contents):
             resolved.relative_to(contents.resolve())
             new = '@loader_path/' + os.path.relpath(resolved, image.parent)
             if dep != new: run('/usr/bin/install_name_tool', '-change', dep, new, image)
+        commands = subprocess.check_output(['/usr/bin/otool', '-l', str(image)], text=True).splitlines()
+        for index, line in enumerate(commands):
+            if line.strip() == 'cmd LC_RPATH':
+                entry = commands[index + 2].strip()
+                if not entry.startswith('path '): raise ValueError('Malformed native rpath')
+                route = entry[5:].rsplit(' (offset ', 1)[0]
+                if route.startswith('/') and not route.startswith(('/usr/lib/', '/System/Library/')):
+                    run('/usr/bin/install_name_tool', '-delete_rpath', route, image)
         ids = subprocess.check_output(['/usr/bin/otool', '-D', str(image)], text=True).splitlines()[1:]
         if ids: run('/usr/bin/install_name_tool', '-id', '@loader_path/' + image.name, image)
         # Existing wheel/Python ad-hoc signatures are invalidated by relocation.
         # Ad-hoc signing grants no Developer ID or Gatekeeper/notarization trust.
+        final = subprocess.check_output(['/usr/bin/otool', '-L', str(image)], text=True).splitlines()[1:]
+        for line in final:
+            dep = line.strip().split(' (')[0]
+            if dep.startswith(('/usr/lib/', '/System/Library/')): continue
+            if not dep.startswith('@loader_path/'): raise ValueError('Unclosed native load path: ' + dep)
+            (image.parent / dep[len('@loader_path/'):]).resolve(strict=True).relative_to(contents.resolve())
         run('/usr/bin/codesign', '--force', '--sign', '-', image)
     return [str(p.relative_to(contents)) for p in images]
 

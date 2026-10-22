@@ -148,6 +148,14 @@ jobs:
         run: |
           node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-first.log" 2>&1
           node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-restart.log" 2>&1
+      - name: Packaged engine through actual Chrome UI and IndexedDB at four sizes
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+          NOVA_REAL_BROWSER_REPORT: ${{ runner.temp }}/package-browser.json
+          NOVA_PACKAGE_SCREENSHOT_DIR: ${{ runner.temp }}/package-screenshots
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-intel-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-intel-browser/node_modules" CHROME_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node scripts/music-local-real-browser.js
       - name: Record candidate files and archive SHA256 without release publication
         run: |
           cp "$RUNNER_TEMP/relocated app/Music Studio Candidate.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/package-candidate.json"
@@ -162,6 +170,8 @@ jobs:
           name: music-intel-package-evidence
           path: |
             ${{ runner.temp }}/package-candidate.json
+            ${{ runner.temp }}/package-browser.json
+            ${{ runner.temp }}/package-screenshots/
             ${{ runner.temp }}/package-generation-first.log
             ${{ runner.temp }}/package-generation-restart.log
             ${{ runner.temp }}/package-archive-sha256.txt
