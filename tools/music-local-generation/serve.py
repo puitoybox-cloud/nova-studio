@@ -194,6 +194,7 @@ if __name__ == '__main__':
     elif options.tls_cert or options.tls_key: p.error('TLS options require --lan-ip')
     if not 1024 <= options.port <= 65535: p.error('port outside bounds')
     class Server(ThreadingHTTPServer):
+        allow_reuse_address = True
         tls_context = None
         def get_request(self):
             connection, peer = super().get_request()

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from diagnostics import diagnose, transport
+from diagnostics import diagnose, transport, check_listen_address
 from prepare_tls import create
 
 HERE = Path(__file__).resolve().parent
@@ -58,6 +58,29 @@ class Startup(unittest.TestCase):
         for name in ('asset-paths', 'model:model_base.onnx', 'voice', 'sinsy-execution', 'listen-address'):
             self.assertFalse(checks[name]['ok']); self.assertTrue(checks[name]['remedy'])
         self.assertFalse(report['deviceTrustVerified'])
+
+    def test_time_wait_preflight_reopens_same_origin(self):
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(('127.0.0.1', 0)); listener.listen(1)
+            port = listener.getsockname()[1]
+            with socket.create_connection(('127.0.0.1', port), timeout=2) as client:
+                connection, _ = listener.accept()
+                with connection:
+                    connection.shutdown(socket.SHUT_WR)
+                    self.assertEqual(client.recv(1), b'')
+        # The server initiated TCP close, leaving TIME_WAIT on its own port.
+        # This reproduces the failed non-reusing preflight without any sleep.
+        with socket.socket() as naive:
+            with self.assertRaises(OSError): naive.bind(('127.0.0.1', port))
+        check_listen_address('127.0.0.1', port)
+        check_listen_address('127.0.0.1', port)
+
+    def test_reusing_active_listener_is_still_rejected(self):
+        with socket.socket() as active:
+            active.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            active.bind(('127.0.0.1', 0)); active.listen(1)
+            with self.assertRaises(OSError): check_listen_address('127.0.0.1', active.getsockname()[1])
 
     def test_config_relative_paths_and_invalid_keys(self):
         config = Path(self.tmp.name) / 'launch.json'
