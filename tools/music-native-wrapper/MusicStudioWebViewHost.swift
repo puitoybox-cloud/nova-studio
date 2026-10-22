@@ -21,6 +21,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
     public static let activeHosts = NSHashTable<MusicStudioWebViewHost>.weakObjects()
     private weak var guardedWindow: NSWindow?
     private var windowCloseGuard: MusicStudioWindowCloseGuard?
+    private var activeDownloads: [WKDownload] = []
     #endif
 
     public init(configuration: MusicStudioAppConfiguration, platform: String) {
@@ -198,27 +199,47 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
     public func prepareForClose(completion: @escaping (Bool) -> Void) {
         guard lifecycleState == "BROWSER_READY", !closePreparationInFlight,
               let url = webView.url, configuration.allows(url) else { completion(false); return }
+        #if os(macOS)
+        guard activeDownloads.isEmpty else { completion(false); return }
+        #endif
         closePreparationInFlight = true
+        packageLifecycleEvent("CLOSE_REQUEST")
         var completed = false
         let finish: (Bool) -> Void = { [weak self] ok in
             guard !completed else { return }
             completed = true
             self?.closePreparationInFlight = false
+            self?.packageLifecycleEvent(ok ? "CLOSE_SAVED" : "CLOSE_REFUSED")
             completion(ok)
         }
         let timeout = DispatchWorkItem { finish(false) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeout)
         webView.callAsyncJavaScript(
-            "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return false; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return result?.ok===true;}finally{if(body)body.inert=previous;}",
+            "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return {ok:false,reason:'page-api-unavailable'}; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return {ok:result?.ok===true,reason:result?.reason||'none'};}finally{if(body)body.inert=previous;}",
             arguments: [:], in: nil, in: .page) { result in
                 DispatchQueue.main.async {
                     timeout.cancel()
                     switch result {
-                    case .success(let value): finish(value as? Bool == true)
-                    case .failure: finish(false)
+                    case .success(let value):
+                        let result = value as? [String: Any]
+                        if let reason = result?["reason"] as? String,
+                           reason.count <= 96, reason.allSatisfy({ $0.isASCII && ($0.isLetter || $0 == "-") }) {
+                            self.packageLifecycleEvent("CLOSE_REASON_" + reason)
+                        }
+                        finish(result?["ok"] as? Bool == true)
+                    case .failure: self.packageLifecycleEvent("CLOSE_SCRIPT_FAILED"); finish(false)
                     }
                 }
             }
+    }
+
+    private func packageLifecycleEvent(_ event: String) {
+        #if os(macOS)
+        guard let resources = Bundle.main.resourceURL,
+              FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) else { return }
+        print("NOVA_PACKAGE_" + event)
+        fflush(stdout)
+        #endif
     }
 
     #if os(macOS)
@@ -285,8 +306,36 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             decisionHandler(.cancel)
             return
         }
+        #if os(macOS)
+        if navigationAction.shouldPerformDownload,
+           allowsDownload(requestURL: url, sourceURL: navigationAction.sourceFrame.request.url,
+                          isMainFrame: navigationAction.sourceFrame.isMainFrame) {
+            decisionHandler(.download); return
+        }
+        #endif
         decisionHandler(configuration.allows(url) ? .allow : .cancel)
     }
+
+    /// Only explicit blob downloads from the approved main document may open a
+    /// destination picker. The page cannot choose a filesystem destination.
+    public func allowsDownload(requestURL: URL?, sourceURL: URL?, isMainFrame: Bool) -> Bool {
+        guard lifecycleState == "BROWSER_READY", isMainFrame,
+              let sourceURL, configuration.allows(sourceURL),
+              let requestURL, requestURL.scheme == "blob" else { return false }
+        let value = requestURL.absoluteString
+        if configuration.startURL.isFileURL { return value.hasPrefix("blob:null/") }
+        guard let components = URLComponents(url: configuration.startURL, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme, let host = components.host else { return false }
+        let port = components.port.map { ":\($0)" } ?? ""
+        return value.hasPrefix("blob:\(scheme)://\(host)\(port)/")
+    }
+
+    #if os(macOS)
+    public func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        activeDownloads.append(download)
+        download.delegate = self
+    }
+    #endif
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         ownedLifecycle?.fail()
@@ -339,6 +388,11 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             // This establishes document navigation, not saved-song acceptance.
             print("NOVA_PACKAGE_NATIVE_DOCUMENT_LOADED")
             fflush(stdout)
+            webView.callAsyncJavaScript("for(let i=0;i<300;i++){if(window.MusicStudio?.state?.loaded===true&&typeof window.MusicStudio.prepareForShutdown==='function')return true;await new Promise(resolve=>setTimeout(resolve,100));}return false;", arguments: [:], in: nil, in: .page) { [weak self] result in
+                if case .success(let ready) = result, ready as? Bool == true {
+                    self?.packageLifecycleEvent("NATIVE_SAVE_API_READY")
+                } else { self?.packageLifecycleEvent("NATIVE_SAVE_API_UNAVAILABLE") }
+            }
         }
         #endif
         #if os(macOS)
@@ -353,6 +407,32 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         midiCoordinator?.resyncPageAvailability()
     }
 }
+
+#if os(macOS)
+extension MusicStudioWebViewHost: WKDownloadDelegate {
+    public func download(_ download: WKDownload, decideDestinationUsing response: URLResponse,
+                         suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
+        guard activeDownloads.contains(where: { $0 === download }), lifecycleState == "BROWSER_READY" else {
+            completionHandler(nil); return
+        }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = URL(fileURLWithPath: suggestedFilename).lastPathComponent
+        panel.canCreateDirectories = true
+        panel.begin { [weak self] result in
+            guard result == .OK, let self, self.lifecycleState == "BROWSER_READY" else {
+                completionHandler(nil); return
+            }
+            completionHandler(panel.url)
+        }
+    }
+    public func downloadDidFinish(_ download: WKDownload) {
+        activeDownloads.removeAll { $0 === download }
+    }
+    public func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        activeDownloads.removeAll { $0 === download }
+    }
+}
+#endif
 
 #if os(macOS)
 private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
@@ -388,6 +468,25 @@ private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
 /// Shared by the Swift Package and Xcode app entrypoints.
 public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelegate {
     private var preparing = false
+    private var terminationSignal: DispatchSourceSignal?
+    public func applicationDidFinishLaunching(_ notification: Notification) {
+        // Package launcher shutdown must use the same save gate as Cmd-Q.
+        // A storage failure cancels termination and leaves the engine/editor alive.
+        signal(SIGTERM, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        source.setEventHandler {
+            print("NOVA_NATIVE_TERMINATION_SIGNAL"); fflush(stdout)
+            // AppKit's terminateLater may enter a nested run loop. Starting it
+            // inside a main dispatch callback prevents the queued save request
+            // from running on that same serial queue. Re-enter through AppKit's
+            // run loop after this signal callback has returned.
+            RunLoop.main.perform {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+        terminationSignal = source
+        source.resume()
+    }
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         guard let resources = Bundle.main.resourceURL else { return false }
         return FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path)
@@ -395,6 +494,7 @@ public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelega
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !preparing else { return .terminateCancel }
         preparing = true
+        print("NOVA_NATIVE_TERMINATION_REQUEST"); fflush(stdout)
         DispatchQueue.main.async {
             MusicStudioWebViewHost.prepareAllForTermination { [weak self] ok in
                 self?.preparing = false
