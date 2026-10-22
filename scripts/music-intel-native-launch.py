@@ -39,7 +39,7 @@ try:
         if selector.select(.1):
             output += os.read(child.stdout.fileno(), 4096)
             if len(output) > 16384: raise ValueError('Native readiness output budget')
-        if any(native in line for line in owned) and b'NOVA_PACKAGE_NATIVE_DOCUMENT_LOADED\n' in output:
+        if any(native in line for line in owned) and b'NOVA_PACKAGE_NATIVE_SAVE_API_READY\n' in output:
             with urllib.request.urlopen('http://127.0.0.1:8765/__nova_generation/status', timeout=3) as response:
                 status = json.load(response)
             if not status['composer'] or not status['singer']: raise ValueError('Incomplete packaged engine')
@@ -47,7 +47,14 @@ try:
         time.sleep(.2)
     else: raise TimeoutError('Native package startup deadline')
     child.send_signal(signal.SIGTERM)
-    child.wait(timeout=12)
+    try:
+        child.wait(timeout=45)
+    except subprocess.TimeoutExpired as error:
+        while selector.select(0):
+            chunk = os.read(child.stdout.fileno(), 4096)
+            if not chunk: break
+            output += chunk
+        raise RuntimeError('Native save-gated exit failed: ' + output[-4096:].decode(errors='replace')) from error
     if child.returncode != 0: raise RuntimeError('App launcher did not stop cleanly')
     try:
         urllib.request.urlopen('http://127.0.0.1:8765/__nova_generation/status', timeout=1)
@@ -55,7 +62,7 @@ try:
     else: raise RuntimeError('Owned engine survived launcher shutdown')
     print(json.dumps({'app':str(app),'entry':str(entry),'nativeWrapper':native,
                       'ownedChildren':owned,'packageEngineStartup':True,
-                      'nativeProcessStarted':True,'nativeDocumentLoaded':True,'ownedShutdown':True,
+                      'nativeProcessStarted':True,'nativeDocumentLoaded':True,'nativeSaveAPIReady':True,'ownedShutdown':True,
                       'generationOrigin':'http://127.0.0.1:8765','legacyAudioPort8766Occupied':True,
                       'saveOnClose':'UNVERIFIED: signal shutdown without edits',
                       'physicalAcceptance':False}, indent=2))
