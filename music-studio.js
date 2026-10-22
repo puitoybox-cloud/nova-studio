@@ -2856,7 +2856,7 @@
   function inspectAudioReference(file){if(!file)return{ok:false,cancelled:true,message:'ファイル選択をキャンセルしました。'};if(!/\.(?:wav|wave|aif|aiff|caf)$/i.test(file.name||''))return fileResult('#logicAudioResult','対応していない形式です。WAV、AIFF、CAFを選択してください。','error');return fileResult('#logicAudioResult',`${file.name} / ${file.type||'形式情報なし'} / ${byteLabel(file.size)}。このタブ内で確認しただけで、本体・パスは保存していません。`,'success')}
   const LOGIC_EXPORT_STEPS=['Logic Proで編集を終え、元のLogicプロジェクトを先に保存します。','Standard MIDI Fileとして書き出します。複数トラックを維持する場合はType 1を推奨します。Type 0は単一トラック内にイベントがまとまります。','Music Studioで.midを選び、解析概要、トラック、テンポ／拍子、警告を確認します。','既存プロジェクトを守るため、新規プロジェクトまたは現在プロジェクトの複製へ保存します。','取り込み後にノート等を確認し、必要なら再びType 1 MIDIとして書き出します。','Drums MIDIはtrack名「Drums」、MIDI channel 10、Program Changeなしで書き出します。Logic ProがStudio Grandなどのピアノ音源を自動で割り当てた場合は、Drum Kit Designer等のドラム音源を手動で選択し、Kick 36／Snare 38／Closed Hi-Hat 42を確認します。','元のLogicプロジェクトとMIDIファイルは変更されません。音源、プラグイン、オーディオ、オートメーションはMIDIへ完全には含まれません。'];
   function importWarningsHtml(items){return items.length?`<div class="music-validation is-warning"><b>警告・未対応情報</b><ul>${items.map(item=>`<li>${escapeHtml(item.message||item)}</li>`).join('')}</ul></div>`:'<p class="music-help">重大な警告はありません。</p>'}
-  async function logicImportAudioReturn(file,id){
+  async function logicImportAudioReturn(file,id=selectedMidiProject()?.projectId){
     if(!file)return {ok:false,cancelled:true};
     const source=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(source),target=repository;
     try{
@@ -2878,7 +2878,7 @@
   }
   function logicAudioReturnHtml(){
     const p=selectedMidiProject();if(!p)return '';
-    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>短いWAVを追加した複製を作成します。元曲・元MIDIは保持します。開始位置は0です。PCM合計200万サンプルまで。長いWAVはMix / Gainの読み込みを使用してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0],'${escapeHtml(p.projectId)}');this.value=''" ${versionPanel.busy?'disabled':''}></section>`;
+    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>短いWAVを追加した複製を作成します。元曲・元MIDIは保持します。開始位置は0です。PCM合計200万サンプルまで。長いWAVはMix / Gainの読み込みを使用してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0]);this.value=''" ${versionPanel.busy?'disabled':''}></section>`;
   }
   function logicMidiDifference(before,after){
     const counts=midi=>{const result=new Map();for(const track of midi?.tracks||[])for(const note of track.notes||[]){const key=JSON.stringify([track.channel??null,note.pitch,note.startTick,note.durationTicks,note.velocity]);result.set(key,(result.get(key)||0)+1)}return result};
