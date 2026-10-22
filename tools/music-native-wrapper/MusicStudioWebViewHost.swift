@@ -196,7 +196,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
 
     /// Await the actual page save promise; missing API, timeout and storage errors
     /// keep the application open. No data is discarded to make closing succeed.
-    public func prepareForClose(completion: @escaping (Bool) -> Void) {
+    public func prepareForClose(timeoutSeconds: TimeInterval = 15, completion: @escaping (Bool) -> Void) {
         guard lifecycleState == "BROWSER_READY", !closePreparationInFlight,
               let url = webView.url, configuration.allows(url) else { completion(false); return }
         #if os(macOS)
@@ -208,17 +208,20 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         let finish: (Bool) -> Void = { [weak self] ok in
             guard !completed else { return }
             completed = true
-            self?.closePreparationInFlight = false
             self?.packageLifecycleEvent(ok ? "CLOSE_SAVED" : "CLOSE_REFUSED")
             completion(ok)
         }
+        // A timeout refuses termination but does not cancel WebKit's pending save.
+        // Keep admission closed until that callback returns, so a retry cannot
+        // overlap the original write or unlock its page while it still saves.
         let timeout = DispatchWorkItem { finish(false) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeout)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds, execute: timeout)
         webView.callAsyncJavaScript(
             "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return {ok:false,reason:'page-api-unavailable'}; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return {ok:result?.ok===true,reason:result?.reason||'none'};}finally{if(body)body.inert=previous;}",
             arguments: [:], in: nil, in: .page) { result in
                 DispatchQueue.main.async {
                     timeout.cancel()
+                    self.closePreparationInFlight = false
                     switch result {
                     case .success(let value):
                         let result = value as? [String: Any]

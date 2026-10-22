@@ -3534,7 +3534,7 @@
   async function createAIProject(input){const timestamp=now(),project=makeProject({...input.projectInput,midiData:input.midiData,projectId:input.projectInput?.projectId||uuid()},timestamp),checked=validateProject(project);if(!checked.valid)throw Error(checked.errors.join(' '));await repository.put(project);state.projects=[project,...state.projects.filter(item=>item.projectId!==project.projectId)];setLastProject(project.projectId);return clone(project)}
   const saveMidiEditorWithoutTempoMap=saveMidiEditor;
   saveMidiEditor=async function(options={}){const session=state.midiEditor;if(session?.midiData)session.midiData.tempoMap=normalizeProjectTempoMap(session.midiData.tempoMap,session.midiData.tempo);return saveMidiEditorWithoutTempoMap(options)};
-  function shutdownBusy(){return Boolean(state.midiImporting||state.externalSongImporting||state.midiExporting||pcmEditor.busy||restoreOperation?.active||archiveTransfer.busy||autoBackupPromise)}
+  function shutdownBusy(){return Boolean(state.midiImporting||state.externalSongImporting||state.midiExporting||finalExport.busy||lyricsEditor.busy||workspaceSaving||pcmEditor.busy||restoreOperation?.active||archiveTransfer.busy||autoBackupPromise)}
   // Native owners await this result before closing the WebView. Pagehide cannot
   // promise an asynchronous IndexedDB transaction will finish after termination.
   function prepareForShutdown(){
