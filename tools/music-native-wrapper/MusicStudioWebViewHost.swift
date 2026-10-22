@@ -30,6 +30,13 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
 
         let webConfiguration = WKWebViewConfiguration()
         webConfiguration.websiteDataStore = .default()
+        #if NOVA_NATIVE_ACCEPTANCE && os(macOS)
+        // CI-only profiles: never compiled into the normal release build.
+        if #available(macOS 14.0, *), let raw = ProcessInfo.processInfo.environment["NOVA_NATIVE_ACCEPTANCE_STORE"],
+           let identifier = UUID(uuidString: raw) {
+            webConfiguration.websiteDataStore = WKWebsiteDataStore(forIdentifier: identifier)
+        }
+        #endif
         webConfiguration.defaultWebpagePreferences.allowsContentJavaScript = true
         webConfiguration.userContentController.addUserScript(
             WKUserScript(
@@ -196,7 +203,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
 
     /// Await the actual page save promise; missing API, timeout and storage errors
     /// keep the application open. No data is discarded to make closing succeed.
-    public func prepareForClose(completion: @escaping (Bool) -> Void) {
+    public func prepareForClose(timeoutSeconds: TimeInterval = 15, completion: @escaping (Bool) -> Void) {
         guard lifecycleState == "BROWSER_READY", !closePreparationInFlight,
               let url = webView.url, configuration.allows(url) else { completion(false); return }
         #if os(macOS)
@@ -208,17 +215,20 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         let finish: (Bool) -> Void = { [weak self] ok in
             guard !completed else { return }
             completed = true
-            self?.closePreparationInFlight = false
             self?.packageLifecycleEvent(ok ? "CLOSE_SAVED" : "CLOSE_REFUSED")
             completion(ok)
         }
+        // A timeout refuses termination but does not cancel WebKit's pending save.
+        // Keep admission closed until that callback returns, so a retry cannot
+        // overlap the original write or unlock its page while it still saves.
         let timeout = DispatchWorkItem { finish(false) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: timeout)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds, execute: timeout)
         webView.callAsyncJavaScript(
             "if(typeof window.MusicStudio?.prepareForShutdown !== 'function')return {ok:false,reason:'page-api-unavailable'}; const body=document.body,previous=body?.inert;if(body)body.inert=true;try{const result=await window.MusicStudio.prepareForShutdown();return {ok:result?.ok===true,reason:result?.reason||'none'};}finally{if(body)body.inert=previous;}",
             arguments: [:], in: nil, in: .page) { result in
                 DispatchQueue.main.async {
                     timeout.cancel()
+                    self.closePreparationInFlight = false
                     switch result {
                     case .success(let value):
                         let result = value as? [String: Any]
@@ -232,6 +242,32 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
                 }
             }
     }
+
+    #if NOVA_NATIVE_ACCEPTANCE && os(macOS)
+    // A separately compiled CI candidate can exercise the real app WebView across
+    // process exits. Normal candidates contain no script-file execution hook.
+    private func runNativeAcceptance() {
+        let environment = ProcessInfo.processInfo.environment
+        guard let scriptPath = environment["NOVA_NATIVE_ACCEPTANCE_SCRIPT"],
+              let resultPath = environment["NOVA_NATIVE_ACCEPTANCE_RESULT"] else { return }
+        do {
+            let script = try String(contentsOfFile: scriptPath, encoding: .utf8)
+            guard script.utf8.count <= 32 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+            webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { [weak self] result in
+                do {
+                    let value = try result.get()
+                    guard let report = value as? [String: Any] else { throw CocoaError(.coderInvalidValue) }
+                    let data = try JSONSerialization.data(withJSONObject: report, options: [.sortedKeys])
+                    try data.write(to: URL(fileURLWithPath: resultPath), options: .atomic)
+                    self?.packageLifecycleEvent("NATIVE_ACCEPTANCE_COMPLETE")
+                } catch {
+                    self?.packageLifecycleEvent("NATIVE_ACCEPTANCE_FAILED")
+                    fputs("Native acceptance failed: \(error)\n", stderr)
+                }
+            }
+        } catch { packageLifecycleEvent("NATIVE_ACCEPTANCE_FAILED") }
+    }
+    #endif
 
     private func packageLifecycleEvent(_ event: String) {
         #if os(macOS)
@@ -391,6 +427,9 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
             webView.callAsyncJavaScript("for(let i=0;i<300;i++){if(window.MusicStudio?.state?.loaded===true&&typeof window.MusicStudio.prepareForShutdown==='function')return true;await new Promise(resolve=>setTimeout(resolve,100));}return false;", arguments: [:], in: nil, in: .page) { [weak self] result in
                 if case .success(let ready) = result, ready as? Bool == true {
                     self?.packageLifecycleEvent("NATIVE_SAVE_API_READY")
+                    #if NOVA_NATIVE_ACCEPTANCE
+                    self?.runNativeAcceptance()
+                    #endif
                 } else { self?.packageLifecycleEvent("NATIVE_SAVE_API_UNAVAILABLE") }
             }
         }

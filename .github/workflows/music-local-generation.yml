@@ -33,6 +33,7 @@ jobs:
           node-version: '22'
       - name: Full JavaScript regression on fixed CI Node
         run: node --test
+      - run: python tools/music-local-generation/test_audible_sampling.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
@@ -107,6 +108,7 @@ jobs:
           node-version: '22'
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_audible_sampling.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
       - run: python tools/music-local-generation/test_cancellation.py
@@ -127,13 +129,15 @@ jobs:
           python tools/music-local-generation/test_package_integrity.py
           python tools/music-local-generation/test_native_launch.py
       - name: Assemble actual app-contained Intel runtime, models, voice and sound samples
-        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app"
+        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app" --native-acceptance
       - name: Relocate candidate before package-origin inference
         run: |
           mkdir -p "$RUNNER_TEMP/relocated app"
           mv "$RUNNER_TEMP/Music Studio Candidate.app" "$RUNNER_TEMP/relocated app/Music Studio Candidate.app"
       - name: Actual app entry starts native wrapper and owns engine shutdown
         run: python scripts/music-intel-native-launch.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" > "$RUNNER_TEMP/package-native-launch.json"
+      - name: Actual native edited-song save, full exit, reopen, re-edit and isolated archive recovery
+        run: python scripts/music-native-edited-song.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/native-edited-song.json"
       - name: Actual packaged CPU ONNX and Sinsy generation, restart and archive recovery
         env:
           NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
@@ -176,6 +180,7 @@ jobs:
           path: |
             ${{ runner.temp }}/package-candidate.json
             ${{ runner.temp }}/package-native-launch.json
+            ${{ runner.temp }}/native-edited-song.json
             ${{ runner.temp }}/package-browser.json
             ${{ runner.temp }}/package-screenshots/
             ${{ runner.temp }}/package-generation-first.log

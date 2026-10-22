@@ -139,6 +139,25 @@ def remove_prompt_notes(score, prompt_score):
     return score
 
 
+def audible_sample(sample, seed, index, cancel=None):
+    """Retry only empty real-model samples; never invent or recycle notes."""
+    empty = {'model produced no audible notes; generation incomplete',
+             'model produced no new source-conditioned notes'}
+    for attempt in range(3):
+        if cancel:
+            cancel()
+        used_seed = (seed + index + 3 * attempt) % 2147483648
+        try:
+            value = sample(used_seed)
+            if cancel:
+                cancel()
+            return value, used_seed, attempt + 1
+        except ValueError as error:
+            if str(error) not in empty or attempt == 2:
+                raise
+    raise RuntimeError('unreachable-model-sampling-state')
+
+
 def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=None, pitch_min=48, pitch_max=84, numerator=4, denominator=4, style='balanced', description='', genre='', chords='', sourceNotes=None, cancel=None):
     started = time.perf_counter()
     memory_before = memory_snapshot()
@@ -170,28 +189,32 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
     inference_counts = {'base': 0, 'token': 0}
     for index, variant in enumerate('ABC'):
         if cancel: cancel()
-        rows = list(prompt)
-        budget = RangeBudget(tokenizer, prompt, max_ticks, bool(source))
-        generated_events = 0
-        range_reached = False
         candidate_started = time.perf_counter()
         calls_before = dict(inference_counts)
-        for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(seed + index), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel, metrics=inference_counts):
-            rows.append(row[0])
-            generated_events += 1
-            if budget.reached(row[0]):
-                range_reached = True
-                break
-        score = tokenizer.detokenize(rows)
-        if source: remove_prompt_notes(score, prompt_score)
-        for i, track in enumerate(score[1:], 1):
-            score[i] = [e for e in track if e[1] < max_ticks]
-            for e in score[i]:
-                if e[0] == 'note': e[2] = min(e[2], max_ticks - e[1])
-        adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm, chord_sets=chord_sets)
-        data, notes = midi_bytes(score); name = variant + '.mid'
+        def sample(sample_seed):
+            rows = list(prompt)
+            budget = RangeBudget(tokenizer, prompt, max_ticks, bool(source))
+            generated_events = 0
+            range_reached = False
+            for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(sample_seed), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel, metrics=inference_counts):
+                rows.append(row[0])
+                generated_events += 1
+                if budget.reached(row[0]):
+                    range_reached = True
+                    break
+            score = tokenizer.detokenize(rows)
+            if source: remove_prompt_notes(score, prompt_score)
+            for i, track in enumerate(score[1:], 1):
+                score[i] = [e for e in track if e[1] < max_ticks]
+                for e in score[i]:
+                    if e[0] == 'note': e[2] = min(e[2], max_ticks - e[1])
+            adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm, chord_sets=chord_sets)
+            data, notes = midi_bytes(score)
+            return data, notes, adjusted, generated_events, range_reached
+        (data, notes, adjusted, generated_events, range_reached), used_seed, sampling_attempts = audible_sample(sample, seed, index, cancel)
+        name = variant + '.mid'
         (output / name).write_bytes(data)
-        result['candidates'].append({'variant': variant, 'seed': seed + index, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+        result['candidates'].append({'variant': variant, 'seed': used_seed, 'requestedSeed': seed + index, 'samplingAttempts': sampling_attempts, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     if cancel: cancel()
     result['performance'] = {'memoryBefore': memory_before, 'memoryAfter': memory_snapshot(), 'sessionReused': reused, 'loadSeconds': load_seconds, 'elapsedSeconds': time.perf_counter()-started, 'onnxCalls': inference_counts, 'midiBytes': sum(c['byteLength'] for c in result['candidates'])}
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')

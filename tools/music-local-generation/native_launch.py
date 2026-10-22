@@ -4,6 +4,7 @@ Uses the existing Studio save-on-close contract. No developer fallback, PATH
 Python, network installation, external provider or implicit TLS trust changes.
 """
 import os
+import json
 from pathlib import Path
 import plistlib
 import selectors
@@ -87,7 +88,17 @@ def main():
         ready(engine)
         threading.Thread(target=drain, args=(engine.stdout,), daemon=True).start()
         if interrupted[0]: raise InterruptedError('Startup interrupted')
-        ui = subprocess.Popen([str(native)], env=env, cwd=CONTENTS, start_new_session=True)
+        ui_env = dict(env)
+        inventory = json.loads((CONTENTS / 'Resources/package-candidate.json').read_text())
+        # Only an explicitly instrumented CI artifact receives these exact keys.
+        # Engine subprocesses and normal release candidates retain the strict
+        # NOVA_* environment filter above.
+        if inventory.get('nativeAcceptanceInstrumentation') is True:
+            for key in ('NOVA_NATIVE_ACCEPTANCE_SCRIPT', 'NOVA_NATIVE_ACCEPTANCE_RESULT',
+                        'NOVA_NATIVE_ACCEPTANCE_STORE'):
+                if key in os.environ:
+                    ui_env[key] = os.environ[key]
+        ui = subprocess.Popen([str(native)], env=ui_env, cwd=CONTENTS, start_new_session=True)
         # Engine failure never kills an editor holding unsaved data. Generation
         # becomes unavailable; existing editing/save remains usable until exit.
         result = ui.wait()

@@ -90,7 +90,7 @@ def verify_wheel_notices(runtime):
                 raise ValueError('Changed/missing dependency notice: ' + notice['path'])
 
 
-def build(work, output):
+def build(work, output, native_acceptance=False):
     if platform.system() != 'Darwin' or platform.machine() != 'x86_64':
         raise ValueError('Build requires native Intel macOS; no cross-platform success substitute')
     work, output = Path(work).resolve(), Path(output).resolve()
@@ -111,7 +111,8 @@ def build(work, output):
     derived = work / 'native'
     run('xcodebuild', '-project', ROOT / 'tools/music-native-wrapper/MusicStudioNative.xcodeproj',
         '-scheme', 'MusicStudioMac', '-configuration', 'Release', '-derivedDataPath', derived,
-        'ARCHS=x86_64', 'ONLY_ACTIVE_ARCH=NO', 'MACOSX_DEPLOYMENT_TARGET=13.0', 'CODE_SIGNING_ALLOWED=NO', 'build')
+        'ARCHS=x86_64', 'ONLY_ACTIVE_ARCH=NO', 'MACOSX_DEPLOYMENT_TARGET=13.0', 'CODE_SIGNING_ALLOWED=NO',
+        *(['SWIFT_ACTIVE_COMPILATION_CONDITIONS=NOVA_NATIVE_ACCEPTANCE'] if native_acceptance else []), 'build')
     app = derived / 'Build/Products/Release/Music Studio.app'
     shutil.copytree(app, staged, symlinks=True)
     contents = staged / 'Contents'
@@ -178,6 +179,7 @@ def build(work, output):
               'pythonSource': {'url': PYTHON_URL, 'sha256': PYTHON_SHA},
               'architecture': 'x86_64', 'files': files,
               'byteLength': sum(f.get('byteLength', 0) for f in files), 'nativeImages': native,
+              'nativeAcceptanceInstrumentation': native_acceptance,
               'publicationEligible': False, 'signed': False, 'notarized': False,
               'licenseClosure': 'OPEN: NumPy linked GCC/LGPL source obligations require release review',
               'physicalAcceptance': 'UNVERIFIED', 'fullFeatureAcceptance': 'UNVERIFIED'}
@@ -256,5 +258,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--native-acceptance', action='store_true', help='CI-only instrumented app; never a release candidate')
     args = parser.parse_args()
-    build(args.work, args.output)
+    build(args.work, args.output, args.native_acceptance)

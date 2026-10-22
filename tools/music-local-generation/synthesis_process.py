@@ -1,6 +1,6 @@
 """Own one Sinsy process group until completion, cancellation or deadline."""
 import os
-import signal
+from startup_process import _terminate_group
 import subprocess
 import tempfile
 import time
@@ -32,13 +32,4 @@ def run_synthesis(command, cancel=None, timeout=120):
         finally:
             # Reap even on cancellation/errors. Terminate the whole owned group,
             # including descendants that outlive a normally exited group leader.
-            def terminate(sig):
-                try: os.killpg(child.pid, sig)
-                except ProcessLookupError: pass
-            terminate(signal.SIGTERM)
-            try: child.wait(timeout=1)
-            except subprocess.TimeoutExpired:
-                terminate(signal.SIGKILL)
-                child.wait()
-            finally:
-                terminate(signal.SIGKILL)
+            _terminate_group(child)
