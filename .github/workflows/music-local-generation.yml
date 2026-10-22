@@ -132,7 +132,10 @@ jobs:
         run: node scripts/music-local-real-generation.js
 
       - name: Intel candidate assembly guards
-        run: python tools/music-local-generation/test_intel_assembly.py
+        run: |
+          python tools/music-local-generation/test_intel_assembly.py
+          python tools/music-local-generation/test_package_integrity.py
+          python tools/music-local-generation/test_native_launch.py
       - name: Assemble actual app-contained Intel runtime, models, voice and sound samples
         run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app"
       - name: Relocate candidate before package-origin inference

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import plistlib
 import shutil
 import subprocess
 import tarfile
@@ -76,6 +77,16 @@ def check_models(assets):
             raise ValueError('Model identity mismatch: ' + name)
 
 
+def verify_wheel_notices(runtime):
+    site = runtime / 'lib/python3.12/site-packages'
+    for wheel in json.loads((HERE / 'intel-wheels.json').read_text()):
+        for notice in wheel['notices']:
+            path = site / notice['path']
+            path.resolve(strict=True).relative_to(runtime.resolve())
+            if path.stat().st_size != notice['byteLength'] or digest(path) != notice['sha256']:
+                raise ValueError('Changed/missing dependency notice: ' + notice['path'])
+
+
 def build(work, output):
     if platform.system() != 'Darwin' or platform.machine() != 'x86_64':
         raise ValueError('Build requires native Intel macOS; no cross-platform success substitute')
@@ -97,12 +108,16 @@ def build(work, output):
     derived = work / 'native'
     run('xcodebuild', '-project', ROOT / 'tools/music-native-wrapper/MusicStudioNative.xcodeproj',
         '-scheme', 'MusicStudioMac', '-configuration', 'Release', '-derivedDataPath', derived,
-        'ARCHS=x86_64', 'ONLY_ACTIVE_ARCH=NO', 'CODE_SIGNING_ALLOWED=NO', 'build')
+        'ARCHS=x86_64', 'ONLY_ACTIVE_ARCH=NO', 'MACOSX_DEPLOYMENT_TARGET=13.0', 'CODE_SIGNING_ALLOWED=NO', 'build')
     app = derived / 'Build/Products/Release/Music Studio.app'
     shutil.copytree(app, staged, symlinks=True)
     contents = staged / 'Contents'
     runtime = contents / 'Frameworks/Python'
     shutil.copytree(source / 'install', runtime, symlinks=True)
+    # Compiler-only objects/archives are not executable images and are not used
+    # by this fixed wheel runtime. Do not feed MH_OBJECT files to codesign.
+    for pattern in ('*.o', '*.a'):
+        for item in runtime.rglob(pattern): item.unlink()
     runtime_notices(source, contents / 'Resources/Notices/Python')
     python = runtime / 'bin/python3'
     # Pinned direct requirements, wheel-only: native source builds are forbidden.
@@ -110,6 +125,7 @@ def build(work, output):
     run(python, '-I', '-B', '-m', 'pip', 'install', '--only-binary=:all:',
         '--require-hashes', '--report', work / 'pip-install.json', '-r', HERE / 'intel-requirements.lock')
     run(python, '-I', '-B', '-m', 'pip', 'check')
+    verify_wheel_notices(runtime)
     shutil.copy2(work / 'pip-install.json', contents / 'Resources/Notices/pip-install.json')
     shutil.copy2(HERE / 'vendor/Flatbuffers-LICENSE', contents / 'Resources/Notices/Flatbuffers-LICENSE')
     engine = contents / 'Resources/MusicStudioEngine'
@@ -129,6 +145,16 @@ def build(work, output):
     shutil.rmtree(target / 'runtime/include')
     for path in (target / 'runtime/lib').glob('*.a'): path.unlink()
     for path in (target / 'runtime/lib').glob('*.la'): path.unlink()
+    plist = contents / 'Info.plist'
+    info = plistlib.loads(plist.read_bytes())
+    original = info['CFBundleExecutable']
+    if Path(original).name != original or original in ('.', '..'): raise ValueError('Invalid native executable')
+    native_name = original + '-Native'
+    (contents / 'MacOS' / original).rename(contents / 'MacOS' / native_name)
+    info['NOVAOriginalExecutable'] = native_name
+    plist.write_bytes(plistlib.dumps(info))
+    run('/usr/bin/clang', '-arch', 'x86_64', '-mmacosx-version-min=13.0', '-Wall', '-Wextra',
+        HERE / 'native_launcher.c', '-o', contents / 'MacOS' / original)
     native = relocate(contents)
     files = files_manifest(contents)
     report = {'format': 'NOVA_INTEL_PACKAGE_CANDIDATE', 'version': 1,
@@ -161,6 +187,12 @@ def relocate(contents):
     by_name = {}
     for image in images:
         by_name.setdefault(image.name, []).append(image)
+    for alias in contents.rglob('*'):
+        if alias.is_symlink() and alias.is_file():
+            target = alias.resolve(strict=True)
+            target.relative_to(contents.resolve())
+            if target in images and alias.name not in by_name:
+                by_name[alias.name] = [target]
     for image in images:
         lines = subprocess.check_output(['/usr/bin/otool', '-L', str(image)], text=True).splitlines()[1:]
         for line in lines:

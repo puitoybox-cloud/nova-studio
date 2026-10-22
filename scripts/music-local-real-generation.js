@@ -73,4 +73,11 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
  console.log(JSON.stringify({lateRangeRealSinsy:true,measure:101,startSeconds:200,archiveByteEquality:true}));
  const forbidden=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:'{}'});assert.equal(forbidden.status,403);
  console.log(JSON.stringify({realInference:true,longBaseSeconds:180,longReplacementOutsideBytesUnchanged:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
-}finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exitCode=1});
+}finally{
+ if(server.exitCode===null&&server.signalCode===null){
+  await new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>{server.kill('SIGKILL');reject(Error('owned engine shutdown deadline'))},8000);
+   server.once('exit',()=>{clearTimeout(timer);resolve()});server.kill('SIGTERM');
+  });
+ }
+}})().catch(e=>{console.error(e);process.exitCode=1});
