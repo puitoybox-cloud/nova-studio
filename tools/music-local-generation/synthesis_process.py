@@ -1,4 +1,5 @@
 """Own one Sinsy process group until completion, cancellation or deadline."""
+import os
 from startup_process import _terminate_group
 import subprocess
 import tempfile
