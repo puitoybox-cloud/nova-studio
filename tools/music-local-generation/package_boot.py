@@ -55,6 +55,11 @@ def main():
         raise ValueError('Packaged engine requires isolated Python')
     code = Path(__file__).resolve().parent
     assets = prepare(code)
+    # Fixed local module; do not trust an installed module with the same name.
+    spec = importlib.util.spec_from_file_location('nova_package_integrity', code / 'package_integrity.py')
+    integrity = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(integrity)
+    integrity.verify(code.parents[2])
     # These are connection settings only; asset/runtime paths cannot be overridden.
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)

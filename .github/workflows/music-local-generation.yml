@@ -94,7 +94,7 @@ jobs:
             ${{ runner.temp }}/music-long-production-browser.json
   intel-mac-generation:
     runs-on: macos-15-intel
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -130,3 +130,36 @@ jobs:
           NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
           NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
         run: node scripts/music-local-real-generation.js
+
+      - name: Intel candidate assembly guards
+        run: python tools/music-local-generation/test_intel_assembly.py
+      - name: Assemble actual app-contained Intel runtime, models, voice and sound samples
+        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app"
+      - name: Relocate candidate before package-origin inference
+        run: |
+          mkdir -p "$RUNNER_TEMP/relocated app"
+          mv "$RUNNER_TEMP/Music Studio Candidate.app" "$RUNNER_TEMP/relocated app/Music Studio Candidate.app"
+      - name: Actual packaged CPU ONNX and Sinsy generation, restart and archive recovery
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+        run: |
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-first.log" 2>&1
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-restart.log" 2>&1
+      - name: Record candidate files and archive SHA256 without release publication
+        run: |
+          cp "$RUNNER_TEMP/relocated app/Music Studio Candidate.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/package-candidate.json"
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/music-intel-candidate.zip"
+          shasum -a 256 "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-sha256.txt"
+          stat -f '%z' "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-bytes.txt"
+      # Binary publication remains blocked by license/source, native lifecycle,
+      # Developer ID, notarization and physical acceptance gates.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-intel-package-evidence
+          path: |
+            ${{ runner.temp }}/package-candidate.json
+            ${{ runner.temp }}/package-generation-first.log
+            ${{ runner.temp }}/package-generation-restart.log
+            ${{ runner.temp }}/package-archive-sha256.txt
+            ${{ runner.temp }}/package-archive-bytes.txt
