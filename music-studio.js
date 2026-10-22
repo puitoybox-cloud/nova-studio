@@ -3535,7 +3535,7 @@
   const saveMidiEditorWithoutTempoMap=saveMidiEditor;
   saveMidiEditor=async function(options={}){const session=state.midiEditor;if(session?.midiData)session.midiData.tempoMap=normalizeProjectTempoMap(session.midiData.tempoMap,session.midiData.tempo);return saveMidiEditorWithoutTempoMap(options)};
   // An acknowledged native close must not interrupt a separate writer.
-  function shutdownBusy(){return Boolean(state.midiImporting||state.externalSongImporting||state.midiExporting||pcmEditor.busy||restoreOperation?.active||archiveTransfer.busy||autoBackupPromise||workspaceSaving||lyricsEditor.busy||finalExport.busy||state.saveStatus==='saving')}
+  function shutdownBusy(){return Boolean(state.midiImporting||state.externalSongImporting||state.midiExporting||pcmEditor.busy||restoreOperation?.active||archiveTransfer.busy||autoBackupPromise||workspaceSaving||lyricsEditor.busy||finalExport.busy||versionPanel.busy||midiStemBatch||state.saveStatus==='saving')}
   // Native owners await this result before closing the WebView. Pagehide cannot
   // promise an asynchronous IndexedDB transaction will finish after termination.
   function prepareForShutdown(){

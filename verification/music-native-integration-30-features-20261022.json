@@ -1,0 +1,414 @@
+{
+  "date": "2026-10-22 JST",
+  "formalSpecification": {
+    "name": "Music_Studio_最終機能仕様書_v1.pdf",
+    "date": "2026-09-30",
+    "read": "Original all 5 pages / 166 lines read in this Work on 2026-10-22 JST through Library read, exact libraryFileId retained.",
+    "libraryFileId": "libfile_fea4127fde5c81919fee8296d5c7647d"
+  },
+  "A": 0,
+  "B": 0,
+  "C": 30,
+  "scope": "PRs 491/492 integrated with both parents retained. Owned-process cleanup implemented; native edited-song separate-process CI and isolated persistent restore acceptance added. Execution is pending; no full-function closure claimed.",
+  "features": [
+    {
+      "number": 1,
+      "name": "MIDI・Track編集",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全対象Track・Partial Edit・Correction/Cleanupの単独製品受入対応表が閉じていない。",
+      "newScope": "Native edited-song acceptance opens the existing observed six-note MIDI fixture, edits notes and tempo, saves, terminates, reopens and edits again; CI result pending.",
+      "physicalProcedure": "複数Trackの音符/Velocity/Quantize/範囲編集を行い、Undo/Redo→保存→再Open。",
+      "requiredContent": "Piano Roll、音符編集、Velocity、Quantize、音長、Mute/Solo、複数Track、Partial Edit、Melody Correction、MIDI Cleanup等",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 2,
+      "name": "MIDI録音",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "単独起動→入力権限→Stop保存→再起動までの配布runtime受入が閉じていない。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "Keystation接続→Count-in録音→Stop→保存→終了→再起動→再Open→編集。",
+      "requiredContent": "MIDI鍵盤録音、Count-in、Metronome、録音・再生・保存",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 3,
+      "name": "曲構造・音楽情報",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実音声BPM/Key/Scale/セクション解析の全要件・品質が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "Tempo/Key/拍子変更を入れ、小節位置と保存/再Openの整合を確認。",
+      "requiredContent": "BPM/Key/Scale/拍子解析、曲途中のTempo/Key/拍子変更、セクション解析、小節位置合わせ",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 4,
+      "name": "AI新曲スタート",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実ONNX経路は存在。文章/歌詞から構成・楽器編成まで含む実用候補の全要件適合が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "文章/歌詞・曲調指定から候補を生成し、採用後の編成/音楽品質を確認。",
+      "requiredContent": "文章または歌詞からBPM、Key、コード、メロディ、構成、楽器編成の候補を作成",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 5,
+      "name": "Music Studio AI制作アシスタント",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "自然言語から複数作業を計画し、必要な機能を実行する中核AIの全要件が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "制作相談と複数依頼を自然言語で行い、対象と実行結果を照合。",
+      "requiredContent": "普通の会話で制作相談、操作案内、機能呼出し、複数作業、次の作業、完成までの進行支援",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 6,
+      "name": "AI安全編集・変更管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "領域横断の特定変更Undo・競合解決の全要件受入が閉じていない。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "保護範囲を設定→候補比較→部分採用→特定変更Undo→保存/復元。",
+      "requiredContent": "変更前確認、編集ロック、A/B/C、部分採用/却下、変更履歴、特定変更Undo、元データ保護",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 7,
+      "name": "AI作曲・曲展開",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全セクション展開・指定時間版・選択再生成の品質と全要件適合が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "続き/2番/Intro/Outro/指定時間を生成し、対象外音符保持を照合。",
+      "requiredContent": "曲の続き、2番、ラスサビ、Intro/Interlude/Outro、指定時間版、部分再生成",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 8,
+      "name": "AIアレンジ支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "既存単一/複数パートの明示再生成・差し替え、新規Track、規則ドラムは存在。全曲複数Sectionの一括モデル生成、演奏表現・音色・音楽的品質と全要件受入は未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "メロディ固定で単一/複数楽器だけ再生成し、対象外Track保持を確認。",
+      "requiredContent": "伴奏全体、単一/複数Trackだけを再生成。メロディ固定や選択範囲固定に対応",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 9,
+      "name": "AIコード支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実音声コード解析とVoicing・追従補正の全要件品質が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "コード解析→別案/Voicing→採用→メロディ追従を確認。",
+      "requiredContent": "コード解析、自動コード、コード候補、追従補正、Voicing、コードだけ別案",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 10,
+      "name": "AI歌詞・メロディ制作",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "歌詞生成/アクセント・歌詞固定/メロディ固定再生成の全要件が未完了。",
+      "newScope": "Both PRs preserve explicit adoption of pending lyric input. Native acceptance includes persisted syllable assignments; pending execution.",
+      "physicalProcedure": "日本語歌詞/読みを割り付け、アクセントと歌詞固定再生成を確認。",
+      "requiredContent": "歌詞生成/修正、文字数、音符割当、アクセント、歌詞⇄メロディ調整、部分/全体再生成",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 11,
+      "name": "AI仮歌・対話修正",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実Sinsy接続・小節別テイクは実装済み。聴きながら自然言語で部分修正する対話経路は未完了。",
+      "newScope": "Native acceptance invokes packaged real Sinsy and verifies restored WAV bytes; pending execution.",
+      "physicalProcedure": "仮歌を生成/試聴→小節別再生成→比較採用→保存/復元。",
+      "requiredContent": "メロディ＋歌詞から仮歌、完成形確認、仮歌を聴きながら自然言語で部分修正",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 12,
+      "name": "ボーカル録音",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "8分PCM録音のproduction経路は親#455に存在。録音中のタブ終了/電源断からのdurable復旧、長時間高度補正/Comp、単独配布runtimeの受入が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "許可→録音/Pause/Resume→Stop保存→Cycle複数テイク→遅延補正→再Open。",
+      "requiredContent": "非圧縮WAV、入力チェック、モニター、Latency補正、Punch/Cycle、Take/Comp、歌詞スクロール等",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 13,
+      "name": "ボーカル編集",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "非破壊編集・部分置換は存在。Vibrato等を含む全ボーカル補正の品質受入が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "波形範囲のCut/Move/Join/Gain→Undo/Redo→Mix保存→再Open。",
+      "requiredContent": "波形＋歌詞＋音符同期、Pitch/Timing/長さ、Crossfade、Breath、Vibrato、非破壊編集",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 14,
+      "name": "ボーカル生成・Harmony",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実歌声Harmony/Double/Chorus・本人同意済み声のモデル/権利確認の全要件が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "同意/権利確認済み声だけでHarmony/Double/Chorusを生成・比較。",
+      "requiredContent": "Harmony、Double、Chorus、仮歌、自分の声を利用する機能（本人同意・技術/権利確認前提）",
+      "classification": "external decision"
+    },
+    {
+      "number": 15,
+      "name": "ボーカル完成チェック",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "仮歌対比・録り直し/補正判断まで含む完成チェックの全要件受入が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "仮歌/テイク比較・音程/Timing/音域を確認し、補正/録り直し判断。",
+      "requiredContent": "仮歌比較、Take比較、音程/Timing/音域、補正か録り直しかの判断支援",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 16,
+      "name": "Stem Separation",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実分離モデル・依存runtime・配布接続と一般作品品質受入の全要件が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "許諾済みテスト音声を分離し各Stemと再合成品質を試聴。",
+      "requiredContent": "Vocals / Drums / Bass / Guitar / Piano / Otherへの分離",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 17,
+      "name": "Audio-to-MIDI",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実変換の配布runtime接続・信頼度/比較修正・一般作品精度受入の全要件が未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "許諾済み単音/和音音声を変換し、誤検出/信頼度/修正/保存を確認。",
+      "requiredContent": "変換、比較修正、誤変換候補、信頼度、楽器/精度/単音和音設定、自動整理",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 18,
+      "name": "AIミックス支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実測Gain/EQ/Compression候補と名前付きLong Mix版は存在。作品全体の音楽的品質と全形式/音源を含む受入は未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "MIDI音声化とVocalをSourcesへ明示選択しGain/EQ/Comp→候補比較/部分採用。",
+      "requiredContent": "Volume、EQ、Compression、空間、伴奏との衝突、ボーカル可聴性、複数Mix案比較",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 19,
+      "name": "AIマスタリング",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実LUFS/Peak測定・複数候補・長時間処理は存在。測定の規格適合と全曲品質受入は未認定。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "短/長MasterをBefore/After比較しLUFS/Peak/Clippingと保存を確認。",
+      "requiredContent": "複数Master案、LUFS、Peak、Clipping、最終音量チェック",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 20,
+      "name": "Logic Pro往復連携",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Logic往復の対応/差分管理と単独アプリ受渡し全要件が未認定。",
+      "newScope": "No new production Logic import implementation. Long WAV/Stem mapping and physical Logic handoff remain open.",
+      "physicalProcedure": "WAV/Stem/MIDIをLogicへ渡し、仕上げを再取込して対応/差分を確認。",
+      "requiredContent": "Logic用Export、完成WAV/Stem/MIDI再取込、差分・対応管理、受渡し前チェック",
+      "classification": "external decision"
+    },
+    {
+      "number": 21,
+      "name": "最終書出し・配信パッケージ",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "簡易音源/指定サンプルによる8分MIDI音声化と実一括出力を追加。全音源/配信前チェック・配布権利の全要件は未認定。",
+      "newScope": "Native isolated restore acceptance renders MIDI, prepares Master/Stem/MIDI ZIP and saves export history; pending execution. No complete delivery certification.",
+      "physicalProcedure": "130秒超・8分以内の曲を音声化→Master/Instrumental/MIDIを一括Export。",
+      "requiredContent": "Master WAV、Instrumental、Stem、MIDI等の一括Export、配信前チェック",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 22,
+      "name": "保存・曲バージョン管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Track/range-level cross-version composition beyond dependency bundles, independent audible A/B checkpoint comparison, full crash/forced-exit recovery and standalone distribution acceptance remain unclosed. Broad Music/Audio bundle composition is deliberately constrained, not full original-spec certification.",
+      "newScope": "Merged atomic metadata/tempo saves and busy-writer/draft protection with close retry admission until WebKit callback settles. Native edited-song multi-launch acceptance added, pending execution.",
+      "physicalProcedure": "編集→保存→終了→再Open→再編集→再保存、候補版/部分合成を照合。",
+      "requiredContent": "Auto Save、Checkpoint、複製、A/B比較、候補版、複数Versionの部分合成",
+      "evidence": [
+        "music-studio.js: versionCapture/versionCompare/versionCompose/versionStep/versionCommit/versionView",
+        "tests/music-song-checkpoints.test.js",
+        "scripts/music-song-checkpoints-browser.js (final-head CI pending)"
+      ],
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 23,
+      "name": "バックアップ・復旧・移行",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Cloud Sync service/auth/encryption/conflict/offline/recovery selection and implementation remain unavailable without user choices. All legacy/imported local dependency migration and power-loss automatic recovery acceptance remain unclosed. No provider or service selected.",
+      "newScope": "Native acceptance uses two separate persistent WebKit store identifiers at the same fixed origin; full archive restores into the initially empty second store, checks MIDI/lyrics/AI/audio and edits/re-exports. Pending execution; crash/update migration closure remains open.",
+      "physicalProcedure": "Full WAV Archiveを別保存先へ復元しMIDI/音声hash・旧データを照合。",
+      "requiredContent": "完全Backup、別Mac移行、依存ファイル検査、破損チェック、自動復旧、更新前保護。Cloud Syncは採用済み、同期先/暗号化/Conflict/Offline architecture選定が必要",
+      "evidence": [
+        "music-studio.js: archiveBinaries/archiveValidateProjects/restoreLongWavArchive/archiveCapacity/prepareRestoreProjects",
+        "tests/music-song-checkpoints.test.js",
+        "scripts/music-song-checkpoints-browser.js (final-head CI pending)"
+      ],
+      "classification": "external decision"
+    },
+    {
+      "number": 24,
+      "name": "Music Studio診断・安全修復",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全製品の性能診断→安全修復の全要件が未完了。",
+      "newScope": "No new diagnostic production completion certified. Do not confuse formal No.24 with Japanese singing.",
+      "physicalProcedure": "重い/欠損/不正状態の診断→修復候補を確認し元曲保持を照合。",
+      "requiredContent": "重い原因、不具合診断、安全軽量化、安全に直せる範囲の自動修復",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 25,
+      "name": "AI実行環境・作品保護",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "固定実生成資産の許諾は存在。Intel/Apple Siliconの配布runtime閉包・署名公証等の全要件が未完了。",
+      "newScope": "Startup probe cleanup checks live owned group members and reaps direct child, treats EPERM as failure unless OS confirms no live member. Linux virtualized local real-process tests failed; native/Linux CI pending. Normal candidate contains no acceptance script hook.",
+      "physicalProcedure": "完全LocalとProject外部送信禁止で処理し、外部通信がないことを確認。",
+      "requiredContent": "Local優先、完全Local、Project外部送信禁止、通信内容表示、Intel/Apple Silicon最適化",
+      "classification": "backend/runtime foundation"
+    },
+    {
+      "number": 26,
+      "name": "AI料金管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "承認済み有料Provider条件を基にする料金予約/上限/使用量のproduction閉包が未完了。今回Live Provider APIを呼ばない。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "承認済み料金条件で見積/上限/取消/使用量台帳を確認（現状実施不可）。",
+      "requiredContent": "有料処理の事前料金表示、月額上限、AI別使用量/料金確認",
+      "classification": "external decision"
+    },
+    {
+      "number": 27,
+      "name": "AIモデル管理・互換性",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "固定ONNX/Sinsyは存在。モデル交換/旧モデル/更新前品質テストを含む全要件が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "モデル更新前後で旧成果を開き、交換/互換テスト結果を確認。",
+      "requiredContent": "Provider交換可能、軽量Model切替、速度/品質、旧Model、更新前Test、過去生成結果保護",
+      "classification": "external decision"
+    },
+    {
+      "number": 28,
+      "name": "スマートUI",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Local rule-based screen discovery is implemented; arbitrary natural-language assistant routing and full standalone/distribution/policy acceptance across all editing states remain unclosed. Current-head Chrome and native/real-generation checks must be verified before any completion claim.",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "iPad横1180x820で8画面、長い候補/履歴/ダイアログと未保存切替を確認。",
+      "requiredContent": "不要機能OFF、作業別UI、お気に入り操作、自然言語から必要画面を開く",
+      "evidence": [
+        "music-studio.js: normalizeWorkspace/setWorkActionVisible/resolveWorkRequest/previewWorkRequest/openWorkAction",
+        "tests/music-studio-workspace.test.js",
+        "scripts/music-workspace-browser.js",
+        ".github/workflows/music-smart-workspace.yml"
+      ],
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 29,
+      "name": "素材・テンプレートライブラリ",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "再利用素材保存・曲に合わせたKey/BPM調整・文章検索の全要件が未完了。",
+      "newScope": "No new feature completion certified in this Work.",
+      "physicalProcedure": "素材保存→文章検索→別曲でKey/BPM追従を確認。",
+      "requiredContent": "曲/一部分の素材保存、曲に合わせたKey/BPM等の調整、文章検索。これ以上の素材系追加はしない",
+      "classification": "production connection or acceptance"
+    },
+    {
+      "number": 30,
+      "name": "完成版・制作履歴管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Current-head browser UI/restart/IndexedDB/complete binary archive and regression checks must complete. Standalone runtime and distribution/policy acceptance has not been certified. Explicit sessions/daily notes are supported, not automatic logging of every edit.",
+      "newScope": "Native acceptance saves a real project checkpoint and compares complete saved metadata across separate app processes. Pending execution; full production completion not certified.",
+      "physicalProcedure": "完成版固定→検索→Session/日次履歴→再Openを確認。",
+      "requiredContent": "完成版固定、曲情報、完成曲検索、制作Session、日次記録、完成までの時系列履歴",
+      "classification": "closest bounded local lifecycle; implementation added, acceptance pending",
+      "evidence": [
+        "music-studio.js: finishedFork/finishedOpen/productionSessionChange/productionHistoryView/versionCommit/compareAndFork",
+        "tests/music-song-checkpoints.test.js",
+        "scripts/music-song-checkpoints-browser.js"
+      ]
+    }
+  ],
+  "prioritization": [
+    {
+      "number": 30,
+      "reason": "Original requires fixed final versions, metadata/search, sessions/daily chronology. Existing checkpoint graph and complete archive permit reuse without external service/model decisions."
+    },
+    {
+      "number": 28,
+      "reason": "General natural-language assistant and whole-state UI acceptance remain broader than this local lifecycle."
+    },
+    {
+      "number": 19,
+      "reason": "Whole-song loudness/quality and production acceptance require more than final-version storage."
+    },
+    {
+      "number": 29,
+      "reason": "Cross-song material lifecycle plus Key/BPM transformation remains a larger implementation."
+    }
+  ]
+}
