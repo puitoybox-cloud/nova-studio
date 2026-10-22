@@ -52,11 +52,17 @@ if(input.phase==='write'){
  const expected=JSON.parse(input.expected);
  assert(JSON.stringify(p.midiData)===JSON.stringify(expected.midiData),'restored MIDI mismatch');
  assert(JSON.stringify(p.syllableAssignments)===JSON.stringify(expected.syllableAssignments),'restored lyric mismatch');
- assert(p.aiWorkspace?.candidateSets?.length===expected.aiWorkspace?.candidateSets?.length,'restored candidate mismatch');
+ const workspaceContent=value=>{const copy=structuredClone(value);for(const key of ['projectId','baseRevision','updatedAt'])delete copy[key];return JSON.stringify(copy)};
+ assert(JSON.stringify(p.musicalSettings)===JSON.stringify(expected.musicalSettings),'restored musical metadata mismatch');
+ assert(workspaceContent(p.aiWorkspace)===workspaceContent(expected.aiWorkspace),'restored AI workspace mismatch');
+ const historyContent=project=>JSON.stringify(project.songVersions.checkpoints.map(c=>({name:c.name,midi:c.snapshot.midiData,lyrics:c.snapshot.syllableAssignments})));
+ assert(historyContent(p)===historyContent(expected),'restored checkpoint content mismatch');
  for(let i=0;i<(expected.longWavAssets||[]).length;i++)assert(await to64(await a.pcmLoadLongWav(id,p.longWavAssets[i].id))===input.audio[expected.longWavAssets[i].id],'restored WAV mismatch');
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);core.selectPart(a.state.midiEditor,'melody');
  core.addNote(a.state.midiEditor,{pitch:71,startTick:2880,durationTicks:240,velocity:70});assert((await a.saveMidiEditor({silent:true})).ok,'restored edit save failed');
+ const candidatesBefore=(await repo.get(id)).aiWorkspace.candidateSets.length;
  MusicStudioAIAssistantPanel.setTab(id,'candidates');await MusicStudioAIAssistantPanel.generateLocalModel(id);assert((await a.saveMidiEditor({silent:true})).ok,'restored AI save failed');
+ assert((await repo.get(id)).aiWorkspace.candidateSets.length>candidatesBefore,'restored AI did not generate a new candidate set');
  const render=await a.midiRenderForMix(id);assert(render.ok,'restored MIDI audio render failed');
  const output=await a.finalPreview(id,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+render.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:true});
  assert(output.ok,'restored final export failed: '+output.error);assert(output.candidate.zip.size>44,'final ZIP missing');
