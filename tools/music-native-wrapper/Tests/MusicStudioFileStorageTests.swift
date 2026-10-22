@@ -114,4 +114,53 @@ final class MusicStudioFileStorageTests: XCTestCase {
         XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
     }
 
+    @MainActor func testTimedOutCloseCannotOverlapStillRunningPageSave() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let assets = root.appendingPathComponent("MusicStudioWeb")
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("""
+        <!doctype html><script>
+        window.calls=0;window.releaseSave=null;
+        window.MusicStudio={prepareForShutdown:async()=>{
+          calls++;await new Promise(resolve=>window.releaseSave=resolve);return {ok:true};
+        }};
+        </script><title>Close timeout fixture</title>
+        """.utf8).write(to: assets.appendingPathComponent("music-studio.html"))
+        let config = try XCTUnwrap(MusicStudioAppConfiguration.bundled(resourceURL: root))
+        let host = MusicStudioWebViewHost(configuration: config, platform: "mac")
+        defer { host.stop() }
+        host.start()
+        for _ in 0..<200 {
+            if host.lifecycleState == "BROWSER_READY" { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(host.lifecycleState, "BROWSER_READY")
+        var completions = 0
+        let refused = await withCheckedContinuation { continuation in
+            host.prepareForClose(timeoutSeconds: 0.2) { ok in
+                completions += 1; continuation.resume(returning: ok)
+            }
+        }
+        XCTAssertFalse(refused)
+        let retry = await withCheckedContinuation { continuation in
+            host.prepareForClose { continuation.resume(returning: $0) }
+        }
+        XCTAssertFalse(retry)
+        let calls = try await host.webView.evaluateJavaScript("calls")
+        XCTAssertEqual(calls as? Int, 1)
+        _ = try await host.webView.evaluateJavaScript("releaseSave()")
+        for _ in 0..<100 {
+            let inert = try await host.webView.evaluateJavaScript("document.body.inert")
+            if inert as? Bool == false { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(completions, 1)
+        _ = try await host.webView.evaluateJavaScript("MusicStudio.prepareForShutdown=async()=>({ok:true})")
+        let recovered = await withCheckedContinuation { continuation in
+            host.prepareForClose { continuation.resume(returning: $0) }
+        }
+        XCTAssertTrue(recovered)
+    }
+
 }
