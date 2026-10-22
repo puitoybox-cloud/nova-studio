@@ -15,7 +15,7 @@ import time
 
 CODE = Path(__file__).resolve().parent
 CONTENTS = CODE.parents[2]
-ORIGIN = 'http://127.0.0.1:8766'
+ORIGIN = 'http://127.0.0.1:8765'
 
 
 def stop(child):
@@ -76,7 +76,7 @@ def main():
         if engine is not None and engine.poll() is None: engine.terminate()
     old = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
-        engine = subprocess.Popen([str(CONTENTS / 'Helpers/MusicStudioEngine')],
+        engine = subprocess.Popen([str(CONTENTS / 'Helpers/MusicStudioEngine'), '--port', '8765'],
                                   env=env, cwd=CONTENTS, stdout=subprocess.PIPE,
                                   stderr=subprocess.DEVNULL, start_new_session=True)
         ready(engine)

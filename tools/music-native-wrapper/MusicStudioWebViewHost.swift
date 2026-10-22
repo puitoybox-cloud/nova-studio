@@ -332,7 +332,7 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
         #if os(macOS)
-        if configuration.startURL.absoluteString == "http://127.0.0.1:8766/music-studio.html",
+        if configuration.startURL.absoluteString == "http://127.0.0.1:8765/music-studio.html",
            let resources = Bundle.main.resourceURL,
            FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) {
             // Bounded owned stdout acknowledgement for the package launcher.

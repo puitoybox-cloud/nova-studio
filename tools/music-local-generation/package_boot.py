@@ -63,7 +63,7 @@ def main():
     # These are connection settings only; asset/runtime paths cannot be overridden.
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=8766)
+    parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--lan-ip')
     parser.add_argument('--tls-cert')
     parser.add_argument('--tls-key')

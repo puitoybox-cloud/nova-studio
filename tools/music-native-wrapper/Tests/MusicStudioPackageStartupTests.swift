@@ -16,9 +16,9 @@ final class MusicStudioPackageStartupTests: XCTestCase {
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: helper.path)
         XCTAssertNil(MusicStudioAppConfiguration.startup(environment: [:], resourceURL: resources))
         XCTAssertNil(MusicStudioAppConfiguration.startup(environment: ["NOVA_PACKAGE_ENGINE_ORIGIN":"http://example.com"], resourceURL: resources))
-        let env = ["NOVA_PACKAGE_ENGINE_ORIGIN":"http://127.0.0.1:8766"]
+        let env = ["NOVA_PACKAGE_ENGINE_ORIGIN":"http://127.0.0.1:8765"]
         let configuration = try XCTUnwrap(MusicStudioAppConfiguration.startup(environment: env, resourceURL: resources))
-        XCTAssertEqual(configuration.startURL.absoluteString, "http://127.0.0.1:8766/music-studio.html")
+        XCTAssertEqual(configuration.startURL.absoluteString, "http://127.0.0.1:8765/music-studio.html")
         XCTAssertTrue(configuration.allows(configuration.startURL))
         XCTAssertFalse(configuration.allows(URL(string:"http://127.0.0.1:8767/music-studio.html")!))
         var strict = env; strict["NOVA_STRICT_OFFLINE"] = "1"

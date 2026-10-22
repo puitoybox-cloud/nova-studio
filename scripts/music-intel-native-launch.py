@@ -5,6 +5,7 @@ from pathlib import Path
 import plistlib
 import signal
 import selectors
+import socket
 import subprocess
 import sys
 import time
@@ -15,7 +16,16 @@ contents = app / 'Contents'
 info = plistlib.loads((contents / 'Info.plist').read_bytes())
 entry = contents / 'MacOS' / info['CFBundleExecutable']
 native = str(contents / 'MacOS' / info['NOVAOriginalExecutable'])
-child = subprocess.Popen([str(entry)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# Reserve the existing Audio Helper port with a real listening socket. It is
+# not a fake processing backend and returns no health/processing success.
+legacy = socket.socket()
+legacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+legacy.bind(('127.0.0.1', 8766)); legacy.listen(1)
+try:
+    child = subprocess.Popen([str(entry)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+except BaseException:
+    legacy.close()
+    raise
 started = time.monotonic()
 owned = []
 output = b''
@@ -30,7 +40,7 @@ try:
             output += os.read(child.stdout.fileno(), 4096)
             if len(output) > 16384: raise ValueError('Native readiness output budget')
         if any(native in line for line in owned) and b'NOVA_PACKAGE_NATIVE_DOCUMENT_LOADED\n' in output:
-            with urllib.request.urlopen('http://127.0.0.1:8766/__nova_generation/status', timeout=3) as response:
+            with urllib.request.urlopen('http://127.0.0.1:8765/__nova_generation/status', timeout=3) as response:
                 status = json.load(response)
             if not status['composer'] or not status['singer']: raise ValueError('Incomplete packaged engine')
             break
@@ -40,12 +50,13 @@ try:
     child.wait(timeout=12)
     if child.returncode != 0: raise RuntimeError('App launcher did not stop cleanly')
     try:
-        urllib.request.urlopen('http://127.0.0.1:8766/__nova_generation/status', timeout=1)
+        urllib.request.urlopen('http://127.0.0.1:8765/__nova_generation/status', timeout=1)
     except OSError: pass
     else: raise RuntimeError('Owned engine survived launcher shutdown')
     print(json.dumps({'app':str(app),'entry':str(entry),'nativeWrapper':native,
                       'ownedChildren':owned,'packageEngineStartup':True,
                       'nativeProcessStarted':True,'nativeDocumentLoaded':True,'ownedShutdown':True,
+                      'generationOrigin':'http://127.0.0.1:8765','legacyAudioPort8766Occupied':True,
                       'saveOnClose':'UNVERIFIED: signal shutdown without edits',
                       'physicalAcceptance':False}, indent=2))
 finally:
@@ -53,4 +64,4 @@ finally:
         child.terminate()
         try: child.wait(timeout=12)
         except subprocess.TimeoutExpired: child.kill(); child.wait()
-    selector.close(); child.stdout.close(); child.stderr.close()
+    selector.close(); child.stdout.close(); child.stderr.close(); legacy.close()

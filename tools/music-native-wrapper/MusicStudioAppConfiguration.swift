@@ -41,9 +41,9 @@ public struct MusicStudioAppConfiguration: Equatable {
             // to file/online/developer pages when its startup channel is absent.
             guard environment["NOVA_STRICT_OFFLINE"] == nil, environment["NOVA_LOCAL_HANDOFF"] == nil,
                   environment["NOVA_TRUSTED_MANIFEST_PATH"] == nil,
-                  environment["NOVA_PACKAGE_ENGINE_ORIGIN"] == "http://127.0.0.1:8766",
+                  environment["NOVA_PACKAGE_ENGINE_ORIGIN"] == "http://127.0.0.1:8765",
                   FileManager.default.isExecutableFile(atPath: resourceURL.deletingLastPathComponent().appendingPathComponent("Helpers/MusicStudioEngine").path) else { return nil }
-            return localHosted(startURL: URL(string: "http://127.0.0.1:8766/music-studio.html")!)
+            return localHosted(startURL: URL(string: "http://127.0.0.1:8765/music-studio.html")!)
         }
         #endif
         guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return bundled(resourceURL: resourceURL) }
