@@ -1,9 +1,22 @@
 // Opt-in real model/voice verification. Requires explicit local assets; no fixtures substitute inference.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
 const base='http://127.0.0.1:8767';
-const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/serve.py','--port','8767','--weights',process.env.NOVA_MODEL_WEIGHTS,'--sinsy',process.env.NOVA_SINSY,'--dictionary',process.env.NOVA_SINSY_DICTIONARY,'--voice',process.env.NOVA_SINSY_VOICE],{stdio:['ignore','pipe','pipe']});
+const packageApp=process.env.NOVA_PACKAGE_APP;
+const executable=packageApp?path.join(fs.realpathSync(packageApp),'Contents/Helpers/MusicStudioEngine'):(process.env.PYTHON||'python');
+const arguments_=packageApp?['--port','8767']:['tools/music-local-generation/serve.py','--port','8767','--weights',process.env.NOVA_MODEL_WEIGHTS,'--sinsy',process.env.NOVA_SINSY,'--dictionary',process.env.NOVA_SINSY_DICTIONARY,'--voice',process.env.NOVA_SINSY_VOICE];
+const server=spawn(executable,arguments_,{stdio:['ignore','pipe','pipe']});
+let serverFailure;server.once('error',error=>{serverFailure=error});
+server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data',data=>process.stderr.write(data));
 (async()=>{try{
- await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error('host exited '+code)))});
+ const deadline=Date.now()+240000;
+ while(true){
+  if(serverFailure)throw serverFailure;
+  if(server.exitCode!==null||server.signalCode!==null)throw Error('host exited before readiness');
+  try{const response=await fetch(base+'/__nova_generation/status',{signal:AbortSignal.timeout(1000)});if(response.ok)break}catch{}
+  if(Date.now()>deadline)throw Error('host readiness timeout');
+  await new Promise(resolve=>setTimeout(resolve,200));
+ }
+ if(packageApp)console.log(JSON.stringify({packageOrigin:true,app:fs.realpathSync(packageApp),helper:executable,externalFallback:false}));
  const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],fixture=new Function('require',source+'\nreturn fixture;')(require),f=fixture();
  const measurements=[];
  f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;f.w.fetch=async(url,options={})=>{
@@ -60,4 +73,11 @@ const server=spawn(process.env.PYTHON||'python',['tools/music-local-generation/s
  console.log(JSON.stringify({lateRangeRealSinsy:true,measure:101,startSeconds:200,archiveByteEquality:true}));
  const forbidden=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:'https://example.com','Content-Type':'application/json'},body:'{}'});assert.equal(forbidden.status,403);
  console.log(JSON.stringify({realInference:true,longBaseSeconds:180,longReplacementOutsideBytesUnchanged:true,model:'skytnt/midi-model-tv2o-medium',candidateNotes:set.candidates.map(c=>c.value.importedMidi.notes.length),midiPartialApply:true,midiSaveReopen:true,singingEngine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001',wavBytes:rendered.blob.size,archiveByteEquality:true,selectedMeasures:[2,2],outsideLyricExcluded:true,normalizedKana:true,foreignOriginRejected:true},null,2));
-}finally{server.kill('SIGTERM')}})().catch(e=>{console.error(e);process.exitCode=1});
+}finally{
+ if(server.exitCode===null&&server.signalCode===null){
+  await new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>{server.kill('SIGKILL');reject(Error('owned engine shutdown deadline'))},8000);
+   server.once('exit',()=>{clearTimeout(timer);resolve()});server.kill('SIGTERM');
+  });
+ }
+}})().catch(e=>{console.error(e);process.exitCode=1});

@@ -35,6 +35,17 @@ public struct MusicStudioAppConfiguration: Equatable {
 
     /// Explicit launcher channel. Invalid/missing strict startup never chooses HTTPS.
     public static func startup(environment: [String: String], now: Date = Date(), resourceURL: URL? = Bundle.main.resourceURL) -> MusicStudioAppConfiguration? {
+        #if os(macOS)
+        if let resourceURL, FileManager.default.fileExists(atPath: resourceURL.appendingPathComponent("package-candidate.json").path) {
+            // The package launcher owns this fixed-origin engine. Never fall back
+            // to file/online/developer pages when its startup channel is absent.
+            guard environment["NOVA_STRICT_OFFLINE"] == nil, environment["NOVA_LOCAL_HANDOFF"] == nil,
+                  environment["NOVA_TRUSTED_MANIFEST_PATH"] == nil,
+                  environment["NOVA_PACKAGE_ENGINE_ORIGIN"] == "http://127.0.0.1:8765",
+                  FileManager.default.isExecutableFile(atPath: resourceURL.deletingLastPathComponent().appendingPathComponent("Helpers/MusicStudioEngine").path) else { return nil }
+            return localHosted(startURL: URL(string: "http://127.0.0.1:8765/music-studio.html")!)
+        }
+        #endif
         guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return bundled(resourceURL: resourceURL) }
         guard let text = environment["NOVA_LOCAL_HANDOFF"], text.utf8.count <= 4096,
               let data = text.data(using: .utf8),

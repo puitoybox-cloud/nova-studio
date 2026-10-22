@@ -36,6 +36,17 @@ def transport(lan_ip, cert, key, port):
     return str(address)
 
 
+def check_listen_address(bind, port):
+    # Match HTTPServer's restart semantics: closed TCP sessions can leave
+    # TIME_WAIT after the owning process is fully reaped. SO_REUSEADDR permits
+    # that restart, while listen still rejects an actually active listener.
+    # Never enable SO_REUSEPORT or select a different production origin.
+    with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((bind, port))
+        sock.listen(1)
+
+
 def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
     checks = []
     def check(name, action, remedy):
@@ -93,9 +104,7 @@ def diagnose(asset_root, port=8766, lan_ip=None, tls_cert=None, tls_key=None):
     except Exception as error: checks.append({'id': 'transport', 'ok': False, 'error': str(error)[:400], 'remedy': 'MacのLAN IP、有効なIP SAN証明書、対応する秘密鍵を確認してください。'})
     else: checks.append({'id': 'transport', 'ok': True})
     if bind:
-        def available():
-            with socket.socket() as sock: sock.bind((bind, port))
-        check('listen-address', available, 'IPがこのMacに属するか、別のエンジンが同じポートで起動していないか確認してください。')
+        check('listen-address', lambda: check_listen_address(bind, port), 'IPがこのMacに属するか、別のエンジンが同じポートで起動していないか確認してください。')
     return {'ok': all(c['ok'] for c in checks), 'system': platform.system(), 'architecture': platform.machine(),
             'signedDistribution': False, 'deviceTrustVerified': False,
             'modelsLoaded': next(c['ok'] for c in checks if c['id'] == 'model-load'),

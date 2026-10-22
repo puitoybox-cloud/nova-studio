@@ -2,6 +2,7 @@ import Foundation
 import WebKit
 #if os(macOS)
 import AppKit
+import Darwin
 #endif
 
 public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply {
@@ -331,6 +332,16 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
         #if os(macOS)
+        if configuration.startURL.absoluteString == "http://127.0.0.1:8765/music-studio.html",
+           let resources = Bundle.main.resourceURL,
+           FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) {
+            // Bounded owned stdout acknowledgement for the package launcher.
+            // This establishes document navigation, not saved-song acceptance.
+            print("NOVA_PACKAGE_NATIVE_DOCUMENT_LOADED")
+            fflush(stdout)
+        }
+        #endif
+        #if os(macOS)
         attachWindowCloseGuard()
         #endif
         #if os(iOS)
@@ -377,6 +388,10 @@ private final class MusicStudioWindowCloseGuard: NSObject, NSWindowDelegate {
 /// Shared by the Swift Package and Xcode app entrypoints.
 public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelegate {
     private var preparing = false
+    public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        guard let resources = Bundle.main.resourceURL else { return false }
+        return FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path)
+    }
     public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !preparing else { return .terminateCancel }
         preparing = true

@@ -94,7 +94,7 @@ jobs:
             ${{ runner.temp }}/music-long-production-browser.json
   intel-mac-generation:
     runs-on: macos-15-intel
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -119,14 +119,66 @@ jobs:
       - run: python tools/music-local-generation/test_startup.py
       - run: python -m pip install -r tools/music-local-generation/requirements.txt
       - run: python tools/music-local-generation/test_generation_budget.py
-      - name: Build fixed Sinsy and prepare model on Intel Mac
-        run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
-      - name: Verify actual launch prerequisites
-        run: python tools/music-local-generation/launch.py "$RUNNER_TEMP/nova-generation-assets" --check
-      - name: Real Intel CPU model and Japanese voice through Studio
+      # Linux retains development-origin inference. Intel proceeds directly to
+      # package-origin acceptance: no duplicate model download/build/inference.
+      - name: Intel candidate assembly guards
+        run: |
+          python tools/music-local-generation/test_intel_assembly.py
+          python tools/music-local-generation/test_package_integrity.py
+          python tools/music-local-generation/test_native_launch.py
+      - name: Assemble actual app-contained Intel runtime, models, voice and sound samples
+        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app"
+      - name: Relocate candidate before package-origin inference
+        run: |
+          mkdir -p "$RUNNER_TEMP/relocated app"
+          mv "$RUNNER_TEMP/Music Studio Candidate.app" "$RUNNER_TEMP/relocated app/Music Studio Candidate.app"
+      - name: Actual app entry starts native wrapper and owns engine shutdown
+        run: python scripts/music-intel-native-launch.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" > "$RUNNER_TEMP/package-native-launch.json"
+      - name: Actual packaged CPU ONNX and Sinsy generation, restart and archive recovery
         env:
-          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
-          NOVA_SINSY: ${{ runner.temp }}/nova-generation-assets/runtime/bin/sinsy
-          NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
-          NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
-        run: node scripts/music-local-real-generation.js
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+        run: |
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-first.log" 2>&1
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-restart.log" 2>&1
+      - name: Packaged engine through actual Chrome UI and IndexedDB at four sizes
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+          NOVA_REAL_BROWSER_REPORT: ${{ runner.temp }}/package-browser.json
+          NOVA_PACKAGE_SCREENSHOT_DIR: ${{ runner.temp }}/package-screenshots
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-intel-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-intel-browser/node_modules" CHROME_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node scripts/music-local-real-browser.js
+      - name: Record candidate files and archive SHA256 without release publication
+        run: |
+          cp "$RUNNER_TEMP/relocated app/Music Studio Candidate.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/package-candidate.json"
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/music-intel-candidate.zip"
+          shasum -a 256 "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-sha256.txt"
+          stat -f '%z' "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-bytes.txt"
+      - name: Preserve inventory evidence even if later package acceptance fails
+        if: always()
+        run: |
+          python - <<'PYREPORT'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          for app in (root/'relocated app/Music Studio Candidate.app', root/'Music Studio Candidate.app', root/'Music Studio Candidate.app.incomplete'):
+              report = app/'Contents/Resources/package-candidate.json'
+              if report.is_file():
+                  shutil.copyfile(report, root/'package-candidate.json')
+                  break
+          PYREPORT
+      # Binary publication remains blocked by license/source, native lifecycle,
+      # Developer ID, notarization and physical acceptance gates.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-intel-package-evidence
+          path: |
+            ${{ runner.temp }}/package-candidate.json
+            ${{ runner.temp }}/package-native-launch.json
+            ${{ runner.temp }}/package-browser.json
+            ${{ runner.temp }}/package-screenshots/
+            ${{ runner.temp }}/package-generation-first.log
+            ${{ runner.temp }}/package-generation-restart.log
+            ${{ runner.temp }}/package-archive-sha256.txt
+            ${{ runner.temp }}/package-archive-bytes.txt

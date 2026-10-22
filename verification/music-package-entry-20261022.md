@@ -39,4 +39,3 @@ Before B: supply and approve a relocatable Intel Python/ONNX/numpy/Pillow/Sinsy/
 Last known formal count remains A0/B0/C30; no promotion. The September 30 original specification was not re-read here; the October 21 repository ledger is prior evidence only.
 
 Signing/notarization not performed. Remaining user-controlled inputs: authorized Developer ID Application signing identity/private key in Keychain, Team ID and approved notarytool profile/credentials. None acquired, used, committed or changed. Hardened Runtime/entitlements and nested signing must be validated against the final actual Python/native library tree; no blanket disable-library-validation entitlement added. Physical Intel Mac/iPad, LAN address and certificate trust acceptance remain with Tia.
-
