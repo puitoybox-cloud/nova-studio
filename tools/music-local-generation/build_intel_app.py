@@ -139,8 +139,15 @@ def build(work, output):
         shutil.copytree(assets / name, target / name, symlinks=True)
     check_models(target)
     (contents / 'Helpers').mkdir(exist_ok=True)
-    shutil.copy2(HERE / 'MusicStudioEngine', contents / 'Helpers/MusicStudioEngine')
-    (contents / 'Helpers/MusicStudioEngine').chmod(0o755)
+    run('/usr/bin/clang', '-arch', 'x86_64', '-mmacosx-version-min=13.0',
+        '-DNOVA_BOOT_SCRIPT="package_boot.py"', HERE / 'native_launcher.c',
+        '-o', contents / 'Helpers/MusicStudioEngine')
+    # Build/install console scripts refer to the staging interpreter and are not
+    # production entrypoints. Only the fixed interpreter and aliases are used.
+    for item in (runtime / 'bin').iterdir():
+        if item.name not in ('python', 'python3', 'python3.12'):
+            if item.is_dir() and not item.is_symlink(): shutil.rmtree(item)
+            else: item.unlink()
     # Remove build-local static headers/archives: they are not runtime dependencies.
     shutil.rmtree(target / 'runtime/include')
     for path in (target / 'runtime/lib').glob('*.a'): path.unlink()
@@ -218,15 +225,17 @@ def relocate(contents):
                     run('/usr/bin/install_name_tool', '-delete_rpath', route, image)
         ids = subprocess.check_output(['/usr/bin/otool', '-D', str(image)], text=True).splitlines()[1:]
         if ids: run('/usr/bin/install_name_tool', '-id', '@loader_path/' + image.name, image)
-        # Existing wheel/Python ad-hoc signatures are invalidated by relocation.
-        # Ad-hoc signing grants no Developer ID or Gatekeeper/notarization trust.
+        # Relocation invalidates upstream ad-hoc signatures. This Intel candidate
+        # is explicitly unsigned; final nested Developer ID signing is separate.
         final = subprocess.check_output(['/usr/bin/otool', '-L', str(image)], text=True).splitlines()[1:]
         for line in final:
             dep = line.strip().split(' (')[0]
             if dep.startswith(('/usr/lib/', '/System/Library/')): continue
             if not dep.startswith('@loader_path/'): raise ValueError('Unclosed native load path: ' + dep)
             (image.parent / dep[len('@loader_path/'):]).resolve(strict=True).relative_to(contents.resolve())
-        run('/usr/bin/codesign', '--force', '--sign', '-', image)
+        signature_commands = subprocess.check_output(['/usr/bin/otool', '-l', str(image)], text=True)
+        if 'cmd LC_CODE_SIGNATURE' in signature_commands:
+            run('/usr/bin/codesign', '--remove-signature', image)
     return [str(p.relative_to(contents)) for p in images]
 
 

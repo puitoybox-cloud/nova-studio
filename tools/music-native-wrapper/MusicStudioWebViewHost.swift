@@ -2,6 +2,7 @@ import Foundation
 import WebKit
 #if os(macOS)
 import AppKit
+import Darwin
 #endif
 
 public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandlerWithReply {
@@ -330,6 +331,16 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
               ownedLifecycle.map({ !["FAILED","STOPPING","STOPPED"].contains($0.state) && !$0.state.hasPrefix("SHUTDOWN") }) ?? true else { return }
         guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
+        #if os(macOS)
+        if configuration.startURL.absoluteString == "http://127.0.0.1:8766/music-studio.html",
+           let resources = Bundle.main.resourceURL,
+           FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) {
+            // Bounded owned stdout acknowledgement for the package launcher.
+            // This establishes document navigation, not saved-song acceptance.
+            print("NOVA_PACKAGE_NATIVE_DOCUMENT_LOADED")
+            fflush(stdout)
+        }
+        #endif
         #if os(macOS)
         attachWindowCloseGuard()
         #endif

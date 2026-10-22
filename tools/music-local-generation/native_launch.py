@@ -86,7 +86,7 @@ def main():
         # Engine failure never kills an editor holding unsaved data. Generation
         # becomes unavailable; existing editing/save remains usable until exit.
         result = ui.wait()
-        if result: raise RuntimeError('Native wrapper exited with status ' + str(result))
+        if result and not interrupted[0]: raise RuntimeError('Native wrapper exited with status ' + str(result))
     finally:
         try: stop(ui)
         finally:

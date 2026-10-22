@@ -142,6 +142,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/relocated app"
           mv "$RUNNER_TEMP/Music Studio Candidate.app" "$RUNNER_TEMP/relocated app/Music Studio Candidate.app"
+      - name: Actual app entry starts native wrapper and owns engine shutdown
+        run: python scripts/music-intel-native-launch.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" > "$RUNNER_TEMP/package-native-launch.json"
       - name: Actual packaged CPU ONNX and Sinsy generation, restart and archive recovery
         env:
           NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
@@ -162,6 +164,19 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/music-intel-candidate.zip"
           shasum -a 256 "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-sha256.txt"
           stat -f '%z' "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-bytes.txt"
+      - name: Preserve inventory evidence even if later package acceptance fails
+        if: always()
+        run: |
+          python - <<'PYREPORT'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          for app in (root/'relocated app/Music Studio Candidate.app', root/'Music Studio Candidate.app', root/'Music Studio Candidate.app.incomplete'):
+              report = app/'Contents/Resources/package-candidate.json'
+              if report.is_file():
+                  shutil.copyfile(report, root/'package-candidate.json')
+                  break
+          PYREPORT
       # Binary publication remains blocked by license/source, native lifecycle,
       # Developer ID, notarization and physical acceptance gates.
       - uses: actions/upload-artifact@v4
@@ -170,6 +185,7 @@ jobs:
           name: music-intel-package-evidence
           path: |
             ${{ runner.temp }}/package-candidate.json
+            ${{ runner.temp }}/package-native-launch.json
             ${{ runner.temp }}/package-browser.json
             ${{ runner.temp }}/package-screenshots/
             ${{ runner.temp }}/package-generation-first.log
