@@ -476,7 +476,13 @@ public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelega
         let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
         source.setEventHandler {
             print("NOVA_NATIVE_TERMINATION_SIGNAL"); fflush(stdout)
-            NSApplication.shared.terminate(nil)
+            // AppKit's terminateLater may enter a nested run loop. Starting it
+            // inside a main dispatch callback prevents the queued save request
+            // from running on that same serial queue. Re-enter through AppKit's
+            // run loop after this signal callback has returned.
+            RunLoop.main.perform {
+                NSApplication.shared.terminate(nil)
+            }
         }
         terminationSignal = source
         source.resume()
