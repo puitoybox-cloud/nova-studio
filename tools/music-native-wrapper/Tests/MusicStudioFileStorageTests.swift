@@ -156,7 +156,7 @@ final class MusicStudioFileStorageTests: XCTestCase {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         XCTAssertEqual(completions, 1)
-        _ = try await host.webView.evaluateJavaScript("MusicStudio.prepareForShutdown=async()=>({ok:true})")
+        _ = try await host.webView.evaluateJavaScript("MusicStudio.prepareForShutdown=async()=>({ok:true});true")
         let recovered = await withCheckedContinuation { continuation in
             host.prepareForClose { continuation.resume(returning: $0) }
         }
