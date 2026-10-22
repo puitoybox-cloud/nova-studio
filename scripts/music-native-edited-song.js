@@ -29,7 +29,7 @@ if(input.phase==='write'){
  MusicStudioAIAssistantPanel.setTab(id,'candidates');
  await MusicStudioAIAssistantPanel.generateLocalModel(id);
  assert((await a.saveMidiEditor({silent:true})).ok,'AI workspace save failed');
- p=await repo.get(id);assert(p.aiWorkspace?.candidateSets?.some(s=>s.candidates.length),'real ONNX candidates missing');
+ p=await repo.get(id);assert(p.aiWorkspace?.candidateSets?.some(s=>s.candidates.length),'real ONNX candidates missing: '+MusicStudioAIAssistantPanel._states.get(id)?.message);
  const track=p.midiData.tracks.find(t=>t.part==='melody'&&t.notes.length);
  const preview=a.lyricsAssignmentPreview(p,{trackId:track.id,fromNote:1,toNote:1,text:'あ',reading:'あ'});
  p=a.adoptLyricsAssignment(p,preview);assert(a.validateProject(p).valid,'lyrics project invalid');
