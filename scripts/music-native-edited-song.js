@@ -7,7 +7,7 @@ const wait=async check=>{for(let n=0;n<600;n++){if(check())return;await new Prom
 const to64=async blob=>{const bytes=new Uint8Array(await blob.arrayBuffer());let text='';for(let n=0;n<bytes.length;n+=32768)text+=String.fromCharCode(...bytes.subarray(n,n+32768));return btoa(text)};
 const from64=text=>new Blob([Uint8Array.from(atob(text),c=>c.charCodeAt(0))]);
 // Persistence acceptance uses explicit four-bar generation controls. The default
-// one-bar empty-output failure remains a separate, documented production residual.
+// short-range acceptance is independently exercised by music-local-real-generation.js.
 const generationSettings={startMeasure:1,endMeasure:4,style:'gentle',genre:'ballad',chords:'C F G C',seed:72};
 function configureGeneration(id){
  MusicStudioAIAssistantPanel.setTab(id,'candidates');
@@ -53,7 +53,7 @@ if(input.phase==='write'){
  p=await repo.get(id);assert(JSON.stringify(p)===input.expected,'restarted metadata mismatch');
  for(const asset of p.longWavAssets||[])assert(await to64(await loadAudio(id,asset.id))===input.audio[asset.id],'restarted audio mismatch');
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);
- if(input.phase==='edit'){
+ if(input.phase==='edit'||input.phase==='read-return'){
   const session=a.state.midiEditor;core.selectPart(session,'melody');core.addNote(session,{pitch:69,startTick:2400,durationTicks:360,velocity:77});session.midiData.tempo=102;session.dirty=true;
   assert((await a.saveMidiEditor({silent:true})).ok,'re-edit save failed');
  }
@@ -93,10 +93,24 @@ if(input.phase==='write'){
  const asset=returned.project.longWavAssets.at(-1);
  const again=await a.finalPreview(id,{...output.candidate.plan,routes:[{key:'wav:'+asset.id,role:'instrument',startSeconds:0,gainDb:0,muted:false}]});
  assert(again.ok,'native returned-song export failed: '+again.error);assert((await a.finalSave(id)).ok,'returned-song history save failed');
+ // Render the existing fixture's real instrument parts, then export aligned Stems.
+ stage='logic-stem-render';const tracks=(await repo.get(id)).midiData.tracks.filter(t=>t.notes?.length&&!t.muted).slice(0,2);assert(tracks.length===2,'two original MIDI tracks required');
+ const stems=await a.midiRenderStems(id,tracks.map(t=>t.id));assert(stems.ok,'native stem render: '+stems.error);
+ const routed=await a.finalPreview(id,{...output.candidate.plan,routes:stems.completed.map(x=>({key:'wav:'+x.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}))});assert(routed.ok,'aligned stem package: '+routed.error);
+ const sourceBefore=JSON.stringify(await repo.get(id));
+ const entries=stems.completed.map((x,i)=>({trackId:x.trackId,file:new File([routed.candidate.files.find(f=>f.name==='Instrument-'+(i+1)+'.wav').blob],'Returned-'+(i+1)+'.wav',{type:'audio/wav'})}));
+ const batch=await a.logicImportStemReturns(entries,id);assert(batch.ok,'native batch return: '+batch.error);assert(JSON.stringify(await repo.get(id))===sourceBefore,'batch changed source');id=batch.project.projectId;
+ const returnedAssets=batch.project.longWavAssets.slice(-2),batchOut=await a.finalPreview(id,{...routed.candidate.plan,routes:returnedAssets.map(x=>({key:'wav:'+x.id,role:'instrument',startSeconds:0,gainDb:0,muted:false}))});assert(batchOut.ok,'native batch export: '+batchOut.error);assert((await a.finalSave(id)).ok,'batch history save');
+}else if(input.phase==='restore-return'){
+ assert((await repo.list()).length===0,'returned-batch restore store must be empty');
+ const restored=await a.restoreLongWavArchive(from64(input.archive),{settings:false});assert(restored.ok,'returned batch restore: '+restored.error);
+ p=restored.projects.find(x=>x.integrations?.logicPro?.filter(l=>l.batchId).length===2);assert(p,'restored mapped batch missing');id=p.projectId;
+ for(const link of p.integrations.logicPro.filter(l=>l.batchId)){const asset=p.longWavAssets.find(x=>x.id===link.assetId);assert(asset?.midiRender?.stemTrackId===link.trackId,'restored native track correspondence');assert(p.midiData.tracks.some(t=>t.id===link.trackId),'returned MIDI identity missing')}
+ const output=await a.finalPreview(id,p.finalExportPlan);assert(output.ok,'returned batch restored export: '+output.error);assert((await a.finalSave(id)).ok,'returned batch restored history save');
 }else throw Error('invalid native acceptance phase');
 stage='shutdown';assert((await a.prepareForShutdown()).ok,'page save gate refused');
 stage='saved-audio-readback';p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await loadAudio(id,asset.id));
-const archive=input.phase==='read'?await to64(await a.createLongWavArchive()):null;
+const archive=['read','restore'].includes(input.phase)?await to64(await a.createLongWavArchive()):null;
 assert(messages.length===0,'console errors/warnings: '+messages.join(';'));assert(external.length===0,'Live Provider/external request attempted');
 return {phase:input.phase,id,generationSettings,expected:JSON.stringify(p),audio,archive,origin:location.origin,console:messages,external,revision:p.revision,noteCount:p.midiData.tracks.reduce((n,t)=>n+t.notes.length,0),physicalAcceptance:false};
 

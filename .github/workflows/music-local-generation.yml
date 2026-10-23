@@ -4,6 +4,8 @@ on:
     paths:
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-native-edited-song.js'
+      - 'scripts/music-native-edited-song.py'
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
       - 'scripts/music-long-indexeddb-browser.js'

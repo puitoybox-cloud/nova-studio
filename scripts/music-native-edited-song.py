@@ -1,4 +1,4 @@
-"""Five separate actual Intel app launches; isolated persistent WebKit profiles.
+"""Six separate actual Intel app launches; isolated persistent WebKit profiles.
 
 Requires an explicitly instrumented CI candidate. No test scripts are accepted by
 normal app builds. Only the existing six-note MIDI fixture is imported/edited.
@@ -25,26 +25,26 @@ inventory = json.loads((contents / 'Resources/package-candidate.json').read_text
 assert inventory.get('nativeAcceptanceInstrumentation') is True, 'CI-only candidate required'
 info = plistlib.loads((contents / 'Info.plist').read_bytes())
 entry = contents / 'MacOS' / info['CFBundleExecutable']
-profile, recovery_profile = str(uuid.uuid4()), str(uuid.uuid4())
+profile, recovery_profile, returned_profile = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
 project_id = 'native-ci-' + str(uuid.uuid4())
 source = (ROOT / 'scripts/music-native-edited-song.js').read_text()
 prior = None
 results = []
 with tempfile.TemporaryDirectory(prefix='nova-native-acceptance-') as tmp:
     tmp = Path(tmp)
-    for phase in ('write', 'edit', 'read', 'restore', 'read-return'):
-        data = {'phase': phase, 'id': prior['id'] if phase == 'read-return' else project_id}
+    for phase in ('write', 'edit', 'read', 'restore', 'restore-return', 'read-return'):
+        data = {'phase': phase, 'id': prior['id'] if phase in ('restore-return', 'read-return') else project_id}
         if phase == 'write':
             data['midi'] = base64.b64encode((ROOT / 'tools/music-audio-pipeline/fixtures/observed_six_notes_stems.mid').read_bytes()).decode()
         else:
             data.update({k: prior[k] for k in ('expected', 'audio')})
-            if phase == 'restore':
+            if phase in ('restore', 'restore-return'):
                 data['archive'] = prior['archive']
         script, output = tmp / (phase + '.js'), tmp / (phase + '.json')
         script.write_text(source + '\nreturn await runNativeEditedSong(' + json.dumps(data) + ');\n')
         env = dict(os.environ, NOVA_NATIVE_ACCEPTANCE_SCRIPT=str(script),
                    NOVA_NATIVE_ACCEPTANCE_RESULT=str(output),
-                   NOVA_NATIVE_ACCEPTANCE_STORE=recovery_profile if phase in ('restore', 'read-return') else profile)
+                   NOVA_NATIVE_ACCEPTANCE_STORE=returned_profile if phase in ('restore-return', 'read-return') else recovery_profile if phase == 'restore' else profile)
         with (tmp / (phase + '.stdout')).open('w+') as stdout, (tmp / (phase + '.stderr')).open('w+') as stderr:
             child = subprocess.Popen([str(entry)], env=env, stdout=stdout, stderr=stderr)
             try:

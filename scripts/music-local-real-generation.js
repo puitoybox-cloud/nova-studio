@@ -27,6 +27,14 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
   if(process.env.NOVA_SHORT_RANGE_REPORT)fs.writeFileSync(process.env.NOVA_SHORT_RANGE_REPORT,JSON.stringify(shortResults,null,2));
   assert.equal(response.ok,true,JSON.stringify(value));assert.equal(value.synthetic,false);assert.equal(value.candidates.length,3);
   for(const candidate of value.candidates){assert.ok(candidate.notes>0);assert.ok(candidate.performance.onnxCalls.base>0&&candidate.performance.onnxCalls.token>0);assert.ok(candidate.samplingTrace.length>=1);assert.ok(candidate.samplingTrace.every(x=>x.generatedRows.length>0));}
+  const fixtureSource=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],makeFixture=new Function('require',fixtureSource+'\nreturn fixture;')(require);
+  for(const candidate of value.candidates){
+   const f=makeFixture(),bytes=Uint8Array.from(Buffer.from(candidate.midiBase64,'base64')),parsed=f.w.MusicStudioMidiParser.parseMidiFile(bytes);assert.equal(parsed.validation.importable,true);
+   const midi=f.w.MusicStudioMidiParser.convertParsedMidiToProjectData(parsed),p=f.a.makeProject({projectId:'short-'+bars+'-'+conditioned+'-'+candidate.variant,projectName:'Real short inference acceptance',midiData:midi}),repo=f.a.memoryRepository();
+   f.a.setRepository(repo);await repo.put(p);f.a.state.projects=[p];f.a.state.midiEditor=f.core.createCoordinatedSession(p);
+   const track=f.a.state.midiEditor.midiData.tracks.find(t=>t.notes.length);assert.ok(track);assert.ok(track.notes.every(n=>n.startTick>=0&&n.startTick+n.durationTicks<=1920*bars));track.notes[0].velocity=64;f.a.state.midiEditor.dirty=true;
+   assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);const reopened=await repo.get(p.projectId);assert.ok(reopened.midiData.tracks.some(t=>t.notes.some(n=>n.velocity===64)));
+  }
   console.log(JSON.stringify({realShortRange:true,bars,conditioned,notes:value.candidates.map(c=>c.notes),attempts:value.candidates.map(c=>c.samplingAttempts),offsets:value.candidates.map(c=>c.performance.firstNoteOffsetTicks)}));
  }
  const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],fixture=new Function('require',source+'\nreturn fixture;')(require),f=fixture();
