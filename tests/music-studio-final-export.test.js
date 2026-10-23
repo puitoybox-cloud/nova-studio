@@ -124,3 +124,16 @@ test('navigation or explicit cancellation during progress cannot publish an Expo
   assert.equal(f.a.finalExport.candidate,null);assert.equal(JSON.stringify(await f.repo.get('p')),before);
  }
 });
+
+test('encoded loudness pass measurements belong to saved export and survive backup restoration',async()=>{
+ const f=fixture(),result=await f.a.finalPreview('p',f.plan);assert.equal(result.ok,true,result.error);
+ const m=result.candidate.manifest,last=m.measurements.at(-1);
+ assert.equal(m.measurements.length,m.passes);assert.equal(last.lufs,m.after.lufs);assert.equal(last.truePeakDb,m.after.truePeakDb);assert.equal(last.gainDb,m.gainDb);
+ assert.equal(last.targetDifferenceLu,m.plan.targetLufs-m.after.lufs);assert.equal(last.clippingSamples,0);
+ assert.ok(['target-reached','true-peak-ceiling','gain-limit','correction-limit'].includes(m.loudnessReason));
+ assert.equal((await f.a.finalSave('p')).ok,true);
+ const saved=await f.repo.get('p'),d=fixture();d.a.setRepository(d.a.memoryRepository());
+ assert.equal((await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
+ assert.deepEqual(plain(d.a.state.projects.find(p=>p.projectId==='p').finalExportHistory),plain(saved.finalExportHistory));
+ assert.deepEqual(plain(saved.finalExportHistory.at(-1).measurements),plain(m.measurements));
+});
