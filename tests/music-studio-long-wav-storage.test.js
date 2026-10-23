@@ -449,3 +449,12 @@ test('Logic long return quota, cancellation and source conflict leave neither fo
   if(kind!=='conflict')assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
  }
 });
+
+test('small archive-backed records detach bounded bytes before the source backing expires',async()=>{
+ const f=await setup(),raw=wav(100),bytes=await raw.arrayBuffer(),hashes=[Buffer.from(await webcrypto.subtle.digest('SHA-256',bytes)).toString('hex')];let available=true,reads=0;
+ // A transient readable source; it cannot itself be structured-cloned into IDB.
+ const borrowed={size:raw.size,type:raw.type,slice(start,end){assert.equal(available,true);assert.ok(end-start<=1048576);reads++;return raw.slice(start,end)}};
+ const next=JSON.parse(JSON.stringify(f.p));next.longWavAssets=[{id:'detached-short',name:'short.wav',size:raw.size,frames:100,sampleRate:8000,channels:1,hashes}];next.revision++;
+ await f.repo.putLongWav(next,{id:'detached-short',blob:borrowed,hashes},JSON.stringify(f.p),()=>{});available=false;
+ assert.ok(reads>0);const saved=await f.a.pcmLoadLongWav(next.projectId,'detached-short');assert.deepEqual(Buffer.from(await saved.arrayBuffer()),Buffer.from(bytes));
+});

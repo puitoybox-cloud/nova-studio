@@ -291,7 +291,7 @@
       for(const s of [next,...versionSnapshots(next)]){if(root.MusicStudioInstruments?.inventory(s).some(a=>a.missing))throw Error('checkpoint-instrument-dependency-missing')}
       editorStopMelody(false);pcmStop();longMixStop();vocalPlaybackStop();
       const binaries=[...new Map(archiveBinaries(next).map(a=>[a.id,a])).values()];
-      for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=(options.binaryRecords||[]).find(r=>r.id===a.id)||await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt')}
+      for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=(options.binaryRecords||[]).find(r=>r.id===a.id)||await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt: '+a.id)}
       await archiveCapacity(pcmJsonBytes(next),guard);guard();if(options.fork){if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(next,baseline,guard);
       state.projects=options.fork?[...state.projects,next]:state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
       versionPanel.preview=null;finalInvalidate();versionPanel.message='Checkpoint（保存しました。元データと履歴は保持しています）';return{ok:true,project:next};
@@ -487,7 +487,9 @@
     // the database's durable backing rather than retransferring a WAV of raw bytes
     // into the browser Blob service on every read.
     async function encodeLongBinary(record,guard){
-      guard();if(record.blob.size<=4*1048576)return record;
+      guard();
+      // Archive slices and short rendered WAVs need owned backing too. Never
+      // persist a borrowed slice merely because it is below the large-file cutoff.
       const parts=[];for(let at=0;at<record.blob.size;at+=1048576){
         guard();const bytes=await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer();guard();
         const node=new Blob([bytes]);
@@ -495,6 +497,7 @@
         if((await node.arrayBuffer()).byteLength!==bytes.byteLength)throw Error('long-wav-binary-chunks-invalid');
         guard();parts.push(node);
       }
+      if(record.blob.size<=4*1048576)return{...record,blob:new Blob(parts,{type:record.blob.type})};
       return{id:record.id,format:'nova-long-binary-blobs-v2',size:record.blob.size,type:record.blob.type,parts,hashes:record.hashes};
     }
     async function getLongWav(id){
@@ -1601,7 +1604,10 @@
     if(!asset||!target.getLongWav)throw Error('long-wav-asset-missing');
     longMixHistory(asset);
     const record=await target.getLongWav(assetId);
-    if(!record?.blob||record.blob.size!==asset.size||JSON.stringify(record.hashes)!==JSON.stringify(asset.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(asset.hashes))throw Error('long-wav-corrupt-or-missing');
+    if(!record?.blob)throw Error('long-wav-corrupt-or-missing: record');
+    if(record.blob.size!==asset.size)throw Error('long-wav-corrupt-or-missing: size');
+    if(JSON.stringify(record.hashes)!==JSON.stringify(asset.hashes))throw Error('long-wav-corrupt-or-missing: hash-metadata');
+    if(JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(asset.hashes))throw Error('long-wav-corrupt-or-missing: bytes');
     if(repository!==target||JSON.stringify(await target.get(id))!==JSON.stringify(project))throw Error('long-wav-stale-read');
     guard();return record.blob;
   }
