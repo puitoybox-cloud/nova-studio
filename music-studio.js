@@ -2922,10 +2922,21 @@
       if(!source||target.kind!=='indexeddb'||!target.compareAndFork||!target.getLongWav)throw Error('logic-stems-durable-storage-required');
       if(workspaceBusy()||versionPanel.busy)throw Error('logic-stems-production-busy');
       if(!Array.isArray(entries)||!entries.length||entries.length>32||new Set(entries.map(e=>e.trackId)).size!==entries.length)throw Error('logic-stems-selection');
-      const tracks=source.midiData?.tracks||[];
+      const generated=options.separatedAudio===true;
+      const roles=['vocals','drums','bass','guitar','piano','other'];
+      if(generated&&(!source.midiData||entries.length!==6||entries.some((e,i)=>e.role!==roles[i])||options.model!=='htdemucs_6s'||!/^[a-f0-9]{64}$/.test(options.sourceSha256||'')))throw Error('separated-audio-contract');
+      const addedTracks=generated?entries.map(e=>({id:e.trackId,name:'Demucs '+e.role,part:e.role==='vocals'?'melody':e.role==='other'?'accompaniment':e.role,notes:[],channel:e.role==='drums'?9:0})):[];
+      const tracks=[...(source.midiData?.tracks||[]),...addedTracks];
+      if(generated&&new Set(tracks.map(t=>t.id)).size!==tracks.length)throw Error('separated-audio-track-collision');
       for(const e of entries)if(!tracks.some(t=>t.id===e.trackId)||!e.file||!/\.wav$/i.test(e.file.name||''))throw Error('logic-stems-track-or-wav-required');
       guard();pcmEditor.busy=true;ownsBusy=true;requestPaint();
-      const records=[],assets=[],links=[],batchId=uuid();let reference=null,total=0;
+      const records=[],assets=[],links=[],batchId=uuid();let reference=null,total=0,originalReference=null;
+      if(generated){
+        const file=options.sourceFile;if(!file||!Number.isSafeInteger(file.size)||file.size<1||file.size>500*1024*1024||typeof file.name!=='string')throw Error('separated-original-required');
+        const blob=new Blob([file],{type:file.type||'application/octet-stream'}),hashes=await longWavDigest(blob,guard),assetId=uuid();
+        originalReference={id:uuid(),name:file.name,binary:{format:'nova-reference-binary-v1',id:assetId,size:blob.size,hashes,name:file.name,type:blob.type},storage:{kind:'external-file',reference:file.name,requiresReselection:false}};
+        records.push({id:assetId,blob,hashes});total+=blob.size;
+      }
       for(const {file,trackId} of entries){
         guard();let frames=0,sampleRate=0,channels=0,bits=0,encoding=0;
         for await(const chunk of pcmDecodeWavStream(file)){guard();frames+=chunk.channels[0].length;sampleRate=chunk.sampleRate;channels=chunk.channels.length;bits=chunk.bitDepth;encoding=chunk.encoding}
@@ -2939,8 +2950,9 @@
       }
       await archiveCapacity(total+pcmJsonBytes(source),guard);guard();pcmEditor.busy=false;ownsBusy=false;
       return await versionCommit(id,p=>{
-        guard();const projectId=uuid(),timestamp=now(),next={...clone(p),projectId,projectName:(p.projectName+'（Logic Stem戻り）').slice(0,200),revision:1,createdAt:timestamp,updatedAt:timestamp};
-        if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,projectId,1);versionRebind(next,'（Logic Stem戻り）');
+        guard();const projectId=uuid(),timestamp=now(),next={...clone(p),projectId,projectName:(p.projectName+(generated?'（AI分離Stem）':'（Logic Stem戻り）')).slice(0,200),revision:1,createdAt:timestamp,updatedAt:timestamp};
+        if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,projectId,1);versionRebind(next,generated?'（AI分離Stem）':'（Logic Stem戻り）');
+        if(generated){next.fileReferences=[...(next.fileReferences||[]),originalReference];next.midiData.tracks.push(...addedTracks);next.audioSeparationHistory=[...(next.audioSeparationHistory||[]),{model:options.model,sourceSha256:options.sourceSha256,createdAt:timestamp,assetIds:assets.map(a=>a.id),originalRetained:true,strictRuntime:false}];}
         next.longWavAssets=[...(next.longWavAssets||[]),...assets];
         next.integrations={...next.integrations,logicPro:[...(next.integrations?.logicPro||[]),...links.map(link=>({...link,importedAt:timestamp}))]};return next;
       },{fork:true,binaryRecords:records,signal:options.signal});

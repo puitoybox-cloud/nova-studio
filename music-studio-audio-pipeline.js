@@ -147,6 +147,52 @@
     target.setAttribute('role',kind==='error'?'alert':'status');
   }
 
+  function parseAudioInstruction(text){
+    const value=String(text||'').normalize('NFKC').trim().replace(/[。.!！]$/,'');
+    if(/^(この音声|この曲|選択した音声)を(ボーカルと楽器に分けて|6つのStemに分けて|6ステムに分離して)$/.test(value))return {kind:'separate',model:'htdemucs_6s'};
+    if(/^(この音声|このピアノ音声|選択した音声)をMIDIにして$/i.test(value))return {kind:'transcribe',model:'basic-pitch'};
+    return null;
+  }
+  let stemController=null;
+  async function importSeparatedAudio(file){
+    const api=root.MusicStudio,project=api?.selectedMidiProject?.();
+    if(processing||!project)return {ok:false,error:'project-required-or-processing'};
+    if(localSession||bootstrapState!=='LEGACY_UNVERIFIED')return {ok:false,error:'packaged-stem-receipt-not-supported'};
+    if(!isAudioFile(file)||!file.size||file.size>MAX_AUDIO_BYTES)return {ok:false,error:'invalid-audio-input'};
+    const baseline=JSON.stringify(project),id=project.projectId;
+    if(!root.confirm?.('Demucs htdemucs_6sで6本のStemを生成します。元音声を保持し、結果を確認してから別バージョンへ保存します。実行しますか？'))return {ok:false,cancelled:true};
+    processing=true;stemController=new AbortController();
+    const signal=stemController.signal;
+    const check=()=>{if(signal.aborted||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
+    try{
+      setStatus('Demucsで分離中です。Cancelで結果の受取と採用を中止できます。');
+      const response=await root.fetch(`${ENDPOINT}/process-stems`,{method:'POST',signal,headers:{'Content-Type':file.type||'application/octet-stream','X-Nova-Audio-Pipeline':'1','X-Nova-File-Name':encodeURIComponent(file.name)},body:file});
+      check();if(!response.ok)throw Error(await parseError(response));
+      // Bound the response before parsing JSON (six WAVs total <=24 MiB).
+      const reader=response.body.getReader(),chunks=[];let total=0;
+      try{for(;;){const {value,done}=await reader.read();check();if(done)break;total+=value.length;if(total>34*1024*1024)throw Error('stem-response-budget');chunks.push(value)}}finally{await reader.cancel()}
+      const payload=JSON.parse(await new Blob(chunks).text());check();
+      const roles=['vocals','drums','bass','guitar','piano','other'];
+      if(!payload.ok||payload.strictRuntime!==false||payload.model!=='htdemucs_6s'||payload.audioStems?.length!==6)throw Error('invalid-stem-response');
+      const hash=async blob=>Array.from(new Uint8Array(await root.crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),x=>x.toString(16).padStart(2,'0')).join('');
+      if((await hashBrowserArtifact(file,{signal,check})).digest!==payload.sourceSha256)throw Error('stem-source-mismatch');
+      const entries=[];let size=0,reference=null;
+      for(let i=0;i<6;i++){
+        const stem=payload.audioStems[i];if(typeof stem.wavBase64!=='string'||stem.wavBase64.length>32*1024*1024||stem.name!==roles[i]||stem.fileName!==roles[i]+'.wav'||!/^[a-f0-9]{64}$/.test(stem.sha256||''))throw Error('invalid-stem-identity');
+        const bytes=decodeBase64(stem.wavBase64);size+=bytes.length;
+        if(size>24*1024*1024||bytes.length!==stem.byteLength)throw Error('stem-byte-budget');
+        const blob=new Blob([bytes],{type:'audio/wav'});blob.name=stem.fileName;
+        if(await hash(blob)!==stem.sha256)throw Error('stem-digest-mismatch');
+        const format=JSON.stringify([stem.frames,stem.sampleRate,stem.channels]);if(reference!==null&&reference!==format)throw Error('stem-timeline-mismatch');reference=format;
+        entries.push({file:blob,role:stem.name,trackId:'demucs-'+root.crypto.randomUUID()});check();
+      }
+      if(!root.confirm?.('Vocals / Drums / Bass / Guitar / Piano / Other の6本を生成しました。元音声と一緒に別バージョンへ保存しますか？'))return {ok:false,cancelled:true};
+      check();const result=await api.logicImportStemReturns(entries,id,{signal,separatedAudio:true,model:payload.model,sourceSha256:payload.sourceSha256,sourceFile:file});
+      if(!result.ok)throw Error(result.error);setStatus('6本のStemと元音声を別バージョンへ保存しました。音声編集・Mix画面で確認できます。','success');return result;
+    }catch(error){setStatus(error.message,'error');return {ok:false,error:error.message}}finally{processing=false;stemController=null}
+  }
+  function cancelSeparatedAudio(){stemController?.abort()}
+
   function enhanceExternalInput(){
     const input=root.document?.querySelector?.('#externalSongMidiImport');
     if(!input)return false;
@@ -160,6 +206,11 @@
       help.className='music-external-import-status';
       help.textContent='音声（MP3 / WAVなど）はMac内でStem分離 → Audio-to-MIDI → Track Reviewへ進みます。外部AI APIへ音声は送信しません。';
       section.appendChild(help);
+      const label=root.document.createElement('label');label.textContent='Separate WAV（6 Stemを音声で保存）';
+      const picker=root.document.createElement('input');picker.type='file';picker.accept=AUDIO_ACCEPT;picker.setAttribute('aria-label','分離する音声');picker.onchange=()=>{const file=picker.files?.[0];picker.value='';if(file)importSeparatedAudio(file)};label.appendChild(picker);section.appendChild(label);
+      const cancel=root.document.createElement('button');cancel.type='button';cancel.textContent='Cancel separation（採用中止）';cancel.onclick=cancelSeparatedAudio;section.appendChild(cancel);
+      const directLabel=root.document.createElement('label');directLabel.textContent='Audio to MIDI（Basic Pitchで直接変換）';
+      const direct=root.document.createElement('input');direct.type='file';direct.accept=AUDIO_ACCEPT;direct.setAttribute('aria-label','MIDIに変換する音声');direct.onchange=()=>{const file=direct.files?.[0];direct.value='';if(file&&root.confirm?.('Basic Pitchで音声をMIDI候補へ変換します。Track Reviewで確認・採用してください。和音・複数楽器では誤検出が増える場合があります。'))importAudioFile(file,{mode:'transcribe'})};directLabel.appendChild(direct);section.appendChild(directLabel);
     }
     return true;
   }
@@ -309,6 +360,7 @@
 
   async function processAudioLocally(file,options={}){
     if(['PENDING','BLOCKED'].includes(bootstrapState))throw Error('strict-bootstrap-incomplete');
+    if(options.mode==='transcribe'&&localSession)throw Error('packaged-direct-transcription-receipt-not-supported');
     const localEpoch=bootstrapEpoch,localSignal=localController?.signal;
     const expected=options.expected||expectedHelperIdentity;
     const check=()=>{const why=localSession&&localExpiresAt<=Date.now()?'expired-local-session':options.signal?.aborted||localSignal?.aborted?'Abort':localSignal&&bootstrapEpoch!==localEpoch?'stale':options.reason?.();if(why)throw Error(why)};check();
@@ -336,7 +388,7 @@
     check();
     if(localSession)upload=consumeBrowserArtifact(file,artifact,artifactContext);
     let response;
-    try{response=await root.fetch(`${ENDPOINT}/process`,{
+    try{response=await root.fetch(`${ENDPOINT}/${options.mode==='transcribe'?'transcribe':'process'}`,{
       method:'POST',
       signal:options.signal,
       headers:{
@@ -361,14 +413,14 @@
     return payload;
   }
 
-  async function importAudioFile(file){
+  async function importAudioFile(file,options={}){
     const api=root.MusicStudio;
     if(!api||typeof originalImport!=='function')return{ok:false,message:'Music StudioのImport機能を読み込めません。'};
     if(processing)return{ok:false,busy:true,message:'音声をStem分離・MIDI化しています。'};
     processing=true;
     setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
     try{
-      const payload=await processAudioLocally(file),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
+      const payload=await processAudioLocally(file,options),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
       setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
@@ -401,7 +453,7 @@
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -416,7 +468,7 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader,install});
   if(root.__NOVA_LOCAL_HANDOFF||root.location?.hash?.startsWith('#nova-local=')){
     bootstrapState='BLOCKED';
     try{

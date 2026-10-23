@@ -304,3 +304,10 @@ test('helper commands are local startup and shutdown scripts',()=>{
   assert.match(start,/server\.py/);
   assert.match(stop,/kill "\$PID"/);
 });
+
+test('Japanese audio instructions select explicit model actions and refuse ambiguous requests',()=>{
+ const bridge=loadBridge();
+ assert.equal(bridge.parseAudioInstruction('この音声をボーカルと楽器に分けて').kind,'separate');
+ assert.equal(bridge.parseAudioInstruction('このピアノ音声をMIDIにして').kind,'transcribe');
+ for(const value of ['いい感じにして','Track 2を消して','この曲をMIDIにして','この音声をMIDIにしてから上書き'])assert.equal(bridge.parseAudioInstruction(value),null);
+});
