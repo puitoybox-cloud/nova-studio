@@ -103,3 +103,24 @@ test('Logic WAV return atomically forks audio with source correspondence; quota 
  const r=await f.a.logicImportAudioReturn(file,'p');assert.equal(r.ok,true,r.error);assert.notEqual(r.project.projectId,'p');assert.equal(JSON.stringify(await f.repo.get('p')),before);assert.equal(r.project.integrations.logicPro.at(-1).kind,'audio-return');assert.equal(r.project.pcmMix.assets.at(-1).name,file.name);assert.equal(r.project.integrations.logicPro.at(-1).sourceRevision,f.p.revision);
  const g=fixture(),original=JSON.stringify(await g.repo.get('p'));g.repo.compareAndFork=async()=>{throw Error('quota')};assert.equal((await g.a.logicImportAudioReturn(file,'p')).ok,false);assert.equal((await g.repo.list()).length,1);assert.equal(JSON.stringify(await g.repo.get('p')),original);
 });
+
+// Native restore acceptance calls Export while the MIDI editor remains visible.
+// Use the real route renderer on every progress paint, rather than a no-op host.
+test('same-route production repaints retain Export generation, while navigation still cancels',async()=>{
+ const f=fixture(),route=f.a.HOME_ROUTE;
+ f.a.renderRoute(route);f.w.render=()=>f.a.renderRoute(route);
+ const before=JSON.stringify(await f.repo.get('p')),r=await f.a.finalPreview('p',f.plan);
+ assert.equal(r.ok,true,r.error);assert.equal(JSON.stringify(await f.repo.get('p')),before);
+ const token=f.a.finalExport.generation;f.a.renderRoute(route);
+ assert.equal(f.a.finalExport.generation,token);assert.equal(f.a.finalExport.candidate,r.candidate);
+ f.a.renderRoute(route+'/projects');assert.ok(f.a.finalExport.generation>token);assert.equal(f.a.finalExport.candidate,null);
+});
+test('navigation or explicit cancellation during progress cannot publish an Export',async()=>{
+ for(const cancel of ['navigate','cancel']){
+  const f=fixture(),route=f.a.HOME_ROUTE;f.a.renderRoute(route);let paints=0;
+  f.w.render=()=>{if(++paints===2){if(cancel==='navigate')f.a.renderRoute(route+'/projects');else f.a.finalCancel()}else f.a.renderRoute(route)};
+  const before=JSON.stringify(await f.repo.get('p')),r=await f.a.finalPreview('p',f.plan);
+  assert.equal(r.ok,false,cancel);assert.match(r.error,/cancelled-or-stale/);
+  assert.equal(f.a.finalExport.candidate,null);assert.equal(JSON.stringify(await f.repo.get('p')),before);
+ }
+});
