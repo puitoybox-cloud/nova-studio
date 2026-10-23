@@ -22,6 +22,8 @@ const fetchOriginal=window.fetch.bind(window);window.fetch=(url,...args)=>{const
 assert(location.origin==='http://127.0.0.1:8765','unexpected persistent origin');
 assert(!a.state.persistenceUnavailable&&repo.kind==='indexeddb','durable repository required');
 let id=input.id,p;
+let stage='entry';
+const loadAudio=async(projectId,assetId)=>{try{return await a.pcmLoadLongWav(projectId,assetId)}catch(error){throw Error(input.phase+'/'+stage+'/'+assetId+': '+error.message)}};
 if(input.phase==='write'){
  assert(!(await repo.get(id)),'acceptance project already exists');
  const parsed=MusicStudioMidiParser.parseMidiFile(Uint8Array.from(atob(input.midi),c=>c.charCodeAt(0)));
@@ -47,13 +49,17 @@ if(input.phase==='write'){
  a.openLyricsAssignment(id);
  const sung=await a.generateLocalScoreVocal(id,p.syllableAssignments.at(-1).id);assert(sung.ok,'real Sinsy generation failed: '+sung.error);
  assert((await a.versionSave(id,'Native lifecycle saved revision')).ok,'song history save failed');
-}else if(input.phase==='edit'||input.phase==='read'){
+}else if(input.phase==='edit'||input.phase==='read'||input.phase==='read-return'){
  p=await repo.get(id);assert(JSON.stringify(p)===input.expected,'restarted metadata mismatch');
- for(const asset of p.longWavAssets||[])assert(await to64(await a.pcmLoadLongWav(id,asset.id))===input.audio[asset.id],'restarted audio mismatch');
+ for(const asset of p.longWavAssets||[])assert(await to64(await loadAudio(id,asset.id))===input.audio[asset.id],'restarted audio mismatch');
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);
  if(input.phase==='edit'){
   const session=a.state.midiEditor;core.selectPart(session,'melody');core.addNote(session,{pitch:69,startTick:2400,durationTicks:360,velocity:77});session.midiData.tempo=102;session.dirty=true;
   assert((await a.saveMidiEditor({silent:true})).ok,'re-edit save failed');
+ }
+ if(input.phase==='read-return'){
+  stage='final-export';const output=await a.finalPreview(id,p.finalExportPlan);assert(output.ok,'returned-song restart export failed: '+output.error);
+  assert(output.candidate.files.some(f=>f.name==='Instrumental.wav')&&output.candidate.files.some(f=>f.name==='Song.mid'),'returned-song package incomplete');
  }
 }else if(input.phase==='restore'){
  assert((await repo.list()).length===0,'restore profile is not empty');
@@ -67,20 +73,29 @@ if(input.phase==='write'){
  assert(workspaceContent(p.aiWorkspace)===workspaceContent(expected.aiWorkspace),'restored AI workspace mismatch');
  const historyContent=project=>JSON.stringify(project.songVersions.checkpoints.map(c=>({name:c.name,midi:c.snapshot.midiData,lyrics:c.snapshot.syllableAssignments})));
  assert(historyContent(p)===historyContent(expected),'restored checkpoint content mismatch');
- for(let i=0;i<(expected.longWavAssets||[]).length;i++)assert(await to64(await a.pcmLoadLongWav(id,p.longWavAssets[i].id))===input.audio[expected.longWavAssets[i].id],'restored WAV mismatch');
+ for(let i=0;i<(expected.longWavAssets||[]).length;i++)assert(await to64(await loadAudio(id,p.longWavAssets[i].id))===input.audio[expected.longWavAssets[i].id],'restored WAV mismatch');
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);core.selectPart(a.state.midiEditor,'melody');
  core.addNote(a.state.midiEditor,{pitch:71,startTick:2880,durationTicks:240,velocity:70});assert((await a.saveMidiEditor({silent:true})).ok,'restored edit save failed');
  const candidatesBefore=(await repo.get(id)).aiWorkspace.candidateSets.length;
  configureGeneration(id);await MusicStudioAIAssistantPanel.generateLocalModel(id);assert((await a.saveMidiEditor({silent:true})).ok,'restored AI save failed');
  assert((await repo.get(id)).aiWorkspace.candidateSets.length>candidatesBefore,'restored AI did not generate a new candidate set');
- const render=await a.midiRenderForMix(id);assert(render.ok,'restored MIDI audio render failed');
- const output=await a.finalPreview(id,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+render.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:true});
+ stage='restored-render';const render=await a.midiRenderForMix(id);assert(render.ok,'restored MIDI audio render failed');
+ stage='final-export';const output=await a.finalPreview(id,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+render.assetId,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:true});
  assert(output.ok,'restored final export failed: '+output.error);assert(output.candidate.zip.size>44,'final ZIP missing');
  assert(output.candidate.files.some(f=>f.name==='Song.mid')&&output.candidate.files.some(f=>f.name==='Master.wav'),'final MIDI/Master missing');
  assert((await a.finalSave(id)).ok,'restored export history save failed');
+ // Return the actual completed native WAV through the production Logic return path.
+ // This checks the transport contract; it does not claim physical Logic operation.
+ stage='logic-return';const original=JSON.stringify(await repo.get(id)),master=output.candidate.files.find(f=>f.name==='Master.wav').blob;
+ const file=new File([master],'Native-return.wav',{type:'audio/wav'});
+ const returned=await a.logicImportAudioReturn(file,id);assert(returned.ok,'native Logic WAV return failed: '+returned.error);
+ assert(JSON.stringify(await repo.get(id))===original,'Logic return changed source song');id=returned.project.projectId;
+ const asset=returned.project.longWavAssets.at(-1);
+ const again=await a.finalPreview(id,{...output.candidate.plan,routes:[{key:'wav:'+asset.id,role:'instrument',startSeconds:0,gainDb:0,muted:false}]});
+ assert(again.ok,'native returned-song export failed: '+again.error);assert((await a.finalSave(id)).ok,'returned-song history save failed');
 }else throw Error('invalid native acceptance phase');
-assert((await a.prepareForShutdown()).ok,'page save gate refused');
-p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await a.pcmLoadLongWav(id,asset.id));
+stage='shutdown';assert((await a.prepareForShutdown()).ok,'page save gate refused');
+stage='saved-audio-readback';p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await loadAudio(id,asset.id));
 const archive=input.phase==='read'?await to64(await a.createLongWavArchive()):null;
 assert(messages.length===0,'console errors/warnings: '+messages.join(';'));assert(external.length===0,'Live Provider/external request attempted');
 return {phase:input.phase,id,generationSettings,expected:JSON.stringify(p),audio,archive,origin:location.origin,console:messages,external,revision:p.revision,noteCount:p.midiData.tracks.reduce((n,t)=>n+t.notes.length,0),physicalAcceptance:false};
