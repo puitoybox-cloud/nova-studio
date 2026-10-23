@@ -17,26 +17,6 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
   await new Promise(resolve=>setTimeout(resolve,200));
  }
  if(packageApp)console.log(JSON.stringify({packageOrigin:true,app:fs.realpathSync(packageApp),helper:executable,externalFallback:false}));
- // Independently exercise real new-song and source-conditioned 1/2/4-bar inference.
- const shortResults=[];
- const status=await(await fetch(base+'/__nova_generation/status')).json();
- for(const bars of [1,2,4])for(const conditioned of [false,true]){
-  const response=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Nova-Generation':status.token},body:JSON.stringify({seed:72,events:128,bpm:72,max_ticks:1920*bars,key:'C',pitch_min:48,pitch_max:84,numerator:4,denominator:4,...(conditioned?{sourceNotes:[{pitch:60,velocity:80,startTick:0,durationTicks:480}]}:{})}),signal:AbortSignal.timeout(240000)});
-  const value=await response.json();
-  shortResults.push({bars,conditioned,status:response.status,result:value});
-  if(process.env.NOVA_SHORT_RANGE_REPORT)fs.writeFileSync(process.env.NOVA_SHORT_RANGE_REPORT,JSON.stringify(shortResults,null,2));
-  assert.equal(response.ok,true,JSON.stringify(value));assert.equal(value.synthetic,false);assert.equal(value.candidates.length,3);
-  for(const candidate of value.candidates){assert.ok(candidate.notes>0);assert.ok(candidate.performance.onnxCalls.base>0&&candidate.performance.onnxCalls.token>0);assert.ok(candidate.samplingTrace.length>=1);assert.ok(candidate.samplingTrace.every(x=>x.generatedRows.length>0));}
-  const fixtureSource=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],makeFixture=new Function('require',fixtureSource+'\nreturn fixture;')(require);
-  for(const candidate of value.candidates){
-   const f=makeFixture(),bytes=Uint8Array.from(Buffer.from(candidate.midiBase64,'base64')),parsed=f.w.MusicStudioMidiParser.parseMidiFile(bytes);assert.equal(parsed.validation.importable,true);
-   const midi=f.w.MusicStudioMidiParser.convertParsedMidiToProjectData(parsed),p=f.a.makeProject({projectId:'short-'+bars+'-'+conditioned+'-'+candidate.variant,projectName:'Real short inference acceptance',midiData:midi}),repo=f.a.memoryRepository();
-   f.a.setRepository(repo);await repo.put(p);f.a.state.projects=[p];f.a.state.midiEditor=f.core.createCoordinatedSession(p);
-   const track=f.a.state.midiEditor.midiData.tracks.find(t=>t.notes.length);assert.ok(track);assert.ok(track.notes.every(n=>n.startTick>=0&&n.startTick+n.durationTicks<=1920*bars));track.notes[0].velocity=64;f.a.state.midiEditor.dirty=true;
-   assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);const reopened=await repo.get(p.projectId);assert.ok(reopened.midiData.tracks.some(t=>t.notes.some(n=>n.velocity===64)));
-  }
-  console.log(JSON.stringify({realShortRange:true,bars,conditioned,notes:value.candidates.map(c=>c.notes),attempts:value.candidates.map(c=>c.samplingAttempts),offsets:value.candidates.map(c=>c.performance.firstNoteOffsetTicks)}));
- }
  const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],fixture=new Function('require',source+'\nreturn fixture;')(require),f=fixture();
  const measurements=[];
  f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;f.w.fetch=async(url,options={})=>{
@@ -68,6 +48,26 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
  assert.ok(measurements.every(p=>p.onnxCalls.base>0&&p.onnxCalls.token>0&&p.midiBytes>0&&p.elapsedSeconds>=p.loadSeconds));
  console.log(JSON.stringify({realModelRuntimeMeasurements:measurements,requestStateReused:false}));
  console.log(JSON.stringify({realSourceConditionedRemake:true,candidates:ms.candidates.map(c=>c.value.importedMidi.notes.length),timingAndVelocityPreserved:true,undoRedo:true}));
+ // Independently exercise real new-song and source-conditioned 1/2/4-bar inference.
+ const shortResults=[];
+ const status=await(await fetch(base+'/__nova_generation/status')).json();
+ for(const bars of [1,2,4])for(const conditioned of [false,true]){
+  const response=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Nova-Generation':status.token},body:JSON.stringify({seed:72,events:128,bpm:72,max_ticks:1920*bars,key:'C',pitch_min:48,pitch_max:84,numerator:4,denominator:4,...(conditioned?{sourceNotes:[{pitch:60,velocity:80,startTick:0,durationTicks:480}]}:{})}),signal:AbortSignal.timeout(240000)});
+  const value=await response.json();
+  shortResults.push({bars,conditioned,status:response.status,result:value});
+  if(process.env.NOVA_SHORT_RANGE_REPORT)fs.writeFileSync(process.env.NOVA_SHORT_RANGE_REPORT,JSON.stringify(shortResults,null,2));
+  assert.equal(response.ok,true,JSON.stringify(value));assert.equal(value.synthetic,false);assert.equal(value.candidates.length,3);
+  for(const candidate of value.candidates){assert.ok(candidate.notes>0);assert.ok(candidate.performance.onnxCalls.base>0&&candidate.performance.onnxCalls.token>0);assert.ok(candidate.samplingTrace.length>=1);assert.ok(candidate.samplingTrace.every(x=>x.generatedRows.length>0));}
+  const fixtureSource=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],makeFixture=new Function('require',fixtureSource+'\nreturn fixture;')(require);
+  for(const candidate of value.candidates){
+   const f=makeFixture(),bytes=Uint8Array.from(Buffer.from(candidate.midiBase64,'base64')),parsed=f.w.MusicStudioMidiParser.parseMidiFile(bytes);assert.equal(parsed.validation.importable,true);
+   const midi=f.w.MusicStudioMidiParser.convertParsedMidiToProjectData(parsed),p=f.a.makeProject({projectId:'short-'+bars+'-'+conditioned+'-'+candidate.variant,projectName:'Real short inference acceptance',midiData:midi}),repo=f.a.memoryRepository();
+   f.a.setRepository(repo);await repo.put(p);f.a.state.projects=[p];f.a.state.midiEditor=f.core.createCoordinatedSession(p);
+   const track=f.a.state.midiEditor.midiData.tracks.find(t=>t.notes.length);assert.ok(track);assert.ok(track.notes.every(n=>n.startTick>=0&&n.startTick+n.durationTicks<=1920*bars));track.notes[0].velocity=64;f.a.state.midiEditor.dirty=true;
+   assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);const reopened=await repo.get(p.projectId);assert.ok(reopened.midiData.tracks.some(t=>t.notes.some(n=>n.velocity===64)));
+  }
+  console.log(JSON.stringify({realShortRange:true,bars,conditioned,notes:value.candidates.map(c=>c.notes),attempts:value.candidates.map(c=>c.samplingAttempts),offsets:value.candidates.map(c=>c.performance.firstNoteOffsetTicks)}));
+ }
  const scoreFixture=new Function('require',fs.readFileSync('tests/music-studio-score-vocal-return.test.js','utf8').split('\ntest(')[0]+'\nreturn scoreSetup;')(require),s=await scoreFixture();
  s.w.location.hostname='127.0.0.1';s.w.File=File;s.w.atob=atob;s.w.fetch=f.w.fetch;
  let rangeProject=s.a.makeProject({projectId:s.p.projectId,projectName:'Range generation',bpm:90,midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'a',pitch:60,startTick:0,durationTicks:480},{id:'b',pitch:62,startTick:1920,durationTicks:480},{id:'c',pitch:64,startTick:2400,durationTicks:480}]}]}});
