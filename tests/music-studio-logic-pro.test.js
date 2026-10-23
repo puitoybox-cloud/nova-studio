@@ -1562,3 +1562,39 @@ test('superseded MIDI access and saved old state callback cannot replace current
  const old=app.editorInitializeMidi();await app.editorInitializeMidi({forceRefresh:true});firstResolve(first);assert.equal((await old).reason,'access-superseded');assert.equal(app.state.midiInput.access,second);assert.equal(app.state.midiInput.selectedId,'new');
  const stale=second.onstatechange;await app.editorInitializeMidi({forceRefresh:true});second.inputs.clear();stale();assert.equal(app.state.midiInput.access,third);assert.equal(app.state.midiInput.selectedId,'third');
 });
+
+test('Logic return candidates survive renamed reordered IDs and never silently bind ambiguous tracks',()=>{
+  const {app}=load(),note={pitch:60,startTick:480,durationTicks:240,velocity:90};
+  const before={ppq:480,tracks:[{id:'old-a',name:'Piano',channel:1,notes:[note]},{id:'old-b',name:'Double',channel:1,notes:[note]}]};
+  const after={ppq:960,tracks:[{id:'rewritten',name:'Renamed',channel:1,notes:[{...note,startTick:960,durationTicks:480}]}]};
+  const snapshot=JSON.stringify([before,after]),difference=app.logicMidiDifference(before,after),entry=difference.trackCorrespondence[0];
+  assert.equal(entry.status,'confirmation-required');assert.equal(entry.candidates.length,2);
+  assert.ok(entry.candidates.every(c=>c.reasons.includes('notes-and-velocity')));
+  assert.equal(entry.sourceTrackId,undefined);assert.equal(JSON.stringify([before,after]),snapshot);
+  const changed=structuredClone(after);changed.tracks[0].notes[0].velocity=20;
+  assert.ok(app.logicMidiDifference(before,changed).trackCorrespondence[0].candidates.every(c=>!c.reasons.includes('notes-and-velocity')));
+  const unrelated={ppq:480,tracks:[{id:'old-a',name:'Unknown',channel:9,notes:[{...note,pitch:80}]}]};
+  assert.equal(app.logicMidiDifference(before,unrelated).trackCorrespondence[0].status,'unmatched');
+});
+
+test('Logic manual confirmation refuses duplicate or stale bindings and leaves unknown tracks separate',()=>{
+ const {app}=load(),before={ppq:480,tracks:[{id:'a',notes:[]},{id:'b',notes:[]}]},after={ppq:480,tracks:[{id:'x',notes:[]},{id:'y',notes:[]}]};
+ const rows=app.logicConfirmTrackCandidates(before,after,i=>i===0?'b':'');
+ assert.equal(rows[0].status,'user-confirmed');assert.equal(rows[0].sourceTrackId,'b');assert.equal(rows[1].status,'unmatched');
+ assert.throws(()=>app.logicConfirmTrackCandidates(before,after,()=> 'a'),/duplicate/);
+ assert.throws(()=>app.logicConfirmTrackCandidates(before,after,()=> 'missing'),/invalid/);
+});
+
+test('confirmed changed-ID MIDI return survives fork reopen and metadata backup without mutating source',async()=>{
+ const {app,window}=load(),repo=app.memoryRepository(),source=app.makeProject({projectId:'origin',projectName:'Origin',midiData:window.MusicStudioMidi.createTestMidiData()});
+ app.setRepository(repo);await repo.put(source);app.state.projects=[source];const original=JSON.stringify(await repo.get('origin'));
+ const bytes=window.MusicStudioMidi.createMidiFile(source.midiData).bytes;await app.inspectMidiFile(file('return.mid',bytes));
+ const sourceId=source.midiData.tracks[0].id;
+ let choice=sourceId;window.document={getElementById:id=>id==='logicMidiTrack0'?{value:choice}:null};window.render=()=>{choice=''};
+ const result=await app.saveMidiImport('duplicate');assert.equal(result.ok,true,result.error?.message);
+ delete window.document;
+ const saved=await repo.get(result.project.projectId),rows=saved.integrations.logicPro.at(-1).difference.trackCorrespondence;
+ assert.equal(rows[0].status,'user-confirmed');assert.equal(rows[0].sourceTrackId,sourceId);assert.equal(JSON.stringify(await repo.get('origin')),original);
+ const d=load();d.app.setRepository(d.app.memoryRepository());assert.equal((await d.app.restoreBackup(app.backupObject(),{settings:false,projects:true})).ok,true);
+ assert.equal(JSON.stringify(d.app.state.projects.find(p=>p.projectId===saved.projectId).integrations),JSON.stringify(saved.integrations));
+});

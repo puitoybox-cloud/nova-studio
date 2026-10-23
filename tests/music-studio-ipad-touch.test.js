@@ -12,7 +12,7 @@ require(path.join(root,'music-studio-ipad-touch.js'));
 
 test('Music Studio loads current iPad Piano Roll gesture assets',()=>{
   assert.match(html,/music-studio-ipad\.css\?v=1\.0\.19/);
-  const core=html.indexOf('./music-studio.js?v=1.4.199');
+  const core=html.indexOf('./music-studio.js?v=1.4.200');
   const bridge=html.indexOf('./music-studio-ipad-touch.js?v=1.0.6');
   assert.ok(core>=0);assert.ok(bridge>core);
 });
