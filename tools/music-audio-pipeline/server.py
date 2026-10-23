@@ -10,6 +10,7 @@ import base64
 import copy
 import hashlib
 import importlib.util
+import importlib.metadata
 import json
 import math
 import os
@@ -592,6 +593,92 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
     return output_path, generated, counts
 
 
+STEM_NAMES = ('vocals', 'drums', 'bass', 'guitar', 'piano', 'other')
+STEM_TRANSFER_LIMIT = 24 * 1024 * 1024
+
+
+def separated_wav_payload(stem_root, target_sample_rate=None):
+    """Bound the complete transfer before reading any output bytes."""
+    import wave
+    paths = [Path(stem_root) / (name + '.wav') for name in STEM_NAMES]
+    if any(path.is_symlink() or not path.is_file() for path in paths):
+        raise ValueError('missing-or-linked-stem-output')
+    sizes = [path.stat().st_size for path in paths]
+    if sum(sizes) > STEM_TRANSFER_LIMIT:
+        raise ValueError('stem-transfer-limit-24MiB-use-shorter-input')
+    reference = None
+    result = []
+    for name, path, size in zip(STEM_NAMES, paths, sizes):
+        with wave.open(str(path), 'rb') as wav:
+            info = (wav.getnframes(), wav.getframerate(), wav.getnchannels(), wav.getsampwidth())
+            if info[0] <= 0 or info[1] != 44100 or info[2] not in (1, 2) or info[3] not in (2, 3, 4):
+                raise ValueError('invalid-stem-wav-format')
+            if reference is not None and info != reference:
+                raise ValueError('stem-timeline-mismatch')
+            reference = info
+        raw = path.read_bytes()
+        if len(raw) != size:
+            raise ValueError('changed-stem-output')
+        source_digest = hashlib.sha256(raw).hexdigest()
+        source_rate = info[1]
+        if target_sample_rate is not None and target_sample_rate != source_rate:
+            if target_sample_rate != 48000:
+                raise ValueError('unsupported-stem-export-rate')
+            import io
+            import soundfile as sf
+            from scipy.signal import resample_poly
+            pcm, rate = sf.read(io.BytesIO(raw), dtype='float32', always_2d=True)
+            converted = resample_poly(pcm, 160, 147, axis=0)
+            stream = io.BytesIO()
+            sf.write(stream, converted, target_sample_rate, format='WAV', subtype='PCM_16')
+            raw = stream.getvalue()
+            info = (len(converted), target_sample_rate, info[2], 2)
+            if sum(item['byteLength'] for item in result) + len(raw) > STEM_TRANSFER_LIMIT:
+                raise ValueError('stem-transfer-limit-24MiB-use-shorter-input')
+        result.append({'name': name, 'fileName': name + '.wav', 'byteLength': len(raw),
+                       'sourceSha256': source_digest, 'sourceSampleRate': source_rate,
+                       'sha256': hashlib.sha256(raw).hexdigest(), 'frames': info[0],
+                       'sampleRate': info[1], 'channels': info[2],
+                       'wavBase64': base64.b64encode(raw).decode('ascii')})
+    return result
+
+
+def file_sha256(path):
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def process_transcription(source, work_dir):
+    if STRICT_BOOTSTRAP:
+        raise ValueError('packaged-direct-transcription-receipt-not-supported')
+    midi = work_dir / 'transcribed.mid'
+    transcribe_pitched_stem(source, midi)
+    raw = midi.read_bytes()
+    if len(raw) > 64 * 1024 * 1024:
+        raise ValueError('midi-output-budget')
+    return {'ok': True, 'version': 1, 'pipelineRevision': PIPELINE_REVISION,
+            'sourceDigest': SOURCE_DIGEST, 'runtimeIdentity': runtime_health_identity(),
+            'localOnly': True, 'stems': [], 'model': 'basic-pitch',
+            'modelVersion': importlib.metadata.version('basic-pitch'),
+            'sourceSha256': file_sha256(source), 'confidenceAvailable': False,
+            'midiFileName': midi.name, 'midiBase64': base64.b64encode(raw).decode('ascii')}
+
+
+def process_stems(source, work_dir):
+    # The packaged protocol currently authenticates MIDI only. Never downgrade it
+    # to publish unauthenticated WAVs under a strict native session.
+    if STRICT_BOOTSTRAP:
+        raise ValueError('packaged-stem-receipt-not-supported')
+    root = run_demucs(source, work_dir / 'demucs')
+    return {'ok': True, 'pipelineRevision': PIPELINE_REVISION, 'localOnly': True,
+            'sourceSha256': file_sha256(source),
+            'model': 'htdemucs_6s', 'modelVersion': importlib.metadata.version('demucs'),
+            'audioStems': separated_wav_payload(root, target_sample_rate=48000), 'strictRuntime': False}
+
+
 def process_audio(source: Path, work_dir: Path):
     bpm = estimate_bpm(source)
     stems_root = run_demucs(source, work_dir / "demucs")
@@ -681,7 +768,7 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown,daemon=True).start()
             except (ValueError,TypeError): self._json(403,{'ok':False,'code':'INVALID_OWNED_STOP'})
             return
-        if self.path != "/process":
+        if self.path not in ("/process", "/process-stems", "/transcribe"):
             self._json(404, {"ok": False, "message": "Not found"})
             return
         if self._origin() and self._origin() not in ALLOWED_ORIGINS:
@@ -740,7 +827,9 @@ class Handler(BaseHTTPRequestHandler):
                     REQUEST_RECEIPTS.bound = RUNTIME_EVIDENCE_MODULE.BoundProcessingReceipt(binding,
                         timeout=min(300,float(os.environ['NOVA_LIFECYCLE_DEADLINE'])-__import__('time').monotonic()))
                     REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
-                payload = process_audio(source, work_dir)
+                payload = (process_stems(source, work_dir) if self.path == "/process-stems" else
+                           process_transcription(source, work_dir) if self.path == "/transcribe" else
+                           process_audio(source, work_dir))
                 require_runtime_processing()
                 if STRICT_BOOTSTRAP:
                     inventory = runtime_snapshot()

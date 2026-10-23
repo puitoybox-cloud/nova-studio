@@ -278,7 +278,7 @@ test('missing importer result is not reported as successful Track Review',async(
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.6/);
+  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.7/);
 });
 
 test('local helper is loopback-only and protects its POST boundary',()=>{
@@ -303,4 +303,11 @@ test('helper commands are local startup and shutdown scripts',()=>{
   assert.match(start,/pip" install -r requirements\.txt/);
   assert.match(start,/server\.py/);
   assert.match(stop,/kill "\$PID"/);
+});
+
+test('Japanese audio instructions select explicit model actions and refuse ambiguous requests',()=>{
+ const bridge=loadBridge();
+ assert.equal(bridge.parseAudioInstruction('この音声をボーカルと楽器に分けて').kind,'separate');
+ assert.equal(bridge.parseAudioInstruction('このピアノ音声をMIDIにして').kind,'transcribe');
+ for(const value of ['いい感じにして','Track 2を消して','この曲をMIDIにして','この音声をMIDIにしてから上書き'])assert.equal(bridge.parseAudioInstruction(value),null);
 });

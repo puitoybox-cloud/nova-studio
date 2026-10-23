@@ -480,3 +480,18 @@ for(const mode of ['length','track','duplicate','cancel','quota','conflict','cor
  if(mode==='cancel'){const slice=entries[1].file.slice.bind(entries[1].file);entries[1].file.slice=(...args)=>{f.a.pcmCancel();return slice(...args)}}
  const r=await f.a.logicImportStemReturns(entries,f.p.projectId);assert.equal(r.ok,false,mode);assert.equal((await f.repo.list()).length,1);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(f.a.pcmEditor.busy,false);
 });
+
+test('Demucs six WAV adoption preserves source bytes and restores independent audio routes',async()=>{
+ const f=await renderSetup(),roles=['vocals','drums','bass','guitar','piano','other'];
+ const original=wav(100),entries=roles.map((role,i)=>({role,trackId:'demucs-'+i,file:wav(100)}));
+ const before=JSON.stringify(await f.repo.get(f.p.projectId));
+ const r=await f.a.logicImportStemReturns(entries,f.p.projectId,{separatedAudio:true,model:'htdemucs_6s',sourceSha256:'a'.repeat(64),sourceFile:original});
+ assert.equal(r.ok,true,r.error);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+ assert.equal(r.project.longWavAssets.length,6);assert.equal(r.project.fileReferences.length,1);
+ assert.equal(r.project.audioSeparationHistory[0].assetIds.length,6);
+ const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());
+ const restored=await dst.a.restoreLongWavArchive(await f.a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);
+ const p=restored.projects.find(p=>p.audioSeparationHistory?.length);assert.ok(p);
+ for(const asset of p.longWavAssets)assert.equal((await dst.a.pcmLoadLongWav(p.projectId,asset.id)).size,entries[0].file.size);
+ assert.equal((await dst.a.loadReferenceFile(p.projectId,'fileReferences',0)).blob.size,original.size);
+});
