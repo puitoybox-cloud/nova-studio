@@ -1590,7 +1590,7 @@ test('confirmed changed-ID MIDI return survives fork reopen and metadata backup 
  app.setRepository(repo);await repo.put(source);app.state.projects=[source];const original=JSON.stringify(await repo.get('origin'));
  const bytes=window.MusicStudioMidi.createMidiFile(source.midiData).bytes;await app.inspectMidiFile(file('return.mid',bytes));
  const sourceId=source.midiData.tracks[0].id;
- window.document={getElementById:id=>id==='logicMidiTrack0'?{value:sourceId}:null};
+ let choice=sourceId;window.document={getElementById:id=>id==='logicMidiTrack0'?{value:choice}:null};window.render=()=>{choice=''};
  const result=await app.saveMidiImport('duplicate');assert.equal(result.ok,true,result.error?.message);
  delete window.document;
  const saved=await repo.get(result.project.projectId),rows=saved.integrations.logicPro.at(-1).difference.trackCorrespondence;
