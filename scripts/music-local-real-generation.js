@@ -28,7 +28,7 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
  f.w.document={querySelector:selector=>({value:({'#aiModelStyle':'gentle','#aiModelRange':'57:77','#aiModelMood':'優しい','#aiModelGenre':'ballad','#aiModelChords':'Dm Gm A7 Dm'})[selector]||''}),querySelectorAll:()=>[]};
  await f.panel.generateLocalModel(f.p.projectId);
  const r=f.panel._states.get(f.p.projectId),set=r.state.workspace.candidateSets.at(-1);assert.ok(set,r.message);assert.equal(set.candidates.length,3);
- assert.ok(set.candidates.every(c=>c.value.synthetic===false&&c.value.importedMidi.notes.length>0));
+ assert.ok(set.candidates.every(c=>c.value.synthetic===false&&c.value.importedMidi.notes.length>0&&c.value.modelGeneration.sampling.trace.length>0));
  assert.ok(set.candidates.every(c=>c.value.importedMidi.notes.every(n=>n.pitch>=57&&n.pitch<=77&&([[2,5,9],[7,10,2],[9,1,4,7],[2,5,9]][Math.floor(n.startTick/1920)%4]).includes(n.pitch%12))));
  const candidate=set.candidates[0],bundle=f.P.createPreview(f.s,f.core,candidate,{project:f.p}),plan=f.P.auditionPlan(f.s,f.core,bundle,null);assert.ok(plan.tracks[0].notes.length>0);
  f.P.applyPreview(f.s,f.core,bundle,{startMeasure:2,endMeasure:2});assert.ok(f.core.currentTrack(f.s).notes.some(n=>n.id==='original'));
