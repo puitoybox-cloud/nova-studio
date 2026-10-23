@@ -139,6 +139,16 @@ def remove_prompt_notes(score, prompt_score):
     return score
 
 
+def align_short_score(score):
+    """Place real sampled material at the selected start; never synthesize notes."""
+    first = min((e[1] for track in score[1:] for e in track if e[0] == 'note' and e[2] > 0 and e[5] > 0), default=None)
+    if first is None: raise ValueError('model produced no audible notes; generation incomplete')
+    for track in score[1:]:
+        for event in track:
+            event[1] = max(0, event[1] - first)
+    return first
+
+
 def audible_sample(sample, seed, index, cancel=None):
     """Retry only empty real-model samples; never invent or recycle notes."""
     empty = {'model produced no audible notes; generation incomplete',
@@ -191,9 +201,11 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
         if cancel: cancel()
         candidate_started = time.perf_counter()
         calls_before = dict(inference_counts)
+        sampling_trace = []
         def sample(sample_seed):
             rows = list(prompt)
-            budget = RangeBudget(tokenizer, prompt, max_ticks, bool(source))
+            short_alignment = not source and max_ticks <= 1920
+            budget = RangeBudget(tokenizer, prompt, max_ticks, bool(source), align_first_note=short_alignment)
             generated_events = 0
             range_reached = False
             for row in generate((*models, tokenizer), prompt=prompt, max_len=events + len(prompt), generator=np.random.default_rng(sample_seed), temp=STYLES[style][0], top_p=STYLES[style][1], top_k=STYLES[style][2], disable_patch_change=True, disable_control_change=True, disable_channels=list(range(1,16)), cancel=cancel, metrics=inference_counts):
@@ -202,19 +214,21 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
                 if budget.reached(row[0]):
                     range_reached = True
                     break
+            sampling_trace.append({'seed': sample_seed, 'generatedRows': [list(map(int, row)) for row in rows[len(prompt):]], 'rangeReached': range_reached})
             score = tokenizer.detokenize(rows)
             if source: remove_prompt_notes(score, prompt_score)
+            first_note_offset = align_short_score(score) if short_alignment else 0
             for i, track in enumerate(score[1:], 1):
                 score[i] = [e for e in track if e[1] < max_ticks]
                 for e in score[i]:
                     if e[0] == 'note': e[2] = min(e[2], max_ticks - e[1])
             adjusted = constrain_score(score, key=key, pitch_min=pitch_min, pitch_max=pitch_max, numerator=numerator, denominator=denominator, style=style, bpm=bpm, chord_sets=chord_sets)
             data, notes = midi_bytes(score)
-            return data, notes, adjusted, generated_events, range_reached
-        (data, notes, adjusted, generated_events, range_reached), used_seed, sampling_attempts = audible_sample(sample, seed, index, cancel)
+            return data, notes, adjusted, generated_events, range_reached, first_note_offset
+        (data, notes, adjusted, generated_events, range_reached, first_note_offset), used_seed, sampling_attempts = audible_sample(sample, seed, index, cancel)
         name = variant + '.mid'
         (output / name).write_bytes(data)
-        result['candidates'].append({'variant': variant, 'seed': used_seed, 'requestedSeed': seed + index, 'samplingAttempts': sampling_attempts, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+        result['candidates'].append({'variant': variant, 'seed': used_seed, 'requestedSeed': seed + index, 'samplingAttempts': sampling_attempts, 'samplingTrace': sampling_trace, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'firstNoteOffsetTicks': first_note_offset, 'shortRangeAlignment': max_ticks <= 1920 and not source, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     if cancel: cancel()
     result['performance'] = {'memoryBefore': memory_before, 'memoryAfter': memory_snapshot(), 'sessionReused': reused, 'loadSeconds': load_seconds, 'elapsedSeconds': time.perf_counter()-started, 'onnxCalls': inference_counts, 'midiBytes': sum(c['byteLength'] for c in result['candidates'])}
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')

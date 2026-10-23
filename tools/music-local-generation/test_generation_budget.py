@@ -42,4 +42,19 @@ class BudgetTests(unittest.TestCase):
         self.assertGreater(m['processPeakRssBytes'], 0)
         self.assertEqual(m['peakScope'], 'host-process-lifetime')
 
+
+
+class ShortAlignmentTests(unittest.TestCase):
+    def test_leading_rest_cannot_end_short_generation_before_first_note(self):
+        b = RangeBudget(Tokenizer(), [], 1920, False, align_first_note=True)
+        self.assertFalse(b.reached(['set_tempo', 8, 0]))
+        self.assertFalse(b.reached(['note', 4, 0]))
+        self.assertTrue(b.reached(['note', 4, 0]))
+
+    def test_real_note_rebase_retains_pitch_velocity_and_relative_timing(self):
+        from compose import align_short_score
+        score = [480, [['patch_change',0,0,0], ['note',3840,360,0,61,77], ['note',4320,120,0,64,91]]]
+        self.assertEqual(align_short_score(score),3840)
+        self.assertEqual(score[1][1:], [['note',0,360,0,61,77], ['note',480,120,0,64,91]])
+
 if __name__ == '__main__': unittest.main()

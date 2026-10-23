@@ -458,3 +458,23 @@ test('small archive-backed records detach bounded bytes before the source backin
  await f.repo.putLongWav(next,{id:'detached-short',blob:borrowed,hashes},JSON.stringify(f.p),()=>{});available=false;
  assert.ok(reads>0);const saved=await f.a.pcmLoadLongWav(next.projectId,'detached-short');assert.deepEqual(Buffer.from(await saved.arrayBuffer()),Buffer.from(bytes));
 });
+
+test('Logic multi-Stem return atomically retains track identities through reopen, archive and final Export',async()=>{
+ const f=await renderSetup();f.p.midiData.tracks.push({...JSON.parse(JSON.stringify(f.p.midiData.tracks[0])),id:'bass',name:'Bass',part:'bass'});await f.repo.put(f.p);
+ const before=JSON.stringify(await f.repo.get(f.p.projectId)),files=[0,1].map(()=>new Blob([f.a.pcmEncodeWav({sampleRate:48000,channels:[Array.from({length:48000},(_,i)=>.02*Math.sin(i*.1)),Array.from({length:48000},(_,i)=>.02*Math.sin(i*.1))]})],{type:'audio/wav'}));files.forEach((x,i)=>{x.name=['piano.wav','bass.wav'][i];x.arrayBuffer=()=>{throw Error('whole-file-read-forbidden')}});
+ const r=await f.a.logicImportStemReturns(files.map((file,i)=>({file,trackId:['melody','bass'][i]})),f.p.projectId);assert.equal(r.ok,true,r.error);
+ assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);assert.equal(r.project.longWavAssets.length,2);assert.equal(r.project.integrations.logicPro[1].trackId,'bass');
+ const reopened=fixture(f.indexedDB);reopened.a.setRepository(reopened.a.indexedDbRepository());reopened.a.state.projects=await reopened.a.indexedDbRepository().list();
+ const archive=await reopened.a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
+ const p=restored.projects.find(x=>x.integrations?.logicPro?.length);assert.ok(p);for(const link of p.integrations.logicPro){const asset=p.longWavAssets.find(a=>a.id===link.assetId);assert.ok(asset);assert.equal(asset.midiRender.stemTrackId,link.trackId);assert.equal((await dst.a.pcmLoadLongWav(p.projectId,asset.id)).size,files[0].size)}
+ const plan={format:'nova-final-export-plan-v1',routes:p.longWavAssets.map(a=>({key:'wav:'+a.id,role:'instrument',startSeconds:0,gainDb:0,muted:false})),targetLufs:-18,ceilingDb:-1,includeMidi:false};
+ // Small actual PCM verifies restored final routing; commercial quality remains listening acceptance.
+ const out=await dst.a.finalPreview(p.projectId,plan);assert.equal(out.ok,true,out.error);assert.equal(out.candidate.files.filter(x=>/Instrument-/.test(x.name)).length,2);
+});
+for(const mode of ['length','track','duplicate','cancel','quota','conflict','corrupt'])test('Logic multi-Stem '+mode+' publishes neither partial song nor orphan bytes',async()=>{
+ const f=await renderSetup();f.p.midiData.tracks.push({...JSON.parse(JSON.stringify(f.p.midiData.tracks[0])),id:'bass'});await f.repo.put(f.p);
+ const entries=[{file:wav(100),trackId:'melody'},{file:mode==='corrupt'?Object.assign(new Blob([new Uint8Array(44)]),{name:'bad.wav'}):wav(mode==='length'?101:100),trackId:mode==='track'?'missing':mode==='duplicate'?'melody':'bass'}];
+ if(mode==='quota')f.indexedDB.fail();if(mode==='conflict')await f.repo.put({...f.p,revision:50});
+ if(mode==='cancel'){const slice=entries[1].file.slice.bind(entries[1].file);entries[1].file.slice=(...args)=>{f.a.pcmCancel();return slice(...args)}}
+ const r=await f.a.logicImportStemReturns(entries,f.p.projectId);assert.equal(r.ok,false,mode);assert.equal((await f.repo.list()).length,1);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(f.a.pcmEditor.busy,false);
+});

@@ -17,6 +17,18 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
   await new Promise(resolve=>setTimeout(resolve,200));
  }
  if(packageApp)console.log(JSON.stringify({packageOrigin:true,app:fs.realpathSync(packageApp),helper:executable,externalFallback:false}));
+ // Independently exercise real new-song and source-conditioned 1/2/4-bar inference.
+ const shortResults=[];
+ const status=await(await fetch(base+'/__nova_generation/status')).json();
+ for(const bars of [1,2,4])for(const conditioned of [false,true]){
+  const response=await fetch(base+'/__nova_generation/compose',{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Nova-Generation':status.token},body:JSON.stringify({seed:72,events:128,bpm:72,max_ticks:1920*bars,key:'C',pitch_min:48,pitch_max:84,numerator:4,denominator:4,...(conditioned?{sourceNotes:[{pitch:60,velocity:80,startTick:0,durationTicks:480}]}:{})}),signal:AbortSignal.timeout(240000)});
+  const value=await response.json();
+  shortResults.push({bars,conditioned,status:response.status,result:value});
+  if(process.env.NOVA_SHORT_RANGE_REPORT)fs.writeFileSync(process.env.NOVA_SHORT_RANGE_REPORT,JSON.stringify(shortResults,null,2));
+  assert.equal(response.ok,true,JSON.stringify(value));assert.equal(value.synthetic,false);assert.equal(value.candidates.length,3);
+  for(const candidate of value.candidates){assert.ok(candidate.notes>0);assert.ok(candidate.performance.onnxCalls.base>0&&candidate.performance.onnxCalls.token>0);assert.ok(candidate.samplingTrace.length>=1);assert.ok(candidate.samplingTrace.every(x=>x.generatedRows.length>0));}
+  console.log(JSON.stringify({realShortRange:true,bars,conditioned,notes:value.candidates.map(c=>c.notes),attempts:value.candidates.map(c=>c.samplingAttempts),offsets:value.candidates.map(c=>c.performance.firstNoteOffsetTicks)}));
+ }
  const source=fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0],fixture=new Function('require',source+'\nreturn fixture;')(require),f=fixture();
  const measurements=[];
  f.w.location.hostname='127.0.0.1';f.w.File=File;f.w.atob=atob;f.w.fetch=async(url,options={})=>{

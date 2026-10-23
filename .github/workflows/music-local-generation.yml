@@ -50,6 +50,7 @@ jobs:
         run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
       - name: Real CPU model and Japanese HMM singing through Studio
         env:
+          NOVA_SHORT_RANGE_REPORT: ${{ runner.temp }}/music-short-range.json
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
           NOVA_SINSY: ${{ runner.temp }}/nova-generation-assets/runtime/bin/sinsy
           NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
@@ -89,6 +90,7 @@ jobs:
         with:
           name: music-local-real-generation
           path: |
+            ${{ runner.temp }}/music-short-range.json
             verification/music-local-real-browser.json
             ${{ runner.temp }}/music-local-real-whole-song-ci.json
             ${{ runner.temp }}/music-long-indexeddb-browser.json
