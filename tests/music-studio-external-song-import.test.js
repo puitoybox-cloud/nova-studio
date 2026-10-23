@@ -19,7 +19,7 @@ function sourceMidi(writer){return writer.createMidiFile({version:1,ppq:480,temp
   {id:'strings',name:'AI Strings',channel:3,program:48,notes:[{id:'s1',pitch:72,startTick:0,durationTicks:960,velocity:82}]}
 ]}).bytes}
 
-for(const fixture of ['music-basic-pitch-real-20261023.json','music-demucs-real-20261023.json'])test(`actual audio model output ${fixture} imports, saves, reopens and restores without losing detected notes`,async()=>{
+for(const fixture of ['music-basic-pitch-real-20261023.json','music-demucs-real-20261023.json','music-basic-pitch-real-20261024.json'])test(`actual audio model output ${fixture} imports, saves, reopens and restores without losing detected notes`,async()=>{
   const evidence=JSON.parse(fs.readFileSync(path.join(__dirname,'..','verification',fixture),'utf8'));
   const bytes=Buffer.from(evidence.midiBase64,'base64');
   assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),evidence.midiSha256);

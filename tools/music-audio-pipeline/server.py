@@ -597,7 +597,7 @@ STEM_NAMES = ('vocals', 'drums', 'bass', 'guitar', 'piano', 'other')
 STEM_TRANSFER_LIMIT = 24 * 1024 * 1024
 
 
-def separated_wav_payload(stem_root):
+def separated_wav_payload(stem_root, target_sample_rate=None):
     """Bound the complete transfer before reading any output bytes."""
     import wave
     paths = [Path(stem_root) / (name + '.wav') for name in STEM_NAMES]
@@ -619,7 +619,24 @@ def separated_wav_payload(stem_root):
         raw = path.read_bytes()
         if len(raw) != size:
             raise ValueError('changed-stem-output')
-        result.append({'name': name, 'fileName': name + '.wav', 'byteLength': size,
+        source_digest = hashlib.sha256(raw).hexdigest()
+        source_rate = info[1]
+        if target_sample_rate is not None and target_sample_rate != source_rate:
+            if target_sample_rate != 48000:
+                raise ValueError('unsupported-stem-export-rate')
+            import io
+            import soundfile as sf
+            from scipy.signal import resample_poly
+            pcm, rate = sf.read(io.BytesIO(raw), dtype='float32', always_2d=True)
+            converted = resample_poly(pcm, 160, 147, axis=0)
+            stream = io.BytesIO()
+            sf.write(stream, converted, target_sample_rate, format='WAV', subtype='PCM_16')
+            raw = stream.getvalue()
+            info = (len(converted), target_sample_rate, info[2], 2)
+            if sum(item['byteLength'] for item in result) + len(raw) > STEM_TRANSFER_LIMIT:
+                raise ValueError('stem-transfer-limit-24MiB-use-shorter-input')
+        result.append({'name': name, 'fileName': name + '.wav', 'byteLength': len(raw),
+                       'sourceSha256': source_digest, 'sourceSampleRate': source_rate,
                        'sha256': hashlib.sha256(raw).hexdigest(), 'frames': info[0],
                        'sampleRate': info[1], 'channels': info[2],
                        'wavBase64': base64.b64encode(raw).decode('ascii')})
@@ -659,7 +676,7 @@ def process_stems(source, work_dir):
     return {'ok': True, 'pipelineRevision': PIPELINE_REVISION, 'localOnly': True,
             'sourceSha256': file_sha256(source),
             'model': 'htdemucs_6s', 'modelVersion': importlib.metadata.version('demucs'),
-            'audioStems': separated_wav_payload(root), 'strictRuntime': False}
+            'audioStems': separated_wav_payload(root, target_sample_rate=48000), 'strictRuntime': False}
 
 
 def process_audio(source: Path, work_dir: Path):

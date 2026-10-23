@@ -315,10 +315,10 @@
   async function applyAudioPlan(id,record){
     const plan=record.audioPlan;record.audioPlan=null;
     if(!plan||plan.file!==record.audioFile||JSON.stringify(project(id))!==plan.baseline){record.message='音声プレビューが古くなりました。';refresh(id);return {ok:false}}
-    record.pending=false;
-    const bridge=root.MusicStudioAudioPipeline;
+    const wasPending=record.pending;record.pending=false;
+    try{const bridge=root.MusicStudioAudioPipeline;
     const result=plan.kind==='separate'?await bridge.importSeparatedAudio(plan.file):await bridge.importAudioFile(plan.file,{mode:'transcribe'});
-    record.message=result.ok?'実処理の結果を確認してください。':'音声処理を採用できません：'+(result.error||result.message||'取消');refresh(id);return result;
+    record.message=result.ok?'実処理の結果を確認してください。':'音声処理を採用できません：'+(result.error||result.message||'取消');refresh(id);return result;}finally{record.pending=wasPending}
   }
   function applyEdit(id){
     const audioRecord=states.get(id);if(audioRecord?.audioPlan)return applyAudioPlan(id,audioRecord);
