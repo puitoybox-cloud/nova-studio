@@ -75,6 +75,14 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
  const sung=await s.a.generateLocalScoreVocal(s.p.projectId,s.recordId,{startMeasure:2,endMeasure:2});assert.equal(sung.ok,true,sung.error);
  const sourceInfo=sung.project.longWavAssets.find(a=>a.id===sung.assetId).vocalTake.scoreSource;assert.equal(sourceInfo.generationRange.startMeasure,2);assert.ok(!sourceInfo.scoreXML.includes('<text>あ</text>'));assert.ok(sourceInfo.scoreXML.includes('<text>い</text>'));
  const rendered=await s.a.vocalRender(s.p.projectId,sung.assetId);assert.ok(rendered.blob.size>44);
+ // Harmony must use transferred real lyric bindings and the actual Sinsy host.
+ const harmonySource=await s.repo.get(s.p.projectId),leadBefore=JSON.stringify(harmonySource.midiData.tracks[0]);
+ s.a.pcmMixView(s.p.projectId);s.a.productionPreview.harmony=s.a.harmonyPreview(harmonySource,{trackId:'lead',fromNote:1,toNote:3,tonic:0,scale:'major',steps:2,low:48,high:84});
+ const harmonySaved=await s.a.productionSave(s.p.projectId,'harmony');assert.equal(harmonySaved.ok,true,harmonySaved.error);
+ const harmonyProject=await s.repo.get(s.p.projectId),harmonyRecordId=harmonyProject.productionHistory.at(-1).lyricRecordIds[0];assert.ok(harmonyRecordId);assert.equal(JSON.stringify(harmonyProject.midiData.tracks[0]),leadBefore);
+ const harmonySung=await s.a.generateLocalScoreVocal(s.p.projectId,harmonyRecordId,{startMeasure:2,endMeasure:2});assert.equal(harmonySung.ok,true,harmonySung.error);
+ const harmonyRendered=await s.a.vocalRender(s.p.projectId,harmonySung.assetId);assert.ok(harmonyRendered.blob.size>44);assert.notDeepEqual(Buffer.from(await harmonyRendered.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer()));
+ console.log(JSON.stringify({realHarmonySinsy:true,lyricRecordId:harmonyRecordId,wavBytes:harmonyRendered.blob.size,sourceMelodyUnchanged:true}));
  const generatedAsset=s.a.state.projects[0].longWavAssets.find(a=>a.id===sung.assetId),frames=generatedAsset.sampleRate*180,channels=generatedAsset.channels;
  const header=await rendered.blob.slice(0,44).arrayBuffer(),view=new DataView(header);view.setUint32(4,36+frames*channels*2,true);view.setUint32(40,frames*channels*2,true);
  const longFile=Object.assign(new Blob([header,new Uint8Array(frames*channels*2)],{type:'audio/wav'}),{name:'long-original.wav'}),longBase=await s.a.importScoreVocal(longFile,s.p.projectId,s.recordId,'score-zero');assert.equal(longBase.ok,true,longBase.error);
@@ -84,6 +92,7 @@ server.stdout.on('data',data=>process.stdout.write(data));server.stderr.on('data
  const archive=await s.a.createLongWavArchive(),restored=await s.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
  const copy=restored.projects[0],again=await s.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);
  assert.deepEqual(Buffer.from(await again.blob.arrayBuffer()),replaced);
+ const restoredHarmony=copy.longWavAssets.find(a=>a.vocalTake?.scoreSource?.recordId===harmonyRecordId);assert.ok(restoredHarmony);assert.ok(copy.syllableAssignments.some(r=>r.id===harmonyRecordId));assert.deepEqual(Buffer.from(await(await s.a.vocalRender(copy.projectId,restoredHarmony.id)).blob.arrayBuffer()),Buffer.from(await harmonyRendered.blob.arrayBuffer()));
  // Late-song inference must not synthesize the preceding 200 seconds of silence.
  let late=s.a.makeProject({projectId:s.p.projectId,projectName:'Late range',bpm:120,midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'late',pitch:60,startTick:192000,durationTicks:480}]}]}});
  late=s.a.adoptLyricsAssignment(late,s.a.lyricsAssignmentPreview(late,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await s.repo.put(late);s.a.state.projects=[late];
