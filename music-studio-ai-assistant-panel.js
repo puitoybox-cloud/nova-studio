@@ -162,7 +162,7 @@
         if(c.variant!==String.fromCharCode(65+i)||typeof c.midiBase64!=='string'||c.midiBase64.length>1400000)throw Error('invalid-whole-song-variant');
         const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0)),file={name:c.variant+'-whole.mid',size:bytes.length};
         let v=composition().midiCandidate(bytes,file,{key:chunk.key,range:chunk.range},i,session.midiData.ppq);
-        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range),...(result.performance?{performance:clone(result.performance)}:{})};
+        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,...(c.samplingTrace?{sampling:{requestedSeed:c.requestedSeed,attempts:c.samplingAttempts,trace:clone(c.samplingTrace),performance:clone(c.performance||{})}}:{}),constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range),...(result.performance?{performance:clone(result.performance)}:{})};
         return composition().bindEnsemble(v,chunk.source,chunk.chords,chunk.section);
       });
     };
@@ -338,7 +338,7 @@
         if(modelResult?.remake)v=modelResult.remake.mode==='ensemble'?composition().bindEnsemble(v,modelResult.remake.source,modelResult.remake.chords||'',modelResult.remake.section||null):composition().bindRemake(v,modelResult.remake.source,modelResult.remake.mode,modelResult.remake.amount,modelResult.remake.destinationTrackId,modelResult.remake.newTrack);
         const bundle=materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
         materializer().auditionPlan(session,core(),bundle,null);
-        if(modelResult){const source=modelResult.candidates[i];v.modelGeneration={model:modelResult.model,revision:modelResult.revision,seed:source.seed,constraints:clone(source.constraints||{}),adjustedNotes:source.adjustedNotes||0};v.summary+=` / ${source.constraints?.description||''} ${source.constraints?.genre||''} ${(source.constraints?.chords||[]).join(' → ')} / ${source.constraints?.style||'balanced'} / ${source.constraints?.key||'Key自由'} / ${source.constraints?.pitchMin??48}–${source.constraints?.pitchMax??84} / ${v.importedMidi.notes.length}音 / 補正${source.adjustedNotes||0}音`;}
+        if(modelResult){const source=modelResult.candidates[i];v.modelGeneration={model:modelResult.model,revision:modelResult.revision,seed:source.seed,...(source.samplingTrace?{sampling:{requestedSeed:source.requestedSeed,attempts:source.samplingAttempts,trace:clone(source.samplingTrace),performance:clone(source.performance||{})}}:{}),constraints:clone(source.constraints||{}),adjustedNotes:source.adjustedNotes||0};v.summary+=` / ${source.constraints?.description||''} ${source.constraints?.genre||''} ${(source.constraints?.chords||[]).join(' → ')} / ${source.constraints?.style||'balanced'} / ${source.constraints?.key||'Key自由'} / ${source.constraints?.pitchMin??48}–${source.constraints?.pitchMax??84} / ${v.importedMidi.notes.length}音 / 補正${source.adjustedNotes||0}音`;}
         values.push(v);
       }
       if(!current())return;

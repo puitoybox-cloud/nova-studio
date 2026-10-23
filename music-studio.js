@@ -1116,7 +1116,7 @@
         buffered=await read(data.start+first*fmt.align,bufferFrames*fmt.align);
       }
       const view=new DataView(buffered.buffer,buffered.byteOffset+(first-bufferFirst)*fmt.align,count*fmt.align);
-      const pcm={sampleRate:fmt.rate,channels:Array.from({length:fmt.channels},()=>Array(count))};
+      const pcm={sampleRate:fmt.rate,bitDepth:fmt.bits,encoding:fmt.code,channels:Array.from({length:fmt.channels},()=>Array(count))};
       for(let i=0;i<count;i++)for(let c=0;c<fmt.channels;c++){
         const at=i*fmt.align+c*bytes;
         let sample;
@@ -1532,12 +1532,13 @@
       }
       if(offset!==file.size)throw Error('archive-trailing-bytes');
       // New identities prevent overwriting songs, even when restoring on the source device.
-      const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=uuid();p.projectName+='（復元）';p.updatedAt=now();
+      const projectMapping=new Map(manifest.projects.map(p=>[p.projectId,uuid()]));
+      const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=projectMapping.get(source.projectId);p.projectName+='（復元）';p.updatedAt=now();
         versionRebind(p,'（復元）');const restored=p;for(const p of [restored,...versionSnapshots(restored)]){p.projectId=restored.projectId;
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
         const remapPlan=plan=>plan?{...plan,routes:plan.routes.map(r=>({...r,key:r.key.startsWith('wav:')?'wav:'+(mapping.get(r.key.slice(4))||r.key.slice(4)):r.key}))}:plan;
         p.finalExportPlan=remapPlan(p.finalExportPlan);
-        if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>link.kind==='audio-return'&&mapping.has(link.assetId)?{...link,assetId:mapping.get(link.assetId)}:link);
+        if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>({...link,...(link.kind==='audio-return'&&mapping.has(link.assetId)?{assetId:mapping.get(link.assetId)}:{}),...(projectMapping.has(link.sourceProjectId)?{sourceProjectId:projectMapping.get(link.sourceProjectId),originalSourceProjectId:link.originalSourceProjectId||link.sourceProjectId}:{})}));
         if(p.vocalWorkspace?.selectedAssetId)p.vocalWorkspace={...p.vocalWorkspace,selectedAssetId:mapping.get(p.vocalWorkspace.selectedAssetId)};
         if(p.longMasterWorkspace?.selectedAssetId)p.longMasterWorkspace={...p.longMasterWorkspace,selectedAssetId:mapping.get(p.longMasterWorkspace.selectedAssetId)};
         if(p.finalExportHistory)p.finalExportHistory=p.finalExportHistory.map(h=>({...h,projectId:p.projectId,plan:remapPlan(h.plan)}));
@@ -2905,9 +2906,54 @@
       return result;
     }catch(error){notice('音声を取り込めません：'+error.message,'error');return {ok:false,error:error.message}}
   }
+  // Files are paired explicitly with stable MIDI identities; filenames never guess a track.
+  const logicStemDraft={files:[],projectId:''};
+  function logicSelectStems(files){logicStemDraft.files=Array.from(files||[]);logicStemDraft.projectId=selectedMidiProject()?.projectId||'';requestPaint()}
+  async function logicImportStemForm(){
+    const entries=logicStemDraft.files.map((file,i)=>({file,trackId:root.document?.getElementById('logicStemTrack'+i)?.value}));
+    const result=await logicImportStemReturns(entries,logicStemDraft.projectId);
+    if(result.ok){logicStemDraft.files=[];setLastProject(result.project.projectId);pcmOpen(result.project.projectId)}return result;
+  }
+  async function logicImportStemReturns(entries,id=selectedMidiProject()?.projectId,options={}){
+    const target=repository,source=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(source),token=pcmEditor.generation;
+    let ownsBusy=false;
+    const guard=()=>{if(options.signal?.aborted||repository!==target||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('logic-stems-cancelled-or-source-changed')};
+    try{
+      if(!source||target.kind!=='indexeddb'||!target.compareAndFork||!target.getLongWav)throw Error('logic-stems-durable-storage-required');
+      if(workspaceBusy()||versionPanel.busy)throw Error('logic-stems-production-busy');
+      if(!Array.isArray(entries)||!entries.length||entries.length>32||new Set(entries.map(e=>e.trackId)).size!==entries.length)throw Error('logic-stems-selection');
+      const tracks=source.midiData?.tracks||[];
+      for(const e of entries)if(!tracks.some(t=>t.id===e.trackId)||!e.file||!/\.wav$/i.test(e.file.name||''))throw Error('logic-stems-track-or-wav-required');
+      guard();pcmEditor.busy=true;ownsBusy=true;requestPaint();
+      const records=[],assets=[],links=[],batchId=uuid();let reference=null,total=0;
+      for(const {file,trackId} of entries){
+        guard();let frames=0,sampleRate=0,channels=0,bits=0,encoding=0;
+        for await(const chunk of pcmDecodeWavStream(file)){guard();frames+=chunk.channels[0].length;sampleRate=chunk.sampleRate;channels=chunk.channels.length;bits=chunk.bitDepth;encoding=chunk.encoding}
+        const format=JSON.stringify([frames,sampleRate,channels,bits,encoding]);
+        if(reference!==null&&reference!==format)throw Error('logic-stems-timeline-or-format-mismatch');reference=format;
+        const assetId=uuid(),blob=new Blob([file],{type:'audio/wav'}),hashes=await longWavDigest(blob,guard),track=tracks.find(t=>t.id===trackId);
+        total+=blob.size;if(!Number.isSafeInteger(total))throw Error('logic-stems-size');
+        records.push({id:assetId,blob,hashes});
+        assets.push({id:assetId,name:file.name,size:blob.size,frames,sampleRate,channels,hashes,midiRender:{sourceRevision:source.revision,trackIds:[trackId],stemTrackId:trackId},logicReturn:{batchId,trackId,startFrame:0,bitDepth:bits,encoding}});
+        links.push({kind:'audio-return',batchId,sourceProjectId:id,sourceRevision:source.revision,trackId,trackName:track.name||trackId,part:track.part||null,role:track.role||track.part||null,fileName:file.name,assetId,size:blob.size,frames,sampleRate,channels,bitDepth:bits,encoding,startFrame:0,originalRetained:true});
+      }
+      await archiveCapacity(total+pcmJsonBytes(source),guard);guard();pcmEditor.busy=false;ownsBusy=false;
+      return await versionCommit(id,p=>{
+        guard();const projectId=uuid(),timestamp=now(),next={...clone(p),projectId,projectName:(p.projectName+'（Logic Stem戻り）').slice(0,200),revision:1,createdAt:timestamp,updatedAt:timestamp};
+        if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,projectId,1);versionRebind(next,'（Logic Stem戻り）');
+        next.longWavAssets=[...(next.longWavAssets||[]),...assets];
+        next.integrations={...next.integrations,logicPro:[...(next.integrations?.logicPro||[]),...links.map(link=>({...link,importedAt:timestamp}))]};return next;
+      },{fork:true,binaryRecords:records,signal:options.signal});
+    }catch(error){notice('Stemを取り込めません：'+error.message,'error');return{ok:false,error:error.message}}
+    finally{if(ownsBusy)pcmEditor.busy=false;requestPaint()}
+  }
+  function logicStemReturnHtml(p){
+    const files=logicStemDraft.projectId===p.projectId?logicStemDraft.files:[],tracks=p.midiData?.tracks||[];
+    return `<h3>楽器別Stemをまとめて戻す</h3><p>曲頭から同じ長さ・サンプル形式で書き出したWAVを選び、対応トラックを指定してください。全ファイルを検査してから別バージョンへ一括保存します。</p><input type="file" multiple accept=".wav,audio/wav" aria-label="Logicから戻した複数Stem" onchange="MusicStudio.logicSelectStems(this.files);this.value=''" ${pcmEditor.busy||versionPanel.busy?'disabled':''}>${files.map((file,i)=>`<label>${escapeHtml(file.name)}<select id="logicStemTrack${i}" aria-label="${escapeHtml(file.name)}の対応トラック"><option value="">トラックを選択</option>${tracks.map(t=>`<option value="${escapeHtml(t.id)}">${escapeHtml(t.name||t.id)}</option>`).join('')}</select></label>`).join('')}${files.length?'<button type="button" class="music-primary" onclick="MusicStudio.logicImportStemForm()">対応を確認して複製へ保存</button><button type="button" class="music-secondary" onclick="MusicStudio.pcmCancel()">キャンセル</button>':''}`;
+  }
   function logicAudioReturnHtml(){
     const p=selectedMidiProject();if(!p)return '';
-    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>WAV本体と対応情報を保存した別バージョンを作成します。元曲・元MIDI・音声・履歴は保持します。長いWAVも対応。開始位置は0です。Logicでは曲の先頭から書き出してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0]);this.value=''" ${versionPanel.busy?'disabled':''}></section>`;
+    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>WAV本体と対応情報を保存した別バージョンを作成します。元曲・元MIDI・音声・履歴は保持します。長いWAVも対応。開始位置は0です。Logicでは曲の先頭から書き出してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0]);this.value=''" ${versionPanel.busy?'disabled':''}>${logicStemReturnHtml(p)}</section>`;
   }
   function logicMidiDifference(before,after){
     const counts=midi=>{const result=new Map();for(const track of midi?.tracks||[])for(const note of track.notes||[]){const key=JSON.stringify([track.channel??null,note.pitch,note.startTick,note.durationTicks,note.velocity]);result.set(key,(result.get(key)||0)+1)}return result};
@@ -4338,6 +4384,7 @@
   api.finalHandoff=finalHandoff;
   api.logicMidiDifference=logicMidiDifference;
   api.logicImportAudioReturn=logicImportAudioReturn;
+  api.logicImportStemReturns=logicImportStemReturns;api.logicSelectStems=logicSelectStems;api.logicImportStemForm=logicImportStemForm;
   api.createAIProject=createAIProject;
   api.repaintEditor=repaintEditor;
   api.editorSetBpm=editorSetBpm;

@@ -4,11 +4,11 @@ import sys
 
 
 class RangeBudget:
-    def __init__(self, tokenizer, prompt, max_ticks, source):
+    def __init__(self, tokenizer, prompt, max_ticks, source, align_first_note=False):
         self.tokenizer = tokenizer
         self.max_ticks = max_ticks
         self.beats = 0
-        self.anchor = None if source else 0
+        self.anchor = None if source or align_first_note else 0
         for row in prompt:
             event = tokenizer.tokens2event(row)
             if event:

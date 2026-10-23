@@ -19,11 +19,11 @@ test('real model request passes project music and chosen voice range; keeps gene
  f.p.musicalSettings={...f.p.musicalSettings,key:'Dm',bpm:90,timeSignature:{numerator:6,denominator:8}};
  f.s.midiData.tempo=90;f.s.midiData.timeSignature={numerator:6,denominator:8};
  f.w.document={querySelector:selector=>({value:({'#aiModelStyle':'gentle','#aiModelRange':'57:77','#aiGenerationSeed':'81'})[selector]||''}),querySelectorAll:()=>[]};
- let request;f.a.localGenerationRequest=async(kind,payload)=>{request={kind,payload};return{model:'skytnt/midi-model-tv2o-medium',revision:'fixed-test-revision',synthetic:false,candidates:['A','B','C'].map((variant,i)=>({variant,seed:81+i,midiBase64:Buffer.from(f.data).toString('base64'),adjustedNotes:2,constraints:{key:'Dm',pitchMin:57,pitchMax:77,style:'gentle'}}))}};
+ let request;f.a.localGenerationRequest=async(kind,payload)=>{request={kind,payload};return{model:'skytnt/midi-model-tv2o-medium',revision:'fixed-test-revision',synthetic:false,candidates:['A','B','C'].map((variant,i)=>({variant,seed:81+i,requestedSeed:81+i,samplingAttempts:1,samplingTrace:[{seed:81+i,generatedRows:[[1,2,3]],rangeReached:true}],performance:{firstNoteOffsetTicks:1920},midiBase64:Buffer.from(f.data).toString('base64'),adjustedNotes:2,constraints:{key:'Dm',pitchMin:57,pitchMax:77,style:'gentle'}}))}};
  await f.panel.generateLocalModel(f.p.projectId);
  assert.equal(request.kind,'compose');for(const [k,v] of Object.entries({key:'Dm',bpm:90,numerator:6,denominator:8,pitch_min:57,pitch_max:77,style:'gentle',seed:81}))assert.equal(request.payload[k],v,k);
  const record=f.panel._states.get(f.p.projectId),set=record.state.workspace.candidateSets.at(-1);assert.ok(set,record.message);assert.equal(set.candidates.length,3);
- assert.deepEqual(plain(set.candidates.map(c=>c.value.modelGeneration.seed)),[81,82,83]);assert.match(set.candidates[0].value.summary,/補正2音/);
+ assert.deepEqual(plain(set.candidates.map(c=>c.value.modelGeneration.seed)),[81,82,83]);assert.match(set.candidates[0].value.summary,/補正2音/);assert.equal(set.candidates[0].value.modelGeneration.sampling.attempts,1);assert.deepEqual(plain(set.candidates[0].value.modelGeneration.sampling.trace[0].generatedRows),[[1,2,3]]);
  const repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);assert.equal((await f.a.saveMidiEditor({silent:true})).ok,true);
  const backup=f.a.backupObject(),w=load(),rr=w.MusicStudio.memoryRepository();w.MusicStudio.setRepository(rr);assert.equal((await w.MusicStudio.restoreBackup(backup,{settings:false,projects:true})).ok,true);
  const restored=await rr.get(f.p.projectId);assert.deepEqual(plain(restored.aiWorkspace.candidateSets.at(-1).candidates[0].value.modelGeneration),plain(set.candidates[0].value.modelGeneration));
