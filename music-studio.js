@@ -291,8 +291,8 @@
       for(const s of [next,...versionSnapshots(next)]){if(root.MusicStudioInstruments?.inventory(s).some(a=>a.missing))throw Error('checkpoint-instrument-dependency-missing')}
       editorStopMelody(false);pcmStop();longMixStop();vocalPlaybackStop();
       const binaries=[...new Map(archiveBinaries(next).map(a=>[a.id,a])).values()];
-      for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt')}
-      await archiveCapacity(pcmJsonBytes(next),guard);guard();if(options.fork){if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard)}else await target.compareAndPut(next,baseline,guard);
+      for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=(options.binaryRecords||[]).find(r=>r.id===a.id)||await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt')}
+      await archiveCapacity(pcmJsonBytes(next),guard);guard();if(options.fork){if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(next,baseline,guard);
       state.projects=options.fork?[...state.projects,next]:state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
       versionPanel.preview=null;finalInvalidate();versionPanel.message='Checkpoint（保存しました。元データと履歴は保持しています）';return{ok:true,project:next};
     }catch(e){versionPanel.message='Checkpoint：'+e.message;return{ok:false,error:e.message}}finally{options.signal?.removeEventListener?.('abort',cancel);versionPanel.busy=false;versionPanel.abort=null;requestPaint()}
@@ -477,11 +477,11 @@
       tx.onabort=()=>{guard?.clearAbort?.();reject(failure||tx.error||Error('lyrics-save-aborted'))};tx.onerror=()=>abort(tx.error||Error('lyrics-save-failed'));tx.oncomplete=()=>{guard?.clearAbort?.();resolve(clone(value))};
       const get=store.get(value.projectId);get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{guard?.();if(JSON.stringify(get.result)!==baseline)throw Error('stale-lyrics-assignment-storage');const put=store.put(value);put.onerror=()=>abort(put.error);put.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}catch(e){abort(e)}};
     }))}
-    function compareAndFork(item,sourceId,baseline,guard){const value=clone(item);return database.then(db=>new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE_NAME,'readwrite',{durability:'strict'}),store=tx.objectStore(STORE_NAME);let failure;
+    async function compareAndFork(item,sourceId,baseline,guard,records=[]){const value=clone(item),encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard?.()}return database.then(db=>new Promise((resolve,reject)=>{
+      const tx=db.transaction(encoded.length?[STORE_NAME,'longWavBinaries']:STORE_NAME,'readwrite',{durability:'strict'}),store=tx.objectStore(STORE_NAME);let failure;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
       guard?.registerAbort?.(abort);tx.onabort=()=>{guard?.clearAbort?.();reject(failure||tx.error||Error('finished-fork-aborted'))};tx.onerror=()=>abort(tx.error||Error('finished-fork-failed'));tx.oncomplete=()=>{guard?.clearAbort?.();resolve(clone(value))};
-      const source=store.get(sourceId);source.onerror=()=>abort(source.error);source.onsuccess=()=>{try{guard?.();if(value.projectId===sourceId||JSON.stringify(source.result)!==baseline)throw Error('finished-fork-storage-conflict');const add=store.add(value);add.onerror=()=>abort(add.error);add.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}catch(e){abort(e)}};
+      const source=store.get(sourceId);source.onerror=()=>abort(source.error);source.onsuccess=()=>{try{guard?.();if(value.projectId===sourceId||JSON.stringify(source.result)!==baseline)throw Error('finished-fork-storage-conflict');for(const record of encoded){const binary=tx.objectStore('longWavBinaries').add(record);binary.onerror=()=>abort(binary.error);binary.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}const add=store.add(value);add.onerror=()=>abort(add.error);add.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}catch(e){abort(e)}};
     }))}
     // Store bounded, detached Blob nodes in IndexedDB. Reopening these nodes uses
     // the database's durable backing rather than retransferring a WAV of raw bytes
@@ -1533,6 +1533,7 @@
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
         const remapPlan=plan=>plan?{...plan,routes:plan.routes.map(r=>({...r,key:r.key.startsWith('wav:')?'wav:'+(mapping.get(r.key.slice(4))||r.key.slice(4)):r.key}))}:plan;
         p.finalExportPlan=remapPlan(p.finalExportPlan);
+        if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>link.kind==='audio-return'&&mapping.has(link.assetId)?{...link,assetId:mapping.get(link.assetId)}:link);
         if(p.vocalWorkspace?.selectedAssetId)p.vocalWorkspace={...p.vocalWorkspace,selectedAssetId:mapping.get(p.vocalWorkspace.selectedAssetId)};
         if(p.longMasterWorkspace?.selectedAssetId)p.longMasterWorkspace={...p.longMasterWorkspace,selectedAssetId:mapping.get(p.longMasterWorkspace.selectedAssetId)};
         if(p.finalExportHistory)p.finalExportHistory=p.finalExportHistory.map(h=>({...h,projectId:p.projectId,plan:remapPlan(h.plan)}));
@@ -2861,7 +2862,28 @@
     const source=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(source),target=repository;
     try{
       if(!source||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('logic-return-save-first');
-      if(typeof file.name!=='string'||!file.name.toLowerCase().endsWith('.wav')||file.size>PCM_LIMIT*4+65536)throw Error('logic-return-short-wav-required');
+      if(typeof file.name!=='string'||!file.name.toLowerCase().endsWith('.wav'))throw Error('logic-return-wav-required');
+      if(target.kind==='indexeddb'){
+        if(!target.compareAndFork||!target.getLongWav)throw Error('logic-return-durable-fork-required');
+        if(workspaceBusy()||versionPanel.busy)throw Error('logic-return-production-busy');
+        const token=pcmEditor.generation,guard=()=>{if(repository!==target||token!==pcmEditor.generation||baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||state.dirty||midiEditorHasPendingChanges()||shutdownPromise)throw Error('logic-return-source-changed')};
+        pcmEditor.busy=true;requestPaint();let frames=0,sampleRate=0,channels=0,blob,hashes;
+        try{
+          guard();for await(const chunk of pcmDecodeWavStream(file)){guard();frames+=chunk.channels[0].length;sampleRate=chunk.sampleRate;channels=chunk.channels.length}
+          blob=new Blob([file],{type:'audio/wav'});hashes=await longWavDigest(blob,guard);guard();await archiveCapacity(blob.size+pcmJsonBytes(source),guard);
+        }finally{pcmEditor.busy=false}
+        const assetId=uuid(),result=await versionCommit(id,p=>{
+          const projectId=uuid(),timestamp=now(),next={...clone(p),projectId,projectName:(p.projectName+'（Logic音声戻り）').slice(0,200),revision:1,createdAt:timestamp,updatedAt:timestamp};
+          if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,projectId,1);
+          versionRebind(next,'（Logic音声戻り）');
+          next.longWavAssets=[...(next.longWavAssets||[]),{id:assetId,name:file.name,size:blob.size,frames,sampleRate,channels,hashes}];
+          next.integrations={...next.integrations,logicPro:[...(next.integrations?.logicPro||[]),{kind:'audio-return',sourceProjectId:p.projectId,sourceRevision:p.revision,importedAt:timestamp,fileName:file.name,size:blob.size,assetId,sampleRate,channels,frames,startFrame:0,originalRetained:true}]};
+          return next;
+        },{fork:true,binaryRecords:[{id:assetId,blob,hashes}]});
+        if(result.ok){setLastProject(result.project.projectId);pcmOpen(result.project.projectId)}
+        return result;
+      }
+      if(file.size>PCM_LIMIT*4+65536)throw Error('logic-return-durable-storage-required');
       const pcm=pcmDecodeWav(await file.arrayBuffer());
       if(target!==repository||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)throw Error('logic-return-source-changed');
       const result=await versionCommit(id,p=>{
@@ -2878,7 +2900,7 @@
   }
   function logicAudioReturnHtml(){
     const p=selectedMidiProject();if(!p)return '';
-    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>短いWAVを追加した複製を作成します。元曲・元MIDIは保持します。開始位置は0です。PCM合計200万サンプルまで。長いWAVはMix / Gainの読み込みを使用してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0]);this.value=''" ${versionPanel.busy?'disabled':''}></section>`;
+    return `<section class="music-setting-section"><h2>Logic音声を複製へ戻す</h2><p>WAV本体と対応情報を保存した別バージョンを作成します。元曲・元MIDI・音声・履歴は保持します。長いWAVも対応。開始位置は0です。Logicでは曲の先頭から書き出してください。</p><input type="file" accept=".wav,audio/wav" aria-label="Logicから戻したWAV" onchange="MusicStudio.logicImportAudioReturn(this.files[0]);this.value=''" ${versionPanel.busy?'disabled':''}></section>`;
   }
   function logicMidiDifference(before,after){
     const counts=midi=>{const result=new Map();for(const track of midi?.tracks||[])for(const note of track.notes||[]){const key=JSON.stringify([track.channel??null,note.pitch,note.startTick,note.durationTicks,note.velocity]);result.set(key,(result.get(key)||0)+1)}return result};

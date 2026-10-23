@@ -423,3 +423,29 @@ for(const mode of ['state','cancel'])test(`archive creation frozen-clock ${mode}
  repo.getLongWav=async id=>{const rec=await get(id),slice=rec.blob.slice.bind(rec.blob);let reads=0;rec.blob.slice=(...args)=>{const part=slice(...args),read=part.arrayBuffer.bind(part);part.arrayBuffer=async()=>{const bytes=await read();if(++reads===2){if(mode==='state')a.state.projects[0].productionNotes='in-place edit';else a.cancelArchiveTransfer()}return bytes};return part};return rec};
  await assert.rejects(a.createLongWavArchive(),mode==='state'?/state-conflict/:/cancelled/);assert.equal(JSON.stringify(await repo.list()),before);
 });
+
+test('Logic long WAV return forks metadata and binary atomically, reopens and restores without a whole-file read',async()=>{
+ const f=await renderSetup(),file=wav(2100000),original=JSON.stringify(await f.repo.get(f.p.projectId));
+ file.arrayBuffer=()=>{throw Error('whole-file-read-forbidden')};
+ const r=await f.a.logicImportAudioReturn(file,f.p.projectId);assert.equal(r.ok,true,r.error);
+ assert.notEqual(r.project.projectId,f.p.projectId);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),original);
+ assert.equal(JSON.stringify(r.project.midiData),JSON.stringify(f.p.midiData));assert.equal(JSON.stringify(r.project.musicalSettings),JSON.stringify(f.p.musicalSettings));
+ const asset=r.project.longWavAssets.at(-1),link=r.project.integrations.logicPro.at(-1);assert.equal(asset.frames,2100000);assert.equal(link.assetId,asset.id);assert.equal(link.startFrame,0);assert.equal(link.sourceRevision,f.p.revision);
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());fresh.a.state.projects=await fresh.a.indexedDbRepository().list();
+ const bytes=await fresh.a.pcmLoadLongWav(r.project.projectId,asset.id);assert.equal(bytes.size,file.size);
+ const archive=await fresh.a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());
+ const restored=await dst.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);
+ const copy=restored.projects.find(p=>p.integrations?.logicPro?.length);assert.ok(copy);assert.equal(copy.integrations.logicPro.at(-1).assetId,copy.longWavAssets.at(-1).id);
+ assert.deepEqual(Buffer.from(await (await dst.a.pcmLoadLongWav(copy.projectId,copy.longWavAssets.at(-1).id)).arrayBuffer()),Buffer.from(await bytes.arrayBuffer()));
+});
+test('Logic long return quota, cancellation and source conflict leave neither fork nor orphan binary',async()=>{
+ for(const kind of ['quota','cancel','conflict']){
+  const f=await renderSetup(),file=wav(100),before=JSON.stringify(await f.repo.get(f.p.projectId));
+  if(kind==='quota')f.indexedDB.fail();
+  if(kind==='conflict')await f.repo.put({...f.p,revision:50});
+  if(kind==='cancel'){const slice=file.slice.bind(file);file.slice=(...args)=>{f.a.pcmCancel();return slice(...args)}}
+  const r=await f.a.logicImportAudioReturn(file,f.p.projectId);assert.equal(r.ok,false,kind);
+  assert.equal((await f.repo.list()).length,1);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0);
+  if(kind!=='conflict')assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+ }
+});

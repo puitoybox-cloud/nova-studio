@@ -47,13 +47,17 @@ if(input.phase==='write'){
  a.openLyricsAssignment(id);
  const sung=await a.generateLocalScoreVocal(id,p.syllableAssignments.at(-1).id);assert(sung.ok,'real Sinsy generation failed: '+sung.error);
  assert((await a.versionSave(id,'Native lifecycle saved revision')).ok,'song history save failed');
-}else if(input.phase==='edit'||input.phase==='read'){
+}else if(input.phase==='edit'||input.phase==='read'||input.phase==='read-return'){
  p=await repo.get(id);assert(JSON.stringify(p)===input.expected,'restarted metadata mismatch');
  for(const asset of p.longWavAssets||[])assert(await to64(await a.pcmLoadLongWav(id,asset.id))===input.audio[asset.id],'restarted audio mismatch');
  a.openMidiEditor(id);await wait(()=>a.state.midiEditor?.projectId===id);
  if(input.phase==='edit'){
   const session=a.state.midiEditor;core.selectPart(session,'melody');core.addNote(session,{pitch:69,startTick:2400,durationTicks:360,velocity:77});session.midiData.tempo=102;session.dirty=true;
   assert((await a.saveMidiEditor({silent:true})).ok,'re-edit save failed');
+ }
+ if(input.phase==='read-return'){
+  const output=await a.finalPreview(id,p.finalExportPlan);assert(output.ok,'returned-song restart export failed: '+output.error);
+  assert(output.candidate.files.some(f=>f.name==='Instrumental.wav')&&output.candidate.files.some(f=>f.name==='Song.mid'),'returned-song package incomplete');
  }
 }else if(input.phase==='restore'){
  assert((await repo.list()).length===0,'restore profile is not empty');
@@ -78,6 +82,15 @@ if(input.phase==='write'){
  assert(output.ok,'restored final export failed: '+output.error);assert(output.candidate.zip.size>44,'final ZIP missing');
  assert(output.candidate.files.some(f=>f.name==='Song.mid')&&output.candidate.files.some(f=>f.name==='Master.wav'),'final MIDI/Master missing');
  assert((await a.finalSave(id)).ok,'restored export history save failed');
+ // Return the actual completed native WAV through the production Logic return path.
+ // This checks the transport contract; it does not claim physical Logic operation.
+ const original=JSON.stringify(await repo.get(id)),master=output.candidate.files.find(f=>f.name==='Master.wav').blob;
+ const file=new File([master],'Native-return.wav',{type:'audio/wav'});
+ const returned=await a.logicImportAudioReturn(file,id);assert(returned.ok,'native Logic WAV return failed: '+returned.error);
+ assert(JSON.stringify(await repo.get(id))===original,'Logic return changed source song');id=returned.project.projectId;
+ const asset=returned.project.longWavAssets.at(-1);
+ const again=await a.finalPreview(id,{...output.candidate.plan,routes:[{key:'wav:'+asset.id,role:'instrument',startSeconds:0,gainDb:0,muted:false}]});
+ assert(again.ok,'native returned-song export failed: '+again.error);assert((await a.finalSave(id)).ok,'returned-song history save failed');
 }else throw Error('invalid native acceptance phase');
 assert((await a.prepareForShutdown()).ok,'page save gate refused');
 p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await a.pcmLoadLongWav(id,asset.id));

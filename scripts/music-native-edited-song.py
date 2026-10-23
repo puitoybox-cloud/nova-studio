@@ -1,4 +1,4 @@
-"""Four separate actual Intel app launches; isolated persistent WebKit profiles.
+"""Five separate actual Intel app launches; isolated persistent WebKit profiles.
 
 Requires an explicitly instrumented CI candidate. No test scripts are accepted by
 normal app builds. Only the existing six-note MIDI fixture is imported/edited.
@@ -32,8 +32,8 @@ prior = None
 results = []
 with tempfile.TemporaryDirectory(prefix='nova-native-acceptance-') as tmp:
     tmp = Path(tmp)
-    for phase in ('write', 'edit', 'read', 'restore'):
-        data = {'phase': phase, 'id': project_id}
+    for phase in ('write', 'edit', 'read', 'restore', 'read-return'):
+        data = {'phase': phase, 'id': prior['id'] if phase == 'read-return' else project_id}
         if phase == 'write':
             data['midi'] = base64.b64encode((ROOT / 'tools/music-audio-pipeline/fixtures/observed_six_notes_stems.mid').read_bytes()).decode()
         else:
@@ -44,7 +44,7 @@ with tempfile.TemporaryDirectory(prefix='nova-native-acceptance-') as tmp:
         script.write_text(source + '\nreturn await runNativeEditedSong(' + json.dumps(data) + ');\n')
         env = dict(os.environ, NOVA_NATIVE_ACCEPTANCE_SCRIPT=str(script),
                    NOVA_NATIVE_ACCEPTANCE_RESULT=str(output),
-                   NOVA_NATIVE_ACCEPTANCE_STORE=recovery_profile if phase == 'restore' else profile)
+                   NOVA_NATIVE_ACCEPTANCE_STORE=recovery_profile if phase in ('restore', 'read-return') else profile)
         with (tmp / (phase + '.stdout')).open('w+') as stdout, (tmp / (phase + '.stderr')).open('w+') as stderr:
             child = subprocess.Popen([str(entry)], env=env, stdout=stdout, stderr=stderr)
             try:
@@ -78,7 +78,7 @@ with tempfile.TemporaryDirectory(prefix='nova-native-acceptance-') as tmp:
                     try: child.wait(timeout=15)
                     except subprocess.TimeoutExpired: child.kill(); child.wait(timeout=5)
         # Preserve a small reviewable checkpoint even if a later phase fails.
-        report.write_text(json.dumps({'phases': results, 'complete': phase == 'restore',
+        report.write_text(json.dumps({'phases': results, 'complete': phase == 'read-return',
                                      'separateRecoveryProfile': recovery_profile != profile,
                                      'instrumentedNativeCI': True, 'physicalAcceptance': False}, indent=2))
 print(report.read_text())
