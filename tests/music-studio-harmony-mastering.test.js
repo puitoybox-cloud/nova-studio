@@ -47,3 +47,22 @@ test('encoded-output correction reaches target when absolute loudness gating cha
  const f=await ready(),pcm={sampleRate:48000,channels:[Array.from({length:192000},(_,i)=>(i<48000?.0005:.0003)*Math.sin(2*Math.PI*997*i/48000))]};f.p=f.a.pcmImport(f.p,pcm,'gated-quiet.wav');
  const c=await f.a.masterPreview(f.p,f.p.pcmMix.assets[0].id,-18,-1);assert.equal(c.targetReached,true);assert.ok(Math.abs(c.after.lufs+18)<=.1,c.after.lufs);assert.ok(c.passes>1,c.passes);assert.equal(c.after.clippingSamples,0);assert.ok(c.after.truePeakDb<=-.998);assert.deepEqual(plain(f.p.pcmMix.assets[0].original),pcm);
 });
+
+test('harmony rejects octave fitting that creates unison or crosses lead',()=>{
+ const f=fixture();assert.throws(()=>f.a.harmonyPreview(f.p,{...f.input,fromNote:1,toNote:1,low:60,high:60}),/unison|vocal-range/);
+ assert.throws(()=>f.a.harmonyPreview(f.p,{...f.input,fromNote:1,toNote:1,low:48,high:59}),/voice-crossing/);
+ assert.throws(()=>f.a.harmonyPreview(f.p,{...f.input,fromNote:1,toNote:1,steps:-2,low:61,high:84}),/voice-crossing/);
+});
+async function lyricHarmony(){const f=await ready();vm.runInNewContext(fs.readFileSync('music-studio-meter-map.js','utf8'),f.w);f.p=f.a.adoptLyricsAssignment(f.p,f.a.lyricsAssignmentPreview(f.p,{trackId:'lead',fromNote:1,toNote:3,text:'あい',reading:'あ い ~'}));await f.repo.put(f.p);f.a.state.projects=[f.p];return f}
+test('Harmony transfers actual lyrics with new identities and exports distinct MusicXML after reopen and backup',async()=>{
+ const f=await lyricHarmony(),before=plain(f.p),candidate=f.a.harmonyPreview(f.p,f.input);assert.equal(candidate.lyricRecords.length,1);
+ f.a.productionPreview.harmony=candidate;assert.equal((await f.a.productionSave('p','harmony')).ok,true);
+ const saved=await f.repo.get('p'),lead=saved.syllableAssignments[0],harmony=saved.syllableAssignments[1];assert.deepEqual(plain(saved.midiData.tracks[0]),before.midiData.tracks[0]);assert.deepEqual(plain(lead),before.syllableAssignments[0]);assert.notEqual(lead.id,harmony.id);assert.equal(harmony.sourceRecordId,lead.id);assert.notEqual(harmony.trackId,lead.trackId);
+ assert.deepEqual(plain(harmony.assignments.map(a=>a.token)),['あ','い','~']);assert.deepEqual(plain(harmony.assignments.map(a=>a.pitch)),[64,65,67]);assert.equal(f.a.lyricsSavedRows(saved).some(r=>r.stale),false);
+ assert.ok(harmony.assignments.every(a=>saved.midiData.tracks[1].notes.some(n=>n.id===a.noteId&&n.pitch===a.pitch)));
+ const xml=f.a.lyricsScoreXML(saved,harmony.id).text;assert.match(xml,/<text>あ<\/text>/);assert.match(xml,/<step>E<\/step>/);assert.notEqual(xml,f.a.lyricsScoreXML(saved,lead.id).text);
+ const d=fixture();d.a.setRepository(d.a.memoryRepository());assert.equal((await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);assert.deepEqual(plain(d.a.state.projects[0].syllableAssignments),plain(saved.syllableAssignments));assert.deepEqual(plain(saved.productionHistory[0].lyricRecordIds),[harmony.id]);
+});
+test('Harmony rejects stale, overlapping lyrics and partial melisma without source mutation',async()=>{
+ for(const mode of ['stale','overlap','melisma']){const f=await lyricHarmony();if(mode==='stale')f.p.syllableAssignments[0].assignments[0].pitch=59;if(mode==='overlap')f.p.syllableAssignments.push({...plain(f.p.syllableAssignments[0]),id:'duplicate'});if(mode==='melisma')f.input.toNote=2;const before=JSON.stringify(f.p);assert.throws(()=>f.a.harmonyPreview(f.p,f.input),/harmony-(stale-lyrics|ambiguous-lyrics|partial-syllable)/);assert.equal(JSON.stringify(f.p),before);}
+});
