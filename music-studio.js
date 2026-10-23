@@ -1532,12 +1532,13 @@
       }
       if(offset!==file.size)throw Error('archive-trailing-bytes');
       // New identities prevent overwriting songs, even when restoring on the source device.
-      const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=uuid();p.projectName+='（復元）';p.updatedAt=now();
+      const projectMapping=new Map(manifest.projects.map(p=>[p.projectId,uuid()]));
+      const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=projectMapping.get(source.projectId);p.projectName+='（復元）';p.updatedAt=now();
         versionRebind(p,'（復元）');const restored=p;for(const p of [restored,...versionSnapshots(restored)]){p.projectId=restored.projectId;
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
         const remapPlan=plan=>plan?{...plan,routes:plan.routes.map(r=>({...r,key:r.key.startsWith('wav:')?'wav:'+(mapping.get(r.key.slice(4))||r.key.slice(4)):r.key}))}:plan;
         p.finalExportPlan=remapPlan(p.finalExportPlan);
-        if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>link.kind==='audio-return'&&mapping.has(link.assetId)?{...link,assetId:mapping.get(link.assetId)}:link);
+        if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>({...link,...(link.kind==='audio-return'&&mapping.has(link.assetId)?{assetId:mapping.get(link.assetId)}:{}),...(projectMapping.has(link.sourceProjectId)?{sourceProjectId:projectMapping.get(link.sourceProjectId),originalSourceProjectId:link.originalSourceProjectId||link.sourceProjectId}:{})}));
         if(p.vocalWorkspace?.selectedAssetId)p.vocalWorkspace={...p.vocalWorkspace,selectedAssetId:mapping.get(p.vocalWorkspace.selectedAssetId)};
         if(p.longMasterWorkspace?.selectedAssetId)p.longMasterWorkspace={...p.longMasterWorkspace,selectedAssetId:mapping.get(p.longMasterWorkspace.selectedAssetId)};
         if(p.finalExportHistory)p.finalExportHistory=p.finalExportHistory.map(h=>({...h,projectId:p.projectId,plan:remapPlan(h.plan)}));
