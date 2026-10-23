@@ -19,6 +19,24 @@ function sourceMidi(writer){return writer.createMidiFile({version:1,ppq:480,temp
   {id:'strings',name:'AI Strings',channel:3,program:48,notes:[{id:'s1',pitch:72,startTick:0,durationTicks:960,velocity:82}]}
 ]}).bytes}
 
+for(const fixture of ['music-basic-pitch-real-20261023.json','music-demucs-real-20261023.json'])test(`actual audio model output ${fixture} imports, saves, reopens and restores without losing detected notes`,async()=>{
+  const evidence=JSON.parse(fs.readFileSync(path.join(__dirname,'..','verification',fixture),'utf8'));
+  const bytes=Buffer.from(evidence.midiBase64,'base64');
+  assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),evidence.midiSha256);
+  const {app,editor}=loadApp(),repo=app.memoryRepository();app.setRepository(repo);
+  const imported=await app.importExternalSongFile(midiFile('basic-pitch-real.mid',bytes));assert.equal(imported.ok,true);
+  const saved=await repo.get(imported.project.projectId),plain=v=>JSON.parse(JSON.stringify(v));
+  const notes=saved.midiData.tracks.flatMap(t=>t.notes||[]);assert.equal(notes.length,evidence.noteOnCount);
+  assert.deepEqual(plain(notes.map(n=>n.pitch)).sort((a,b)=>a-b),evidence.events.map(e=>e[2]).sort((a,b)=>a-b));
+  const reopened=editor.createSession(saved);
+  assert.deepEqual(plain(reopened.midiData.tracks.filter(t=>t.roleAssignment==='unassigned')),plain(saved.midiData.tracks));
+  assert.equal(reopened.midiData.ppq,saved.midiData.ppq);
+  app.state.projects=[saved];app.state.midiEditor=reopened;assert.equal((await app.saveMidiEditor({silent:true})).ok,true);
+  const persisted=await repo.get(saved.projectId),backup=app.backupObject(),fresh=loadApp(),target=fresh.app.memoryRepository();fresh.app.setRepository(target);
+  assert.equal((await fresh.app.restoreBackup(backup,{projects:true,settings:false})).ok,true);
+  assert.deepEqual(plain((await target.get(saved.projectId)).midiData),plain(persisted.midiData));
+});
+
 test('external MIDI intake reuses SMF parsing while leaving every imported role unassigned',()=>{
   const{writer,intake}=load(),bytes=sourceMidi(writer),prepared=intake.prepareMidiImport(bytes,{name:'external-ai-song.mid',size:bytes.length,type:'audio/midi'},{receivedAt:'2026-09-08T08:30:00.000Z'});
   assert.equal(prepared.status,'ready-for-project');
