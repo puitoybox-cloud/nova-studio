@@ -20,6 +20,9 @@ xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility
  -framework CoreFoundation -framework Cocoa -framework CoreMIDI -framework UniformTypeIdentifiers -framework JavaScriptCore \
  "$SDK"/src/AudioUnitSDK/*.cpp NovaMix.mm View.mm -fobjc-arc \
  -o "$BUNDLE/Contents/MacOS/NovaMix"
+# Offline companion reuses the AU quality DSP; it is never called from render.
+xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -O2 whole-song.cpp -o "$BUNDLE/Contents/MacOS/nova-whole-song"
+cp whole-song.py select-whole-song.py "$BUNDLE/Contents/Resources/"
 printf 'BNDLNvSt' > "$BUNDLE/Contents/PkgInfo"
 cp Info.plist "$BUNDLE/Contents/Info.plist"
 cp "$SDK/LICENSE.txt" "$BUNDLE/Contents/Resources/AudioUnitSDK-LICENSE.txt"
@@ -28,6 +31,8 @@ file "$BUNDLE/Contents/MacOS/NovaMix"
 lipo "$BUNDLE/Contents/MacOS/NovaMix" -verify_arch x86_64
 nm -gU "$BUNDLE/Contents/MacOS/NovaMix" | grep _NovaMixFactory
 # Ad-hoc development sealing uses no Apple identity, certificate, keychain secret or notarization.
+codesign --force --sign - "$BUNDLE/Contents/MacOS/nova-whole-song"
+codesign --verify --strict "$BUNDLE/Contents/MacOS/nova-whole-song"
 codesign --force --sign - "$BUNDLE"
 codesign --verify --strict "$BUNDLE"
 # No user-machine installation is performed by this build script.
