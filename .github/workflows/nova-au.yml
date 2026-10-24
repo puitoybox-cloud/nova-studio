@@ -32,8 +32,11 @@ jobs:
           shasum -a 256 "$RUNNER_TEMP/nova-au/actual-approved.wav" > "$RUNNER_TEMP/nova-au/wav-sha256.txt"
       - name: AU validation on disposable CI machine only
         run: |
-          mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
-          cp -R "$RUNNER_TEMP/nova-au/NovaMix.component" "$HOME/Library/Audio/Plug-Ins/Components/"
+          sudo mkdir -p /Library/Audio/Plug-Ins/Components
+          sudo cp -R "$RUNNER_TEMP/nova-au/NovaMix.component" /Library/Audio/Plug-Ins/Components/
+          sudo touch /Library/Audio/Plug-Ins/Components/NovaMix.component
+          codesign --verify --strict /Library/Audio/Plug-Ins/Components/NovaMix.component
+          plutil -p /Library/Audio/Plug-Ins/Components/NovaMix.component/Contents/Info.plist
           # The earlier read-only/dynamic host may have started a registrar before the bundle existed.
           # Refresh only the disposable CI registrar, then require real filesystem discovery.
           killall AudioComponentRegistrar || true
@@ -43,6 +46,7 @@ jobs:
             sleep 1
           done
           cat "$RUNNER_TEMP/nova-au/au-list.txt"
+          /usr/bin/log show --last 2m --predicate 'process == "AudioComponentRegistrar"' --style compact > "$RUNNER_TEMP/nova-au/registrar-log.txt" 2>&1 || true
           grep 'NvMx.*NvSt' "$RUNNER_TEMP/nova-au/au-list.txt"
           /usr/bin/auval -v aufx NvMx NvSt | tee "$RUNNER_TEMP/nova-au/auval.txt"
       - name: Existing Swift wrapper regression tests

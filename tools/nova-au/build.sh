@@ -20,10 +20,14 @@ xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility
  -framework CoreFoundation -framework Cocoa -framework CoreMIDI -framework UniformTypeIdentifiers -framework JavaScriptCore \
  "$SDK"/src/AudioUnitSDK/*.cpp NovaMix.mm View.mm -fobjc-arc \
  -o "$BUNDLE/Contents/MacOS/NovaMix"
+printf 'BNDLNvSt' > "$BUNDLE/Contents/PkgInfo"
 cp Info.plist "$BUNDLE/Contents/Info.plist"
 cp "$SDK/LICENSE.txt" "$BUNDLE/Contents/Resources/AudioUnitSDK-LICENSE.txt"
 plutil -lint "$BUNDLE/Contents/Info.plist"
 file "$BUNDLE/Contents/MacOS/NovaMix"
 lipo "$BUNDLE/Contents/MacOS/NovaMix" -verify_arch x86_64
 nm -gU "$BUNDLE/Contents/MacOS/NovaMix" | grep _NovaMixFactory
-# No identity, signing secret, notarization or user plug-in installation is used.
+# Ad-hoc development sealing uses no Apple identity, certificate, keychain secret or notarization.
+codesign --force --sign - "$BUNDLE"
+codesign --verify --strict "$BUNDLE"
+# No user-machine installation is performed by this build script.

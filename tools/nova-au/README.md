@@ -2,7 +2,7 @@
 
 This is an actual Audio Unit v2 stereo audio effect, not an inventory executable or MIDI instrument. Stable identity: `aufx / NvMx / NvSt`, Bundle ID `studio.nova.audio.NovaMix`, component version `0x00000100` (0.1.0). SDK factory: `NovaMixFactory`. One input and one output bus, two non-interleaved float32 channels, 22050–192000 Hz; no MIDI input/output bus. Initial Intel build targets x86_64/macOS 12.0, matching the existing wrapper. This does not establish physical compatibility with every macOS/Logic version. The user's Logic version is unknown.
 
-Build on macOS with Xcode: `tools/nova-au/build.sh /absolute/output/directory`. No network dependency fetch, signature identity, notarization, license operation or user-machine installation occurs. CI installs only its own component on its disposable runner to run `auval -v aufx NvMx NvSt`. Do not install it on a user's machine without their instruction. CI artifacts are unsigned development components, not a signed commercial release.
+Build on macOS with Xcode: `tools/nova-au/build.sh /absolute/output/directory`. No network dependency fetch, signature identity, notarization, license operation or user-machine installation occurs. CI installs only its own component in the system plug-in directory on its disposable runner to run `auval -v aufx NvMx NvSt`. Do not install it on a user's machine without their instruction. CI artifacts are ad-hoc sealed development components, not a certificate-signed commercial release. Ad-hoc sealing uses `codesign --sign -` and no user/Apple signing identity.
 
 ## Real processing
 
