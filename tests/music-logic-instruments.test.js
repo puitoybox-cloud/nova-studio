@@ -8,3 +8,40 @@ test('AU identity, range and unsupported control safeguards',()=>{const e={...en
 test('handoff retains independent track identities and reports missing/version changes',()=>{let p=n.register(song(),entry());p.midiData.tracks.push({...structuredClone(p.midiData.tracks[0]),id:'second'});for(const id of ['piano','second'])p=n.apply(p,n.preview(p,{trackId:id,entryId:'warm',machineId:'mac'}),{approved:true});assert.equal(Object.keys(n.handoff(p,'mac').assignments).length,2);assert.equal(n.audit(p,'different')[0].status,'instrument-missing');p.logicInstruments.registry.entries[0].version='new';assert.equal(n.audit(p,'mac')[0].status,'version-mismatch');p.midiData.tracks.reverse();assert.equal(n.audit(p,'mac').length,2);p.midiData.tracks[0].id='renamed';assert.equal(n.audit(p,'mac')[1].status,'track-missing');});
 test('supported Japanese intents and explicit unknown refusal',()=>{for(const s of ['ピアノをもっと温かい音にして','この曲に合うストリングスを選んで','ベースは自然なアコースティックにして','今持っている音源から選んで'])assert.equal(n.parse(s).operation,'recommend');assert.equal(n.parse('AとBの音色を比較したい').operation,'compare');assert.equal(n.parse('さっきの音源に戻して').operation,'undo');assert.throws(()=>n.parse('何でも買って'));});
 test('expression preserves locked notes and rejects saved measure locks',()=>{const p=n.register(song(),entry());p.midiData.tracks[0].notes[0].locked=true;const plan=n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac',expression:{velocityScale:0.8}});assert.deepEqual(plan.after,plan.before);p.midiData.editor={trackStates:{piano:{lockedMeasures:[1]}}};assert.throws(()=>n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac',expression:{velocityScale:0.8}}),/locked-measures/);});
+require('../music-studio-midi.js');
+test('handoff package binds real SMF bytes to duplicate-named Tracks and restores exact snapshot',async()=>{
+ let p=n.register(song(),entry());p.midiData={...p.midiData,ppq:480,tempo:72,timeSignature:{numerator:4,denominator:4}};p.midiData.tracks[0].channel=1;p.midiData.tracks[0].program=12;
+ p.midiData.tracks.push({...structuredClone(p.midiData.tracks[0]),id:'../unsafe/日本語',channel:2});
+ p=n.apply(p,n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac'}),{approved:true});
+ const before=JSON.stringify(p),bundle=n.packageFiles(p,'mac');assert.equal(JSON.stringify(p),before);
+ assert.equal(bundle.manifest.files[1].id,'../unsafe/日本語');assert.equal(bundle.manifest.files[1].midiFile,'track-002.mid');assert.deepEqual(bundle.manifest.midiSnapshot,p.midiData);
+ for(const file of bundle.files.filter(f=>f.name.endsWith('.mid'))){const check=MusicStudioMidi.inspectMidiBytes(await file.blob.arrayBuffer());assert.equal(check.ok,true);assert.equal(check.ppq,480);assert.equal(check.tracks[0].tempo,72)}
+ assert.equal(bundle.manifest.files[0].assignment.entry.reference,'My Piano.patch');assert.equal(bundle.manifest.files[1].status,'unassigned');assert.equal(bundle.manifest.comparison.audioVerified,false);
+ const restored=JSON.parse(JSON.stringify(p));assert.deepEqual(n.packageFiles(restored,'mac').manifest,bundle.manifest);assert.deepEqual(n.undo(restored,{approved:true}).midiData,p.midiData);
+ p.midiData.tracks[1].muted=true;assert.equal(n.packageFiles(p,'mac').manifest.files[1].midiFile,null);
+});
+test('purchased-only recommendations require explicit ownership and Japanese new intents',()=>{
+ let p=n.register(song(),entry());p=n.register(p,{...entry('owned'),kind:'au',purchased:true,component:{type:'aumu',subtype:'test',manufacturer:'NOVA'},tags:['柔らかい']});
+ const r=n.recommend(p,{trackId:'piano',machineId:'mac',instruction:'購入した音源だけから選んで'});assert.deepEqual(r.candidates.map(c=>c.entry.id),['owned']);
+ assert.equal(n.parse('ストリングスはもっと柔らかく').tags[0],'柔らかい');assert.equal(n.parse('A/B/Cを比較して').operation,'compare');assert.equal(n.parse('前の設定に戻して').operation,'undo');
+ assert.equal(n.recommend(n.register(song(),entry()),{trackId:'piano',machineId:'mac',instruction:'購入した音源だけから選んで'}).candidates.length,0);
+});
+test('multi Track approval is atomic, role bounded, stale guarded and serializable',()=>{
+ let p=n.register(song(),entry());p.midiData.tracks[0].role='piano';p.midiData.tracks.push({...structuredClone(p.midiData.tracks[0]),id:'unknown',role:null});
+ const batch=n.batchPreview(p,{machineId:'mac',instruction:'曲に合う音源を全部選んで'});assert.equal(batch.plans.length,1);assert.equal(batch.missing[0].reason,'family-unconfirmed');assert.throws(()=>n.batchApply(p,batch));
+ const next=n.batchApply(p,batch,{approved:true});assert.equal(Object.keys(next.logicInstruments.assignments).length,1);assert.deepEqual(next.midiData,p.midiData);assert.deepEqual(n.undo(JSON.parse(JSON.stringify(next)),{approved:true}),{...p,logicInstruments:{...next.logicInstruments,assignments:{},history:next.logicInstruments.history.map(h=>({...h,undone:true}))}});
+ p.midiData.tracks[0].notes[0].velocity++;assert.throws(()=>n.batchApply(p,batch,{approved:true}),/stale/);
+ p.midiData.tracks[0].locked=true;assert.throws(()=>n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac'}),/track-locked/);
+});
+test('read-only inventory distinguishes AU presence, version, ambiguity and internal Logic',()=>{
+ let p=n.register(song(),entry());p=n.register(p,{...entry('au'),kind:'au',componentVersion:'123',component:{type:'aumu',subtype:'test',manufacturer:'NOVA'}});
+ const inventory={version:1,detectionOnly:true,entries:[{component:{type:'aumu',subtype:'test',manufacturer:'NOVA'},componentVersion:'123'}]},before=JSON.stringify(p);
+ assert.deepEqual(n.inspectInventory(p,'mac',inventory).map(r=>r.status),['logic-internal-not-enumerated','component-detected']);assert.equal(JSON.stringify(p),before);
+ inventory.entries[0].componentVersion='124';assert.equal(n.inspectInventory(p,'mac',inventory)[1].status,'component-version-mismatch');inventory.entries.push(inventory.entries[0]);assert.equal(n.inspectInventory(p,'mac',inventory)[1].status,'component-ambiguous');inventory.entries=[];assert.equal(n.inspectInventory(p,'mac',inventory)[1].status,'component-missing');assert.throws(()=>n.inspectInventory(p,'mac',{version:1,entries:[]}));assert.equal(n.inspectInventory(p,'other',inventory)[1].status,'machine-mismatch');
+ p=n.apply(p,n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac'}),{approved:true});p.logicInstruments.registry.entries[0].preset='changed';assert.equal(n.audit(p,'mac')[0].status,'preset-reference-mismatch');
+});
+test('batch Undo restores all approved Tracks and rejects a manual conflict atomically',()=>{
+ let p=n.register(song(),entry());p.midiData.tracks[0].role='piano';p.midiData.tracks.push({...structuredClone(p.midiData.tracks[0]),id:'two'});
+ const batch=n.batchPreview(p,{machineId:'mac',instruction:'曲に合う音源を全部選んで'}),next=n.batchApply(p,batch,{approved:true});assert.equal(Object.keys(next.logicInstruments.assignments).length,2);assert.deepEqual(n.undo(next,{approved:true}).logicInstruments.assignments,{});
+ next.midiData.tracks[0].notes[0].velocity++;const before=JSON.stringify(next);assert.throws(()=>n.undo(next,{approved:true}),/manual-edit/);assert.equal(JSON.stringify(next),before);
+});
