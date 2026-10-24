@@ -23,7 +23,7 @@ static void configure(AudioUnit u,Source* source,double sr,unsigned buffer){
  source->sr=sr;source->frame=0;AURenderCallbackStruct cb{input,source};ok(AudioUnitSetProperty(u,kAudioUnitProperty_SetRenderCallback,kAudioUnitScope_Input,0,&cb,sizeof(cb)),"input callback");ok(AudioUnitInitialize(u),"initialize");
 }
 static std::vector<float> render(AudioUnit u,unsigned count,unsigned block){
- static uint64_t clock=0;
+ static thread_local uint64_t clock=0;
  std::vector<float> out;struct Stereo{UInt32 n;AudioBuffer b[2];} buffers;
  std::vector<float> l(block),r(block);for(unsigned pos=0;pos<count;pos+=block){unsigned n=std::min(block,count-pos);buffers.n=2;buffers.b[0]={1,n*4,l.data()};buffers.b[1]={1,n*4,r.data()};AudioTimeStamp t={};t.mSampleTime=clock;clock+=n;t.mFlags=kAudioTimeStampSampleTimeValid;AudioUnitRenderActionFlags flags=0;
   ok(AudioUnitRender(u,&flags,&t,0,n,(AudioBufferList*)&buffers),"actual AU render");for(unsigned f=0;f<n;++f){check(std::isfinite(l[f])&&std::abs(l[f])<=.981,"finite bounded output");check(l[f]==r[f],"stereo identical source");out.push_back(l[f]);}}
@@ -86,6 +86,13 @@ int main(int argc,char** argv){@autoreleasepool{
  for(unsigned k=0;k<4;++k){std::string label=k?std::string(1,char('A'+k-1)):"original";wav((std::string(argv[2])+"-"+label+".wav").c_str(),actualAudio[k]);double factor=common/rms(actualAudio[k]);for(float& v:actualAudio[k])v*=factor;wav((std::string(argv[2])+"-"+label+"-rms-matched.wav").c_str(),actualAudio[k]);}
  NSData* report=[NSJSONSerialization dataWithJSONObject:@{@"inputCapture":analysis,@"proposal":proposal,@"postApply":after,@"actualAURenders":actualRows,@"source":@"deterministic 10 kHz signal through real AU; not Logic or an instrument"} options:NSJSONWritingPrettyPrinted error:nil];check([report writeToFile:[[NSString stringWithUTF8String:argv[2]]stringByAppendingString:@"-analysis.json"] atomically:YES],"AU measured evidence saved");
  source.hz=80;for(unsigned id=0;id<4;++id)ok(AudioUnitSetParameter(a,id,0,0,0,0),"low baseline");ok(AudioUnitReset(a,0,0),"low reset");d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"low capture");render(a,96000,2048);check([snapshot(a)[@"analysis"][@"input"][@"bandPowerFractions"][0]doubleValue]>.99,"actual low FFT");d=cmd(a,@"preview");d[@"instruction"]=@"全体の音を自然に整えて";ok(command(a,d),"low measured preview");check(![snapshot(a)[@"choices"]isEqual:settings],"different actual audio different candidates");
+ // Simultaneous independent real AU render/capture, not only parameter storage isolation.
+ Source secondSource;secondSource.hz=10000;secondSource.amplitude=.05;configure(b,&secondSource,48000,256);
+ ok(command(b,@{@"operation":@"bind",@"projectId":@"song-1",@"trackId":@"strings-2",@"confirmed":@YES}),"second independent Track binding");
+ source.hz=80;source.amplitude=.1;
+ auto captureA=cmd(a,@"capture");captureA[@"consent"]=@YES;ok(command(a,captureA),"parallel a capture");auto captureB=cmd(b,@"capture");captureB[@"consent"]=@YES;ok(command(b,captureB),"parallel b capture");
+ std::thread renderA([&]{render(a,96000,256);});std::thread renderB([&]{render(b,96000,256);});renderA.join();renderB.join();
+ auto parallelA=snapshot(a),parallelB=snapshot(b);check([parallelA[@"analysis"][@"input"][@"bandPowerFractions"][0]doubleValue]>.99&&[parallelB[@"analysis"][@"input"][@"bandPowerFractions"][2]doubleValue]>.99,"parallel AU spectral isolation");check(![parallelA[@"analysis"][@"audioId"]isEqual:parallelB[@"analysis"][@"audioId"]],"parallel acquisition identity isolation");ok(AudioUnitUninitialize(b),"second instance stop");
  for(double amplitude:{0.,double(NAN)}){source.amplitude=amplitude;d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"invalid signal capture");render(a,96000,256);check(![snapshot(a)[@"audioAnalyzed"]boolValue],"silence/nonfinite never analyzed");}
  source.amplitude=.1;d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"partial capture");render(a,128,32);check(![snapshot(a)[@"audioAnalyzed"]boolValue],"short capture incomplete");ok(AudioUnitReset(a,0,0),"interrupt acquisition");check([snapshot(a)[@"analysis"][@"captureState"]unsignedIntValue]==4,"reset distinguishes incomplete");
  ok(AudioUnitUninitialize(a),"stop");ok(AudioComponentInstanceDispose(a),"destroy a");ok(AudioComponentInstanceDispose(b),"destroy b");
