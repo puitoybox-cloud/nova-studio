@@ -31,6 +31,8 @@ file "$BUNDLE/Contents/MacOS/NovaMix"
 lipo "$BUNDLE/Contents/MacOS/NovaMix" -verify_arch x86_64
 nm -gU "$BUNDLE/Contents/MacOS/NovaMix" | grep _NovaMixFactory
 # Ad-hoc development sealing uses no Apple identity, certificate, keychain secret or notarization.
+codesign --force --sign - "$BUNDLE/Contents/MacOS/nova-whole-song"
+codesign --verify --strict "$BUNDLE/Contents/MacOS/nova-whole-song"
 codesign --force --sign - "$BUNDLE"
 codesign --verify --strict "$BUNDLE"
 # No user-machine installation is performed by this build script.
