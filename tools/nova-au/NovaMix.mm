@@ -29,6 +29,9 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(targets.load()!=expected){writer.clear(std::memory_order_release);return false;}
   sequence.fetch_add(1);processing.store(extra);targets.store(next);sequence.fetch_add(1);writer.clear(std::memory_order_release);return true;
  }
+ bool readPair(uint64_t& core,uint64_t& extra)const{
+  for(unsigned attempt=0;attempt<4;++attempt){auto before=sequence.load();if(before&1)continue;core=targets.load();extra=processing.load();if(sequence.load()==before)return true;}return false;
+ }
  nova::DSP dsp;
  nova::Capture capture;
  std::atomic<bool> measuredGuard{false},safetyStop{false};
@@ -60,10 +63,10 @@ class NovaMix final:public ausdk::AUEffectBase {
  static NSDictionary* bindingInfo(const nova::Binding& b){return @{@"projectId":ns(b.project),@"trackId":ns(b.track),@"instanceId":ns(b.instance),@"confirmed":@(b.confirmed),@"role":ns(b.role),@"targetKind":ns(b.kind),@"inputSource":ns(b.source)};}
  NSDictionary* bindingDictionary()const{return bindingInfo(binding);}
  NSDictionary* snapshot(){
-  collect();
-  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingInfo(captureBinding),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
-  s[@"processing"]=processingArray(nova::unpack(processing.load()));s[@"gainReductionDb"]=@(gainReduction.load());
-  if(pending){s[@"processingChoices"]=@[processingArray(pending->processingChoices[0]),processingArray(pending->processingChoices[1]),processingArray(pending->processingChoices[2])];s[@"proposalAudioAnalyzed"]=@(pending->audioAnalyzed);s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
+  collect();uint64_t core=targets.load(),extra=processing.load();bool consistent=readPair(core,extra);
+  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(core)),@"parameterSnapshotConsistent":@(consistent),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingInfo(captureBinding),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
+  s[@"processing"]=processingArray(nova::unpack(extra));s[@"gainReductionDb"]=@(gainReduction.load());
+  if(pending&&consistent){s[@"processingChoices"]=@[processingArray(pending->processingChoices[0]),processingArray(pending->processingChoices[1]),processingArray(pending->processingChoices[2])];s[@"proposalAudioAnalyzed"]=@(pending->audioAnalyzed);s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
  }
  OSStatus command(NSDictionary* c){
   const auto op=str(c[@"operation"]);
@@ -77,15 +80,15 @@ class NovaMix final:public ausdk::AUEffectBase {
   }
   if(str(c[@"instanceId"])!=binding.instance||str(c[@"projectId"])!=binding.project||str(c[@"trackId"])!=binding.track||!binding.confirmed)return kAudioUnitErr_InvalidPropertyValue;
   collect();
-  const auto nowWord=targets.load();auto now=nova::decode(nowWord);
+  uint64_t nowWord=0,nowProcessing=0;if(!readPair(nowWord,nowProcessing))return kAudioUnitErr_CannotDoInCurrentContext;auto now=nova::decode(nowWord);
   if(op=="capture"){
    if(![c[@"consent"] isEqual:@YES])return kAudioUnitErr_InvalidPropertyValue;
    if(!capture.arm())return kAudioUnitErr_CannotDoInCurrentContext;
-   captureProcessing=processing.load();captureBinding=binding;collected=false;inputAnalysis={};outputAnalysis={};pending.reset();audioId=[@"capture-" stringByAppendingString:NSUUID.UUID.UUIDString];status=@"入力・出力の2秒をローカルRAMに取得中。外部送信なし";return noErr;
+   captureProcessing=nowProcessing;captureBinding=binding;collected=false;inputAnalysis={};outputAnalysis={};pending.reset();audioId=[@"capture-" stringByAppendingString:NSUUID.UUID.UUIDString];status=@"入力・出力の2秒をローカルRAMに取得中。外部送信なし";return noErr;
   }
 
   if(op=="preview"){
-   pending.reset();pendingWord=nowWord;pendingProcessing=processing.load();
+   pending.reset();pendingWord=nowWord;pendingProcessing=nowProcessing;
    JSContext* js=[[JSContext alloc]init];[js evaluateScript:[NSString stringWithUTF8String:NovaAssistantSource]];
    JSValue* routed=[js[@"NovaLogicInstruments"] invokeMethod:@"parseAudioCommand" withArguments:@[c[@"instruction"]?:@""]];
    if(js.exception){status=@"未対応の指示です";return kAudioUnitErr_InvalidPropertyValue;}
@@ -200,11 +203,12 @@ public:
  }
  OSStatus SaveState(CFPropertyListRef* data)override{
   if(!data)return kAudio_ParamError;std::lock_guard lock(controlMutex);
+  uint64_t savedCore=0,savedExtra=0;if(!readPair(savedCore,savedExtra))return kAudioUnitErr_CannotDoInCurrentContext;
   // Full host-owned state; contains no Music Studio files or Logic project edits.
   AUPreset preset{};OSStatus presetStatus=DispatchGetProperty(kAudioUnitProperty_PresentPreset,kAudioUnitScope_Global,0,&preset);if(presetStatus)return presetStatus;
   NSString* presetName=CFBridgingRelease(preset.presetName);
   NSMutableArray* undo=[NSMutableArray array];for(const auto& h:history)[undo addObject:@[array(h.first),array(h.second),@(h.extraBefore),@(h.extraAfter)]];
-  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@2,@"novaProcessing":processingArray(nova::unpack(processing.load())),@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary(),@"novaEvidence":evidence,@"novaUndo":undo,@"novaMeasuredGuard":@(measuredGuard.load())};return noErr;
+  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@2,@"novaProcessing":processingArray(nova::unpack(savedExtra)),@"novaValues":array(nova::decode(savedCore)),@"novaBinding":bindingDictionary(),@"novaEvidence":evidence,@"novaUndo":undo,@"novaMeasuredGuard":@(measuredGuard.load())};return noErr;
  }
  OSStatus RestoreState(CFPropertyListRef data)override{
   if(!data||CFGetTypeID(data)!=CFDictionaryGetTypeID())return kAudioUnitErr_InvalidPropertyValue;
@@ -221,10 +225,11 @@ public:
   id restored=d[@"novaEvidence"];if(restored){if(![restored isKindOfClass:NSArray.class]||[restored count]>32||![NSJSONSerialization isValidJSONObject:restored])return kAudioUnitErr_InvalidPropertyValue;NSData* bytes=[NSJSONSerialization dataWithJSONObject:restored options:0 error:nil];if(!bytes||bytes.length>262144)return kAudioUnitErr_InvalidPropertyValue;}
   std::lock_guard lock(controlMutex);
   if(presetName){AUPreset preset{-1,(__bridge CFStringRef)presetName};OSStatus err=AUEffectBase::NewCustomPresetSet(preset);if(err)return err;}
+  if(!publish(targets.load(),nova::encode(v),nova::pack(restoredProcessing)))return kAudioUnitErr_CannotDoInCurrentContext;
   evidence=restored?[restored mutableCopy]:[NSMutableArray array];
   collected=true;measuredGuard.store([d[@"novaMeasuredGuard"]isEqual:@YES]);safetyStop.store(false);
   inputAnalysis={};outputAnalysis={};audioId=@"";
-  if(!publish(targets.load(),nova::encode(v),nova::pack(restoredProcessing)))return kAudioUnitErr_CannotDoInCurrentContext;binding.project=p;binding.track=t;binding.role=role;binding.kind=kind;binding.source=source;
+  binding.project=p;binding.track=t;binding.role=role;binding.kind=kind;binding.source=source;
   // A duplicated Logic insert must explicitly re-confirm its Track; keep a fresh runtime instance UUID.
   binding.confirmed=false;pending.reset();history=std::move(restoredUndo);if(!history.empty())history.back().appliedWord=nova::encode(v);status=@"設定復元済み。曲・Trackの対応を再確認してください";return noErr;
  }

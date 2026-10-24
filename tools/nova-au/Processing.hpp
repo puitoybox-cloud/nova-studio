@@ -16,7 +16,7 @@ constexpr unsigned extraLevels[ExtraCount]={1,63,63,63,96,31,1,120,15,31,31,15,2
 using Processing=std::array<float,ExtraCount>;
 inline bool extraValid(unsigned i,float x){return i<ExtraCount&&std::isfinite(x)&&x>=extraMin[i]&&x<=extraMax[i];}
 inline uint64_t pack(const Processing& p){uint64_t word=0;unsigned shift=0;for(unsigned i=0;i<ExtraCount;++i){double x=std::isfinite(p[i])?std::clamp(p[i],extraMin[i],extraMax[i]):extraDefault[i];double t=extraLog[i]?std::log(x/extraMin[i])/std::log(extraMax[i]/extraMin[i]):(x-extraMin[i])/(extraMax[i]-extraMin[i]);auto max=extraLevels[i];word|=uint64_t(std::llround(t*max))<<shift;shift+=extraBits[i];}return word;}
-inline Processing unpack(uint64_t word){Processing p{};unsigned shift=0;for(unsigned i=0;i<ExtraCount;++i){auto max=extraLevels[i];double t=double(std::min<uint64_t>(max,(word>>shift)&((1ULL<<extraBits[i])-1)))/max;p[i]=extraLog[i]?extraMin[i]*std::pow(extraMax[i]/extraMin[i],t):extraMin[i]+t*(extraMax[i]-extraMin[i]);shift+=extraBits[i];}return p;}
+inline Processing unpack(uint64_t word){Processing p{};unsigned shift=0;for(unsigned i=0;i<ExtraCount;++i){auto max=extraLevels[i];double t=double(std::min<uint64_t>(max,(word>>shift)&((1ULL<<extraBits[i])-1)))/max;p[i]=extraLog[i]?extraMin[i]*std::pow(extraMax[i]/extraMin[i],t):extraMin[i]+t*(extraMax[i]-extraMin[i]);p[i]=std::clamp(p[i],extraMin[i],extraMax[i]);shift+=extraBits[i];}return p;}
 inline Processing defaults(){Processing p;std::copy_n(extraDefault,ExtraCount,p.begin());return unpack(pack(p));}
 constexpr double pi=3.14159265358979323846;
 // Audio EQ Cookbook normalized RBJ biquads, transposed direct form II, double state.
