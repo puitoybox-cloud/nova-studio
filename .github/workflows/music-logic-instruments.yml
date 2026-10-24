@@ -1,0 +1,52 @@
+name: NOVA Logic instrument plans
+on:
+  pull_request:
+    paths:
+      - 'music-studio*.js'
+      - 'music-studio.html'
+      - 'app.js'
+      - 'tests/music*logic*.test.js'
+      - 'scripts/music-logic-instruments-browser.js'
+      - 'tools/music-logic-instruments/**'
+      - '.github/workflows/music-logic-instruments.yml'
+permissions:
+  contents: read
+jobs:
+  instrument-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test
+      - run: git ls-files '*.js' | xargs -n1 node --check
+      - run: git diff --check HEAD^ HEAD
+      - run: npm install --prefix "$RUNNER_TEMP/logic-browser" playwright
+      - name: Browser approval, reopen, backup, Undo and responsive UI
+        env:
+          NODE_PATH: ${{ runner.temp }}/logic-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-logic-instruments-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nova-logic-instrument-browser
+          path: verification/music-logic-instruments-*
+  intel-inventory:
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Build read-only Intel inventory helper (not an AU or Logic acceptance)
+        run: swiftc -target x86_64-apple-macos12.0 tools/music-logic-instruments/Inventory.swift -o "$RUNNER_TEMP/nova-au-inventory"
+      - run: '"$RUNNER_TEMP/nova-au-inventory" > verification/music-logic-instruments-au-detection.json'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nova-au-inventory-intel
+          path: verification/music-logic-instruments-au-detection.json
