@@ -53,17 +53,17 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(op=="apply"){
    if(![c[@"approved"] isEqual:@YES]||!pending||!(pending->binding==binding)||pending->before!=now||![c[@"choice"] isKindOfClass:NSNumber.class])return kAudioUnitErr_InvalidPropertyValue;
    NSInteger i=[c[@"choice"] integerValue];if(i<0||i>2)return kAudioUnitErr_InvalidPropertyValue;
-   auto next=nova::decode(nova::encode(pending->choices[i]));history.push_back({now,next});if(history.size()>32)history.erase(history.begin());targets.store(nova::encode(next));pending.reset();status=@"承認した値をNOVA AU自身へ適用";return noErr;
+   auto next=nova::decode(nova::encode(pending->choices[i]));history.push_back({now,next});auto expected=nova::encode(now);if(!targets.compare_exchange_strong(expected,nova::encode(next))){history.pop_back();return kAudioUnitErr_InvalidPropertyValue;}if(history.size()>32)history.erase(history.begin());pending.reset();status=@"承認した値をNOVA AU自身へ適用";return noErr;
   }
   if(op=="undo"){
    if(![c[@"approved"] isEqual:@YES]||history.empty()||history.back().second!=now)return kAudioUnitErr_InvalidPropertyValue;
-   targets.store(nova::encode(history.back().first));history.pop_back();pending.reset();status=@"前のNOVA AU設定に戻しました";return noErr;
+   auto expected=nova::encode(now);if(!targets.compare_exchange_strong(expected,nova::encode(history.back().first)))return kAudioUnitErr_InvalidPropertyValue;history.pop_back();pending.reset();status=@"前のNOVA AU設定に戻しました";return noErr;
   }
   return kAudioUnitErr_InvalidPropertyValue;
  }
 public:
  explicit NovaMix(AudioComponentInstance ci):AUEffectBase(ci,true){
-  CreateElements();Globals()->UseIndexedParameters(4);for(unsigned i=0;i<4;++i)AUEffectBase::SetParameter(i,0);
+  history.reserve(33);CreateElements();Globals()->UseIndexedParameters(4);for(unsigned i=0;i<4;++i)AUEffectBase::SetParameter(i,0);
   binding.instance=str(NSUUID.UUID.UUIDString);
  }
  bool SupportsTail()override{return true;}
