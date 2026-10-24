@@ -25,6 +25,10 @@ jobs:
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"
           "$RUNNER_TEMP/nova-dsp"
+      - name: Quality EQ, compressor, loudness and mastering audio
+        run: |
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/quality.cpp -o "$RUNNER_TEMP/nova-quality"
+          "$RUNNER_TEMP/nova-quality" "$RUNNER_TEMP/nova-au/quality" | tee "$RUNNER_TEMP/nova-au/quality-measurements.txt"
       - name: Actual FFT, bounded capture and comparison engine
         run: |
           xcrun clang++ -std=c++20 -O2 -pthread tools/nova-au/tests/analysis.cpp -o "$RUNNER_TEMP/nova-analysis"

@@ -5,7 +5,7 @@
 #include <vector>
 namespace nova {
 struct Binding { std::string project,track,instance; bool confirmed=false; std::string role="unspecified",kind="track",source="user-confirmed AU input"; bool operator==(const Binding&)const=default; };
-struct Proposal { Binding binding; std::array<float,4> before; std::array<std::array<float,4>,3> choices; std::string reason; bool audioAnalyzed=false; uint64_t audioHash=0; };
+struct Proposal { Binding binding; std::array<float,4> before; std::array<std::array<float,4>,3> choices; std::string reason; bool audioAnalyzed=false; uint64_t audioHash=0; Processing processingBefore=defaults(); std::array<Processing,3> processingChoices{defaults(),defaults(),defaults()}; };
 inline Proposal propose(const Binding& b,const std::array<float,4>& values,const std::string& request){
  if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty())throw std::runtime_error("対象の明示的確認が必要です");
  Proposal p{b,values,{values,values,values},"音声未解析・ルールによる提案"};
@@ -21,17 +21,23 @@ inline Proposal propose(const Binding& b,const std::array<float,4>& values,const
 }
 
 namespace nova {
-inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,const std::string& request,const Measurement& m){
+inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,const std::string& request,const Measurement& m,const Processing& processing=defaults()){
  if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty()||!m.valid)throw std::runtime_error("有効な実音声解析と対象確認が必要です");
  Proposal p{b,v,{v,v,v},"実音声FFT・Peak・RMSに基づくルール提案（機械学習推論なし）",true,m.hash};
- const bool warm=request=="ピアノをもっと温かくして"||request=="ピアノを柔らかくして";
+ p.processingBefore=processing;p.processingChoices={processing,processing,processing};
+ const bool warm=request=="ピアノを温かく自然にして"||request=="ピアノをもっと温かくして"||request=="ピアノを柔らかくして";
  const bool soft=request=="ストリングスの高音を柔らかくして"||request=="高音を少し抑えて";
  const bool vocal=request=="ボーカルをもう少し前に出して";
- const bool bass=request=="低音が強すぎるので調整して";
- const bool natural=request=="全体の音を自然に整えて";
- if(!warm&&!soft&&!vocal&&!bass&&!natural)throw std::runtime_error("未対応の指示です");
+ const bool bass=request=="ベースが強すぎるので調整して"||request=="低音が強すぎるので調整して";
+ const bool drum=request=="ドラムをもう少し力強くして";
+ const bool natural=request=="全体の音量バランスを整えて"||request=="全体の音を自然に整えて";
+ if(!warm&&!soft&&!vocal&&!bass&&!natural&&!drum)throw std::runtime_error("未対応の指示です");
  for(unsigned i=0;i<3;++i){
-  double strength=(i+1)/3.;auto& x=p.choices[i];
+  double strength=(i+1)/3.;auto& x=p.choices[i];auto& e=p.processingChoices[i];e[0]=1;
+  double crest=db(m.peak/std::max(m.rms,1e-20));
+  e[6]=crest>6?1:0;e[7]=std::clamp(float(db(m.rms)+crest*.35),-60.f,0.f);e[8]=1+float(strength)*(b.kind=="stereo-out"?1.f:2.f);e[9]=drum?30:10;e[10]=150;e[11]=6;e[12]=0;
+  if(vocal){e[3]=2500;e[4]=float(strength)*std::min(2.,m.bands[1]*2);e[5]=.8;}
+  e=unpack(pack(e));
   double headroom=std::max(0.,db(.85/std::max(m.peak,1e-9)));
   double safety=m.peak>.85?db(.85/m.peak):0;
   x[0]=std::clamp(float(v[0]+safety),-24.f,6.f);
@@ -40,8 +46,8 @@ inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,co
   if(warm||soft||natural)x[2]=std::clamp(float(v[2]-strength*roleWeight*std::min(.2+m.bands[2]*8.,4.)),-6.f,6.f);
   if(bass||natural)x[1]=std::clamp(float(v[1]-strength*std::min(.2+m.bands[0]*8.,4.)),-6.f,6.f);
   if(warm)x[1]=std::clamp(float(v[1]+strength*std::max(0.,(.35-m.bands[0])*3.)),-6.f,6.f);
-  // Conservative bound for this parallel EQ: do not spend more than measured input headroom.
-  double eqBound=20*std::log10(1+std::abs(std::pow(10.,x[1]/20)-1)+2*std::abs(std::pow(10.,x[2]/20)-1));
+  // Conservative sum of absolute EQ gains (including peak band); not a limiter: do not spend more than measured input headroom.
+  double eqBound=std::abs(x[1])+std::abs(x[2])+std::abs(e[4])+e[12];
   x[0]=std::min(x[0],float(std::clamp(db(.90/std::max(m.peak,1e-9))-eqBound,-24.,6.)));
   x=decode(encode(x));
  }
