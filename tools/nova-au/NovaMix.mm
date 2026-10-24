@@ -53,7 +53,7 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(op=="apply"){
    if(![c[@"approved"] isEqual:@YES]||!pending||!(pending->binding==binding)||pending->before!=now||![c[@"choice"] isKindOfClass:NSNumber.class])return kAudioUnitErr_InvalidPropertyValue;
    NSInteger i=[c[@"choice"] integerValue];if(i<0||i>2)return kAudioUnitErr_InvalidPropertyValue;
-   auto next=pending->choices[i];history.push_back({now,next});if(history.size()>32)history.erase(history.begin());targets.store(nova::encode(next));pending.reset();status=@"承認した値をNOVA AU自身へ適用";return noErr;
+   auto next=nova::decode(nova::encode(pending->choices[i]));history.push_back({now,next});if(history.size()>32)history.erase(history.begin());targets.store(nova::encode(next));pending.reset();status=@"承認した値をNOVA AU自身へ適用";return noErr;
   }
   if(op=="undo"){
    if(![c[@"approved"] isEqual:@YES]||history.empty()||history.back().second!=now)return kAudioUnitErr_InvalidPropertyValue;
