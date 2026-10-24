@@ -1,6 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
 #include <dlfcn.h>
+#include "../WholeSong.hpp"
+#include <iomanip>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -120,6 +123,22 @@ int main(int argc,char** argv){@autoreleasepool{
  NSData* masterReport=[NSJSONSerialization dataWithJSONObject:@{@"before":masterInput,@"proposal":masterProposal,@"after":masterOutput,@"measuredMidGainDb":@(measuredEq)} options:NSJSONWritingPrettyPrinted error:nil];check([masterReport writeToFile:[[NSString stringWithUTF8String:argv[2]]stringByAppendingString:@"-quality.json"]atomically:YES],"quality evidence written");
  auto masterUndo=cmd(b,@"undo");masterUndo[@"approved"]=@YES;ok(command(b,masterUndo),"master full EQ+dynamics+gain undo");check([snapshot(b)[@"processing"][0]floatValue]==0,"master undo returns legacy processing");
  ok(AudioUnitUninitialize(b),"quality instance stop");
+ // Full-song actual AU rendering in fixed blocks. No whole-song RAM allocation.
+ std::ofstream longReport(std::string(argv[2])+"-whole-song.jsonl");
+ for(double sr:{44100.,48000.,96000.})for(unsigned seconds:{30u,240u,480u}){
+  Source longSource;longSource.amplitude=.1;configure(b,&longSource,sr,256);
+  ok(AudioUnitSetParameter(b,4,0,0,1,0),"long quality chain");
+  ok(AudioUnitSetParameter(b,10,0,0,1,0),"long compressor");
+  ok(AudioUnitSetParameter(b,11,0,0,-24,0),"long threshold");
+  ok(AudioUnitSetParameter(b,12,0,0,2,0),"long ratio");
+  ok(AudioUnitReset(b,0,0),"long reset");
+  nova::WholeMeter meter(sr);auto started=std::chrono::steady_clock::now();
+  for(uint64_t pos=0;pos<uint64_t(sr*seconds);pos+=256){unsigned count=std::min<uint64_t>(256,uint64_t(sr*seconds)-pos);auto block=render(b,count,256);for(float x:block)meter.add(x,x);}
+  meter.finish();check(meter.frames==uint64_t(sr*seconds),"actual AU full-song frame count");check(meter.proposalMeasurement().valid,"actual AU full-song loudness");check(meter.clipped==0,"actual AU full-song unclipped");
+  longReport<<std::setprecision(15)<<"{\"actualAuFactory\":true,\"logicHostVerified\":false,\"seconds\":"<<seconds<<",\"wallSeconds\":"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<<",\"measurement\":";meter.json(longReport);longReport<<"}\n";
+  ok(AudioUnitUninitialize(b),"long stop");
+ }
+ check(longReport.good(),"long AU report saved");
  ok(AudioUnitUninitialize(a),"stop");ok(AudioComponentInstanceDispose(a),"destroy a");ok(AudioComponentInstanceDispose(b),"destroy b");
  puts("Actual AU binary host, stereo, Gain/EQ, Japanese approval/Undo, isolation and state tests PASS. Logic not tested.");
  // Keep the code loaded until process exit: component registry owns its factory pointer.

@@ -13,7 +13,7 @@ permissions:
 jobs:
   intel-au:
     runs-on: macos-15-intel
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,3 +94,28 @@ jobs:
           path: |
             ${{ runner.temp }}/nova-au
             verification/music-logic-instruments-*
+
+  whole-song:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Independent reference and bounded whole-song processing
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          g++ -std=c++20 -O2 tools/nova-au/whole-song.cpp -o "$RUNNER_TEMP/nova-whole-song"
+          python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
+          /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nova-whole-song-audio
+          path: |
+            ${{ runner.temp }}/whole-song/**/manifest.json
+            ${{ runner.temp }}/whole-song/**/*.wav
+            ${{ runner.temp }}/whole-song/whole-song-results.json
+            ${{ runner.temp }}/whole-song-log.txt
+            ${{ runner.temp }}/whole-song-resources.txt

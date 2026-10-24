@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import <CommonCrypto/CommonDigest.h>
 #import <AudioUnit/AUCocoaUIView.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioToolbox/AudioUnitUtilities.h>
@@ -15,6 +16,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 @property NSPopUpButton *tracks,*targetKind;
 @property NSDictionary* manifest;
 @property NSDictionary* state;
+@property NSString* offlineSummary;
 @property NSTimer* refresh;
 @end
 @implementation NovaMixView
@@ -45,6 +47,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"キャンセル" x:16 y:346 action:@selector(cancel:) tag:0];
   [self button:@"Undoを承認" x:180 y:346 action:@selector(undo:) tag:0];
   [self button:@"値を更新" x:344 y:346 action:@selector(update:) tag:0];
+  [self button:@"全曲結果を照合" x:520 y:346 action:@selector(wholeSong:) tag:0];
   [self button:@"2秒音声取得に同意" x:16 y:388 action:@selector(capture:) tag:0];
   [self button:@"比較WAVを保存" x:180 y:388 action:@selector(compare:) tag:0];
   self.targetLufs=[[NSTextField alloc]initWithFrame:NSMakeRect(344,390,70,26)];self.targetLufs.stringValue=@"-14";[self addSubview:self.targetLufs];[self button:@"LUFSでMaster候補" x:424 y:388 action:@selector(master:) tag:0];
@@ -61,8 +64,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(!self.fieldsInitialized){self.sourceField.stringValue=b[@"inputSource"]?:@"user-confirmed AU input";NSUInteger index=[@[@"track",@"bus",@"stereo-out"]indexOfObject:b[@"targetKind"]?:@"track"];if(index!=NSNotFound)[self.targetKind selectItemAtIndex:index];self.fieldsInitialized=YES;}
  if(!self.projectField.stringValue.length)self.projectField.stringValue=b[@"projectId"]?:@"";
  if(!self.trackField.stringValue.length)self.trackField.stringValue=b[@"trackId"]?:@"";
- self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部送信・外部AU操作なし。48 kHz取得区間のLUFS/4x True Peak推定。全曲・Limiter未対応。\n入力: %@\n出力: %@\n取得状態 %@ / 完了 %@",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@"",measurement(self.state[@"analysis"][@"input"]),measurement(self.state[@"analysis"][@"output"]),self.state[@"analysis"][@"captureState"],self.state[@"analysis"][@"complete"]];
- NSMutableString* detail=[NSMutableString stringWithFormat:@"\nGR %.2f dB / %@",[self.state[@"gainReductionDb"]doubleValue],processingText(self.state[@"processing"])];unsigned k=0;for(id row in self.state[@"processingChoices"])[detail appendFormat:@"\n%c %@",'A'+k++,processingText(row)];for(NSString* side in @[@"input",@"output"]){id m=self.state[@"analysis"][side];if([m[@"lufsMeasured"]boolValue])[detail appendFormat:@"\n%@ %.2f LUFS / %.2f dBTP推定（取得区間）",side,[m[@"integratedLufsExcerpt"]doubleValue],[m[@"truePeakEstimateDbTP"]doubleValue]];}self.report.stringValue=[self.report.stringValue stringByAppendingString:detail];
+ self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部送信・外部AU操作なし。48 kHz取得区間のLUFS/4x True Peak推定。ライブ取得は全曲・Limiter未対応。\n入力: %@\n出力: %@\n取得状態 %@ / 完了 %@",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@"",measurement(self.state[@"analysis"][@"input"]),measurement(self.state[@"analysis"][@"output"]),self.state[@"analysis"][@"captureState"],self.state[@"analysis"][@"complete"]];
+ NSMutableString* detail=[NSMutableString stringWithFormat:@"\nGR %.2f dB / %@",[self.state[@"gainReductionDb"]doubleValue],processingText(self.state[@"processing"])];unsigned k=0;for(id row in self.state[@"processingChoices"])[detail appendFormat:@"\n%c %@",'A'+k++,processingText(row)];for(NSString* side in @[@"input",@"output"]){id m=self.state[@"analysis"][side];if([m[@"lufsMeasured"]boolValue])[detail appendFormat:@"\n%@ %.2f LUFS / %.2f dBTP推定（取得区間）",side,[m[@"integratedLufsExcerpt"]doubleValue],[m[@"truePeakEstimateDbTP"]doubleValue]];}self.report.stringValue=[self.report.stringValue stringByAppendingString:detail];if(self.offlineSummary)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n%@",self.offlineSummary];
 }
 - (void)send:(NSMutableDictionary*)command{
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
@@ -74,6 +77,25 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  [self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
  if(!e){for(UInt32 i=0;i<13;++i)if(![beforeProcessing[i]isEqual:self.state[@"processing"][i]]){AudioUnitParameter p={self.unit,i+4,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}
  if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
+}
+- (void)wholeSong:(id)sender{
+ NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedContentTypes=@[UTTypeJSON];panel.allowsMultipleSelection=NO;if([panel runModal]!=NSModalResponseOK)return;
+ NSNumber* size;[panel.URL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024){self.offlineSummary=@"全曲manifestは4 MiB以下が必要です";return;}
+ NSDictionary* m=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:panel.URL] options:0 error:nil];
+ if(![m isKindOfClass:NSDictionary.class]||![m[@"format"]isEqual:@"nova-whole-song-v1"]||![m[@"complete"]isEqual:@YES]||![m[@"status"]isEqual:@"complete"]||![m[@"identity"]isKindOfClass:NSDictionary.class]||![m[@"artifacts"]isKindOfClass:NSDictionary.class]||![m[@"renders"]isKindOfClass:NSArray.class]||[m[@"renders"]count]!=4||[m[@"artifacts"]count]>64){self.offlineSummary=@"全曲完了manifestではありません";return;}
+ NSDictionary* identity=m[@"identity"];NSDictionary* binding=self.state[@"binding"];
+ if(![binding[@"confirmed"]boolValue]||![identity[@"projectId"]isEqual:binding[@"projectId"]]||![identity[@"trackId"]isEqual:binding[@"trackId"]]||![identity[@"kind"]isEqual:binding[@"targetKind"]]){self.offlineSummary=@"全曲結果の曲・Track・処理位置が確認済み対象と一致しません";return;}
+ NSURL* directory=panel.URL.URLByDeletingLastPathComponent;self.offlineSummary=@"全曲比較ファイルのSHA256を照合中（ライブAU設定は変更しません）";
+ NSString* project=[binding[@"projectId"]copy];NSString* track=[binding[@"trackId"]copy];
+ dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0), ^{
+  BOOL valid=YES;NSRegularExpression* hex=[NSRegularExpression regularExpressionWithPattern:@"^[a-f0-9]{64}$" options:0 error:nil];
+  for(id name in m[@"artifacts"]){id expected=m[@"artifacts"][name];if(![name isKindOfClass:NSString.class]||![name isEqual:[name lastPathComponent]]||![expected isKindOfClass:NSString.class]||![hex numberOfMatchesInString:expected options:0 range:NSMakeRange(0,[expected length])]){valid=NO;break;}
+   NSInputStream* stream=[NSInputStream inputStreamWithURL:[directory URLByAppendingPathComponent:name]];[stream open];CC_SHA256_CTX context;CC_SHA256_Init(&context);uint8_t buffer[65536];NSInteger count;while((count=[stream read:buffer maxLength:sizeof(buffer)])>0)CC_SHA256_Update(&context,buffer,(CC_LONG)count);[stream close];if(count<0){valid=NO;break;}uint8_t digest[CC_SHA256_DIGEST_LENGTH];CC_SHA256_Final(digest,&context);NSMutableString* actual=[NSMutableString string];for(unsigned j=0;j<sizeof(digest);++j)[actual appendFormat:@"%02x",digest[j]];if(![actual isEqual:expected]){valid=NO;break;}
+  }
+  NSMutableString* summary=[NSMutableString stringWithFormat:@"全曲SHA256照合 %@ / audioVersion %@ / source SHA %@\nオフライン結果。ライブAUのLimiter・Gainや他社AUへの自動適用なし。",valid?@"成功":@"失敗",identity[@"audioVersion"],identity[@"sourceWavSha256"]];
+  if(valid)for(id row in m[@"renders"]){if(![row isKindOfClass:NSDictionary.class]||![row[@"measurement"]isKindOfClass:NSDictionary.class]){valid=NO;break;}NSDictionary* measured=row[@"measurement"];[summary appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / %@ frames",row[@"label"],[measured[@"integratedLufs"]doubleValue],[measured[@"truePeakEstimateDbTP"]doubleValue],measured[@"frames"]];}
+  dispatch_async(dispatch_get_main_queue(), ^{if(![self.state[@"binding"][@"projectId"]isEqual:project]||![self.state[@"binding"][@"trackId"]isEqual:track])self.offlineSummary=@"照合中に対象が変わりました。再照合してください";else self.offlineSummary=valid?summary:@"全曲比較ファイルの照合失敗。採用しないでください";[self update:nil];});
+ });
 }
 - (void)compare:(id)s{NSOpenPanel* p=[NSOpenPanel openPanel];p.canChooseDirectories=YES;p.canChooseFiles=NO;p.allowsMultipleSelection=NO;if([p runModal]==NSModalResponseOK)[self send:[@{@"operation":@"compare",@"approved":@YES,@"directory":p.URL.path}mutableCopy]];}
 - (void)capture:(id)s{[self send:[@{@"operation":@"capture",@"consent":@YES}mutableCopy]];}
