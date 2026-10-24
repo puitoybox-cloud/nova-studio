@@ -24,6 +24,6 @@ cp Info.plist "$BUNDLE/Contents/Info.plist"
 cp "$SDK/LICENSE.txt" "$BUNDLE/Contents/Resources/AudioUnitSDK-LICENSE.txt"
 plutil -lint "$BUNDLE/Contents/Info.plist"
 file "$BUNDLE/Contents/MacOS/NovaMix"
-lipo -verify_arch x86_64 "$BUNDLE/Contents/MacOS/NovaMix"
+lipo "$BUNDLE/Contents/MacOS/NovaMix" -verify_arch x86_64
 nm -gU "$BUNDLE/Contents/MacOS/NovaMix" | grep _NovaMixFactory
 # No identity, signing secret, notarization or user plug-in installation is used.
