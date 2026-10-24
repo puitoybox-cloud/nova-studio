@@ -111,12 +111,12 @@ public:
  OSStatus SaveState(CFPropertyListRef* data)override{
   if(!data)return kAudio_ParamError;std::lock_guard lock(controlMutex);
   // Full host-owned state; contains no Music Studio files or Logic project edits.
-  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@('aufx'),@"subtype":@('NvMx'),@"manufacturer":@('NvSt'),@"name":@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary()};return noErr;
+  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary()};return noErr;
  }
  OSStatus RestoreState(CFPropertyListRef data)override{
   if(!data||CFGetTypeID(data)!=CFDictionaryGetTypeID())return kAudioUnitErr_InvalidPropertyValue;
   NSDictionary* d=(__bridge NSDictionary*)data;std::array<float,4> v;
-  if(![d[@"novaVersion"] isEqual:@1]||![d[@"type"] isEqual:@('aufx')]||![d[@"subtype"] isEqual:@('NvMx')]||![d[@"manufacturer"] isEqual:@('NvSt')]||!values(d[@"novaValues"],v))return kAudioUnitErr_InvalidPropertyValue;
+  if(![d[@"novaVersion"] isEqual:@1]||![d[@"type"] isEqual:@((UInt32)'aufx')]||![d[@"subtype"] isEqual:@((UInt32)'NvMx')]||![d[@"manufacturer"] isEqual:@((UInt32)'NvSt')]||!values(d[@"novaValues"],v))return kAudioUnitErr_InvalidPropertyValue;
   id b=d[@"novaBinding"];if(![b isKindOfClass:NSDictionary.class])return kAudioUnitErr_InvalidPropertyValue;
   auto p=str(b[@"projectId"]),t=str(b[@"trackId"]);if(p.size()>256||t.size()>256)return kAudioUnitErr_InvalidPropertyValue;
   std::lock_guard lock(controlMutex);targets.store(nova::encode(v));binding.project=p;binding.track=t;

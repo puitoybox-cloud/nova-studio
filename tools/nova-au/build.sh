@@ -11,7 +11,7 @@ SDK=vendor/AudioUnitSDK
 # The Apple SDK is vendored at a fixed revision; builds do not fetch network dependencies.
 xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility=hidden \
  -I "$SDK/include" -bundle -framework AudioToolbox -framework AudioUnit -framework CoreAudio \
- -framework CoreFoundation -framework Cocoa -framework CoreMIDI \
+ -framework CoreFoundation -framework Cocoa -framework CoreMIDI -framework UniformTypeIdentifiers \
  "$SDK"/src/AudioUnitSDK/*.cpp NovaMix.mm View.mm -fobjc-arc \
  -o "$BUNDLE/Contents/MacOS/NovaMix"
 cp Info.plist "$BUNDLE/Contents/Info.plist"

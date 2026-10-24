@@ -1,5 +1,10 @@
 #import <Cocoa/Cocoa.h>
 #import <AudioUnit/AUCocoaUIView.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import <AudioUnit/AudioUnitUtilities.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+static NSString* params(id a){if(![a isKindOfClass:NSArray.class]||[a count]!=4)return @"—";return [NSString stringWithFormat:@"%.2f dB / %.2f dB / %.2f dB / %@",[a[0] floatValue],[a[1] floatValue],[a[2] floatValue],a[3]];}
+static NSString* choices(id a){if(![a isKindOfClass:NSArray.class]||[a count]!=3)return @"—";return [NSString stringWithFormat:@"A: %@\nB: %@\nC: %@",params(a[0]),params(a[1]),params(a[2])];}
 static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 @interface NovaMixView : NSView
 @property AudioUnit unit;
@@ -35,7 +40,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"キャンセル" x:16 y:346 action:@selector(cancel:) tag:0];
   [self button:@"Undoを承認" x:180 y:346 action:@selector(undo:) tag:0];
   [self button:@"値を更新" x:344 y:346 action:@selector(update:) tag:0];
-  self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(16,392,668,232);[self addSubview:self.report];
+  self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(16,392,668,232);self.report.font=[NSFont systemFontOfSize:11];[self addSubview:self.report];
   [self update:nil];__weak NovaMixView* weakSelf=self;
   self.refresh=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*){[weakSelf update:nil];}];
  }return self;
@@ -47,12 +52,13 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  self.state=CFBridgingRelease(d);NSDictionary* b=self.state[@"binding"];
  if(!self.projectField.stringValue.length)self.projectField.stringValue=b[@"projectId"]?:@"";
  if(!self.trackField.stringValue.length)self.trackField.stringValue=b[@"trackId"]?:@"";
- self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部プラグイン操作なし。Mastering完成・音声解析済みの表示なし。",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],self.state[@"current"],self.state[@"before"]?:@"—",self.state[@"choices"]?:@"—",self.state[@"reason"]?:@""];
+ self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部プラグイン操作なし。Mastering完成・音声解析済みの表示なし。",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@""];
 }
 - (void)send:(NSMutableDictionary*)command{
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
- CFDictionaryRef d=(__bridge CFDictionaryRef)command;OSStatus e=AudioUnitSetProperty(self.unit,Command,kAudioUnitScope_Global,0,&d,sizeof(d));
- [self update:nil];if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
+ NSArray* before=self.state[@"current"];CFDictionaryRef d=(__bridge CFDictionaryRef)command;OSStatus e=AudioUnitSetProperty(self.unit,Command,kAudioUnitScope_Global,0,&d,sizeof(d));
+ [self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
+ if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
 }
 - (void)bind:(id)s{[self send:[@{@"operation":@"bind",@"confirmed":@YES}mutableCopy]];}
 - (void)preview:(id)s{[self send:[@{@"operation":@"preview",@"instruction":self.instruction.stringValue}mutableCopy]];}
@@ -61,7 +67,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 - (void)undo:(id)s{[self send:[@{@"operation":@"undo",@"approved":@YES}mutableCopy]];}
 - (void)selectTrack:(id)s{NSDictionary* t=self.manifest[@"tracks"][[self.tracks indexOfSelectedItem]];self.trackField.stringValue=t[@"id"];}
 - (void)importFile:(id)s{
- NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedFileTypes=@[@"json"];panel.allowsMultipleSelection=NO;
+ NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedContentTypes=@[UTTypeJSON];panel.allowsMultipleSelection=NO;
  if([panel runModal]!=NSModalResponseOK)return;
  NSNumber* bytes;[panel.URL getResourceValue:&bytes forKey:NSURLFileSizeKey error:nil];if(bytes.unsignedLongLongValue>16*1024*1024){self.report.stringValue=@"16 MiBを超えるJSONは読み込めません";return;}
  NSData* data=[NSData dataWithContentsOfURL:panel.URL];NSDictionary* m=data?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
