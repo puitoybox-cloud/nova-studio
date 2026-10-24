@@ -402,6 +402,7 @@ def main():
                                      systemCpuSecondsThisRun=usage.ru_stime-before_usage.ru_stime+children.ru_stime-before_children.ru_stime,
                                      peakRssBytes=max(usage.ru_maxrss,children.ru_maxrss)*(1 if platform.system()=='Darwin' else 1024),
                                      memoryScope='maximum individual parent/child process RSS, not aggregate concurrent RSS')
+        manifest.setdefault('initialCompletedRun', dict(wallSeconds=time.monotonic()-started, resources=manifest['resources']))
         manifest.update(status='complete' , complete=True, elapsedSecondsThisRun=time.monotonic()-started,
                         adoptionRequiresExplicitApproval=True, offlineLimiterNotLiveAu=True, independentPeakCeilingVerified=True)
         checkpoint()

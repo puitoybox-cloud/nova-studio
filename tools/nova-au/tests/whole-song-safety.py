@@ -29,6 +29,7 @@ with tempfile.TemporaryDirectory() as tmp:
  subprocess.run(cmd+['--resume'],stdout=subprocess.DEVNULL,check=True)
  complete=json.loads((out/'manifest.json').read_text());assert complete['complete'] and complete['status']=='complete'
  assert complete['resources']['peakRssBytes'] < 128*1024*1024
+ assert complete['initialCompletedRun']['wallSeconds'] > 0
  # A changed source must never resume an earlier project/version.
  with wav.open('r+b') as f:
   f.seek(48);saved=f.read(4);f.seek(48);f.write(b'\x00\x00\x00\x00')
