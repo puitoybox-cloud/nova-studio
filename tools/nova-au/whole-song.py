@@ -9,6 +9,8 @@ import hashlib
 import fcntl
 import resource
 import platform
+import shutil
+import re
 import json
 import math
 import os
@@ -94,6 +96,11 @@ def decode(path, info, destination):
             if not raw:
                 raise ValueError('source truncated during decode')
             remaining -= len(raw)
+            if info['format'] == 3 and channels == 2:
+                # Native streaming meter validates every float before any plan/completion.
+                # Preserve exact stereo float bytes without a redundant Python sample loop.
+                out.write(raw)
+                continue
             if info['format'] == 3 or width in (2, 4):
                 values = array.array('f' if info['format'] == 3 else ('h' if width == 2 else 'i'))
                 values.frombytes(raw)
@@ -151,6 +158,7 @@ def main():
     parser.add_argument('--ceiling-dbtp', type=float, default=-1)
     parser.add_argument('--confirm-source', action='store_true', required=True)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--reference-ffmpeg', type=Path, default=shutil.which('ffmpeg'), help='independent installed FFmpeg reference; required, never downloaded')
     parser.add_argument('--handoff', type=Path, help='read-only #501 Logic handoff JSON')
     parser.add_argument('--stem', action='append', default=[], help='explicit aligned role=path.wav; one per role')
     parser.add_argument('--confirm-stem-alignment', action='store_true')
@@ -159,6 +167,9 @@ def main():
         parser.error('explicit project/track/version required')
     if not math.isfinite(args.target_lufs) or not -36 <= args.target_lufs <= -5 or not math.isfinite(args.ceiling_dbtp) or not -12 <= args.ceiling_dbtp <= -1:
         parser.error('target -36..-5 LUFS, ceiling -12..-1 dBTP required')
+    if not args.reference_ffmpeg or not Path(args.reference_ffmpeg).is_file():
+        parser.error('installed FFmpeg reference required before processing/adoption')
+    args.reference_ffmpeg = Path(args.reference_ffmpeg)
     info = wav_info(args.wav)
     handoff = None
     if args.handoff:
@@ -185,7 +196,7 @@ def main():
         stems.append(dict(role=role,path=str(path.resolve()),sha256=sha(path),input=stem_info))
     identity = dict(projectId=args.project, trackId=args.track, audioVersion=args.version, source=args.source, role=args.role, kind=args.kind,
                     sourceWavSha256=sha(args.wav), engineSha256=sha(args.engine), input=info, instruction=args.instruction,
-                    targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION, pipelineSha256=sha(Path(__file__)), handoff=handoff, stems=stems)
+                    targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION, pipelineSha256=sha(Path(__file__)), handoff=handoff, stems=stems, referenceFfmpegSha256=sha(args.reference_ffmpeg))
     folder = args.output
     if not args.resume:
         folder.mkdir(parents=False, exist_ok=False)
@@ -234,6 +245,30 @@ def main():
             raise ValueError('engine ' + stage + ': ' + stderr.strip())
         result = json.loads(stdout)
         manifest['stages'][stage] = result
+        return result
+    def independent_reference(stage, wav):
+        nonlocal child
+        key = stage + '-ffmpeg'
+        if key in manifest['stages']:
+            return manifest['stages'][key]
+        # Per-frame logs are verbose; default info logs contain only a bounded summary.
+        child = subprocess.Popen([str(args.reference_ffmpeg.resolve()), '-hide_banner','-nostats','-i',str(wav),
+                                  '-af','ebur128=peak=true:framelog=verbose','-f','null','-'],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        _, stderr = child.communicate()
+        code = child.returncode
+        child = None
+        if code:
+            raise ValueError('independent meter failed: ' + stderr[-2000:])
+        summary = stderr.split('Summary:')[-1]
+        lu = re.search(r'I:\s*([-\d.]+) LUFS', summary)
+        tp = re.search(r'Peak:\s*([-\d.]+) dBFS', summary)
+        if not lu or not tp:
+            raise ValueError('independent meter summary unavailable/nonfinite')
+        result = dict(integratedLufs=float(lu[1]),truePeakDbTP=float(tp[1]),
+                      displayResolutionDb=.1,peakUpperRoundingBoundDb=.05,
+                      method='installed FFmpeg ebur128=peak=true; not certification')
+        manifest['stages'][key] = result
         return result
     def measure_wave(stage, wav):
         raw = folder / 'verify.f32.partial'
@@ -315,12 +350,23 @@ def main():
             wave_from_raw(raw, output, rate, 10 ** (correction / 20))
             artifact(output)
             verified = measure_wave(label + '-wav-verified', output)
+            independent = independent_reference(label + '-wav-verified', output)
+            if k and independent['truePeakDbTP'] + .05 > args.ceiling_dbtp:
+                correction += args.ceiling_dbtp - .15 - independent['truePeakDbTP']
+                wave_from_raw(raw, output, rate, 10 ** (correction / 20))
+                artifact(output)
+                verified = measure_wave(label + '-reference-corrected', output)
+                independent = independent_reference(label + '-reference-corrected', output)
+            if abs(verified['integratedLufs'] - independent['integratedLufs']) >= .15:
+                raise ValueError('independent LUFS reference discrepancy')
+            if k and independent['truePeakDbTP'] + .05 > args.ceiling_dbtp:
+                raise ValueError('independent True Peak ceiling verification failed')
             if verified['frames'] != info['frames'] or verified['sampleRate'] != rate:
                 raise ValueError('WAV identity/length mismatch')
             if k and (verified['truePeakEstimateDbTP'] > args.ceiling_dbtp + .001 or verified['clippedSamples']):
                 raise ValueError('post-WAV ceiling/clip verification failed')
             rows.append(dict(label=label, values=values, processing=processing, finalGainDb=final_gain,
-                             postTruePeakAttenuationDb=correction, minimumLimiterGain=limiter_gain, measurement=verified,
+                             postTruePeakAttenuationDb=correction, minimumLimiterGain=limiter_gain, measurement=verified, independentReference=independent,
                              requestedLufs=(args.target_lufs - (3-k)) if k and args.kind == 'stereo-out' else None,
                              targetDifferenceLu=(verified['integratedLufs']-(args.target_lufs-(3-k))) if k and args.kind == 'stereo-out' else None,
                              reason='full-song bands/crest -> existing measured proposal; A conservative/B balanced/C stronger. Loudness shortfall can reflect gain bounds, dynamics and peak ceiling; no quality score.'))
@@ -351,7 +397,7 @@ def main():
                                      peakRssBytes=max(usage.ru_maxrss,children.ru_maxrss)*(1 if platform.system()=='Darwin' else 1024),
                                      memoryScope='maximum individual parent/child process RSS, not aggregate concurrent RSS')
         manifest.update(status='complete' , complete=True, elapsedSecondsThisRun=time.monotonic()-started,
-                        adoptionRequiresExplicitApproval=True, offlineLimiterNotLiveAu=True)
+                        adoptionRequiresExplicitApproval=True, offlineLimiterNotLiveAu=True, independentPeakCeilingVerified=True)
         checkpoint()
         print(json.dumps(manifest, ensure_ascii=False, indent=2))
     except BaseException as error:

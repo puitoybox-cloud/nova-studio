@@ -52,8 +52,28 @@ for rate in (44100,48000,96000):
         assert w.sha(out/'adopted.wav')==w.sha(out/'B.wav')
         subprocess.run(adopt+['--choice','undo'],check=True,stdout=subprocess.DEVNULL)
         assert json.loads((out/'manifest.json').read_text())['adopted'] is None
-        report[-1]['production']=dict(elapsed=result['elapsedSecondsThisRun'],renders=result['renders'],artifactBytes=sum((out/n).stat().st_size for n in result['artifacts']))
+        report[-1]['production']=dict(elapsed=result['elapsedSecondsThisRun'],resources=result.get('resources'),renders=result['renders'],artifactBytes=sum((out/n).stat().st_size for n in result['artifacts']))
     # Keep all comparison WAVs, discard only reproducible temporary fixture raw.
     raw.unlink()
     (a.output/'whole-song-results.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))
+# Abrupt intersample fixtures expose the short FIR's reference differences.
+# Production adoption must additionally satisfy the independent peak ceiling;
+# this does not loosen the mixed/gated matrix's existing 0.5-dB reference check.
+peak_guard=[]
+for rate in (44100,48000,96000):
+    raw=a.output/f'intersample-{rate}.f32'
+    values=array.array('f')
+    for i in range(rate*2):
+        x=.8*math.sin(2*math.pi*.25*i+math.pi/4) if i%(rate//2)<rate//20 else 0;values.extend([x,x])
+    raw.write_bytes(values.tobytes());wav=raw.with_suffix('.wav');w.wave_from_raw(raw,wav,rate)
+    out=a.output/f'peak-guard-{rate}'
+    cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','peak-fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--target-lufs','-5','--confirm-source']
+    subprocess.run(cmd,stdout=subprocess.DEVNULL,check=True)
+    result=json.loads((out/'manifest.json').read_text());assert result['independentPeakCeilingVerified']
+    for row in result['renders'][1:]:
+        assert row['independentReference']['truePeakDbTP']+.05<=-1
+        assert row['measurement']['clippedSamples']==0
+    peak_guard.append(dict(rate=rate,before=result['renders'][0],renders=result['renders'][1:],resources=result['initialCompletedRun']))
+    raw.unlink()
+(a.output/'peak-guard-results.json').write_text(json.dumps(peak_guard,indent=2))

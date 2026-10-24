@@ -23,7 +23,7 @@ lock = (a.folder / '.processing.lock').open('a')
 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
 m = json.loads((a.folder / 'manifest.json').read_text())
 i = m['identity']
-if not m.get('complete') or m['status'] != 'complete' or (i['projectId'], i['trackId'], i['audioVersion'], i['sourceWavSha256']) != (a.project, a.track, a.version, whole.sha(a.source_wav)):
+if not m.get('independentPeakCeilingVerified') or not m.get('complete') or m['status'] != 'complete' or (i['projectId'], i['trackId'], i['audioVersion'], i['sourceWavSha256']) != (a.project, a.track, a.version, whole.sha(a.source_wav)):
     p.error('incomplete or mismatched project/track/version/source')
 for name, digest in m['artifacts'].items():
     if whole.sha(a.folder / name) != digest:
