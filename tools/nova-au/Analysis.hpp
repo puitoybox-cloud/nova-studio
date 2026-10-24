@@ -10,9 +10,11 @@ namespace nova {
 struct Capture {
  static constexpr unsigned capacity=384000;
  std::vector<float> samples=std::vector<float>(capacity*4);
- std::atomic<unsigned> state{0}; // 0 idle, 1 armed, 2 writing (across blocks), 3 ready
+ std::atomic<unsigned> progress{0};
+ std::atomic<unsigned> state{0}; // 0 idle, 1 armed, 2 writing, 3 ready, 4 incomplete/reset
  unsigned frames=0,limit=0; double rate=0; uint64_t settings=0; bool changed=false;
- bool arm(){unsigned s=state.load(std::memory_order_acquire);if(s==1||s==2)return false;frames=0;changed=false;state.store(1,std::memory_order_release);return true;}
+ void invalidate() noexcept {auto s=state.load();if(s==1||s==2)state.store(4,std::memory_order_release);}
+ bool arm(){unsigned s=state.load(std::memory_order_acquire);if(s==1||s==2)return false;frames=0;progress.store(0);changed=false;state.store(1,std::memory_order_release);return true;}
  // Called before DSP so in-place hosts retain the actual unprocessed input.
  unsigned input(const float* l,const float* r,unsigned n,double sr,uint64_t p) noexcept {
   auto s=state.load(std::memory_order_acquire);if(s!=1&&s!=2)return 0;
@@ -21,7 +23,7 @@ struct Capture {
   unsigned k=std::min(n,limit-frames);for(unsigned i=0;i<k;++i){samples[(frames+i)*4]=l[i];samples[(frames+i)*4+1]=r[i];}return k;
  }
  void output(const float* l,const float* r,unsigned n) noexcept {
-  if(!n)return;for(unsigned i=0;i<n;++i){samples[(frames+i)*4+2]=l[i];samples[(frames+i)*4+3]=r[i];}frames+=n;
+  if(!n)return;for(unsigned i=0;i<n;++i){samples[(frames+i)*4+2]=l[i];samples[(frames+i)*4+3]=r[i];}frames+=n;progress.store(frames,std::memory_order_relaxed);
   if(frames==limit)state.store(3,std::memory_order_release);
  }
 };

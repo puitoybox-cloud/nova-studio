@@ -26,11 +26,11 @@ class NovaMix final:public ausdk::AUEffectBase {
  bool collected=false;
  NSString* audioId=@"";
  NSMutableArray* evidence=[NSMutableArray array];
- static NSDictionary* measured(const nova::Measurement& m){return @{@"valid":@(m.valid),@"status":ns(m.status),@"sampleRate":@(m.rate),@"frames":@(m.frames),@"samplePeak":@(m.peak),@"samplePeakDbFS":@(nova::db(m.peak)),@"rms":@(m.rms),@"rmsDbFS":@(nova::db(m.rms)),@"bandPowerFractions":@[@(m.bands[0]),@(m.bands[1]),@(m.bands[2])],@"clippedSamples":@(m.clipped),@"invalidSamples":@(m.invalid),@"lufsMeasured":@NO,@"truePeakMeasured":@NO};}
+ static NSDictionary* measured(const nova::Measurement& m){return @{@"valid":@(m.valid),@"status":ns(m.status),@"sampleRate":@(m.rate),@"frames":@(m.frames),@"samplePeak":@(m.peak),@"samplePeakDbFS":@(nova::db(m.peak)),@"rms":@(m.rms),@"rmsDbFS":@(nova::db(m.rms)),@"bandPowerFractions":@[@(m.bands[0]),@(m.bands[1]),@(m.bands[2])],@"crestFactorDb":@(nova::db(m.peak/std::max(m.rms,1e-20))),@"clippedSamples":@(m.clipped),@"invalidSamples":@(m.invalid),@"lufsMeasured":@NO,@"truePeakMeasured":@NO};}
  void collect(){
   if(collected||capture.state.load(std::memory_order_acquire)!=3)return;
   collected=true;inputAnalysis=nova::measure(capture.samples.data(),capture.frames,capture.rate,4,0);outputAnalysis=nova::measure(capture.samples.data(),capture.frames,capture.rate,4,2);analysisSettings=capture.settings;
-  audioId=[NSString stringWithFormat:@"capture-%@-%016llx",ns(binding.instance),(unsigned long long)inputAnalysis.hash];
+  if(!audioId.length)audioId=[@"capture-" stringByAppendingString:NSUUID.UUID.UUIDString];
   if(capture.changed||!(captureBinding==binding)){inputAnalysis.valid=false;inputAnalysis.status="changed-settings-or-target";}
   [evidence addObject:@{@"operation":@"measurement",@"audioId":audioId,@"binding":bindingDictionary(),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis)}];if(evidence.count>32)[evidence removeObjectAtIndex:0];
   status=ns(inputAnalysis.status);
@@ -43,10 +43,10 @@ class NovaMix final:public ausdk::AUEffectBase {
  std::optional<nova::Proposal> pending;
  std::vector<std::pair<std::array<float,4>,std::array<float,4>>> history;
  NSString* status=@"音声未解析";
- NSDictionary* bindingDictionary()const{return @{ @"projectId":ns(binding.project),@"trackId":ns(binding.track),@"instanceId":ns(binding.instance),@"confirmed":@(binding.confirmed)};}
+ NSDictionary* bindingDictionary()const{return @{ @"projectId":ns(binding.project),@"trackId":ns(binding.track),@"instanceId":ns(binding.instance),@"confirmed":@(binding.confirmed),@"role":ns(binding.role),@"targetKind":ns(binding.kind),@"inputSource":ns(binding.source)};}
  NSDictionary* snapshot(){
   collect();
-  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingDictionary(),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
+  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingDictionary(),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
   if(pending){s[@"proposalAudioAnalyzed"]=@(pending->audioAnalyzed);s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
  }
  OSStatus command(NSDictionary* c){
@@ -54,7 +54,10 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(op=="bind"){
    const auto p=str(c[@"projectId"]),t=str(c[@"trackId"]);
    if(![c[@"confirmed"] isEqual:@YES]||p.empty()||t.empty()||p.size()>256||t.size()>256)return kAudioUnitErr_InvalidPropertyValue;
-   if(p!=binding.project||t!=binding.track)history.clear();inputAnalysis={};outputAnalysis={};audioId=@"";binding.project=p;binding.track=t;binding.confirmed=true;pending.reset();status=@"対象確認済み・音声未解析";return noErr;
+   auto role=str(c[@"role"]),kind=str(c[@"targetKind"]),source=str(c[@"inputSource"]);
+   if(kind.empty())kind="track";if(role.empty())role="unspecified";if(source.empty())source="user-confirmed AU input";
+   if(role.size()>256||source.size()>512||(kind!="track"&&kind!="bus"&&kind!="stereo-out"))return kAudioUnitErr_InvalidPropertyValue;
+   if(p!=binding.project||t!=binding.track||kind!=binding.kind||source!=binding.source)history.clear();binding.role=role;binding.kind=kind;binding.source=source;inputAnalysis={};outputAnalysis={};audioId=@"";binding.project=p;binding.track=t;binding.confirmed=true;collected=true;pending.reset();status=@"対象確認済み・音声未解析";return noErr;
   }
   if(str(c[@"instanceId"])!=binding.instance||str(c[@"projectId"])!=binding.project||str(c[@"trackId"])!=binding.track||!binding.confirmed)return kAudioUnitErr_InvalidPropertyValue;
   collect();
@@ -62,7 +65,7 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(op=="capture"){
    if(![c[@"consent"] isEqual:@YES])return kAudioUnitErr_InvalidPropertyValue;
    if(!capture.arm())return kAudioUnitErr_CannotDoInCurrentContext;
-   captureBinding=binding;collected=false;inputAnalysis={};outputAnalysis={};pending.reset();audioId=@"";status=@"入力・出力の2秒をローカルRAMに取得中。外部送信なし";return noErr;
+   captureBinding=binding;collected=false;inputAnalysis={};outputAnalysis={};pending.reset();audioId=[@"capture-" stringByAppendingString:NSUUID.UUID.UUIDString];status=@"入力・出力の2秒をローカルRAMに取得中。外部送信なし";return noErr;
   }
 
   if(op=="preview"){
@@ -74,7 +77,7 @@ class NovaMix final:public ausdk::AUEffectBase {
    auto request=str(intent[@"instruction"]);
    if([intent[@"operation"] isEqual:@"undo"])request="前の設定に戻して";
    if(request=="前の設定に戻して"){status=@"Undoボタンで明示的に承認してください";pending.reset();return noErr;}
-   try{if(inputAnalysis.valid){if(analysisSettings!=targets.load())throw std::runtime_error("設定変更後は音声を再解析してください");pending=nova::proposeMeasured(binding,now,request,inputAnalysis);}else {if(capture.state.load()!=0)throw std::runtime_error("音声の取得・解析を完了し、有効な入力を再取得してください");pending=nova::propose(binding,now,request);}status=ns(pending->reason);return noErr;}catch(const std::exception& e){status=ns(e.what());return kAudioUnitErr_InvalidPropertyValue;}
+   try{if(inputAnalysis.valid){if(analysisSettings!=targets.load())throw std::runtime_error("設定変更後は音声を再解析してください");pending=nova::proposeMeasured(binding,now,request,inputAnalysis);}else {if(capture.state.load()!=0)throw std::runtime_error("音声の取得・解析を完了し、有効な入力を再取得してください");pending=nova::propose(binding,now,request);}[evidence addObject:@{@"operation":@"proposal",@"instruction":ns(request),@"audioId":audioId,@"binding":bindingDictionary(),@"audioAnalyzed":@(pending->audioAnalyzed),@"input":measured(inputAnalysis),@"choices":@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])]}];if(evidence.count>32)[evidence removeObjectAtIndex:0];status=ns(pending->reason);return noErr;}catch(const std::exception& e){status=ns(e.what());return kAudioUnitErr_InvalidPropertyValue;}
   }
   if(op=="compare"){
    if(!pending||!pending->audioAnalyzed||pending->before!=now||!(pending->binding==binding)||!inputAnalysis.valid||![c[@"approved"] isEqual:@YES])return kAudioUnitErr_InvalidPropertyValue;
@@ -120,8 +123,8 @@ public:
  bool ValidFormat(AudioUnitScope s,AudioUnitElement e,const AudioStreamBasicDescription& f)override{
   return e==0&&(s==kAudioUnitScope_Input||s==kAudioUnitScope_Output)&&f.mChannelsPerFrame==2&&f.mSampleRate>=22050&&f.mSampleRate<=192000&&AUEffectBase::ValidFormat(s,e,f);
  }
- OSStatus Initialize()override{auto err=AUEffectBase::Initialize();if(!err)dsp.reset(GetSampleRate(),nova::decode(targets.load()));return err;}
- OSStatus Reset(AudioUnitScope s,AudioUnitElement e)override{dsp.reset(GetSampleRate(),nova::decode(targets.load()));return AUEffectBase::Reset(s,e);}
+ OSStatus Initialize()override{capture.invalidate();auto err=AUEffectBase::Initialize();if(!err)dsp.reset(GetSampleRate(),nova::decode(targets.load()));return err;}
+ OSStatus Reset(AudioUnitScope s,AudioUnitElement e)override{capture.invalidate();dsp.reset(GetSampleRate(),nova::decode(targets.load()));return AUEffectBase::Reset(s,e);}
  OSStatus GetParameterInfo(AudioUnitScope s,AudioUnitParameterID i,AudioUnitParameterInfo& p)override{
   if(s!=kAudioUnitScope_Global||i>=4)return kAudioUnitErr_InvalidParameter;
   p={};const char* names[]={"Gain","Low band (180 Hz)","High band (4 kHz)","Bypass"};strlcpy(p.name,names[i],sizeof(p.name));
@@ -179,7 +182,7 @@ public:
   AUPreset preset{};OSStatus presetStatus=DispatchGetProperty(kAudioUnitProperty_PresentPreset,kAudioUnitScope_Global,0,&preset);if(presetStatus)return presetStatus;
   NSString* presetName=CFBridgingRelease(preset.presetName);
   NSMutableArray* undo=[NSMutableArray array];for(const auto& h:history)[undo addObject:@[array(h.first),array(h.second)]];
-  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary(),@"novaEvidence":evidence,@"novaUndo":undo};return noErr;
+  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary(),@"novaEvidence":evidence,@"novaUndo":undo,@"novaMeasuredGuard":@(measuredGuard.load())};return noErr;
  }
  OSStatus RestoreState(CFPropertyListRef data)override{
   if(!data||CFGetTypeID(data)!=CFDictionaryGetTypeID())return kAudioUnitErr_InvalidPropertyValue;
@@ -187,14 +190,18 @@ public:
   if(![d[@"novaVersion"] isEqual:@1]||![d[@"type"] isEqual:@((UInt32)'aufx')]||![d[@"subtype"] isEqual:@((UInt32)'NvMx')]||![d[@"manufacturer"] isEqual:@((UInt32)'NvSt')]||!values(d[@"novaValues"],v))return kAudioUnitErr_InvalidPropertyValue;
   id b=d[@"novaBinding"];if(![b isKindOfClass:NSDictionary.class])return kAudioUnitErr_InvalidPropertyValue;
   auto p=str(b[@"projectId"]),t=str(b[@"trackId"]);if(p.size()>256||t.size()>256)return kAudioUnitErr_InvalidPropertyValue;
+  auto role=str(b[@"role"]),kind=str(b[@"targetKind"]),source=str(b[@"inputSource"]);if(role.empty())role="unspecified";if(kind.empty())kind="track";if(source.empty())source="user-confirmed AU input";
+  if(role.size()>256||source.size()>512||(kind!="track"&&kind!="bus"&&kind!="stereo-out"))return kAudioUnitErr_InvalidPropertyValue;
   id presetName=d[@"name"];if(presetName&&(![presetName isKindOfClass:NSString.class]||[presetName length]>1024))return kAudioUnitErr_InvalidPropertyValue;
   std::vector<std::pair<std::array<float,4>,std::array<float,4>>> restoredUndo;
   id u=d[@"novaUndo"];if(u){if(![u isKindOfClass:NSArray.class]||[u count]>32)return kAudioUnitErr_InvalidPropertyValue;for(id row in u){std::array<float,4> a,b;if(![row isKindOfClass:NSArray.class]||[row count]!=2||!values(row[0],a)||!values(row[1],b))return kAudioUnitErr_InvalidPropertyValue;restoredUndo.push_back({a,b});}}
+  id restored=d[@"novaEvidence"];if(restored){if(![restored isKindOfClass:NSArray.class]||[restored count]>32||![NSJSONSerialization isValidJSONObject:restored])return kAudioUnitErr_InvalidPropertyValue;NSData* bytes=[NSJSONSerialization dataWithJSONObject:restored options:0 error:nil];if(!bytes||bytes.length>262144)return kAudioUnitErr_InvalidPropertyValue;}
   std::lock_guard lock(controlMutex);
   if(presetName){AUPreset preset{-1,(__bridge CFStringRef)presetName};OSStatus err=AUEffectBase::NewCustomPresetSet(preset);if(err)return err;}
-  id restored=d[@"novaEvidence"];if(restored){if(![restored isKindOfClass:NSArray.class]||[restored count]>32)return kAudioUnitErr_InvalidPropertyValue;NSData* bytes=[NSJSONSerialization dataWithJSONObject:restored options:0 error:nil];if(!bytes||bytes.length>262144)return kAudioUnitErr_InvalidPropertyValue;evidence=[restored mutableCopy];}else evidence=[NSMutableArray array];
+  evidence=restored?[restored mutableCopy]:[NSMutableArray array];
+  capture.invalidate();measuredGuard.store([d[@"novaMeasuredGuard"]isEqual:@YES]);safetyStop.store(false);
   inputAnalysis={};outputAnalysis={};audioId=@"";
-  targets.store(nova::encode(v));binding.project=p;binding.track=t;
+  targets.store(nova::encode(v));binding.project=p;binding.track=t;binding.role=role;binding.kind=kind;binding.source=source;
   // A duplicated Logic insert must explicitly re-confirm its Track; keep a fresh runtime instance UUID.
   binding.confirmed=false;pending.reset();history=std::move(restoredUndo);status=@"設定復元済み。曲・Trackの対応を再確認してください";return noErr;
  }

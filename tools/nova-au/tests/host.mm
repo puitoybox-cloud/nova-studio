@@ -72,6 +72,10 @@ int main(int argc,char** argv){@autoreleasepool{
  d=cmd(a,@"apply");d[@"approved"]=@YES;d[@"choice"]=@1;ok(command(a,d),"measured B applies to real AU");check([snapshot(a)[@"current"]isEqual:settings[1]],"measured actual AU values");
  d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"post-apply capture");source.frame=0;auto measuredB=render(a,96000,256);NSDictionary* after=snapshot(a);check([after[@"audioAnalyzed"]boolValue],"post-apply remeasurement");check([after[@"analysis"][@"output"][@"rms"]doubleValue]<[after[@"analysis"][@"input"][@"rms"]doubleValue],"actual output reduced");
  wav((std::string(argv[2])+"-measured-B.wav").c_str(),measuredB);
+
+ CFPropertyListRef measuredSaved=nullptr;UInt32 measuredSize=sizeof(measuredSaved);ok(AudioUnitGetProperty(a,kAudioUnitProperty_ClassInfo,0,0,&measuredSaved,&measuredSize),"measured state save");ok(AudioUnitSetProperty(b,kAudioUnitProperty_ClassInfo,0,0,&measuredSaved,sizeof(measuredSaved)),"measured history restore");CFRelease(measuredSaved);check([snapshot(b)[@"history"]count]>0&&[snapshot(b)[@"undoCount"]unsignedIntValue]>0,"bounded measurements and undo persisted");
+ ok(command(b,@{@"operation":@"bind",@"projectId":@"song-1",@"trackId":@"piano-1",@"confirmed":@YES}),"restored target reconfirmation");auto restoredUndo=cmd(b,@"undo");restoredUndo[@"approved"]=@YES;ok(command(b,restoredUndo),"restored undo after reconfirmation");check([snapshot(b)[@"current"][2]floatValue]==0,"restored undo actual parameter");
+ source.amplitude=3;auto stopped=render(a,4096,256);check([snapshot(a)[@"safetyStopped"]boolValue],"measured safety level stop");for(float v:stopped)check(v==0,"safety stop mutes output");source.amplitude=.2;
  d=cmd(a,@"undo");d[@"approved"]=@YES;ok(command(a,d),"measured undo");check([snapshot(a)[@"current"][2]floatValue]==0,"measured undo value");
  // A/B/C rendered through the actual AU factory with identical source start/reset.
  NSMutableArray* actualRows=[NSMutableArray array];std::vector<std::vector<float>> actualAudio;

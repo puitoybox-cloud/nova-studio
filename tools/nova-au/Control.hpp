@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 namespace nova {
-struct Binding { std::string project,track,instance; bool confirmed=false; bool operator==(const Binding&)const=default; };
+struct Binding { std::string project,track,instance; bool confirmed=false; std::string role="unspecified",kind="track",source="user-confirmed AU input"; bool operator==(const Binding&)const=default; };
 struct Proposal { Binding binding; std::array<float,4> before; std::array<std::array<float,4>,3> choices; std::string reason; bool audioAnalyzed=false; uint64_t audioHash=0; };
 inline Proposal propose(const Binding& b,const std::array<float,4>& values,const std::string& request){
  if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty())throw std::runtime_error("対象の明示的確認が必要です");
@@ -36,7 +36,8 @@ inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,co
   double safety=m.peak>.85?db(.85/m.peak):0;
   x[0]=std::clamp(float(v[0]+safety),-24.f,6.f);
   if(vocal)x[0]=std::clamp(float(v[0]+safety+std::min({headroom,3.,std::max(0.,-20-db(m.rms))})*strength),-24.f,6.f);
-  if(warm||soft||natural)x[2]=std::clamp(float(v[2]-strength*std::min(.2+m.bands[2]*8.,4.)),-6.f,6.f);
+  double roleWeight=natural?(b.role=="bass"?.5:b.role=="vocal"?.7:1.):1.;
+  if(warm||soft||natural)x[2]=std::clamp(float(v[2]-strength*roleWeight*std::min(.2+m.bands[2]*8.,4.)),-6.f,6.f);
   if(bass||natural)x[1]=std::clamp(float(v[1]-strength*std::min(.2+m.bands[0]*8.,4.)),-6.f,6.f);
   if(warm)x[1]=std::clamp(float(v[1]+strength*std::max(0.,(.35-m.bands[0])*3.)),-6.f,6.f);
   // Conservative bound for this parallel EQ: do not spend more than measured input headroom.
