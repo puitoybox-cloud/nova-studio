@@ -81,7 +81,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 - (void)wholeSong:(id)sender{
  NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedContentTypes=@[UTTypeJSON];panel.allowsMultipleSelection=NO;if([panel runModal]!=NSModalResponseOK)return;
  NSNumber* size;[panel.URL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024){self.offlineSummary=@"全曲manifestは4 MiB以下が必要です";return;}
- NSDictionary* m=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:panel.URL] options:0 error:nil];
+ NSData* manifestData=[NSData dataWithContentsOfURL:panel.URL options:NSDataReadingMappedIfSafe error:nil];if(!manifestData||manifestData.length>4*1024*1024){self.offlineSummary=@"全曲manifestを読み込めません";return;}
+ NSDictionary* m=[NSJSONSerialization JSONObjectWithData:manifestData options:0 error:nil];
  if(![m isKindOfClass:NSDictionary.class]||![m[@"format"]isEqual:@"nova-whole-song-v1"]||![m[@"complete"]isEqual:@YES]||![m[@"status"]isEqual:@"complete"]||![m[@"identity"]isKindOfClass:NSDictionary.class]||![m[@"artifacts"]isKindOfClass:NSDictionary.class]||![m[@"renders"]isKindOfClass:NSArray.class]||[m[@"renders"]count]!=4||[m[@"artifacts"]count]>64){self.offlineSummary=@"全曲完了manifestではありません";return;}
  for(NSString* required in @[@"original.wav",@"A.wav",@"B.wav",@"C.wav",@"source.f32"]){if(![m[@"artifacts"][required]isKindOfClass:NSString.class]){self.offlineSummary=@"全曲成果物の一覧が不完全です";return;}}
  unsigned expectedLabel=0;for(id row in m[@"renders"]){if(![row isKindOfClass:NSDictionary.class]||![row[@"label"]isEqual:@[@"original",@"A",@"B",@"C"][expectedLabel++]]||![row[@"measurement"]isKindOfClass:NSDictionary.class]){self.offlineSummary=@"全曲計測の形式が不正です";return;}for(NSString* key in @[@"integratedLufs",@"truePeakEstimateDbTP",@"frames"]){if(![row[@"measurement"][key]isKindOfClass:NSNumber.class]){self.offlineSummary=@"全曲計測の数値が不正です";return;}}}
