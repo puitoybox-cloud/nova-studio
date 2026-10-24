@@ -1,0 +1,60 @@
+name: NOVA AU actual Intel binary
+on:
+  pull_request:
+    paths:
+      - 'tools/nova-au/**'
+      - '.github/workflows/nova-au.yml'
+defaults:
+  run:
+    shell: bash
+permissions:
+  contents: read
+jobs:
+  intel-au:
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+      - name: Build real x86_64 AU component without signing identity
+        run: tools/nova-au/build.sh "$RUNNER_TEMP/nova-au"
+      - name: Portable DSP measurement and smoothing
+        run: |
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"
+          "$RUNNER_TEMP/nova-dsp"
+      - name: Load binary as AudioComponent and render actual audio
+        run: |
+          xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc tools/nova-au/tests/host.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/nova-au-host"
+          "$RUNNER_TEMP/nova-au-host" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/NovaMix" "$RUNNER_TEMP/nova-au/actual" | tee "$RUNNER_TEMP/nova-au/host-measurements.txt"
+          shasum -a 256 "$RUNNER_TEMP/nova-au/actual-approved.wav" > "$RUNNER_TEMP/nova-au/wav-sha256.txt"
+      - name: AU validation on disposable CI machine only
+        run: |
+          mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
+          cp -R "$RUNNER_TEMP/nova-au/NovaMix.component" "$HOME/Library/Audio/Plug-Ins/Components/"
+          /usr/bin/auval -v aufx NvMx NvSt | tee "$RUNNER_TEMP/nova-au/auval.txt"
+      - name: Existing Swift wrapper regression tests
+        run: swift test --package-path tools/music-native-wrapper
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full Node, syntax and whitespace
+        run: |
+          node --test > "$RUNNER_TEMP/nova-au/node-tests.txt"
+          git ls-files '*.js' | xargs -n1 node --check
+          git diff --check HEAD^ HEAD
+      - name: Existing handoff browser regression, four viewports
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-browser/node_modules
+          CHROME_EXECUTABLE: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          node scripts/music-logic-instruments-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nova-au-intel-development
+          path: |
+            ${{ runner.temp }}/nova-au
+            verification/music-logic-instruments-*
