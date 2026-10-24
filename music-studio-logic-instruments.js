@@ -86,7 +86,7 @@
   const add=(name,data,type)=>files.push({name,blob:new Blob([data],{type})});
   const source=copy(p.midiData);
   // GM Program Change is not a Logic Patch selector: keep it in the snapshot, omit it from audition MIDI.
-  const exportSource={...source,tracks:source.tracks.map(t=>({...t,program:null}))};
+  const exportSource={...source,ppq:source.ppq??480,tempo:source.tempo??p.musicalSettings?.bpm,timeSignature:source.timeSignature??p.musicalSettings?.timeSignature,tracks:source.tracks.map(t=>({...t,program:null}))};
   const full=midi.createMidiFile(exportSource);add('approved-song.mid',full.bytes,'audio/midi');
   for(const [index,t] of source.tracks.entries()){
    const a=w.assignments[t.id],token=`track-${String(index+1).padStart(3,'0')}`,name=token+'.mid';

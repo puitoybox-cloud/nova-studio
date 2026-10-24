@@ -45,3 +45,7 @@ test('batch Undo restores all approved Tracks and rejects a manual conflict atom
  const batch=n.batchPreview(p,{machineId:'mac',instruction:'曲に合う音源を全部選んで'}),next=n.batchApply(p,batch,{approved:true});assert.equal(Object.keys(next.logicInstruments.assignments).length,2);assert.deepEqual(n.undo(next,{approved:true}).logicInstruments.assignments,{});
  next.midiData.tracks[0].notes[0].velocity++;const before=JSON.stringify(next);assert.throws(()=>n.undo(next,{approved:true}),/manual-edit/);assert.equal(JSON.stringify(next),before);
 });
+test('handoff uses saved project meter when legacy MIDI has no explicit meter',async()=>{
+ const p=n.register(song(),entry());p.midiData.ppq=480;p.midiData.tempo=72;p.midiData.tracks[0].channel=1;p.musicalSettings.timeSignature={numerator:3,denominator:4};
+ const before=JSON.stringify(p),bundle=n.packageFiles(p,'mac'),check=MusicStudioMidi.inspectMidiBytes(await bundle.files[0].blob.arrayBuffer());assert.equal(check.tracks[0].timeSignature,'3/4');assert.equal(JSON.stringify(p),before);assert.equal(bundle.manifest.midiSnapshot.timeSignature,undefined);
+});
