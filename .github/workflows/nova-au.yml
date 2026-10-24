@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/nova-au/**'
+      - 'music-studio-logic-instruments.js'
       - '.github/workflows/nova-au.yml'
 defaults:
   run:

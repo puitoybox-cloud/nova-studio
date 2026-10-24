@@ -1,4 +1,6 @@
 #import <Cocoa/Cocoa.h>
+#import <JavaScriptCore/JavaScriptCore.h>
+#include "AssistantSource.hpp"
 #import <AudioUnit/AUCocoaUIView.h>
 #include <AudioUnitSDK/AUEffectBase.h>
 #include "Control.hpp"
@@ -16,6 +18,8 @@ static bool values(id a,std::array<float,4>& v){
 class NovaMix final:public ausdk::AUEffectBase {
  std::atomic<uint64_t> targets{nova::encode({0,0,0,0})};
  nova::DSP dsp;
+ std::atomic<float> outputPeak{0},outputRms{0};
+ static_assert(std::atomic<float>::is_always_lock_free);
  std::mutex controlMutex; // UI/state only; render never acquires it.
  nova::Binding binding;
  std::optional<nova::Proposal> pending;
@@ -23,7 +27,7 @@ class NovaMix final:public ausdk::AUEffectBase {
  NSString* status=@"音声未解析";
  NSDictionary* bindingDictionary()const{return @{ @"projectId":ns(binding.project),@"trackId":ns(binding.track),@"instanceId":ns(binding.instance),@"confirmed":@(binding.confirmed)};}
  NSDictionary* snapshot(){
-  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@NO,@"status":status,@"undoCount":@(history.size())} mutableCopy];
+  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@NO,@"status":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
   if(pending){s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
  }
  OSStatus command(NSDictionary* c){
@@ -36,7 +40,12 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(str(c[@"instanceId"])!=binding.instance||str(c[@"projectId"])!=binding.project||str(c[@"trackId"])!=binding.track||!binding.confirmed)return kAudioUnitErr_InvalidPropertyValue;
   auto now=nova::decode(targets.load());
   if(op=="preview"){
-   auto request=str(c[@"instruction"]);
+   JSContext* js=[[JSContext alloc]init];[js evaluateScript:[NSString stringWithUTF8String:NovaAssistantSource]];
+   JSValue* routed=[js[@"NovaLogicInstruments"] invokeMethod:@"parseAudioCommand" withArguments:@[c[@"instruction"]?:@""]];
+   if(js.exception){status=@"未対応の指示です";return kAudioUnitErr_InvalidPropertyValue;}
+   NSDictionary* intent=[routed toDictionary];
+   auto request=str(intent[@"instruction"]);
+   if([intent[@"operation"] isEqual:@"undo"])request="前の設定に戻して";
    if(request=="前の設定に戻して"){status=@"Undoボタンで明示的に承認してください";pending.reset();return noErr;}
    try{pending=nova::propose(binding,now,request);status=ns(pending->reason);return noErr;}catch(const std::exception& e){status=ns(e.what());return kAudioUnitErr_InvalidPropertyValue;}
   }
@@ -83,6 +92,8 @@ public:
   if(in.mNumberBuffers!=2||out.mNumberBuffers!=2)return kAudioUnitErr_FormatNotSupported;
   for(unsigned c=0;c<2;++c)if(!in.mBuffers[c].mData||!out.mBuffers[c].mData||in.mBuffers[c].mDataByteSize<n*sizeof(float)||out.mBuffers[c].mDataByteSize<n*sizeof(float))return kAudio_ParamError;
   dsp.process((float*)in.mBuffers[0].mData,(float*)in.mBuffers[1].mData,(float*)out.mBuffers[0].mData,(float*)out.mBuffers[1].mData,n,nova::decode(targets.load()));
+  double sum=0;float peak=0;for(unsigned c=0;c<2;++c){const float* x=(const float*)out.mBuffers[c].mData;for(UInt32 f=0;f<n;++f){peak=std::max(peak,std::abs(x[f]));sum+=double(x[f])*x[f];}}
+  outputPeak.store(peak);outputRms.store(n?float(std::sqrt(sum/(2*n))):0);
   flags&=~kAudioUnitRenderAction_OutputIsSilence;return noErr;
  }
  OSStatus GetPropertyInfo(AudioUnitPropertyID i,AudioUnitScope s,AudioUnitElement e,UInt32& size,bool& writable)override{

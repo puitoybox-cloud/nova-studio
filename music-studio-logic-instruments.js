@@ -80,6 +80,13 @@
   if(!batch.plans.length)throw Error('instrument-batch-empty');const start=workspace(p).history.length;let next=copy(p);for(const plan of batch.plans){const renewed=preview(next,{trackId:plan.trackId,entryId:plan.entry.id,machineId:batch.machineId,instruction:batch.instruction,expression:plan.expression});next=apply(next,renewed,{approved:true})}for(let i=start;i<next.logicInstruments.history.length;i++)next.logicInstruments.history[i].groupId=`batch-${start}`;return next;
  }
  // Export actual SMF bytes together with explicit per-track manual host instructions.
+ // Shared deterministic routing for the AU control UI; never controls a Logic sibling plug-in.
+ function parseAudioCommand(instruction){
+  const s=text(instruction);
+  if(s==='前の設定に戻して')return{operation:'undo',approvalRequired:true,audioAnalyzed:false};
+  if(!['ピアノを柔らかくして','ボーカルをもう少し前に出して','高音を少し抑えて'].includes(s))throw Error('nova-au-instruction-unsupported');
+  return{operation:'preview',instruction:s,approvalRequired:true,audioAnalyzed:false,target:'NOVA AU自身'};
+ }
  function packageFiles(p,machineId,midi=root.MusicStudioMidi){
   if(!midi)throw Error('instrument-midi-writer-unavailable');
   const w=workspace(p),manifest=handoff(p,machineId),files=[],rows=[];
@@ -111,5 +118,5 @@
   add('READ-ME.txt',['NOVA Logic handoff — manual host setup; no automatic assignment or audio verification.',...manifest.steps,...rows.flatMap(r=>[`${r.token}: ${r.name} / ID ${r.id} / channel ${r.channel??'unknown'}`,...r.instructions]),'Music Studio backups do not include Logic projects or Patch files. Keep independent backups.'].join('\n'),'text/plain');
   return{manifest,files};
  }
- root.NovaLogicInstruments={registry,workspace,register,tracks,parse,recommend,preview,apply,undo,audit,handoff,packageFiles,inspectInventory,batchPreview,batchApply};
+ root.NovaLogicInstruments={registry,workspace,register,tracks,parse,recommend,preview,apply,undo,audit,handoff,packageFiles,inspectInventory,batchPreview,batchApply,parseAudioCommand};
 })(typeof window!=='undefined'?window:globalThis);
