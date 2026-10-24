@@ -19,6 +19,7 @@ int main(){
  assert(!nova::valid(0,7)&&!nova::valid(1,-7)&&!nova::valid(2,NAN)&&!nova::valid(99,0));
  nova::Binding b{"song","track","instance",true};auto p=nova::propose(b,{0,0,0,0},"ピアノを柔らかくして");assert(p.choices[0][2]==-1&&p.choices[2][2]==-3);assert(nova::propose(b,{0,0,0,0},"ボーカルをもう少し前に出して").choices[2][0]==1.5);
  bool rejected=false;try{nova::propose({}, {0,0,0,0},"高音を少し抑えて");}catch(...){rejected=true;}assert(rejected);
+ auto word=nova::encode({0,0,0,0});auto versioned=nova::revised(word,{0,0,0,0});assert(versioned!=word&&nova::decode(word)==nova::decode(versioned));
  // Smoothing: no instantaneous gain jump on the first sample after a change.
  d.reset(48000,{0,0,0,0});std::vector<float> a(4096,.1),l(a.size()),r(a.size());d.process(a.data(),a.data(),l.data(),r.data(),a.size(),{-24,0,0,0});assert(std::abs(l[0]-.1)<.001);assert(l.back()<.01);
  std::cout<<"DSP and deterministic proposal checks PASS\n";

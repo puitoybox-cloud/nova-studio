@@ -49,3 +49,9 @@ test('handoff uses saved project meter when legacy MIDI has no explicit meter',a
  const p=n.register(song(),entry());p.midiData.ppq=480;p.midiData.tempo=72;p.midiData.tracks[0].channel=1;p.musicalSettings.timeSignature={numerator:3,denominator:4};
  const before=JSON.stringify(p),bundle=n.packageFiles(p,'mac'),check=MusicStudioMidi.inspectMidiBytes(await bundle.files[0].blob.arrayBuffer());assert.equal(check.tracks[0].timeSignature,'3/4');assert.equal(JSON.stringify(p),before);assert.equal(bundle.manifest.midiSnapshot.timeSignature,undefined);
 });
+test('Japanese AU routing never claims measurement or model inference on instruction alone',()=>{
+ for(const instruction of ['ピアノをもっと温かくして','ストリングスの高音を柔らかくして','ボーカルをもう少し前に出して','低音が強すぎるので調整して','全体の音を自然に整えて']){
+  const intent=n.parseAudioCommand(instruction);assert.equal(intent.operation,'preview');assert.equal(intent.instruction,instruction);assert.equal(intent.audioAnalyzed,false);assert.equal(intent.approvalRequired,true);
+ }
+ assert.throws(()=>n.parseAudioCommand('購入した他社AUを無断操作して'));
+});

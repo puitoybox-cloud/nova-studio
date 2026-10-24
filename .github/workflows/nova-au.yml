@@ -25,6 +25,17 @@ jobs:
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"
           "$RUNNER_TEMP/nova-dsp"
+      - name: Actual FFT, bounded capture and comparison engine
+        run: |
+          xcrun clang++ -std=c++20 -O2 -pthread tools/nova-au/tests/analysis.cpp -o "$RUNNER_TEMP/nova-analysis"
+          "$RUNNER_TEMP/nova-analysis" | tee "$RUNNER_TEMP/nova-au/analysis-portable.txt"
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/performance.cpp -o "$RUNNER_TEMP/nova-performance"
+          "$RUNNER_TEMP/nova-performance" | tee "$RUNNER_TEMP/nova-au/render-performance.txt"
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/analyze.cpp -o "$RUNNER_TEMP/nova-analyze"
+          python3 tools/nova-au/analyze-wav.py assets/music-acoustic-v1/piano-60.wav --engine "$RUNNER_TEMP/nova-analyze" --output "$RUNNER_TEMP/nova-au/piano-comparison" --project fixture --track piano --source development-fixture --instruction 全体の音を自然に整えて > "$RUNNER_TEMP/nova-au/piano-analysis.json"
+          python3 tools/nova-au/analyze-wav.py assets/music-acoustic-v1/strings-60.wav --engine "$RUNNER_TEMP/nova-analyze" --output "$RUNNER_TEMP/nova-au/strings-comparison" --project fixture --track strings --source development-fixture --instruction 全体の音を自然に整えて > "$RUNNER_TEMP/nova-au/strings-analysis.json"
+          python3 tools/nova-au/analyze-wav.py assets/music-acoustic-v1/bass-24.wav --engine "$RUNNER_TEMP/nova-analyze" --output "$RUNNER_TEMP/nova-au/bass-comparison" --project fixture --track bass --source development-fixture --instruction 全体の音を自然に整えて > "$RUNNER_TEMP/nova-au/bass-analysis.json"
+          python3 tools/nova-au/tests/verify-wavs.py "$RUNNER_TEMP/nova-au/piano-comparison" "$RUNNER_TEMP/nova-au/strings-comparison" "$RUNNER_TEMP/nova-au/bass-comparison"
       - name: Load binary as AudioComponent and render actual audio
         run: |
           xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc tools/nova-au/tests/host.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/nova-au-host"

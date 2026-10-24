@@ -10,11 +10,16 @@ constexpr float minimum[4] = {-24,-6,-6,0};
 constexpr float maximum[4] = {6,6,6,1};
 constexpr float initial[4] = {0,0,0,0}; // gain, low band, high band, bypass
 inline bool valid(unsigned id,float v) { return id<4 && std::isfinite(v) && v>=minimum[id] && v<=maximum[id]; }
+// 41 bits of quantized values, 23 bits of write generation in one lock-free word.
+// Including generation in CAS rejects host automation even if values return to baseline.
+constexpr unsigned shifts[4]={0,12,23,34};
+constexpr uint64_t masks[4]={4095,2047,2047,127};
 inline uint64_t encode(const std::array<float,4>& v) {
- uint64_t n=0;for(unsigned i=0;i<4;++i)n|=uint64_t(std::lround((v[i]-minimum[i])*100))<<(i*16);return n;
+ uint64_t n=0;for(unsigned i=0;i<4;++i)n|=uint64_t(std::lround((v[i]-minimum[i])*100))<<shifts[i];return n;
 }
+inline uint64_t revised(uint64_t old,const std::array<float,4>& v){return encode(v)|((((old>>41)+1)&0x7fffffULL)<<41);}
 inline std::array<float,4> decode(uint64_t n) {
- std::array<float,4> v{};for(unsigned i=0;i<4;++i)v[i]=float((n>>(i*16))&65535)/100+minimum[i];return v;
+ std::array<float,4> v{};for(unsigned i=0;i<4;++i)v[i]=float((n>>shifts[i])&masks[i])/100+minimum[i];return v;
 }
 static_assert(std::atomic<uint64_t>::is_always_lock_free,"Render targets must be lock free");
 struct DSP {
