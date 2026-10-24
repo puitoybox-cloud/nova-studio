@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <vector>
 #include <fstream>
+#include <thread>
 static void check(bool v,const char* m){if(!v){fprintf(stderr,"FAIL: %s\n",m);exit(1);}}
 static void ok(OSStatus s,const char* m){if(s){fprintf(stderr,"FAIL %s: %d\n",m,(int)s);exit(1);}}
 struct Source{double sr=48000,hz=1000,amplitude=.1;uint64_t frame=0;};
@@ -16,7 +17,7 @@ static NSDictionary* snapshot(AudioUnit u){CFDictionaryRef d=nullptr;UInt32 n=si
 static OSStatus command(AudioUnit u,NSDictionary* d){CFDictionaryRef cf=(__bridge CFDictionaryRef)d;return AudioUnitSetProperty(u,64000,0,0,&cf,sizeof(cf));}
 static NSMutableDictionary* cmd(AudioUnit u,NSString* op){NSMutableDictionary* d=[snapshot(u)[@"binding"]mutableCopy];d[@"operation"]=op;return d;}
 static void configure(AudioUnit u,Source* source,double sr,unsigned buffer){
- AudioStreamBasicDescription f={};f.mSampleRate=sr;f.mFormatID=kAudioFormatLinearPCM;f.mFormatFlags=kAudioFormatFlagsNativeFloatPacked|kAudioFormatFlagIsNonInterleaved;f.mBytesPerPacket=4;f.mFramesPerPacket=1;f.mBytesPerFrame=4;f.mChannelsPerFrame=2;f.mBitsPerChannel=32;
+ AudioStreamBasicDescription f={};f.mSampleRate=sr;f.mFormatID=kAudioFormatLinearPCM;f.mFormatFlags=AudioFormatFlags(kAudioFormatFlagsNativeFloatPacked)|AudioFormatFlags(kAudioFormatFlagIsNonInterleaved);f.mBytesPerPacket=4;f.mFramesPerPacket=1;f.mBytesPerFrame=4;f.mChannelsPerFrame=2;f.mBitsPerChannel=32;
  ok(AudioUnitSetProperty(u,kAudioUnitProperty_StreamFormat,kAudioUnitScope_Input,0,&f,sizeof(f)),"input format");ok(AudioUnitSetProperty(u,kAudioUnitProperty_StreamFormat,kAudioUnitScope_Output,0,&f,sizeof(f)),"output format");
  UInt32 max=4096;ok(AudioUnitSetProperty(u,kAudioUnitProperty_MaximumFramesPerSlice,0,0,&max,sizeof(max)),"max frames");
  source->sr=sr;source->frame=0;AURenderCallbackStruct cb{input,source};ok(AudioUnitSetProperty(u,kAudioUnitProperty_SetRenderCallback,kAudioUnitScope_Input,0,&cb,sizeof(cb)),"input callback");ok(AudioUnitInitialize(u),"initialize");
@@ -51,7 +52,12 @@ int main(int argc,char** argv){@autoreleasepool{
  d=cmd(a,@"undo");d[@"approved"]=@YES;ok(command(a,d),"approved undo");check([snapshot(a)[@"current"][2]floatValue]==0,"undo restores");
  ok(AudioUnitSetParameter(a,0,0,0,-3,0),"non-default gain before save");ok(AudioUnitSetParameter(a,2,0,0,-2,0),"non-default EQ before save");
  source.amplitude=0;auto silence=render(a,65536,256);check(rms(silence)<1e-8,"silence settles");source.amplitude=100;render(a,65536,256);source.amplitude=NAN;render(a,65536,256);source.amplitude=.1;
+ // Concurrent host automation must not stop or corrupt the real render path.
+ std::thread automation([&]{for(unsigned i=0;i<10000;++i)ok(AudioUnitSetParameter(a,0,0,0,i%2?-3:0,0),"concurrent host automation");});
+ render(a,96000,256);automation.join();ok(AudioUnitSetParameter(a,0,0,0,-3,0),"restore save target");
+ AUPreset named{-1,CFSTR("NOVA CI Preset")};ok(AudioUnitSetProperty(a,kAudioUnitProperty_PresentPreset,0,0,&named,sizeof(named)),"host preset name");
  CFPropertyListRef saved=nullptr;UInt32 size=sizeof(saved);ok(AudioUnitGetProperty(a,kAudioUnitProperty_ClassInfo,0,0,&saved,&size),"host state save");
+ check([((__bridge NSDictionary*)saved)[@"name"] isEqual:@"NOVA CI Preset"],"preset name retained in class state");
  ok(AudioUnitSetProperty(b,kAudioUnitProperty_ClassInfo,0,0,&saved,sizeof(saved)),"new AU restore");CFRelease(saved);check([snapshot(b)[@"current"][0]floatValue]==-3&&[snapshot(b)[@"current"][2]floatValue]==-2,"non-default gain/EQ survive restore");check(![snapshot(b)[@"binding"][@"confirmed"]boolValue],"restored binding needs re-confirmation");
  ok(AudioUnitUninitialize(a),"stop");ok(AudioComponentInstanceDispose(a),"destroy a");ok(AudioComponentInstanceDispose(b),"destroy b");
  puts("Actual AU binary host, stereo, Gain/EQ, Japanese approval/Undo, isolation and state tests PASS. Logic not tested.");

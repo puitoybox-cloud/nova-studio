@@ -66,6 +66,8 @@ public:
   CreateElements();Globals()->UseIndexedParameters(4);for(unsigned i=0;i<4;++i)AUEffectBase::SetParameter(i,0);
   binding.instance=str(NSUUID.UUID.UUIDString);
  }
+ bool SupportsTail()override{return true;}
+ Float64 GetTailTime()override{return .05;}
  bool CanScheduleParameters()const noexcept override{return false;} // immediate host automation, 20 ms DSP smoothing
  UInt32 SupportedNumChannels(const AUChannelInfo** info)override{static const AUChannelInfo channels={2,2};if(info)*info=&channels;return 1;}
  bool ValidFormat(AudioUnitScope s,AudioUnitElement e,const AudioStreamBasicDescription& f)override{
@@ -76,7 +78,8 @@ public:
  OSStatus GetParameterInfo(AudioUnitScope s,AudioUnitParameterID i,AudioUnitParameterInfo& p)override{
   if(s!=kAudioUnitScope_Global||i>=4)return kAudioUnitErr_InvalidParameter;
   p={};const char* names[]={"Gain","Low band (180 Hz)","High band (4 kHz)","Bypass"};strlcpy(p.name,names[i],sizeof(p.name));
-  p.unit=i==3?kAudioUnitParameterUnit_Boolean:kAudioUnitParameterUnit_Decibels;p.minValue=nova::minimum[i];p.maxValue=nova::maximum[i];p.defaultValue=0;p.flags=kAudioUnitParameterFlag_IsReadable|kAudioUnitParameterFlag_IsWritable;return noErr;
+  static const CFStringRef cfNames[]={CFSTR("Gain"),CFSTR("Low band (180 Hz)"),CFSTR("High band (4 kHz)"),CFSTR("Bypass")};p.cfNameString=cfNames[i];
+  p.unit=i==3?kAudioUnitParameterUnit_Boolean:kAudioUnitParameterUnit_Decibels;p.minValue=nova::minimum[i];p.maxValue=nova::maximum[i];p.defaultValue=0;p.flags=kAudioUnitParameterFlag_IsReadable|kAudioUnitParameterFlag_IsWritable|kAudioUnitParameterFlag_HasCFNameString;return noErr;
  }
  OSStatus SetParameter(AudioUnitParameterID i,AudioUnitScope s,AudioUnitElement e,AudioUnitParameterValue v,UInt32)override{
   if(s!=kAudioUnitScope_Global||e!=0||!nova::valid(i,v))return kAudioUnitErr_InvalidParameter;
@@ -122,7 +125,9 @@ public:
  OSStatus SaveState(CFPropertyListRef* data)override{
   if(!data)return kAudio_ParamError;std::lock_guard lock(controlMutex);
   // Full host-owned state; contains no Music Studio files or Logic project edits.
-  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary()};return noErr;
+  AUPreset preset{};OSStatus presetStatus=AUEffectBase::GetProperty(kAudioUnitProperty_PresentPreset,kAudioUnitScope_Global,0,&preset);if(presetStatus)return presetStatus;
+  NSString* presetName=CFBridgingRelease(preset.presetName);
+  *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary()};return noErr;
  }
  OSStatus RestoreState(CFPropertyListRef data)override{
   if(!data||CFGetTypeID(data)!=CFDictionaryGetTypeID())return kAudioUnitErr_InvalidPropertyValue;
@@ -130,7 +135,10 @@ public:
   if(![d[@"novaVersion"] isEqual:@1]||![d[@"type"] isEqual:@((UInt32)'aufx')]||![d[@"subtype"] isEqual:@((UInt32)'NvMx')]||![d[@"manufacturer"] isEqual:@((UInt32)'NvSt')]||!values(d[@"novaValues"],v))return kAudioUnitErr_InvalidPropertyValue;
   id b=d[@"novaBinding"];if(![b isKindOfClass:NSDictionary.class])return kAudioUnitErr_InvalidPropertyValue;
   auto p=str(b[@"projectId"]),t=str(b[@"trackId"]);if(p.size()>256||t.size()>256)return kAudioUnitErr_InvalidPropertyValue;
-  std::lock_guard lock(controlMutex);targets.store(nova::encode(v));binding.project=p;binding.track=t;
+  id presetName=d[@"name"];if(presetName&&(![presetName isKindOfClass:NSString.class]||[presetName length]>1024))return kAudioUnitErr_InvalidPropertyValue;
+  std::lock_guard lock(controlMutex);
+  if(presetName){AUPreset preset{-1,(__bridge CFStringRef)presetName};OSStatus err=AUEffectBase::NewCustomPresetSet(preset);if(err)return err;}
+  targets.store(nova::encode(v));binding.project=p;binding.track=t;
   // A duplicated Logic insert must explicitly re-confirm its Track; keep a fresh runtime instance UUID.
   binding.confirmed=false;pending.reset();history.clear();status=@"設定復元済み。曲・Trackの対応を再確認してください";return noErr;
  }
