@@ -24,7 +24,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  NSButton* b=[NSButton buttonWithTitle:s target:self action:a];b.frame=NSMakeRect(x,y,150,30);b.tag=t;[self addSubview:b];
 }
 - (instancetype)initWithUnit:(AudioUnit)unit{
- if((self=[super initWithFrame:NSMakeRect(0,0,700,640)])){
+ if((self=[super initWithFrame:NSMakeRect(0,0,700,720)])){
   self.unit=unit;[self field:@"NOVA Mix — ステレオ Gain / EQ（音源選択とは別機能）" y:14 editable:NO];
   [self button:@"handoff JSONを開く" x:16 y:48 action:@selector(importFile:) tag:0];
   [self field:@"曲ID / Track IDを照合して対象を確認。Logic内部Track IDの自動取得なし" y:86 editable:NO];
@@ -40,7 +40,9 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"キャンセル" x:16 y:346 action:@selector(cancel:) tag:0];
   [self button:@"Undoを承認" x:180 y:346 action:@selector(undo:) tag:0];
   [self button:@"値を更新" x:344 y:346 action:@selector(update:) tag:0];
-  self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(16,392,668,232);self.report.font=[NSFont systemFontOfSize:11];[self addSubview:self.report];
+  [self button:@"2秒音声取得に同意" x:16 y:388 action:@selector(capture:) tag:0];
+  [self button:@"比較WAVを保存" x:180 y:388 action:@selector(compare:) tag:0];
+  self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(16,432,668,272);self.report.font=[NSFont systemFontOfSize:11];[self addSubview:self.report];
   [self update:nil];__weak NovaMixView* weakSelf=self;
   self.refresh=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*){[weakSelf update:nil];}];
  }return self;
@@ -52,7 +54,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  self.state=CFBridgingRelease(d);NSDictionary* b=self.state[@"binding"];
  if(!self.projectField.stringValue.length)self.projectField.stringValue=b[@"projectId"]?:@"";
  if(!self.trackField.stringValue.length)self.trackField.stringValue=b[@"trackId"]?:@"";
- self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部プラグイン操作なし。Mastering完成・音声解析済みの表示なし。",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@""];
+ self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部送信・外部AU操作なし。LUFS/True Peak未測定。解析: %@",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@"",self.state[@"analysis"]];
 }
 - (void)send:(NSMutableDictionary*)command{
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
@@ -60,6 +62,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  [self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
  if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
 }
+- (void)compare:(id)s{NSOpenPanel* p=[NSOpenPanel openPanel];p.canChooseDirectories=YES;p.canChooseFiles=NO;p.allowsMultipleSelection=NO;if([p runModal]==NSModalResponseOK)[self send:[@{@"operation":@"compare",@"approved":@YES,@"directory":p.URL.path}mutableCopy]];}
+- (void)capture:(id)s{[self send:[@{@"operation":@"capture",@"consent":@YES}mutableCopy]];}
 - (void)bind:(id)s{[self send:[@{@"operation":@"bind",@"confirmed":@YES}mutableCopy]];}
 - (void)preview:(id)s{[self send:[@{@"operation":@"preview",@"instruction":self.instruction.stringValue}mutableCopy]];}
 - (void)apply:(NSButton*)s{[self send:[@{@"operation":@"apply",@"approved":@YES,@"choice":@(s.tag)}mutableCopy]];}

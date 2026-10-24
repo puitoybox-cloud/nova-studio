@@ -60,6 +60,26 @@ int main(int argc,char** argv){@autoreleasepool{
  CFPropertyListRef saved=nullptr;UInt32 size=sizeof(saved);ok(AudioUnitGetProperty(a,kAudioUnitProperty_ClassInfo,0,0,&saved,&size),"host state save");
  check([((__bridge NSDictionary*)saved)[@"name"] isEqual:@"NOVA CI Preset"],"preset name retained in class state");
  ok(AudioUnitSetProperty(b,kAudioUnitProperty_ClassInfo,0,0,&saved,sizeof(saved)),"new AU restore");CFRelease(saved);check([snapshot(b)[@"current"][0]floatValue]==-3&&[snapshot(b)[@"current"][2]floatValue]==-2,"non-default gain/EQ survive restore");check(![snapshot(b)[@"binding"][@"confirmed"]boolValue],"restored binding needs re-confirmation");
+
+ // Actual AU input capture -> control-thread FFT -> measured candidates -> actual render/Undo.
+ for(unsigned id=0;id<4;++id)ok(AudioUnitSetParameter(a,id,0,0,0,0),"analysis baseline");
+ source.hz=10000;source.frame=0;source.amplitude=.2;ok(AudioUnitReset(a,0,0),"analysis reset");
+ d=cmd(a,@"capture");check(command(a,d)!=noErr,"capture consent required");d[@"consent"]=@YES;ok(command(a,d),"explicit capture consent");
+ render(a,96000,256);NSDictionary* analysis=snapshot(a);check([analysis[@"audioAnalyzed"]boolValue],"actual input analyzed");check([analysis[@"analysis"][@"input"][@"bandPowerFractions"][2]doubleValue]>.99,"actual FFT high band");
+ check(std::abs([analysis[@"analysis"][@"input"][@"rms"]doubleValue]-.2/sqrt(2))<.00001,"actual RMS");
+ d=cmd(a,@"preview");d[@"instruction"]=@"全体の音を自然に整えて";ok(command(a,d),"measured Japanese preview");NSDictionary* proposal=snapshot(a);check([proposal[@"proposalAudioAnalyzed"]boolValue],"proposal really measured");NSArray* settings=proposal[@"choices"];
+ d=cmd(a,@"compare");d[@"approved"]=@YES;d[@"directory"]=[NSString stringWithUTF8String:argv[2]].stringByDeletingLastPathComponent;ok(command(a,d),"actual capture offline comparison WAVs");
+ d=cmd(a,@"apply");d[@"approved"]=@YES;d[@"choice"]=@1;ok(command(a,d),"measured B applies to real AU");check([snapshot(a)[@"current"]isEqual:settings[1]],"measured actual AU values");
+ d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"post-apply capture");source.frame=0;auto measuredB=render(a,96000,256);NSDictionary* after=snapshot(a);check([after[@"audioAnalyzed"]boolValue],"post-apply remeasurement");check([after[@"analysis"][@"output"][@"rms"]doubleValue]<[after[@"analysis"][@"input"][@"rms"]doubleValue],"actual output reduced");
+ wav((std::string(argv[2])+"-measured-B.wav").c_str(),measuredB);
+ d=cmd(a,@"undo");d[@"approved"]=@YES;ok(command(a,d),"measured undo");check([snapshot(a)[@"current"][2]floatValue]==0,"measured undo value");
+ // A/B/C rendered through the actual AU factory with identical source start/reset.
+ NSMutableArray* actualRows=[NSMutableArray array];std::vector<std::vector<float>> actualAudio;
+ double common=1;
+ for(unsigned k=0;k<4;++k){for(unsigned id=0;id<4;++id)ok(AudioUnitSetParameter(a,id,0,0,k?[settings[k-1][id]floatValue]:0,0),"actual audition parameters");source.frame=0;ok(AudioUnitReset(a,0,0),"same audition start");auto audio=render(a,96000,256);double level=rms(audio);common=std::min(common,level);actualAudio.push_back(audio);[actualRows addObject:@{@"choice":@(k),@"rmsLastHalf":@(level),@"settings":k?settings[k-1]:@[@0,@0,@0,@0]}];}
+ for(unsigned k=0;k<4;++k){std::string label=k?std::string(1,char('A'+k-1)):"original";wav((std::string(argv[2])+"-"+label+".wav").c_str(),actualAudio[k]);double factor=common/rms(actualAudio[k]);for(float& v:actualAudio[k])v*=factor;wav((std::string(argv[2])+"-"+label+"-rms-matched.wav").c_str(),actualAudio[k]);}
+ NSData* report=[NSJSONSerialization dataWithJSONObject:@{@"inputCapture":analysis,@"proposal":proposal,@"postApply":after,@"actualAURenders":actualRows,@"source":@"deterministic 10 kHz signal through real AU; not Logic or an instrument"} options:NSJSONWritingPrettyPrinted error:nil];check([report writeToFile:[[NSString stringWithUTF8String:argv[2]]stringByAppendingString:@"-analysis.json"] atomically:YES],"AU measured evidence saved");
+ source.hz=80;for(unsigned id=0;id<4;++id)ok(AudioUnitSetParameter(a,id,0,0,0,0),"low baseline");ok(AudioUnitReset(a,0,0),"low reset");d=cmd(a,@"capture");d[@"consent"]=@YES;ok(command(a,d),"low capture");render(a,96000,2048);check([snapshot(a)[@"analysis"][@"input"][@"bandPowerFractions"][0]doubleValue]>.99,"actual low FFT");d=cmd(a,@"preview");d[@"instruction"]=@"全体の音を自然に整えて";ok(command(a,d),"low measured preview");check(![snapshot(a)[@"choices"]isEqual:settings],"different actual audio different candidates");
  ok(AudioUnitUninitialize(a),"stop");ok(AudioComponentInstanceDispose(a),"destroy a");ok(AudioComponentInstanceDispose(b),"destroy b");
  puts("Actual AU binary host, stereo, Gain/EQ, Japanese approval/Undo, isolation and state tests PASS. Logic not tested.");
  // Keep the code loaded until process exit: component registry owns its factory pointer.
