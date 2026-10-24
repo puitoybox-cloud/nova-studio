@@ -29,15 +29,17 @@
   }).sort((a,b)=>b.score-a.score||a.entry.id.localeCompare(b.entry.id)).slice(0,3).map((c,i)=>({...c,label:'ABC'[i]}));
   return{intent,track,candidates,context:copy(p.musicalSettings||{}),auditionAvailable:false,hostApplied:false};
  }
- function preview(p,{trackId,entryId,machineId,expression={}}){
+ function preview(p,{trackId,entryId,machineId,expression={},instruction=null}){
   const w=workspace(p),track=tracks(p).find(t=>t.id===trackId),entry=w.registry.entries.find(e=>e.id===entryId);
   if(!track||!entry||!entry.installed||entry.machineId!==machineId)throw Error('instrument-unavailable');
   if(track.range&&(!entry.range||track.range[0]<entry.range[0]||track.range[1]>entry.range[1]))throw Error('instrument-range-unconfirmed');
   const velocityScale=expression.velocityScale??1,timingTicks=expression.timingTicks??0,lengthScale=expression.lengthScale??1;
   if(!Number.isFinite(velocityScale)||velocityScale<0.5||velocityScale>1.5||!Number.isFinite(lengthScale)||lengthScale<0.5||lengthScale>1.5)throw Error('expression-out-of-range');integer(timingTicks,-120,120);
+  const hasLocks=value=>value&&typeof value==='object'&&Object.entries(value).some(([k,v])=>k==='lockedMeasures'&&Array.isArray(v)&&v.length||typeof v==='object'&&hasLocks(v));
+  if((velocityScale!==1||timingTicks!==0||lengthScale!==1)&&hasLocks(p.midiData.editor))throw Error('instrument-expression-locked-measures');
   if(Object.keys(expression).some(k=>!['velocityScale','timingTicks','lengthScale'].includes(k)))throw Error('unknown-expression-control');
-  const source=p.midiData.tracks.find(t=>t.id===trackId),notes=source.notes.map(n=>({...copy(n),velocity:Math.max(1,Math.min(127,Math.round(n.velocity*velocityScale))),startTick:Math.max(0,n.startTick+timingTicks),durationTicks:Math.max(1,Math.round(n.durationTicks*lengthScale))}));
-  const plan={trackId,entry:copy(entry),expression:{velocityScale,timingTicks,lengthScale},before:copy(source.notes),after:notes,logicTrackId:null,hostApplied:false,method:'manual-patch-or-template'};
+  const source=p.midiData.tracks.find(t=>t.id===trackId),notes=source.notes.map(n=>n.locked?copy(n):({...copy(n),velocity:Math.max(1,Math.min(127,Math.round(n.velocity*velocityScale))),startTick:Math.max(0,n.startTick+timingTicks),durationTicks:Math.max(1,Math.round(n.durationTicks*lengthScale))}));
+  const plan={trackId,entry:copy(entry),expression:{velocityScale,timingTicks,lengthScale},before:copy(source.notes),after:notes,instruction,recommendation:instruction?recommend(p,{trackId,instruction,machineId}):null,logicTrackId:null,hostApplied:false,method:'manual-patch-or-template'};
   proofs.set(plan,{baseline:JSON.stringify(p),plan:JSON.stringify(plan)});return plan;
  }
  function apply(p,plan,{approved=false}={}){const proof=proofs.get(plan);if(!approved||!proof||proof.baseline!==JSON.stringify(p)||proof.plan!==JSON.stringify(plan))throw Error('instrument-unapproved-or-stale');const next=copy(p),w=workspace(p),t=next.midiData.tracks.find(t=>t.id===plan.trackId);w.history.push({trackId:t.id,before:w.assignments[t.id]||null,after:copy(plan),beforeNotes:copy(t.notes),afterNotes:copy(plan.after)});w.assignments[t.id]=copy(plan);t.notes=copy(plan.after);next.logicInstruments=w;return next}
