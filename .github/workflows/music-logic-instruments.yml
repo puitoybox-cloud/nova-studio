@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v4
         with:
@@ -42,6 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Build read-only Intel inventory helper (not an AU or Logic acceptance)
         run: swiftc -target x86_64-apple-macos12.0 tools/music-logic-instruments/Inventory.swift -o "$RUNNER_TEMP/nova-au-inventory"
