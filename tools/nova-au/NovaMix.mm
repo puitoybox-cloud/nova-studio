@@ -32,7 +32,7 @@ class NovaMix final:public ausdk::AUEffectBase {
   collected=true;inputAnalysis=nova::measure(capture.samples.data(),capture.frames,capture.rate,4,0);outputAnalysis=nova::measure(capture.samples.data(),capture.frames,capture.rate,4,2);analysisSettings=capture.settings;
   if(!audioId.length)audioId=[@"capture-" stringByAppendingString:NSUUID.UUID.UUIDString];
   if(capture.changed||!(captureBinding==binding)){inputAnalysis.valid=false;inputAnalysis.status="changed-settings-or-target";}
-  [evidence addObject:@{@"operation":@"measurement",@"audioId":audioId,@"binding":bindingDictionary(),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis)}];if(evidence.count>32)[evidence removeObjectAtIndex:0];
+  [evidence addObject:@{@"operation":@"measurement",@"audioId":audioId,@"binding":bindingInfo(captureBinding),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis)}];if(evidence.count>32)[evidence removeObjectAtIndex:0];
   status=ns(inputAnalysis.status);
  }
 
@@ -45,10 +45,11 @@ class NovaMix final:public ausdk::AUEffectBase {
  struct Undo {std::array<float,4> first,second;uint64_t appliedWord=0;};
  std::vector<Undo> history;
  NSString* status=@"音声未解析";
- NSDictionary* bindingDictionary()const{return @{ @"projectId":ns(binding.project),@"trackId":ns(binding.track),@"instanceId":ns(binding.instance),@"confirmed":@(binding.confirmed),@"role":ns(binding.role),@"targetKind":ns(binding.kind),@"inputSource":ns(binding.source)};}
+ static NSDictionary* bindingInfo(const nova::Binding& b){return @{@"projectId":ns(b.project),@"trackId":ns(b.track),@"instanceId":ns(b.instance),@"confirmed":@(b.confirmed),@"role":ns(b.role),@"targetKind":ns(b.kind),@"inputSource":ns(b.source)};}
+ NSDictionary* bindingDictionary()const{return bindingInfo(binding);}
  NSDictionary* snapshot(){
   collect();
-  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingDictionary(),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
+  NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(targets.load())),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingInfo(captureBinding),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
   if(pending){s[@"proposalAudioAnalyzed"]=@(pending->audioAnalyzed);s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
  }
  OSStatus command(NSDictionary* c){
@@ -201,7 +202,7 @@ public:
   std::lock_guard lock(controlMutex);
   if(presetName){AUPreset preset{-1,(__bridge CFStringRef)presetName};OSStatus err=AUEffectBase::NewCustomPresetSet(preset);if(err)return err;}
   evidence=restored?[restored mutableCopy]:[NSMutableArray array];
-  capture.invalidate();measuredGuard.store([d[@"novaMeasuredGuard"]isEqual:@YES]);safetyStop.store(false);
+  collected=true;measuredGuard.store([d[@"novaMeasuredGuard"]isEqual:@YES]);safetyStop.store(false);
   inputAnalysis={};outputAnalysis={};audioId=@"";
   targets.store(nova::encode(v));binding.project=p;binding.track=t;binding.role=role;binding.kind=kind;binding.source=source;
   // A duplicated Logic insert must explicitly re-confirm its Track; keep a fresh runtime instance UUID.

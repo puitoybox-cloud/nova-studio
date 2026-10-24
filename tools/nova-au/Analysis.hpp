@@ -7,6 +7,7 @@
 namespace nova {
 // Fixed, preallocated single-producer capture. Control reads only after release/acquire ready.
 // 2 seconds at the maximum supported sample rate, input and output stereo: 6,144,000 bytes.
+static_assert(std::atomic<unsigned>::is_always_lock_free && std::atomic<bool>::is_always_lock_free);
 struct Capture {
  static constexpr unsigned capacity=384000;
  std::vector<float> samples=std::vector<float>(capacity*4);

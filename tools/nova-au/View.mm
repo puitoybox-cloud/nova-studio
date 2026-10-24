@@ -9,6 +9,7 @@ static NSString* measurement(id m){if(![m isKindOfClass:NSDictionary.class])retu
 static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 @interface NovaMixView : NSView
 @property AudioUnit unit;
+@property BOOL fieldsInitialized;
 @property NSTextField *projectField,*trackField,*instruction,*report,*sourceField;
 @property NSPopUpButton *tracks,*targetKind;
 @property NSDictionary* manifest;
@@ -55,12 +56,15 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  CFDictionaryRef d=nullptr;UInt32 size=sizeof(d);OSStatus e=AudioUnitGetProperty(self.unit,Snapshot,kAudioUnitScope_Global,0,&d,&size);
  if(e||!d){self.report.stringValue=[NSString stringWithFormat:@"状態読取エラー %d",(int)e];return;}
  self.state=CFBridgingRelease(d);NSDictionary* b=self.state[@"binding"];
+ if(!self.fieldsInitialized){self.sourceField.stringValue=b[@"inputSource"]?:@"user-confirmed AU input";NSUInteger index=[@[@"track",@"bus",@"stereo-out"]indexOfObject:b[@"targetKind"]?:@"track"];if(index!=NSNotFound)[self.targetKind selectItemAtIndex:index];self.fieldsInitialized=YES;}
  if(!self.projectField.stringValue.length)self.projectField.stringValue=b[@"projectId"]?:@"";
  if(!self.trackField.stringValue.length)self.trackField.stringValue=b[@"trackId"]?:@"";
  self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部送信・外部AU操作なし。LUFS/True Peak未測定。RAM内のみ取得、保存ボタンでWAV出力。\n入力: %@\n出力: %@\n取得状態 %@ / 完了 %@",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@"",measurement(self.state[@"analysis"][@"input"]),measurement(self.state[@"analysis"][@"output"]),self.state[@"analysis"][@"captureState"],self.state[@"analysis"][@"complete"]];
 }
 - (void)send:(NSMutableDictionary*)command{
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
+ NSString* chosenKind=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];NSString* chosenSource=self.sourceField.stringValue.length?self.sourceField.stringValue:@"user-confirmed AU input";
+ if(![command[@"operation"] isEqual:@"bind"]&&[b[@"confirmed"]boolValue]&&(![chosenKind isEqual:b[@"targetKind"]]||![chosenSource isEqual:b[@"inputSource"]])){self.report.stringValue=@"入力元またはTrack/Bus/Stereo Out指定が変わりました。対象を再確認してください。";return;}
  if([command[@"operation"] isEqual:@"bind"]){command[@"targetKind"]=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];command[@"inputSource"]=self.sourceField.stringValue;NSInteger index=[self.tracks indexOfSelectedItem];if(index>=0&&index<[self.manifest[@"tracks"]count])command[@"role"]=self.manifest[@"tracks"][index][@"role"]?:@"unspecified";}
 
  NSArray* before=self.state[@"current"];CFDictionaryRef d=(__bridge CFDictionaryRef)command;OSStatus e=AudioUnitSetProperty(self.unit,Command,kAudioUnitScope_Global,0,&d,sizeof(d));
