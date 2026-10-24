@@ -252,12 +252,18 @@ def main():
         if key in manifest['stages']:
             return manifest['stages'][key]
         # Per-frame logs are verbose; default info logs contain only a bounded summary.
-        child = subprocess.Popen([str(args.reference_ffmpeg.resolve()), '-hide_banner','-nostats','-i',str(wav),
-                                  '-af','ebur128=peak=true:framelog=verbose','-f','null','-'],
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-        _, stderr = child.communicate()
-        code = child.returncode
-        child = None
+        log_path = folder / 'reference-meter.log.partial'
+        with log_path.open('wb') as log:
+            child = subprocess.Popen([str(args.reference_ffmpeg.resolve()), '-hide_banner','-nostats','-i',str(wav),
+                                      '-af','ebur128=peak=true:framelog=verbose','-f','null','-'],
+                                     stdout=subprocess.DEVNULL, stderr=log)
+            code = child.wait()
+            child = None
+        # WAV metadata must not turn a subprocess log into unbounded RAM usage.
+        with log_path.open('rb') as log:
+            log.seek(max(0, log_path.stat().st_size - 65536))
+            stderr = log.read(65536).decode('utf-8', errors='replace')
+        log_path.unlink()
         if code:
             raise ValueError('independent meter failed: ' + stderr[-2000:])
         summary = stderr.split('Summary:')[-1]
