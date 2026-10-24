@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include "Processing.hpp"
 namespace nova {
 constexpr unsigned ParameterCount = 4;
 constexpr float minimum[4] = {-24,-6,-6,0};
@@ -23,22 +24,30 @@ inline std::array<float,4> decode(uint64_t n) {
 }
 static_assert(std::atomic<uint64_t>::is_always_lock_free,"Render targets must be lock free");
 struct DSP {
+ Quality quality;
+ Processing processing=defaults();
  double rate=44100, smooth=0, lowA=0, highA=0;
  std::array<double,2> low{},high{};
  std::array<float,4> current{0,0,0,0};
- void reset(double sr,const std::array<float,4>& p) {
+ void reset(double sr,const std::array<float,4>& p,const Processing& extra=defaults()) {
+  processing=extra;quality.reset(extra);
   rate=sr;smooth=1-std::exp(-1/(.020*sr));lowA=1-std::exp(-2*3.141592653589793*180/sr);highA=1-std::exp(-2*3.141592653589793*4000/sr);low={};high={};current=p;
  }
  void process(const float* l,const float* r,float* ol,float* oright,unsigned count,const std::array<float,4>& target) noexcept {
   for(unsigned f=0;f<count;++f){
    for(unsigned i=0;i<4;++i)current[i]+=float(smooth)*(target[i]-current[i]);
    const double gain=std::pow(10.,current[0]/20.), lg=std::pow(10.,current[1]/20.)-1, hg=std::pow(10.,current[2]/20.)-1;
+   quality.frame(rate,smooth,processing,current[1],current[2]);
+   double dry[2],legacy[2],modern[2];
    for(unsigned c=0;c<2;++c){
-    double x=(c?r:l)[f];if(!std::isfinite(x))x=0;
-    // Bound hostile inputs and internal state before filtering; bypass preserves normal float audio.
-    x=std::clamp(x,-16.,16.);low[c]+=lowA*(x-low[c]);high[c]+=highA*(x-high[c]);
-    double y=(x+lg*low[c]+hg*(x-high[c]))*gain;
-    y=std::clamp(y,-.98,.98);y=y*(1-current[3])+x*current[3];
+    double x=(c?r:l)[f];if(!std::isfinite(x))x=0;x=std::clamp(x,-16.,16.);dry[c]=modern[c]=x;
+    low[c]+=lowA*(x-low[c]);high[c]+=highA*(x-high[c]);legacy[c]=x+lg*low[c]+hg*(x-high[c]);
+   }
+   quality.process(modern[0],modern[1],rate);
+   for(unsigned c=0;c<2;++c){
+    double y=(legacy[c]*(1-quality.modern)+modern[c]*quality.modern)*gain;
+    // Existing emergency ceiling retained for backward compatibility; not a limiter.
+    y=std::clamp(y,-.98,.98);y=y*(1-current[3])+dry[c]*current[3];
     (c?oright:ol)[f]=std::isfinite(y)?float(y):0;
    }
   }

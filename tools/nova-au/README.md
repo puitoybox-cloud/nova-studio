@@ -63,3 +63,55 @@ Only this NOVA AU's own four parameters are controlled. No Logic instrument, int
 ## Verification boundary
 
 See verification/music-au-analysis-20261024.md and exact-head CI on PR #503. Synthetic signals establish numerical behavior; repository piano/bass/strings PCM establish real WAV decoding/rendering, not the user's Logic instruments. Physical Intel Logic discovery, Audio FX/Bus/Stereo Out use, actual source correspondence, host UI, automation behavior, save/reopen and listening acceptance remain unverified. No formal feature A/B upgrade or overall completion percentage is claimed. All existing 30 features and standalone Music Studio paths remain.
+
+## Quality processing extension — 2026-10-24
+
+Host IDs 0..3 and AU component identity remain unchanged. New IDs 4..16 are append-only:
+
+| ID | Parameter | Range |
+|---|---|---|
+| 4 | Quality EQ / dynamics chain enable | 0 / 1 |
+| 5 | Low Shelf frequency | 30–500 Hz |
+| 6 | High Shelf frequency | 1–16 kHz |
+| 7 | Peaking frequency | 100–12000 Hz |
+| 8 | Peaking gain | ±12 dB, 0.25 dB steps |
+| 9 | Peaking Q | 0.25–8 |
+| 10 | Compressor enable | 0 / 1 |
+| 11 | Threshold | −60–0 dBFS, 0.5 dB steps |
+| 12 | Ratio | 1–16 |
+| 13 | Attack | 0.1–100 ms |
+| 14 | Release | 10–2000 ms |
+| 15 | Knee | 0–15 dB |
+| 16 | Makeup gain | 0–12 dB, 0.5 dB steps |
+
+Frequency, Q and times have logarithmic quantization (63/31 intervals). The snapshot and AU GetParameter return the decoded effective setting, not an unachievable requested value. Frequencies are additionally capped to 0.45 × sample rate at coefficient design. Shelf Q is fixed at √0.5; peaking Q is adjustable. Shelves retain the original ±6 dB gain IDs 1 and 2. Default and restored v1 states use the **original first-order processing**; audio-derived approval enables the new chain. No silent change to old preset sound is intended. v2 ClassInfo stores advanced controls and grouped old/new Undo words. v1 two-array Undo rows migrate with legacy advanced defaults. New states cannot be opened by the old binary.
+
+The quality chain uses double-state RBJ biquads (Low Shelf → Peaking → High Shelf), then a stereo-linked feed-forward peak compressor (maximum absolute L/R). Soft-knee transfer precedes separate attack/release smoothing of gain reduction in dB. A displayed attack/release value is the one-pole time constant, not a look-ahead or an RMS detector. The common gain preserves L/R balance. Makeup is explicit; automatic makeup is off. Parameters smooth with the existing 20-ms time constant; coefficient updates use a fixed 16-frame quantum independent of render block boundaries. The existing ±0.98 emergency hard ceiling is retained and **is not a transparent limiter**. It can distort excess signals. Musical listening and more demanding modulation/aliasing acceptance remain necessary.
+
+Advanced parameters publish in one 62-bit atomic word. A nonblocking writer reservation and sequence protect publication together with the original generation word. Render reads once and retains the previous coherent pair on overlap; it never spins, locks, allocates or runs FFT/LUFS/file/network code. Concurrent writers may receive CannotDoInCurrentContext and must retry as a new action. Any advanced automation increments the original generation, invalidating pending adoption and Undo. Generation retains the existing 23-bit wrap limit. Multiple controls should be set while stopped when using a generic host editor; a group of separate host automation writes is not an atomic user gesture.
+
+### Measured Mix and excerpt Mastering
+
+Japanese requests now also include ピアノを温かく自然にして / ベースが強すぎるので調整して / ドラムをもう少し力強くして / 全体の音量バランスを整えて. Spectrum fractions, measured RMS/Peak/crest, explicit role and target kind determine the settings. A/B/C are deterministic conservative/intermediate/stronger rule proposals, **not a learned model**. The analysis cannot identify masking, a particular instrument, artistic quality, or full-song balance from two seconds. Explicit role never establishes automatic source recognition. Processing values, reasons and grouped Undo persist with evidence. The custom AU view shows all effective values and reduction; all 17 host parameters are public.
+
+The Master candidate button requires a confirmed Stereo Out, a numeric target −36..−5 LUFS, and valid 48-kHz capture. It renders EQ/dynamics candidates, measures each actual processed excerpt, then adjusts static final gain towards target−2 / target−1 / target LUFS, capped by the 4× estimated True Peak at −1.5 dBTP and the existing Gain range. Approval re-renders and rejects estimated True Peak above −1 dBTP. This margin is not a guaranteed intersample ceiling or a limiter. Output may not reach target; compare the reported result. No loudness maximization guarantee or whole-song mastering completion claim is made.
+
+The control-thread meter ports the existing No.19 **48-kHz stereo** K-weighting, 400-ms/75%-overlap integrated gates (−70 absolute / −10 relative), and Annex 2 4× FIR estimate. `integratedLufsExcerpt` describes only the captured interval. `momentaryLufsLast400ms` is the last 400-ms window. Short-Term requires three seconds and is explicitly unmeasured for the current two-second AU capture. Other sample rates retain DSP/FFT/Peak/RMS, but AU LUFS/True Peak are explicitly unmeasured and Master candidates are rejected. No hidden 48-kHz coefficients on 44.1/96 kHz, unvalidated resampling, oversampled limiter, lookahead latency, or standards certification. FIR history is flushed at excerpt end and sample peak is a lower bound. Raw and attenuation-only RMS-matched comparisons retain identical start, duration, source IDs and per-candidate advanced settings. RMS matching does not equalize perceived loudness and never changes adoption values.
+
+### Host control boundaries (official sources checked 2026-10-24)
+
+- RBJ formulas: https://www.w3.org/TR/audio-eq-cookbook/ (W3C Working Group Note, 2021-06-08).
+- Logic Smart Controls can map channel-strip and plug-in parameters: https://support.apple.com/guide/logicpro/lgcp7e59f24b/mac
+- User-configured Controller Assignments: https://support.apple.com/guide/logicpro/ctls71c31487/mac
+- Mastering Assistant's documented UI controls: https://support.apple.com/108294 and https://support.apple.com/guide/logicpro/lgcpa4b810ba/mac
+- AU public host API: https://developer.apple.com/documentation/audiotoolbox/audiounitgetparameter and https://developer.apple.com/documentation/audiotoolbox/audiounitsetparameter
+
+Successful NOVA AU control proves only host access to that instance. A sibling NOVA AU cannot discover or mutate Logic's internal EQ/Compressor/Mastering Assistant instances through this interface. The documented Smart Control / Controller Assignment path requires a user-selected mapping in Logic; no automatic assignment has been validated. Mastering Assistant internal automation/remote read-write is **unverified**. Its documented manual controls are not evidence of an external API.
+
+No commercial products are installed, licensed, scanned internally, or controlled. Product name/version/component triplet/parameter IDs and ranges must be inventoried on an expressly approved installed instance. Public AU parameters must be accessed by the owner host or an approved host bridge; vendor-internal state is not inferred. Version changes require renewed inventory and mapping. All commercial EQ/Compressor/Reverb/Limiter support remains **unverified/manual**. Generic parameter control is not product compatibility evidence. No Accessibility permission, private Logic project mutation, external provider call, Apple signing identity or license activation is used.
+
+Music Studio backups cover its own project data/handoff metadata. Logic .logicx projects, plugin binaries/licenses, and Logic's host state are outside that backup; save and back up Logic separately. Commercial signing/notarization, license review, physical Intel Logic recognition/playback/save/reopen, third-party mappings, full-song 44.1/96-kHz metering and musical quality acceptance remain open.
+
+`tests/apple-host-control.mm --approved-ci-fixture` is a restricted standalone host probe for the OS-supplied Apple LowPass AU (the actual component constants and returned triplet/version are written to JSON). It enumerates public parameter IDs/ranges, records the old value, changes one writable value in its **own instance**, reads it back and restores the old value. The CI artifact records the actual product/version/triplet. This does not address a Logic-hosted instance, does not establish Logic Channel EQ/Compressor/Mastering Assistant support, and is not a commercial product compatibility result. It does not install any plugin.
+
+The native loudness port is compared against existing Music Studio No.19 using the same float32 997-Hz, gated-silence, intersample-overshoot and unequal-channel noise fixtures. This verifies shared meter semantics rather than independence from the existing implementation. A separate local FFmpeg reference checks one calibrated sine. Full standards conformance and physical audio quality remain unverified.

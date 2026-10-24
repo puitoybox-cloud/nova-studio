@@ -1,5 +1,6 @@
 #pragma once
 #include "DSP.hpp"
+#include "Loudness.hpp"
 #include <complex>
 #include <cstring>
 #include <vector>
@@ -29,6 +30,7 @@ struct Capture {
  }
 };
 struct Measurement {
+ Loudness loudness;
  bool valid=false; unsigned frames=0,invalid=0,clipped=0; double rate=0,peak=0,rms=0;
  std::array<double,3> bands{}; uint64_t hash=14695981039346656037ull; std::string status="unmeasured";
 };
@@ -48,6 +50,6 @@ inline Measurement measure(const float* data,unsigned frames,double sr,unsigned 
   for(unsigned i=0;i<2048;++i)a[i]=double(data[(start+i)*stride+offset+c])*(.5-.5*std::cos(2*3.141592653589793*i/2047));fft(a);
   for(unsigned k=1;k<=1024;++k){double hz=k*sr/2048;if(hz<20)continue;m.bands[hz<200?0:hz<4000?1:2]+=std::norm(a[k]);}
  }
- double total=m.bands[0]+m.bands[1]+m.bands[2];if(total<=0){m.status="no-spectrum";return m;}for(auto& b:m.bands)b/=total;m.valid=true;m.status=m.clipped?"clipping-detected":"measured";return m;
+ double total=m.bands[0]+m.bands[1]+m.bands[2];if(total<=0){m.status="no-spectrum";return m;}for(auto& b:m.bands)b/=total;m.loudness=nova::loudness(data,frames,sr,stride,offset);m.valid=true;m.status=m.clipped?"clipping-detected":"measured";return m;
 }
 }

@@ -25,6 +25,10 @@ jobs:
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"
           "$RUNNER_TEMP/nova-dsp"
+      - name: Quality EQ, compressor, loudness and mastering audio
+        run: |
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/quality.cpp -o "$RUNNER_TEMP/nova-quality"
+          "$RUNNER_TEMP/nova-quality" "$RUNNER_TEMP/nova-au/quality" | tee "$RUNNER_TEMP/nova-au/quality-measurements.txt"
       - name: Actual FFT, bounded capture and comparison engine
         run: |
           xcrun clang++ -std=c++20 -O2 -pthread tools/nova-au/tests/analysis.cpp -o "$RUNNER_TEMP/nova-analysis"
@@ -41,6 +45,10 @@ jobs:
           xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc tools/nova-au/tests/host.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/nova-au-host"
           "$RUNNER_TEMP/nova-au-host" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/NovaMix" "$RUNNER_TEMP/nova-au/actual" | tee "$RUNNER_TEMP/nova-au/host-measurements.txt"
           shasum -a 256 "$RUNNER_TEMP/nova-au/actual-approved.wav" > "$RUNNER_TEMP/nova-au/wav-sha256.txt"
+      - name: Public parameter control of an owned Apple AU fixture
+        run: |
+          xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
+          "$RUNNER_TEMP/apple-au-host-control" --approved-ci-fixture | tee "$RUNNER_TEMP/nova-au/apple-owned-host-control.json"
       - name: AU validation on disposable CI machine only
         run: |
           sudo mkdir -p /Library/Audio/Plug-Ins/Components
@@ -67,6 +75,8 @@ jobs:
           node-version: '22'
       - name: Full Node, syntax and whitespace
         run: |
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/meter.cpp -o "$RUNNER_TEMP/nova-meter"
+          node tools/nova-au/tests/loudness-reference.js "$RUNNER_TEMP/nova-meter" | tee "$RUNNER_TEMP/nova-au/loudness-reference.jsonl"
           node --test > "$RUNNER_TEMP/nova-au/node-tests.txt"
           git ls-files '*.js' | xargs -n1 node --check
           git diff --check HEAD^ HEAD
