@@ -116,6 +116,7 @@ jobs:
           path: |
             ${{ runner.temp }}/whole-song/**/manifest.json
             ${{ runner.temp }}/whole-song/**/*.wav
+            ${{ runner.temp }}/whole-song/**/*.f32
             ${{ runner.temp }}/whole-song/whole-song-results.json
             ${{ runner.temp }}/whole-song-log.txt
             ${{ runner.temp }}/whole-song-resources.txt

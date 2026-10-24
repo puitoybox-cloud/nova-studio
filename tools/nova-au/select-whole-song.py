@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 from pathlib import Path
 import time
+import fcntl
 
 spec = importlib.util.spec_from_file_location('whole_song', Path(__file__).with_name('whole-song.py'))
 whole = importlib.util.module_from_spec(spec)
@@ -18,6 +19,8 @@ p.add_argument('--choice', choices=['A', 'B', 'C', 'undo'], required=True)
 p.add_argument('--approve', action='store_true', required=True)
 a = p.parse_args()
 import json
+lock = (a.folder / '.processing.lock').open('a')
+fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
 m = json.loads((a.folder / 'manifest.json').read_text())
 i = m['identity']
 if not m.get('complete') or m['status'] != 'complete' or (i['projectId'], i['trackId'], i['audioVersion'], i['sourceWavSha256']) != (a.project, a.track, a.version, whole.sha(a.source_wav)):

@@ -6,6 +6,9 @@ Resume reuses only verified completed stages; interrupted stages restart from ze
 import argparse
 import array
 import hashlib
+import fcntl
+import resource
+import platform
 import json
 import math
 import os
@@ -148,16 +151,46 @@ def main():
     parser.add_argument('--ceiling-dbtp', type=float, default=-1)
     parser.add_argument('--confirm-source', action='store_true', required=True)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--handoff', type=Path, help='read-only #501 Logic handoff JSON')
+    parser.add_argument('--stem', action='append', default=[], help='explicit aligned role=path.wav; one per role')
+    parser.add_argument('--confirm-stem-alignment', action='store_true')
     args = parser.parse_args()
     if not all(x.strip() for x in (args.project, args.track, args.version)):
         parser.error('explicit project/track/version required')
     if not math.isfinite(args.target_lufs) or not -36 <= args.target_lufs <= -5 or not math.isfinite(args.ceiling_dbtp) or not -12 <= args.ceiling_dbtp <= -1:
         parser.error('target -36..-5 LUFS, ceiling -12..-1 dBTP required')
     info = wav_info(args.wav)
+    handoff = None
+    if args.handoff:
+        if args.handoff.stat().st_size > 16*1024*1024:
+            parser.error('handoff exceeds 16 MiB')
+        package = json.loads(args.handoff.read_text())
+        if package.get('format') != 'nova-logic-instrument-package-v1' or package.get('projectId') != args.project:
+            parser.error('handoff format/project mismatch')
+        matches = [t for t in package.get('tracks', []) if t.get('id') == args.track]
+        if len(matches) != 1:
+            parser.error('handoff requires exactly one matching Track')
+        handoff = dict(sha256=sha(args.handoff), track=matches[0])
+    stems = []
+    for item in args.stem:
+        if not args.confirm_stem_alignment or '=' not in item:
+            parser.error('stem requires role=path and explicit alignment confirmation')
+        role, filename = item.split('=', 1)
+        path = Path(filename)
+        if role not in ('piano','strings','bass','drums','vocal') or role in [x['role'] for x in stems]:
+            parser.error('stem role invalid/duplicate')
+        stem_info = wav_info(path)
+        if (stem_info['frames'],stem_info['sampleRate']) != (info['frames'],info['sampleRate']):
+            parser.error('stems must have identical start/frames/rate; no implicit resampling')
+        stems.append(dict(role=role,path=str(path.resolve()),sha256=sha(path),input=stem_info))
     identity = dict(projectId=args.project, trackId=args.track, audioVersion=args.version, source=args.source, role=args.role, kind=args.kind,
                     sourceWavSha256=sha(args.wav), engineSha256=sha(args.engine), input=info, instruction=args.instruction,
-                    targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION)
+                    targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION, pipelineSha256=sha(Path(__file__)), handoff=handoff, stems=stems)
     folder = args.output
+    if not args.resume:
+        folder.mkdir(parents=False, exist_ok=False)
+    lock = (folder / '.processing.lock').open('a')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if args.resume:
         manifest = json.loads((folder / 'manifest.json').read_text())
         if manifest['identity'] != identity:
@@ -166,7 +199,6 @@ def main():
             if sha(folder / name) != digest:
                 raise ValueError('resume artifact damaged: ' + name)
     else:
-        folder.mkdir(parents=False, exist_ok=False)
         manifest = dict(format=VERSION, identity=identity, status='incomplete', complete=False, adopted=None, history=[], artifacts={}, stages={},
                         hostTrackAutomaticallyVerified=False, modelInference=False, maskingMeasured=False,
                         processingOrder='existing RBJ EQ -> existing linked compressor -> gain -> 5ms linked sample-lookahead / 100ms release -> verified global TP attenuation',
@@ -184,6 +216,8 @@ def main():
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
     started = time.monotonic()
+    before_usage = resource.getrusage(resource.RUSAGE_SELF)
+    before_children = resource.getrusage(resource.RUSAGE_CHILDREN)
     def checkpoint():
         atomic_json(state, manifest)
     def artifact(path):
@@ -218,7 +252,29 @@ def main():
                 raise ValueError('source changed during decode')
             artifact(source)
             checkpoint()
-        plan = engine('plan', 'plan', source, rate, args.instruction, args.role, args.kind)
+        if stems and 'stemRelationships' not in manifest:
+            stem_rows = []
+            for stem in stems:
+                path = Path(stem['path'])
+                raw_stem = folder / (stem['role']+'-stem.f32.partial')
+                raw_stem.unlink(missing_ok=True)
+                decode(path, stem['input'], raw_stem)
+                measured = engine('stem-'+stem['role'], 'meter', raw_stem, rate)['measurement']
+                raw_stem.unlink()
+                if sha(path) != stem['sha256']:
+                    raise ValueError('stem changed during analysis')
+                stem_rows.append(dict(role=stem['role'],measurement=measured))
+            relationships = []
+            for i, left in enumerate(stem_rows):
+                for right in stem_rows[i+1:]:
+                    l,r = left['measurement'],right['measurement']
+                    relationships.append(dict(left=left['role'],right=right['role'],rmsDifferenceDb=l['rmsDbFS']-r['rmsDbFS'],
+                                              coarseBandOverlap=sum(min(x,y) for x,y in zip(l['bands'],r['bands'])),
+                                              perceptualMaskingEstablished=False))
+            manifest['stemRelationships'] = dict(stems=stem_rows,pairs=relationships,alignmentUserConfirmed=True,
+                                                  limitations='coarse full-song band/level relationships; no time-local or psychoacoustic masking inference')
+            checkpoint()
+        plan = engine('plan' , 'plan', source, rate, args.instruction, args.role, args.kind)
         manifest['before'] = plan['input']
         checkpoint()
         rows = manifest.setdefault('renders', [])
@@ -289,7 +345,12 @@ def main():
             checkpoint()
         if sha(args.wav) != identity['sourceWavSha256']:
             raise ValueError('source changed during processing')
-        manifest.update(status='complete', complete=True, elapsedSecondsThisRun=time.monotonic()-started,
+        usage, children = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
+        manifest['resources'] = dict(userCpuSecondsThisRun=usage.ru_utime-before_usage.ru_utime+children.ru_utime-before_children.ru_utime,
+                                     systemCpuSecondsThisRun=usage.ru_stime-before_usage.ru_stime+children.ru_stime-before_children.ru_stime,
+                                     peakRssBytes=max(usage.ru_maxrss,children.ru_maxrss)*(1 if platform.system()=='Darwin' else 1024),
+                                     memoryScope='maximum individual parent/child process RSS, not aggregate concurrent RSS')
+        manifest.update(status='complete' , complete=True, elapsedSecondsThisRun=time.monotonic()-started,
                         adoptionRequiresExplicitApproval=True, offlineLimiterNotLiveAu=True)
         checkpoint()
         print(json.dumps(manifest, ensure_ascii=False, indent=2))
