@@ -125,7 +125,7 @@ public:
  OSStatus SaveState(CFPropertyListRef* data)override{
   if(!data)return kAudio_ParamError;std::lock_guard lock(controlMutex);
   // Full host-owned state; contains no Music Studio files or Logic project edits.
-  AUPreset preset{};OSStatus presetStatus=AUEffectBase::GetProperty(kAudioUnitProperty_PresentPreset,kAudioUnitScope_Global,0,&preset);if(presetStatus)return presetStatus;
+  AUPreset preset{};OSStatus presetStatus=DispatchGetProperty(kAudioUnitProperty_PresentPreset,kAudioUnitScope_Global,0,&preset);if(presetStatus)return presetStatus;
   NSString* presetName=CFBridgingRelease(preset.presetName);
   *data=(__bridge_retained CFPropertyListRef)@{@"version":@0,@"type":@((UInt32)'aufx'),@"subtype":@((UInt32)'NvMx'),@"manufacturer":@((UInt32)'NvSt'),@"name":presetName?:@"NOVA Mix",@"novaVersion":@1,@"novaValues":array(nova::decode(targets.load())),@"novaBinding":bindingDictionary()};return noErr;
  }
