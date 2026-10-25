@@ -27,6 +27,7 @@ resources=bundle/'Contents/Resources';runtime=resources/'Runtime'
 python=runtime/'Python/bin/python3.12';ffmpeg=runtime/'FFmpeg/bin/ffmpeg'
 engine=bundle/'Contents/MacOS/nova-whole-song'
 env={'PATH':'/nonexistent','LANG':'en_US.UTF-8'}
+subprocess.run(['/usr/bin/codesign','--verify','--deep','--strict',str(bundle)],check=True)
 # Test orchestration is external; all production scripts are the bundled bytes.
 source=Path(__file__).resolve().parents[1]
 with (a.output/'matrix.log').open('w') as out:
@@ -34,6 +35,8 @@ with (a.output/'matrix.log').open('w') as out:
         '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
         '--engine',str(engine),'--output',str(a.output/'matrix'),'--long'],
         env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+# Processing must preserve the complete seal, including no stdlib bytecode writes.
+subprocess.run(['/usr/bin/codesign','--verify','--deep','--strict',str(bundle)],check=True)
 # dyld trace records what the relocated executables actually load. macOS system
 # libraries are platform dependencies; all other images must stay in the bundle.
 traces=[]

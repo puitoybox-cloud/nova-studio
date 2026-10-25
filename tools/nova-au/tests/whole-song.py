@@ -39,7 +39,7 @@ for rate in (44100,48000,96000):
     # Whole production chain at all rates for 30s and 4/8 min at 48k.
     if seconds==30 or rate==48000:
         out=a.output/f'comparison-{rate}-{seconds}'
-        cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
+        cmd=[sys.executable,'-I','-B',str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
         with (a.output/f'production-{rate}-{seconds}.json').open('w') as log:
             subprocess.run(cmd,stdout=log,check=True)
         result=json.loads((out/'manifest.json').read_text());assert result['complete'];assert result['adopted'] is None
@@ -50,7 +50,7 @@ for rate in (44100,48000,96000):
         before={n:w.sha(out/n) for n in result['artifacts']}
         subprocess.run(cmd+['--resume'],stdout=subprocess.DEVNULL,check=True)
         assert before=={n:w.sha(out/n) for n in result['artifacts']}
-        adopt=[sys.executable,str(root/'select-whole-song.py'),str(out),'--project','fixture','--track','stereo','--version','v1','--source-wav',str(wav),'--approve']
+        adopt=[sys.executable,'-I','-B',str(root/'select-whole-song.py'),str(out),'--project','fixture','--track','stereo','--version','v1','--source-wav',str(wav),'--approve']
         subprocess.run(adopt+['--choice','B'],check=True,stdout=subprocess.DEVNULL)
         assert w.sha(out/'adopted.wav')==w.sha(out/'B.wav')
         subprocess.run(adopt+['--choice','undo'],check=True,stdout=subprocess.DEVNULL)
@@ -71,7 +71,7 @@ for rate in (44100,48000,96000):
         x=.8*math.sin(2*math.pi*.25*i+math.pi/4) if i%(rate//2)<rate//20 else 0;values.extend([x,x])
     raw.write_bytes(values.tobytes());wav=raw.with_suffix('.wav');w.wave_from_raw(raw,wav,rate)
     out=a.output/f'peak-guard-{rate}'
-    cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','peak-fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--target-lufs','-5','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
+    cmd=[sys.executable,'-I','-B',str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','peak-fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--target-lufs','-5','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
     subprocess.run(cmd,stdout=subprocess.DEVNULL,check=True)
     result=json.loads((out/'manifest.json').read_text());assert result['independentPeakCeilingVerified']
     for row in result['renders'][1:]:

@@ -123,6 +123,7 @@ jobs:
             ${{ runner.temp }}/nova-au/NovaMix.component/Contents/Resources/Runtime/inventory.json
             ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/result.json
+            ${{ runner.temp }}/nova-au/contained/matrix.log
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
             ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
