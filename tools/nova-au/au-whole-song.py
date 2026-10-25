@@ -30,6 +30,8 @@ def validate(q):
         raise ValueError('explicit kind/role required')
     if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'development-fixture'):
         raise ValueError('explicit audio origin required')
+    if q.get('sourceTap') not in ('pre-nova-confirmed', 'post-or-unknown'):
+        raise ValueError('explicit pre/post NOVA source confirmation required')
     if q.get('confirmed') is not True:
         raise ValueError('Logic source/Track confirmation required')
     for key in ('sourceWav', 'engine', 'ffmpeg', 'output'):
@@ -74,7 +76,8 @@ def verify(q):
         for row in m['renders']:
             if row['label'] + '.wav' not in artifacts or not all(math.isfinite(row['measurement'][k]) for k in ('integratedLufs', 'truePeakEstimateDbTP')):
                 raise ValueError('unverified candidate')
-        return dict(format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
+        validate(q)  # detect source/runtime edits during the artifact scan as well
+        return dict(runtime=dict(pythonVersion=sys.version.split()[0], pythonExecutable=sys.executable, pythonSha256=w.sha(Path(sys.executable)), ffmpegSha256=q['ffmpegSha256'], engineSha256=q['engineSha256']), format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)

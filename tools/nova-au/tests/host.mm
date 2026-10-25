@@ -142,4 +142,5 @@ int main(int argc,char** argv){@autoreleasepool{
  ok(AudioUnitUninitialize(a),"stop");ok(AudioComponentInstanceDispose(a),"destroy a");ok(AudioComponentInstanceDispose(b),"destroy b");
  puts("Actual AU binary host, stereo, Gain/EQ, Japanese approval/Undo, isolation and state tests PASS. Logic not tested.");
  // Keep the code loaded until process exit: component registry owns its factory pointer.
+return 0;
 }}

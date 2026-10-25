@@ -114,6 +114,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   NovaMixView* view=weakSelf;if(!view)return;
   if(error){view.wholeReply=nil;view.offlineSummary=error;[view update:nil];return;}
   view.wholeReply=reply;NSMutableString* text=[NSMutableString stringWithFormat:@"全曲検証成功 / source SHA %@ / %@\n信号解析ルール提案（学習AIなし）。AU設定は承認待ち。offline追加Gain/ピーク制御はAU未対応。",reply[@"request"][@"sourceWavSha256"],reply[@"request"][@"audioVersion"]];
+  NSDictionary* before=reply[@"before"];[text appendFormat:@"\n解析元 %@ frames / %@ Hz / Peak %.2f dBFS / RMS %.2f dBFS / crest %.2f dB / 帯域比 %@",before[@"frames"],before[@"sampleRate"],[before[@"samplePeakDbFS"]doubleValue],[before[@"rmsDbFS"]doubleValue],[before[@"crestDb"]doubleValue],before[@"bands"]];
   for(id row in reply[@"renders"])[text appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / EQ+Gain %@ / %@ / 追加Gain %.2f dB / TP補正 %.2f dB / %@",row[@"label"],[row[@"measurement"][@"integratedLufs"]doubleValue],[row[@"measurement"][@"truePeakEstimateDbTP"]doubleValue],params(row[@"values"]),processingText(row[@"processing"]),[row[@"finalGainDb"]doubleValue],[row[@"postTruePeakAttenuationDb"]doubleValue],row[@"reason"]];
   view.offlineSummary=text;if(after)after(reply);[view update:nil];
  }];
@@ -122,13 +123,14 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(self.wholeController.busy||self.wholePreparing)return;[self update:nil];NSDictionary* b=[self.state[@"binding"]copy];
  if(![b[@"confirmed"]boolValue]||!self.audioVersion.stringValue.length){self.offlineSummary=@"対象を確認し、音源/プリセット/音声revision IDを入力してください";return;}
  NSURL* wav=[self chooseWholeFile:@"このAUの挿入先をLogicで書き出したWAVを選択（Track/Bus/Stereo Outを手動確認）" wav:YES];if(!wav)return;
+ NSAlert* tap=[NSAlert new];tap.messageText=@"解析用WAVの書き出し位置を確認";tap.informativeText=@"このNOVA AUをバイパスして書き出した同じ挿入先のWAVだけが、AUへの設定適用候補になります。通常の完成Mix WAVはオフライン処理専用として扱います。";[tap addButtonWithTitle:@"NOVAバイパス済み・AU候補"];[tap addButtonWithTitle:@"完成Mix・オフライン専用"];[tap addButtonWithTitle:@"戻る"];NSModalResponse tapChoice=tap.runModal;if(tapChoice==NSAlertThirdButtonReturn)return;NSString* sourceTap=tapChoice==NSAlertFirstButtonReturn?@"pre-nova-confirmed":@"post-or-unknown";
  NSURL* python=[self chooseWholeFile:@"使用するローカルPython3実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!python)return;
  NSURL* ffmpeg=[self chooseWholeFile:@"使用するローカルFFmpeg実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!ffmpeg)return;
  NSOpenPanel* parent=[NSOpenPanel openPanel];parent.message=@"比較WAVを保存する親フォルダ（新規専用フォルダを作成）";parent.canChooseDirectories=YES;parent.canChooseFiles=NO;if([parent runModal]!=NSModalResponseOK)return;
  NSURL* folder=[parent.URL URLByAppendingPathComponent:[@"NOVA-whole-" stringByAppendingString:NSUUID.UUID.UUIDString] isDirectory:YES];
  if(![NSFileManager.defaultManager createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:nil])return;
  NSURL* resources=self.wholeResources;NSURL* engine=[resources URLByAppendingPathComponent:@"../MacOS/nova-whole-song"];
- NSMutableDictionary* q=[@{@"format":@"nova-au-whole-request-v1",@"sourceKind":@"logic-render",@"projectId":b[@"projectId"],@"trackId":b[@"trackId"],@"instanceId":b[@"instanceId"],@"inputSource":b[@"inputSource"],@"role":b[@"role"],@"kind":b[@"targetKind"],@"confirmed":@YES,@"audioVersion":self.audioVersion.stringValue,@"settingsToken":self.state[@"settingsToken"],@"instruction":self.instruction.stringValue,@"targetLufs":@(self.targetLufs.doubleValue),@"ceilingDbTP":@(self.peakCeiling.doubleValue),@"sourceWav":wav.path,@"engine":engine.path,@"ffmpeg":ffmpeg.path,@"output":[folder URLByAppendingPathComponent:@"audio"].path}mutableCopy];
+ NSMutableDictionary* q=[@{@"format":@"nova-au-whole-request-v1",@"sourceKind":@"logic-render",@"sourceTap":sourceTap,@"projectId":b[@"projectId"],@"trackId":b[@"trackId"],@"instanceId":b[@"instanceId"],@"inputSource":b[@"inputSource"],@"role":b[@"role"],@"kind":b[@"targetKind"],@"confirmed":@YES,@"audioVersion":self.audioVersion.stringValue,@"settingsToken":self.state[@"settingsToken"],@"instruction":self.instruction.stringValue,@"targetLufs":@(self.targetLufs.doubleValue),@"ceilingDbTP":@(self.peakCeiling.doubleValue),@"sourceWav":wav.path,@"engine":engine.path,@"ffmpeg":ffmpeg.path,@"output":[folder URLByAppendingPathComponent:@"audio"].path}mutableCopy];
  self.wholeRequest=[folder URLByAppendingPathComponent:@"request.json"];self.wholePython=python;self.wholeReply=nil;
  // Hash large source on a worker, never on audio/main callbacks.
  NSURL* request=self.wholeRequest;self.wholePreparing=YES;NSUInteger generation=++self.wholeGeneration;
@@ -151,7 +153,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 }
 - (void)stopWhole:(id)sender{++self.wholeGeneration;[self.wholeController cancel];self.offlineSummary=@"全曲処理を停止中。完了前の候補は採用できません";}
 - (void)applyWhole:(id)sender{
- if(!self.wholeReply||self.wholeController.busy)return;NSInteger index=self.wholeChoice.indexOfSelectedItem;id row=self.wholeReply[@"renders"][index+1];
+ if(!self.wholeReply||self.wholeController.busy)return;if(![self.wholeReply[@"request"][@"sourceTap"]isEqual:@"pre-nova-confirmed"]){self.offlineSummary=@"完成Mix/書出し位置未確認のWAVはオフライン専用です。AU適用にはNOVAをバイパスしたWAVを新たに解析してください";return;}NSInteger index=self.wholeChoice.indexOfSelectedItem;id row=self.wholeReply[@"renders"][index+1];
  NSAlert* alert=[NSAlert new];alert.messageText=@"全曲実測案の共有パラメータだけをこのNOVA AUへ適用しますか？";alert.informativeText=[NSString stringWithFormat:@"現在 %@\n新値 %@\n現在 %@\n新値 %@\nオフライン追加Gain・Lookahead・TP補正は反映されません。適用後にLogicを再出力して全曲再測定してください。",params(self.state[@"current"]),params(row[@"values"]),processingText(self.state[@"processing"]),processingText(row[@"processing"])];[alert addButtonWithTitle:@"承認・適用"];[alert addButtonWithTitle:@"戻る"];if(alert.runModal!=NSAlertFirstButtonReturn)return;
  [self runWhole:@"verify" choice:nil after:^(NSDictionary* reply){
   if(![self wholeTargetMatches:reply[@"request"]]){self.offlineSummary=@"曲/Track/音源/挿入先/AUが変わりました。再解析してください";return;}
