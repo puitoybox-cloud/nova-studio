@@ -36,7 +36,7 @@ NSString* NovaFileSHA256(NSURL* url){
    if(![q isKindOfClass:NSDictionary.class]||![NovaFileSHA256(python)isEqual:q[@"pythonSha256"]])@throw @"選択したPythonが変更されています";
    if(![q[@"engine"]isKindOfClass:NSString.class]||![[NSURL fileURLWithPath:q[@"engine"]].URLByResolvingSymlinksInPath.path isEqual:[resources URLByAppendingPathComponent:@"../MacOS/nova-whole-song"].URLByResolvingSymlinksInPath.path])@throw @"同梱engine以外は起動できません";
    NSTask* task=[NSTask new];task.executableURL=python;
-   NSMutableArray* args=[@[@"-I",[resources URLByAppendingPathComponent:@"au-whole-song.py"].path,operation,request.path]mutableCopy];
+   NSMutableArray* args=[@[@"-I",@"-B",[resources URLByAppendingPathComponent:@"au-whole-song.py"].path,operation,request.path]mutableCopy];
    if(choice){[args addObjectsFromArray:@[@"--choice",choice,@"--approve"]];}else if([operation isEqual:@"undo"])[args addObject:@"--approve"];
    task.arguments=args;
    // No shell, Python import injection or inherited provider credentials.

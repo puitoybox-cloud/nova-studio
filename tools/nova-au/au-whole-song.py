@@ -106,7 +106,7 @@ def main():
         if not a.approve or (a.operation == 'adopt' and not a.choice):
             p.error('explicit choice/approval required')
         import subprocess
-        subprocess.run([sys.executable, '-I', str(ROOT / 'select-whole-song.py'), q['output'], '--project', q['projectId'], '--track', q['trackId'], '--version', q['audioVersion'], '--source-wav', q['sourceWav'], '--choice', 'undo' if a.operation == 'undo' else a.choice, '--approve'], stdout=sys.stderr, check=True)
+        subprocess.run([sys.executable, '-I', '-B', str(ROOT / 'select-whole-song.py'), q['output'], '--project', q['projectId'], '--track', q['trackId'], '--version', q['audioVersion'], '--source-wav', q['sourceWav'], '--choice', 'undo' if a.operation == 'undo' else a.choice, '--approve'], stdout=sys.stderr, check=True)
         result = verify(q)
     print(json.dumps(result, ensure_ascii=False))
 
