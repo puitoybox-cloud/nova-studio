@@ -42,6 +42,10 @@ with (a.output/'matrix.log').open('w') as out:
         '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
         '--engine',str(engine),'--output',str(a.output/'matrix'),'--long'],
         env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+with (a.output/'multitrack.log').open('w') as out:
+    subprocess.run([str(python),'-I','-B',str(source/'tests/multitrack-audio.py'),
+        '--scripts',str(resources),'--ffmpeg',str(ffmpeg),'--engine',str(engine),
+        '--output',str(a.output/'multitrack')],env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
 # Processing must preserve the complete seal, including no stdlib bytecode writes.
 subprocess.run(['/usr/bin/codesign','--verify','--deep','--strict',str(bundle)],check=True)
 # dyld trace records what the relocated executables actually load. macOS system
