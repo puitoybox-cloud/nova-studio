@@ -23,7 +23,9 @@ def fixture(path,rate,seconds):
     with path.open('wb') as f:
         for j in range(seconds):f.write(bytes(len(block)*4) if j in (0,seconds-1) else block.tobytes())
 
-def run(*args):return json.loads(subprocess.check_output([str(a.engine.resolve()),*map(str,args)],text=True))
+def run(*args):
+    executable=a.engine.with_name('nova-section-meter') if args[0]=='sections' else a.engine
+    return json.loads(subprocess.check_output([str(executable.resolve()),*map(str,args)],text=True))
 report=[]
 for rate in (44100,48000,96000):
  for seconds in ((30,240,480) if a.long else (30,)):

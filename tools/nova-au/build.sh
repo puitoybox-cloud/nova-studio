@@ -22,6 +22,7 @@ xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility
  -o "$BUNDLE/Contents/MacOS/NovaMix"
 # Offline companion reuses the AU quality DSP; it is never called from render.
 xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -O2 whole-song.cpp -o "$BUNDLE/Contents/MacOS/nova-whole-song"
+xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -O2 section-meter.cpp -o "$BUNDLE/Contents/MacOS/nova-section-meter"
 cp whole-song.py select-whole-song.py au-whole-song.py compare-sections.py "$BUNDLE/Contents/Resources/"
 printf 'BNDLNvSt'  > "$BUNDLE/Contents/PkgInfo"
 cp Info.plist "$BUNDLE/Contents/Info.plist"
@@ -32,12 +33,14 @@ lipo "$BUNDLE/Contents/MacOS/NovaMix" -verify_arch x86_64
 nm -gU "$BUNDLE/Contents/MacOS/NovaMix" | grep _NovaMixFactory
 # Ad-hoc development sealing uses no Apple identity, certificate, keychain secret or notarization.
 codesign --force --sign - "$BUNDLE/Contents/MacOS/nova-whole-song"
+codesign --force --sign - "$BUNDLE/Contents/MacOS/nova-section-meter"
+codesign --verify --strict "$BUNDLE/Contents/MacOS/nova-section-meter"
 codesign --verify --strict "$BUNDLE/Contents/MacOS/nova-whole-song"
 python3 - "$BUNDLE" <<'PYINVENTORY'
 import hashlib,json,sys
 from pathlib import Path
 r=Path(sys.argv[1])/'Contents/Resources'
-names=['whole-song.py','select-whole-song.py','au-whole-song.py','compare-sections.py','../MacOS/nova-whole-song']
+names=['whole-song.py','select-whole-song.py','au-whole-song.py','compare-sections.py','../MacOS/nova-whole-song','../MacOS/nova-section-meter']
 (r/'whole-song-runtime.json').write_text(json.dumps({n:hashlib.sha256((r/n).read_bytes()).hexdigest() for n in names}))
 PYINVENTORY
 codesign --force --sign - "$BUNDLE"

@@ -41,7 +41,7 @@ def compare(original, candidate):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--engine', type=pathlib.Path, required=True)
+    p.add_argument('--engine', type=pathlib.Path, required=True, help='path to nova-section-meter (separate from the production render executable)')
     p.add_argument('--rate', type=int, choices=(44100,48000,96000), required=True)
     p.add_argument('original', type=pathlib.Path)
     p.add_argument('candidate', type=pathlib.Path)
