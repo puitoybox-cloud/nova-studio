@@ -116,6 +116,25 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: nova-au-intel-contained-package
+          path: |
+            ${{ runner.temp }}/nova-au/NOVA-Mix-Intel-development.tar.gz
+            ${{ runner.temp }}/nova-au/distribution-sha256.txt
+            ${{ runner.temp }}/nova-au/NovaMix.component/Contents/Resources/Runtime/inventory.json
+            ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
+            ${{ runner.temp }}/nova-au/contained/result.json
+            ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
+            ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
+            ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
+            ${{ runner.temp }}/nova-au/contained/corrupt/rejection.json
+            ${{ runner.temp }}/nova-au/contained/missing/rejection.json
+            ${{ runner.temp }}/nova-au/contained/version/rejection.json
+            ${{ runner.temp }}/nova-au/node-tests.txt
+            ${{ runner.temp }}/nova-au/auval.txt
+            verification/music-logic-instruments-*
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
           name: nova-au-intel-development
           path: |
             ${{ runner.temp }}/nova-au
