@@ -133,6 +133,10 @@ jobs:
             ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/result.json
             ${{ runner.temp }}/nova-au/contained/matrix.log
+            ${{ runner.temp }}/nova-au/contained/matrix/whole-song-results.json
+            ${{ runner.temp }}/nova-au/host-measurements.txt
+            ${{ runner.temp }}/nova-au/shared-render.jsonl
+            ${{ runner.temp }}/nova-au/quality-measurements.txt
             ${{ runner.temp }}/nova-au/contained/multitrack/result.json
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
@@ -175,6 +179,7 @@ jobs:
           /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
       - name: Sequential PR 509 audio parity and resource comparison
         run: |
+          git fetch --no-tags --depth=1 origin a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8
           mkdir -p "$RUNNER_TEMP/nova-before"
           git archive a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
           g++ -std=c++20 -O2 "$RUNNER_TEMP/nova-before/tools/nova-au/whole-song.cpp" -o "$RUNNER_TEMP/nova-before-engine"
@@ -191,4 +196,14 @@ jobs:
             ${{ runner.temp }}/whole-song/whole-song-results.json
             ${{ runner.temp }}/whole-song/peak-guard-results.json
             ${{ runner.temp }}/whole-song-log.txt
+            ${{ runner.temp }}/whole-song-resources.txt
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
+        if: always()
+        with:
+          name: nova-whole-song-evidence
+          path: |
+            ${{ runner.temp }}/efficiency/efficiency.json
+            ${{ runner.temp }}/whole-song/whole-song-results.json
+            ${{ runner.temp }}/whole-song/peak-guard-results.json
             ${{ runner.temp }}/whole-song-resources.txt

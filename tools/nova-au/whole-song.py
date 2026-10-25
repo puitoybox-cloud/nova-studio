@@ -154,6 +154,12 @@ def retire_intermediates(folder, manifest):
     names = ['source.f32'] + [label + suffix for label in ('A', 'B', 'C')
                               for suffix in ('-trial.f32', '.f32')]
     pending = manifest.setdefault('retiredIntermediates', {})
+    if not isinstance(pending, dict) or any(name not in names for name in pending):
+        raise ValueError('invalid intermediate retirement intent')
+    required = {label + suffix for label in ('original', 'A', 'B', 'C')
+                for suffix in ('.wav', '-lufs-matched.wav')}
+    if not manifest.get('complete') or not required.issubset(manifest['artifacts']):
+        raise ValueError('retirement requires all completed comparison WAVs')
     for name in names:
         if name in manifest['artifacts']:
             path = folder / name

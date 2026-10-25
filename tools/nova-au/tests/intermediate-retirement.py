@@ -11,7 +11,7 @@ spec.loader.exec_module(w)
 with tempfile.TemporaryDirectory() as tmp:
     folder = pathlib.Path(tmp)
     names = ['source.f32'] + [label + suffix for label in 'ABC' for suffix in ('-trial.f32', '.f32')]
-    retained = ['original.wav', 'A.wav', 'B.wav', 'C.wav', 'adopted.wav', 'A-lufs-matched.wav']
+    retained = ['adopted.wav'] + [label + suffix for label in ('original', 'A', 'B', 'C') for suffix in ('.wav', '-lufs-matched.wav')]
     for name in names + retained:
         (folder / name).write_bytes(name.encode() * 100)
     hashes = {name: w.sha(folder / name) for name in names + retained}
@@ -47,4 +47,12 @@ with tempfile.TemporaryDirectory() as tmp:
     assert saved['intermediateBytesRetired'] == sum(len(name.encode()) * 100 for name in names)
     assert saved['history'] == manifest['history']
     w.retire_intermediates(folder, saved)
+    for hostile in ('original.wav', '../outside.wav'):
+        saved['retiredIntermediates'][hostile] = dict(sha256=hashes['original.wav'], bytes=1)
+        try:
+            w.retire_intermediates(folder, saved)
+            raise AssertionError('non-intermediate retirement accepted')
+        except ValueError:
+            assert w.sha(folder / 'original.wav') == hashes['original.wav']
+        del saved['retiredIntermediates'][hostile]
 print('intermediate retirement crash/restart/hash/retained-audio/history/idempotence PASS')
