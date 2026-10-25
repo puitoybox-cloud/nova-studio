@@ -56,7 +56,8 @@ class NovaMix final:public ausdk::AUEffectBase {
  std::mutex controlMutex; // UI/state only; render never acquires it.
  nova::Binding binding;
  std::optional<nova::Proposal> pending;
- uint64_t pendingWord=0;
+ uint64_t pendingWord=0,controlEpoch=0;
+ NSString* settingsToken(uint64_t core,uint64_t extra)const{return [NSString stringWithFormat:@"%llu:%llu:%llu",(unsigned long long)core,(unsigned long long)extra,(unsigned long long)controlEpoch];}
  struct Undo {std::array<float,4> first,second;uint64_t appliedWord=0;uint64_t extraBefore=nova::pack(nova::defaults()),extraAfter=nova::pack(nova::defaults());};
  std::vector<Undo> history;
  NSString* status=@"音声未解析";
@@ -65,12 +66,13 @@ class NovaMix final:public ausdk::AUEffectBase {
  NSDictionary* snapshot(){
   collect();uint64_t core=targets.load(),extra=processing.load();bool consistent=readPair(core,extra);
   NSMutableDictionary* s=[@{@"version":@1,@"binding":bindingDictionary(),@"current":array(nova::decode(core)),@"parameterSnapshotConsistent":@(consistent),@"audioAnalyzed":@(inputAnalysis.valid),@"analysis":@{@"audioId":audioId,@"binding":bindingInfo(captureBinding),@"input":measured(inputAnalysis),@"output":measured(outputAnalysis),@"captureState":@(capture.state.load()),@"capturedFrames":@(capture.progress.load()),@"complete":@(capture.state.load()==3),@"source":@"user-confirmed AU input; host Track not auto-discovered"},@"history":evidence,@"safetyStopped":@(safetyStop.load()),@"status":safetyStop.load()?@"出力過大のため停止中。Undo承認で解除してください":status,@"undoCount":@(history.size()),@"meter":@{@"outputPeak":@(outputPeak.load()),@"outputRms":@(outputRms.load()),@"scope":@"last-render-block",@"lufsMeasured":@NO,@"truePeakMeasured":@NO}} mutableCopy];
-  s[@"processing"]=processingArray(nova::unpack(extra));s[@"gainReductionDb"]=@(gainReduction.load());
+  s[@"settingsToken"]=settingsToken(core,extra);s[@"processing"]=processingArray(nova::unpack(extra));s[@"gainReductionDb"]=@(gainReduction.load());
   if(pending&&consistent){s[@"processingChoices"]=@[processingArray(pending->processingChoices[0]),processingArray(pending->processingChoices[1]),processingArray(pending->processingChoices[2])];s[@"proposalAudioAnalyzed"]=@(pending->audioAnalyzed);s[@"before"]=array(pending->before);s[@"choices"]=@[array(pending->choices[0]),array(pending->choices[1]),array(pending->choices[2])];s[@"reason"]=ns(pending->reason);}return s;
  }
  OSStatus command(NSDictionary* c){
   const auto op=str(c[@"operation"]);
   if(op=="bind"){
+   ++controlEpoch;
    const auto p=str(c[@"projectId"]),t=str(c[@"trackId"]);
    if(![c[@"confirmed"] isEqual:@YES]||p.empty()||t.empty()||p.size()>256||t.size()>256)return kAudioUnitErr_InvalidPropertyValue;
    auto role=str(c[@"role"]),kind=str(c[@"targetKind"]),source=str(c[@"inputSource"]);
@@ -81,6 +83,20 @@ class NovaMix final:public ausdk::AUEffectBase {
   if(str(c[@"instanceId"])!=binding.instance||str(c[@"projectId"])!=binding.project||str(c[@"trackId"])!=binding.track||!binding.confirmed)return kAudioUnitErr_InvalidPropertyValue;
   collect();
   uint64_t nowWord=0,nowProcessing=0;if(!readPair(nowWord,nowProcessing))return kAudioUnitErr_CannotDoInCurrentContext;auto now=nova::decode(nowWord);
+  if(op=="apply-whole-song"){
+   // The control UI revalidates source and every output hash immediately before this command.
+   // No filesystem, subprocess, FFT or whole-song buffers enter this command or render.
+   id reply=c[@"result"];if(![reply isKindOfClass:NSDictionary.class])return kAudioUnitErr_InvalidPropertyValue;id q=reply[@"request"];id rows=reply[@"renders"];
+   if(![c[@"approved"]isEqual:@YES]||![reply isKindOfClass:NSDictionary.class]||![reply[@"format"]isEqual:@"nova-au-whole-reply-v1"]||![q isKindOfClass:NSDictionary.class]||![rows isKindOfClass:NSArray.class]||[rows count]!=4||![q[@"settingsToken"]isEqual:settingsToken(nowWord,nowProcessing)]||![q[@"instanceId"]isEqual:ns(binding.instance)]||![q[@"projectId"]isEqual:ns(binding.project)]||![q[@"trackId"]isEqual:ns(binding.track)]||![q[@"kind"]isEqual:ns(binding.kind)]||![q[@"role"]isEqual:ns(binding.role)]||![q[@"inputSource"]isEqual:ns(binding.source)]||![c[@"choice"]isKindOfClass:NSNumber.class])return kAudioUnitErr_InvalidPropertyValue;
+   NSInteger index=[c[@"choice"]integerValue];if(index<0||index>2)return kAudioUnitErr_InvalidPropertyValue;
+   id row=rows[index+1];std::array<float,4> next;nova::Processing extra;
+   if(![row isKindOfClass:NSDictionary.class]||![row[@"label"]isEqual:@[@"A",@"B",@"C"][index]]||!values(row[@"values"],next)||!processingValues(row[@"processing"],extra)||extra[0]!=1||next[3]!=0)return kAudioUnitErr_InvalidPropertyValue;
+   // Only the shared live EQ/compressor/base Gain map. Offline final gain, lookahead and TP attenuation do NOT.
+   next=nova::decode(nova::encode(next));auto nextExtra=nova::pack(extra);auto nextWord=nova::revised(nowWord,next);
+   history.push_back({now,next,nextWord,nowProcessing,nextExtra});if(!publish(nowWord,nextWord,nextExtra)){history.pop_back();return kAudioUnitErr_CannotDoInCurrentContext;}if(history.size()>32)history.erase(history.begin());
+   [evidence addObject:@{@"operation":@"apply-whole-song",@"binding":bindingDictionary(),@"request":q,@"manifestSha256":reply[@"manifestSha256"]?:@"",@"choice":@(index),@"before":array(now),@"after":array(next),@"processing":processingArray(extra),@"offlineLimiterApplied":@NO,@"offlineFinalGainApplied":@NO,@"liveRemeasurementRequired":@YES}];if(evidence.count>32)[evidence removeObjectAtIndex:0];
+   ++controlEpoch;pending.reset();inputAnalysis.valid=false;measuredGuard.store(true);safetyStop.store(false);status=@"全曲実測EQ/Comp/base Gainを適用。オフラインLimiter/追加Gainは未適用。Logic再出力で全曲再測定が必要";return noErr;
+  }
   if(op=="capture"){
    if(![c[@"consent"] isEqual:@YES])return kAudioUnitErr_InvalidPropertyValue;
    if(!capture.arm())return kAudioUnitErr_CannotDoInCurrentContext;
@@ -231,7 +247,7 @@ public:
   inputAnalysis={};outputAnalysis={};audioId=@"";
   binding.project=p;binding.track=t;binding.role=role;binding.kind=kind;binding.source=source;
   // A duplicated Logic insert must explicitly re-confirm its Track; keep a fresh runtime instance UUID.
-  binding.confirmed=false;pending.reset();history=std::move(restoredUndo);if(!history.empty())history.back().appliedWord=nova::encode(v);status=@"設定復元済み。曲・Trackの対応を再確認してください";return noErr;
+  ++controlEpoch;binding.confirmed=false;pending.reset();history=std::move(restoredUndo);if(!history.empty())history.back().appliedWord=nova::encode(v);status=@"設定復元済み。曲・Trackの対応を再確認してください";return noErr;
  }
 };
 AUSDK_COMPONENT_ENTRY(ausdk::AUBaseFactory,NovaMix)
