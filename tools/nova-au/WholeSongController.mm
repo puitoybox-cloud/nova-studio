@@ -1,5 +1,7 @@
 #import "WholeSongController.h"
 #import <CommonCrypto/CommonDigest.h>
+#include <signal.h>
+#include <unistd.h>
 NSString* NovaFileSHA256(NSURL* url){
  NSInputStream* stream=[NSInputStream inputStreamWithURL:url];[stream open];CC_SHA256_CTX context;CC_SHA256_Init(&context);uint8_t buffer[65536];NSInteger count;
  while((count=[stream read:buffer maxLength:sizeof(buffer)])>0)CC_SHA256_Update(&context,buffer,(CC_LONG)count);[stream close];if(count<0)return nil;
@@ -11,7 +13,14 @@ NSString* NovaFileSHA256(NSURL* url){
 @property NSTask* task;
 @end
 @implementation NovaWholeSongController
-- (void)cancel{ @synchronized(self){self.cancelled=YES;if(self.task.running)[self.task terminate];} }
+- (void)cancel{
+ @synchronized(self){self.cancelled=YES;NSTask* task=self.task;if(task.running){
+  [task terminate];
+  // Helper creates its own session before starting an engine/FFmpeg child.
+  // Escalate only while this exact NSTask still runs in its own process group.
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW,5*NSEC_PER_SEC),dispatch_get_main_queue(),^{@synchronized(self){pid_t pid=task.processIdentifier;if(task.running&&pid>0&&getpgid(pid)==pid)kill(-pid,SIGKILL);}});
+ }}
+}
 - (void)execute:(NSString*)operation request:(NSURL*)request python:(NSURL*)python resources:(NSURL*)resources choice:(NSString*)choice completion:(void (^)(NSDictionary*, NSString*))completion{
  NSAssert(NSThread.isMainThread,@"control API requires main queue");
  if(self.busy){completion(nil,@"全曲処理中です。終了を待ってください");return;}self.busy=YES;self.cancelled=NO;

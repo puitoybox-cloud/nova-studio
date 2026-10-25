@@ -32,6 +32,7 @@ int main(int argc,char** argv){@autoreleasepool{
  check([snapshot(unit)[@"current"]isEqual:s[@"current"]],"analysis does not apply settings");
  auto d=cmd(unit,@"apply-whole-song");d[@"result"]=reply;d[@"choice"]=@1;check(command(unit,d)!=noErr,"approval required");d[@"approved"]=@YES;
  NSMutableDictionary* wrong=[d mutableCopy];wrong[@"instanceId"]=snapshot(other)[@"binding"][@"instanceId"];check(command(other,wrong)!=noErr,"other AU refuses result");
+ NSMutableDictionary* offlineOnly=[reply mutableCopy],*offlineRequest=[q mutableCopy];offlineRequest[@"sourceTap"]=@"post-or-unknown";offlineOnly[@"request"]=offlineRequest;auto refused=[d mutableCopy];refused[@"result"]=offlineOnly;check(command(unit,refused)!=noErr,"post/unknown NOVA source cannot authorize live application");
  ok(command(unit,d),"approved full-song mapped settings");auto applied=snapshot(unit);std::array<float,4> requested;for(unsigned i=0;i<4;++i)requested[i]=[reply[@"renders"][2][@"values"][i]floatValue];auto effective=nova::decode(nova::encode(requested));for(unsigned i=0;i<4;++i)check([applied[@"current"][i]floatValue]==effective[i],"mapped effective float32 values read back");
  for(unsigned i=0;i<17;++i){float v=0;ok(AudioUnitGetParameter(unit,i,0,0,&v),"public readback");NSNumber* expected=i<4?applied[@"current"][i]:applied[@"processing"][i-4];check(v==expected.floatValue,"all public values agree");}
  check(![[(NSArray*)applied[@"history"] lastObject][@"offlineLimiterApplied"]boolValue],"offline limiter never claimed live");
@@ -40,6 +41,13 @@ int main(int argc,char** argv){@autoreleasepool{
  auto undo=cmd(unit,@"undo");undo[@"approved"]=@YES;ok(command(unit,undo),"whole undo");check([snapshot(unit)[@"current"]isEqual:s[@"current"]],"whole undo exact values");check(command(unit,d)!=noErr,"old result stale after apply undo");
  // Fresh request token then ABA host automation invalidates even identical current values.
  NSMutableDictionary* fresh=[reply mutableCopy],*fq=[q mutableCopy];fq[@"settingsToken"]=snapshot(unit)[@"settingsToken"];fresh[@"request"]=fq;d[@"result"]=fresh;ok(AudioUnitSetParameter(unit,0,0,0,1,0),"automation change");ok(AudioUnitSetParameter(unit,0,0,0,0,0),"automation returns");check(command(unit,d)!=noErr,"ABA automation rejected");
+ // Cancel from the native view control queue, then retry verification without touching source.
+ complete=NO;[view runWhole:@"verify" choice:nil after:^(NSDictionary*){complete=YES;}];[[view valueForKey:@"wholeController"]cancel];
+ while([[[view valueForKey:@"wholeController"]valueForKey:@"busy"]boolValue])[[NSRunLoop currentRunLoop]runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.05]];
+ check(!complete,"native cancellation cannot publish a result");
+ complete=NO;[view runWhole:@"verify" choice:nil after:^(NSDictionary*){complete=YES;}];
+ while([[[view valueForKey:@"wholeController"]valueForKey:@"busy"]boolValue])[[NSRunLoop currentRunLoop]runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.05]];
+ check(complete,"native verification retry after cancellation");
  NSDictionary* report=@{@"viewOperationWholeSong":@YES,@"logicHostVerified":@NO,@"sourceSha256":hashFile(wavPath),@"reply":reply,@"applied":applied,@"final":snapshot(unit)};check([[NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted error:nil]writeToFile:[output stringByAppendingPathComponent:@"ui-evidence.json"]atomically:YES],"evidence");
  ok(AudioUnitUninitialize(unit),"stop"); // view/timer retains unit until process exit
  puts("AU native view control -> whole-song processing -> actual parameter readback/Undo/state PASS; Logic unverified");

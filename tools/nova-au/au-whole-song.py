@@ -86,6 +86,8 @@ def main():
     p.add_argument('--choice', choices=['A', 'B', 'C'])
     p.add_argument('--approve', action='store_true')
     a = p.parse_args()
+    if os.getpgrp() != os.getpid():
+        os.setsid()  # private owned process group; native cancellation can bound descendant cleanup
     q = load(a.request)
     validate(q)
     if sys.version_info < (3, 9):
