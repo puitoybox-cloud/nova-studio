@@ -11,12 +11,18 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tarfile
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('bundle', type=Path);p.add_argument('host', type=Path);p.add_argument('output', type=Path)
 a=p.parse_args();a.output.mkdir(exist_ok=False)
 bundle=a.output/'relocated space/NovaMix.component'
-bundle.parent.mkdir();shutil.copytree(a.bundle,bundle,symlinks=True)
+bundle.parent.mkdir()
+# Distribution archive preserves executable modes; a raw Actions ZIP does not.
+with tarfile.open(a.output/'runtime-delivery.tar.gz','w:gz') as archive:
+    archive.add(a.bundle,arcname='NovaMix.component')
+with tarfile.open(a.output/'runtime-delivery.tar.gz') as archive:
+    archive.extractall(bundle.parent,filter='data')
 resources=bundle/'Contents/Resources';runtime=resources/'Runtime'
 python=runtime/'Python/bin/python3.12';ffmpeg=runtime/'FFmpeg/bin/ffmpeg'
 engine=bundle/'Contents/MacOS/nova-whole-song'

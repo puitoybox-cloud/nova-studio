@@ -93,6 +93,9 @@ def main():
     folder = Path(q.get('output', ''))
     if folder.is_symlink() or folder.parent.resolve() != a.request.parent.resolve():
         raise ValueError('workspace must be beside approved request')
+    if folder.exists():
+        for path in folder.iterdir():
+            if path.is_symlink(): raise ValueError('workspace entry symlink forbidden')
     for name in ('bridge-reply.json.partial','bridge-error.log','processing.log'):
         if (a.request.parent/name).is_symlink(): raise ValueError('workspace log symlink forbidden')
     validate(q)
@@ -103,7 +106,7 @@ def main():
         if a.operation == 'resume':
             sys.argv.append('--resume')
         # Retain diagnostic output on disk, never fill an unread subprocess pipe.
-        with (a.request.parent / 'processing.log').open('w') as log:
+        with (a.request.parent / ('processing-' + str(os.getpid()) + '.log')).open('x') as log:
             from contextlib import redirect_stdout
             with redirect_stdout(log):
                 w.main()

@@ -31,7 +31,9 @@ Logicを終了する。元のLogicプロジェクトは開かず、Finderでプ�
 Python/FFmpegの導入、ダウンロード、Apple署名情報の使用をこの手順では行わない。
 同梱Runtimeが欠落している候補は使用しない。
 
-配布ZIPを新規フォルダに展開し、同じフォルダにあるprepare-install.pyを実行する。
+Actions成果物からNOVA-Mix-Intel-development.tar.gzを取り出し、
+新規フォルダに展開する（実行権限を保持）。生ZIPの.componentを直接使わない。
+同じフォルダにあるprepare-install.pyを実行する。
 出力先はまだ存在しない、Components以外のフォルダを指定する。
 
 ```sh

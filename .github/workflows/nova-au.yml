@@ -29,7 +29,7 @@ jobs:
         run: |
           python3 tools/nova-au/tests/prepare-install.py
           python3 tools/nova-au/prepare-install.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/install-kit"
-          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/"
+          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md tools/nova-au/CONTAINED-RUNTIME-JA.md "$RUNNER_TEMP/nova-au/"
           cp tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/install-kit/"
       - name: Shared real-time DSP buffer/rate parity
         run: |
@@ -109,6 +109,10 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           node scripts/music-logic-instruments-browser.js
+      - name: Preserve executable modes in actual development distribution
+        run: |
+          tar -czf "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" -C "$RUNNER_TEMP/nova-au" NovaMix.component prepare-install.py INSTALL-JA.md CONTAINED-RUNTIME-JA.md
+          shasum -a 256 "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" > "$RUNNER_TEMP/nova-au/distribution-sha256.txt"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

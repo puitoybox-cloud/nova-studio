@@ -30,6 +30,8 @@ Developer ID署名・Hardened Runtime・公証・商用ライセンス最終審�
 公式根拠: https://ffmpeg.org/legal.html （確認2026-10-25）。
 Pythonビルド形式: https://docs.astral.sh/python-build-standalone/distributions/
 
+配布用のNOVA-Mix-Intel-development.tar.gzは実行権限を保持する。
+Actionsの生ZIP内の.componentを直接導入しない。
 導入はINSTALL-JA.mdの衝突検査・バックアップ・手動承認手順に従う。
 自動インストールしない。AU ID・v1/v2状態形式と既存DSPは維持する。
 LogicプロジェクトとMusic Studioのバックアップは別に保存する。
