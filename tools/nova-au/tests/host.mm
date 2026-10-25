@@ -63,6 +63,18 @@ int main(int argc,char** argv){@autoreleasepool{
  check(argc==3,"host BINARY OUTPUT_PREFIX");void* lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){fprintf(stderr,"%s\n",dlerror());return 1;}
  auto factory=(AudioComponentFactoryFunction)dlsym(lib,"NovaMixFactory");check(factory,"factory symbol");AudioComponentDescription desc={'aufx','NvMx','NvSt',0,0};auto c=AudioComponentRegister(&desc,CFSTR("NOVA: Mix"),256,factory);check(c,"register actual AU binary");sharedParity(c);
  AudioUnit a=nullptr,b=nullptr;ok(AudioComponentInstanceNew(c,&a),"create a");ok(AudioComponentInstanceNew(c,&b),"create b");check(![snapshot(a)[@"binding"][@"instanceId"] isEqual:snapshot(b)[@"binding"][@"instanceId"]],"distinct instance IDs");
+ // Query through the public host API: all append-only IDs must publish stable CF names.
+ const char* expectedNames[]={"Gain","Low band (180 Hz)","High band (4 kHz)","Bypass","Quality EQ enabled","Low shelf frequency","High shelf frequency","Mid frequency","Mid gain","Mid Q","Compressor enabled","Threshold","Ratio","Attack","Release","Knee","Makeup gain"};
+ for(unsigned repeat=0;repeat<3;++repeat)for(unsigned id=0;id<17;++id){
+  AudioUnitParameterInfo info={};UInt32 bytes=sizeof(info);
+  ok(AudioUnitGetProperty(a,kAudioUnitProperty_ParameterInfo,0,id,&info,&bytes),"public parameter metadata");
+  check(bytes==sizeof(info)&&(info.flags&kAudioUnitParameterFlag_HasCFNameString)&&info.cfNameString,"all seventeen CF names published");
+  check(CFGetTypeID(info.cfNameString)==CFStringGetTypeID(),"CF name type");
+  check([(__bridge NSString*)info.cfNameString isEqualToString:[NSString stringWithUTF8String:expectedNames[id]]],"stable parameter names and IDs");
+  check(strcmp(info.name,expectedNames[id])==0,"legacy name compatibility");
+  check(!(info.flags&kAudioUnitParameterFlag_CFNameRelease),"static CF names have borrowed lifetime");
+ }
+ printf("PARAMETER_METADATA 17 stable IDs, CF and legacy names, 3 queries PASS\n");
  Source source;std::vector<float> flat,changed;
  for(double sr:{22050.,44100.,48000.,96000.,192000.})for(unsigned block:{32u,256u,2048u}){
   configure(a,&source,sr,block);source.hz=1000;ok(AudioUnitSetParameter(a,0,0,0,0,0),"flat gain");ok(AudioUnitSetParameter(a,2,0,0,0,0),"flat EQ");flat=render(a,65536,block);

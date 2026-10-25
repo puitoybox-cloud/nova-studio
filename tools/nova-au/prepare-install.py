@@ -71,6 +71,27 @@ def scan(roots):
     return matches, errors
 
 
+def verify_runtime(candidate):
+    root = Path(candidate) / 'Contents/Resources/Runtime'
+    manifest = json.loads((root / 'inventory.json').read_text())
+    if (manifest.get('format'), manifest.get('architecture')) != ('nova-contained-runtime-v1', 'x86_64'):
+        raise ValueError('invalid contained runtime identity')
+    expected = manifest.get('files')
+    if not isinstance(expected, list) or not expected:
+        raise ValueError('empty runtime inventory')
+    actual = inventory(root)
+    # The inventory itself is sealed by codesign and is intentionally not self-hashed.
+    actual = [r for r in actual if r['path'] != 'inventory.json']
+    normalized = [{'path': r['path'], 'sha256': r['sha256'], 'bytes': r['byteLength'], 'executable': r['executable']} for r in expected]
+    if sorted(normalized, key=lambda r: r['path']) != actual:
+        raise ValueError('contained runtime hash/permission/file-set mismatch')
+    paths = {r['path']: r for r in actual}
+    for field, fixed in (('python', 'Python/bin/python3.12'), ('ffmpeg', 'FFmpeg/bin/ffmpeg'), ('ffprobe', 'FFmpeg/bin/ffprobe')):
+        if manifest.get(field) != fixed or fixed not in paths or not paths[fixed]['executable']:
+            raise ValueError('contained executable missing or not executable: ' + field)
+    return {'verifiedFiles': len(actual), 'architecture': 'x86_64', 'hashesAndPermissionsVerified': True}
+
+
 def prepare(candidate, output, roots, native=True):
     candidate, output = Path(candidate).resolve(), Path(output).resolve()
     # A kit is never staged in an AU search path or inside its own source.
@@ -81,6 +102,7 @@ def prepare(candidate, output, roots, native=True):
     if p.get('CFBundleIdentifier') != BUNDLE_ID or ids != [IDENTITY] or p.get('LSMinimumSystemVersion') != '12.0':
         raise ValueError('unexpected AU identity/minimum OS')
     files = inventory(candidate)
+    runtime = verify_runtime(candidate) if native else None
     required = {'Contents/MacOS/NovaMix', 'Contents/MacOS/nova-whole-song',
                 'Contents/Resources/whole-song-runtime.json', 'Contents/Resources/AudioUnitSDK-LICENSE.txt'}
     if not required.issubset({r['path'] for r in files}):
@@ -101,12 +123,14 @@ def prepare(candidate, output, roots, native=True):
               'logicCompatibilityVerified': False, 'installed': matches, 'scanErrors': errors,
               'manualInstallationAllowed': not matches and not errors, 'validation': validation,
               'files': files, 'runtime': ('bundled Python/FFmpeg candidate; inspect exact-head package-only acceptance' if (candidate / 'Contents/Resources/Runtime/inventory.json').is_file() else 'runtime not bundled; whole-song execution unavailable'),
-              'installationPerformed': False}
+              'runtimeVerification': runtime, 'installationPerformed': False}
     # Exclusive mkdir prevents replacing a previous kit/receipt; no mutation of installed AU.
     output.mkdir(parents=False, exist_ok=False)
     try:
         staged = output / 'NovaMix.component'
         shutil.copytree(candidate, staged, symlinks=False)
+        if native:
+            verify_runtime(staged)
         if inventory(staged) != files or inventory(candidate) != files:
             raise ValueError('source changed or staged hash mismatch')
         (output / 'preflight.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')

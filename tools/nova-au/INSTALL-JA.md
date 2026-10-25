@@ -122,3 +122,48 @@ AU専用の最小構成を同梱し、control queueで署名・全ファイル�
 販売用Developer ID、Hardened RuntimeでのLogic内子プロセス実行・library validation、
 公証・Gatekeeperと最低OSの実機確認、商用配布条項の最終審査は未完了。
 Appleの認証情報を使用しない。既存AUを自動上書きしない。
+
+## 2026-10-27 最初の実機確認（準備日 2026-10-25 JST）
+
+上記の導入前確認を完了した後、最初は空のLogicプロジェクトで行う。
+既存の制作プロジェクトを最初の認識試験に使わない。
+
+1. 「このMacについて」「Logic Proについて」のバージョンを記録。
+2. preflight.jsonのruntimeVerification.hashesAndPermissionsVerifiedがtrue、
+   manualInstallationAllowedがtrueであることを確認。競合・読取不能・破損は停止。
+3. 手動配置後、auvalとPlug-in ManagerでNOVA: Mixの認識を確認。
+4. ステレオ音声を1つ読み込み、小音量で再生。NOVA → Mixを挿入。
+5. Gainを0から-6 dBへ変更し、音量変化と値の読み戻しを確認。0へ戻し、
+   Bypassを切り替えて再生が続くことを確認。ここまでが最初の認識・再生・設定変更試験。
+6. 別名保存→Logic完全終了→再Open。設定と音声が戻ることを確認。
+7. 上記成功後のみ、コピーした曲でA/B/C・承認・Undo・2インスタンス・全曲処理へ進む。
+
+所要時間はユーザーのOS・Logic・再認識状況に依存し、現時点で確認できません。
+実機結果は「成功／失敗／未実施」と、対象パッケージのSHA256とともに記録する。
+CIのAudioComponent成功を物理Logic成功として記入しない。
+
+### 認識できない場合の切り分け
+
+| 観測結果 | 次の確認 |
+|---|---|
+| preflightが失敗 | ハッシュ・実行権限・署名・重複AUの診断内容を確認。配置を進めない |
+| auval一覧にNvMx/NvStがない | 配置先とIntel構成を確認。Logic終了後に再起動し、本AUだけ再スキャン |
+| auvalが失敗／タイムアウト | 診断ログを採取し停止。強制的に有効化しない |
+| auval成功、Logicで未認識 | Logic版・Plug-in Managerの状態を記録。CI成功から互換性を推定しない |
+| OSが起動を拒否 | ad-hoc署名・公証未完了の制約。警告を迂回せず停止 |
+| 認識するが無音 | 元音声、Track入出力、Bypass、Gain、Stereo構成を確認。元データは変更しない |
+
+展開フォルダから以下で新しい診断フォルダを作成できる。
+
+```sh
+./NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12 -I -B collect-diagnostics.py /絶対パス/NOVA-AU-diagnostics-新規
+```
+
+macOS版・CPU・auval一覧・auval検証・NOVAに絞った直近10分のRegistrarログを採取する。
+各コマンドは120秒で打ち切り、失敗・タイムアウトもdiagnostics.jsonへ記録する。
+インストール、プロセス終了、キャッシュ削除、隔離解除、設定変更は行わない。
+ローカルパスを含む可能性があるため、共有前に内容を確認する。
+診断用Python自体がOSに拒否された場合も迂回せず、表示されたメッセージを記録する。
+
+復旧は上記「4. 元の環境へ戻す」に従う。Logic終了→今回のAUを退避→旧AUを元パスへ戻す。
+元プロジェクト・音声・比較音声・バックアップを削除しない。
