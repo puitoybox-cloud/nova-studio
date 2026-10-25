@@ -31,6 +31,7 @@ jobs:
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/shared-render.cpp -o "$RUNNER_TEMP/nova-shared-render"
           "$RUNNER_TEMP/nova-shared-render" > "$RUNNER_TEMP/nova-au/shared-render.jsonl"
+          python3 tools/nova-au/tests/shared-cli.py --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song"
       - name: Portable DSP measurement and smoothing
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"

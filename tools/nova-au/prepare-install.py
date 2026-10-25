@@ -72,7 +72,7 @@ def scan(roots):
 
 
 def prepare(candidate, output, roots, native=True):
-    candidate, output = Path(candidate).resolve(), Path(output).absolute()
+    candidate, output = Path(candidate).resolve(), Path(output).resolve()
     # A kit is never staged in an AU search path or inside its own source.
     for root in [candidate, *[Path(x).resolve() for x in roots]]:
         if output == root or root in output.parents:
