@@ -6,6 +6,7 @@
 static double rms(const std::vector<float>& a,unsigned start=0){double s=0;for(unsigned i=start;i<a.size();++i)s+=double(a[i])*a[i];return std::sqrt(s/(a.size()-start));}
 static double response(double sr,double hz,std::array<float,4> core,nova::Processing extra){unsigned n=unsigned(sr)*2;nova::DSP d;d.reset(sr,core,extra);std::vector<float>x(n),y(n),z(n);for(unsigned i=0;i<n;++i)x[i]=.01*std::sin(2*nova::pi*hz*i/sr);d.process(x.data(),x.data(),y.data(),z.data(),n,core);assert(y==z);return 20*std::log10(rms(y,n/2)/rms(x,n/2));}
 int main(int argc,char** argv){
+ for(unsigned i=0;i<nova::ExtraCount;++i)for(float endpoint:{nova::extraMin[i],nova::extraMax[i]}){auto values=nova::defaults();values[i]=endpoint;assert(nova::unpack(nova::pack(values))[i]==endpoint);}
  auto extra=nova::defaults();assert(extra[4]==0&&extra[12]==0);assert(nova::pack(nova::unpack(nova::pack(extra)))==nova::pack(extra));extra[0]=1;
  for(double sr:{22050.,44100.,48000.,96000.,192000.}){
   for(float g:{-6.f,6.f}){auto low=response(sr,30,{0,g,0,0},extra),high=response(sr,sr*.4,{0,0,g,0},extra);assert(std::abs(low-g)<.08&&std::abs(high-g)<.12);std::cout<<"EQ sr="<<sr<<" shelfGain="<<g<<" low30Hz="<<low<<" high="<<high<<"\n";}

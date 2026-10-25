@@ -8,6 +8,26 @@ m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 class PrepareTest(unittest.TestCase):
+    def test_runtime_inventory_corruption_and_modes(self):
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            candidate = Path(temp)/'fixture.component'
+            root = candidate/'Contents/Resources/Runtime'
+            for name in ('Python/bin/python3.12','FFmpeg/bin/ffmpeg','FFmpeg/bin/ffprobe'):
+                p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b'executable');p.chmod(0o755)
+            # Path component ordering differs from POSIX string ordering for directory/prefix-file pairs.
+            (root/'Python.dylib').write_bytes(b'fixture-library')
+            rows=[dict(path=r['path'],sha256=r['sha256'],byteLength=r['bytes'],executable=r['executable']) for r in m.inventory(root)]
+            manifest=dict(format='nova-contained-runtime-v1',architecture='x86_64',python='Python/bin/python3.12',ffmpeg='FFmpeg/bin/ffmpeg',ffprobe='FFmpeg/bin/ffprobe',files=rows)
+            (root/'inventory.json').write_text(json.dumps(manifest))
+            self.assertEqual(m.verify_runtime(candidate)['verifiedFiles'],4)
+            p=root/'FFmpeg/bin/ffmpeg';p.chmod(0o644)
+            with self.assertRaises(ValueError):m.verify_runtime(candidate)
+            p.chmod(0o755);p.write_bytes(b'corrupted')
+            with self.assertRaises(ValueError):m.verify_runtime(candidate)
+            p.write_bytes(b'executable');(root/'unexpected').write_bytes(b'extra')
+            with self.assertRaises(ValueError):m.verify_runtime(candidate)
+
     def test_stage_conflict_and_preserve(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); candidate = root/'candidate.component'; contents = candidate/'Contents'; contents.mkdir(parents=True)

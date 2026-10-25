@@ -27,9 +27,10 @@ jobs:
           python3 tools/nova-au/package-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-contained-build"
       - name: Prepare non-installing development kit and test conflict preservation
         run: |
+          python3 tools/nova-au/tests/diagnostics.py
           python3 tools/nova-au/tests/prepare-install.py
           python3 tools/nova-au/prepare-install.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/install-kit"
-          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md tools/nova-au/CONTAINED-RUNTIME-JA.md "$RUNNER_TEMP/nova-au/"
+          cp tools/nova-au/collect-diagnostics.py tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md tools/nova-au/CONTAINED-RUNTIME-JA.md "$RUNNER_TEMP/nova-au/"
           cp tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/install-kit/"
       - name: Shared real-time DSP buffer/rate parity
         run: |
@@ -91,7 +92,13 @@ jobs:
           cat "$RUNNER_TEMP/nova-au/au-list.txt"
           /usr/bin/log show --last 2m --predicate 'process == "AudioComponentRegistrar"' --style compact > "$RUNNER_TEMP/nova-au/registrar-log.txt" 2>&1 || true
           grep 'NvMx.*NvSt' "$RUNNER_TEMP/nova-au/au-list.txt"
-          /usr/bin/auval -v aufx NvMx NvSt | tee "$RUNNER_TEMP/nova-au/auval.txt"
+          /usr/bin/auval -v aufx NvMx NvSt 2>&1 | tee "$RUNNER_TEMP/nova-au/auval.txt"
+          if grep -Eiq 'WARNING.*(parameter|CFString)|(parameter|CFString).*WARNING' "$RUNNER_TEMP/nova-au/auval.txt"; then
+            echo 'Parameter metadata warning regression' >&2
+            exit 1
+          fi
+          python3 tools/nova-au/collect-diagnostics.py "$RUNNER_TEMP/nova-au/diagnostics"
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["results"]["component-validation"]["exitCode"] == 0' "$RUNNER_TEMP/nova-au/diagnostics/diagnostics.json"
       - name: Existing Swift wrapper regression tests
         run: swift test --package-path tools/music-native-wrapper
       - uses: actions/setup-node@v4
@@ -113,7 +120,7 @@ jobs:
           node scripts/music-logic-instruments-browser.js
       - name: Preserve executable modes in actual development distribution
         run: |
-          tar -czf "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" -C "$RUNNER_TEMP/nova-au" NovaMix.component prepare-install.py INSTALL-JA.md CONTAINED-RUNTIME-JA.md
+          tar -czf "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" -C "$RUNNER_TEMP/nova-au" NovaMix.component prepare-install.py collect-diagnostics.py INSTALL-JA.md CONTAINED-RUNTIME-JA.md
           shasum -a 256 "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" > "$RUNNER_TEMP/nova-au/distribution-sha256.txt"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -126,6 +133,7 @@ jobs:
             ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/result.json
             ${{ runner.temp }}/nova-au/contained/matrix.log
+            ${{ runner.temp }}/nova-au/contained/multitrack/result.json
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
             ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
@@ -133,6 +141,7 @@ jobs:
             ${{ runner.temp }}/nova-au/contained/missing/rejection.json
             ${{ runner.temp }}/nova-au/contained/version/rejection.json
             ${{ runner.temp }}/nova-au/node-tests.txt
+            ${{ runner.temp }}/nova-au/diagnostics/
             ${{ runner.temp }}/nova-au/auval.txt
             ${{ runner.temp }}/nova-au/au-list.txt
             ${{ runner.temp }}/nova-au/registrar-log.txt
