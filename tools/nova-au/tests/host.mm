@@ -73,6 +73,8 @@ int main(int argc,char** argv){@autoreleasepool{
   check([(__bridge NSString*)info.cfNameString isEqualToString:[NSString stringWithUTF8String:expectedNames[id]]],"stable parameter names and IDs");
   check(strcmp(info.name,expectedNames[id])==0,"legacy name compatibility");
   check(!(info.flags&kAudioUnitParameterFlag_CFNameRelease),"static CF names have borrowed lifetime");
+  for(float endpoint:{info.minValue,info.maxValue}){float value=0;ok(AudioUnitSetParameter(a,id,0,0,endpoint,0),"set exact endpoint");ok(AudioUnitGetParameter(a,id,0,0,&value),"read endpoint");check(value==endpoint,"exact published endpoint readback");}
+  ok(AudioUnitSetParameter(a,id,0,0,info.defaultValue,0),"restore metadata default");
  }
  printf("PARAMETER_METADATA 17 stable IDs, CF and legacy names, 3 queries PASS\n");
  Source source;std::vector<float> flat,changed;

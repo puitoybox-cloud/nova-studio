@@ -27,6 +27,7 @@ jobs:
           python3 tools/nova-au/package-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-contained-build"
       - name: Prepare non-installing development kit and test conflict preservation
         run: |
+          python3 tools/nova-au/tests/diagnostics.py
           python3 tools/nova-au/tests/prepare-install.py
           python3 tools/nova-au/prepare-install.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/install-kit"
           cp tools/nova-au/collect-diagnostics.py tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md tools/nova-au/CONTAINED-RUNTIME-JA.md "$RUNNER_TEMP/nova-au/"
