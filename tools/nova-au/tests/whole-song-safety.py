@@ -61,6 +61,11 @@ with tempfile.TemporaryDirectory() as tmp:
   result=json.loads(subprocess.check_output([str(a.engine),'process',str(raw),str(rate),str(processed),'12','-1.5',*map(str,[0,0,0,0]+extra)]))
   dry=json.loads(subprocess.check_output([str(a.engine),'process-meter',str(raw),str(rate),str(d/'must-not-exist.f32'),'12','-1.5',*map(str,[0,0,0,0]+extra)]))
   assert dry == result and not (d/'must-not-exist.f32').exists()
+  level=json.loads(subprocess.check_output([str(a.engine),'process-loudness',str(raw),str(rate),str(d/'must-not-exist.f32'),'12','-1.5',*map(str,[0,0,0,0]+extra)]))
+  assert level.pop('spectrumMeasured') is False
+  assert level['measurement'].pop('bands') == [0,0,0]
+  reference=json.loads(json.dumps(result));reference['measurement'].pop('bands')
+  assert level == reference and not (d/'must-not-exist.f32').exists()
   measured=result['measurement'];assert measured['frames']==rate and measured['clippedSamples']==0
   assert measured['samplePeakDbFS']<=-1.499 and 0<result['minimumLimiterGain']<1
   # No clipping/limiting: explicit five-ms flush/trim retains the first/last impulse.

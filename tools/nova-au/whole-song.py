@@ -384,8 +384,9 @@ def main():
             else:
                 choice = plan['choices'][k - 1]
                 values, processing = choice['values'], choice['processing']
-                # Identical float32 DSP and meter, without persisting disposable trial PCM.
-                preliminary = engine(label + '-trial', 'process-meter', source, rate, '-', 0,
+                # Identical float32 DSP and loudness/peak metering; trial band FFT is unused.
+                # Full spectrum remains enabled for plan, final render and WAV verification.
+                preliminary = engine(label + '-trial', 'process-loudness', source, rate, '-', 0,
                                      args.ceiling_dbtp - .5, *values, *processing)['measurement']
                 checkpoint()
                 desired = args.target_lufs - (3 - k)

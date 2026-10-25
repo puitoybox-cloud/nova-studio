@@ -185,3 +185,4 @@ Logicから再書き出した音声のLUFS・True Peakを確認する。合成�
 Developer ID署名・公証・商用配布レビューは引き続き未完了。
 
 全曲FFTのHann窓は同じ係数を解析開始時に事前計算する。True Peak FIRの係数・加算順序、EQ・Compressor・Limiterの設定は変更しない。性能比較では工程内の記録時間に加えて、起動・ハッシュ確認・中間整理を含む外部計測の総時間とCPU時間を区別する。
+試行3候補ではGain算出に使うLUFS・ピークのみを計測し、使わない帯域FFTを省く（spectrumMeasured:false）。計画生成、最終処理、WAV再検証の帯域・LUFS・ピーク測定は継続する。音量・ピーク検証の成功条件を変更しない。
