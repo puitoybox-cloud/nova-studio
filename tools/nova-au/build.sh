@@ -17,7 +17,7 @@ PYEMBED
 # The Apple SDK is vendored at a fixed revision; builds do not fetch network dependencies.
 xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility=hidden \
  -I "$SDK/include" -I "$OUT" -bundle -framework AudioToolbox -framework AudioUnit -framework CoreAudio \
- -framework CoreFoundation -framework Cocoa -framework CoreMIDI -framework UniformTypeIdentifiers -framework JavaScriptCore \
+ -framework CoreFoundation -framework Cocoa -framework CoreMIDI -framework UniformTypeIdentifiers -framework JavaScriptCore -framework Security \
  "$SDK"/src/AudioUnitSDK/*.cpp NovaMix.mm View.mm WholeSongController.mm -fobjc-arc \
  -o "$BUNDLE/Contents/MacOS/NovaMix"
 # Offline companion reuses the AU quality DSP; it is never called from render.

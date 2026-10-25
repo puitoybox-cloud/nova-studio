@@ -28,6 +28,19 @@ with (a.output/'matrix.log').open('w') as out:
         '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
         '--engine',str(engine),'--output',str(a.output/'matrix'),'--long'],
         env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+# dyld trace records what the relocated executables actually load. macOS system
+# libraries are platform dependencies; all other images must stay in the bundle.
+traces=[]
+for executable,args in ((python,['-I','-B','-c','import json,hashlib,wave,fcntl,subprocess,resource,math']),
+                        (ffmpeg,['-version'])):
+    probe=subprocess.run([str(executable),*args],env=dict(env,DYLD_PRINT_LIBRARIES='1'),capture_output=True,text=True,check=True)
+    lines=[line for line in probe.stderr.splitlines() if line.startswith('dyld[') and '/ ' not in line and ' /' in line]
+    assert lines,probe.stderr
+    for line in lines:
+        path=Path(line[line.index(' /')+1:]).resolve()
+        assert str(path).startswith(('/System/Library/','/usr/lib/',str(bundle.resolve())+'/')),line
+    traces.extend(lines)
+(a.output/'dyld-trace.txt').write_text('\n'.join(traces))
 # Host invokes the actual view method; NSOpenPanel and physical Logic excluded.
 def host(destination, succeeds):
     result=subprocess.run([str(a.host),str(bundle),str(python),str(ffmpeg),str(destination)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
