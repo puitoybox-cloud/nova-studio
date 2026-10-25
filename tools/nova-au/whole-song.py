@@ -158,7 +158,10 @@ def main():
     parser.add_argument('--ceiling-dbtp', type=float, default=-1)
     parser.add_argument('--confirm-source', action='store_true', required=True)
     parser.add_argument('--resume', action='store_true')
-    parser.add_argument('--reference-ffmpeg', type=Path, default=shutil.which('ffmpeg'), help='independent installed FFmpeg reference; required, never downloaded')
+    resources = Path(__file__).resolve().parent
+    packaged = resources.name == 'Resources' and resources.parent.name == 'Contents'
+    package_ffmpeg = resources / 'Runtime/FFmpeg/bin/ffmpeg'
+    parser.add_argument('--reference-ffmpeg', type=Path, default=package_ffmpeg if packaged else shutil.which('ffmpeg'), help='independent installed FFmpeg reference; required, never downloaded')
     parser.add_argument('--handoff', type=Path, help='read-only #501 Logic handoff JSON')
     parser.add_argument('--stem', action='append', default=[], help='explicit aligned role=path.wav; one per role')
     parser.add_argument('--confirm-stem-alignment', action='store_true')
@@ -170,6 +173,8 @@ def main():
     if not args.reference_ffmpeg or not Path(args.reference_ffmpeg).is_file():
         parser.error('installed FFmpeg reference required before processing/adoption')
     args.reference_ffmpeg = Path(args.reference_ffmpeg)
+    if packaged and args.reference_ffmpeg.resolve() != package_ffmpeg.resolve():
+        parser.error('packaged execution requires the bundled FFmpeg; no external fallback')
     info = wav_info(args.wav)
     handoff = None
     if args.handoff:

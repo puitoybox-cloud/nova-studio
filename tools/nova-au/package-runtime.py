@@ -104,6 +104,12 @@ def assemble(bundle, work):
         if not target.is_file(): raise ValueError('unsupported runtime directory alias')
         alias.unlink()
         shutil.copy2(target, alias)
+    # Data-safe tar extraction leaves directories private (0700). A root-owned
+    # /Library installation must remain readable/searchable by the audio host.
+    # Normalize the public shipping tree before signing and hashing, not at runtime.
+    for path in [bundle, contents, *contents.rglob('*')]:
+        if path.is_dir(): path.chmod(0o755)
+        elif path.is_file(): path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
     # Reuse bounded Mach-O parser/closure relocation. No Homebrew dylib copying.
     images = relocate(contents)
     for name in images:

@@ -21,8 +21,15 @@ bundle.parent.mkdir()
 # Distribution archive preserves executable modes; a raw Actions ZIP does not.
 with tarfile.open(a.output/'runtime-delivery.tar.gz','w:gz') as archive:
     archive.add(a.bundle,arcname='NovaMix.component')
+def delivery_filter(member,destination):
+    clean=tarfile.data_filter(member,destination)
+    if clean is not None and clean.isdir(): clean.mode=member.mode & 0o755
+    return clean
 with tarfile.open(a.output/'runtime-delivery.tar.gz') as archive:
-    archive.extractall(bundle.parent,filter='data')
+    archive.extractall(bundle.parent,filter=delivery_filter)
+for path in [bundle,*bundle.rglob('*')]:
+    if path.is_dir(): assert path.stat().st_mode & 0o055 == 0o055,path
+    elif path.is_file(): assert path.stat().st_mode & 0o044 == 0o044,path
 resources=bundle/'Contents/Resources';runtime=resources/'Runtime'
 python=runtime/'Python/bin/python3.12';ffmpeg=runtime/'FFmpeg/bin/ffmpeg'
 engine=bundle/'Contents/MacOS/nova-whole-song'

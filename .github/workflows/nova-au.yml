@@ -76,6 +76,8 @@ jobs:
           sudo mkdir -p /Library/Audio/Plug-Ins/Components
           sudo cp -R "$RUNNER_TEMP/nova-au/NovaMix.component" /Library/Audio/Plug-Ins/Components/
           sudo touch /Library/Audio/Plug-Ins/Components/NovaMix.component
+          find /Library/Audio/Plug-Ins/Components/NovaMix.component -type d ! -perm -0055 -print > "$RUNNER_TEMP/nova-au/unreadable-directories.txt"
+          test ! -s "$RUNNER_TEMP/nova-au/unreadable-directories.txt"
           codesign --verify --strict /Library/Audio/Plug-Ins/Components/NovaMix.component
           plutil -p /Library/Audio/Plug-Ins/Components/NovaMix.component/Contents/Info.plist
           # The earlier read-only/dynamic host may have started a registrar before the bundle existed.
@@ -132,6 +134,9 @@ jobs:
             ${{ runner.temp }}/nova-au/contained/version/rejection.json
             ${{ runner.temp }}/nova-au/node-tests.txt
             ${{ runner.temp }}/nova-au/auval.txt
+            ${{ runner.temp }}/nova-au/au-list.txt
+            ${{ runner.temp }}/nova-au/registrar-log.txt
+            ${{ runner.temp }}/nova-au/unreadable-directories.txt
             verification/music-logic-instruments-*
       - uses: actions/upload-artifact@v4
         if: always()
