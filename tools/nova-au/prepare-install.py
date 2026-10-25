@@ -83,7 +83,7 @@ def verify_runtime(candidate):
     # The inventory itself is sealed by codesign and is intentionally not self-hashed.
     actual = [r for r in actual if r['path'] != 'inventory.json']
     normalized = [{'path': r['path'], 'sha256': r['sha256'], 'bytes': r['byteLength'], 'executable': r['executable']} for r in expected]
-    if sorted(normalized, key=lambda r: r['path']) != actual:
+    if sorted(normalized, key=lambda r: r['path']) != sorted(actual, key=lambda r: r['path']):
         raise ValueError('contained runtime hash/permission/file-set mismatch')
     paths = {r['path']: r for r in actual}
     for field, fixed in (('python', 'Python/bin/python3.12'), ('ffmpeg', 'FFmpeg/bin/ffmpeg'), ('ffprobe', 'FFmpeg/bin/ffprobe')):
