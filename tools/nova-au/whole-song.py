@@ -129,6 +129,8 @@ def wave_from_raw(raw, output, rate, scale=1):
     tmp = output.with_suffix('.wav.partial')
     with raw.open('rb') as f, tmp.open('wb') as out:
         out.write(struct.pack('<4sI4s4sIHHIIHH4sI', b'RIFF', size + 36, b'WAVE', b'fmt ', 16, 3, 2, rate, rate * 8, 8, 32, b'data', size))
+        if scale == 1:
+            shutil.copyfileobj(f, out, 1024 * 1024)
         for block in iter(lambda: f.read(CHUNK * 8), b''):
             pcm = array.array('f')
             pcm.frombytes(block)
@@ -140,6 +142,39 @@ def wave_from_raw(raw, output, rate, scale=1):
                 pcm.byteswap()
             out.write(pcm.tobytes())
     os.replace(tmp, output)
+
+
+
+def retire_intermediates(folder, manifest):
+    """Crash-safe retirement; never includes WAVs, adopted exports or history.
+
+    Publish the intent before unlinking, so an interrupted cleanup can be resumed.
+    A changed intermediate is retained and reported rather than silently deleted.
+    """
+    names = ['source.f32'] + [label + suffix for label in ('A', 'B', 'C')
+                              for suffix in ('-trial.f32', '.f32')]
+    pending = manifest.setdefault('retiredIntermediates', {})
+    if not isinstance(pending, dict) or any(name not in names for name in pending):
+        raise ValueError('invalid intermediate retirement intent')
+    required = {label + suffix for label in ('original', 'A', 'B', 'C')
+                for suffix in ('.wav', '-lufs-matched.wav')}
+    if not manifest.get('complete') or not required.issubset(manifest['artifacts']):
+        raise ValueError('retirement requires all completed comparison WAVs')
+    for name in names:
+        if name in manifest['artifacts']:
+            path = folder / name
+            if path.is_symlink() or sha(path) != manifest['artifacts'][name]:
+                raise ValueError('intermediate changed before retirement: ' + name)
+            pending[name] = dict(sha256=manifest['artifacts'].pop(name), bytes=path.stat().st_size)
+    atomic_json(folder / 'manifest.json', manifest)
+    for name, record in pending.items():
+        path = folder / name
+        if path.exists() or path.is_symlink():
+            if path.is_symlink() or sha(path) != record['sha256']:
+                raise ValueError('retired intermediate changed: ' + name)
+            path.unlink()
+    manifest['intermediateBytesRetired'] = sum(row['bytes'] for row in pending.values())
+    atomic_json(folder / 'manifest.json', manifest)
 
 
 def main():
@@ -227,6 +262,10 @@ def main():
                         truePeakMethod='4x Annex2 FIR estimate; not standards certification; independent reference tolerance in tests',
                         realtimeAuChanged=False, logicProjectBackupIncluded=False)
     state = folder / 'manifest.json'
+    if args.resume and manifest.get('complete') and manifest.get('independentPeakCeilingVerified'):
+        retire_intermediates(folder, manifest)
+        print(json.dumps(manifest, ensure_ascii=False, indent=2))
+        return
     manifest.update(status='running', complete=False)
     atomic_json(state, manifest)
     child = None
@@ -345,13 +384,10 @@ def main():
             else:
                 choice = plan['choices'][k - 1]
                 values, processing = choice['values'], choice['processing']
-                trial = folder / (label + '-trial.f32')
-                # A pending subprocess may have left a partial file; no reuse without stage+hash.
-                stage = label + '-trial'
-                if stage not in manifest['stages']:
-                    trial.unlink(missing_ok=True)
-                preliminary = engine(stage, 'process', source, rate, trial, 0, args.ceiling_dbtp - .5, *values, *processing)['measurement']
-                artifact(trial)
+                # Identical float32 DSP and loudness/peak metering; trial band FFT is unused.
+                # Full spectrum remains enabled for plan, final render and WAV verification.
+                preliminary = engine(label + '-trial', 'process-loudness', source, rate, '-', 0,
+                                     args.ceiling_dbtp - .5, *values, *processing)['measurement']
                 checkpoint()
                 desired = args.target_lufs - (3 - k)
                 final_gain = min(12., max(-24., desired - preliminary['integratedLufs'])) if args.kind == 'stereo-out' else 0
@@ -419,8 +455,13 @@ def main():
         manifest.update(status='complete' , complete=True, elapsedSecondsThisRun=time.monotonic()-started,
                         adoptionRequiresExplicitApproval=True, offlineLimiterNotLiveAu=True, independentPeakCeilingVerified=True)
         checkpoint()
+        retire_intermediates(folder, manifest)
         print(json.dumps(manifest, ensure_ascii=False, indent=2))
     except BaseException as error:
+        if manifest.get('complete'):
+            manifest['cleanupError'] = str(error)
+            atomic_json(state, manifest)
+            raise
         manifest.update(status='cancelled' if isinstance(error, KeyboardInterrupt) else 'failed', complete=False, error=str(error))
         checkpoint()
         raise

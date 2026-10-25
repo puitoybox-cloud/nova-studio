@@ -15,7 +15,7 @@ jobs:
     runs-on: macos-15-intel
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, node24
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
@@ -101,7 +101,7 @@ jobs:
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["results"]["component-validation"]["exitCode"] == 0' "$RUNNER_TEMP/nova-au/diagnostics/diagnostics.json"
       - name: Existing Swift wrapper regression tests
         run: swift test --package-path tools/music-native-wrapper
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5, node24
         with:
           node-version: '22'
       - name: Full Node, syntax and whitespace
@@ -122,7 +122,7 @@ jobs:
         run: |
           tar -czf "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" -C "$RUNNER_TEMP/nova-au" NovaMix.component prepare-install.py collect-diagnostics.py INSTALL-JA.md CONTAINED-RUNTIME-JA.md
           shasum -a 256 "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" > "$RUNNER_TEMP/nova-au/distribution-sha256.txt"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
         if: always()
         with:
           name: nova-au-intel-contained-package
@@ -133,6 +133,10 @@ jobs:
             ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/result.json
             ${{ runner.temp }}/nova-au/contained/matrix.log
+            ${{ runner.temp }}/nova-au/contained/matrix/whole-song-results.json
+            ${{ runner.temp }}/nova-au/host-measurements.txt
+            ${{ runner.temp }}/nova-au/shared-render.jsonl
+            ${{ runner.temp }}/nova-au/quality-measurements.txt
             ${{ runner.temp }}/nova-au/contained/multitrack/result.json
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
@@ -147,7 +151,7 @@ jobs:
             ${{ runner.temp }}/nova-au/registrar-log.txt
             ${{ runner.temp }}/nova-au/unreadable-directories.txt
             verification/music-logic-instruments-*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
         if: always()
         with:
           name: nova-au-intel-development
@@ -159,9 +163,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, node24
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
       - name: Independent reference and bounded whole-song processing
         run: |
           sudo apt-get update -qq
@@ -169,17 +174,36 @@ jobs:
           g++ -std=c++20 -O2 tools/nova-au/whole-song.cpp -o "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/au-whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-bridge"
+          python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
           /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
-      - uses: actions/upload-artifact@v4
+      - name: Sequential PR 509 audio parity and resource comparison
+        run: |
+          git fetch --no-tags --depth=1 origin a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8
+          mkdir -p "$RUNNER_TEMP/nova-before"
+          git archive a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
+          g++ -std=c++20 -O2 "$RUNNER_TEMP/nova-before/tools/nova-au/whole-song.cpp" -o "$RUNNER_TEMP/nova-before-engine"
+          python3 tools/nova-au/tests/efficiency.py --baseline-scripts "$RUNNER_TEMP/nova-before/tools/nova-au" --baseline-engine "$RUNNER_TEMP/nova-before-engine" --scripts tools/nova-au --engine "$RUNNER_TEMP/nova-whole-song" --matrix "$RUNNER_TEMP/whole-song" --output "$RUNNER_TEMP/efficiency" > "$RUNNER_TEMP/efficiency-log.json"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
         if: always()
         with:
           name: nova-whole-song-audio
           path: |
+            ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/**/manifest.json
             ${{ runner.temp }}/whole-song/**/*.wav
             ${{ runner.temp }}/whole-song/**/*.f32
             ${{ runner.temp }}/whole-song/whole-song-results.json
             ${{ runner.temp }}/whole-song/peak-guard-results.json
             ${{ runner.temp }}/whole-song-log.txt
+            ${{ runner.temp }}/whole-song-resources.txt
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
+        if: always()
+        with:
+          name: nova-whole-song-evidence
+          path: |
+            ${{ runner.temp }}/efficiency/efficiency.json
+            ${{ runner.temp }}/whole-song/whole-song-results.json
+            ${{ runner.temp }}/whole-song/peak-guard-results.json
             ${{ runner.temp }}/whole-song-resources.txt
