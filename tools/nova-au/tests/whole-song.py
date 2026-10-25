@@ -47,6 +47,20 @@ for rate in (44100,48000,96000):
             assert row['measurement']['frames']==rate*seconds
             assert abs(row['matchedMeasurement']['integratedLufs']-min(x['measurement']['integratedLufs'] for x in result['renders']))<.01
             if row['label']!='original':assert row['measurement']['truePeakEstimateDbTP']<=-1 and row['measurement']['clippedSamples']==0
+        # Independent, read-only diagnostics. Retained comparison WAVs and production
+        # manifests stay untouched; diagnostic PCM is private and disposable.
+        import tempfile
+        comparison_spec=importlib.util.spec_from_file_location('section_comparison',root/'compare-sections.py')
+        comparison=importlib.util.module_from_spec(comparison_spec);comparison_spec.loader.exec_module(comparison)
+        with tempfile.TemporaryDirectory() as temporary:
+            section_meters={}
+            for label in ('original','A','B','C'):
+                decoded=pathlib.Path(temporary)/(label+'.f32')
+                w.decode(out/(label+'.wav'),w.wav_info(out/(label+'.wav')),decoded)
+                section_meters[label]=run('sections',decoded,rate)
+                decoded.unlink()
+            sections={label:comparison.compare(section_meters['original'],section_meters[label]) for label in ('A','B','C')}
+            (a.output/f'section-comparison-{rate}-{seconds}.json').write_text(json.dumps(sections,indent=2,allow_nan=False))
         before={n:w.sha(out/n) for n in result['artifacts']}
         subprocess.run(cmd+['--resume'],stdout=subprocess.DEVNULL,check=True)
         assert before=={n:w.sha(out/n) for n in result['artifacts']}

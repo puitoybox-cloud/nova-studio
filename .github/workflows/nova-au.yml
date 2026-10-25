@@ -173,6 +173,7 @@ jobs:
           sudo apt-get install -y ffmpeg
           g++ -std=c++20 -O2 tools/nova-au/whole-song.cpp -o "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
+          python3 tools/nova-au/tests/section-comparison.py --engine "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/au-whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-bridge"
           python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"

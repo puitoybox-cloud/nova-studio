@@ -8,6 +8,16 @@
 int main(int argc,char** argv){try{
  if(argc<4)throw std::runtime_error("meter/plan/process INPUT.f32 RATE ...");std::string mode=argv[1];double sr=std::stod(argv[3]);bool levelOnly=mode=="process-loudness";nova::WholeMeter meter(sr,!levelOnly);
  std::ifstream f(argv[2],std::ios::binary|std::ios::ate);auto bytes=f.tellg();if(!f||bytes<=0||bytes%8||bytes>sr*7200*8)throw std::runtime_error("invalid bounded stereo float32 input");uint64_t frames=uint64_t(bytes)/8;f.seekg(0);
+ // Independent diagnostic mode; never changes production rendering or its meters.
+ if(mode=="sections"){
+  const uint64_t sectionFrames=uint64_t(sr*3);uint64_t position=0;
+  std::cout<<std::setprecision(15)<<"{\"sectionSeconds\":3,\"perceptualQualityVerified\":false,\"sections\":[";
+  while(position<frames){nova::WholeMeter section(sr);uint64_t count=std::min(sectionFrames,frames-position);
+   for(uint64_t i=0;i<count;++i){float pair[2];f.read(reinterpret_cast<char*>(pair),8);if(!f)throw std::runtime_error("incomplete section input");section.add(pair[0],pair[1]);}
+   section.finish();if(position)std::cout<<",";std::cout<<"{\"startFrame\":"<<position<<",\"measurement\":";section.json(std::cout);std::cout<<"}";position+=count;
+  }
+  std::cout<<"]}\n";return 0;
+ }
  std::ofstream out; nova::Quality quality;std::array<float,4> values{};auto extra=nova::defaults();double gain=1;bool shared=mode=="shared-process",dry=mode=="process-meter"||levelOnly,processing=mode=="process"||shared||dry; nova::SharedRender sharedRender;
  if(processing){if(argc!=24)throw std::runtime_error("process INPUT RATE OUTPUT GAIN_DB CEILING_DB 4-values 13-processing-values");if(!dry&&std::filesystem::exists(argv[4]))throw std::runtime_error("output already exists");if(!dry){out.open(argv[4],std::ios::binary);if(!out)throw std::runtime_error("output open failed");}double gainDb=std::stod(argv[5]),ceilingDb=std::stod(argv[6]);if(!std::isfinite(gainDb)||gainDb< -24||gainDb>12||!std::isfinite(ceilingDb)||ceilingDb< -12.5||ceilingDb> -1)throw std::runtime_error("invalid gain/ceiling");gain=std::pow(10.,gainDb/20);for(unsigned i=0;i<4;++i){values[i]=std::stof(argv[7+i]);if(!nova::valid(i,values[i]))throw std::runtime_error("invalid original parameter");}for(unsigned i=0;i<13;++i){extra[i]=std::stof(argv[11+i]);if(!nova::extraValid(i,extra[i]))throw std::runtime_error("invalid processing parameter");}if(!shared&&(extra[0]!=1||values[3]!=0))throw std::runtime_error("offline quality chain must be enabled and not bypassed");quality.reset(extra);if(shared){if(gainDb!=0)throw std::runtime_error("shared-process forbids additional mastering gain");values=nova::decode(nova::encode(values));extra=nova::unpack(nova::pack(extra));sharedRender.reset(sr,values,extra);}}
  else if(mode!="meter"&&mode!="plan")throw std::runtime_error("unknown mode");
