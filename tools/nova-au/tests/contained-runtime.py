@@ -43,9 +43,10 @@ for executable,args in ((python,['-I','-B','-c','import json,hashlib,wave,fcntl,
 (a.output/'dyld-trace.txt').write_text('\n'.join(traces))
 # Host invokes the actual view method; NSOpenPanel and physical Logic excluded.
 def host(destination, succeeds):
-    result=subprocess.run([str(a.host),str(bundle),str(python),str(ffmpeg),str(destination)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
+    result=subprocess.run([str(a.host),str(bundle),str(python),str(ffmpeg),str(destination)]+([] if succeeds else ['expect-rejection']),env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
     (destination.parent/(destination.name+'.log')).write_text(result.stdout)
-    assert (result.returncode==0)==succeeds,result.stdout
+    assert result.returncode==0,result.stdout
+    if not succeeds: assert json.loads((destination/'rejection.json').read_text())['operationRejected']
 host(a.output/'native', True)
 # Mutate only a disposable copied package, never the built distribution.
 victim=runtime/'Python/lib/python3.12/json/__init__.py'

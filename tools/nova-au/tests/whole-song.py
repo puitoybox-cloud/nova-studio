@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Independent FFmpeg reference, long-file, resume and explicit adoption checks."""
-import argparse, array, importlib.util, json, math, pathlib, re, subprocess, sys, time, wave
+import argparse, array, importlib.util, json, math, pathlib, re, subprocess, sys, time, wave, shutil
 root = pathlib.Path(__file__).resolve().parents[1]
+p=argparse.ArgumentParser();p.add_argument('--engine',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--long',action='store_true');p.add_argument('--reference-ffmpeg',default=shutil.which('ffmpeg'));p.add_argument('--scripts',type=pathlib.Path);a=p.parse_args();a.output.mkdir(exist_ok=False)
+if a.scripts: root=a.scripts.resolve()
 spec = importlib.util.spec_from_file_location('whole', root / 'whole-song.py')
 w = importlib.util.module_from_spec(spec); spec.loader.exec_module(w)
-p=argparse.ArgumentParser();p.add_argument('--engine',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--long',action='store_true');p.add_argument('--reference-ffmpeg',default='ffmpeg');p.add_argument('--scripts',type=pathlib.Path);a=p.parse_args();a.output.mkdir(exist_ok=False)
-if a.scripts: root=a.scripts.resolve()
+
 
 
 def fixture(path,rate,seconds):

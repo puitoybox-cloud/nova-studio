@@ -70,7 +70,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"完成WAV採用承認" x:180 y:506 action:@selector(adoptWhole:) tag:0];
   [self button:@"WAV採用Undo承認" x:344 y:506 action:@selector(undoWhole:) tag:0];
   [self button:@"比較フォルダを開く" x:520 y:506 action:@selector(revealWhole:) tag:0];
-  [self field:@"全曲: 明示選択Python3/FFmpeg必要。右欄True Peak上限dBTP。信号解析提案・学習AIなし" y:542 editable:NO];
+  [self field:@"全曲: 同梱runtime使用。右欄True Peak上限dBTP。信号解析提案・学習AIなし" y:542 editable:NO];
   NSScrollView* scroll=[[NSScrollView alloc]initWithFrame:NSMakeRect(16,578,668,306)];scroll.hasVerticalScroller=YES;self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(0,0,648,900);self.report.font=[NSFont systemFontOfSize:11];scroll.documentView=self.report;[self addSubview:scroll];
   [self update:nil];__weak NovaMixView* weakSelf=self;
   self.refresh=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*){[weakSelf update:nil];}];
@@ -107,7 +107,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  return [b[@"confirmed"]boolValue]&&[q[@"projectId"]isEqual:b[@"projectId"]]&&[q[@"trackId"]isEqual:b[@"trackId"]]&&[q[@"instanceId"]isEqual:b[@"instanceId"]]&&[q[@"kind"]isEqual:b[@"targetKind"]]&&[q[@"inputSource"]isEqual:b[@"inputSource"]]&&[q[@"role"]isEqual:b[@"role"]]&&[self.projectField.stringValue isEqual:b[@"projectId"]]&&[self.trackField.stringValue isEqual:b[@"trackId"]]&&[self.sourceField.stringValue isEqual:b[@"inputSource"]]&&[@[@"track",@"bus",@"stereo-out"][self.targetKind.indexOfSelectedItem]isEqual:b[@"targetKind"]];
 }
 - (void)runWhole:(NSString*)operation choice:(NSString*)choice after:(void (^)(NSDictionary*))after{
- if(!self.wholeRequest||!self.wholePython){self.offlineSummary=@"先に全曲WAVとruntimeを選択してください";return;}
+ if(!self.wholeRequest||!self.wholePython){self.offlineSummary=@"先に全曲WAVと保存先を選択してください";return;}
  self.offlineSummary=@"全曲処理/ハッシュ検証中。音声再生スレッドとは別処理";[self update:nil];
  __weak NovaMixView* weakSelf=self;
  [self.wholeController execute:operation request:self.wholeRequest python:self.wholePython resources:self.wholeResources choice:choice completion:^(NSDictionary* reply,NSString* error){
