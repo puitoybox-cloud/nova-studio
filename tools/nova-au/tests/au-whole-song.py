@@ -17,7 +17,7 @@ if sys.byteorder!='little':v.byteswap()
 with raw.open('wb') as f:
  for _ in range(30):f.write(v.tobytes())
 wav=folder/'logic-fixture.wav';b.w.wave_from_raw(raw,wav,48000)
-q=dict(format='nova-au-whole-request-v1',projectId='fixture',trackId='piano',instanceId='instance-A',audioVersion='source-v1',settingsToken='baseline',inputSource='explicit fixture',kind='track',role='piano',confirmed=True,instruction='ピアノを温かく自然にして',targetLufs=-14,ceilingDbTP=-1,sourceWav=str(wav.resolve()),engine=str(a.engine.resolve()),ffmpeg=str(pathlib.Path(shutil.which('ffmpeg')).resolve()),output=str((folder/'audio').resolve()),pipelineSha256=sha(root/'whole-song.py'),pythonSha256=sha(sys.executable))
+q=dict(format='nova-au-whole-request-v1',sourceKind='development-fixture',projectId='fixture',trackId='piano',instanceId='instance-A',audioVersion='source-v1',settingsToken='baseline',inputSource='explicit fixture',kind='track',role='piano',confirmed=True,instruction='ピアノを温かく自然にして',targetLufs=-14,ceilingDbTP=-1,sourceWav=str(wav.resolve()),engine=str(a.engine.resolve()),ffmpeg=str(pathlib.Path(shutil.which('ffmpeg')).resolve()),output=str((folder/'audio').resolve()),pipelineSha256=sha(root/'whole-song.py'),pythonSha256=sha(sys.executable))
 for k in ('sourceWav','engine','ffmpeg'):q[k+'Sha256']=sha(q[k])
 request=folder/'request.json';request.write_text(json.dumps(q))
 cmd=[sys.executable,'-I',str(root/'au-whole-song.py')]

@@ -28,6 +28,8 @@ def validate(q):
             raise ValueError('explicit binding required: ' + key)
     if q.get('kind') not in ('track', 'bus', 'stereo-out') or q.get('role') not in ('piano', 'strings', 'bass', 'drums', 'vocal', 'unspecified'):
         raise ValueError('explicit kind/role required')
+    if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'development-fixture'):
+        raise ValueError('explicit audio origin required')
     if q.get('confirmed') is not True:
         raise ValueError('Logic source/Track confirmation required')
     for key in ('sourceWav', 'engine', 'ffmpeg', 'output'):
@@ -53,7 +55,7 @@ def verify(q):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         m = load(folder / 'manifest.json')
         i = m['identity']
-        for a, b in (('projectId','projectId'), ('trackId','trackId'), ('audioVersion','audioVersion'), ('sourceWavSha256','sourceWavSha256'), ('kind','kind'), ('role','role'), ('instruction','instruction'), ('targetLufs','targetLufs'), ('ceilingDbTP','ceilingDbTP'), ('engineSha256','engineSha256'), ('pipelineSha256','pipelineSha256'), ('referenceFfmpegSha256','ffmpegSha256')):
+        for a, b in (('projectId','projectId'), ('trackId','trackId'), ('audioVersion','audioVersion'), ('sourceWavSha256','sourceWavSha256'), ('kind','kind'), ('source','sourceKind'), ('role','role'), ('instruction','instruction'), ('targetLufs','targetLufs'), ('ceilingDbTP','ceilingDbTP'), ('engineSha256','engineSha256'), ('pipelineSha256','pipelineSha256'), ('referenceFfmpegSha256','ffmpegSha256')):
             if i.get(a) != q.get(b):
                 raise ValueError('result identity mismatch: ' + a)
         if m.get('format') != 'nova-whole-song-v1' or not m.get('complete') or m.get('status') != 'complete' or not m.get('independentPeakCeilingVerified'):
@@ -83,8 +85,10 @@ def main():
     a = p.parse_args()
     q = load(a.request)
     validate(q)
+    if sys.version_info < (3, 9):
+        raise ValueError('Python 3.9+ required; no runtime is downloaded')
     if a.operation in ('run', 'resume'):
-        sys.argv = [str(ROOT / 'whole-song.py'), q['sourceWav'], '--engine', q['engine'], '--reference-ffmpeg', q['ffmpeg'], '--output', q['output'], '--project', q['projectId'], '--track', q['trackId'], '--version', q['audioVersion'], '--source', 'logic-render', '--kind', q['kind'], '--role', q['role'], '--instruction', q['instruction'], '--target-lufs', str(q['targetLufs']), '--ceiling-dbtp', str(q['ceilingDbTP']), '--confirm-source']
+        sys.argv = [str(ROOT / 'whole-song.py'), q['sourceWav'], '--engine', q['engine'], '--reference-ffmpeg', q['ffmpeg'], '--output', q['output'], '--project', q['projectId'], '--track', q['trackId'], '--version', q['audioVersion'], '--source', q['sourceKind'], '--kind', q['kind'], '--role', q['role'], '--instruction', q['instruction'], '--target-lufs', str(q['targetLufs']), '--ceiling-dbtp', str(q['ceilingDbTP']), '--confirm-source']
         if a.operation == 'resume':
             sys.argv.append('--resume')
         # Retain diagnostic output on disk, never fill an unread subprocess pipe.
