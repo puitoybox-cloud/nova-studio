@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import "WholeSongController.h"
 #import <CommonCrypto/CommonDigest.h>
 #import <AudioUnit/AUCocoaUIView.h>
 #import <AudioToolbox/AudioToolbox.h>
@@ -18,6 +19,13 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 @property NSDictionary* state;
 @property NSString* offlineSummary;
 @property NSTimer* refresh;
+@property NovaWholeSongController* wholeController;
+@property NSURL *wholeRequest,*wholePython;
+@property NSDictionary* wholeReply;
+@property BOOL wholePreparing;
+@property NSUInteger wholeGeneration;
+@property NSPopUpButton *wholeChoice,*wholeRole;
+@property NSTextField *audioVersion,*peakCeiling;
 @end
 @implementation NovaMixView
 - (BOOL)isFlipped{return YES;}
@@ -29,8 +37,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  NSButton* b=[NSButton buttonWithTitle:s target:self action:a];b.frame=NSMakeRect(x,y,150,30);b.tag=t;[self addSubview:b];
 }
 - (instancetype)initWithUnit:(AudioUnit)unit{
- if((self=[super initWithFrame:NSMakeRect(0,0,700,720)])){
-  self.unit=unit;[self field:@"NOVA Mix — ステレオ Gain / EQ（音源選択とは別機能）" y:14 editable:NO];
+ if((self=[super initWithFrame:NSMakeRect(0,0,700,900)])){
+  self.unit=unit;self.wholeController=[NovaWholeSongController new];[self field:@"NOVA Mix — ステレオ Gain / EQ（音源選択とは別機能）" y:14 editable:NO];
   [self button:@"handoff JSONを開く" x:16 y:48 action:@selector(importFile:) tag:0];
   self.targetKind=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(180,48,150,28) pullsDown:NO];[self.targetKind addItemsWithTitles:@[@"Track",@"Bus",@"Stereo Out"]];[self addSubview:self.targetKind];
   self.sourceField=[[NSTextField alloc]initWithFrame:NSMakeRect(344,48,340,26)];self.sourceField.placeholderString=@"実際の音源・録音元（手動確認）";[self addSubview:self.sourceField];
@@ -51,12 +59,24 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"2秒音声取得に同意" x:16 y:388 action:@selector(capture:) tag:0];
   [self button:@"比較WAVを保存" x:180 y:388 action:@selector(compare:) tag:0];
   self.targetLufs=[[NSTextField alloc]initWithFrame:NSMakeRect(344,390,70,26)];self.targetLufs.stringValue=@"-14";[self addSubview:self.targetLufs];[self button:@"LUFSでMaster候補" x:424 y:388 action:@selector(master:) tag:0];
-  NSScrollView* scroll=[[NSScrollView alloc]initWithFrame:NSMakeRect(16,432,668,272)];scroll.hasVerticalScroller=YES;self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(0,0,648,900);self.report.font=[NSFont systemFontOfSize:11];scroll.documentView=self.report;[self addSubview:scroll];
+  self.audioVersion=[[NSTextField alloc]initWithFrame:NSMakeRect(16,434,210,26)];self.audioVersion.placeholderString=@"音源/プリセット/音声 revision ID";[self addSubview:self.audioVersion];
+  self.wholeRole=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(240,434,150,26) pullsDown:NO];[self.wholeRole addItemsWithTitles:@[@"unspecified",@"piano",@"strings",@"bass",@"drums",@"vocal"]];[self addSubview:self.wholeRole];
+  self.peakCeiling=[[NSTextField alloc]initWithFrame:NSMakeRect(410,434,70,26)];self.peakCeiling.stringValue=@"-1";[self addSubview:self.peakCeiling];
+  [self button:@"WAV全曲解析開始" x:16 y:468 action:@selector(startWhole:) tag:0];
+  [self button:@"requestを再開/照合" x:180 y:468 action:@selector(resumeWhole:) tag:0];
+  [self button:@"全曲処理を停止" x:344 y:468 action:@selector(stopWhole:) tag:0];
+  self.wholeChoice=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(520,468,150,26) pullsDown:NO];[self.wholeChoice addItemsWithTitles:@[@"A",@"B",@"C"]];[self addSubview:self.wholeChoice];
+  [self button:@"全曲案をAUへ承認" x:16 y:506 action:@selector(applyWhole:) tag:0];
+  [self button:@"完成WAV採用承認" x:180 y:506 action:@selector(adoptWhole:) tag:0];
+  [self button:@"WAV採用Undo承認" x:344 y:506 action:@selector(undoWhole:) tag:0];
+  [self button:@"比較フォルダを開く" x:520 y:506 action:@selector(revealWhole:) tag:0];
+  [self field:@"全曲: 明示選択Python3/FFmpeg必要。右欄True Peak上限dBTP。信号解析提案・学習AIなし" y:542 editable:NO];
+  NSScrollView* scroll=[[NSScrollView alloc]initWithFrame:NSMakeRect(16,578,668,306)];scroll.hasVerticalScroller=YES;self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(0,0,648,900);self.report.font=[NSFont systemFontOfSize:11];scroll.documentView=self.report;[self addSubview:scroll];
   [self update:nil];__weak NovaMixView* weakSelf=self;
   self.refresh=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*){[weakSelf update:nil];}];
  }return self;
 }
-- (void)dealloc{[self.refresh invalidate];}
+- (void)dealloc{[self.refresh invalidate];[self.wholeController cancel];}
 - (void)update:(id)sender{
  CFDictionaryRef d=nullptr;UInt32 size=sizeof(d);OSStatus e=AudioUnitGetProperty(self.unit,Snapshot,kAudioUnitScope_Global,0,&d,&size);
  if(e||!d){self.report.stringValue=[NSString stringWithFormat:@"状態読取エラー %d",(int)e];return;}
@@ -71,13 +91,81 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
  NSString* chosenKind=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];NSString* chosenSource=self.sourceField.stringValue.length?self.sourceField.stringValue:@"user-confirmed AU input";
  if(![command[@"operation"] isEqual:@"bind"]&&[b[@"confirmed"]boolValue]&&(![chosenKind isEqual:b[@"targetKind"]]||![chosenSource isEqual:b[@"inputSource"]])){self.report.stringValue=@"入力元またはTrack/Bus/Stereo Out指定が変わりました。対象を再確認してください。";return;}
- if([command[@"operation"] isEqual:@"bind"]){command[@"targetKind"]=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];command[@"inputSource"]=self.sourceField.stringValue;NSInteger index=[self.tracks indexOfSelectedItem];if(index>=0&&index<[self.manifest[@"tracks"]count])command[@"role"]=self.manifest[@"tracks"][index][@"role"]?:@"unspecified";}
+ if([command[@"operation"] isEqual:@"bind"]){command[@"targetKind"]=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];command[@"inputSource"]=self.sourceField.stringValue;NSInteger index=[self.tracks indexOfSelectedItem];command[@"role"]=self.wholeRole.titleOfSelectedItem; if(index>=0&&index<[self.manifest[@"tracks"]count])command[@"role"]=self.manifest[@"tracks"][index][@"role"]?:@"unspecified";}
 
  NSArray* before=self.state[@"current"];NSArray* beforeProcessing=self.state[@"processing"];CFDictionaryRef d=(__bridge CFDictionaryRef)command;OSStatus e=AudioUnitSetProperty(self.unit,Command,kAudioUnitScope_Global,0,&d,sizeof(d));
  [self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
  if(!e){for(UInt32 i=0;i<13;++i)if(![beforeProcessing[i]isEqual:self.state[@"processing"][i]]){AudioUnitParameter p={self.unit,i+4,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}
  if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
 }
+- (NSURL*)chooseWholeFile:(NSString*)message wav:(BOOL)wav{
+ NSOpenPanel* p=[NSOpenPanel openPanel];p.message=message;p.allowsMultipleSelection=NO;if(wav)p.allowedContentTypes=@[UTTypeWAV];return [p runModal]==NSModalResponseOK?p.URL:nil;
+}
+- (NSURL*)wholeResources{return [NSBundle bundleForClass:self.class].resourceURL;}
+- (BOOL)wholeTargetMatches:(NSDictionary*)q{
+ [self update:nil];NSDictionary* b=self.state[@"binding"];
+ return [b[@"confirmed"]boolValue]&&[q[@"projectId"]isEqual:b[@"projectId"]]&&[q[@"trackId"]isEqual:b[@"trackId"]]&&[q[@"instanceId"]isEqual:b[@"instanceId"]]&&[q[@"kind"]isEqual:b[@"targetKind"]]&&[q[@"inputSource"]isEqual:b[@"inputSource"]]&&[q[@"role"]isEqual:b[@"role"]]&&[self.projectField.stringValue isEqual:b[@"projectId"]]&&[self.trackField.stringValue isEqual:b[@"trackId"]]&&[self.sourceField.stringValue isEqual:b[@"inputSource"]]&&[@[@"track",@"bus",@"stereo-out"][self.targetKind.indexOfSelectedItem]isEqual:b[@"targetKind"]];
+}
+- (void)runWhole:(NSString*)operation choice:(NSString*)choice after:(void (^)(NSDictionary*))after{
+ if(!self.wholeRequest||!self.wholePython){self.offlineSummary=@"先に全曲WAVとruntimeを選択してください";return;}
+ self.offlineSummary=@"全曲処理/ハッシュ検証中。音声再生スレッドとは別処理";[self update:nil];
+ __weak NovaMixView* weakSelf=self;
+ [self.wholeController execute:operation request:self.wholeRequest python:self.wholePython resources:self.wholeResources choice:choice completion:^(NSDictionary* reply,NSString* error){
+  NovaMixView* view=weakSelf;if(!view)return;
+  if(error){view.wholeReply=nil;view.offlineSummary=error;[view update:nil];return;}
+  view.wholeReply=reply;NSMutableString* text=[NSMutableString stringWithFormat:@"全曲検証成功 / source SHA %@ / %@\n信号解析ルール提案（学習AIなし）。AU設定は承認待ち。offline追加Gain/ピーク制御はAU未対応。",reply[@"request"][@"sourceWavSha256"],reply[@"request"][@"audioVersion"]];
+  NSDictionary* before=reply[@"before"];[text appendFormat:@"\n解析元 %@ frames / %@ Hz / Peak %.2f dBFS / RMS %.2f dBFS / crest %.2f dB / 帯域比 %@",before[@"frames"],before[@"sampleRate"],[before[@"samplePeakDbFS"]doubleValue],[before[@"rmsDbFS"]doubleValue],[before[@"crestDb"]doubleValue],before[@"bands"]];
+  for(id row in reply[@"renders"])[text appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / EQ+Gain %@ / %@ / 追加Gain %.2f dB / TP補正 %.2f dB / %@",row[@"label"],[row[@"measurement"][@"integratedLufs"]doubleValue],[row[@"measurement"][@"truePeakEstimateDbTP"]doubleValue],params(row[@"values"]),processingText(row[@"processing"]),[row[@"finalGainDb"]doubleValue],[row[@"postTruePeakAttenuationDb"]doubleValue],row[@"reason"]];
+  view.offlineSummary=text;if(after)after(reply);[view update:nil];
+ }];
+}
+- (void)startWhole:(id)sender{
+ if(self.wholeController.busy||self.wholePreparing)return;[self update:nil];NSDictionary* b=[self.state[@"binding"]copy];
+ if(![b[@"confirmed"]boolValue]||!self.audioVersion.stringValue.length){self.offlineSummary=@"対象を確認し、音源/プリセット/音声revision IDを入力してください";return;}
+ NSURL* wav=[self chooseWholeFile:@"このAUの挿入先をLogicで書き出したWAVを選択（Track/Bus/Stereo Outを手動確認）" wav:YES];if(!wav)return;
+ NSAlert* tap=[NSAlert new];tap.messageText=@"解析用WAVの書き出し位置を確認";tap.informativeText=@"このNOVA AUをバイパスして書き出した同じ挿入先のWAVだけが、AUへの設定適用候補になります。通常の完成Mix WAVはオフライン処理専用として扱います。";[tap addButtonWithTitle:@"NOVAバイパス済み・AU候補"];[tap addButtonWithTitle:@"完成Mix・オフライン専用"];[tap addButtonWithTitle:@"戻る"];NSModalResponse tapChoice=tap.runModal;if(tapChoice==NSAlertThirdButtonReturn)return;NSString* sourceTap=tapChoice==NSAlertFirstButtonReturn?@"pre-nova-confirmed":@"post-or-unknown";
+ NSURL* python=[self chooseWholeFile:@"使用するローカルPython3実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!python)return;
+ NSURL* ffmpeg=[self chooseWholeFile:@"使用するローカルFFmpeg実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!ffmpeg)return;
+ NSOpenPanel* parent=[NSOpenPanel openPanel];parent.message=@"比較WAVを保存する親フォルダ（新規専用フォルダを作成）";parent.canChooseDirectories=YES;parent.canChooseFiles=NO;if([parent runModal]!=NSModalResponseOK)return;
+ NSURL* folder=[parent.URL URLByAppendingPathComponent:[@"NOVA-whole-" stringByAppendingString:NSUUID.UUID.UUIDString] isDirectory:YES];
+ if(![NSFileManager.defaultManager createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:nil])return;
+ NSURL* resources=self.wholeResources;NSURL* engine=[resources URLByAppendingPathComponent:@"../MacOS/nova-whole-song"];
+ NSMutableDictionary* q=[@{@"format":@"nova-au-whole-request-v1",@"sourceKind":@"logic-render",@"sourceTap":sourceTap,@"projectId":b[@"projectId"],@"trackId":b[@"trackId"],@"instanceId":b[@"instanceId"],@"inputSource":b[@"inputSource"],@"role":b[@"role"],@"kind":b[@"targetKind"],@"confirmed":@YES,@"audioVersion":self.audioVersion.stringValue,@"settingsToken":self.state[@"settingsToken"],@"instruction":self.instruction.stringValue,@"targetLufs":@(self.targetLufs.doubleValue),@"ceilingDbTP":@(self.peakCeiling.doubleValue),@"sourceWav":wav.path,@"engine":engine.path,@"ffmpeg":ffmpeg.path,@"output":[folder URLByAppendingPathComponent:@"audio"].path}mutableCopy];
+ self.wholeRequest=[folder URLByAppendingPathComponent:@"request.json"];self.wholePython=python;self.wholeReply=nil;
+ // Hash large source on a worker, never on audio/main callbacks.
+ NSURL* request=self.wholeRequest;self.wholePreparing=YES;NSUInteger generation=++self.wholeGeneration;
+ dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED,0), ^{
+  for(NSString* key in @[@"sourceWav",@"engine",@"ffmpeg"]){NSString* hash=NovaFileSHA256([NSURL fileURLWithPath:q[key]]);if(hash)q[[key stringByAppendingString:@"Sha256"]]=hash;}
+  q[@"pythonSha256"]=NovaFileSHA256(python)?:@"";q[@"pipelineSha256"]=NovaFileSHA256([resources URLByAppendingPathComponent:@"whole-song.py"])?:@"";
+  NSData* data=[NSJSONSerialization dataWithJSONObject:q options:NSJSONWritingPrettyPrinted error:nil];BOOL written=[data writeToURL:request atomically:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{self.wholePreparing=NO;if(generation!=self.wholeGeneration)return;if(!written){self.offlineSummary=@"request保存失敗";return;}[self runWhole:@"run" choice:nil after:nil];});
+ });
+}
+- (void)resumeWhole:(id)sender{
+ if(self.wholeController.busy||self.wholePreparing)return;
+ NSURL* request=[self chooseWholeFile:@"保存したrequest.jsonを選択。再Open後のAU適用には新たな全曲解析が必要" wav:NO];if(!request)return;
+ NSURL* python=[self chooseWholeFile:@"request作成時と同じPython実行ファイルを選択" wav:NO];if(!python)return;
+ // Explicit external executable confirmation on reopen; do not trust a JSON path as permission to execute.
+ NSURL* ffmpeg=[self chooseWholeFile:@"request作成時と同じFFmpeg実行ファイルを選択" wav:NO];if(!ffmpeg)return;
+ NSNumber* size;[request getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024)return;
+ NSDictionary* q=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:request] options:0 error:nil];if(![q[@"ffmpeg"]isEqual:ffmpeg.path]){self.offlineSummary=@"FFmpegパス不一致";return;}
+ self.wholeRequest=request;self.wholePython=python;self.wholeReply=nil;[self runWhole:@"resume" choice:nil after:nil];
+}
+- (void)stopWhole:(id)sender{++self.wholeGeneration;[self.wholeController cancel];self.offlineSummary=@"全曲処理を停止中。完了前の候補は採用できません";}
+- (void)applyWhole:(id)sender{
+ if(!self.wholeReply||self.wholeController.busy)return;if(![self.wholeReply[@"request"][@"sourceTap"]isEqual:@"pre-nova-confirmed"]){self.offlineSummary=@"完成Mix/書出し位置未確認のWAVはオフライン専用です。AU適用にはNOVAをバイパスしたWAVを新たに解析してください";return;}NSInteger index=self.wholeChoice.indexOfSelectedItem;id row=self.wholeReply[@"renders"][index+1];
+ NSAlert* alert=[NSAlert new];alert.messageText=@"全曲実測案の共有パラメータだけをこのNOVA AUへ適用しますか？";alert.informativeText=[NSString stringWithFormat:@"現在 %@\n新値 %@\n現在 %@\n新値 %@\nオフライン追加Gain・Lookahead・TP補正は反映されません。適用後にLogicを再出力して全曲再測定してください。",params(self.state[@"current"]),params(row[@"values"]),processingText(self.state[@"processing"]),processingText(row[@"processing"])];[alert addButtonWithTitle:@"承認・適用"];[alert addButtonWithTitle:@"戻る"];if(alert.runModal!=NSAlertFirstButtonReturn)return;
+ [self runWhole:@"verify" choice:nil after:^(NSDictionary* reply){
+  if(![self wholeTargetMatches:reply[@"request"]]){self.offlineSummary=@"曲/Track/音源/挿入先/AUが変わりました。再解析してください";return;}
+  [self send:[@{@"operation":@"apply-whole-song",@"approved":@YES,@"choice":@(index),@"result":reply}mutableCopy]];
+  // Read back every public parameter, independent of snapshot dictionary.
+  NSMutableArray* actual=[NSMutableArray array];for(UInt32 i=0;i<17;++i){AudioUnitParameterValue value=0;OSStatus e=AudioUnitGetParameter(self.unit,i,kAudioUnitScope_Global,0,&value);[actual addObject:e?@"read-error":@(value)];}
+  self.offlineSummary=[self.offlineSummary stringByAppendingFormat:@"\nAU公開パラメータ再取得: %@（成功判定は上の操作statusを確認）",actual];
+ }];
+}
+- (void)adoptWhole:(id)sender{if(self.wholeReply)[self runWhole:@"adopt" choice:self.wholeChoice.titleOfSelectedItem after:nil];}
+- (void)undoWhole:(id)sender{if(self.wholeReply)[self runWhole:@"undo" choice:nil after:nil];}
+- (void)revealWhole:(id)sender{NSString* path=self.wholeReply[@"request"][@"output"];if(path)[NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:path]];}
 - (void)wholeSong:(id)sender{
  NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedContentTypes=@[UTTypeJSON];panel.allowsMultipleSelection=NO;if([panel runModal]!=NSModalResponseOK)return;
  NSNumber* size;[panel.URL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024){self.offlineSummary=@"全曲manifestは4 MiB以下が必要です";return;}

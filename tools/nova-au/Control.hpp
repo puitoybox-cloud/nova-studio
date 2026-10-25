@@ -25,12 +25,12 @@ inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,co
  if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty()||!m.valid)throw std::runtime_error("有効な実音声解析と対象確認が必要です");
  Proposal p{b,v,{v,v,v},"実音声FFT・Peak・RMSに基づくルール提案（機械学習推論なし）",true,m.hash};
  p.processingBefore=processing;p.processingChoices={processing,processing,processing};
- const bool warm=request=="ピアノを温かく自然にして"||request=="ピアノをもっと温かくして"||request=="ピアノを柔らかくして";
- const bool soft=request=="ストリングスの高音を柔らかくして"||request=="高音を少し抑えて";
- const bool vocal=request=="ボーカルをもう少し前に出して";
- const bool bass=request=="ベースが強すぎるので調整して"||request=="低音が強すぎるので調整して";
+ const bool warm=request=="ピアノを優しく温かい音にして"||request=="ピアノを温かく自然にして"||request=="ピアノをもっと温かくして"||request=="ピアノを柔らかくして";
+ const bool soft=request=="ストリングスを柔らかくして"||request=="ストリングスの高音を柔らかくして"||request=="高音を少し抑えて";
+ const bool vocal=request=="ボーカルを前に出して"||request=="ボーカルをもう少し前に出して";
+ const bool bass=request=="ベースの低音を整えて"||request=="ベースが強すぎるので調整して"||request=="低音が強すぎるので調整して";
  const bool drum=request=="ドラムをもう少し力強くして";
- const bool natural=request=="全体の音量バランスを整えて"||request=="全体の音を自然に整えて";
+ const bool natural=request=="曲全体を自然にまとめて"||request=="全体の音量バランスを整えて"||request=="全体の音を自然に整えて";
  if(!warm&&!soft&&!vocal&&!bass&&!natural&&!drum)throw std::runtime_error("未対応の指示です");
  for(unsigned i=0;i<3;++i){
   double strength=(i+1)/3.;auto& x=p.choices[i];auto& e=p.processingChoices[i];e[0]=1;
