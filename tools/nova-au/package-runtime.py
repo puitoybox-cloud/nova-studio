@@ -65,12 +65,13 @@ def assemble(bundle, work):
     for name in ('include', 'share'):
         shutil.rmtree(python / name, ignore_errors=True)
     for path in list((python / 'bin').iterdir()):
-        if path.name not in ('python3.12', 'python3', 'python'):
+        if path.name != 'python3.12':
             path.unlink()
     for pattern in ('*.a', '*.o', '*.pyc'):
         for path in python.rglob(pattern): path.unlink()
     for path in sorted(python.rglob('__pycache__'), reverse=True):
         shutil.rmtree(path)
+    shutil.rmtree(python / 'lib/pkgconfig', ignore_errors=True)
     site = python / 'lib/python3.12/site-packages'
     if site.exists(): shutil.rmtree(site)
     site.mkdir()
@@ -93,6 +94,16 @@ def assemble(bundle, work):
         pythonArchiveSha256=PYTHON_SHA, ffmpegUrl=FFMPEG_URL,
         ffmpegCommit=revision, ffmpegSourceSha256=hashlib.sha256((notices/'ffmpeg-source.tar').read_bytes()).hexdigest(),
         configure=CONFIG, sharedLibraries=True, publicationEligible=False), indent=2))
+    # Preserve the existing no-symlink install-kit contract. Materialize only
+    # validated internal regular-file aliases before relocation/signing/inventory.
+    # Actions ZIP does not preserve symlinks, so the shipped bytes must be real.
+    for alias in list(runtime.rglob('*')):
+        if not alias.is_symlink(): continue
+        target = alias.resolve(strict=True)
+        target.relative_to(runtime.resolve())
+        if not target.is_file(): raise ValueError('unsupported runtime directory alias')
+        alias.unlink()
+        shutil.copy2(target, alias)
     # Reuse bounded Mach-O parser/closure relocation. No Homebrew dylib copying.
     images = relocate(contents)
     for name in images:
