@@ -2,6 +2,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #include <dlfcn.h>
 #include "../WholeSong.hpp"
+#include "../SharedRender.hpp"
 #include <iomanip>
 #include <chrono>
 #include <cmath>
@@ -34,9 +35,33 @@ static std::vector<float> render(AudioUnit u,unsigned count,unsigned block){
 }
 static double rms(const std::vector<float>& a){double x=0;for(size_t i=a.size()/2;i<a.size();++i)x+=a[i]*a[i];return std::sqrt(x/(a.size()-a.size()/2));}
 static void wav(const char* path,const std::vector<float>& a){std::ofstream o(path,std::ios::binary);auto u16=[&](uint16_t n){o.write((char*)&n,2);};auto u32=[&](uint32_t n){o.write((char*)&n,4);};o.write("RIFF",4);u32(36+a.size()*8);o.write("WAVEfmt ",8);u32(16);u16(3);u16(2);u32(48000);u32(48000*8);u16(8);u16(32);o.write("data",4);u32(a.size()*8);for(float v:a){o.write((char*)&v,4);o.write((char*)&v,4);}check(o.good(),"WAV written");}
+static void sharedParity(AudioComponent component){
+ for(double sr:{44100.,48000.,96000.})for(unsigned block:{17u,128u,512u,2048u})for(unsigned modern:{0u,1u}){
+  AudioUnit u=nullptr;ok(AudioComponentInstanceNew(component,&u),"parity instance");Source source;source.hz=997;source.amplitude=.18;
+  configure(u,&source,sr,block);
+  auto extra=nova::defaults();extra[0]=modern;extra[6]=1;extra[4]=2;
+  for(unsigned i=0;i<13;++i)ok(AudioUnitSetParameter(u,i+4,0,0,extra[i],0),"parity advanced");
+  for(unsigned i=0;i<13;++i)ok(AudioUnitGetParameter(u,i+4,0,0,&extra[i]),"parity decoded advanced");
+  std::array<float,4> initial{};for(unsigned i=0;i<4;++i)ok(AudioUnitGetParameter(u,i,0,0,&initial[i]),"parity initial");
+  ok(AudioUnitReset(u,0,0),"parity reset");nova::SharedRender offline;offline.reset(sr,initial,extra);
+  nova::WholeMeter a(sr),b(sr);double maxError=0;
+  for(unsigned segment=0;segment<4;++segment){
+   std::array<float,4> target={segment%2?-3.f:0.f,3,-2,segment==3?1.f:0.f};
+   for(unsigned i=0;i<4;++i)ok(AudioUnitSetParameter(u,i,0,0,target[i],0),"parity automation");
+   for(unsigned i=0;i<4;++i)ok(AudioUnitGetParameter(u,i,0,0,&target[i]),"parity target readback");
+   unsigned n=unsigned(sr*.2);auto start=source.frame;auto actual=render(u,n,block);std::vector<float> input(n*2),expected(n*2);
+   for(unsigned i=0;i<n;++i){float x=source.amplitude*std::sin(2*3.141592653589793*source.hz*(start+i)/source.sr);input[2*i]=input[2*i+1]=x;}
+   offline.process(input.data(),expected.data(),n,target,extra);
+   for(unsigned i=0;i<n;++i){maxError=std::max(maxError,std::abs(double(actual[i])-expected[2*i]));a.add(actual[i],actual[i]);b.add(expected[2*i],expected[2*i+1]);}
+  }
+  a.finish();b.finish();check(maxError<=1e-7,"actual AU vs shared engine sample tolerance");check(std::abs(a.integrated()-b.integrated())<.0001,"actual AU vs shared LUFS");check(std::abs(a.peak-b.peak)<1e-7&&std::abs(a.sum-b.sum)<.001,"actual AU vs shared Peak/RMS");
+  printf("SHARED_PARITY rate=%.0f block=%u modern=%u maxSampleError=%.12g peakDifference=%.12g rmsDifference=%.12g lufsDifference=%.12g\n",sr,block,modern,maxError,a.peak-b.peak,std::sqrt(a.sum/(2*a.frames))-std::sqrt(b.sum/(2*b.frames)),a.integrated()-b.integrated());
+  ok(AudioUnitUninitialize(u),"parity uninitialize");ok(AudioComponentInstanceDispose(u),"parity dispose");
+ }
+}
 int main(int argc,char** argv){@autoreleasepool{
  check(argc==3,"host BINARY OUTPUT_PREFIX");void* lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);if(!lib){fprintf(stderr,"%s\n",dlerror());return 1;}
- auto factory=(AudioComponentFactoryFunction)dlsym(lib,"NovaMixFactory");check(factory,"factory symbol");AudioComponentDescription desc={'aufx','NvMx','NvSt',0,0};auto c=AudioComponentRegister(&desc,CFSTR("NOVA: Mix"),256,factory);check(c,"register actual AU binary");
+ auto factory=(AudioComponentFactoryFunction)dlsym(lib,"NovaMixFactory");check(factory,"factory symbol");AudioComponentDescription desc={'aufx','NvMx','NvSt',0,0};auto c=AudioComponentRegister(&desc,CFSTR("NOVA: Mix"),256,factory);check(c,"register actual AU binary");sharedParity(c);
  AudioUnit a=nullptr,b=nullptr;ok(AudioComponentInstanceNew(c,&a),"create a");ok(AudioComponentInstanceNew(c,&b),"create b");check(![snapshot(a)[@"binding"][@"instanceId"] isEqual:snapshot(b)[@"binding"][@"instanceId"]],"distinct instance IDs");
  Source source;std::vector<float> flat,changed;
  for(double sr:{22050.,44100.,48000.,96000.,192000.})for(unsigned block:{32u,256u,2048u}){

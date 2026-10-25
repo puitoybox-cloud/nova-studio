@@ -184,3 +184,30 @@ The native view can cancel, reopen/resume a saved `request.json`, open the compa
 Proposals are deterministic signal-analysis rules, **not learned AI inference**. Full-song FFT band fractions, Peak/RMS/crest and role affect proposals. Japanese aliases include ボーカルを前に出して / ピアノを優しく温かい音にして / ストリングスを柔らかくして / ベースの低音を整えて / 曲全体を自然にまとめて. A single Track does not establish relations with unprovided Tracks. Existing CLI aligned-Stem analysis remains available; multi-Stem picking is not yet in this AU view.
 
 This is a development integration, not a signed/notarized standalone runtime distribution. Python/FFmpeg are still external, explicitly chosen dependencies. Required version/hash diagnostics and packaging/license closure, FFmpeg redistribution obligations, musical listening, native UI layout/accessibility acceptance and physical Intel Logic save/reopen/automation/recorded-vocal/commercial-instrument checks remain separate. No other Logic/vendor plug-in control is added. The native fixture test exercises the actual AU view's action and real component parameters in a standalone test host; it is not Logic acceptance or an automated NSOpenPanel interaction test.
+
+## Intel development install preparation and shared DSP — 2026-10-25
+
+See INSTALL-JA.md for non-overwriting installation, identity/hash checks, Logic
+project-copy acceptance and rollback. `prepare-install.py COMPONENT NEW_KIT`
+performs native architecture/signature verification and inventories both standard
+Components paths. It creates a verified staging kit only; it never installs or
+changes an existing AU. Duplicate component identity under a different filename
+and unreadable components block manual installation. Existing bundle files and
+versions are retained in the receipt. Python/FFmpeg redistribution closure remains
+unavailable; the kit explicitly records external-runtime dependence.
+
+`whole-song shared-process INPUT.f32 RATE OUTPUT.f32 0 CEILING_DB <4 values>
+<13 processing values>` streams the exact AU DSP (SharedRender.hpp), including
+host value quantization, 20 ms smoothing, legacy/modern blend, compressor state,
+base Gain, safety clip and bypass. CEILING_DB is validated for CLI compatibility
+but no lookahead/extra mastering gain/TP attenuation is used. Initial state is
+reset to the given decoded parameters; continuous host automation requires the
+same initial state and sample-position target schedule through SharedRender.
+The original `process` mastering mode and approved live/offline limitation remain
+unchanged. A matching parameter list alone does not imply matching mastering WAVs.
+
+Portable shared-render tests compare distinct buffer partitions, automation and
+bypass at 44.1/48/96 kHz. The actual AudioComponent host also compares its rendered
+samples and Peak/RMS/LUFS to SharedRender on Intel CI. These are different evidence
+levels; neither is physical Logic acceptance. No latency/lookahead or state-format
+change is introduced into the real-time AU.
