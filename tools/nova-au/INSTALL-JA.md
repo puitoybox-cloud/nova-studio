@@ -183,3 +183,5 @@ Gain/EQ/Compressorの急変更とAutomation、2インスタンスの独立動作
 Logicから再書き出した音声のLUFS・True Peakを確認する。合成母音のCI成功は録音ボーカルの品質保証ではない。
 今回の高速化は音声結果を維持する変更であり、音質改善やOversampling Limiterの実装を意味しない。
 Developer ID署名・公証・商用配布レビューは引き続き未完了。
+
+全曲FFTのHann窓は同じ係数を解析開始時に事前計算する。True Peak FIRの係数・加算順序、EQ・Compressor・Limiterの設定は変更しない。性能比較では工程内の記録時間に加えて、起動・ハッシュ確認・中間整理を含む外部計測の総時間とCPU時間を区別する。
