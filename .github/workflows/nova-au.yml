@@ -13,7 +13,7 @@ permissions:
 jobs:
   intel-au:
     runs-on: macos-15-intel
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,6 +21,10 @@ jobs:
           fetch-depth: 2
       - name: Build real x86_64 AU component without signing identity
         run: tools/nova-au/build.sh "$RUNNER_TEMP/nova-au"
+      - name: Assemble actual pinned Intel Python and shared LGPL FFmpeg
+        run: |
+          if ! command -v zstd; then brew install zstd; fi
+          python3 tools/nova-au/package-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-contained-build"
       - name: Prepare non-installing development kit and test conflict preservation
         run: |
           python3 tools/nova-au/tests/prepare-install.py
@@ -58,9 +62,11 @@ jobs:
           shasum -a 256 "$RUNNER_TEMP/nova-au/actual-approved.wav" > "$RUNNER_TEMP/nova-au/wav-sha256.txt"
       - name: Native AU view whole-song launch and approved live parameter integration
         run: |
-          if ! command -v ffmpeg; then brew install ffmpeg; fi
           xcrun clang++ -std=c++20 -O2 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc tools/nova-au/tests/whole-song-ui.mm -framework Cocoa -framework AudioToolbox -o "$RUNNER_TEMP/nova-whole-ui"
-          "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/NovaMix.component" "$(command -v python3)" "$(command -v ffmpeg)" "$RUNNER_TEMP/nova-au/whole-ui"
+          "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/FFmpeg/bin/ffmpeg" "$RUNNER_TEMP/nova-au/whole-ui"
+      - name: Package-only relocated runtime, long audio and failure acceptance
+        run: |
+          python3 tools/nova-au/tests/contained-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/contained"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"

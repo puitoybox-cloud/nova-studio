@@ -88,7 +88,13 @@ def main():
     a = p.parse_args()
     if os.getpgrp() != os.getpid():
         os.setsid()  # private owned process group; native cancellation can bound descendant cleanup
+    if a.request.is_symlink(): raise ValueError('request symlink forbidden')
     q = load(a.request)
+    folder = Path(q.get('output', ''))
+    if folder.is_symlink() or folder.parent.resolve() != a.request.parent.resolve():
+        raise ValueError('workspace must be beside approved request')
+    for name in ('bridge-reply.json.partial','bridge-error.log','processing.log'):
+        if (a.request.parent/name).is_symlink(): raise ValueError('workspace log symlink forbidden')
     validate(q)
     if sys.version_info < (3, 9):
         raise ValueError('Python 3.9+ required; no runtime is downloaded')

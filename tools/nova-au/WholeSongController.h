@@ -6,3 +6,6 @@
 - (void)cancel;
 @end
 NSString* NovaFileSHA256(NSURL* url);
+// Fixed package paths only. Full inventory is validated on the worker before launch.
+NSURL* NovaBundledPython(NSURL* resources);
+NSURL* NovaBundledFFmpeg(NSURL* resources);

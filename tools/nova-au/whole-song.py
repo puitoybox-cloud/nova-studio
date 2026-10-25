@@ -198,6 +198,12 @@ def main():
                     sourceWavSha256=sha(args.wav), engineSha256=sha(args.engine), input=info, instruction=args.instruction,
                     targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION, pipelineSha256=sha(Path(__file__)), handoff=handoff, stems=stems, referenceFfmpegSha256=sha(args.reference_ffmpeg))
     folder = args.output
+    if folder.is_symlink(): raise ValueError('workspace symlink forbidden')
+    # Conservative whole-run disk reservation estimate includes retained original,
+    # A/B/C, matched WAVs and intermediate PCM. Source is never an output target.
+    reserve = info['frames'] * 128 + 16 * 1024 * 1024
+    if not args.resume and shutil.disk_usage(folder.parent).free < reserve:
+        raise ValueError('insufficient workspace space; original WAV preserved')
     if not args.resume:
         folder.mkdir(parents=False, exist_ok=False)
     lock = (folder / '.processing.lock').open('a')
@@ -230,6 +236,8 @@ def main():
     before_usage = resource.getrusage(resource.RUSAGE_SELF)
     before_children = resource.getrusage(resource.RUSAGE_CHILDREN)
     def checkpoint():
+        if shutil.disk_usage(folder).free < 8 * 1024 * 1024:
+            raise ValueError('workspace disk low; original WAV preserved')
         atomic_json(state, manifest)
     def artifact(path):
         manifest['artifacts'][path.name] = sha(path)

@@ -124,8 +124,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(![b[@"confirmed"]boolValue]||!self.audioVersion.stringValue.length){self.offlineSummary=@"対象を確認し、音源/プリセット/音声revision IDを入力してください";return;}
  NSURL* wav=[self chooseWholeFile:@"このAUの挿入先をLogicで書き出したWAVを選択（Track/Bus/Stereo Outを手動確認）" wav:YES];if(!wav)return;
  NSAlert* tap=[NSAlert new];tap.messageText=@"解析用WAVの書き出し位置を確認";tap.informativeText=@"このNOVA AUをバイパスして書き出した同じ挿入先のWAVだけが、AUへの設定適用候補になります。通常の完成Mix WAVはオフライン処理専用として扱います。";[tap addButtonWithTitle:@"NOVAバイパス済み・AU候補"];[tap addButtonWithTitle:@"完成Mix・オフライン専用"];[tap addButtonWithTitle:@"戻る"];NSModalResponse tapChoice=tap.runModal;if(tapChoice==NSAlertThirdButtonReturn)return;NSString* sourceTap=tapChoice==NSAlertFirstButtonReturn?@"pre-nova-confirmed":@"post-or-unknown";
- NSURL* python=[self chooseWholeFile:@"使用するローカルPython3実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!python)return;
- NSURL* ffmpeg=[self chooseWholeFile:@"使用するローカルFFmpeg実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!ffmpeg)return;
+ NSURL* python=NovaBundledPython(self.wholeResources);
+ NSURL* ffmpeg=NovaBundledFFmpeg(self.wholeResources);
  NSOpenPanel* parent=[NSOpenPanel openPanel];parent.message=@"比較WAVを保存する親フォルダ（新規専用フォルダを作成）";parent.canChooseDirectories=YES;parent.canChooseFiles=NO;if([parent runModal]!=NSModalResponseOK)return;
  NSURL* folder=[parent.URL URLByAppendingPathComponent:[@"NOVA-whole-" stringByAppendingString:NSUUID.UUID.UUIDString] isDirectory:YES];
  if(![NSFileManager.defaultManager createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:nil])return;
@@ -144,9 +144,9 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 - (void)resumeWhole:(id)sender{
  if(self.wholeController.busy||self.wholePreparing)return;
  NSURL* request=[self chooseWholeFile:@"保存したrequest.jsonを選択。再Open後のAU適用には新たな全曲解析が必要" wav:NO];if(!request)return;
- NSURL* python=[self chooseWholeFile:@"request作成時と同じPython実行ファイルを選択" wav:NO];if(!python)return;
- // Explicit external executable confirmation on reopen; do not trust a JSON path as permission to execute.
- NSURL* ffmpeg=[self chooseWholeFile:@"request作成時と同じFFmpeg実行ファイルを選択" wav:NO];if(!ffmpeg)return;
+ NSURL* python=NovaBundledPython(self.wholeResources);
+ // Saved JSON cannot authorize external executable paths.
+ NSURL* ffmpeg=NovaBundledFFmpeg(self.wholeResources);
  NSNumber* size;[request getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024)return;
  NSDictionary* q=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:request] options:0 error:nil];if(![q[@"ffmpeg"]isEqual:ffmpeg.path]){self.offlineSummary=@"FFmpegパス不一致";return;}
  self.wholeRequest=request;self.wholePython=python;self.wholeReply=nil;[self runWhole:@"resume" choice:nil after:nil];

@@ -1,0 +1,52 @@
+"""Actual relocated Intel package-only execution and native failure guards.
+
+Host Python orchestrates only. Every audio stage and subprocess uses the copied
+package interpreter/FFmpeg/engine with an empty PATH. No Homebrew libraries.
+"""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+p=argparse.ArgumentParser(description=__doc__)
+p.add_argument('bundle', type=Path);p.add_argument('host', type=Path);p.add_argument('output', type=Path)
+a=p.parse_args();a.output.mkdir(exist_ok=False)
+bundle=a.output/'relocated space/NovaMix.component'
+bundle.parent.mkdir();shutil.copytree(a.bundle,bundle,symlinks=True)
+resources=bundle/'Contents/Resources';runtime=resources/'Runtime'
+python=runtime/'Python/bin/python3.12';ffmpeg=runtime/'FFmpeg/bin/ffmpeg'
+engine=bundle/'Contents/MacOS/nova-whole-song'
+env={'PATH':'/nonexistent','LANG':'en_US.UTF-8'}
+# Test orchestration is external; all production scripts are the bundled bytes.
+source=Path(__file__).resolve().parents[1]
+with (a.output/'matrix.log').open('w') as out:
+    subprocess.run([str(python),'-I','-B',str(source/'tests/whole-song.py'),
+        '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
+        '--engine',str(engine),'--output',str(a.output/'matrix'),'--long'],
+        env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+# Host invokes the actual view method; NSOpenPanel and physical Logic excluded.
+def host(destination, succeeds):
+    result=subprocess.run([str(a.host),str(bundle),str(python),str(ffmpeg),str(destination)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
+    (destination.parent/(destination.name+'.log')).write_text(result.stdout)
+    assert (result.returncode==0)==succeeds,result.stdout
+host(a.output/'native', True)
+# Mutate only a disposable copied package, never the built distribution.
+victim=runtime/'Python/lib/python3.12/json/__init__.py'
+original=victim.read_bytes();victim.write_bytes(original+b'\n# corrupt\n')
+host(a.output/'corrupt', False);victim.write_bytes(original)
+renamed=ffmpeg.with_name('ffmpeg.missing');ffmpeg.rename(renamed)
+host(a.output/'missing', False);renamed.rename(ffmpeg)
+m=runtime/'inventory.json';original=m.read_bytes();j=json.loads(original);j['pythonVersion']='0';m.write_text(json.dumps(j))
+host(a.output/'version', False);m.write_bytes(original)
+# Even with original bytes restored, validate the entire sealed copied bundle.
+subprocess.run(['/usr/bin/codesign','--verify','--deep','--strict',str(bundle)],check=True)
+report=dict(format='nova-contained-acceptance-v1',path=str(bundle),externalPath=env['PATH'],
+    matrix=json.loads((a.output/'matrix/whole-song-results.json').read_text()),
+    nativeView=True,missingRejected=True,corruptionRejected=True,versionRejected=True,
+    physicalLogic=False,publicationEligible=False)
+(a.output/'result.json').write_text(json.dumps(report,indent=2))
+print(json.dumps({k:v for k,v in report.items() if k!='matrix'}))
