@@ -8,7 +8,7 @@ namespace nova {
 struct WholeMeter {
  double rate; uint64_t frames=0,clipped=0; double peak=0,sum=0,windowSum=0,shortSum=0;
  unsigned window,hop,shortWindow,head=0; Biquad shelf,hp;
- std::vector<double> ring,blocks,shortBlocks; std::array<std::array<double,12>,2> history{};
+ std::vector<double> ring,blocks,shortBlocks; std::array<std::array<double,24>,2> history{};
  std::array<std::array<float,2048>,2> spectrum{}; std::array<double,3> bands{};
  explicit WholeMeter(double sr):rate(sr),window(std::llround(sr*.4)),hop(std::llround(sr*.1)),shortWindow(std::llround(sr*3)),ring(shortWindow){
   if(sr!=44100&&sr!=48000&&sr!=96000)throw std::runtime_error("whole-song rate must be 44100/48000/96000");
@@ -29,7 +29,7 @@ struct WholeMeter {
    {.97216796875,.77978515625,.465087890625,.1373291015625},{-.102294921875,-.2003173828125,-.16650390625,-.0594482421875},
    {.047607421875,.1015625,.089111328125,.033203125},{-.026611328125,-.0582275390625,-.0517578125,-.0196533203125},
    {.014892578125,.0330810546875,.029296875,.010986328125},{-.00830078125,-.0189208984375,-.0291748046875,.001708984375}};
-  head=(head+11)%12;double input[2]={l,r};for(unsigned c=0;c<2;++c){history[c][head]=input[c];truePeak=std::max(truePeak,std::abs(input[c]));for(unsigned p=0;p<4;++p){double y=0;for(unsigned j=0;j<12;++j)y+=history[c][(head+j)%12]*fir[j][p];truePeak=std::max(truePeak,std::abs(y));}}
+  head=(head+11)%12;double input[2]={l,r};for(unsigned c=0;c<2;++c){history[c][head]=history[c][head+12]=input[c];truePeak=std::max(truePeak,std::abs(input[c]));for(unsigned p=0;p<4;++p){double y=0;for(unsigned j=0;j<12;++j)y+=history[c][head+j]*fir[j][p];truePeak=std::max(truePeak,std::abs(y));}}
  }
  void add(float l,float r){
   if(!std::isfinite(l)||!std::isfinite(r)||std::abs(l)>16||std::abs(r)>16)throw std::runtime_error("nonfinite or abnormal audio");

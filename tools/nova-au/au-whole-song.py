@@ -63,8 +63,11 @@ def verify(q):
         if m.get('format') != 'nova-whole-song-v1' or not m.get('complete') or m.get('status') != 'complete' or not m.get('independentPeakCeilingVerified'):
             raise ValueError('incomplete/unverified result')
         artifacts = m['artifacts']
-        if not isinstance(artifacts, dict) or not 5 <= len(artifacts) <= 64:
+        if not isinstance(artifacts, dict) or not 8 <= len(artifacts) <= 64:
             raise ValueError('invalid artifact list')
+        required = {label + suffix for label in ('original', 'A', 'B', 'C') for suffix in ('.wav', '-lufs-matched.wav')}
+        if not required.issubset(artifacts):
+            raise ValueError('retained comparison WAV missing')
         for name, digest in artifacts.items():
             if not re.fullmatch(r'[A-Za-z0-9_-]+\.(wav|f32)', name) or not re.fullmatch('[a-f0-9]{64}', digest):
                 raise ValueError('invalid artifact path/hash')

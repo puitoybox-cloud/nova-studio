@@ -59,6 +59,8 @@ with tempfile.TemporaryDirectory() as tmp:
    signal.extend([value,value*.5])
   raw.write_bytes(signal.tobytes());processed=d/f'limited-{rate}.f32'
   result=json.loads(subprocess.check_output([str(a.engine),'process',str(raw),str(rate),str(processed),'12','-1.5',*map(str,[0,0,0,0]+extra)]))
+  dry=json.loads(subprocess.check_output([str(a.engine),'process-meter',str(raw),str(rate),str(d/'must-not-exist.f32'),'12','-1.5',*map(str,[0,0,0,0]+extra)]))
+  assert dry == result and not (d/'must-not-exist.f32').exists()
   measured=result['measurement'];assert measured['frames']==rate and measured['clippedSamples']==0
   assert measured['samplePeakDbFS']<=-1.499 and 0<result['minimumLimiterGain']<1
   # No clipping/limiting: explicit five-ms flush/trim retains the first/last impulse.
