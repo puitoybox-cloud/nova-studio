@@ -48,6 +48,10 @@ def host(destination, succeeds):
     assert result.returncode==0,result.stdout
     if not succeeds: assert json.loads((destination/'rejection.json').read_text())['operationRejected']
 host(a.output/'native', True)
+evidence=json.loads((a.output/'native/ui-evidence.json').read_text())
+assert Path(evidence['reply']['runtime']['pythonExecutable']).resolve()==python.resolve()
+assert evidence['reply']['runtime']['ffmpegSha256']==hashlib.sha256(ffmpeg.read_bytes()).hexdigest()
+assert evidence['reply']['runtime']['engineSha256']==hashlib.sha256(engine.read_bytes()).hexdigest()
 # Mutate only a disposable copied package, never the built distribution.
 victim=runtime/'Python/lib/python3.12/json/__init__.py'
 original=victim.read_bytes();victim.write_bytes(original+b'\n# corrupt\n')

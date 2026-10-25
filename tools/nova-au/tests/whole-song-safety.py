@@ -20,6 +20,14 @@ with tempfile.TemporaryDirectory() as tmp:
  # Pause/cancel after workspace creation; re-open only with same source and options.
  raw.write_bytes(audio.tobytes()*30);w.wave_from_raw(raw,wav,48000)
  out=d/'work';cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine),'--output',str(out),'--project','p','--track','t','--version','v','--source','development-fixture','--kind','stereo-out','--confirm-source']
+ # Disk-shortage rejection occurs before workspace creation or source mutation.
+ from unittest.mock import patch
+ from types import SimpleNamespace
+ original_bytes=wav.read_bytes()
+ with patch.object(sys,'argv',cmd[1:]), patch.object(w.shutil,'disk_usage',return_value=SimpleNamespace(free=0)):
+  try:w.main();raise AssertionError('disk shortage accepted')
+  except ValueError as error:assert 'insufficient workspace' in str(error)
+ assert not out.exists() and wav.read_bytes()==original_bytes
  child=subprocess.Popen(cmd,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
  deadline=time.monotonic()+15
  while not (out/'manifest.json').exists() and time.monotonic()<deadline:time.sleep(.01)
