@@ -21,6 +21,16 @@ jobs:
           fetch-depth: 2
       - name: Build real x86_64 AU component without signing identity
         run: tools/nova-au/build.sh "$RUNNER_TEMP/nova-au"
+      - name: Prepare non-installing development kit and test conflict preservation
+        run: |
+          python3 tools/nova-au/tests/prepare-install.py
+          python3 tools/nova-au/prepare-install.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/install-kit"
+          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/"
+          cp tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/install-kit/"
+      - name: Shared real-time DSP buffer/rate parity
+        run: |
+          xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/shared-render.cpp -o "$RUNNER_TEMP/nova-shared-render"
+          "$RUNNER_TEMP/nova-shared-render" > "$RUNNER_TEMP/nova-au/shared-render.jsonl"
       - name: Portable DSP measurement and smoothing
         run: |
           xcrun clang++ -std=c++20 -O2 tools/nova-au/tests/dsp.cpp -o "$RUNNER_TEMP/nova-dsp"
