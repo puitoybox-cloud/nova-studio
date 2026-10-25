@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Independent FFmpeg reference, long-file, resume and explicit adoption checks."""
-import argparse, array, importlib.util, json, math, pathlib, re, subprocess, sys, time, wave
+import argparse, array, importlib.util, json, math, pathlib, re, subprocess, sys, time, wave, shutil
 root = pathlib.Path(__file__).resolve().parents[1]
+p=argparse.ArgumentParser();p.add_argument('--engine',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--long',action='store_true');p.add_argument('--reference-ffmpeg',default=shutil.which('ffmpeg'));p.add_argument('--scripts',type=pathlib.Path);a=p.parse_args();a.output.mkdir(exist_ok=False)
+if a.scripts: root=a.scripts.resolve()
 spec = importlib.util.spec_from_file_location('whole', root / 'whole-song.py')
 w = importlib.util.module_from_spec(spec); spec.loader.exec_module(w)
-p=argparse.ArgumentParser();p.add_argument('--engine',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--long',action='store_true');a=p.parse_args();a.output.mkdir(exist_ok=False)
+
+
 
 def fixture(path,rate,seconds):
     # Actual encoded audio, deterministic tonal mixture with attacks, gated heads/tails
@@ -27,7 +30,7 @@ for rate in (44100,48000,96000):
     raw=a.output/f'fixture-{rate}-{seconds}.f32';fixture(raw,rate,seconds)
     started=time.monotonic();m=run('meter',raw,rate)['measurement'];elapsed=time.monotonic()-started
     wav=raw.with_suffix('.wav');w.wave_from_raw(raw,wav,rate)
-    ref=subprocess.run(['ffmpeg','-hide_banner','-nostats','-i',str(wav),'-filter_complex','ebur128=peak=true','-f','null','-'],capture_output=True,text=True,check=True).stderr.split('Summary:')[-1]
+    ref=subprocess.run([a.reference_ffmpeg,'-hide_banner','-nostats','-i',str(wav),'-filter_complex','ebur128=peak=true','-f','null','-'],capture_output=True,text=True,check=True).stderr.split('Summary:')[-1]
     lu=float(re.search(r'I:\s*([-\d.]+) LUFS',ref)[1]);tp=float(re.search(r'Peak:\s*([-\d.]+) dBFS',ref)[1])
     assert abs(m['integratedLufs']-lu)<.15,(rate,seconds,m,ref)
     assert abs(m['truePeakEstimateDbTP']-tp)<.5,(rate,seconds,m,ref)
@@ -36,7 +39,7 @@ for rate in (44100,48000,96000):
     # Whole production chain at all rates for 30s and 4/8 min at 48k.
     if seconds==30 or rate==48000:
         out=a.output/f'comparison-{rate}-{seconds}'
-        cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--confirm-source']
+        cmd=[sys.executable,'-I','-B',str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
         with (a.output/f'production-{rate}-{seconds}.json').open('w') as log:
             subprocess.run(cmd,stdout=log,check=True)
         result=json.loads((out/'manifest.json').read_text());assert result['complete'];assert result['adopted'] is None
@@ -47,7 +50,7 @@ for rate in (44100,48000,96000):
         before={n:w.sha(out/n) for n in result['artifacts']}
         subprocess.run(cmd+['--resume'],stdout=subprocess.DEVNULL,check=True)
         assert before=={n:w.sha(out/n) for n in result['artifacts']}
-        adopt=[sys.executable,str(root/'select-whole-song.py'),str(out),'--project','fixture','--track','stereo','--version','v1','--source-wav',str(wav),'--approve']
+        adopt=[sys.executable,'-I','-B',str(root/'select-whole-song.py'),str(out),'--project','fixture','--track','stereo','--version','v1','--source-wav',str(wav),'--approve']
         subprocess.run(adopt+['--choice','B'],check=True,stdout=subprocess.DEVNULL)
         assert w.sha(out/'adopted.wav')==w.sha(out/'B.wav')
         subprocess.run(adopt+['--choice','undo'],check=True,stdout=subprocess.DEVNULL)
@@ -68,7 +71,7 @@ for rate in (44100,48000,96000):
         x=.8*math.sin(2*math.pi*.25*i+math.pi/4) if i%(rate//2)<rate//20 else 0;values.extend([x,x])
     raw.write_bytes(values.tobytes());wav=raw.with_suffix('.wav');w.wave_from_raw(raw,wav,rate)
     out=a.output/f'peak-guard-{rate}'
-    cmd=[sys.executable,str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','peak-fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--target-lufs','-5','--confirm-source']
+    cmd=[sys.executable,'-I','-B',str(root/'whole-song.py'),str(wav),'--engine',str(a.engine.resolve()),'--output',str(out),'--project','peak-fixture','--track','stereo','--version','v1','--source','development-fixture','--kind','stereo-out','--target-lufs','-5','--confirm-source','--reference-ffmpeg',a.reference_ffmpeg]
     subprocess.run(cmd,stdout=subprocess.DEVNULL,check=True)
     result=json.loads((out/'manifest.json').read_text());assert result['independentPeakCeilingVerified']
     for row in result['renders'][1:]:

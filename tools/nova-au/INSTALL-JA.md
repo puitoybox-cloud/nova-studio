@@ -15,7 +15,7 @@ Developer ID署名・公証・一般販売配布の完了を意味しない。
 | Logic 10.x、11.x、12.xごとの本AUロード・UI・保存互換 | 未検証。AUv2対応という一般仕様から本AUの成功を推定しない |
 | Intel AUビルド・auval・単独AudioComponentホスト | 当該HEADのIntel CIの成功と成果物で確認する |
 | Logic内部Mastering Assistant / 他社AU操作 | 未対応。製品・版・公開IDの確認とホスト側の明示的設定が必要 |
-| 全曲処理runtime | 選択済み外部Python 3.9+ / FFmpegが必要。同梱閉包未完成 |
+| 全曲処理runtime | 同梱固定Python 3.12.15 / FFmpeg 7.1.1のみ。欠落時停止。自己完結の実証は当該HEADのIntel CI結果で確認 |
 
 Apple一次資料（上記日付に確認）:
 - https://support.apple.com/en-euro/122179 : 64-bit要件、導入場所、再認識とPlug-in Manager。
@@ -29,13 +29,15 @@ Apple一次資料（上記日付に確認）:
 Logicを終了する。元のLogicプロジェクトは開かず、Finderでプロジェクトと外部音声を
 別フォルダへコピーしておく。コピーしたプロジェクトだけを検証に使う。
 Python/FFmpegの導入、ダウンロード、Apple署名情報の使用をこの手順では行わない。
-Pythonがなければここで止める。
+同梱Runtimeが欠落している候補は使用しない。
 
-配布ZIPを新規フォルダに展開し、同じフォルダにあるprepare-install.pyを実行する。
+Actions成果物からNOVA-Mix-Intel-development.tar.gzを取り出し、
+新規フォルダに展開する（実行権限を保持）。生ZIPの.componentを直接使わない。
+同じフォルダにあるprepare-install.pyを実行する。
 出力先はまだ存在しない、Components以外のフォルダを指定する。
 
 ```sh
-python3 prepare-install.py /絶対パス/NovaMix.component /絶対パス/NOVA-AU-review-kit
+./NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12 -I -B prepare-install.py /絶対パス/NovaMix.component /絶対パス/NOVA-AU-review-kit
 ```
 
 このツールは次を行う。
@@ -111,11 +113,12 @@ Logicを完全終了する。今回配置したAUのファイルハッシュが�
 Logicを再起動し、元のプロジェクトのコピーで認識を確認する。
 今回の検証用コピー、WAV、A/B/C、履歴、旧AUはそのまま保管する。
 
-## 配布runtimeの未完了事項
+## 配布runtimeと残る要件
 
-Music Studioアプリ内のruntimeとAUの実行環境は別。現在のAUは承認された外部実行ファイルを
-control queueから起動し、そのハッシュを照合する。Renderからの起動は行わない。
-このチェックだけではPython標準ライブラリ、動的ライブラリ、FFmpeg依存の閉包・
-版固定・再配布許諾は保証されない。開発環境のPython/FFmpegで成功しても
-単独配布版完成としない。許可されたIntel runtime実体の用意、既存package検証への接続、
-ライセンスNOTICE/ソース提供要件、署名・公証、Intel上で同梱物だけを使う起動検証が残る。
+詳細はCONTAINED-RUNTIME-JA.md。Music Studioアプリと同じPython配布元を再利用するが、
+アプリの実行ファイルやユーザーのインストール済み依存は参照しない。
+AU専用の最小構成を同梱し、control queueで署名・全ファイルのハッシュを検証して起動する。
+署名順序は各Mach-O/dylib/拡張モジュール→外側AU。現在はad-hoc開発署名のみ。
+販売用Developer ID、Hardened RuntimeでのLogic内子プロセス実行・library validation、
+公証・Gatekeeperと最低OSの実機確認、商用配布条項の最終審査は未完了。
+Appleの認証情報を使用しない。既存AUを自動上書きしない。

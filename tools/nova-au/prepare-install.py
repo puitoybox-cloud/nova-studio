@@ -100,7 +100,7 @@ def prepare(candidate, output, roots, native=True):
               'component': IDENTITY, 'minimumMacOS': '12.0', 'logicVersion': None,
               'logicCompatibilityVerified': False, 'installed': matches, 'scanErrors': errors,
               'manualInstallationAllowed': not matches and not errors, 'validation': validation,
-              'files': files, 'runtime': 'external Python and FFmpeg required; not self-contained',
+              'files': files, 'runtime': ('bundled Python/FFmpeg candidate; inspect exact-head package-only acceptance' if (candidate / 'Contents/Resources/Runtime/inventory.json').is_file() else 'runtime not bundled; whole-song execution unavailable'),
               'installationPerformed': False}
     # Exclusive mkdir prevents replacing a previous kit/receipt; no mutation of installed AU.
     output.mkdir(parents=False, exist_ok=False)

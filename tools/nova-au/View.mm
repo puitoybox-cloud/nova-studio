@@ -70,7 +70,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"完成WAV採用承認" x:180 y:506 action:@selector(adoptWhole:) tag:0];
   [self button:@"WAV採用Undo承認" x:344 y:506 action:@selector(undoWhole:) tag:0];
   [self button:@"比較フォルダを開く" x:520 y:506 action:@selector(revealWhole:) tag:0];
-  [self field:@"全曲: 明示選択Python3/FFmpeg必要。右欄True Peak上限dBTP。信号解析提案・学習AIなし" y:542 editable:NO];
+  [self field:@"全曲: 同梱runtime使用。右欄True Peak上限dBTP。信号解析提案・学習AIなし" y:542 editable:NO];
   NSScrollView* scroll=[[NSScrollView alloc]initWithFrame:NSMakeRect(16,578,668,306)];scroll.hasVerticalScroller=YES;self.report=[NSTextField wrappingLabelWithString:@""];self.report.frame=NSMakeRect(0,0,648,900);self.report.font=[NSFont systemFontOfSize:11];scroll.documentView=self.report;[self addSubview:scroll];
   [self update:nil];__weak NovaMixView* weakSelf=self;
   self.refresh=[NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*){[weakSelf update:nil];}];
@@ -107,7 +107,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  return [b[@"confirmed"]boolValue]&&[q[@"projectId"]isEqual:b[@"projectId"]]&&[q[@"trackId"]isEqual:b[@"trackId"]]&&[q[@"instanceId"]isEqual:b[@"instanceId"]]&&[q[@"kind"]isEqual:b[@"targetKind"]]&&[q[@"inputSource"]isEqual:b[@"inputSource"]]&&[q[@"role"]isEqual:b[@"role"]]&&[self.projectField.stringValue isEqual:b[@"projectId"]]&&[self.trackField.stringValue isEqual:b[@"trackId"]]&&[self.sourceField.stringValue isEqual:b[@"inputSource"]]&&[@[@"track",@"bus",@"stereo-out"][self.targetKind.indexOfSelectedItem]isEqual:b[@"targetKind"]];
 }
 - (void)runWhole:(NSString*)operation choice:(NSString*)choice after:(void (^)(NSDictionary*))after{
- if(!self.wholeRequest||!self.wholePython){self.offlineSummary=@"先に全曲WAVとruntimeを選択してください";return;}
+ if(!self.wholeRequest||!self.wholePython){self.offlineSummary=@"先に全曲WAVと保存先を選択してください";return;}
  self.offlineSummary=@"全曲処理/ハッシュ検証中。音声再生スレッドとは別処理";[self update:nil];
  __weak NovaMixView* weakSelf=self;
  [self.wholeController execute:operation request:self.wholeRequest python:self.wholePython resources:self.wholeResources choice:choice completion:^(NSDictionary* reply,NSString* error){
@@ -124,8 +124,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(![b[@"confirmed"]boolValue]||!self.audioVersion.stringValue.length){self.offlineSummary=@"対象を確認し、音源/プリセット/音声revision IDを入力してください";return;}
  NSURL* wav=[self chooseWholeFile:@"このAUの挿入先をLogicで書き出したWAVを選択（Track/Bus/Stereo Outを手動確認）" wav:YES];if(!wav)return;
  NSAlert* tap=[NSAlert new];tap.messageText=@"解析用WAVの書き出し位置を確認";tap.informativeText=@"このNOVA AUをバイパスして書き出した同じ挿入先のWAVだけが、AUへの設定適用候補になります。通常の完成Mix WAVはオフライン処理専用として扱います。";[tap addButtonWithTitle:@"NOVAバイパス済み・AU候補"];[tap addButtonWithTitle:@"完成Mix・オフライン専用"];[tap addButtonWithTitle:@"戻る"];NSModalResponse tapChoice=tap.runModal;if(tapChoice==NSAlertThirdButtonReturn)return;NSString* sourceTap=tapChoice==NSAlertFirstButtonReturn?@"pre-nova-confirmed":@"post-or-unknown";
- NSURL* python=[self chooseWholeFile:@"使用するローカルPython3実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!python)return;
- NSURL* ffmpeg=[self chooseWholeFile:@"使用するローカルFFmpeg実行ファイルを明示選択（ダウンロードなし）" wav:NO];if(!ffmpeg)return;
+ NSURL* python=NovaBundledPython(self.wholeResources);
+ NSURL* ffmpeg=NovaBundledFFmpeg(self.wholeResources);
  NSOpenPanel* parent=[NSOpenPanel openPanel];parent.message=@"比較WAVを保存する親フォルダ（新規専用フォルダを作成）";parent.canChooseDirectories=YES;parent.canChooseFiles=NO;if([parent runModal]!=NSModalResponseOK)return;
  NSURL* folder=[parent.URL URLByAppendingPathComponent:[@"NOVA-whole-" stringByAppendingString:NSUUID.UUID.UUIDString] isDirectory:YES];
  if(![NSFileManager.defaultManager createDirectoryAtURL:folder withIntermediateDirectories:NO attributes:nil error:nil])return;
@@ -144,9 +144,9 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 - (void)resumeWhole:(id)sender{
  if(self.wholeController.busy||self.wholePreparing)return;
  NSURL* request=[self chooseWholeFile:@"保存したrequest.jsonを選択。再Open後のAU適用には新たな全曲解析が必要" wav:NO];if(!request)return;
- NSURL* python=[self chooseWholeFile:@"request作成時と同じPython実行ファイルを選択" wav:NO];if(!python)return;
- // Explicit external executable confirmation on reopen; do not trust a JSON path as permission to execute.
- NSURL* ffmpeg=[self chooseWholeFile:@"request作成時と同じFFmpeg実行ファイルを選択" wav:NO];if(!ffmpeg)return;
+ NSURL* python=NovaBundledPython(self.wholeResources);
+ // Saved JSON cannot authorize external executable paths.
+ NSURL* ffmpeg=NovaBundledFFmpeg(self.wholeResources);
  NSNumber* size;[request getResourceValue:&size forKey:NSURLFileSizeKey error:nil];if(!size||size.unsignedLongLongValue>4*1024*1024)return;
  NSDictionary* q=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:request] options:0 error:nil];if(![q[@"ffmpeg"]isEqual:ffmpeg.path]){self.offlineSummary=@"FFmpegパス不一致";return;}
  self.wholeRequest=request;self.wholePython=python;self.wholeReply=nil;[self runWhole:@"resume" choice:nil after:nil];

@@ -13,7 +13,7 @@ permissions:
 jobs:
   intel-au:
     runs-on: macos-15-intel
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,11 +21,15 @@ jobs:
           fetch-depth: 2
       - name: Build real x86_64 AU component without signing identity
         run: tools/nova-au/build.sh "$RUNNER_TEMP/nova-au"
+      - name: Assemble actual pinned Intel Python and shared LGPL FFmpeg
+        run: |
+          if ! command -v zstd; then brew install zstd; fi
+          python3 tools/nova-au/package-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-contained-build"
       - name: Prepare non-installing development kit and test conflict preservation
         run: |
           python3 tools/nova-au/tests/prepare-install.py
           python3 tools/nova-au/prepare-install.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/install-kit"
-          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/"
+          cp tools/nova-au/prepare-install.py tools/nova-au/INSTALL-JA.md tools/nova-au/CONTAINED-RUNTIME-JA.md "$RUNNER_TEMP/nova-au/"
           cp tools/nova-au/INSTALL-JA.md "$RUNNER_TEMP/nova-au/install-kit/"
       - name: Shared real-time DSP buffer/rate parity
         run: |
@@ -58,9 +62,11 @@ jobs:
           shasum -a 256 "$RUNNER_TEMP/nova-au/actual-approved.wav" > "$RUNNER_TEMP/nova-au/wav-sha256.txt"
       - name: Native AU view whole-song launch and approved live parameter integration
         run: |
-          if ! command -v ffmpeg; then brew install ffmpeg; fi
           xcrun clang++ -std=c++20 -O2 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc tools/nova-au/tests/whole-song-ui.mm -framework Cocoa -framework AudioToolbox -o "$RUNNER_TEMP/nova-whole-ui"
-          "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/NovaMix.component" "$(command -v python3)" "$(command -v ffmpeg)" "$RUNNER_TEMP/nova-au/whole-ui"
+          "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12" "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/FFmpeg/bin/ffmpeg" "$RUNNER_TEMP/nova-au/whole-ui"
+      - name: Package-only relocated runtime, long audio and failure acceptance
+        run: |
+          python3 tools/nova-au/tests/contained-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/contained"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
@@ -70,6 +76,8 @@ jobs:
           sudo mkdir -p /Library/Audio/Plug-Ins/Components
           sudo cp -R "$RUNNER_TEMP/nova-au/NovaMix.component" /Library/Audio/Plug-Ins/Components/
           sudo touch /Library/Audio/Plug-Ins/Components/NovaMix.component
+          find /Library/Audio/Plug-Ins/Components/NovaMix.component -type d ! -perm -0055 -print > "$RUNNER_TEMP/nova-au/unreadable-directories.txt"
+          test ! -s "$RUNNER_TEMP/nova-au/unreadable-directories.txt"
           codesign --verify --strict /Library/Audio/Plug-Ins/Components/NovaMix.component
           plutil -p /Library/Audio/Plug-Ins/Components/NovaMix.component/Contents/Info.plist
           # The earlier read-only/dynamic host may have started a registrar before the bundle existed.
@@ -103,6 +111,33 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           node scripts/music-logic-instruments-browser.js
+      - name: Preserve executable modes in actual development distribution
+        run: |
+          tar -czf "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" -C "$RUNNER_TEMP/nova-au" NovaMix.component prepare-install.py INSTALL-JA.md CONTAINED-RUNTIME-JA.md
+          shasum -a 256 "$RUNNER_TEMP/nova-au/NOVA-Mix-Intel-development.tar.gz" > "$RUNNER_TEMP/nova-au/distribution-sha256.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nova-au-intel-contained-package
+          path: |
+            ${{ runner.temp }}/nova-au/NOVA-Mix-Intel-development.tar.gz
+            ${{ runner.temp }}/nova-au/distribution-sha256.txt
+            ${{ runner.temp }}/nova-au/NovaMix.component/Contents/Resources/Runtime/inventory.json
+            ${{ runner.temp }}/nova-au/whole-ui/ui-evidence.json
+            ${{ runner.temp }}/nova-au/contained/result.json
+            ${{ runner.temp }}/nova-au/contained/matrix.log
+            ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
+            ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
+            ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
+            ${{ runner.temp }}/nova-au/contained/corrupt/rejection.json
+            ${{ runner.temp }}/nova-au/contained/missing/rejection.json
+            ${{ runner.temp }}/nova-au/contained/version/rejection.json
+            ${{ runner.temp }}/nova-au/node-tests.txt
+            ${{ runner.temp }}/nova-au/auval.txt
+            ${{ runner.temp }}/nova-au/au-list.txt
+            ${{ runner.temp }}/nova-au/registrar-log.txt
+            ${{ runner.temp }}/nova-au/unreadable-directories.txt
+            verification/music-logic-instruments-*
       - uses: actions/upload-artifact@v4
         if: always()
         with:
