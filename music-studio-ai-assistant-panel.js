@@ -130,10 +130,11 @@
   function wholeSongWorkspace(workspace){const copy=clone(workspace);delete copy.wholeSongCheckpoint;delete copy.baseRevision;delete copy.updatedAt;return JSON.stringify(copy);}
   function stopWholeSong(id){const record=states.get(id);if(record){const requestId=record.wholeSongToken?.requestId;record.wholeSongToken=null;record.wholeSongAbort?.abort();if(requestId)app().localGenerationRequest('cancel-compose',{requestId}).catch(()=>{});record.message='全曲生成を中断しました。完了済み小節を保持。Save checkpointで保存し、Resumeで続きから再開できます。サーバーへも停止を要求します。実行中の単一モデル処理は終了待ちになる場合があります。';refresh(id);}}
   async function saveWholeSongCheckpoint(id){
-    const record=states.get(id);if(!record?.state?.workspace.wholeSongCheckpoint)return;
+    const record=states.get(id),session=app()?.state?.midiEditor;if(!record?.state?.workspace.wholeSongCheckpoint)return;
+    if(session?.projectId!==id){record.message='対象の曲をOpenしてから中断地点を保存してください。';refresh(id);return;}
     if(record.localModelBusy){record.message='先にPauseを押し、処理の終了後に保存してください。';refresh(id);return;}
     const result=await app().saveMidiEditor({silent:true});
-    if(states.get(id)===record){record.message=result.ok?'Checkpoint saved（中断地点を保存しました）。再Open・完全バックアップから再開できます。':'Checkpoint save failed（保存失敗）。画面内の完了済み小節を保持しています。再保存してください。';refresh(id);}
+    if(states.get(id)===record){record.message=result.ok&&!result.stale&&app().state.midiEditor===session?'Checkpoint saved（中断地点を保存しました）。再Open・完全バックアップから再開できます。':'Checkpoint save failed（保存失敗）。画面内の完了済み小節を保持しています。再保存してください。';refresh(id);}
   }
   function clearWholeSongCheckpoint(id){const record=states.get(id);if(!record||record.localModelBusy)return;delete record.state.workspace.wholeSongCheckpoint;touch(id);record.message='中断地点を取り消しました。元曲・完成候補は保持しています。';refresh(id);}
   async function generateWholeSong(id,resume=false,autoSave=true){
@@ -178,6 +179,16 @@
         }
       }
       record.state.workspace.wholeSongCheckpoint=clone(checkpoint);record.pending=true;
+      // Commit the source and job before the first new inference, including resumed jobs.
+      // Otherwise a crash during that request loses unsaved source edits or retry progress.
+      if(autoSave){
+        const saved=await app().saveMidiEditor({silent:true});
+        if(!saved.ok)throw Error('checkpoint-save-failed: 開始前の保存に失敗。推論は開始していません。再保存してください。');
+        if(record.wholeSongToken!==token||states.get(id)!==record||app().state.midiEditor!==session)return;
+        if(saved.stale){record.message='開始前の保存中に編集が変わったため中断しました。条件を確認して再開してください。';return;}
+        p=saved.project||project(id);music=JSON.stringify(p.musicalSettings);
+        if(!current()){record.message='開始前の保存後に条件が変わったため中断しました。保存済みCheckpointを保持しています。';return;}
+      }
       for(let n=checkpoint.results.length;n<plan.chunks.length;n++){
         if(!current())return;const chunk=plan.chunks[n];token.requestId='whole_'+(root.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));record.message=`Whole song（全曲） 完了${n}/${plan.chunks.length}小節・残り${plan.chunks.length-n}小節 / 元曲保持`;refresh(id);
         const result=await app().localGenerationRequest('compose',{requestId:token.requestId,seed:72+n*3,events:64,max_ticks:Math.floor((chunk.range.endTick-chunk.range.startTick)*480/session.midiData.ppq),bpm:chunk.bpm,key:chunk.key,numerator:chunk.numerator,denominator:chunk.denominator,pitch_min:48,pitch_max:84,style:chunk.section.density==='sparse'?'gentle':chunk.section.density==='rich'?'varied':'balanced',description:chunk.section.mood||'',genre:'',chords:chunk.chords,...(chunk.modelInputNotes?{sourceNotes:composition().remakePrompt(chunk.source,session.midiData.ppq)}:{})},{signal:record.wholeSongAbort?.signal});
