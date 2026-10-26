@@ -68,6 +68,9 @@ jobs:
       - name: Package-only relocated runtime, long audio and failure acceptance
         run: |
           python3 tools/nova-au/tests/contained-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/contained"
+      - name: Section-aware mastering and Japanese multi-action production paths
+        run: |
+          "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12" -I -B tools/nova-au/tests/section-policy.py --scripts "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources" --reference-ffmpeg "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/FFmpeg/bin/ffmpeg" --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --output "$RUNNER_TEMP/nova-au/section-policy"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
@@ -140,6 +143,8 @@ jobs:
             ${{ runner.temp }}/nova-au/contained/multitrack/result.json
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
+            ${{ runner.temp }}/nova-au/contained/section-long-results.json
+            ${{ runner.temp }}/nova-au/contained/section-policy/section-policy-results.json
             ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/corrupt/rejection.json
             ${{ runner.temp }}/nova-au/contained/missing/rejection.json
@@ -175,15 +180,19 @@ jobs:
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
           g++ -std=c++20 -O2 tools/nova-au/section-meter.cpp -o "$RUNNER_TEMP/nova-section-meter"
           python3 tools/nova-au/tests/section-comparison.py --engine "$RUNNER_TEMP/nova-section-meter"
+          python3 tools/nova-au/tests/section-policy.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/section-policy"
           python3 tools/nova-au/tests/au-whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-bridge"
           python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
           /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
-      - name: Sequential PR 509 audio parity and resource comparison
+      - name: 480-second section-aware loudness production and resume
         run: |
-          git fetch --no-tags --depth=1 origin a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8
+          python3 tools/nova-au/tests/section-long.py --engine "$RUNNER_TEMP/nova-whole-song" --source "$RUNNER_TEMP/whole-song/fixture-48000-480.wav" --output "$RUNNER_TEMP/section-long" > "$RUNNER_TEMP/section-long.log"
+      - name: Sequential stable PR 510 audio parity and resource comparison
+        run: |
+          git fetch --no-tags --depth=1 origin 27bfc24a013fa5377821fc30791ea9270882bcc4
           mkdir -p "$RUNNER_TEMP/nova-before"
-          git archive a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
+          git archive 27bfc24a013fa5377821fc30791ea9270882bcc4 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
           g++ -std=c++20 -O2 "$RUNNER_TEMP/nova-before/tools/nova-au/whole-song.cpp" -o "$RUNNER_TEMP/nova-before-engine"
           python3 tools/nova-au/tests/efficiency.py --baseline-scripts "$RUNNER_TEMP/nova-before/tools/nova-au" --baseline-engine "$RUNNER_TEMP/nova-before-engine" --scripts tools/nova-au --engine "$RUNNER_TEMP/nova-whole-song" --matrix "$RUNNER_TEMP/whole-song" --output "$RUNNER_TEMP/efficiency" > "$RUNNER_TEMP/efficiency-log.json"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
@@ -191,6 +200,8 @@ jobs:
         with:
           name: nova-whole-song-audio
           path: |
+            ${{ runner.temp }}/section-long-results.json
+            ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/**/manifest.json
             ${{ runner.temp }}/whole-song/**/*.wav
@@ -205,6 +216,8 @@ jobs:
         with:
           name: nova-whole-song-evidence
           path: |
+            ${{ runner.temp }}/section-long-results.json
+            ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/whole-song-results.json
             ${{ runner.temp }}/whole-song/peak-guard-results.json

@@ -4,6 +4,7 @@ import argparse,array,hashlib,importlib.util,json,math,pathlib,subprocess,sys,te
 p=argparse.ArgumentParser();p.add_argument('--engine',required=True);args=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('comparison',root/'compare-sections.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+policy_spec=importlib.util.spec_from_file_location('policy',root/'whole-song.py');policy=importlib.util.module_from_spec(policy_spec);policy_spec.loader.exec_module(policy)
 with tempfile.TemporaryDirectory() as d:
  for rate in (44100,48000,96000):
   paths=[]
@@ -27,6 +28,8 @@ with tempfile.TemporaryDirectory() as d:
   assert abs(uniform['medianSectionGainDb']-20*math.log10(2))<1e-6
   assert uniform['sectionGainVariationDb']<1e-6
   assert changed['sectionGainVariationDb']>6
+  assert not policy.section_review(results[0],results[1])['excessiveDynamicsChange']
+  assert policy.section_review(results[0],results[2])['excessiveDynamicsChange']
   assert not uniform['perceptualQualityVerified'] and not uniform['intelligibilityMeasured']
   assert hashes==[hashlib.sha256(x.read_bytes()).hexdigest() for x in paths]
   try:module.compare(results[0],{'sections':results[1]['sections'][:-1]})

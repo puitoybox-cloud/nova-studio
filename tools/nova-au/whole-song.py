@@ -177,6 +177,93 @@ def retire_intermediates(folder, manifest):
     atomic_json(folder / 'manifest.json', manifest)
 
 
+# Explicit local grammar: every clause must be recognized before any rendering.
+# No inferred instrument separation or vocal-intelligibility claim.
+LOUDNESS = '全体の音圧を少し上げて'
+PUNCH = '音を潰さず迫力を出して'
+ALIASES = {'ピアノを自然に': 'ピアノを温かく自然にして',
+           '高音を柔らかく': '高音を少し抑えて',
+           '低音をすっきり': '低音が強すぎるので調整して',
+           '音を潰さずに迫力を出して': PUNCH}
+SUPPORTED = {
+    'ピアノを自然に聞こえるように', 'ピアノを優しく温かい音にして',
+    'ピアノを温かく自然にして', 'ピアノをもっと温かくして', 'ピアノを柔らかくして',
+    '高音がきついので柔らかく', 'ストリングスを柔らかくして',
+    'ストリングスの高音を柔らかくして', '高音を少し抑えて',
+    'ボーカルを前に出して', 'ボーカルをもう少し前に出して',
+    '低音をすっきりさせて', 'ベースの低音を整えて',
+    'ベースが強すぎるので調整して', '低音が強すぎるので調整して',
+    'ドラムをもう少し力強くして', '曲全体を自然にまとめて',
+    '全体の音量バランスを整えて', '全体の音を自然に整えて', LOUDNESS, PUNCH}
+
+
+def instruction_steps(instruction, role, kind):
+    if not isinstance(instruction, str) or not 0 < len(instruction) <= 2048:
+        raise ValueError('bounded explicit instruction required')
+    clauses = re.split(r'、|そして|[;；\n]', instruction)
+    if not 1 <= len(clauses) <= 8 or any(not x.strip() for x in clauses):
+        raise ValueError('指示は1〜8個の明示した処理にしてください')
+    steps = [ALIASES.get(x.strip(), x.strip()) for x in clauses]
+    for step in steps:
+        if step not in SUPPORTED:
+            raise ValueError('未対応の指示です: ' + step)
+        if step in (LOUDNESS, PUNCH) and kind != 'stereo-out':
+            raise ValueError('全曲音圧・迫力の指示は確認済みStereo Out専用です')
+    if len(steps) > 1:
+        targets = {name for step in steps for name in ('ピアノ','ボーカル','ベース','ドラム','ストリングス') if name in step}
+        expected = {'ピアノ':'piano','ボーカル':'vocal','ベース':'bass','ドラム':'drums','ストリングス':'strings'}
+        if len(targets) > 1 or any(expected[t] != role for t in targets):
+            raise ValueError('複数指示の対象不一致: 分離済みの同一Trackとroleを確認してください')
+        # Warm piano may raise bass while the clean-low instruction cuts it.
+        if any('ピアノ' in x for x in steps) and any('低音' in x or 'ベース' in x for x in steps):
+            raise ValueError('矛盾する低域指示です: 温かさと低域削減の優先を明示してください')
+        if len(set(steps)) != len(steps):
+            raise ValueError('重複指示です: 同じ処理の二重適用はしません')
+    return steps
+
+
+def section_profile(document):
+    rows = document.get('sections', [])
+    if not rows:
+        raise ValueError('section measurements missing')
+    valid = [r['measurement'] for r in rows if r['measurement']['loudnessValid'] and
+             r['measurement']['frames'] >= r['measurement']['sampleRate'] * .4]
+    if not valid:
+        raise ValueError('no active section; silence/short input cannot master')
+    levels = sorted(r['integratedLufs'] for r in valid)
+    median = levels[len(levels)//2]
+    return dict(activeSections=len(valid), invalidSections=len(rows)-len(valid),
+                quietSections=sum(x < median-6 for x in levels),
+                loudSections=sum(x > median+6 for x in levels),
+                medianLufs=median, loudestLufs=max(levels),
+                rangeLu=max(levels)-min(levels),
+                # Include even loudness-invalid partial tails in peak protection.
+                maximumTruePeakEstimateDbTP=max(r['measurement']['truePeakEstimateDbTP'] for r in rows),
+                minimumActiveCrestDb=min(r['crestDb'] for r in valid),
+                classification='relative to active median +/-6 LU; invalid is not necessarily digital silence')
+
+
+def section_review(before, after):
+    left, right = before['sections'], after['sections']
+    if len(left) != len(right):
+        raise ValueError('section alignment mismatch')
+    gains, crest = [], []
+    for a, b in zip(left, right):
+        x, y = a['measurement'], b['measurement']
+        if (a['startFrame'], x['frames'], x['sampleRate']) != (b['startFrame'], y['frames'], y['sampleRate']):
+            raise ValueError('section alignment mismatch')
+        if x['loudnessValid'] and y['loudnessValid']:
+            gains.append(y['integratedLufs']-x['integratedLufs'])
+            crest.append(y['crestDb']-x['crestDb'])
+    if not gains:
+        raise ValueError('no aligned active sections')
+    variation, loss = max(gains)-min(gains), max(0., -min(crest))
+    return dict(sectionGainVariationDb=variation, maximumSectionCrestLossDb=loss,
+                excessiveDynamicsChange=variation > 1.5 or loss > 1.5,
+                thresholdDb=1.5, perceptualQualityVerified=False,
+                note='3-second diagnostic guard, not a listening test or compressor attack measurement')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('wav', type=Path)
@@ -200,7 +287,13 @@ def main():
     parser.add_argument('--handoff', type=Path, help='read-only #501 Logic handoff JSON')
     parser.add_argument('--stem', action='append', default=[], help='explicit aligned role=path.wav; one per role')
     parser.add_argument('--confirm-stem-alignment', action='store_true')
+    parser.add_argument('--section-aware', action='store_true', help='opt-in section-based gain/compression guard; legacy render path stays unchanged')
     args = parser.parse_args()
+    steps = instruction_steps(args.instruction, args.role, args.kind)
+    guarded = args.section_aware or any(x in (LOUDNESS, PUNCH) for x in steps)
+    section_engine = args.engine.with_name('nova-section-meter')
+    if guarded and (section_engine.is_symlink() or not section_engine.is_file()):
+        parser.error('同梱section meterが必要です。外部fallbackはありません')
     if not all(x.strip() for x in (args.project, args.track, args.version)):
         parser.error('explicit project/track/version required')
     if not math.isfinite(args.target_lufs) or not -36 <= args.target_lufs <= -5 or not math.isfinite(args.ceiling_dbtp) or not -12 <= args.ceiling_dbtp <= -1:
@@ -237,6 +330,8 @@ def main():
     identity = dict(projectId=args.project, trackId=args.track, audioVersion=args.version, source=args.source, role=args.role, kind=args.kind,
                     sourceWavSha256=sha(args.wav), engineSha256=sha(args.engine), input=info, instruction=args.instruction,
                     targetLufs=args.target_lufs, ceilingDbTP=args.ceiling_dbtp, pipelineVersion=VERSION, pipelineSha256=sha(Path(__file__)), handoff=handoff, stems=stems, referenceFfmpegSha256=sha(args.reference_ffmpeg))
+    if guarded:
+        identity['sectionPolicy'] = dict(version=1, meterSha256=sha(section_engine))
     folder = args.output
     if folder.is_symlink(): raise ValueError('workspace symlink forbidden')
     # Conservative whole-run disk reservation estimate includes retained original,
@@ -285,18 +380,19 @@ def main():
         atomic_json(state, manifest)
     def artifact(path):
         manifest['artifacts'][path.name] = sha(path)
-    def engine(stage, *parameters):
+    def engine(stage, *parameters, executable=None, cache=True):
         nonlocal child
-        if stage in manifest['stages']:
+        if cache and stage in manifest['stages']:
             return manifest['stages'][stage]
-        child = subprocess.Popen([str(args.engine.resolve()), *map(str, parameters)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        child = subprocess.Popen([str((executable or args.engine).resolve()), *map(str, parameters)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = child.communicate()
         code = child.returncode
         child = None
         if code:
             raise ValueError('engine ' + stage + ': ' + stderr.strip())
         result = json.loads(stdout)
-        manifest['stages'][stage] = result
+        if cache:
+            manifest['stages'][stage] = result
         return result
     def independent_reference(stage, wav):
         nonlocal child
@@ -367,7 +463,53 @@ def main():
             manifest['stemRelationships'] = dict(stems=stem_rows,pairs=relationships,alignmentUserConfirmed=True,
                                                   limitations='coarse full-song band/level relationships; no time-local or psychoacoustic masking inference')
             checkpoint()
-        plan = engine('plan' , 'plan', source, rate, args.instruction, args.role, args.kind)
+        # A single legacy instruction retains exact #510 settings/audio/timing path.
+        policy_only = all(x in (LOUDNESS, PUNCH) for x in steps)
+        if policy_only:
+            measured = engine('policy-input', 'meter', source, rate)['measurement']
+            if not measured['loudnessValid']:
+                raise ValueError('silence/short input cannot produce a plan')
+            neutral = [1,180,4000,1000,0,1,0,-18,1,10,150,6,0]
+            plan = dict(input=measured, choices=[dict(values=[0,0,0,0], processing=neutral[:]) for _ in range(3)])
+        else:
+            plans = [engine('plan' if len(steps)==1 else 'plan-'+str(i), 'plan', source, rate, text, args.role, args.kind)
+                     for i,text in enumerate(steps) if text not in (LOUDNESS, PUNCH)]
+            plan = json.loads(json.dumps(plans[0]))
+            for other in plans[1:]:
+                for choice, extra in zip(plan['choices'], other['choices']):
+                    # Only explicitly requested deltas are accumulated. Gain safety
+                    # uses the stricter measured bound; compressor has one shared set.
+                    choice['values'][0] = min(choice['values'][0], extra['values'][0])
+                    for index in (1,2):
+                        choice['values'][index] = max(-6., min(6., choice['values'][index]+extra['values'][index]))
+                    if extra['processing'][4]:
+                        choice['processing'][3:6] = extra['processing'][3:6]
+        if len(steps)>1:
+            for choice in plan['choices']:
+                eq_bound = sum(abs(choice['values'][i]) for i in (1,2)) + abs(choice['processing'][4]) + choice['processing'][12]
+                choice['values'][0] = max(-24., min(choice['values'][0], 20*math.log10(.9)-plan['input']['samplePeakDbFS']-eq_bound))
+        source_sections = None
+        if guarded:
+            source_sections = engine('source-sections', 'sections', source, rate, executable=section_engine, cache=False)
+            profile = section_profile(source_sections)
+            profile['maximumTruePeakEstimateDbTP'] = max(profile['maximumTruePeakEstimateDbTP'], plan['input']['truePeakEstimateDbTP'])
+            manifest['sectionPolicy'] = dict(version=1, source=profile, steps=steps,
+                target=dict(trackId=args.track, role=args.role, kind=args.kind),
+                parameterOrder='EQ -> linked compressor -> global gain -> offline peak protection',
+                noTimeVaryingGain=True, adoptionRequiresExplicitApproval=True)
+            # Section crest below 6dB already has little peak/rms contrast. Avoid
+            # adding compression; punch/loudness-only intentionally use none.
+            if policy_only or PUNCH in steps or profile['minimumActiveCrestDb'] < 6:
+                for choice in plan['choices']:
+                    choice['processing'][6] = 0
+                    choice['processing'][12] = 0
+            manifest['sectionPolicy']['compressorDisabled'] = all(x['processing'][6]==0 for x in plan['choices'])
+        if len(steps)>1 or guarded:
+            manifest['instructionPlan'] = dict(steps=steps, targetTrackId=args.track,
+                sameConfirmedInput=True, intermediateRemeasurement=False,
+                scope='ordered parameter proposal on one input, not instrument separation or semantic AI',
+                approvalRequired=True)
+
         manifest['before'] = plan['input']
         checkpoint()
         rows = manifest.setdefault('renders', [])
@@ -390,7 +532,23 @@ def main():
                                      args.ceiling_dbtp - .5, *values, *processing)['measurement']
                 checkpoint()
                 desired = args.target_lufs - (3 - k)
+                if LOUDNESS in steps:
+                    if args.target_lufs <= plan['input']['integratedLufs']:
+                        raise ValueError('音圧増加と目標LUFSが矛盾しています。現在より高い目標を明示してください')
+                    desired = min(args.target_lufs, plan['input']['integratedLufs'] + (.5,1.,1.5)[k-1])
                 final_gain = min(12., max(-24., desired - preliminary['integratedLufs'])) if args.kind == 'stereo-out' else 0
+                if guarded:
+                    # Bound global boost by the loudest active section and peak
+                    # headroom, including conservative EQ gain. Never amplify
+                    # silence independently or normalize sections separately.
+                    loudness_bound = (args.target_lufs if LOUDNESS in steps else desired) - profile['loudestLufs']
+                    eq_bound = sum(abs(values[i]) for i in (1,2)) + abs(processing[4]) + processing[12]
+                    peak_bound = args.ceiling_dbtp - .6 - profile['maximumTruePeakEstimateDbTP'] - values[0] - eq_bound
+                    if LOUDNESS in steps or PUNCH in steps:
+                        loudness_bound = min(loudness_bound, (.5,1.,1.5)[k-1] - values[0])
+                    final_gain = max(-24., min(final_gain, loudness_bound, peak_bound)) if args.kind == 'stereo-out' else 0
+                    if LOUDNESS in steps and final_gain + values[0] <= 0:
+                        raise ValueError('区間音量・ピーク上限のため安全な音圧増加を提案できません。別処理に置換しません')
                 raw = folder / (label + '.f32')
                 stage = label + '-render'
                 if stage not in manifest['stages']:
@@ -420,11 +578,24 @@ def main():
                 raise ValueError('WAV identity/length mismatch')
             if k and (verified['truePeakEstimateDbTP'] > args.ceiling_dbtp + .001 or verified['clippedSamples']):
                 raise ValueError('post-WAV ceiling/clip verification failed')
+            review = None
+            if guarded and k:
+                review_raw = folder / 'section-review.f32.partial'
+                review_raw.unlink(missing_ok=True)
+                decode(output, wav_info(output), review_raw)
+                sections = engine(label+'-sections', 'sections', review_raw, rate, executable=section_engine, cache=False)
+                review_raw.unlink()
+                review = section_review(source_sections, sections)
+                if review['excessiveDynamicsChange']:
+                    raise ValueError('section dynamics guard rejected candidate '+label+'; original retained')
             rows.append(dict(label=label, values=values, processing=processing, finalGainDb=final_gain,
                              postTruePeakAttenuationDb=correction, minimumLimiterGain=limiter_gain, measurement=verified, independentReference=independent,
-                             requestedLufs=(args.target_lufs - (3-k)) if k and args.kind == 'stereo-out' else None,
-                             targetDifferenceLu=(verified['integratedLufs']-(args.target_lufs-(3-k))) if k and args.kind == 'stereo-out' else None,
+                             requestedLufs=desired if k and args.kind == 'stereo-out' else None,
+                             targetDifferenceLu=(verified['integratedLufs']-desired) if k and args.kind == 'stereo-out' else None,
                              reason='full-song bands/crest -> existing measured proposal; A conservative/B balanced/C stronger. Loudness shortfall can reflect gain bounds, dynamics and peak ceiling; no quality score.'))
+            if review is not None:
+                rows[-1]['sectionReview'] = review
+                rows[-1]['reason'] = 'Section-bounded global gain; no per-section normalization. See sectionPolicy and measured sectionReview; no quality score.'
             checkpoint()
         quietest = min(row['measurement']['integratedLufs'] for row in rows)
         for row in rows:
@@ -444,6 +615,8 @@ def main():
             if abs(row['matchedMeasurement']['integratedLufs'] - quietest) > .01:
                 raise ValueError('loudness-matching verification failed')
             checkpoint()
+        if guarded and sha(section_engine) != identity['sectionPolicy']['meterSha256']:
+            raise ValueError('section meter changed during processing')
         if sha(args.wav) != identity['sourceWavSha256']:
             raise ValueError('source changed during processing')
         usage, children = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)

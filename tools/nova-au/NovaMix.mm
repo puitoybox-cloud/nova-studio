@@ -104,6 +104,12 @@ class NovaMix final:public ausdk::AUEffectBase {
   }
 
   if(op=="preview"){
+   auto text=str(c[@"instruction"]);unsigned left=0,right=0;
+   if(text=="AとBの中間にして")right=1;else if(text=="AとCの中間にして")right=2;else if(text=="BとCの中間にして"){left=1;right=2;}
+   if(right){
+    if(!pending||!pending->audioAnalyzed||!inputAnalysis.valid||pending->before!=now||pendingWord!=nowWord||pendingProcessing!=nowProcessing||!(pending->binding==binding)){status=@"中間提案には同じ対象・設定の実測済み候補が必要です";return kAudioUnitErr_InvalidPropertyValue;}
+    try{auto proposal=nova::midpointProposal(*pending,left,right);pending=proposal;status=ns(proposal.reason);[evidence addObject:@{@"operation":@"midpoint-proposal",@"instruction":ns(text),@"audioId":audioId,@"binding":bindingDictionary(),@"reason":status,@"currentUnchanged":@YES,@"left":@(left),@"right":@(right),@"choices":@[array(proposal.choices[0]),array(proposal.choices[1]),array(proposal.choices[2])],@"processingChoices":@[processingArray(proposal.processingChoices[0]),processingArray(proposal.processingChoices[1]),processingArray(proposal.processingChoices[2])]}];if(evidence.count>32)[evidence removeObjectAtIndex:0];return noErr;}catch(const std::exception& e){status=ns(e.what());return kAudioUnitErr_InvalidPropertyValue;}
+   }
    pending.reset();pendingWord=nowWord;pendingProcessing=nowProcessing;
    JSContext* js=[[JSContext alloc]init];[js evaluateScript:[NSString stringWithUTF8String:NovaAssistantSource]];
    JSValue* routed=[js[@"NovaLogicInstruments"] invokeMethod:@"parseAudioCommand" withArguments:@[c[@"instruction"]?:@""]];
