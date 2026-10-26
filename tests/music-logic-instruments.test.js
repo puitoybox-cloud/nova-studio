@@ -64,3 +64,49 @@ test('measured candidate midpoint routes without authorizing parameter applicati
  assert.throws(()=>n.parseAudioCommand('AとDの中間にして'));
  assert.throws(()=>n.parseAudioCommand('constructor'));
 });
+
+for(const instruction of [
+ 'ピアノを削除して','ピアノを半音上げる','ピアノを温かくしないで',
+ 'ピアノを温かい音にして、ベースを消して','ピアノを温かい音にして。ただし保存しないで',
+ 'ピアノとベースを選んで','ストリングスは柔らかくしないで',
+ 'ベースは自然なアコースティックにしてから削除して','ドラムを選んで、やっぱり戻して',
+ '今持っている音源から選んで全部削除して','購入した音源だけから選ばないで',
+ 'さっきの音源に戻してピアノを削除','AとBの音色を比較したいので削除して',
+ 'ピアノを温かい音にして\nドラムを選んで','「Piano」の曲に合う音源を全部選んで'
+])test(`instrument rejects entire unsupported/conflicting request: ${instruction}`,()=>{
+ const p=n.register(song(),entry()),before=JSON.stringify(p);
+ assert.throws(()=>n.recommend(p,{trackId:'piano',machineId:'mac',instruction}),/instrument-/);
+ assert.equal(JSON.stringify(p),before);
+});
+test('quoted instrument targets bind unique ID or name and reject mismatch or ambiguous identity',()=>{
+ const p=n.register(song(),entry()),instruction='「Piano」のピアノを温かい音にして';
+ assert.equal(n.recommend(p,{trackId:'piano',machineId:'mac',instruction}).candidates[0].entry.id,'warm');
+ assert.equal(n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac',instruction}).trackId,'piano');
+ p.midiData.tracks.push({...structuredClone(p.midiData.tracks[0]),id:'other',name:'Other'});
+ assert.throws(()=>n.recommend(p,{trackId:'other',machineId:'mac',instruction}),/target-mismatch/);
+ assert.throws(()=>n.preview(p,{trackId:'other',entryId:'warm',machineId:'mac',instruction}),/target-mismatch/);
+ p.midiData.tracks[1].name='Piano';
+ assert.throws(()=>n.recommend(p,{trackId:'piano',machineId:'mac',instruction}),/target-ambiguous/);
+ p.midiData.tracks[1].name='Other';p.midiData.tracks[1].id='Piano';
+ assert.throws(()=>n.recommend(p,{trackId:'piano',machineId:'mac',instruction}),/target-ambiguous/);
+});
+for(const instruction of ['ストリングスを選んで','購入した音源だけから選んで','前の設定に戻して','A/B/Cを比較して'])test(`instrument preview refuses entry that contradicts instruction: ${instruction}`,()=>{
+ const p=n.register(song(),entry()),before=JSON.stringify(p);
+ assert.throws(()=>n.preview(p,{trackId:'piano',entryId:'warm',machineId:'mac',instruction}),/entry-instruction-mismatch/);
+ assert.equal(JSON.stringify(p),before);
+});
+test('strict instrument grammar preserves A/B/C ranking approval Undo and JSON handoff',()=>{
+ let p=song();for(const id of ['one','two','three'])p=n.register(p,entry(id));
+ const instruction='「Piano」のピアノをもっと温かい音にして。',r=n.recommend(p,{trackId:'piano',machineId:'mac',instruction});
+ assert.deepEqual(r.candidates.map(c=>c.label),['A','B','C']);
+ const plan=n.preview(p,{trackId:'piano',entryId:r.candidates[1].entry.id,machineId:'mac',instruction});
+ assert.throws(()=>n.apply(p,plan),/unapproved/);const next=n.apply(p,plan,{approved:true}),restored=JSON.parse(JSON.stringify(next));
+ assert.deepEqual(n.handoff(restored,'mac').assignments,next.logicInstruments.assignments);
+ assert.deepEqual(n.undo(restored,{approved:true}).midiData,p.midiData);
+});
+
+test('quoted Unicode Track identity is preserved while command punctuation is normalized',()=>{
+ const p=n.register(song(),entry());p.midiData.tracks[0].name='Ｐｉａｎｏ';
+ assert.equal(n.recommend(p,{trackId:'piano',machineId:'mac',instruction:'「Ｐｉａｎｏ」のピアノを選んで！'}).track.id,'piano');
+ assert.throws(()=>n.recommend(p,{trackId:'piano',machineId:'mac',instruction:'「Piano」のピアノを選んで'}),/target-ambiguous/);
+});
