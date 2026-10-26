@@ -80,7 +80,7 @@ def verify(q):
             if row['label'] + '.wav' not in artifacts or not all(math.isfinite(row['measurement'][k]) for k in ('integratedLufs', 'truePeakEstimateDbTP')):
                 raise ValueError('unverified candidate')
         validate(q)  # detect source/runtime edits during the artifact scan as well
-        return dict(runtime=dict(pythonVersion=sys.version.split()[0], pythonExecutable=sys.executable, pythonSha256=w.sha(Path(sys.executable)), ffmpegSha256=q['ffmpegSha256'], engineSha256=q['engineSha256']), format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
+        return dict(sectionPolicy=m.get('sectionPolicy'), instructionPlan=m.get('instructionPlan'), runtime=dict(pythonVersion=sys.version.split()[0], pythonExecutable=sys.executable, pythonSha256=w.sha(Path(sys.executable)), ffmpegSha256=q['ffmpegSha256'], engineSha256=q['engineSha256']), format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)

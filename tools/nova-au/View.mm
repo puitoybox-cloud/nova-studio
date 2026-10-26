@@ -115,6 +115,8 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   if(error){view.wholeReply=nil;view.offlineSummary=error;[view update:nil];return;}
   view.wholeReply=reply;NSMutableString* text=[NSMutableString stringWithFormat:@"全曲検証成功 / source SHA %@ / %@\n信号解析ルール提案（学習AIなし）。AU設定は承認待ち。offline追加Gain/ピーク制御はAU未対応。",reply[@"request"][@"sourceWavSha256"],reply[@"request"][@"audioVersion"]];
   NSDictionary* before=reply[@"before"];[text appendFormat:@"\n解析元 %@ frames / %@ Hz / Peak %.2f dBFS / RMS %.2f dBFS / crest %.2f dB / 帯域比 %@",before[@"frames"],before[@"sampleRate"],[before[@"samplePeakDbFS"]doubleValue],[before[@"rmsDbFS"]doubleValue],[before[@"crestDb"]doubleValue],before[@"bands"]];
+  if([reply[@"instructionPlan"]isKindOfClass:NSDictionary.class])[text appendFormat:@"\n処理順 %@ / 対象 %@（同じ確認済み入力・パラメータ提案、途中の再解析なし）",reply[@"instructionPlan"][@"steps"],reply[@"instructionPlan"][@"targetTrackId"]];
+  if([reply[@"sectionPolicy"]isKindOfClass:NSDictionary.class]){id profile=reply[@"sectionPolicy"][@"source"];[text appendFormat:@"\n区間保護: 有効 %@ / 無効 %@ / 音量幅 %.2f LU。全曲Gainのみ・区間別自動音量変更なし。音質は試聴で確認。",profile[@"activeSections"],profile[@"invalidSections"],[profile[@"rangeLu"]doubleValue]];}
   for(id row in reply[@"renders"])[text appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / EQ+Gain %@ / %@ / 追加Gain %.2f dB / TP補正 %.2f dB / %@",row[@"label"],[row[@"measurement"][@"integratedLufs"]doubleValue],[row[@"measurement"][@"truePeakEstimateDbTP"]doubleValue],params(row[@"values"]),processingText(row[@"processing"]),[row[@"finalGainDb"]doubleValue],[row[@"postTruePeakAttenuationDb"]doubleValue],row[@"reason"]];
   view.offlineSummary=text;if(after)after(reply);[view update:nil];
  }];

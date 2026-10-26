@@ -68,6 +68,9 @@ jobs:
       - name: Package-only relocated runtime, long audio and failure acceptance
         run: |
           python3 tools/nova-au/tests/contained-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/contained"
+      - name: Section-aware mastering and Japanese multi-action production paths
+        run: |
+          python3 tools/nova-au/tests/section-policy.py --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --output "$RUNNER_TEMP/nova-au/section-policy"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
@@ -175,6 +178,7 @@ jobs:
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
           g++ -std=c++20 -O2 tools/nova-au/section-meter.cpp -o "$RUNNER_TEMP/nova-section-meter"
           python3 tools/nova-au/tests/section-comparison.py --engine "$RUNNER_TEMP/nova-section-meter"
+          python3 tools/nova-au/tests/section-policy.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/section-policy"
           python3 tools/nova-au/tests/au-whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-bridge"
           python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
@@ -191,6 +195,7 @@ jobs:
         with:
           name: nova-whole-song-audio
           path: |
+            ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/**/manifest.json
             ${{ runner.temp }}/whole-song/**/*.wav
@@ -205,6 +210,7 @@ jobs:
         with:
           name: nova-whole-song-evidence
           path: |
+            ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/whole-song-results.json
             ${{ runner.temp }}/whole-song/peak-guard-results.json
