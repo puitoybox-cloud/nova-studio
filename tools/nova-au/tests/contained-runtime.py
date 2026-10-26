@@ -42,6 +42,11 @@ with (a.output/'matrix.log').open('w') as out:
         '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
         '--engine',str(engine),'--output',str(a.output/'matrix'),'--long'],
         env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+with (a.output/'section-long.log').open('w') as out:
+    subprocess.run([str(python),'-I','-B',str(source/'tests/section-long.py'),
+        '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),
+        '--engine',str(engine),'--source',str(a.output/'matrix/fixture-48000-480.wav'),
+        '--output',str(a.output/'section-long')],env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
 with (a.output/'section-policy.log').open('w') as out:
     subprocess.run([str(python),'-I','-B',str(source/'tests/section-policy.py'),
         '--scripts',str(resources),'--reference-ffmpeg',str(ffmpeg),

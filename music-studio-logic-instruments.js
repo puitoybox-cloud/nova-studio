@@ -83,8 +83,8 @@
  // Shared deterministic routing for the AU control UI; never controls a Logic sibling plug-in.
  function parseAudioCommand(instruction){
   const aliases={'ピアノを自然に':'ピアノを温かく自然にして','高音を柔らかく':'高音を少し抑えて','低音をすっきり':'低音が強すぎるので調整して'};
-  const raw=text(instruction),s=Object.hasOwn(aliases,raw)?aliases[raw]:raw;
-  const points={'AとBの中間にして':[0,1],'AとCの中間にして':[0,2],'BとCの中間にして':[1,2]},midpoint=Object.hasOwn(points,s)?points[s]:null;
+  const raw=text(instruction),s=Object.prototype.hasOwnProperty.call(aliases,raw)?aliases[raw]:raw;
+  const points={'AとBの中間にして':[0,1],'AとCの中間にして':[0,2],'BとCの中間にして':[1,2]},midpoint=Object.prototype.hasOwnProperty.call(points,s)?points[s]:null;
   if(midpoint)return{operation:'midpoint',endpoints:midpoint,approvalRequired:true,audioAnalyzed:false};
   if(s==='前の設定に戻して')return{operation:'undo',approvalRequired:true,audioAnalyzed:false};
   if(!['マスタリングして','ピアノを温かく自然にして','ベースが強すぎるので調整して','ドラムをもう少し力強くして','全体の音量バランスを整えて','ピアノを柔らかくして','ボーカルをもう少し前に出して','高音を少し抑えて','ピアノをもっと温かくして','ストリングスの高音を柔らかくして','低音が強すぎるので調整して','全体の音を自然に整えて'].includes(s))throw Error('nova-au-instruction-unsupported');

@@ -143,6 +143,8 @@ jobs:
             ${{ runner.temp }}/nova-au/contained/multitrack/result.json
             ${{ runner.temp }}/nova-au/contained/dyld-trace.txt
             ${{ runner.temp }}/nova-au/contained/matrix/peak-guard-results.json
+            ${{ runner.temp }}/nova-au/contained/section-long-results.json
+            ${{ runner.temp }}/nova-au/contained/section-policy/section-policy-results.json
             ${{ runner.temp }}/nova-au/contained/native/ui-evidence.json
             ${{ runner.temp }}/nova-au/contained/corrupt/rejection.json
             ${{ runner.temp }}/nova-au/contained/missing/rejection.json
@@ -183,6 +185,9 @@ jobs:
           python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
           /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
+      - name: 480-second section-aware loudness production and resume
+        run: |
+          python3 tools/nova-au/tests/section-long.py --engine "$RUNNER_TEMP/nova-whole-song" --source "$RUNNER_TEMP/whole-song/fixture-48000-480.wav" --output "$RUNNER_TEMP/section-long" > "$RUNNER_TEMP/section-long.log"
       - name: Sequential stable PR 510 audio parity and resource comparison
         run: |
           git fetch --no-tags --depth=1 origin 27bfc24a013fa5377821fc30791ea9270882bcc4
@@ -195,6 +200,7 @@ jobs:
         with:
           name: nova-whole-song-audio
           path: |
+            ${{ runner.temp }}/section-long-results.json
             ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/**/manifest.json
@@ -210,6 +216,7 @@ jobs:
         with:
           name: nova-whole-song-evidence
           path: |
+            ${{ runner.temp }}/section-long-results.json
             ${{ runner.temp }}/section-policy/section-policy-results.json
             ${{ runner.temp }}/efficiency/efficiency.json
             ${{ runner.temp }}/whole-song/whole-song-results.json
