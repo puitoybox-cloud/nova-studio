@@ -25,7 +25,18 @@ def run(operation,*args,ok=True):
  r=subprocess.run([*cmd,operation,str(request),*args],capture_output=True,text=True)
  assert (r.returncode==0)==ok,(operation,r.stderr)
  return json.loads(r.stdout) if ok else None
+preview=run('preview');assert preview['previewOnly'] and not preview['audioAnalyzed']
+assert not (folder/'audio').exists(), 'preflight cannot render or create output'
+assert preview['instructionPlan']['actions'][0]['targetTrackId']=='piano'
+assert preview['instructionPlan']['actions'][0]['timeScope']=='entire confirmed input'
+for instruction in ('ベースの低音を整えて', 'ピアノを自然に、ボーカルを前に出して', '2小節だけ高音を柔らかく', '高音を柔らかく、リバーブを深く'):
+ bad={**q,'instruction':instruction};request.write_text(json.dumps(bad));run('preview',ok=False);run('run',ok=False)
+ assert not (folder/'audio').exists(), 'all clauses must validate before any render'
+request.write_text(json.dumps(q))
 r=run('run');assert r['offlineLimiterNotLiveAu'] and not r['modelInference'];assert len(r['renders'])==4
+assert r['instructionPlan']['audioAnalyzed']
+assert r['instructionPlan']['measuredCandidates'][1]['values']==r['renders'][2]['values']
+assert r['spectralReviews']['B']['perceptualQualityVerified'] is False
 assert r['renders'][1]['values']!=r['renders'][3]['values']
 run('verify');run('resume');run('adopt',ok=False);run('adopt','--choice','B','--approve')
 assert sha(folder/'audio/adopted.wav')==sha(folder/'audio/B.wav')
@@ -36,5 +47,8 @@ run('verify',ok=False)
 with wav.open('r+b') as f:f.truncate(f.seek(0,2)-7)
 output=folder/'audio/A.wav';saved=output.read_bytes();output.write_bytes(b'bad');run('verify',ok=False);output.write_bytes(saved)
 manifest=folder/'audio/manifest.json';original=manifest.read_text();m=json.loads(original);m['artifacts']['../outside.wav']='0'*64;manifest.write_text(json.dumps(m));run('verify',ok=False);manifest.write_text(original)
+for value in (float('nan'), 7, -25, True):
+ m=json.loads(original);m['renders'][1]['values'][0]=value;manifest.write_text(json.dumps(m));run('verify',ok=False)
+manifest.write_text(original);run('verify')
 q['engineSha256']='0'*64;request.write_text(json.dumps(q));run('resume',ok=False)
 print(json.dumps(dict(status='PASS',seconds=30,sourceUnchanged=sha(wav)==q['sourceWavSha256'],folder=str(folder),resources=r['resources'])))

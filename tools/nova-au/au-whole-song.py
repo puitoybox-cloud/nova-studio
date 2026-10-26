@@ -2,6 +2,7 @@
 """AU control-queue bridge. Local explicit files only; no downloads or shell."""
 import argparse
 import fcntl
+import hashlib
 import importlib.util
 import json
 import math
@@ -49,6 +50,7 @@ def validate(q):
         raise ValueError('target out of range')
     if not isinstance(q.get('instruction'), str) or len(q['instruction']) > 2048:
         raise ValueError('bounded instruction required')
+    w.instruction_steps(q['instruction'], q['role'], q['kind'])
 
 def verify(q):
     validate(q)
@@ -76,15 +78,16 @@ def verify(q):
                 raise ValueError('artifact damaged: ' + name)
         if [x['label'] for x in m['renders']] != ['original', 'A', 'B', 'C']:
             raise ValueError('invalid candidates')
+        w.validate_choices(m['renders'][1:])
         for row in m['renders']:
             if row['label'] + '.wav' not in artifacts or not all(math.isfinite(row['measurement'][k]) for k in ('integratedLufs', 'truePeakEstimateDbTP')):
                 raise ValueError('unverified candidate')
         validate(q)  # detect source/runtime edits during the artifact scan as well
-        return dict(sectionPolicy=m.get('sectionPolicy'), instructionPlan=m.get('instructionPlan'), runtime=dict(pythonVersion=sys.version.split()[0], pythonExecutable=sys.executable, pythonSha256=w.sha(Path(sys.executable)), ffmpegSha256=q['ffmpegSha256'], engineSha256=q['engineSha256']), format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
+        return dict(spectralReviews=m.get('spectralReviews'), sectionPolicy=m.get('sectionPolicy'), instructionPlan=m.get('instructionPlan'), runtime=dict(pythonVersion=sys.version.split()[0], pythonExecutable=sys.executable, pythonSha256=w.sha(Path(sys.executable)), ffmpegSha256=q['ffmpegSha256'], engineSha256=q['engineSha256']), format='nova-au-whole-reply-v1', request=q, before=m['before'], renders=m['renders'], resources=m.get('initialCompletedRun'), manifestSha256=w.sha(folder / 'manifest.json'), offlineLimiterNotLiveAu=True, modelInference=False)
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('operation', choices=['run', 'resume', 'verify', 'adopt', 'undo'])
+    p.add_argument('operation', choices=['preview', 'run', 'resume', 'verify', 'adopt', 'undo'])
     p.add_argument('request', type=Path)
     p.add_argument('--choice', choices=['A', 'B', 'C'])
     p.add_argument('--approve', action='store_true')
@@ -92,7 +95,12 @@ def main():
     if os.getpgrp() != os.getpid():
         os.setsid()  # private owned process group; native cancellation can bound descendant cleanup
     if a.request.is_symlink(): raise ValueError('request symlink forbidden')
-    q = load(a.request)
+    if a.request.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError('JSON exceeds 4 MiB')
+    request_bytes = a.request.read_bytes()
+    if len(request_bytes) > 4 * 1024 * 1024:
+        raise ValueError('JSON exceeds 4 MiB')
+    q = json.loads(request_bytes)
     folder = Path(q.get('output', ''))
     if folder.is_symlink() or folder.parent.resolve() != a.request.parent.resolve():
         raise ValueError('workspace must be beside approved request')
@@ -104,6 +112,14 @@ def main():
     validate(q)
     if sys.version_info < (3, 9):
         raise ValueError('Python 3.9+ required; no runtime is downloaded')
+    if a.operation == 'preview':
+        # No output directory, audio subprocess, measurement, adoption or AU
+        # mutation. Every clause/target is validated before render is offered.
+        print(json.dumps(dict(format='nova-au-whole-reply-v1', request=q,
+            requestSha256=hashlib.sha256(request_bytes).hexdigest(),
+            previewOnly=True, audioAnalyzed=False, modelInference=False,
+            instructionPlan=w.instruction_preview(q['instruction'], q['role'], q['kind'], q['trackId'])), ensure_ascii=False))
+        return
     if a.operation in ('run', 'resume'):
         sys.argv = [str(ROOT / 'whole-song.py'), q['sourceWav'], '--engine', q['engine'], '--reference-ffmpeg', q['ffmpeg'], '--output', q['output'], '--project', q['projectId'], '--track', q['trackId'], '--version', q['audioVersion'], '--source', q['sourceKind'], '--kind', q['kind'], '--role', q['role'], '--instruction', q['instruction'], '--target-lufs', str(q['targetLufs']), '--ceiling-dbtp', str(q['ceilingDbTP']), '--confirm-source']
         if a.operation == 'resume':
