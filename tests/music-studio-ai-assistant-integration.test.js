@@ -129,3 +129,20 @@ test('rejected asynchronous local request cannot become an approved preview agai
  const pending=ai.runLocalAdapter(workspace,request.requestId,ai.localAdapter({id:'delayed-local',kind:'local',generate:()=>new Promise(resolve=>finish=resolve)}),core);
  ai.rejectEdit(workspace,request.requestId);finish({updates:[],adds:[],deleteNoteIds:[]});await assert.rejects(pending,/cancelled-or-superseded/);assert.equal(workspace.requests[0].status,'rejected');
 });
+
+test('actual instrument router does not capture quoted MIDI transpose and rejects compound instrument edits',async()=>{
+ const {window:w,app,core,panel}=load();vm.runInNewContext(fs.readFileSync(path.join(root,'music-studio-logic-instruments.js'),'utf8'),w);
+ const p=make(app),s=app.state.midiEditor=core.createCoordinatedSession(p);app.state.projects=[p];let routed=0,instruction='「Melody」の音を半音上げる';
+ app.logicInstrumentOpen=()=>{routed++};w.document={querySelector:selector=>selector==='#musicAIInstruction'?{value:instruction}:null};panel.render(p,s);
+ const before=plain(s.midiData);await panel.previewEdit(p.projectId);const record=panel._states.get(p.projectId);
+ assert.equal(routed,0);assert.equal(record.state.workspace.requests.at(-1).status,'preview');
+ instruction='ピアノを温かい音にして、ベースを削除して';await panel.previewEdit(p.projectId);
+ assert.equal(routed,0);assert.equal(record.state.workspace.requests.at(-1).status,'rejected');assert.deepEqual(plain(s.midiData),before);
+});
+test('audio routing invalidates an existing MIDI approval before returning a separate audio preview',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),s=app.state.midiEditor=core.createCoordinatedSession(p);app.state.projects=[p];let instruction='音を半音上げる';
+ w.document={querySelector:selector=>selector==='#musicAIInstruction'?{value:instruction}:null};panel.render(p,s);await panel.previewEdit(p.projectId);
+ const r=panel._states.get(p.projectId),prior=r.state.workspace.requests.at(-1),before=plain(s.midiData);assert.equal(prior.status,'preview');
+ r.audioFile={name:'original.wav'};w.MusicStudioAudioPipeline={parseAudioInstruction:()=>({kind:'separate',model:'htdemucs_6s'})};instruction='この音声を6ステムに分離して';
+ await panel.previewEdit(p.projectId);assert.equal(prior.status,'rejected');assert.equal(r.audioPlan.model,'htdemucs_6s');assert.deepEqual(plain(s.midiData),before);
+});

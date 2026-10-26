@@ -20,10 +20,33 @@
  function workspace(p){const w=p.logicInstruments||{version:1,registry:{version:1,entries:[]},assignments:{},history:[]};if(w.version!==1||!w.assignments||!Array.isArray(w.history))throw Error('instrument-workspace-invalid');return{...copy(w),registry:registry(w.registry)}}
  function register(p,entry){const next=copy(p),w=workspace(p);if(w.registry.entries.some(e=>e.id===entry.id))throw Error('instrument-id-already-registered');w.registry=registry({version:1,entries:[...w.registry.entries,entry]});next.logicInstruments=w;return next}
  function tracks(p){const ids=new Set();return(p.midiData?.tracks||[]).map(t=>{if(!t.id||ids.has(t.id))throw Error('track-identity-ambiguous');ids.add(t.id);const notes=t.notes||[],pitches=notes.map(n=>integer(n.pitch,0,127));return{id:t.id,name:t.name||t.id,channel:t.channel??null,role:t.role||null,noteCount:notes.length,range:pitches.length?[Math.min(...pitches),Math.max(...pitches)]:null,velocity:notes.length?[Math.min(...notes.map(n=>n.velocity)),Math.max(...notes.map(n=>n.velocity))]:null}})}
- function parse(instruction){const s=text(instruction);if(/さっき.*戻|元.*戻|前の設定.*戻/.test(s))return{operation:'undo'};if(/AとB.*比較|A\/B\/C.*比較/.test(s))return{operation:'compare'};const family=/ピアノ/.test(s)?'piano':/ストリングス/.test(s)?'strings':/ベース/.test(s)?'bass':/ドラム/.test(s)?'drums':null;if(!family&&!/持っている音源|曲に合う音源|購入した音源/.test(s))throw Error('instrument-instruction-unsupported');return{operation:'recommend',family,purchasedOnly:/購入した音源だけ/.test(s),allTracks:/全部/.test(s),tags:[/温か/.test(s)?'温かい':null,/優し/.test(s)?'優しい':null,/柔らか|やわらか/.test(s)?'柔らかい':null,/アコースティック/.test(s)?'アコースティック':null,/壮大/.test(s)?'壮大':null].filter(Boolean)}}
+ // Consume the whole request before issuing a plan; instrument words alone are not intent.
+ function parse(instruction){
+  let s=text(instruction);
+  const named=s.match(/^「([^」]+)」の/),targetName=named?named[1]:null;
+  if(named)s=s.slice(named[0].length);
+  s=s.normalize('NFKC').replace(/[。！!]$/,'');
+  if(/^(?:さっきの音源|元の音源|前の設定)に戻して$/.test(s)&&!named)return{operation:'undo'};
+  if(/^(?:AとBの音色を比較したい|AとBを比較して|A\/B\/Cを比較して)$/.test(s)&&!named)return{operation:'compare'};
+  const familyMatch=s.match(/^(?:この曲に合う)?(ピアノ|ストリングス|ベース|ドラム)(?:を|は)(.*)$/);
+  let family=null;
+  if(familyMatch){
+   family={ピアノ:'piano',ストリングス:'strings',ベース:'bass',ドラム:'drums'}[familyMatch[1]];
+   if(!/^(?:選んで|(?:もっと|少し)?(?:温かい音にして|温かくして|柔らかく(?:して)?|やわらかく(?:して)?|優しい音にして|自然にして|温かく自然にして)|自然なアコースティックにして|壮大な音にして)$/.test(familyMatch[2]))throw Error('instrument-instruction-unsupported');
+  }else if(!/^(?:今)?(?:持っている音源|購入した音源(?:だけ)?|(?:この)?曲に合う音源)(?:から|を)(?:全部)?選んで$/.test(s))throw Error('instrument-instruction-unsupported');
+  const intent={operation:'recommend',family,purchasedOnly:/購入した音源だけ/.test(s),allTracks:/全部/.test(s),tags:[/温か/.test(s)?'温かい':null,/優し/.test(s)?'優しい':null,/柔らか|やわらか/.test(s)?'柔らかい':null,/アコースティック/.test(s)?'アコースティック':null,/壮大/.test(s)?'壮大':null].filter(Boolean)};
+  if(targetName){if(intent.allTracks)throw Error('instrument-target-conflict');intent.targetName=targetName}
+  return intent;
+ }
+ function validateTarget(p,intent,trackId){
+  if(!intent.targetName)return;
+  const matches=tracks(p).filter(t=>t.id===intent.targetName||t.name===intent.targetName);
+  if(matches.length!==1)throw Error('instrument-target-ambiguous');
+  if(matches[0].id!==trackId)throw Error('instrument-target-mismatch');
+ }
  function recommend(p,{trackId,instruction,machineId}){
   const intent=parse(instruction);if(intent.operation!=='recommend')return{intent};
-  const track=tracks(p).find(t=>t.id===trackId);if(!track)throw Error('track-not-found');const w=workspace(p);
+  const track=tracks(p).find(t=>t.id===trackId);if(!track)throw Error('track-not-found');validateTarget(p,intent,trackId);const w=workspace(p);
   const candidates=w.registry.entries.filter(e=>e.installed&&e.machineId===machineId&&(!intent.purchasedOnly||e.purchased)&&(!intent.family||e.family===intent.family)&&(!track.range||e.range&&track.range[0]>=e.range[0]&&track.range[1]<=e.range[1])).map(e=>{
    const matched=intent.tags.filter(t=>e.tags.includes(t));return{entry:copy(e),score:matched.length*10+(track.role&&e.roles.includes(track.role)?3:0),reasons:[`登録済み / ${e.verifiedAt}`,e.range?`MIDI音域 ${e.range.join('–')}`:'音域未確認',...matched.map(t=>`登録タグ: ${t}`)],unconfirmed:intent.tags.filter(t=>!e.tags.includes(t))};
   }).sort((a,b)=>b.score-a.score||a.entry.id.localeCompare(b.entry.id)).slice(0,3).map((c,i)=>({...c,label:'ABC'[i]}));
@@ -33,6 +56,7 @@
   const w=workspace(p),track=tracks(p).find(t=>t.id===trackId),entry=w.registry.entries.find(e=>e.id===entryId);
   if(!track||!entry||!entry.installed||entry.machineId!==machineId)throw Error('instrument-unavailable');
   if(track.range&&(!entry.range||track.range[0]<entry.range[0]||track.range[1]>entry.range[1]))throw Error('instrument-range-unconfirmed');
+  if(instruction!==null){const intent=parse(instruction);if(intent.operation!=='recommend'||intent.family&&intent.family!==entry.family||intent.purchasedOnly&&!entry.purchased)throw Error('instrument-entry-instruction-mismatch');validateTarget(p,intent,trackId)}
   const velocityScale=expression.velocityScale??1,timingTicks=expression.timingTicks??0,lengthScale=expression.lengthScale??1;
   if(!Number.isFinite(velocityScale)||velocityScale<0.5||velocityScale>1.5||!Number.isFinite(lengthScale)||lengthScale<0.5||lengthScale>1.5)throw Error('expression-out-of-range');integer(timingTicks,-120,120);
   const hasLocks=value=>value&&typeof value==='object'&&Object.entries(value).some(([k,v])=>k==='lockedMeasures'&&Array.isArray(v)&&v.length||typeof v==='object'&&hasLocks(v));
@@ -61,6 +85,7 @@
  }
  function batchPreview(p,{machineId,instruction}){
   const intent=parse(instruction);if(intent.operation!=='recommend')throw Error('instrument-batch-recommend-required');
+  if(intent.targetName)throw Error('instrument-batch-target-conflict');
   const plans=[],missing=[];
   for(const t of tracks(p)){
    const original=p.midiData.tracks.find(x=>x.id===t.id);
