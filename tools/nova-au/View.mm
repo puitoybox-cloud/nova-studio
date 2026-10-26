@@ -113,12 +113,25 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  [self.wholeController execute:operation request:self.wholeRequest python:self.wholePython resources:self.wholeResources choice:choice completion:^(NSDictionary* reply,NSString* error){
   NovaMixView* view=weakSelf;if(!view)return;
   if(error){view.wholeReply=nil;view.offlineSummary=error;[view update:nil];return;}
+  if([reply[@"previewOnly"]boolValue]){view.wholeReply=nil;view.offlineSummary=@"指示の事前検査完了。音声未解析・設定未変更。";if(after)after(reply);[view update:nil];return;}
   view.wholeReply=reply;NSMutableString* text=[NSMutableString stringWithFormat:@"全曲検証成功 / source SHA %@ / %@\n信号解析ルール提案（学習AIなし）。AU設定は承認待ち。offline追加Gain/ピーク制御はAU未対応。",reply[@"request"][@"sourceWavSha256"],reply[@"request"][@"audioVersion"]];
   NSDictionary* before=reply[@"before"];[text appendFormat:@"\n解析元 %@ frames / %@ Hz / Peak %.2f dBFS / RMS %.2f dBFS / crest %.2f dB / 帯域比 %@",before[@"frames"],before[@"sampleRate"],[before[@"samplePeakDbFS"]doubleValue],[before[@"rmsDbFS"]doubleValue],[before[@"crestDb"]doubleValue],before[@"bands"]];
   if([reply[@"instructionPlan"]isKindOfClass:NSDictionary.class])[text appendFormat:@"\n処理順 %@ / 対象 %@（同じ確認済み入力・パラメータ提案、途中の再解析なし）",reply[@"instructionPlan"][@"steps"],reply[@"instructionPlan"][@"targetTrackId"]];
   if([reply[@"sectionPolicy"]isKindOfClass:NSDictionary.class]){id profile=reply[@"sectionPolicy"][@"source"];[text appendFormat:@"\n区間保護: 有効 %@ / 無効 %@ / 音量幅 %.2f LU。全曲Gainのみ・区間別自動音量変更なし。音質は試聴で確認。",profile[@"activeSections"],profile[@"invalidSections"],[profile[@"rangeLu"]doubleValue]];}
-  for(id row in reply[@"renders"])[text appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / EQ+Gain %@ / %@ / 追加Gain %.2f dB / TP補正 %.2f dB / %@",row[@"label"],[row[@"measurement"][@"integratedLufs"]doubleValue],[row[@"measurement"][@"truePeakEstimateDbTP"]doubleValue],params(row[@"values"]),processingText(row[@"processing"]),[row[@"finalGainDb"]doubleValue],[row[@"postTruePeakAttenuationDb"]doubleValue],row[@"reason"]];
+  for(id row in reply[@"renders"]){[text appendFormat:@"\n%@: %.2f LUFS / %.2f dBTP推定 / EQ+Gain %@ / %@ / 追加Gain %.2f dB / TP補正 %.2f dB / %@",row[@"label"],[row[@"measurement"][@"integratedLufs"]doubleValue],[row[@"measurement"][@"truePeakEstimateDbTP"]doubleValue],params(row[@"values"]),processingText(row[@"processing"]),[row[@"finalGainDb"]doubleValue],[row[@"postTruePeakAttenuationDb"]doubleValue],row[@"reason"]];if(reply[@"spectralReviews"][row[@"label"]])[text appendFormat:@"\n帯域比変化 %@ / 大きな変化 %@（音色の良否・ボーカル衝突の判定ではありません）",reply[@"spectralReviews"][row[@"label"]][@"bandFractionDelta"],reply[@"spectralReviews"][row[@"label"]][@"largeBandRedistribution"]];}
   view.offlineSummary=text;if(after)after(reply);[view update:nil];
+ }];
+}
+- (void)previewWholeOperation:(NSString*)operation{
+ [self runWhole:@"preview" choice:nil after:^(NSDictionary* reply){
+  if(![self wholeTargetMatches:reply[@"request"]]){self.offlineSummary=@"対象が変わりました。再確認してください";return;}
+  NSMutableString* detail=[NSMutableString stringWithString:@"音声未解析。以下の順で同じ確認済みWAV全体の候補を作成します。部分区間・楽器分離は未対応。数値は実測後、適用前に確認できます。\n"];
+  for(NSDictionary* action in reply[@"instructionPlan"][@"actions"])[detail appendFormat:@"\n%@. %@\n対象 %@ / %@ / %@\n変更候補 %@\n",action[@"order"],action[@"instruction"],action[@"targetTrackId"],action[@"kind"],action[@"role"],action[@"possibleParameters"]];
+  NSAlert* alert=[NSAlert new];alert.messageText=@"指示・対象・変更候補を確認";alert.informativeText=detail;[alert addButtonWithTitle:@"確認・候補作成"];[alert addButtonWithTitle:@"戻る"];
+  if(alert.runModal!=NSAlertFirstButtonReturn){self.offlineSummary=@"候補作成を中止。原音・AU設定は変更していません";return;}
+  if(![NovaFileSHA256(self.wholeRequest)isEqual:reply[@"requestSha256"]]){self.offlineSummary=@"確認中に指示ファイルが変わりました。再確認してください";return;}
+  if(![self wholeTargetMatches:reply[@"request"]]){self.offlineSummary=@"対象が変わりました。再確認してください";return;}
+  [self runWhole:operation choice:nil after:nil];
  }];
 }
 - (void)startWhole:(id)sender{
@@ -140,7 +153,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   for(NSString* key in @[@"sourceWav",@"engine",@"ffmpeg"]){NSString* hash=NovaFileSHA256([NSURL fileURLWithPath:q[key]]);if(hash)q[[key stringByAppendingString:@"Sha256"]]=hash;}
   q[@"pythonSha256"]=NovaFileSHA256(python)?:@"";q[@"pipelineSha256"]=NovaFileSHA256([resources URLByAppendingPathComponent:@"whole-song.py"])?:@"";
   NSData* data=[NSJSONSerialization dataWithJSONObject:q options:NSJSONWritingPrettyPrinted error:nil];BOOL written=[data writeToURL:request atomically:YES];
-  dispatch_async(dispatch_get_main_queue(), ^{self.wholePreparing=NO;if(generation!=self.wholeGeneration)return;if(!written){self.offlineSummary=@"request保存失敗";return;}[self runWhole:@"run" choice:nil after:nil];});
+  dispatch_async(dispatch_get_main_queue(), ^{self.wholePreparing=NO;if(generation!=self.wholeGeneration)return;if(!written){self.offlineSummary=@"request保存失敗";return;}[self previewWholeOperation:@"run"];});
  });
 }
 - (void)resumeWhole:(id)sender{

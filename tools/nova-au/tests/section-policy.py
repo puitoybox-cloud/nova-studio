@@ -8,7 +8,7 @@ root=a.scripts.resolve() if a.scripts else pathlib.Path(__file__).resolve().pare
 spec=importlib.util.spec_from_file_location('whole',root/'whole-song.py');w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 for instruction,role,kind in [('高音を柔らかく、低音をすっきり','unspecified','stereo-out'),('ピアノを自然に、高音を柔らかく','piano','track')]:
  assert len(w.instruction_steps(instruction,role,kind))==2
-for instruction,role,kind in [('ピアノを自然に、低音をすっきり','piano','track'),('ピアノを自然に、ボーカルを前に出して','piano','track'),('低音をすっきり、低音をすっきり','bass','track'),('高音を柔らかく、リバーブを深く','unspecified','stereo-out'),('全体の音圧を少し上げて','vocal','track'),('AとBの中間にして','unspecified','stereo-out'),('この設定を元に戻して','unspecified','stereo-out')]:
+for instruction,role,kind in [('ピアノを自然に','bass','track'),('ベースの低音を整えて','unspecified','stereo-out'),('2小節だけ高音を柔らかく','piano','track'),('ピアノを自然に、低音をすっきり','piano','track'),('ピアノを自然に、ボーカルを前に出して','piano','track'),('低音をすっきり、低音をすっきり','bass','track'),('高音を柔らかく、リバーブを深く','unspecified','stereo-out'),('全体の音圧を少し上げて','vocal','track'),('AとBの中間にして','unspecified','stereo-out'),('この設定を元に戻して','unspecified','stereo-out')]:
  try:w.instruction_steps(instruction,role,kind)
  except ValueError:pass
  else:raise AssertionError(instruction)
@@ -41,6 +41,11 @@ for rate in (44100,48000,96000):
    subprocess.run(run,check=True,stdout=subprocess.DEVNULL)
   result=json.loads((out/'manifest.json').read_text());assert result['complete'] and result['adopted'] is None
   assert len(result['artifacts'])==8 and w.sha(wav)==original
+  assert result['instructionPlan']['audioAnalyzed'] is True
+  assert [x['order'] for x in result['instructionPlan']['actions']]==list(range(1,len(result['instructionPlan']['steps'])+1))
+  for row in result['renders'][1:]:
+   expected=[y-x for x,y in zip(result['before']['bands'],row['measurement']['bands'])]
+   assert result['spectralReviews'][row['label']]['bandFractionDelta']==expected
   if name!='legacy':
    profile=result['sectionPolicy']['source'];assert profile['invalidSections']==3 and profile['activeSections']==3
    assert profile['rangeLu']>24 and profile['quietSections']>=1 and profile['loudSections']>=1

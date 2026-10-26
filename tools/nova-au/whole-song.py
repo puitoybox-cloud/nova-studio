@@ -209,17 +209,69 @@ def instruction_steps(instruction, role, kind):
             raise ValueError('未対応の指示です: ' + step)
         if step in (LOUDNESS, PUNCH) and kind != 'stereo-out':
             raise ValueError('全曲音圧・迫力の指示は確認済みStereo Out専用です')
+    targets = {name for step in steps for name in ('ピアノ','ボーカル','ベース','ドラム','ストリングス') if name in step}
+    expected = {'ピアノ':'piano','ボーカル':'vocal','ベース':'bass','ドラム':'drums','ストリングス':'strings'}
+    if len(targets) > 1 or any(expected[t] != role for t in targets):
+        raise ValueError('指示の対象不一致: 分離済みの同一Trackとroleを確認してください')
     if len(steps) > 1:
-        targets = {name for step in steps for name in ('ピアノ','ボーカル','ベース','ドラム','ストリングス') if name in step}
-        expected = {'ピアノ':'piano','ボーカル':'vocal','ベース':'bass','ドラム':'drums','ストリングス':'strings'}
-        if len(targets) > 1 or any(expected[t] != role for t in targets):
-            raise ValueError('複数指示の対象不一致: 分離済みの同一Trackとroleを確認してください')
         # Warm piano may raise bass while the clean-low instruction cuts it.
         if any('ピアノ' in x for x in steps) and any('低音' in x or 'ベース' in x for x in steps):
             raise ValueError('矛盾する低域指示です: 温かさと低域削減の優先を明示してください')
         if len(set(steps)) != len(steps):
             raise ValueError('重複指示です: 同じ処理の二重適用はしません')
     return steps
+
+
+def instruction_preview(instruction, role, kind, track):
+    """Grammar-only preflight. No audio measurement or numeric proposal implied."""
+    steps = instruction_steps(instruction, role, kind)
+    actions = []
+    for i, step in enumerate(steps):
+        if step == LOUDNESS:
+            parameters = ['offline target LUFS', 'global gain', 'peak ceiling']
+        elif step == PUNCH:
+            parameters = ['compressor enabled=0', 'makeup gain=0', 'global gain', 'peak ceiling']
+        else:
+            parameters = ['Gain', 'Low/High shelf', 'EQ enabled', 'compressor settings']
+            if 'ボーカル' in step:
+                parameters += ['mid frequency', 'mid gain', 'mid Q']
+        actions.append(dict(order=i+1, instruction=step, targetTrackId=track, role=role,
+                            kind=kind, timeScope='entire confirmed input',
+                            possibleParameters=parameters, decisionBasis='explicit grammar; numeric values require audio measurement'))
+    return dict(version=1, steps=steps, actions=actions, targetTrackId=track,
+                sameConfirmedInput=True, intermediateRemeasurement=False,
+                audioAnalyzed=False, modelInference=False, approvalRequired=True,
+                partialTimeRangesSupported=False,
+                scope='ordered parameter proposal on one input, not instrument separation or semantic AI')
+
+
+def validate_choices(choices):
+    """Fail closed before rendering; same public ranges as DSP/Processing.hpp."""
+    bounds = [(-24,6),(-6,6),(-6,6),(0,1)]
+    extra = [(0,1),(30,500),(1000,16000),(100,12000),(-12,12),(.25,8),
+             (0,1),(-60,0),(1,16),(.1,100),(10,2000),(0,15),(0,12)]
+    if not isinstance(choices, list) or len(choices) != 3:
+        raise ValueError('exactly three measured candidates required')
+    for choice in choices:
+        for key, limits in (('values', bounds), ('processing', extra)):
+            values = choice.get(key)
+            if not isinstance(values, list) or len(values) != len(limits):
+                raise ValueError('candidate parameter shape invalid')
+            for value, (low, high) in zip(values, limits):
+                if type(value) not in (int, float) or not math.isfinite(value) or not low <= value <= high:
+                    raise ValueError('candidate parameter outside public range')
+        if choice['values'][3] not in (0,1) or any(choice['processing'][i] not in (0,1) for i in (0,6)):
+            raise ValueError('candidate switch must be binary')
+
+
+def spectral_review(before, after):
+    # Normalized full-file band fractions are level independent, not a timbre
+    # quality score or proof of vocal masking. No extra audio pass is needed.
+    delta = [y-x for x,y in zip(before['bands'], after['bands'])]
+    return dict(bandFractionDelta=delta, maximumAbsoluteBandFractionChange=max(map(abs, delta)),
+                largeBandRedistribution=max(map(abs, delta)) > .2,
+                diagnosticThreshold=.2, perceptualQualityVerified=False,
+                note='coarse full-file spectral redistribution; not isolated EQ response or perceptual masking')
 
 
 def section_profile(document):
@@ -465,6 +517,7 @@ def main():
             checkpoint()
         # A single legacy instruction retains exact #510 settings/audio/timing path.
         policy_only = all(x in (LOUDNESS, PUNCH) for x in steps)
+        clause_proposals = {}
         if policy_only:
             measured = engine('policy-input', 'meter', source, rate)['measurement']
             if not measured['loudnessValid']:
@@ -474,6 +527,9 @@ def main():
         else:
             plans = [engine('plan' if len(steps)==1 else 'plan-'+str(i), 'plan', source, rate, text, args.role, args.kind)
                      for i,text in enumerate(steps) if text not in (LOUDNESS, PUNCH)]
+            for text, proposal in zip((x for x in steps if x not in (LOUDNESS, PUNCH)), plans):
+                validate_choices(proposal['choices'])
+                clause_proposals[text] = proposal['choices']
             plan = json.loads(json.dumps(plans[0]))
             for other in plans[1:]:
                 for choice, extra in zip(plan['choices'], other['choices']):
@@ -504,11 +560,18 @@ def main():
                     choice['processing'][6] = 0
                     choice['processing'][12] = 0
             manifest['sectionPolicy']['compressorDisabled'] = all(x['processing'][6]==0 for x in plan['choices'])
-        if len(steps)>1 or guarded:
-            manifest['instructionPlan'] = dict(steps=steps, targetTrackId=args.track,
-                sameConfirmedInput=True, intermediateRemeasurement=False,
-                scope='ordered parameter proposal on one input, not instrument separation or semantic AI',
-                approvalRequired=True)
+        validate_choices(plan['choices'])
+        manifest['instructionPlan'] = instruction_preview(args.instruction, args.role, args.kind, args.track)
+        manifest['instructionPlan'].update(audioAnalyzed=True,
+            decisionBasis='measured source bands/peak/RMS/crest plus fixed bounded rules; no intermediate remeasurement',
+            compositionPolicy='ordered clauses; stricter Gain bound, summed bounded shelves, last requested mid band; one compressor; punch disables compressor; then section/peak guards',
+            measuredCandidates=plan['choices'])
+        for action in manifest['instructionPlan']['actions']:
+            if action['instruction'] in clause_proposals:
+                action.update(decisionBasis='measured original source plus fixed rules; not intermediate processed audio',
+                              sourceMeasuredCandidates=clause_proposals[action['instruction']])
+            else:
+                action['decisionBasis'] = 'fixed loudness/punch policy constrained by measured source and sections'
 
         manifest['before'] = plan['input']
         checkpoint()
@@ -596,6 +659,8 @@ def main():
             if review is not None:
                 rows[-1]['sectionReview'] = review
                 rows[-1]['reason'] = 'Section-bounded global gain; no per-section normalization. See sectionPolicy and measured sectionReview; no quality score.'
+            if k:
+                manifest.setdefault('spectralReviews', {})[label] = spectral_review(plan['input'], verified)
             checkpoint()
         quietest = min(row['measurement']['integratedLufs'] for row in rows)
         for row in rows:

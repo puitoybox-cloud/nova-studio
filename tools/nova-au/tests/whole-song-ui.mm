@@ -25,6 +25,14 @@ int main(int argc,char** argv){@autoreleasepool{
  NSView* view=[factoryView uiViewForAudioUnit:unit withSize:NSMakeSize(700,900)];check(view!=nil,"actual native AU view");
  [view setValue:[NSURL fileURLWithPath:request]forKey:@"wholeRequest"];[view setValue:[NSURL fileURLWithPath:python]forKey:@"wholePython"];
  __block BOOL complete=NO;__block NSDictionary* reply=nil;std::atomic<bool> stop{false};std::thread playback([&]{while(!stop.load()){render(unit,4096,256);std::this_thread::sleep_for(std::chrono::milliseconds(2));}});
+ if(!expectReject){
+  [view runWhole:@"preview" choice:nil after:^(NSDictionary* r){reply=r;complete=YES;}];
+  while([[[view valueForKey:@"wholeController"]valueForKey:@"busy"]boolValue])[[NSRunLoop currentRunLoop]runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.05]];
+  check(complete&&[reply[@"previewOnly"]boolValue]&&! [reply[@"audioAnalyzed"]boolValue],"native controller grammar-only preflight");
+  check(![NSFileManager.defaultManager fileExistsAtPath:q[@"output"]],"preflight creates no render output");
+  check([snapshot(unit)[@"current"]isEqual:s[@"current"]],"preflight preserves AU");
+  check([view valueForKey:@"wholeReply"]==nil,"preflight is not adoptable");complete=NO;reply=nil;
+ }
  [view runWhole:@"run" choice:nil after:^(NSDictionary* r){reply=r;complete=YES;}];
  auto deadline=NSDate.date.timeIntervalSince1970+180;
  while(!complete&&NSDate.date.timeIntervalSince1970<deadline){[[NSRunLoop currentRunLoop]runUntilDate:[NSDate dateWithTimeIntervalSinceNow:.05]];if(![[[view valueForKey:@"wholeController"]valueForKey:@"busy"]boolValue])break;}
