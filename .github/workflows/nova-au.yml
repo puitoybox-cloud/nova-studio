@@ -70,7 +70,7 @@ jobs:
           python3 tools/nova-au/tests/contained-runtime.py "$RUNNER_TEMP/nova-au/NovaMix.component" "$RUNNER_TEMP/nova-whole-ui" "$RUNNER_TEMP/nova-au/contained"
       - name: Section-aware mastering and Japanese multi-action production paths
         run: |
-          python3 tools/nova-au/tests/section-policy.py --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --output "$RUNNER_TEMP/nova-au/section-policy"
+          "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12" -I -B tools/nova-au/tests/section-policy.py --scripts "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources" --reference-ffmpeg "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/FFmpeg/bin/ffmpeg" --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --output "$RUNNER_TEMP/nova-au/section-policy"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
