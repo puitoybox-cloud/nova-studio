@@ -183,11 +183,11 @@ jobs:
           python3 tools/nova-au/tests/intermediate-retirement.py
           python3 tools/nova-au/tests/whole-song-safety.py --engine "$RUNNER_TEMP/nova-whole-song"
           /usr/bin/time -v python3 tools/nova-au/tests/whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-song" --long > "$RUNNER_TEMP/whole-song-log.txt" 2> "$RUNNER_TEMP/whole-song-resources.txt"
-      - name: Sequential PR 509 audio parity and resource comparison
+      - name: Sequential stable PR 510 audio parity and resource comparison
         run: |
-          git fetch --no-tags --depth=1 origin a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8
+          git fetch --no-tags --depth=1 origin 27bfc24a013fa5377821fc30791ea9270882bcc4
           mkdir -p "$RUNNER_TEMP/nova-before"
-          git archive a7f6e6dbdf640f29e1e1d27ad7205a932603d6d8 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
+          git archive 27bfc24a013fa5377821fc30791ea9270882bcc4 tools/nova-au | tar -x -C "$RUNNER_TEMP/nova-before"
           g++ -std=c++20 -O2 "$RUNNER_TEMP/nova-before/tools/nova-au/whole-song.cpp" -o "$RUNNER_TEMP/nova-before-engine"
           python3 tools/nova-au/tests/efficiency.py --baseline-scripts "$RUNNER_TEMP/nova-before/tools/nova-au" --baseline-engine "$RUNNER_TEMP/nova-before-engine" --scripts tools/nova-au --engine "$RUNNER_TEMP/nova-whole-song" --matrix "$RUNNER_TEMP/whole-song" --output "$RUNNER_TEMP/efficiency" > "$RUNNER_TEMP/efficiency-log.json"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24

@@ -532,17 +532,23 @@ def main():
                                      args.ceiling_dbtp - .5, *values, *processing)['measurement']
                 checkpoint()
                 desired = args.target_lufs - (3 - k)
+                if LOUDNESS in steps:
+                    if args.target_lufs <= plan['input']['integratedLufs']:
+                        raise ValueError('音圧増加と目標LUFSが矛盾しています。現在より高い目標を明示してください')
+                    desired = min(args.target_lufs, plan['input']['integratedLufs'] + (.5,1.,1.5)[k-1])
                 final_gain = min(12., max(-24., desired - preliminary['integratedLufs'])) if args.kind == 'stereo-out' else 0
                 if guarded:
                     # Bound global boost by the loudest active section and peak
                     # headroom, including conservative EQ gain. Never amplify
                     # silence independently or normalize sections separately.
-                    loudness_bound = desired - profile['loudestLufs']
+                    loudness_bound = (args.target_lufs if LOUDNESS in steps else desired) - profile['loudestLufs']
                     eq_bound = sum(abs(values[i]) for i in (1,2)) + abs(processing[4]) + processing[12]
                     peak_bound = args.ceiling_dbtp - .6 - profile['maximumTruePeakEstimateDbTP'] - values[0] - eq_bound
                     if LOUDNESS in steps or PUNCH in steps:
                         loudness_bound = min(loudness_bound, (.5,1.,1.5)[k-1] - values[0])
                     final_gain = max(-24., min(final_gain, loudness_bound, peak_bound)) if args.kind == 'stereo-out' else 0
+                    if LOUDNESS in steps and final_gain + values[0] <= 0:
+                        raise ValueError('区間音量・ピーク上限のため安全な音圧増加を提案できません。別処理に置換しません')
                 raw = folder / (label + '.f32')
                 stage = label + '-render'
                 if stage not in manifest['stages']:
@@ -584,8 +590,8 @@ def main():
                     raise ValueError('section dynamics guard rejected candidate '+label+'; original retained')
             rows.append(dict(label=label, values=values, processing=processing, finalGainDb=final_gain,
                              postTruePeakAttenuationDb=correction, minimumLimiterGain=limiter_gain, measurement=verified, independentReference=independent,
-                             requestedLufs=(args.target_lufs - (3-k)) if k and args.kind == 'stereo-out' else None,
-                             targetDifferenceLu=(verified['integratedLufs']-(args.target_lufs-(3-k))) if k and args.kind == 'stereo-out' else None,
+                             requestedLufs=desired if k and args.kind == 'stereo-out' else None,
+                             targetDifferenceLu=(verified['integratedLufs']-desired) if k and args.kind == 'stereo-out' else None,
                              reason='full-song bands/crest -> existing measured proposal; A conservative/B balanced/C stronger. Loudness shortfall can reflect gain bounds, dynamics and peak ceiling; no quality score.'))
             if review is not None:
                 rows[-1]['sectionReview'] = review

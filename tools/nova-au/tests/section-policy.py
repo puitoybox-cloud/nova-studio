@@ -29,6 +29,7 @@ for rate in (44100,48000,96000):
  results={}
  for name,instruction,flags in [('legacy','全体の音を自然に整えて',[]),('guarded','全体の音を自然に整えて',['--section-aware']),('loudness','全体の音圧を少し上げて',[]),('multi','高音を柔らかく、低音をすっきり、音を潰さず迫力を出して',[])]:
   out=a.output/f'{rate}-{name}';run=cmd+['--output',str(out),'--instruction',instruction]+flags
+  if name=='loudness':run += ['--target-lufs','-5']
   if rate==48000 and name=='guarded':
    child=subprocess.Popen(run,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
    deadline=time.monotonic()+15
@@ -57,7 +58,15 @@ for rate in (44100,48000,96000):
    subprocess.run(select[:-1]+['undo','--approve'],check=True,stdout=subprocess.DEVNULL)
    assert json.loads((out/'manifest.json').read_text())['adopted'] is None
    if name=='loudness':
-    for r in result['renders'][1:]:assert r['processing'][6]==0 and r['values'][1:3]==[0,0]
+    for i,r in enumerate(result['renders'][1:]):
+     assert r['processing'][6]==0 and r['values'][1:3]==[0,0]
+     assert abs(r['measurement']['integratedLufs']-result['before']['integratedLufs']-(.5,1,1.5)[i])<.01
+  if rate==48000 and name=='loudness':
+   conflict=cmd+['--output',str(a.output/'contradictory-target'),'--instruction',instruction]
+   rejected=subprocess.run(conflict,capture_output=True,text=True)
+   assert rejected.returncode!=0 and '目標LUFSが矛盾' in rejected.stderr
+   assert not json.loads((a.output/'contradictory-target/manifest.json').read_text())['complete']
+   assert w.sha(wav)==original
   results[name]=dict(elapsed=result['elapsedSecondsThisRun'],renders=result['renders'],sectionPolicy=result.get('sectionPolicy'))
  rows.append(dict(rate=rate,fixtureSeconds=15.1,sourceSha256=original,results=results))
  (a.output/'section-policy-results.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))

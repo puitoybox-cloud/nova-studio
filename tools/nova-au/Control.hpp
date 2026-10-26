@@ -54,3 +54,25 @@ inline Proposal proposeMeasured(const Binding& b,const std::array<float,4>& v,co
  return p;
 }
 }
+
+namespace nova {
+// Proposal-only interpolation. Categorical state changes cannot be averaged.
+// dB quantities use arithmetic means; Hz/ms/Q use geometric means; ratio
+// averages the gain-reduction slope (equivalently harmonic ratio), not ratio.
+inline Proposal midpointProposal(const Proposal& source,unsigned left,unsigned right){
+ if(left>2||right>2||left==right||!source.audioAnalyzed||!source.binding.confirmed)throw std::runtime_error("実測済みA/B/C候補と対象確認が必要です");
+ Proposal result=source;auto a=source.choices[left],b=source.choices[right];auto x=a;
+ auto e=source.processingChoices[left],f=source.processingChoices[right],y=e;
+ for(unsigned i=0;i<4;++i){if(!valid(i,a[i])||!valid(i,b[i]))throw std::runtime_error("候補パラメータが不正です");if(i==3){if(a[i]!=b[i])throw std::runtime_error("Bypassが異なる候補は補間できません");}else x[i]=(a[i]+b[i])*.5f;}
+ for(unsigned i=0;i<ExtraCount;++i){
+  if(!extraValid(i,e[i])||!extraValid(i,f[i]))throw std::runtime_error("候補パラメータが不正です");
+  if(i==0||i==6){if(e[i]!=f[i])throw std::runtime_error("EQ/Compressor有効状態が異なる候補は補間できません");}
+  else if(i==1||i==2||i==3||i==5||i==9||i==10)y[i]=std::sqrt(e[i]*f[i]);
+  else if(i==8)y[i]=2/(1/e[i]+1/f[i]);
+  else y[i]=(e[i]+f[i])*.5f;
+ }
+ result.choices={a,decode(encode(x)),b};result.processingChoices={e,unpack(pack(y)),f};
+ result.reason="既存の実測候補から中間提案：A=選んだ左候補 / B=中間 / C=選んだ右候補。dBは平均、Hz/ms/Qは幾何平均、Ratioは圧縮傾斜を平均。有効状態が異なる場合は拒否。試聴・承認前は変更しません";
+ return result;
+}
+}

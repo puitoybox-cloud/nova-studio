@@ -55,3 +55,12 @@ test('Japanese AU routing never claims measurement or model inference on instruc
  }
  assert.throws(()=>n.parseAudioCommand('購入した他社AUを無断操作して'));
 });
+
+test('measured candidate midpoint routes without authorizing parameter application',()=>{
+ for(const [instruction,endpoints] of [['AとBの中間にして',[0,1]],['AとCの中間にして',[0,2]],['BとCの中間にして',[1,2]]]){
+  const intent=n.parseAudioCommand(instruction);assert.equal(intent.operation,'midpoint');assert.deepEqual(intent.endpoints,endpoints);assert.equal(intent.approvalRequired,true);assert.equal(intent.audioAnalyzed,false);
+ }
+ assert.equal(n.parseAudioCommand('ピアノを自然に').instruction,'ピアノを温かく自然にして');
+ assert.throws(()=>n.parseAudioCommand('AとDの中間にして'));
+ assert.throws(()=>n.parseAudioCommand('constructor'));
+});
