@@ -74,19 +74,19 @@ test('automatic bar checkpoint save survives failure and resumes without redoing
 test('automatic save failure stops before the next model request and retains completed checkpoint for retry',async()=>{
  const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);let calls=0;
  f.a.saveMidiEditor=async()=>({ok:false,error:Error('quota')});mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,false,true);
- assert.equal(calls,1);assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,1);assert.equal(f.record.pending,true);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.match(f.record.message,/checkpoint-save-failed/);
+ assert.equal(calls,0);assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,0);assert.equal(f.record.pending,true);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.match(f.record.message,/checkpoint-save-failed/);
 });
 test('pause during an automatic save retains its durable bar and rejects later completion',async()=>{
  const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);const originalSave=f.a.saveMidiEditor;
- let entered,release;const ready=new Promise(r=>entered=r),gate=new Promise(r=>release=r);let calls=0;
- f.a.saveMidiEditor=async options=>{entered();await gate;return originalSave(options)};mock(f,()=>calls++);
+ let entered,release;const ready=new Promise(r=>entered=r),gate=new Promise(r=>release=r);let calls=0,saves=0;
+ f.a.saveMidiEditor=async options=>{if(++saves===2){entered();await gate;}return originalSave(options)};mock(f,()=>calls++);
  const pending=f.panel.generateWholeSong(f.p.projectId,false,true);await ready;f.panel.stopWholeSong(f.p.projectId);release();await pending;
  assert.equal(f.record.localModelBusy,false);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.equal((await repo.get(f.p.projectId)).aiWorkspace.wholeSongCheckpoint.results.length,1);
  f.a.saveMidiEditor=originalSave;calls=0;mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,true,true);assert.equal(calls,3,f.record.message);
 });
 test('failed completed-candidate save preserves full durable checkpoint and in-memory A/B/C',async()=>{
  const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);const originalSave=f.a.saveMidiEditor;let saves=0;
- f.a.saveMidiEditor=options=>++saves===5?Promise.resolve({ok:false,error:Error('quota')}):originalSave(options);mock(f);await f.panel.generateWholeSong(f.p.projectId,false,true);
+ f.a.saveMidiEditor=options=>++saves===6?Promise.resolve({ok:false,error:Error('quota')}):originalSave(options);mock(f);await f.panel.generateWholeSong(f.p.projectId,false,true);
  assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);assert.equal(f.record.pending,true);assert.equal((await repo.get(f.p.projectId)).aiWorkspace.wholeSongCheckpoint.results.length,4);assert.match(f.record.message,/保存に失敗/);
 });
 
@@ -119,4 +119,47 @@ test('Pause during restored checkpoint validation yields before inference and pr
  await f.panel.generateWholeSong(f.p.projectId,true,false);
  assert.equal(calls,0);assert.deepEqual(plain(f.record.state.workspace.wholeSongCheckpoint),checkpoint);assert.deepEqual(plain(f.s.midiData),original);assert.equal(f.record.state.workspace.candidateSets.length,0);assert.equal(f.record.localModelBusy,false);
  f.w.setTimeout=timer;await f.panel.generateWholeSong(f.p.projectId,true,false);assert.equal(calls,0);assert.equal(f.record.state.workspace.candidateSets.at(-1).candidates.length,3);
+});
+
+test('initial checkpoint durably commits unsaved source before any inference',async()=>{
+ const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);
+ f.s.midiData.tracks[0].notes[0].pitch=75;
+ mock(f,async()=>{const stored=await repo.get(f.p.projectId);assert.equal(stored.midiData.tracks[0].notes[0].pitch,75);assert.ok(stored.aiWorkspace.wholeSongCheckpoint);throw Error('simulated process loss');});
+ await f.panel.generateWholeSong(f.p.projectId,false,true);
+ const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.wholeSongCheckpoint.results.length,0);assert.equal(stored.midiData.tracks[0].notes[0].pitch,75);
+ });
+test('stale initial save never starts inference and retains checkpoint',async()=>{
+ const f=setup();let calls=0;mock(f,()=>calls++);f.a.saveMidiEditor=async()=>({ok:true,stale:true});
+ await f.panel.generateWholeSong(f.p.projectId,false,true);assert.equal(calls,0);assert.ok(f.record.state.workspace.wholeSongCheckpoint);assert.match(f.record.message,/編集が変わった/);
+ });
+test('manual checkpoint save rejects another open project and stale success',async()=>{
+ const f=setup();mock(f,()=>{throw Error('offline')});await f.panel.generateWholeSong(f.p.projectId,false,false);
+ let saves=0;f.a.saveMidiEditor=async()=>{saves++;return{ok:true,stale:true}};
+ f.a.state.midiEditor={projectId:'other'};await f.panel.saveWholeSongCheckpoint(f.p.projectId);assert.equal(saves,0);assert.doesNotMatch(f.record.message,/Checkpoint saved/);
+ f.a.state.midiEditor=f.s;await f.panel.saveWholeSongCheckpoint(f.p.projectId);assert.equal(saves,1);assert.doesNotMatch(f.record.message,/Checkpoint saved/);
+ });
+
+test('bar save failure keeps last durable prefix, retry commits it before new inference',async()=>{
+ const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);
+ const save=f.a.saveMidiEditor;let saves=0,calls=0;
+ f.a.saveMidiEditor=options=>++saves===2?Promise.resolve({ok:false}):save(options);
+ mock(f,()=>calls++);await f.panel.generateWholeSong(f.p.projectId,false,true);
+ assert.equal(calls,1);assert.equal(f.record.state.workspace.wholeSongCheckpoint.results.length,1);
+ assert.equal((await repo.get(f.p.projectId)).aiWorkspace.wholeSongCheckpoint.results.length,0);
+ f.a.saveMidiEditor=save;calls=0;
+ mock(f,async()=>{if(calls++===0)assert.equal((await repo.get(f.p.projectId)).aiWorkspace.wholeSongCheckpoint.results.length,1)});
+ await f.panel.generateWholeSong(f.p.projectId,true,true);assert.equal(calls,3,f.record.message);
+ assert.equal((await repo.get(f.p.projectId)).aiWorkspace.candidateSets.at(-1).candidates.length,3);
+});
+test('empty durable checkpoint survives backup restore and resumes with original edited source',async()=>{
+ const f=setup(),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);
+ f.s.midiData.tracks[0].notes[0].pitch=75;mock(f,()=>{throw Error('lost first request')});
+ await f.panel.generateWholeSong(f.p.projectId,false,true);
+ const g=setup(),rr=g.a.memoryRepository();g.a.setRepository(rr);
+ assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
+ const restored=await rr.get(f.p.projectId);assert.equal(restored.midiData.tracks[0].notes[0].pitch,75);
+ g.a.state.projects=[restored];g.a.state.midiEditor=g.core.createCoordinatedSession(restored);g.panel.render(restored,g.a.state.midiEditor,g.core);
+ let calls=0;mock(g,()=>calls++);await g.panel.generateWholeSong(restored.projectId,true,true);
+ assert.equal(calls,4);assert.equal((await rr.get(restored.projectId)).aiWorkspace.candidateSets.at(-1).candidates.length,3);
+ assert.equal((await g.a.saveMidiEditor({silent:true})).ok,true);
 });

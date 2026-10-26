@@ -13,7 +13,11 @@ const whole=await page.evaluate(async()=>{
  for(const [from,to,name] of [[1,2,'verse'],[3,4,'chorus']]){core.setEditRange(a.state.midiEditor,{startMeasure:from,endMeasure:to});a.repaintEditor();panel.setTab(p.projectId,'candidates');document.querySelector('#aiSectionName').value=name;document.querySelector('#aiSectionDensity').value='normal';for(const role of ['piano','bass','strings','drums'])document.querySelector('#aiSection'+role).checked=true;panel.saveSectionArrangement(p.projectId);}
  document.querySelector('#aiJapaneseArrangement').value='Aメロは静かに。サビを豪華に。元のメロディーは変更しない。';panel.previewJapaneseArrangement(p.projectId);const record=panel._states.get(p.projectId);if(!record.japanesePlan)throw Error(record.message);panel.applyJapaneseArrangement(p.projectId);
  const original=JSON.stringify(a.state.midiEditor.midiData),request=a.localGenerationRequest;let requestCount=0;
- a.localGenerationRequest=async function(kind,...args){if(kind==='compose'&&++requestCount===2)throw Error('intentional-checkpoint-disconnect');return request(kind,...args)};
+ a.localGenerationRequest=async function(kind,...args){if(kind==='compose'){
+   const committed=await repo.get(p.projectId);
+   if(JSON.stringify(committed.midiData)!==original||committed.aiWorkspace?.wholeSongCheckpoint?.results.length!==requestCount)throw Error('inference-before-durable-checkpoint');
+   if(++requestCount===2)throw Error('intentional-checkpoint-disconnect');
+ }return request(kind,...args)};
  try{await panel.generateWholeSong(p.projectId);}finally{a.localGenerationRequest=request;}
  if(record.state.workspace.wholeSongCheckpoint?.results.length!==1||record.state.workspace.candidateSets.length)throw Error('partial result publication');
  await panel.saveWholeSongCheckpoint(p.projectId);const paused=await repo.get(p.projectId);
