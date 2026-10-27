@@ -142,8 +142,14 @@ def main():
         def save(path):
             m['artifacts'][path.name] = w.sha(path)
             w.atomic_json(state, m)
+        def progress(stage, completed, total):
+            # Persist only finished units, so a reader can show honest progress.
+            # The existing manifest remains the sole resume authority.
+            m['progress'] = dict(stage=stage, completed=completed, total=total)
+            w.atomic_json(state, m)
         rate = rows[0]['input']['sampleRate']
         processed, originals = [], []
+        progress('measure', 0, len(rows))
         for n, r in enumerate(rows):
             raw = out / ('stem-%d.f32' % n)
             if raw.name not in m['artifacts']:
@@ -154,8 +160,10 @@ def main():
                 save(raw)
             originals.append(raw)
             r['measurement'] = call(a.engine, 'meter', raw, rate)['measurement']
+            progress('measure', n + 1, len(rows))
         balance(rows)
         pairs = []
+        progress('process', 0, len(rows))
         for n, r in enumerate(rows):
             for other in rows[n+1:]:
                 pairs.append(dict(left=r['id'], right=other['id'], coarseBandOverlap=sum(min(x,y) for x,y in zip(r['measurement']['bands'], other['measurement']['bands'])), perceptualMaskingEstablished=False))
@@ -178,11 +186,13 @@ def main():
             else:
                 r['after'] = call(a.engine, 'meter', dest, rate)['measurement']
             processed.append(dest)
+            progress('process', n + 1, len(rows))
         m.update(stems=rows, relationships=pairs)
         # Sum with a shared static gain bound from individual measured peaks. No
         # per-sample normalisation, no pumping, and no channel phase/time changes.
-        for name, paths, peaks in [('dry-mix.wav', originals, [r['measurement']['samplePeakDbFS'] for r in rows]),
-                                   ('mix.wav', processed, [r['after']['samplePeakDbFS'] for r in rows])]:
+        progress('mix', 0, 2)
+        for index, (name, paths, peaks) in enumerate([('dry-mix.wav', originals, [r['measurement']['samplePeakDbFS'] for r in rows]),
+                                   ('mix.wav', processed, [r['after']['samplePeakDbFS'] for r in rows])]):
             dest = out / name
             bound = sum(10**(x/20) for x in peaks)
             scale = min(1., 10**(-3/20)/max(bound, 1e-12))
@@ -208,10 +218,12 @@ def main():
                 w.wave_from_raw(raw, dest, rate)
                 raw.unlink()
                 save(dest)
+            progress('mix', index + 1, 2)
         w.atomic_json(state, m)
         final = out / 'mastering'
         cmd = [sys.executable, '-I', '-B', str(ROOT/'whole-song.py'), str(out/'mix.wav'), '--engine', str(a.engine.resolve()), '--reference-ffmpeg', str(a.ffmpeg.resolve()), '--output', str(final), '--project', q['projectId'], '--track', 'auto-finish-stereo', '--version', q['audioVersion'], '--source', q['sourceKind'], '--kind', 'stereo-out', '--instruction', '全体の音を自然に整えて', '--confirm-source', '--section-aware']
         if final.exists(): cmd.append('--resume')
+        progress('mastering', 0, 1)
         with (out/'mastering.log').open('w') as log:
             execute(cmd, stdout=log)
         if any(w.sha(Path(r['path'])) != r['sha256'] for r in rows):
@@ -219,6 +231,8 @@ def main():
         result = json.loads((final/'manifest.json').read_text())
         m.update(complete=result['complete'], renders=result['renders'], adoptionRequired=True,
                  masteringManifestSha256=w.sha(final/'manifest.json'))
+        if m['complete']:
+            m['progress'] = dict(stage='complete', completed=1, total=1)
         w.atomic_json(state, m)
         print(json.dumps(m, ensure_ascii=False, indent=2))
 
