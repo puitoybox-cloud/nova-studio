@@ -1,0 +1,4027 @@
+{
+  "checkedAt": "2026-10-22 JST",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "open": 235,
+  "draft": 233,
+  "errors": [],
+  "records": [
+    {
+      "number": 487,
+      "head": "093974f5b58e03856149b911890a4428159f7659",
+      "base": "2d1ebf1e320168277ccd2d0e594cd5e7cc211c08",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Record completed Node and Python regression results",
+      "checks": {
+        "total": 3,
+        "success": 2,
+        "failed": [
+          "intel-mac-generation"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 488,
+      "head": "391c48eaa85a4e4aa62dc1d4b018cfc59574dde6",
+      "base": "093974f5b58e03856149b911890a4428159f7659",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Run full Node regressions on fixed CI Node 22",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 484,
+      "head": "13021ac52dc0121cea63b64dea1c82cb2eba18ae",
+      "base": "109a539c1bcc5a5fa715290fc4c936816afb6b60",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Music: preserve production history form drafts when durable publication fails",
+      "checks": {
+        "total": 14,
+        "success": 14,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 482,
+      "head": "6c2eaeec7c184c4021edb3bc2591aa6b735977d2",
+      "base": "9cc2ca33482475f5b45277203c0e419f43215ecf",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: keep completed dependency inspection visible after rerender",
+      "checks": {
+        "total": 14,
+        "success": 14,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 483,
+      "head": "109a539c1bcc5a5fa715290fc4c936816afb6b60",
+      "base": "6c2eaeec7c184c4021edb3bc2591aa6b735977d2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: keep workspace discovery controls readable and touch accessible",
+      "checks": {
+        "total": 14,
+        "success": 14,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 485,
+      "head": "8ace98f5fbe0877b00d1f8067f63f684b0e0bc63",
+      "base": "13021ac52dc0121cea63b64dea1c82cb2eba18ae",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Test: open saved score controls before singing cancellation interaction",
+      "checks": {
+        "total": 15,
+        "success": 15,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 479,
+      "head": "c76351d09dd60c985c123b83caf605a157e273d5",
+      "base": "3a7852f1ea498c3570ad658c35808b4b982444e1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Music: bound full archive creation state checks with exact publication validation",
+      "checks": {
+        "total": 13,
+        "success": 13,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 478,
+      "head": "3a7852f1ea498c3570ad658c35808b4b982444e1",
+      "base": "3f104b0d3aeb2543b8e01c4f6f50b0243e0d03ae",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Bound repeated archive metadata checks and force exact atomic publication guards",
+      "checks": {
+        "total": 13,
+        "success": 13,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 486,
+      "head": "2d1ebf1e320168277ccd2d0e594cd5e7cc211c08",
+      "base": "8ace98f5fbe0877b00d1f8067f63f684b0e0bc63",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: verify model sessions at startup and bound engine shutdown",
+      "checks": {
+        "total": 44,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 477,
+      "head": "3f104b0d3aeb2543b8e01c4f6f50b0243e0d03ae",
+      "base": "e49dc7cbfea00a9f29f59d732a611d6736d574b3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Preserve full source and restore-stage diagnostics in long-stem verification",
+      "checks": {
+        "total": 17,
+        "success": 17,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 480,
+      "head": "4cb46a64485a7a5995bd27e48beea0fa040efbfe",
+      "base": "c76351d09dd60c985c123b83caf605a157e273d5",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Music: bind adopted AI candidates before immutable version history and browser recovery",
+      "checks": {
+        "total": 56,
+        "success": 14,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 481,
+      "head": "9cc2ca33482475f5b45277203c0e419f43215ecf",
+      "base": "4cb46a64485a7a5995bd27e48beea0fa040efbfe",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Respect existing exact measure-lock spans in version range adoption",
+      "checks": {
+        "total": 14,
+        "success": 14,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 475,
+      "head": "99fe285a01d569039594fa45cbcb56a3bdcada66",
+      "base": "fcbc4c69f568b1b0a8865fdc162cbe642eaa091c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: provide valid instrument channels in eight-minute MIDI acceptance fixture",
+      "checks": {
+        "total": 12,
+        "success": 12,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 465,
+      "head": "9f474e2185ea984bf2b52aee9b96d7fc5605043c",
+      "base": "0c6e9b14fd03b34f6ad0b7c65415745ce0f5e80e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Music: automatically save completed generation bars and final whole-song candidates",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 472,
+      "head": "9f740de1ecafcd9facba66534c0ebfed707c61df",
+      "base": "15ff9366778e3152eaee9bb9bbcd7626c8c0b760",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Bound saved audio playback waits and preserve browser failure diagnosis",
+      "checks": {
+        "total": 11,
+        "success": 9,
+        "failed": [
+          "stems",
+          "real-generation"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 470,
+      "head": "d312a7b75df85479b32ad241e398cfd7bff5b843",
+      "base": "2f3be50385b86aa36695a34019f4652f08092abb",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Test: align escaped cache assertions with Music 1.4.189",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 467,
+      "head": "852f1fd7f0dce70aab131f069fc379770e4f3f1c",
+      "base": "09da6554e036a932911c859691a0518740b2f6a8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Separate fresh CI performance artifacts from committed historical measurements",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 466,
+      "head": "09da6554e036a932911c859691a0518740b2f6a8",
+      "base": "9f474e2185ea984bf2b52aee9b96d7fc5605043c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: reuse verified ONNX sessions and measure sequential generation",
+      "checks": {
+        "total": 44,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 469,
+      "head": "2f3be50385b86aa36695a34019f4652f08092abb",
+      "base": "4250cc10225eca95e785243b31eba78dfebdb13b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 17,
+      "filesComplete": true,
+      "commit": "Music: retain stem selection and verify long audio recovery",
+      "checks": {
+        "total": 53,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 468,
+      "head": "4250cc10225eca95e785243b31eba78dfebdb13b",
+      "base": "852f1fd7f0dce70aab131f069fc379770e4f3f1c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: compare source before a new instrument layer exists",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 474,
+      "head": "fcbc4c69f568b1b0a8865fdc162cbe642eaa091c",
+      "base": "c3319a6ef6fe35e0abcf2491701ff69e9b2de69b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: bound audio decode wait and transfer WAVs as compact base64",
+      "checks": {
+        "total": 45,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 471,
+      "head": "15ff9366778e3152eaee9bb9bbcd7626c8c0b760",
+      "base": "d312a7b75df85479b32ad241e398cfd7bff5b843",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Verify stem and restored ZIP bytes with bounded SHA256 chunks",
+      "checks": {
+        "total": 53,
+        "success": 10,
+        "failed": [
+          "stems"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 473,
+      "head": "c3319a6ef6fe35e0abcf2491701ff69e9b2de69b",
+      "base": "9f740de1ecafcd9facba66534c0ebfed707c61df",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Avoid redundant full workspace paints during stem ZIP progress",
+      "checks": {
+        "total": 53,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 476,
+      "head": "e49dc7cbfea00a9f29f59d732a611d6736d574b3",
+      "base": "99fe285a01d569039594fa45cbcb56a3bdcada66",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 38,
+      "filesComplete": true,
+      "commit": "Music: measure PCM check cadence after completing large snapshots",
+      "checks": {
+        "total": 17,
+        "success": 8,
+        "failed": [
+          "real-generation",
+          "listening",
+          "verify",
+          "listening",
+          "verify",
+          "software",
+          "stems",
+          "verify",
+          "scoped-midi-repair"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 458,
+      "head": "fe5f6694a9a4875c0378cfee2df19dff9fcb4a60",
+      "base": "fed0bbe083c38eb3431493adedaab96660a024ae",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: preserve mixed-meter timelines in arrangement working copies",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 461,
+      "head": "66bc61e43d1102726f0643f9f3e2c63564d1e9d2",
+      "base": "3ba3bd014c55ed97a390411dc82c6f38c1f1fe2d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Allocate generated note IDs across all tracks for repeated part regeneration",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 456,
+      "head": "3d3023fe08f1a90d8df88fe34de64410ad8da575",
+      "base": "83a65aaf1224e87916c8175bc38b261c8c7a77be",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 19,
+      "filesComplete": true,
+      "commit": "Music: distinguish imported percussion from melodic remake targets",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 454,
+      "head": "93879ee70daf52006dd7451ebbfc1ec05d640602",
+      "base": "b55fd71d3c8dca3845448c82ce6f288e886e4a30",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Keep MIDI audio render entry legible in dark workspaces",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 463,
+      "head": "f9fbfc938af7925002bb94d0b7e5fb9fc70c045c",
+      "base": "e8626fd7b22a5b132bdcba89d57daa1e72f93f86",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Improve chord inversions, instrument expression and candidate note metrics",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 464,
+      "head": "0c6e9b14fd03b34f6ad0b7c65415745ce0f5e80e",
+      "base": "f9fbfc938af7925002bb94d0b7e5fb9fc70c045c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Reduce whole-song candidate storage and tie newly generated strings safely",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 460,
+      "head": "3ba3bd014c55ed97a390411dc82c6f38c1f1fe2d",
+      "base": "55da4aa7a6083c6b22023745b2950090b025745a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Verify chord review before real model generation at all four browser sizes",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 462,
+      "head": "e8626fd7b22a5b132bdcba89d57daa1e72f93f86",
+      "base": "66bc61e43d1102726f0643f9f3e2c63564d1e9d2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Keep chord voicings valid below low melodies and distinguish piano rule A/B/C",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 459,
+      "head": "55da4aa7a6083c6b22023745b2950090b025745a",
+      "base": "fe5f6694a9a4875c0378cfee2df19dff9fcb4a60",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: explicit chord-root bass and harmonic ensemble orchestration",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 455,
+      "head": "83a65aaf1224e87916c8175bc38b261c8c7a77be",
+      "base": "93879ee70daf52006dd7451ebbfc1ec05d640602",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: extend bounded PCM vocal capture to eight minutes",
+      "checks": {
+        "total": 53,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 457,
+      "head": "fed0bbe083c38eb3431493adedaab96660a024ae",
+      "base": "3d3023fe08f1a90d8df88fe34de64410ad8da575",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: adopt source-conditioned model layers into new instrument tracks",
+      "checks": {
+        "total": 92,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 453,
+      "head": "b55fd71d3c8dca3845448c82ce6f288e886e4a30",
+      "base": "44689c5b12a53e886da746c3e7d6b9d325d7f1ce",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 20,
+      "filesComplete": true,
+      "commit": "Test: verify export guidance for separately rendered MIDI audio",
+      "checks": {
+        "total": 53,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 446,
+      "head": "4ba4d5f6abd6da16d3d510275bd84c5dc302dc12",
+      "base": "20ab9264284fa382944575a909c019cce5e9611b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Music: constrain real model candidates and reopen Japanese lyric assignments",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 447,
+      "head": "b1435718371b5232bf428498014c4cafc2524567",
+      "base": "4ba4d5f6abd6da16d3d510275bd84c5dc302dc12",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: run real generation CI for model and browser regressions",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 452,
+      "head": "44689c5b12a53e886da746c3e7d6b9d325d7f1ce",
+      "base": "1d2e91ce2bde934f5309da94a442b0231f0a5d1d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Music: open lyrics as a production editor without the home hero",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 449,
+      "head": "58a012a0cc15fcdd11b5eb7c11f88143e369ba24",
+      "base": "18bc8c56a0d40cde6ed02ba938e7967bcb023ae0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Music: preserve exact vocal take identity for identical-audio adoption history",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 450,
+      "head": "7013f2ae854f63898e61db84ee80024263c3943a",
+      "base": "58a012a0cc15fcdd11b5eb7c11f88143e369ba24",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: report positive PCM16 saturation after vocal replacement gain",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 451,
+      "head": "1d2e91ce2bde934f5309da94a442b0231f0a5d1d",
+      "base": "7013f2ae854f63898e61db84ee80024263c3943a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: align escaped entrypoint cache version assertions",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 444,
+      "head": "3aa6ccc8dcea7a9a40407952693ebffc31495bcd",
+      "base": "91ebf87f654c10cb5ea8a0091c01a350d19ec3cc",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Music: apply checked libc++ compatibility to all Sinsy string tables",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 441,
+      "head": "7cf643437e26e185ed92322cdf7f3df27a332015",
+      "base": "362bbdf817f30eccfb2852e16872e0b4d97ff71e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Test: reopen IndexedDB after browser reload in WAV preflight check",
+      "checks": {
+        "total": 9,
+        "success": 9,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 448,
+      "head": "18bc8c56a0d40cde6ed02ba938e7967bcb023ae0",
+      "base": "b1435718371b5232bf428498014c4cafc2524567",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Music: edit per-note Japanese readings and generate selected measures as retained takes",
+      "checks": {
+        "total": 53,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 442,
+      "head": "4b6787c3bba8b5a289f73524e01889e227ae0811",
+      "base": "7cf643437e26e185ed92322cdf7f3df27a332015",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: anchor trimmed score vocals and export song-aligned WAV",
+      "checks": {
+        "total": 51,
+        "success": 9,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 443,
+      "head": "91ebf87f654c10cb5ea8a0091c01a350d19ec3cc",
+      "base": "4b6787c3bba8b5a289f73524e01889e227ae0811",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 32,
+      "filesComplete": true,
+      "commit": "Guard missing MIDI session and await browser route readiness",
+      "checks": {
+        "total": 52,
+        "success": 10,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 445,
+      "head": "20ab9264284fa382944575a909c019cce5e9611b",
+      "base": "3aa6ccc8dcea7a9a40407952693ebffc31495bcd",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: diagnose prepared Mac startup and provision explicit LAN TLS",
+      "checks": {
+        "total": 86,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 435,
+      "head": "22fa885d0b955ca74bab2dbcad7745fc1681006b",
+      "base": "4e4fba9e0e1441588dca39e25d2b5efb5bf5aed0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: trigger AI Assistant CI for candidate audition and landscape regression tests",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 437,
+      "head": "d62d36149e47545015016d68394268293360a2b8",
+      "base": "9d7a6c65a7959313a66bc1fb9a163ee678843041",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Music: scope lyric score browser assertions and isolate exact-head download verification",
+      "checks": {
+        "total": 9,
+        "success": 9,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 439,
+      "head": "3a57c15fe7a3b0ab39751b0cc22c24e14f8cb6dd",
+      "base": "60afb805cb4c0ecb198cd50d7fd76345ab5061eb",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: preserve score vocal file selection and synchronization origin through repaints",
+      "checks": {
+        "total": 51,
+        "success": 9,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 431,
+      "head": "4ffa0919627c303d72df00dead1179b6a10a7bdc",
+      "base": "7fc43cb97dad2cf71457248424d548108c87feea",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Close candidate drawer only on viewports with a visible close control",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 434,
+      "head": "4e4fba9e0e1441588dca39e25d2b5efb5bf5aed0",
+      "base": "8926d6e75f88101cfee37f15fdfc375f796f2659",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: align landscape AI panel regression with current candidate review cache version",
+      "checks": {
+        "total": 42,
+        "success": 0,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 438,
+      "head": "60afb805cb4c0ecb198cd50d7fd76345ab5061eb",
+      "base": "d62d36149e47545015016d68394268293360a2b8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: import score-associated vocal WAV into durable vocal editing",
+      "checks": {
+        "total": 51,
+        "success": 8,
+        "failed": [
+          "lyrics-score"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 430,
+      "head": "7fc43cb97dad2cf71457248424d548108c87feea",
+      "base": "05bebf78a422202572165a8a6bad2d1f557d2775",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Bound large Track diagnostics and safely quote generation controls",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 436,
+      "head": "9d7a6c65a7959313a66bc1fb9a163ee678843041",
+      "base": "22fa885d0b955ca74bab2dbcad7745fc1681006b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: import real local MIDI outputs into editable audition candidates",
+      "checks": {
+        "total": 45,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 440,
+      "head": "362bbdf817f30eccfb2852e16872e0b4d97ff71e",
+      "base": "3a57c15fe7a3b0ab39751b0cc22c24e14f8cb6dd",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: align score tempo with playback and connect saved vocal takes to editing",
+      "checks": {
+        "total": 51,
+        "success": 9,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 433,
+      "head": "8926d6e75f88101cfee37f15fdfc375f796f2659",
+      "base": "d30fbd4fc5c6a4c0a53d1d9769da6ccc4604bd47",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Fix regression assertion for candidate draft selector",
+      "checks": {
+        "total": 45,
+        "success": 2,
+        "failed": [
+          "verify"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 432,
+      "head": "d30fbd4fc5c6a4c0a53d1d9769da6ccc4604bd47",
+      "base": "4ffa0919627c303d72df00dead1179b6a10a7bdc",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Keep AI panel close and reopen controls visible on every viewport",
+      "checks": {
+        "total": 45,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 429,
+      "head": "05bebf78a422202572165a8a6bad2d1f557d2775",
+      "base": "b488548d6e8a24d85aa503f8f8e6d30f71abc8bc",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 23,
+      "filesComplete": true,
+      "commit": "Connect multisample instruments, preset asset management and playable local composition candidates",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 422,
+      "head": "63901c436f702d8c44b6c31e5c502364cf578245",
+      "base": "920de97f16645775cdf41392cd5a08413086c709",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Music: exercise AI note-selection isolation with a real panel fixture",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 426,
+      "head": "e1d4c67e40d7c9c1dbed32df46b2bce1fa6134f7",
+      "base": "81219cb621fce98d87410f7dff809a8ab86e436b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: align escaped standalone Studio cache version expectations",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 427,
+      "head": "48912060821046652cbde9adeff337f7140ae7bc",
+      "base": "e1d4c67e40d7c9c1dbed32df46b2bce1fa6134f7",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Music: release refused cycle ownership and require owned continuous sessions",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 424,
+      "head": "a6322f5e272ebf22748a0e4373c40e89f96a51db",
+      "base": "f84d03579bee9be47e67e26aaa21044b4a7733b6",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: align regression asset expectations with loopback consensus runtime",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 417,
+      "head": "bf8abb50cab7e3938d56db3553a53aa49ad48f4e",
+      "base": "03f9ef635075d6e6a6f8020ad85664818a7259d0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Pin iPad gesture test to updated landscape stylesheet",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 421,
+      "head": "920de97f16645775cdf41392cd5a08413086c709",
+      "base": "779ba900c5151a11fbab2beb5bba25b371acadd2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Test AI form-draft refresh retention and Escape drawer focus",
+      "checks": {
+        "total": 45,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 418,
+      "head": "5cb00c97a01242276973ef634a0cd15ecf77cdca",
+      "base": "bf8abb50cab7e3938d56db3553a53aa49ad48f4e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: activate and test larger iPad MIDI touch targets",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 419,
+      "head": "a8b20f0ff02d0c9db088e8fa0fb2c5cf9e4020de",
+      "base": "5cb00c97a01242276973ef634a0cd15ecf77cdca",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: activate and test lower MIDI control touch sizing",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 425,
+      "head": "81219cb621fce98d87410f7dff809a8ab86e436b",
+      "base": "a6322f5e272ebf22748a0e4373c40e89f96a51db",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Test median frame provenance and reject cross-device clock/polarity mixtures",
+      "checks": {
+        "total": 42,
+        "success": 0,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 420,
+      "head": "779ba900c5151a11fbab2beb5bba25b371acadd2",
+      "base": "a8b20f0ff02d0c9db088e8fa0fb2c5cf9e4020de",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Test landscape AI drawer persistence, accessibility sizing and asset binding",
+      "checks": {
+        "total": 45,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 423,
+      "head": "f84d03579bee9be47e67e26aaa21044b4a7733b6",
+      "base": "63901c436f702d8c44b6c31e5c502364cf578245",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 19,
+      "filesComplete": true,
+      "commit": "Music: measure loopback delay and preserve recording and AI review choices",
+      "checks": {
+        "total": 92,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 428,
+      "head": "b488548d6e8a24d85aa503f8f8e6d30f71abc8bc",
+      "base": "48912060821046652cbde9adeff337f7140ae7bc",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 17,
+      "filesComplete": true,
+      "commit": "Distinguish expired one-shot samples from unavailable instrument material",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 410,
+      "head": "4a5128a1521dc676a45cd626029ad5dcff235a29",
+      "base": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Music: prevent home sticky-nav overlap in production workspace",
+      "checks": {
+        "total": 8,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 408,
+      "head": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883",
+      "base": "3326d50ffcca629e06ed5a24d77ed4b100a4b836",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Test: align import entry regexes with current Studio asset",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 409,
+      "head": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c",
+      "base": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Fix folded Comp contrast found in real Chrome visual inspection",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 406,
+      "head": "fc9d934169f6ee1f6551d32933a94a296972da1b",
+      "base": "33c87c1b8903fa73234d5d488ec2189a65ef4e61",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 17,
+      "filesComplete": true,
+      "commit": "Music: compact the Mix introduction and restore export heading contrast",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 415,
+      "head": "fcf6e984b3d3cad882a567bef4383d2fcc0eaff9",
+      "base": "7758e6497dff470f91d0758d71d7bae99d31be04",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Test microphone list refresh without clobbering unsaved recording settings",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 412,
+      "head": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24",
+      "base": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Music: unify Mastering control contrast and compact button spacing",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 414,
+      "head": "7758e6497dff470f91d0758d71d7bae99d31be04",
+      "base": "e4a8c54ab8db2ab7864cdfdf477cf9f7c1699d54",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Music: verify retained MIDI route behavior when focused production routes expand",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 416,
+      "head": "03f9ef635075d6e6a6f8020ad85664818a7259d0",
+      "base": "fcf6e984b3d3cad882a567bef4383d2fcc0eaff9",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Test stale microphone enumeration, error and editor-navigation guards",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 405,
+      "head": "33c87c1b8903fa73234d5d488ec2189a65ef4e61",
+      "base": "509bcd570590549283a417ee1bf52ef3ee92307c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 22,
+      "filesComplete": true,
+      "commit": "Music: scope bilingual AI browser actions to the assistant panel",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 413,
+      "head": "e4a8c54ab8db2ab7864cdfdf477cf9f7c1699d54",
+      "base": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Music: unify focused Long Master disclosures and remove inherited empty cards",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 407,
+      "head": "3326d50ffcca629e06ed5a24d77ed4b100a4b836",
+      "base": "fc9d934169f6ee1f6551d32933a94a296972da1b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: restore workspace heading contrast in inherited home and settings themes",
+      "checks": {
+        "total": 49,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 411,
+      "head": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55",
+      "base": "4a5128a1521dc676a45cd626029ad5dcff235a29",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Music: make focused Mix labels readable and measure their contrast",
+      "checks": {
+        "total": 50,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 404,
+      "head": "509bcd570590549283a417ee1bf52ef3ee92307c",
+      "base": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 17,
+      "filesComplete": true,
+      "commit": "Music: preserve interrupted vocal PCM and verify formal scope source",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 401,
+      "head": "5f9a0409271db30fa946a7095e339a9123afa3e2",
+      "base": "f522db43e63858c2ae0d8043136af0985f309f26",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 19,
+      "filesComplete": true,
+      "commit": "Enforce vocal duration in the audio thread during suspended page timers",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 398,
+      "head": "0fc8657918b0c29b053f0a9beebf85b411b5dde1",
+      "base": "3a60972e487d7c85f05e73488df52c4b969880b1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: compact original-file status rows on phones after visual verification",
+      "checks": {
+        "total": 5,
+        "success": 5,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 403,
+      "head": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1",
+      "base": "fc3f315547943eb83142a2c6751e2a9f2c3e179f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Preserve independent breath gain when adopting later pitch and timing edits",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 395,
+      "head": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "base": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: verify explicit page MIDI reopen and disconnected open rejection",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 396,
+      "head": "0f36624de7cfde69e35180ecc128584fb06fcad2",
+      "base": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Music: align literal cache-key regression assertions with refreshed assets",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 400,
+      "head": "f522db43e63858c2ae0d8043136af0985f309f26",
+      "base": "33cc706c7d1bc1e2451d967181ee3924127ce354",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Keep long-WAV and adjacent analysis labels readable in production panels",
+      "checks": {
+        "total": 47,
+        "success": 5,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 393,
+      "head": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "base": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: fix two failing Swift expectations after overlapping-note and reconnect changes",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 394,
+      "head": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "base": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: cover explicit close, disconnect and physical reconnect MIDI behavior",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 397,
+      "head": "3a60972e487d7c85f05e73488df52c4b969880b1",
+      "base": "0f36624de7cfde69e35180ecc128584fb06fcad2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: preserve shared WAV identities in full song Backup",
+      "checks": {
+        "total": 5,
+        "success": 5,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 402,
+      "head": "fc3f315547943eb83142a2c6751e2a9f2c3e179f",
+      "base": "5f9a0409271db30fa946a7095e339a9123afa3e2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Version vocal audio edit semantics to reject unsupported legacy readers safely",
+      "checks": {
+        "total": 7,
+        "success": 7,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 399,
+      "head": "33cc706c7d1bc1e2451d967181ee3924127ce354",
+      "base": "0fc8657918b0c29b053f0a9beebf85b411b5dde1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Fix production candidate panel contrast and verify all widths",
+      "checks": {
+        "total": 5,
+        "success": 5,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 381,
+      "head": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "base": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress immutable validated MIDI bytes across independent listeners",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 389,
+      "head": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "base": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: test matching synthetic releases for overlapping held MIDI notes",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 392,
+      "head": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "base": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: test nested MIDI close while releasing overlapping held notes",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 390,
+      "head": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "base": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress idempotent close with overlapping held MIDI notes",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "swift-test",
+          "native"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 383,
+      "head": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "base": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress input reopen while synthetic note-offs are emitted",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 385,
+      "head": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "base": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: retain deferred reconnect notification in native MIDI release",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 391,
+      "head": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "base": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: cover velocity-zero note-off with overlapping native MIDI notes",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 387,
+      "head": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "base": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress no stale held-note replay after nested reconnect",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "swift-test",
+          "native"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 388,
+      "head": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "base": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress overlapping MIDI note-on and note-off accounting",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "swift-test",
+          "native"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 384,
+      "head": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "base": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: regress reconnect while native held notes are released",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 382,
+      "head": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "base": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: verify native MIDI event state snapshot and original port identity",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 386,
+      "head": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "base": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: cover deferred native MIDI reconnect access and port event subscribers",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "native",
+          "swift-test"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 379,
+      "head": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "base": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: cover nested source transitions and stale state notification suppression",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 378,
+      "head": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "base": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: guard Core MIDI callback lock ordering regression",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 376,
+      "head": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "base": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: preserve note-off recipients across synchronous port-close callbacks",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 371,
+      "head": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "base": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Test: preserve workspace identity in concurrent import fixture",
+      "checks": {
+        "total": 44,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 377,
+      "head": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "base": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: verify state-change delivery under listener mutation",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 373,
+      "head": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "base": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: propagate Core MIDI source availability to native Web MIDI input",
+      "checks": {
+        "total": 46,
+        "success": 2,
+        "failed": [
+          "swift-test",
+          "native"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 374,
+      "head": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "base": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: prevent reentrant MIDI port close from repeating note releases",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 375,
+      "head": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "base": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: test explicitly closed MIDI input stays closed after reconnect",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 380,
+      "head": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "base": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: verify MIDI event listeners continue after callback exceptions",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 372,
+      "head": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "base": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: verify file storage write edit and reopen in separate app processes",
+      "checks": {
+        "total": 46,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 370,
+      "head": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "base": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: preserve nested web assets and expose missing resources in Chrome verification",
+      "checks": {
+        "total": 40,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 369,
+      "head": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "base": "1587ed74025970282810f43f50295931dd7e0f79",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: open current transaction fixture database without downgrade",
+      "checks": {
+        "total": 42,
+        "success": 8,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 364,
+      "head": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "base": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: detect positive PCM16 saturation in measured suggestions [skip ci]",
+      "checks": {
+        "total": 26,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 357,
+      "head": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "base": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: integrate real Compression into protected A/B, persistence and WAV pipeline [skip ci]",
+      "checks": {
+        "total": 12,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 360,
+      "head": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "base": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: exercise browser Blob constructor in VM-backed long-WAV tests [skip ci]",
+      "checks": {
+        "total": 18,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 362,
+      "head": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "base": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Music: add atomic original WAV archive recovery [skip ci]",
+      "checks": {
+        "total": 22,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 366,
+      "head": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "base": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: measure explicit aligned intervals and process stereo spatial WAV [skip ci]",
+      "checks": {
+        "total": 30,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 367,
+      "head": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "base": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Docs: correct current Draft inventory count [skip ci]",
+      "checks": {
+        "total": 32,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 365,
+      "head": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "base": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: connect real PCM proposals and measured audio relationship comparison [skip ci]",
+      "checks": {
+        "total": 28,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 368,
+      "head": "1587ed74025970282810f43f50295931dd7e0f79",
+      "base": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: cancel disconnected MIDI count-in and protect active input",
+      "checks": {
+        "total": 38,
+        "success": 5,
+        "failed": [
+          "verify"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 361,
+      "head": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "base": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Music: persist validated long WAV originals atomically with projects [skip ci]",
+      "checks": {
+        "total": 20,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 359,
+      "head": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "base": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: decode long WAV as bounded PCM chunks without whole-file expansion [skip ci]",
+      "checks": {
+        "total": 16,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 358,
+      "head": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "base": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: process long PCM in continuous bounded DSP chunks [skip ci]",
+      "checks": {
+        "total": 14,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 363,
+      "head": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "base": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: abort pending long mix settings save on cancellation [skip ci]",
+      "checks": {
+        "total": 24,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 354,
+      "head": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "base": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: add offline EQ verification and strict stale-preview regression [skip ci]",
+      "checks": {
+        "total": 8,
+        "success": 1,
+        "failed": [
+          "native"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 353,
+      "head": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "base": "3c40354e65d6945df14676efe317771e3a715947",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: add EQ A/B preview UI with safe non-apply guard [skip ci]",
+      "checks": {
+        "total": 6,
+        "success": 0,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 356,
+      "head": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "base": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: add real local PCM compression DSP and numerical regressions [skip ci]",
+      "checks": {
+        "total": 10,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 352,
+      "head": "3c40354e65d6945df14676efe317771e3a715947",
+      "base": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: implement bounded peaking EQ DSP primitive and regressions [skip ci]",
+      "checks": {
+        "total": 0,
+        "success": 0,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 355,
+      "head": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "base": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 1,
+      "filesComplete": true,
+      "commit": "Music: correct offline Swift and unsigned build validation paths [skip ci]",
+      "checks": {
+        "total": 8,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 346,
+      "head": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "base": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: retain unsupported Wrapper routing as unapproved observation",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 349,
+      "head": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "base": "6ef95994a939817b5d579ff452997598da356673",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: reject missing and non-native package assets; audit formal readiness [skip ci]",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 347,
+      "head": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "base": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: parse package dynamic loader without runtime approval",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 348,
+      "head": "6ef95994a939817b5d579ff452997598da356673",
+      "base": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: canonicalize disposable macOS graph fixture root",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 351,
+      "head": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "base": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 12,
+      "filesComplete": true,
+      "commit": "Music: process real PCM gain with protected A/B and atomic history [skip ci]",
+      "checks": {
+        "total": 12,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 350,
+      "head": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "base": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: persist explicit lyric reading on existing MIDI notes [skip ci]",
+      "checks": {
+        "total": 4,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 345,
+      "head": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "base": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: validate candidate unsigned app layout and nested code",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 341,
+      "head": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "base": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "Music: detach native boundary observation snapshots",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 340,
+      "head": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "base": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: invalidate outstanding final acknowledgement on owner failure",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 337,
+      "head": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "base": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Music: enforce authorization generation in Swift result closure",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 339,
+      "head": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "base": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: reject owner dispatch after terminal launcher state",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 342,
+      "head": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "base": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: detach retained runtime inventory and child shutdown reports",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 338,
+      "head": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "base": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: clean up resident child after processing preflight or send failure",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 344,
+      "head": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "base": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: stage anchored unsigned private generation bytes",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 333,
+      "head": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "base": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: fail closed on owned child changes across health admission",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 335,
+      "head": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "base": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: retain owned cleanup and failed summary after continuity rejection",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 336,
+      "head": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "base": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Music: assert final receipt length against exact fixture bytes",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 343,
+      "head": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "base": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: preserve validated publication snapshot across continuity callbacks",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 334,
+      "head": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "base": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: reject inherited descriptor identity replacement during processing",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 331,
+      "head": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "base": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: bind resident child origin inventory and canonical OS observation fixtures",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 332,
+      "head": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "base": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Music: bind owned startup origin and recheck executable continuity",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 326,
+      "head": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "base": "95287bd846009004e705f267e965510cce56a455",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: validate Darwin anonymous channel and retain one-shot shutdown ownership",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 327,
+      "head": "96c7d8698847a22afd53dc991c61b0110d5d3902",
+      "base": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music: canonicalize Darwin disposable private runtime test roots",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 325,
+      "head": "95287bd846009004e705f267e965510cce56a455",
+      "base": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Music: deliver actual owned child shutdown on retained private channel",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 328,
+      "head": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "base": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: keep native assembly identity stable across Helper and Demucs rechecks",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 321,
+      "head": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "base": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: bind authenticated installed metadata into backend assembly",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 330,
+      "head": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "base": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: strip ambient loader injection from private launches",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 322,
+      "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "base": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music: bind private runtime image, license material and owned exit assembly",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 329,
+      "head": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "base": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: synchronize disposable child readiness before private shutdown regression",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 324,
+      "head": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "base": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Music: execute only anchored owned-process adapter source snapshot",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 323,
+      "head": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "base": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: verify installed RECORD bytes and bind production assembly to manifest",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 318,
+      "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "base": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music: bind production Helper source preflight and actual final MIDI writer",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 316,
+      "head": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "base": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "CI: verify audio bridge on the exact pull-request head",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 312,
+      "head": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "base": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Use fully canonical trusted-root spelling in cross-platform alias regression",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 320,
+      "head": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "base": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: identify exact backend candidates and bind strict stem codec",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 315,
+      "head": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "base": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Music: reject receipt numeric-type tampering without label promotion",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 319,
+      "head": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "base": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Music: use explicit iPad simulator inspection output path",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 317,
+      "head": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "base": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 11,
+      "filesComplete": true,
+      "commit": "Music: bound private shutdown summary freshness and erase failed owner keys",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 314,
+      "head": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "base": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Music: reject label-only native dispatch promotion at strict gate",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 311,
+      "head": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "base": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Preserve fail-closed native receipt compatibility",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 313,
+      "head": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "base": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Music: reject alternate loader path spellings before native operations",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 310,
+      "head": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "base": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Music: invalidate health inventory on retained model replacement",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 309,
+      "head": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "base": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 16,
+      "filesComplete": true,
+      "commit": "Music: invalidate expired sessions and recheck Helper ownership before processing",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 306,
+      "head": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "base": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 21,
+      "filesComplete": true,
+      "commit": "Invalidate bootstrap verification when expected identity changes",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 305,
+      "head": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "base": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 17,
+      "filesComplete": true,
+      "commit": "Snapshot and deeply freeze authenticated bootstrap inputs",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 303,
+      "head": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "base": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 28,
+      "filesComplete": true,
+      "commit": "Guard synchronous Abort and selected-pointer changes across reload",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 304,
+      "head": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "base": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 18,
+      "filesComplete": true,
+      "commit": "Keep existing generation assertion helper outside isolated distribution scope",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 301,
+      "head": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "base": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Preserve opaque package extensions through durable Restore",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 299,
+      "head": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "base": "031def44c194787f4e8e17552961d62e93b10df2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Reject malformed asset dependency identities before Restore publication",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 298,
+      "head": "031def44c194787f4e8e17552961d62e93b10df2",
+      "base": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Wait for IndexedDB transaction completion and reject invalid Restore before publication",
+      "checks": {
+        "total": 4,
+        "success": 3,
+        "failed": [
+          "verify"
+        ],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 308,
+      "head": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "base": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music: keep unverified expected digests out of actual graph identity",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 300,
+      "head": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "base": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Expose binary coverage in metadata-only Restore preflight",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 297,
+      "head": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "base": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Reuse production validation and retain derived asset dependencies",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 307,
+      "head": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "base": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 23,
+      "filesComplete": true,
+      "commit": "Bind browser native evidence and normalize macOS launcher fixture",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 302,
+      "head": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "base": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Bound offline File ingress before decode and release readers on cancellation",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 295,
+      "head": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "base": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Keep opaque binary IDs safe in isolated staging",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 293,
+      "head": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "base": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Keep file-reference and logical asset identities separate",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 292,
+      "head": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "base": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Add read-only storage contract review and backup boundary inspection",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 288,
+      "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "base": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Test duplicate Arrangement Track IDs without invoking unrelated editor renderer",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 290,
+      "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "base": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Plan all 30 Music Studio capabilities and validate actual audio conversion evidence",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 287,
+      "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "base": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Music Studio: inspect exact Arrangement Section and Chord references",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 289,
+      "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "base": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Clear destination verification status immediately when choice or range changes",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 291,
+      "head": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "base": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Keep complete compact GitHub HEAD and CI snapshot",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 294,
+      "head": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "base": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Add review-only Backup candidate and Restore closure comparison",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 285,
+      "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "base": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 7,
+      "filesComplete": true,
+      "commit": "Music Studio: retain inspected Lyrics range and record verification",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 286,
+      "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "base": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Music Studio: preserve stale-reference cancellation and verify native disabled choices",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 296,
+      "head": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "base": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Verify disposable durable staging commit reload and recovery faults",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 284,
+      "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "base": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Music Studio: validate recorded Continuation source before Preview and Apply",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 280,
+      "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "base": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 13,
+      "filesComplete": true,
+      "commit": "Preserve Section labels and verify legacy/persistence compatibility",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 283,
+      "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "base": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Record fresh-source audit and Arrangement persistence reconstruction regression",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 279,
+      "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "base": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Reject incomplete metadata ranges and save verification evidence",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 281,
+      "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "base": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Verify successive Section transactions and clarify explicit Project write Plan",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 278,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "base": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 15,
+      "filesComplete": true,
+      "commit": "Complete exact partial Plan display and save-race/lock verification",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 276,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "base": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Move Family Preview smoke to the intended AI browser project",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 275,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "base": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Record successful exact-adoption browser and baseline verification",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 273,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "base": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Activate exact candidate target track only on explicit Apply",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 274,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "base": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 6,
+      "filesComplete": true,
+      "commit": "Add candidate-family verification: tests/music-studio-ai-composition.test.js",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 282,
+      "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "base": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 14,
+      "filesComplete": true,
+      "commit": "Retain Lyrics candidate kind after Preview and record verified Chrome checkpoint",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 277,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "base": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 9,
+      "filesComplete": true,
+      "commit": "Verify Family Apply persistence across save JSON and backup",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 267,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Expose lock transaction revision for fail-closed browser loading",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 263,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Preserve chronological MIDI markers as section source metadata",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 272,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "base": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 8,
+      "filesComplete": true,
+      "commit": "Normalize cross-realm candidate IDs in composition test",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 264,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Preserve time and key signature changes in MIDI export",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 265,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Add read-only meter boundary calculation for approved A policy",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 266,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "Describe explicit MIDI key families and marker section candidates",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 270,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "base": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "Add local-first Music Studio AI workflow foundation",
+      "checks": {
+        "total": 1,
+        "success": 1,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 271,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "base": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 10,
+      "filesComplete": true,
+      "commit": "Connect local AI Assistant UI safely",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 268,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "Guard internal Editor commits against exact legacy and additive lock ranges",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 269,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 66,
+      "filesComplete": true,
+      "commit": "Keep compact ruler prefixes and numbers on one visible line",
+      "checks": {
+        "total": 11,
+        "success": 11,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 261,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "base": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "ci: require full Node suite on combined Draft verification branch",
+      "checks": {
+        "total": 4,
+        "success": 4,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 262,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 33,
+      "filesComplete": true,
+      "commit": "Fix remaining PR262 asset cache regression expectations",
+      "checks": {
+        "total": 6,
+        "success": 6,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 257,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "ci: syntax-check local helper startup, shutdown and Mac app launchers",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 258,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 4,
+      "filesComplete": true,
+      "commit": "test: successful conversion clears stale error without discarding review tracks",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 256,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 2,
+      "filesComplete": true,
+      "commit": "ci: verify current native Mac and iPad targets and label exact-head artifacts",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 259,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 3,
+      "filesComplete": true,
+      "commit": "test: invalid Track IDs must retain pending scoped repair preview",
+      "checks": {
+        "total": 3,
+        "success": 3,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    },
+    {
+      "number": 260,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changedFiles": 5,
+      "filesComplete": true,
+      "commit": "ci: audit entire Node suite while isolated Track ID fix remains Draft",
+      "checks": {
+        "total": 2,
+        "success": 2,
+        "failed": [],
+        "pending": 0,
+        "allExactHead": true
+      }
+    }
+  ]
+}

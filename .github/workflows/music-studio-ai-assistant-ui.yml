@@ -1,0 +1,177 @@
+name: Music Studio AI Assistant UI
+on:
+  push:
+    branches: ['checkpoint/music-resume-20261002-late']
+  pull_request:
+    paths:
+      - 'assets/music-acoustic-v1/**'
+      - 'tools/music-native-wrapper/**'
+      - 'scripts/music-final-export-browser.js'
+      - 'scripts/music-midi-candidate-import-browser.js'
+      - 'scripts/music-lyrics-score-browser.js'
+      - 'scripts/music-score-vocal-return-browser.js'
+      - 'scripts/music-vocal-replacement-browser.js'
+      - 'tests/music-studio-score-vocal-return.test.js'
+      - 'scripts/music-vocal-transport-browser.js'
+      - 'scripts/music-harmony-mastering-browser.js'
+      - 'scripts/music-bundled-midi-browser.js'
+      - 'scripts/music-stage-native-web.py'
+      - 'tools/music-audio-pipeline/**'
+      - 'music-studio-ai-*.js'
+      - 'music-studio-ai-*.css'
+      - 'music-studio.js'
+      - 'music-studio.html'
+      - 'app.js'
+      - 'tests/music-studio-ai-*.test.js'
+      - 'tests/music-ai-landscape-focus.test.js'
+      - 'tests/music-studio-lyrics-score-export.test.js'
+      - 'tests/music-candidate-audition-review-stability.test.js'
+      - 'scripts/music-studio-ai-assistant-browser-smoke.js'
+      - '.github/workflows/music-studio-ai-assistant-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full Node, syntax and whitespace
+        run: |
+          node --test
+          find . -type f -name '*.js' -not -path './.git/*' -print0 | sort -z | xargs -0 -n1 node --check
+          git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"
+      - name: Real Chrome 1440 / 820 / 390
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk
+          google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-final-export-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-ui-production-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-transport-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-edit-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-recording-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-harmony-mastering-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-bundled-midi-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-studio-ai-assistant-browser-smoke.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-candidate-import-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-ai-assistant-ui-verification
+          path: |
+            verification/music-lyrics-score-browser.json
+            verification/music-score-vocal-return-browser.json
+            verification/music-vocal-replacement-browser.json
+            verification/music-midi-candidate-import-browser.json
+            verification/music-midi-candidate-import-*.png
+            verification/music-input-profiles-browser.json
+            verification/music-export-workspace-browser.json
+            verification/music-export-workspace-*.png
+            verification/music-workspace-browser.json
+            verification/music-workspace-*.png
+            verification/music-final-export-browser.json
+            verification/music-final-export-*.png
+            verification/music-ui-production-browser.json
+            verification/music-ui-*.png
+            verification/music-vocal-transport-browser.json
+            verification/music-vocal-transport-*.png
+            verification/music-vocal-edit-browser.json
+            verification/music-vocal-edit-*.png
+            verification/music-vocal-recording-browser.json
+            verification/music-vocal-recording-*.png
+            verification/music-breath-gain-*.png
+            verification/music-harmony-mastering-browser.json
+            verification/music-harmony-mastering-*.png
+            verification/music-long-master-*.png
+            verification/music-bundled-midi-browser.json
+            music-ai-*.png
+            verification/music-ai-assistant-browser-report-20261002.json
+
+  vocal-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Focused vocal viewport and contrast
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y fonts-noto-cjk
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-production-tabs-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-render-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-stream-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-layout-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-mix-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-master-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-master-workspace-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-input-profiles-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-export-workspace-browser.js
+      - name: PCM instrument MIDI storage and viewport
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          node scripts/music-instrument-browser.js
+          node scripts/music-multisample-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-vocal-layout-verification
+          path: |
+            verification/music-multisample-browser.json
+            verification/music-multisample-*.png
+            verification/music-instrument-browser.json
+            verification/music-instrument-*.png
+            verification/music-master-workspace-browser.json
+            verification/music-master-workspace-*.png
+            verification/music-long-master-workspace-browser.json
+            verification/music-long-master-workspace-*.png
+            verification/music-mix-workspace-browser.json
+            verification/music-mix-workspace-*.png
+            verification/music-production-tabs-browser.json
+            verification/music-midi-render-browser.json
+            verification/music-midi-stream-browser.json
+            verification/music-production-tabs-*.png
+            verification/music-vocal-layout-browser.json
+            verification/music-vocal-layout-*.png
+
+  lyrics-score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Japanese lyric score production and real download
+        run: |
+          node --test tests/music-studio-lyrics-score-export.test.js tests/music-studio-ai-midi-lyrics-score.test.js tests/music-studio-score-vocal-return.test.js
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-score-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-score-vocal-return-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-replacement-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-lyrics-score-verification
+          path: |
+            verification/music-lyrics-score-browser.json
+            verification/music-score-vocal-return-browser.json
+            verification/music-vocal-replacement-browser.json

@@ -1,0 +1,193 @@
+name: Music local real generation
+on:
+  pull_request:
+    paths:
+      - 'tools/music-local-generation/**'
+      - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-native-edited-song.js'
+      - 'scripts/music-native-edited-song.py'
+      - 'scripts/music-local-real-whole-song.js'
+      - 'scripts/music-local-real-browser.js'
+      - 'scripts/music-long-indexeddb-browser.js'
+      - 'scripts/music-long-production-browser.js'
+      - 'tests/music-ai-landscape-focus.test.js'
+      - 'tests/music-studio-local-model.test.js'
+      - 'music-studio-ai-assistant-panel.js'
+      - 'music-studio-ai-composition.js'
+      - 'music-studio-ai-candidate-preview.js'
+      - 'tests/music-studio-long-song-continuity.test.js'
+      - 'music-studio.js'
+      - '.github/workflows/music-local-generation.yml'
+  workflow_dispatch:
+jobs:
+  real-generation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full JavaScript regression on fixed CI Node
+        run: node --test
+      - run: python tools/music-local-generation/test_audible_sampling.py
+      - run: python tools/music-local-generation/test_model_runtime.py
+      - run: python tools/music-local-generation/test_constraints.py
+      - run: python tools/music-local-generation/test_cancellation.py
+      - run: python tools/music-local-generation/test_synthesis_process.py
+      - run: python tools/music-local-generation/test_transport.py
+      - run: python tools/music-local-generation/test_verify_model_load.py
+      - run: python tools/music-local-generation/test_launch_lifecycle.py
+      - run: python tools/music-local-generation/test_startup_process.py
+      - run: python tools/music-local-generation/test_package_entry.py
+      - run: python tools/music-local-generation/test_startup.py
+      - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
+      - name: Prepare fixed licensed development assets
+        run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
+      - name: Real CPU model and Japanese HMM singing through Studio
+        env:
+          NOVA_SHORT_RANGE_REPORT: ${{ runner.temp }}/music-short-range.json
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_SINSY: ${{ runner.temp }}/nova-generation-assets/runtime/bin/sinsy
+          NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
+          NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
+        run: node scripts/music-local-real-generation.js
+      - name: Real 480-second whole-song A/B/C with checkpoint backup and Resume
+        env:
+          NOVA_WHOLE_SONG_REPORT: ${{ runner.temp }}/music-local-real-whole-song-ci.json
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+        run: node scripts/music-local-real-whole-song.js
+      - name: Real browser model and voice at four sizes
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_SINSY: ${{ runner.temp }}/nova-generation-assets/runtime/bin/sinsy
+          NOVA_SINSY_DICTIONARY: ${{ runner.temp }}/nova-generation-assets/runtime/dic
+          NOVA_SINSY_VOICE: ${{ runner.temp }}/nova-generation-assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-real-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
+      - name: Real long candidates through IndexedDB and browser restart
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
+          NOVA_LONG_IDB_REPORT: ${{ runner.temp }}/music-long-indexeddb-browser.json
+        run: NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-indexeddb-browser.js
+      - name: Real eight-minute MIDI through WAV Mix Master Export and archive recovery
+        env:
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_WHOLE_SONG_FIXTURE: ${{ runner.temp }}/music-whole-song-fixture.json
+          NOVA_LONG_PRODUCTION_REPORT: ${{ runner.temp }}/music-long-production-browser.json
+        run: NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-long-production-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-local-real-generation
+          path: |
+            ${{ runner.temp }}/music-short-range.json
+            verification/music-local-real-browser.json
+            ${{ runner.temp }}/music-local-real-whole-song-ci.json
+            ${{ runner.temp }}/music-long-indexeddb-browser.json
+            ${{ runner.temp }}/music-long-production-browser.json
+  intel-mac-generation:
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require Intel runtime
+        run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_audible_sampling.py
+      - run: python tools/music-local-generation/test_model_runtime.py
+      - run: python tools/music-local-generation/test_constraints.py
+      - run: python tools/music-local-generation/test_cancellation.py
+      - run: python tools/music-local-generation/test_synthesis_process.py
+      - run: python tools/music-local-generation/test_transport.py
+      - run: python tools/music-local-generation/test_verify_model_load.py
+      - run: python tools/music-local-generation/test_launch_lifecycle.py
+      - run: python tools/music-local-generation/test_startup_process.py
+      - run: python tools/music-local-generation/test_package_entry.py
+      - run: python tools/music-local-generation/test_startup.py
+      - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/test_generation_budget.py
+      # Linux retains development-origin inference. Intel proceeds directly to
+      # package-origin acceptance: no duplicate model download/build/inference.
+      - name: Intel candidate assembly guards
+        run: |
+          python tools/music-local-generation/test_intel_assembly.py
+          python tools/music-local-generation/test_package_integrity.py
+          python tools/music-local-generation/test_native_launch.py
+      - name: Assemble actual app-contained Intel runtime, models, voice and sound samples
+        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-build" --output "$RUNNER_TEMP/Music Studio Candidate.app" --native-acceptance
+      - name: Relocate candidate before package-origin inference
+        run: |
+          mkdir -p "$RUNNER_TEMP/relocated app"
+          mv "$RUNNER_TEMP/Music Studio Candidate.app" "$RUNNER_TEMP/relocated app/Music Studio Candidate.app"
+      - name: Actual app entry starts native wrapper and owns engine shutdown
+        run: python scripts/music-intel-native-launch.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" > "$RUNNER_TEMP/package-native-launch.json"
+      - name: Actual native edited-song save, full exit, reopen, re-edit and isolated archive recovery
+        run: python scripts/music-native-edited-song.py "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/native-edited-song.json"
+      - name: Actual packaged CPU ONNX and Sinsy generation, restart and archive recovery
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+        run: |
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-first.log" 2>&1
+          node scripts/music-local-real-generation.js > "$RUNNER_TEMP/package-generation-restart.log" 2>&1
+      - name: Packaged engine through actual Chrome UI and IndexedDB at four sizes
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/relocated app/Music Studio Candidate.app
+          NOVA_REAL_BROWSER_REPORT: ${{ runner.temp }}/package-browser.json
+          NOVA_PACKAGE_SCREENSHOT_DIR: ${{ runner.temp }}/package-screenshots
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-intel-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/nova-intel-browser/node_modules" CHROME_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node scripts/music-local-real-browser.js
+      - name: Record candidate files and archive SHA256 without release publication
+        run: |
+          cp "$RUNNER_TEMP/relocated app/Music Studio Candidate.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/package-candidate.json"
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/music-intel-candidate.zip"
+          shasum -a 256 "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-sha256.txt"
+          stat -f '%z' "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-bytes.txt"
+      - name: Preserve inventory evidence even if later package acceptance fails
+        if: always()
+        run: |
+          python - <<'PYREPORT'
+          import os, shutil
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          for app in (root/'relocated app/Music Studio Candidate.app', root/'Music Studio Candidate.app', root/'Music Studio Candidate.app.incomplete'):
+              report = app/'Contents/Resources/package-candidate.json'
+              if report.is_file():
+                  shutil.copyfile(report, root/'package-candidate.json')
+                  break
+          PYREPORT
+      # Binary publication remains blocked by license/source, native lifecycle,
+      # Developer ID, notarization and physical acceptance gates.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-intel-package-evidence
+          path: |
+            ${{ runner.temp }}/package-candidate.json
+            ${{ runner.temp }}/package-native-launch.json
+            ${{ runner.temp }}/native-edited-song.json
+            ${{ runner.temp }}/package-browser.json
+            ${{ runner.temp }}/package-screenshots/
+            ${{ runner.temp }}/package-generation-first.log
+            ${{ runner.temp }}/package-generation-restart.log
+            ${{ runner.temp }}/package-archive-sha256.txt
+            ${{ runner.temp }}/package-archive-bytes.txt
