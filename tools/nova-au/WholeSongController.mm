@@ -58,7 +58,7 @@ static void NovaVerifyRuntime(NSURL* resources){
    NovaVerifyRuntime(resources);
    if(![python.URLByResolvingSymlinksInPath.path isEqual:NovaBundledPython(resources).URLByResolvingSymlinksInPath.path])@throw @"同梱Python以外は起動できません";
    NSDictionary* inventory=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:[resources URLByAppendingPathComponent:@"whole-song-runtime.json"]] options:0 error:nil];
-   NSArray<NSString*>* requiredScripts=@[@"whole-song.py",@"select-whole-song.py",@"au-whole-song.py",@"compare-sections.py",@"../MacOS/nova-whole-song",@"../MacOS/nova-section-meter"];
+   NSArray<NSString*>* requiredScripts=@[@"auto-finish.py",@"whole-song.py",@"select-whole-song.py",@"au-whole-song.py",@"compare-sections.py",@"../MacOS/nova-whole-song",@"../MacOS/nova-section-meter"];
    if(![inventory isKindOfClass:NSDictionary.class]||inventory.count!=requiredScripts.count)@throw @"全曲runtime inventoryがありません";
    for(NSString* name in requiredScripts){NSString* hash=NovaFileSHA256([resources URLByAppendingPathComponent:name]);if(!hash||![hash isEqual:inventory[name]])@throw @"同梱runtimeのSHA256照合失敗";}
    NSNumber* requestLink;[request getResourceValue:&requestLink forKey:NSURLIsSymbolicLinkKey error:nil];if(requestLink.boolValue)@throw @"request symlinkは使用できません";

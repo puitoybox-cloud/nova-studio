@@ -71,6 +71,10 @@ jobs:
       - name: Section-aware mastering and Japanese multi-action production paths
         run: |
           "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/Python/bin/python3.12" -I -B tools/nova-au/tests/section-policy.py --scripts "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources" --reference-ffmpeg "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources/Runtime/FFmpeg/bin/ffmpeg" --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --output "$RUNNER_TEMP/nova-au/section-policy"
+      - name: Contained offline Stem auto Mix and ABC Mastering
+        run: |
+          RES="$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources"
+          "$RES/Runtime/Python/bin/python3.12" -I -B tools/nova-au/tests/auto-finish.py --scripts "$RES" --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --ffmpeg "$RES/Runtime/FFmpeg/bin/ffmpeg" --output "$RUNNER_TEMP/nova-au/auto-finish" > "$RUNNER_TEMP/nova-au/auto-finish-report.json"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"
@@ -179,6 +183,7 @@ jobs:
           g++ -std=c++20 -O2 tools/nova-au/whole-song.cpp -o "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
           g++ -std=c++20 -O2 tools/nova-au/section-meter.cpp -o "$RUNNER_TEMP/nova-section-meter"
+          python3 tools/nova-au/tests/auto-finish.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/auto-finish" > "$RUNNER_TEMP/auto-finish-report.json"
           python3 tools/nova-au/tests/section-comparison.py --engine "$RUNNER_TEMP/nova-section-meter"
           python3 tools/nova-au/tests/section-policy.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/section-policy"
           python3 tools/nova-au/tests/au-whole-song.py --engine "$RUNNER_TEMP/nova-whole-song" --output "$RUNNER_TEMP/whole-bridge"
