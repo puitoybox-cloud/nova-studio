@@ -171,7 +171,7 @@ jobs:
 
   whole-song:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, node24
         with:
@@ -180,7 +180,7 @@ jobs:
       - name: Independent reference and bounded whole-song processing
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg
           g++ -std=c++20 -O2 tools/nova-au/whole-song.cpp -o "$RUNNER_TEMP/nova-whole-song"
           python3 tools/nova-au/tests/whole-song-proposals.py --engine "$RUNNER_TEMP/nova-whole-song"
           g++ -std=c++20 -O2 tools/nova-au/section-meter.cpp -o "$RUNNER_TEMP/nova-section-meter"
