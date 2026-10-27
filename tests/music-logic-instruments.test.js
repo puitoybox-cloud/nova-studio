@@ -110,3 +110,7 @@ test('quoted Unicode Track identity is preserved while command punctuation is no
  assert.equal(n.recommend(p,{trackId:'piano',machineId:'mac',instruction:'「Ｐｉａｎｏ」のピアノを選んで！'}).track.id,'piano');
  assert.throws(()=>n.recommend(p,{trackId:'piano',machineId:'mac',instruction:'「Piano」のピアノを選んで'}),/target-ambiguous/);
 });
+test('AU explicit numeric attenuation is complete, bounded and approval-only',()=>{
+ for(const [text,delta] of [['音量を6dB下げて',-6],['音量を0.5dB下げて',-.5],['音量を24dB下げて',-24]]){const p=n.parseAudioCommand(text);assert.equal(p.gainDeltaDb,delta);assert.equal(p.approvalRequired,true);assert.equal(p.audioAnalyzed,false);}
+ for(const text of ['音量を6dB上げて','音量を6dB下げて、低音を上げて','音量を0dB下げて','音量を25dB下げて','音量を-6dB下げて','音量を6dB下げないで'])assert.throws(()=>n.parseAudioCommand(text));
+});

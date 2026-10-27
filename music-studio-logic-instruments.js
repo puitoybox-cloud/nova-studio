@@ -112,6 +112,9 @@
   const points={'AとBの中間にして':[0,1],'AとCの中間にして':[0,2],'BとCの中間にして':[1,2]},midpoint=Object.prototype.hasOwnProperty.call(points,s)?points[s]:null;
   if(midpoint)return{operation:'midpoint',endpoints:midpoint,approvalRequired:true,audioAnalyzed:false};
   if(s==='前の設定に戻して')return{operation:'undo',approvalRequired:true,audioAnalyzed:false};
+  const attenuation=/^音量を(\d{1,2}(?:\.\d{1,2})?)dB下げて$/.exec(s);
+  if(attenuation){const db=Number(attenuation[1]);if(db<=0||db>24)throw Error('nova-au-gain-range');return{operation:'preview',instruction:s,gainDeltaDb:-db,approvalRequired:true,audioAnalyzed:false,target:'NOVA AU自身'};}
+
   if(!['マスタリングして','ピアノを温かく自然にして','ベースが強すぎるので調整して','ドラムをもう少し力強くして','全体の音量バランスを整えて','ピアノを柔らかくして','ボーカルをもう少し前に出して','高音を少し抑えて','ピアノをもっと温かくして','ストリングスの高音を柔らかくして','低音が強すぎるので調整して','全体の音を自然に整えて'].includes(s))throw Error('nova-au-instruction-unsupported');
   return{operation:'preview',instruction:s,approvalRequired:true,audioAnalyzed:false,target:'NOVA AU自身'};
  }
