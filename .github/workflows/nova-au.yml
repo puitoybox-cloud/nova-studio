@@ -75,6 +75,7 @@ jobs:
         run: |
           RES="$RUNNER_TEMP/nova-au/NovaMix.component/Contents/Resources"
           "$RES/Runtime/Python/bin/python3.12" -I -B tools/nova-au/tests/auto-finish.py --scripts "$RES" --engine "$RUNNER_TEMP/nova-au/NovaMix.component/Contents/MacOS/nova-whole-song" --ffmpeg "$RES/Runtime/FFmpeg/bin/ffmpeg" --output "$RUNNER_TEMP/nova-au/auto-finish" > "$RUNNER_TEMP/nova-au/auto-finish-report.json"
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/nova-au/NovaMix.component"
       - name: Public parameter control of an owned Apple AU fixture
         run: |
           xcrun clang++ -std=c++20 -fobjc-arc tools/nova-au/tests/apple-host-control.mm -framework Foundation -framework AudioToolbox -o "$RUNNER_TEMP/apple-au-host-control"

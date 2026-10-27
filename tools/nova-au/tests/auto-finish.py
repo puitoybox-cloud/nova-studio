@@ -40,7 +40,7 @@ for n, (role, hz, amp) in enumerate([('vocal', 440, .035), ('piano', 660, .25), 
 q = dict(stems=stems,projectId='test',audioVersion='v1',sourceKind='development-fixture',alignmentConfirmed=True,instruction='この曲をきれいに仕上げて')
 request = a.output/'request.json'; request.write_text(json.dumps(q,ensure_ascii=False))
 output = a.output/'finish'
-cmd = [sys.executable, str(root/'auto-finish.py'),str(request),'--engine',str(a.engine.resolve()),'--ffmpeg',a.ffmpeg,'--output',str(output)]
+cmd = [sys.executable, '-I', '-B', str(root/'auto-finish.py'),str(request),'--engine',str(a.engine.resolve()),'--ffmpeg',a.ffmpeg,'--output',str(output)]
 def run(args, success=True):
     r = subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     assert (r.returncode==0)==success, r.stderr[-4000:]
@@ -60,7 +60,7 @@ assert max(r['matchedMeasurement']['integratedLufs'] for r in m['renders'])-min(
 hashes = {x.name:w.sha(x) for x in (output/'mastering').glob('*.wav')}
 run(cmd+['--resume'])
 assert hashes == {x.name:w.sha(x) for x in (output/'mastering').glob('*.wav')}
-select=[sys.executable,str(root/'select-whole-song.py'),str(output/'mastering'),'--project','test','--track','auto-finish-stereo','--version','v1','--source-wav',str(output/'mix.wav'),'--choice','B']
+select=[sys.executable,'-I','-B',str(root/'select-whole-song.py'),str(output/'mastering'),'--project','test','--track','auto-finish-stereo','--version','v1','--source-wav',str(output/'mix.wav'),'--choice','B']
 run(select,False);run(select+['--approve'])
 assert w.sha(output/'mastering'/'adopted.wav')==w.sha(output/'mastering'/'B.wav')
 select[-1]='undo';run(select+['--approve'])
