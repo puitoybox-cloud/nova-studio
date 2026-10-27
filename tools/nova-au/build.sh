@@ -23,7 +23,7 @@ xcrun clang++ -std=c++23 -arch x86_64 -mmacosx-version-min=12.0 -O2 -fvisibility
 # Offline companion reuses the AU quality DSP; it is never called from render.
 xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -O2 whole-song.cpp -o "$BUNDLE/Contents/MacOS/nova-whole-song"
 xcrun clang++ -std=c++20 -arch x86_64 -mmacosx-version-min=12.0 -O2 section-meter.cpp -o "$BUNDLE/Contents/MacOS/nova-section-meter"
-cp whole-song.py select-whole-song.py au-whole-song.py compare-sections.py "$BUNDLE/Contents/Resources/"
+cp auto-finish.py whole-song.py select-whole-song.py au-whole-song.py compare-sections.py "$BUNDLE/Contents/Resources/"
 printf 'BNDLNvSt'  > "$BUNDLE/Contents/PkgInfo"
 cp Info.plist "$BUNDLE/Contents/Info.plist"
 cp "$SDK/LICENSE.txt" "$BUNDLE/Contents/Resources/AudioUnitSDK-LICENSE.txt"
@@ -40,7 +40,7 @@ python3 - "$BUNDLE" <<'PYINVENTORY'
 import hashlib,json,sys
 from pathlib import Path
 r=Path(sys.argv[1])/'Contents/Resources'
-names=['whole-song.py','select-whole-song.py','au-whole-song.py','compare-sections.py','../MacOS/nova-whole-song','../MacOS/nova-section-meter']
+names=['auto-finish.py','whole-song.py','select-whole-song.py','au-whole-song.py','compare-sections.py','../MacOS/nova-whole-song','../MacOS/nova-section-meter']
 (r/'whole-song-runtime.json').write_text(json.dumps({n:hashlib.sha256((r/n).read_bytes()).hexdigest() for n in names}))
 PYINVENTORY
 codesign --force --sign - "$BUNDLE"
