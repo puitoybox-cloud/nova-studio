@@ -18,6 +18,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 @property NSDictionary* manifest;
 @property NSDictionary* state;
 @property NSString* offlineSummary;
+@property NSString* commandSummary;
 @property NSTimer* refresh;
 @property NovaWholeSongController* wholeController;
 @property NSURL *wholeRequest,*wholePython;
@@ -42,13 +43,14 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self button:@"handoff JSONを開く" x:16 y:48 action:@selector(importFile:) tag:0];
   self.targetKind=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(180,48,150,28) pullsDown:NO];[self.targetKind addItemsWithTitles:@[@"Track",@"Bus",@"Stereo Out"]];[self addSubview:self.targetKind];
   self.sourceField=[[NSTextField alloc]initWithFrame:NSMakeRect(344,48,340,26)];self.sourceField.placeholderString=@"実際の音源・録音元（手動確認）";[self addSubview:self.sourceField];
-  [self field:@"曲ID / Track IDを照合して対象を確認。Logic内部Track IDの自動取得なし" y:86 editable:NO];
+  [self field:@"両ID空欄＝このAU入力を手動確認。Music Studio連携時は両ID入力" y:86 editable:NO];
   self.projectField=[self field:@"" y:116 editable:YES];self.projectField.placeholderString=@"Music Studio projectId";
   self.trackField=[self field:@"" y:148 editable:YES];self.trackField.placeholderString=@"Music Studio Track ID";
   self.tracks=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(16,182,480,28) pullsDown:NO];self.tracks.target=self;self.tracks.action=@selector(selectTrack:);[self addSubview:self.tracks];
   [self button:@"対象を確認" x:520 y:182 action:@selector(bind:) tag:0];
   self.instruction=[self field:@"高音を少し抑えて" y:224 editable:YES];
   [self button:@"A/B/C候補を作る" x:16 y:262 action:@selector(preview:) tag:0];
+  [self button:@"診断をコピー" x:520 y:262 action:@selector(copyDiagnostic:) tag:0];
   [self button:@"Aを承認・適用" x:16 y:304 action:@selector(apply:) tag:0];
   [self button:@"Bを承認・適用" x:180 y:304 action:@selector(apply:) tag:1];
   [self button:@"Cを承認・適用" x:344 y:304 action:@selector(apply:) tag:2];
@@ -85,18 +87,22 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(!self.projectField.stringValue.length)self.projectField.stringValue=b[@"projectId"]?:@"";
  if(!self.trackField.stringValue.length)self.trackField.stringValue=b[@"trackId"]?:@"";
  self.report.stringValue=[NSString stringWithFormat:@"%@\n対象: %@ / %@\nAU instance: %@ / 確認 %@\n現在 [Gain, Low, High, Bypass]: %@\n変更前: %@\n提案 A/B/C: %@\n%@\n外部送信・外部AU操作なし。48 kHz取得区間のLUFS/4x True Peak推定。ライブ取得は全曲・Limiter未対応。\n入力: %@\n出力: %@\n取得状態 %@ / 完了 %@",self.state[@"status"],b[@"projectId"],b[@"trackId"],b[@"instanceId"],b[@"confirmed"],params(self.state[@"current"]),params(self.state[@"before"]),choices(self.state[@"choices"]),self.state[@"reason"]?:@"",measurement(self.state[@"analysis"][@"input"]),measurement(self.state[@"analysis"][@"output"]),self.state[@"analysis"][@"captureState"],self.state[@"analysis"][@"complete"]];
- NSMutableString* detail=[NSMutableString stringWithFormat:@"\nGR %.2f dB / %@",[self.state[@"gainReductionDb"]doubleValue],processingText(self.state[@"processing"])];unsigned k=0;for(id row in self.state[@"processingChoices"])[detail appendFormat:@"\n%c %@",'A'+k++,processingText(row)];for(NSString* side in @[@"input",@"output"]){id m=self.state[@"analysis"][side];if([m[@"lufsMeasured"]boolValue])[detail appendFormat:@"\n%@ %.2f LUFS / %.2f dBTP推定（取得区間）",side,[m[@"integratedLufsExcerpt"]doubleValue],[m[@"truePeakEstimateDbTP"]doubleValue]];}self.report.stringValue=[self.report.stringValue stringByAppendingString:detail];if(self.offlineSummary)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n%@",self.offlineSummary];
+ NSMutableString* detail=[NSMutableString stringWithFormat:@"\nGR %.2f dB / %@",[self.state[@"gainReductionDb"]doubleValue],processingText(self.state[@"processing"])];unsigned k=0;for(id row in self.state[@"processingChoices"])[detail appendFormat:@"\n%c %@",'A'+k++,processingText(row)];for(NSString* side in @[@"input",@"output"]){id m=self.state[@"analysis"][side];if([m[@"lufsMeasured"]boolValue])[detail appendFormat:@"\n%@ %.2f LUFS / %.2f dBTP推定（取得区間）",side,[m[@"integratedLufsExcerpt"]doubleValue],[m[@"truePeakEstimateDbTP"]doubleValue]];}self.report.stringValue=[self.report.stringValue stringByAppendingString:detail];if(self.commandSummary)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n%@",self.commandSummary];if(self.offlineSummary)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n%@",self.offlineSummary];
+}
+- (void)copyDiagnostic:(id)sender{
+ [self update:nil];NSData* data=[NSJSONSerialization dataWithJSONObject:self.state?:@{} options:NSJSONWritingPrettyPrinted error:nil];
+ if(data){[NSPasteboard.generalPasteboard clearContents];[NSPasteboard.generalPasteboard setString:[[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding] forType:NSPasteboardTypeString];self.commandSummary=@"診断をコピーしました（対象ID・入力説明・指示を含みます）";[self update:nil];}
 }
 - (void)send:(NSMutableDictionary*)command{
  NSDictionary* b=self.state[@"binding"]?:@{};command[@"projectId"]=self.projectField.stringValue;command[@"trackId"]=self.trackField.stringValue;command[@"instanceId"]=b[@"instanceId"]?:@"";
  NSString* chosenKind=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];NSString* chosenSource=self.sourceField.stringValue.length?self.sourceField.stringValue:@"user-confirmed AU input";
- if(![command[@"operation"] isEqual:@"bind"]&&[b[@"confirmed"]boolValue]&&(![chosenKind isEqual:b[@"targetKind"]]||![chosenSource isEqual:b[@"inputSource"]])){self.report.stringValue=@"入力元またはTrack/Bus/Stereo Out指定が変わりました。対象を再確認してください。";return;}
- if([command[@"operation"] isEqual:@"bind"]){command[@"targetKind"]=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];command[@"inputSource"]=self.sourceField.stringValue;NSInteger index=[self.tracks indexOfSelectedItem];command[@"role"]=self.wholeRole.titleOfSelectedItem; if(index>=0&&index<[self.manifest[@"tracks"]count])command[@"role"]=self.manifest[@"tracks"][index][@"role"]?:@"unspecified";}
+ if(![command[@"operation"] isEqual:@"bind"]&&[b[@"confirmed"]boolValue]&&(![chosenKind isEqual:b[@"targetKind"]]||![chosenSource isEqual:b[@"inputSource"]])){self.commandSummary=@"入力元またはTrack/Bus/Stereo Out指定が変わりました。対象を再確認してください。";[self update:nil];return;}
+ if([command[@"operation"] isEqual:@"bind"]){command[@"localInput"]=@(!self.projectField.stringValue.length&&!self.trackField.stringValue.length&&!self.manifest);command[@"targetKind"]=@[@"track",@"bus",@"stereo-out"][[self.targetKind indexOfSelectedItem]];command[@"inputSource"]=self.sourceField.stringValue;NSInteger index=[self.tracks indexOfSelectedItem];command[@"role"]=self.wholeRole.titleOfSelectedItem; if(index>=0&&index<[self.manifest[@"tracks"]count])command[@"role"]=self.manifest[@"tracks"][index][@"role"]?:@"unspecified";}
 
  NSArray* before=self.state[@"current"];NSArray* beforeProcessing=self.state[@"processing"];CFDictionaryRef d=(__bridge CFDictionaryRef)command;OSStatus e=AudioUnitSetProperty(self.unit,Command,kAudioUnitScope_Global,0,&d,sizeof(d));
- [self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
+ self.commandSummary=[NSString stringWithFormat:@"%@ (%d)：%@",command[@"operation"],(int)e,e?@"停止。下記の状態・診断を確認":@"完了"];[self update:nil];if(!e){for(UInt32 i=0;i<4;++i){if(![before[i] isEqual:self.state[@"current"][i]]){AudioUnitParameter p={self.unit,i,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}}
  if(!e){for(UInt32 i=0;i<13;++i)if(![beforeProcessing[i]isEqual:self.state[@"processing"][i]]){AudioUnitParameter p={self.unit,i+4,kAudioUnitScope_Global,0};AUParameterListenerNotify(nullptr,nullptr,&p);}}
- if(e)self.report.stringValue=[self.report.stringValue stringByAppendingFormat:@"\n操作を停止 (%d)：対象・現在値・承認を再確認",(int)e];
+
 }
 - (NSURL*)chooseWholeFile:(NSString*)message wav:(BOOL)wav{
  NSOpenPanel* p=[NSOpenPanel openPanel];p.message=message;p.allowsMultipleSelection=NO;if(wav)p.allowedContentTypes=@[UTTypeWAV];return [p runModal]==NSModalResponseOK?p.URL:nil;

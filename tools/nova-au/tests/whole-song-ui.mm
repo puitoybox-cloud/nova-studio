@@ -6,6 +6,11 @@
 #import <CommonCrypto/CommonDigest.h>
 #import <AudioUnit/AUCocoaUIView.h>
 @interface NSView (NovaWholeTest)
+- (void)bind:(id)sender;
+- (void)preview:(id)sender;
+- (void)apply:(id)sender;
+- (void)undo:(id)sender;
+- (void)update:(id)sender;
 - (void)runWhole:(NSString*)operation choice:(NSString*)choice after:(void (^)(NSDictionary*))after;
 @end
 static NSString* hashFile(NSString* p){NSData* d=[NSData dataWithContentsOfFile:p];check(d!=nil,"hash input exists");unsigned char bytes[CC_SHA256_DIGEST_LENGTH];CC_SHA256(d.bytes,(CC_LONG)d.length,bytes);NSMutableString* h=[NSMutableString string];for(unsigned i=0;i<sizeof(bytes);++i)[h appendFormat:@"%02x",bytes[i]];return h;}
@@ -14,6 +19,25 @@ int main(int argc,char** argv){@autoreleasepool{
  NSString* bundlePath=[NSString stringWithUTF8String:argv[1]];NSBundle* bundle=[NSBundle bundleWithPath:bundlePath];NSError* err;check([bundle loadAndReturnError:&err],"load AU view bundle");
  void* lib=dlopen([bundle executablePath].UTF8String,RTLD_NOW|RTLD_LOCAL);check(lib,"open binary");auto factory=(AudioComponentFactoryFunction)dlsym(lib,"NovaMixFactory");check(factory,"factory");AudioComponentDescription desc={'aufx','NvMx','NvSt',0,0};auto c=AudioComponentRegister(&desc,CFSTR("NOVA: Mix"),256,factory);
  AudioUnit unit=nullptr,other=nullptr;ok(AudioComponentInstanceNew(c,&unit),"unit");ok(AudioComponentInstanceNew(c,&other),"other");Source source;configure(unit,&source,48000,256);
+ // Reproduce the physical report through the actual native view, with no Music Studio IDs.
+ id<AUCocoaUIBase> localFactory=[NSClassFromString(@"NovaMixViewFactory")new];
+ NSView* localView=[localFactory uiViewForAudioUnit:unit withSize:NSMakeSize(700,900)];
+ auto missing=cmd(unit,@"preview");missing[@"instruction"]=@"音量を6dB下げて";
+ check(command(unit,missing)==kAudioUnitErr_InvalidPropertyValue,"unconfirmed input rejects -10851");
+ [[localView valueForKey:@"targetKind"]selectItemAtIndex:2];
+ [localView bind:nil];check([snapshot(unit)[@"binding"][@"confirmed"]boolValue],"empty IDs explicitly confirm local input");
+ check([snapshot(unit)[@"binding"][@"projectId"]hasPrefix:@"nova-local:"],"local IDs cannot claim Music Studio association");
+ [[localView valueForKey:@"instruction"]setStringValue:@"音量を6dB下げて"];
+ auto original=render(unit,96000,256);[localView preview:nil];
+ check([snapshot(unit)[@"current"][0]floatValue]==0,"native preview preserves Gain");
+ check([snapshot(unit)[@"choices"][2][0]floatValue]==-6,"C is exact -6 dB");
+ NSButton* choice=[NSButton new];choice.tag=2;[localView apply:choice];
+ auto attenuated=render(unit,96000,256);check(std::abs(20*log10(rms(attenuated)/rms(original))+6)<.04,"native approved C changes real audio -6 dB");
+ [localView undo:nil];check([snapshot(unit)[@"current"][0]floatValue]==0,"native Undo restores Gain");
+ [[localView valueForKey:@"instruction"]setStringValue:@"音量を6dB下げて、上げて"];
+ [localView preview:nil];NSString* failure=[[localView valueForKey:@"commandSummary"]copy];[localView update:nil];
+ check([failure containsString:@"-10851"]&&[[[localView valueForKey:@"report"]stringValue]containsString:failure],"failure persists across timer refresh");
+ [[localView valueForKey:@"refresh"]invalidate];
  ok(command(unit,@{@"operation":@"bind",@"projectId":@"ui-fixture",@"trackId":@"out",@"confirmed":@YES,@"role":@"piano",@"targetKind":@"stereo-out",@"inputSource":@"explicit development fixture; not Logic"}),"confirm target");
  NSString* output=[NSString stringWithUTF8String:argv[4]];check([NSFileManager.defaultManager createDirectoryAtPath:output withIntermediateDirectories:NO attributes:nil error:nil],"new folder");
  std::vector<float> audio(48000*30);for(size_t n=0;n<audio.size();++n)audio[n]=.1*std::sin(2*M_PI*997*n/48000);NSString* wavPath=[output stringByAppendingPathComponent:@"source.wav"];wav(wavPath.UTF8String,audio);

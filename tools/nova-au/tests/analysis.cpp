@@ -6,6 +6,14 @@
 std::vector<float> tone(double rate,double hz,double amplitude){std::vector<float> a(unsigned(rate)*4);for(unsigned i=0;i<a.size()/2;++i)a[2*i]=a[2*i+1]=amplitude*std::sin(2*3.141592653589793*hz*i/rate);return a;}
 int main(){
  nova::Binding binding{"song","explicit-track","instance",true};
+ for(auto kind:{"track","bus","stereo-out"}){
+  auto b=binding;b.kind=kind;auto extra=nova::defaults();extra[0]=1;extra[6]=1;
+  auto p=nova::proposeAttenuation(b,{0,2,-1,1},-6,extra);
+  assert(!p.audioAnalyzed&&p.before[0]==0&&p.choices[0][0]==-2&&p.choices[1][0]==-4&&p.choices[2][0]==-6);
+  for(unsigned i=0;i<3;++i){assert(p.choices[i][1]==2&&p.choices[i][2]==-1&&p.choices[i][3]==1&&p.processingChoices[i]==extra);}
+  for(double delta:{0.,1.,-25.}){bool bad=false;try{nova::proposeAttenuation(b,{0,0,0,0},delta,extra);}catch(...){bad=true;}assert(bad);}
+  bool bad=false;try{nova::proposeAttenuation(b,{-20,0,0,0},-6,extra);}catch(...){bad=true;}assert(bad);
+ }
  for(double rate:{22050.,24000.,44100.,48000.,96000.,192000.}){
   auto low=tone(rate,80,.1),high=tone(rate,10000,.2);auto l=nova::measure(low.data(),low.size()/2,rate),h=nova::measure(high.data(),high.size()/2,rate);
   assert(l.valid&&h.valid&&l.bands[0]>.99&&h.bands[2]>.99);assert(std::abs(l.rms-.1/std::sqrt(2))<1e-5);assert(std::abs(h.peak-.2)<.001);

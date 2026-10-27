@@ -5,7 +5,16 @@
 #include <vector>
 namespace nova {
 struct Binding { std::string project,track,instance; bool confirmed=false; std::string role="unspecified",kind="track",source="user-confirmed AU input"; bool operator==(const Binding&)const=default; };
-struct Proposal { Binding binding; std::array<float,4> before; std::array<std::array<float,4>,3> choices; std::string reason; bool audioAnalyzed=false; uint64_t audioHash=0; Processing processingBefore=defaults(); std::array<Processing,3> processingChoices{defaults(),defaults(),defaults()}; };
+struct Proposal { Binding binding; std::array<float,4> before; std::array<std::array<float,4>,3> choices; std::string reason; bool audioAnalyzed=false; uint64_t audioHash=0; Processing processingBefore=defaults(); std::array<Processing,3> processingChoices{defaults(),defaults(),defaults()}; bool attenuationOnly=false; };
+// Explicit attenuation only: no inferred source identity, EQ, dynamics or boost.
+inline Proposal proposeAttenuation(const Binding& b,const std::array<float,4>& values,double delta,const Processing& processing){
+ if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty())throw std::runtime_error("対象の明示的確認が必要です");
+ if(!std::isfinite(delta)||delta>=0||delta < -24||values[0]+delta < -24)throw std::runtime_error("Gainの下限は-24 dBです。指定した減衰量を適用できません");
+ Proposal p{b,values,{values,values,values},"音声未解析・指定Gain減衰のみ。A=1/3、B=2/3、C=指定量。承認前は変更しません"};
+ p.attenuationOnly=true;p.processingBefore=processing;p.processingChoices={processing,processing,processing};
+ for(unsigned i=0;i<3;++i){p.choices[i][0]=float(values[0]+delta*(i+1)/3.);p.choices[i]=decode(encode(p.choices[i]));}
+ return p;
+}
 inline Proposal propose(const Binding& b,const std::array<float,4>& values,const std::string& request){
  if(!b.confirmed||b.project.empty()||b.track.empty()||b.instance.empty())throw std::runtime_error("対象の明示的確認が必要です");
  Proposal p{b,values,{values,values,values},"音声未解析・ルールによる提案"};
