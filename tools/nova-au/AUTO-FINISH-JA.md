@@ -39,6 +39,7 @@ Logicから同じ開始位置・長さ・サンプルレートでStemを書き�
 - `mastering/original.wav`は**個別処理後Mix**。A/B/CはそのMixに対する異なるMastering。原Stemとの同義ではありません。
 - `mastering/*-lufs-matched.wav`はoriginal/A/B/Cの比較用。未処理合算との音量一致は未実装。
 - `auto-finish.json`と`mastering/manifest.json`へStem処理、候補設定、前後測定、hashを保存。
+- `auto-finish.json`の`progress`は、計測・個別処理・合算・Mastering・完了の段階と、各段階で処理済みの単位数を記録します。Mastering中の細かな割合や、中断・エラーの状態通知は未対応です。Music Studioの画面からこの記録を読む接続も未実装です。
 
 A/B/Cを音量一致ファイルで試聴後、選んだ候補のみ承認して完成WAVを作成：
 

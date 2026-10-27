@@ -49,6 +49,7 @@ before = [w.sha(Path(s['path'])) for s in stems]
 run(cmd)
 m=json.loads((output/'auto-finish.json').read_text())
 assert m['complete'] and not m['modelInference'] and not m['hostApplied']
+assert m['progress'] == dict(stage='complete', completed=1, total=1)
 assert m['stems'][0]['balanceDb'] > 0 and m['stems'][1]['balanceDb'] < 0
 assert all(abs(r['balanceDb']) <= 6 for r in m['stems'])
 assert all(r['after']['clippedSamples']==0 for r in m['stems'])
