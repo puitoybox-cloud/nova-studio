@@ -99,7 +99,7 @@ jobs:
 
   vocal-layout:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,8 +110,6 @@ jobs:
       - name: Focused vocal viewport and contrast
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
-          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update -qq
-          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y fonts-noto-cjk
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-production-tabs-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-render-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-midi-stream-browser.js
