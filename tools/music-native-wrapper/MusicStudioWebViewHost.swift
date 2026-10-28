@@ -2,6 +2,7 @@ import Foundation
 import WebKit
 #if os(macOS)
 import AppKit
+import CryptoKit
 import Darwin
 #endif
 
@@ -417,6 +418,11 @@ public final class MusicStudioWebViewHost: NSObject, WKNavigationDelegate, WKUID
         guard let url = webView.url, configuration.allows(url) else { ownedLifecycle?.fail(); lifecycleState = "FAILED"; stop(); return }
         lifecycleState = "BROWSER_READY"
         #if os(macOS)
+        MusicStudioAutoFinishHelper.shared.withHandoff { [weak self] handoff in
+            guard let self, let data = try? JSONSerialization.data(withJSONObject: handoff, options: [.sortedKeys]),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            self.webView.evaluateJavaScript("Object.defineProperty(window,'__NOVA_AUTO_FINISH_HANDOFF',{value:Object.freeze(\(json)),writable:false,configurable:false});")
+        }
         if configuration.startURL.absoluteString == "http://127.0.0.1:8765/music-studio.html",
            let resources = Bundle.main.resourceURL,
            FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) {
@@ -509,6 +515,7 @@ public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelega
     private var preparing = false
     private var terminationSignal: DispatchSourceSignal?
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        MusicStudioAutoFinishHelper.shared.start()
         // Package launcher shutdown must use the same save gate as Cmd-Q.
         // A storage failure cancels termination and leaves the engine/editor alive.
         signal(SIGTERM, SIG_IGN)
@@ -536,12 +543,143 @@ public final class MusicStudioTerminationDelegate: NSObject, NSApplicationDelega
         print("NOVA_NATIVE_TERMINATION_REQUEST"); fflush(stdout)
         DispatchQueue.main.async {
             MusicStudioWebViewHost.prepareAllForTermination { [weak self] ok in
-                self?.preparing = false
-                sender.reply(toApplicationShouldTerminate: ok)
-                if !ok { MusicStudioWebViewHost.showSaveFailure() }
+                guard ok else {
+                    self?.preparing = false
+                    sender.reply(toApplicationShouldTerminate: false)
+                    MusicStudioWebViewHost.showSaveFailure()
+                    return
+                }
+                MusicStudioAutoFinishHelper.shared.stop {
+                    self?.preparing = false
+                    sender.reply(toApplicationShouldTerminate: true)
+                }
             }
         }
         return .terminateLater
+    }
+}
+
+/// Owns the optional Auto-Finish helper for exactly the lifetime of the packaged
+/// macOS app. It accepts only an inventoried, bundled runtime from NovaMix.component.
+public final class MusicStudioAutoFinishHelper: @unchecked Sendable {
+    public static let shared = MusicStudioAutoFinishHelper()
+    private let queue = DispatchQueue(label: "com.puitoybox.nova.auto-finish-helper")
+    private var process: Process?
+    private var stdout = Data()
+    private var handoff: [String: Any]?
+    private var waiters: [([String: Any]) -> Void] = []
+
+    public func start(componentURL: URL? = nil, workspaceURL: URL? = nil) {
+        queue.async { [self] in
+            if componentURL == nil {
+                guard let resources = Bundle.main.resourceURL,
+                      FileManager.default.fileExists(atPath: resources.appendingPathComponent("package-candidate.json").path) else { return }
+            }
+            guard process == nil, let component = componentURL ?? installedComponent(),
+                  let launch = try? verifiedLaunch(component: component, workspaceURL: workspaceURL) else { return }
+            stdout.removeAll(keepingCapacity: true)
+            handoff = nil
+            waiters.removeAll()
+            let child = Process(), output = Pipe(), errors = Pipe()
+            child.executableURL = launch.python
+            child.arguments = ["-I", "-B", launch.server.path, "--workspace", launch.workspace.path,
+                               "--engine", launch.engine.path, "--ffmpeg", launch.ffmpeg.path,
+                               "--scripts", launch.resources.path, "--allowed-origin", "http://127.0.0.1:8765"]
+            child.environment = ["PATH": "/usr/bin:/bin", "PYTHONNOUSERSITE": "1"]
+            child.standardOutput = output; child.standardError = errors
+            output.fileHandleForReading.readabilityHandler = { [weak self] handle in self?.consume(handle.availableData) }
+            errors.fileHandleForReading.readabilityHandler = { handle in _ = handle.availableData }
+            child.terminationHandler = { [weak self] stopped in
+                self?.queue.async {
+                    output.fileHandleForReading.readabilityHandler = nil
+                    errors.fileHandleForReading.readabilityHandler = nil
+                    if self?.process === stopped { self?.process = nil; self?.handoff = nil }
+                }
+            }
+            do { try child.run(); process = child }
+            catch { output.fileHandleForReading.readabilityHandler = nil; errors.fileHandleForReading.readabilityHandler = nil }
+        }
+    }
+
+    public func withHandoff(_ completion: @escaping ([String: Any]) -> Void) {
+        queue.async { [self] in
+            if let handoff { DispatchQueue.main.async { completion(handoff) } }
+            else if process?.isRunning == true { waiters.append(completion) }
+        }
+    }
+
+    public func stop(completion: @escaping () -> Void) {
+        queue.async { [self] in
+            guard let child = process, child.isRunning else { DispatchQueue.main.async(execute: completion); return }
+            var delivered = false
+            let finish = {
+                self.queue.async {
+                    guard !delivered else { return }; delivered = true
+                    DispatchQueue.main.async(execute: completion)
+                }
+            }
+            let previous = child.terminationHandler
+            child.terminationHandler = { stopped in previous?(stopped); finish() }
+            child.terminate()
+            queue.asyncAfter(deadline: .now() + 3) {
+                if child.isRunning { kill(child.processIdentifier, SIGKILL) }
+                finish()
+            }
+        }
+    }
+
+    private func consume(_ data: Data) {
+        guard !data.isEmpty else { return }
+        queue.async { [self] in
+            guard handoff == nil else { return }
+            stdout.append(data)
+            guard stdout.count <= 16_384, let newline = stdout.firstIndex(of: 10) else { return }
+            let line = stdout[..<newline]
+            guard let value = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
+                  value["ok"] as? Bool == true, value["host"] as? String == "127.0.0.1",
+                  value["port"] as? Int == 8767, let token = value["token"] as? String, token.count >= 32,
+                  let session = value["lifecycleSession"] as? String, session.count == 32 else { return }
+            handoff = ["version": 1, "token": token, "lifecycleSession": session]
+            let ready = waiters; waiters.removeAll()
+            for waiter in ready { DispatchQueue.main.async { waiter(self.handoff!) } }
+        }
+    }
+
+    private func installedComponent() -> URL? {
+        let manager = FileManager.default
+        let candidates = [URL(fileURLWithPath: "/Library/Audio/Plug-Ins/Components/NovaMix.component"),
+                          manager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Audio/Plug-Ins/Components/NovaMix.component")]
+        return candidates.first { manager.fileExists(atPath: $0.path) }
+    }
+
+    private struct Launch { let python, server, engine, ffmpeg, resources, workspace: URL }
+    private func verifiedLaunch(component: URL, workspaceURL: URL?) throws -> Launch {
+        let root = component.resolvingSymlinksInPath().standardizedFileURL
+        let resources = root.appendingPathComponent("Contents/Resources", isDirectory: true)
+        let macOS = root.appendingPathComponent("Contents/MacOS", isDirectory: true)
+        let inventoryURL = resources.appendingPathComponent("whole-song-runtime.json")
+        let raw = try Data(contentsOf: inventoryURL)
+        guard let inventory = try JSONSerialization.jsonObject(with: raw) as? [String: String] else { throw CocoaError(.fileReadCorruptFile) }
+        let required = Set(["auto-finish.py", "auto-finish-server.py", "whole-song.py", "select-whole-song.py",
+                            "au-whole-song.py", "compare-sections.py", "../MacOS/nova-whole-song", "../MacOS/nova-section-meter"])
+        guard Set(inventory.keys) == required else { throw CocoaError(.fileReadCorruptFile) }
+        for (name, expected) in inventory {
+            let candidate = resources.appendingPathComponent(name).resolvingSymlinksInPath().standardizedFileURL
+            guard candidate.path.hasPrefix(root.path + "/"), let bytes = try? Data(contentsOf: candidate),
+                  SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == expected else { throw CocoaError(.fileReadCorruptFile) }
+        }
+        let python = resources.appendingPathComponent("Runtime/Python/bin/python3.12")
+        let ffmpeg = resources.appendingPathComponent("Runtime/FFmpeg/bin/ffmpeg")
+        let server = resources.appendingPathComponent("auto-finish-server.py")
+        let engine = macOS.appendingPathComponent("nova-whole-song")
+        for executable in [python, ffmpeg, engine] where !FileManager.default.isExecutableFile(atPath: executable.path) { throw CocoaError(.fileNoSuchFile) }
+        guard FileManager.default.fileExists(atPath: server.path) else { throw CocoaError(.fileNoSuchFile) }
+        let workspace = workspaceURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Project NOVA/Music Studio/Auto Finish", isDirectory: true)
+        try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        return Launch(python: python, server: server, engine: engine, ffmpeg: ffmpeg,
+                      resources: resources, workspace: workspace)
     }
 }
 #endif
