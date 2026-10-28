@@ -9,17 +9,17 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 const plain=value=>JSON.parse(JSON.stringify(value));
 
 function fakeIndexedDB(){
-  const databases=new Map();
+  const databases=new Map(),transactions=[];
   const request=(operation,transaction)=>{const result={};queueMicrotask(()=>{try{result.result=operation();result.onsuccess?.();queueMicrotask(()=>transaction?.oncomplete?.())}catch(error){result.error=error;result.onerror?.()}});return result};
   return{open(name){
     const openRequest={};queueMicrotask(()=>{
       let db=databases.get(name),upgraded=false;
       if(!db){
-        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key){const records=stores.get(key);const transaction={objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone),transaction),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined,transaction),getKey:id=>request(()=>records.has(id)?id:undefined,transaction),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id},transaction),delete:id=>request(()=>records.delete(id),transaction)}}};return transaction}};databases.set(name,db);upgraded=true
+        const stores=new Map();db={objectStoreNames:{contains:key=>stores.has(key)},createObjectStore(key){const records=new Map();stores.set(key,records);return{createIndex(){}}},transaction(key,mode,options){transactions.push({key,mode,options:options===undefined?undefined:clone(options)});const records=stores.get(key);const transaction={objectStore(){return{getAll:()=>request(()=>[...records.values()].map(clone),transaction),get:id=>request(()=>records.has(id)?clone(records.get(id)):undefined,transaction),getKey:id=>request(()=>records.has(id)?id:undefined,transaction),put:value=>request(()=>{const copy=clone(value),id=copy.projectId??copy.id??copy.backupId;records.set(id,copy);return id},transaction),delete:id=>request(()=>records.delete(id),transaction)}}};return transaction}};databases.set(name,db);upgraded=true
       }
       openRequest.result=db;if(upgraded)openRequest.onupgradeneeded?.();openRequest.onsuccess?.()
     });return openRequest
-  }}
+  },transactions}
 }
 
 function load(options={}){
@@ -45,6 +45,12 @@ test('IndexedDB project round trip preserves three tracks Unknown metadata order
   const unknown=reloaded.midiData.tracks[0];assert.equal(unknown.part,null);assert.deepEqual(unknown.trackMetadata,{library:'legacy'});assert.equal(unknown.notes[0].pitch,0);assert.equal(unknown.notes[1].pitch,127);assert.equal(unknown.notes[0].velocity,1);assert.equal(unknown.notes[1].velocity,127);
   const drums=reloaded.midiData.tracks.find(track=>track.part==='drums'),bass=reloaded.midiData.tracks.find(track=>track.part==='bass');assert.equal(drums.channel,10);assert.equal(drums.program,null);assert.deepEqual(drums.notes.map(note=>[note.pitch,note.velocity]),[[36,110],[38,101],[42,84],[46,73]]);assert.equal(bass.channel,2);assert.equal(bass.program,32);assert.equal(bass.muted,true);
   const session=core.createSession(reloaded),sessionUnknown=session.midiData.tracks.find(track=>track.id==='strings');assert.equal(sessionUnknown.part,null);session.midiData.tracks.find(track=>track.part==='drums').trackMetadata={kit:'edited-and-saved'};core.updateDirty(session);app.state.midiEditor=session;app.state.projects=[reloaded];const saved=await app.saveMidiEditor({silent:true});assert.equal(saved.ok,true);assert.deepEqual(plain((await repo.get(project.projectId)).midiData.tracks.find(track=>track.part==='drums').trackMetadata),{kit:'edited-and-saved'})
+});
+test('all generic IndexedDB writes request strict durability and reads remain readonly',async()=>{
+  const indexedDB=fakeIndexedDB(),{app}=load({indexedDB}),repo=app.indexedDbRepository(),project=richProject(app,'strict-durability');
+  await repo.put(project);await repo.putSettings({...app.defaultSettings(),id:'music-studio-settings'});await repo.putAutoBackup({backupId:'backup',createdAt:'2026-10-28T00:00:00.000Z'});await repo.putMidiHistory({id:'midi-history'});await repo.putMidiImportHistory({id:'midi-import-history'});await repo.get(project.projectId);await repo.delete(project.projectId);
+  const writes=indexedDB.transactions.filter(item=>item.mode==='readwrite'),reads=indexedDB.transactions.filter(item=>item.mode==='readonly');
+  assert.equal(writes.length,6);assert.ok(writes.every(item=>item.options?.durability==='strict'));assert.ok(reads.length>0);assert.ok(reads.every(item=>item.options===undefined));
 });
 test('Track-ID keyed editor state survives save reload without changing Track identity or metadata',async()=>{
   const indexedDB=fakeIndexedDB(),{app,core}=load({indexedDB}),repo=app.indexedDbRepository(),project=richProject(app,'track-context-persistence');app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.state.midiEditor=core.createSession(project);const before=plain(app.state.midiEditor.midiData.tracks);core.selectTrackById(app.state.midiEditor,'strings');core.setSelectedMeasures(app.state.midiEditor,[2,4]);await app.saveMidiEditor({silent:true});const stored=await repo.get(project.projectId),reloaded=core.createSession(stored);core.selectTrackById(reloaded,'strings');

@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-24 JST",
+  "date": "2026-10-28 JST",
   "formalSpecification": {
     "name": "Music_Studio_最終機能仕様書_v1.pdf",
     "date": "2026-09-30",
@@ -9,7 +9,7 @@
   "A": 0,
   "B": 0,
   "C": 30,
-  "scope": "No.16 durable six-WAV adoption and actual restored Export; No.17 direct model entry; No.5 Japanese audio previews. Prior ledger retained; original PDF was not independently reread this turn.",
+  "scope": "No.22/23 IndexedDB strict durability for generic writes and atomic metadata Restore, retaining existing Full WAV Archive strict transaction. Prior ledger retained; original PDF was not independently reread this turn.",
   "features": [
     {
       "number": 1,
@@ -290,8 +290,8 @@
       "formal": "C",
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
-      "unclosedRequirementOrEvidence": "Track/range-level cross-version composition beyond dependency bundles, independent audible A/B checkpoint comparison, full crash/forced-exit recovery and standalone distribution acceptance remain unclosed. Broad Music/Audio bundle composition is deliberately constrained, not full original-spec certification.",
-      "newScope": "See verification/music-restored-export-20261023.md. New production changes and native acceptance are subject to exact-head CI; formal C retained.",
+      "unclosedRequirementOrEvidence": "Track/range-level cross-version composition beyond dependency bundles, independent audible A/B checkpoint comparison, forced power-loss acceptance and standalone distribution acceptance remain unclosed. Generic IndexedDB writes and atomic metadata Restore now request strict durability, but physical crash certification is not claimed.",
+      "newScope": "See verification/music-durable-recovery-20261028.md. Project/settings/history/autobackup writes and JSON/metadata Restore now share strict IndexedDB durability; formal C retained.",
       "physicalProcedure": "編集→保存→終了→再Open→再編集→再保存、候補版/部分合成を照合。",
       "requiredContent": "Auto Save、Checkpoint、複製、A/B比較、候補版、複数Versionの部分合成",
       "evidence": [
@@ -300,7 +300,7 @@
         "scripts/music-song-checkpoints-browser.js (final-head CI pending)"
       ],
       "classification": "production connection or acceptance",
-      "thisWorkDelta": "No new full-function closure; prior C residual retained."
+      "thisWorkDelta": "Successful production saves and metadata Restore now acknowledge only after strict IndexedDB transaction completion. Schema and legacy data remain unchanged; physical forced-exit acceptance remains open, so formal C is retained."
     },
     {
       "number": 23,
@@ -308,8 +308,8 @@
       "formal": "C",
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
-      "unclosedRequirementOrEvidence": "Cloud Sync service/auth/encryption/conflict/offline/recovery selection and implementation remain unavailable without user choices. All legacy/imported local dependency migration and power-loss automatic recovery acceptance remain unclosed. No provider or service selected.",
-      "newScope": "See verification/music-restored-export-20261023.md. New production changes and native acceptance are subject to exact-head CI; formal C retained.",
+      "unclosedRequirementOrEvidence": "Cloud Sync service/auth/encryption/conflict/offline/recovery selection and implementation remain unavailable without user choices. All legacy/imported local dependency migration, physical power-loss acceptance and separate-device distribution acceptance remain unclosed. No provider or service selected.",
+      "newScope": "See verification/music-durable-recovery-20261028.md. JSON/normal Backup metadata Restore now uses strict durability, matching the existing strict atomic Full WAV Archive Restore boundary; formal C retained.",
       "physicalProcedure": "Full WAV Archiveを別保存先へ復元しMIDI/音声hash・旧データを照合。",
       "requiredContent": "完全Backup、別Mac移行、依存ファイル検査、破損チェック、自動復旧、更新前保護。Cloud Syncは採用済み、同期先/暗号化/Conflict/Offline architecture選定が必要",
       "evidence": [
@@ -318,7 +318,7 @@
         "scripts/music-song-checkpoints-browser.js (final-head CI pending)"
       ],
       "classification": "external decision",
-      "thisWorkDelta": "No new full-function closure; prior C residual retained."
+      "thisWorkDelta": "Normal and full binary recovery paths now share strict commit durability without a DB/schema/format migration. Real browser restart and hash-equal archive checks remain automated evidence; physical crash and separate-Mac acceptance remain open, so formal C is retained."
     },
     {
       "number": 24,
