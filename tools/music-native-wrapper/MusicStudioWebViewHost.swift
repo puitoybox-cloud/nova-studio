@@ -577,6 +577,9 @@ public final class MusicStudioAutoFinishHelper: @unchecked Sendable {
             }
             guard process == nil, let component = componentURL ?? installedComponent(),
                   let launch = try? verifiedLaunch(component: component, workspaceURL: workspaceURL) else { return }
+            stdout.removeAll(keepingCapacity: true)
+            handoff = nil
+            waiters.removeAll()
             let child = Process(), output = Pipe(), errors = Pipe()
             child.executableURL = launch.python
             child.arguments = ["-I", "-B", launch.server.path, "--workspace", launch.workspace.path,
