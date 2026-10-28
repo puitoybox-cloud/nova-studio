@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.204';
+  const ASSET_VERSION='1.4.205';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -517,6 +517,7 @@
       // persist a borrowed slice merely because it is below the large-file cutoff.
       const parts=[];for(let at=0;at<record.blob.size;at+=1048576){
         guard();const bytes=await record.blob.slice(at,Math.min(record.blob.size,at+1048576)).arrayBuffer();guard();
+        if(bytes.byteLength!==Math.min(1048576,record.blob.size-at))throw Error('long-wav-binary-chunks-invalid');
         const node=new Blob([bytes]);
         // Complete the entire bounded transfer before queuing the durable write.
         if((await node.arrayBuffer()).byteLength!==bytes.byteLength)throw Error('long-wav-binary-chunks-invalid');
@@ -568,7 +569,7 @@
         if(settings)watch(tx.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
       }catch(e){abort(e)}};
     }))}
-    return{kind:'indexeddb',compareAndFork,restoreLongArchive,putLongWav,getLongWav,compareAndPut,restoreMetadata,async close(){(await database).close()},async list(){return request(STORE_NAME,'readonly',store=>store.getAll())},async get(id){return request(STORE_NAME,'readonly',store=>store.get(id))},async put(item){await request(STORE_NAME,'readwrite',store=>store.put(clone(item)));return clone(item)},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async putAutoBackup(value){const record=clone({...value,archive:undefined});if(value.archive){if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');record.archive=value.archive}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
+    return{kind:'indexeddb',compareAndFork,restoreLongArchive,putLongWav,getLongWav,compareAndPut,restoreMetadata,async close(){(await database).close()},async list(){return request(STORE_NAME,'readonly',store=>store.getAll())},async get(id){return request(STORE_NAME,'readonly',store=>store.get(id))},async put(item){await request(STORE_NAME,'readwrite',store=>store.put(clone(item)));return clone(item)},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async putAutoBackup(value){const record=clone({...value,archive:undefined});if(value.archive){if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');const encoded=await encodeLongBinary({id:value.backupId,blob:value.archive},()=>{});record.archive=encoded.blob||new Blob(encoded.parts,{type:encoded.type})}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
   function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();repository=next}
@@ -1497,6 +1498,13 @@
     for(const p of projects)for(const a of archiveBinaries(p)){
       guard();if(packed.has(a.id))continue;packed.add(a.id);const record=await target.getLongWav(a.id);
       if(!record?.blob||record.blob.size!==a.size||JSON.stringify(record.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(a.hashes))throw Error('archive-binary-corrupt-or-missing');
+      // Verify the same audio contract as Restore before publishing a backup.
+      // A checksum alone cannot detect a descriptor with incorrect WAV metadata.
+      if(a.format!=='nova-reference-binary-v1'){
+        let frames=0,sampleRate=0,channels=0;
+        for await(const chunk of pcmDecodeWavStream(record.blob)){guard();frames+=chunk.channels[0].length;sampleRate=chunk.sampleRate;channels=chunk.channels.length}
+        if(frames!==a.frames||sampleRate!==a.sampleRate||channels!==a.channels)throw Error('archive-wav-metadata-mismatch');
+      }
       guard();parts.push(record.blob);entries.push({id:a.id,size:a.size});
     }
     if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard(true);
