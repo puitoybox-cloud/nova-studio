@@ -1240,6 +1240,23 @@ test('confirmed MIDI editing starts IndexedDB persistence without a debounce win
   assert.match(source,/addEventListener\?\.\('pagehide'.*flushMidiEditorAutosave/);
   assert.match(source,/addEventListener\?\.\('visibilitychange'.*flushMidiEditorAutosave/);
 });
+test('successful MIDI saves append bounded automatic production history and preserve it through backup restore',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'automatic-edit-history',projectName:'Automatic edit history'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];
+  assert.equal((await app.productionSessionSave(project.projectId,'start','MIDI editing')).ok,true);
+  app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();await app.state.midiEditorSavePromise;
+  const stored=await repo.get(project.projectId),edits=stored.songVersions.edits;
+  assert.equal(edits.length,1);assert.equal(edits[0].source,'midi-editor');assert.equal(edits[0].revision,stored.revision);assert.deepEqual(Array.from(edits[0].groups),['music']);assert.equal(edits[0].sessionId,stored.songVersions.sessions[0].id);
+  assert.match(app.versionTimeline(stored),/Automatic edit（自動保存）/);assert.equal(app.validateProject(stored).valid,true);
+  app.state.midiEditor=null;app.state.projects=[stored];assert.equal((await app.restoreBackup(app.backupObject(),{settings:false})).ok,true);
+  const restored=(await repo.list()).find(item=>item.projectId!==project.projectId);assert.equal(restored.songVersions.edits.length,1);assert.equal(restored.songVersions.edits[0].revision,edits[0].revision);assert.equal(app.validateProject(restored).valid,true);
+});
+test('automatic edit history rotates its oldest metadata without blocking later MIDI saves',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'bounded-edit-history',projectName:'Bounded edit history'}),createdAt='2026-10-28T00:00:00.000Z';
+  project.songVersions={format:'nova-song-checkpoints-v1',checkpoints:[],operations:[],path:[],cursor:0,edits:Array.from({length:512},(_,i)=>({id:`old-${i}`,createdAt,revision:i+1,source:'midi-editor',groups:['music']}))};project.revision=513;
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const result=await app.state.midiEditorSavePromise,stored=await repo.get(project.projectId);
+  assert.equal(result.ok,true);assert.equal(stored.songVersions.edits.length,512);assert.equal(stored.songVersions.edits.some(edit=>edit.id==='old-0'),false);assert.equal(stored.songVersions.edits.at(-1).revision,stored.revision);assert.equal(app.validateProject(stored).valid,true);
+});
 test('Drums input and persisted editor measure state also save immediately',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'all-durable-edits',projectName:'All durable edits'});
   app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
