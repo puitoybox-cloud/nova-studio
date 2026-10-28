@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.203';
+  const ASSET_VERSION='1.4.204';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -465,12 +465,15 @@
   function indexedDbRepository(){
     if(!root.indexedDB)return memoryRepository();
     const database=new Promise((resolve,reject)=>{let settled=false;const finish=(error,db)=>{if(settled){db?.close();return}settled=true;root.clearTimeout?.(timer);error?reject(error):resolve(db)};const timer=root.setTimeout?.(()=>finish(Error('IndexedDB open timed out.')),15000);const request=root.indexedDB.open(DB_NAME,6);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("longWavBinaries"))request.result.createObjectStore("longWavBinaries",{keyPath:"id"});if(!request.result.objectStoreNames.contains(STORE_NAME)){const store=request.result.createObjectStore(STORE_NAME,{keyPath:'projectId'});store.createIndex('updatedAt','updatedAt')}if(!request.result.objectStoreNames.contains(SETTINGS_STORE_NAME))request.result.createObjectStore(SETTINGS_STORE_NAME,{keyPath:'id'});if(!request.result.objectStoreNames.contains(AUTO_BACKUP_STORE_NAME)){const store=request.result.createObjectStore(AUTO_BACKUP_STORE_NAME,{keyPath:'backupId'});store.createIndex('createdAt','createdAt')}if(!request.result.objectStoreNames.contains(MIDI_HISTORY_STORE_NAME)){const store=request.result.createObjectStore(MIDI_HISTORY_STORE_NAME,{keyPath:'id'});store.createIndex('createdAt','createdAt')}if(!request.result.objectStoreNames.contains(MIDI_IMPORT_HISTORY_STORE_NAME)){const store=request.result.createObjectStore(MIDI_IMPORT_HISTORY_STORE_NAME,{keyPath:'id'});store.createIndex('createdAt','createdAt')}};request.onsuccess=()=>finish(null,request.result);request.onerror=()=>finish(request.error);request.onblocked=()=>finish(Error('データベース更新がほかのタブでブロックされています。'))});
+    const openTransaction=(db,stores,mode)=>db.transaction(stores,mode,mode==='readwrite'?{durability:'strict'}:undefined);
     const request=(storeName,mode,operation)=>database.then(db=>new Promise((resolve,reject)=>{
-      const transaction=db.transaction(storeName,mode);let value,requestSucceeded=false;
-      transaction.oncomplete=()=>requestSucceeded?resolve(value):reject(Error('IndexedDB request did not complete.'));
-      transaction.onabort=()=>reject(transaction.error||Error('IndexedDB transaction aborted.'));
-      transaction.onerror=()=>{reject(transaction.error||Error('IndexedDB transaction failed.'));try{transaction.abort()}catch(_){} };
-      try{const result=operation(transaction.objectStore(storeName));result.onsuccess=()=>{value=result.result;requestSucceeded=true};result.onerror=()=>{reject(result.error||Error('IndexedDB request failed.'));try{transaction.abort()}catch(_){} }}catch(error){try{transaction.abort()}catch(_){}reject(error)}
+      // A resolved write means the browser completed a strict durability commit,
+      // not only that the request reached the in-memory IndexedDB transaction.
+      const tx=openTransaction(db,storeName,mode);let value,requestSucceeded=false;
+      tx.oncomplete=()=>requestSucceeded?resolve(value):reject(Error('IndexedDB request did not complete.'));
+      tx.onabort=()=>reject(tx.error||Error('IndexedDB transaction aborted.'));
+      tx.onerror=()=>{reject(tx.error||Error('IndexedDB transaction failed.'));try{tx.abort()}catch(_){} };
+      try{const result=operation(tx.objectStore(storeName));result.onsuccess=()=>{value=result.result;requestSucceeded=true};result.onerror=()=>{reject(result.error||Error('IndexedDB request failed.'));try{tx.abort()}catch(_){} }}catch(error){try{tx.abort()}catch(_){}reject(error)}
     }));
     function restoreMetadata(sources,settings,control){return database.then(db=>new Promise((resolve,reject)=>{
       let transaction,items=[],failure=null,settled=false;
@@ -478,7 +481,7 @@
       const abort=error=>{failure=failure||error||Error('restore-cancelled');try{transaction?.abort()}catch(e){finish(failure)}};
       const timer=root.setTimeout?.(()=>{abort(Error('restore-transaction-timeout'));finish(failure)},15000);
       try{
-        assertRestoreCurrent(control);transaction=db.transaction([STORE_NAME,SETTINGS_STORE_NAME],'readwrite');
+        assertRestoreCurrent(control);transaction=openTransaction(db,[STORE_NAME,SETTINGS_STORE_NAME],'readwrite');
         if(control)control.abort=()=>abort(Error(control.reason?.()||'restore-cancelled'));
         transaction.onabort=()=>finish(failure||transaction.error||Error('restore-transaction-aborted'));
         transaction.onerror=()=>abort(transaction.error||Error('restore-transaction-error'));
