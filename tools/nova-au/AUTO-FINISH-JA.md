@@ -1,6 +1,17 @@
 # Stemから自動Mix・Mastering（2026-10-27）
 
-`auto-finish.py`は明示した2〜16本のWAVを個別処理し、Mix→既存全曲Mastering→A/B/C完成WAVを生成するローカル補助ツールです。会話モデルは未搭載です。外部通信は行いません。Music Studio/Logicの画面からのワンクリック起動は未接続です。
+`auto-finish.py`は明示した2〜16本のWAVを個別処理し、Mix→既存全曲Mastering→A/B/C完成WAVを生成するローカル補助ツールです。会話モデルは未搭載です。外部通信は行いません。Music StudioのExport画面は`auto-finish-server.py`を通じてStem転送、実行、進捗、停止・再開、A/B/C試聴、承認・Undo、完成WAV保存まで接続します。ヘルパー自体のアプリ起動時自動launchは未接続です。
+
+配布componentのresourceからローカルヘルパーを開始する例（workspaceは新規出力専用directory）:
+
+```bash
+"$RES/Runtime/Python/bin/python3.12" -I -B "$RES/auto-finish-server.py" \
+  --workspace /absolute/new-auto-finish-workspaces \
+  --scripts "$RES" --engine "$BIN/nova-whole-song" \
+  --ffmpeg "$RES/Runtime/FFmpeg/bin/ffmpeg"
+```
+
+ヘルパーは`127.0.0.1:8767`だけで待受し、許可したローカル画面originと起動ごとのtokenを要求します。入力WAVはsession別の作業領域へcopyし、元ファイルを変更しません。完成WAVは候補の明示承認後だけ取得できます。
 
 Logicから同じ開始位置・長さ・サンプルレートでStemを書き出し、役割と位置の一致を確認してください。PCM16/24/32、float32、mono/stereo、44.1/48/96kHzを受け付けます。時間ずれ・サンプルレート変換・Stem分離は自動補正しません。複数本の同じ役割も固有idで扱えます。
 
