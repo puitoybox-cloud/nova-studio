@@ -495,3 +495,30 @@ test('Demucs six WAV adoption preserves source bytes and restores independent au
  for(const asset of p.longWavAssets)assert.equal((await dst.a.pcmLoadLongWav(p.projectId,asset.id)).size,entries[0].file.size);
  assert.equal((await dst.a.loadReferenceFile(p.projectId,'fileReferences',0)).blob.size,original.size);
 });
+
+test('automatic archive backup detaches borrowed backing before acknowledging storage',async()=>{
+ const {repo}=await setup(),bytes=new Uint8Array([1,2,3,4]);let reads=0;
+ const archive=new Blob([bytes],{type:'application/octet-stream'});archive.slice=(start,end)=>({async arrayBuffer(){reads++;return bytes.slice(start,end).buffer}});
+ await repo.putAutoBackup({backupId:'detached-archive',archive});
+ const saved=(await repo.listAutoBackups())[0];
+ assert.ok(reads>0,'archive bytes must be read before the durable write');
+ bytes.fill(0);assert.deepEqual([...new Uint8Array(await saved.archive.arrayBuffer())],[1,2,3,4]);
+});
+test('automatic archive backing read failure preserves the prior backup',async()=>{
+ const {repo}=await setup();await repo.putAutoBackup({backupId:'keep',archive:new Blob(['original'])});
+ await assert.rejects(repo.putAutoBackup({backupId:'keep',archive:Object.assign(new Blob(['next']),{slice(){return{arrayBuffer:async()=>{throw Error('backing-unavailable')}}}})}),/backing-unavailable/);
+ assert.equal(await (await repo.listAutoBackups())[0].archive.text(),'original');
+});
+test('full archive export refuses authenticated WAV with mismatched frame metadata',async()=>{
+ const {a,p,repo}=await setup(),r=await a.pcmImportLongFile(wav(100),p.projectId);assert.equal(r.ok,true,r.error);
+ const stored=await repo.get(p.projectId);stored.longWavAssets[0].frames++;await repo.put(stored);a.state.projects=[stored];
+ await assert.rejects(a.createLongWavArchive(),/archive-wav-metadata-mismatch/);
+ assert.equal((await repo.get(p.projectId)).longWavAssets[0].frames,101);
+});
+
+test('automatic archive short backing read cannot replace an existing backup',async()=>{
+ const {repo}=await setup();await repo.putAutoBackup({backupId:'keep',archive:new Blob(['original'])});
+ const archive=Object.assign(new Blob(['next']),{slice(){return{arrayBuffer:async()=>new ArrayBuffer(1)}}});
+ await assert.rejects(repo.putAutoBackup({backupId:'keep',archive}),/long-wav-binary-chunks-invalid/);
+ assert.equal(await (await repo.listAutoBackups())[0].archive.text(),'original');
+});
