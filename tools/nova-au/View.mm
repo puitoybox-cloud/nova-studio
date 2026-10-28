@@ -46,7 +46,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
   [self field:@"両ID空欄＝このAU入力を手動確認。Music Studio連携時は両ID入力" y:86 editable:NO];
   self.projectField=[self field:@"" y:116 editable:YES];self.projectField.placeholderString=@"Music Studio projectId";
   self.trackField=[self field:@"" y:148 editable:YES];self.trackField.placeholderString=@"Music Studio Track ID";
-  self.tracks=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(16,182,480,28) pullsDown:NO];self.tracks.target=self;self.tracks.action=@selector(selectTrack:);[self addSubview:self.tracks];
+  self.tracks=[[NSPopUpButton alloc]initWithFrame:NSMakeRect(16,182,480,28) pullsDown:NO];self.tracks.target=self;self.tracks.action=@selector(selectTrack:);[self addSubview:self.tracks];[self reloadTracks];
   [self button:@"対象を確認" x:520 y:182 action:@selector(bind:) tag:0];
   self.instruction=[self field:@"高音を少し抑えて" y:224 editable:YES];
   [self button:@"A/B/C候補を作る" x:16 y:262 action:@selector(preview:) tag:0];
@@ -217,7 +217,18 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
 - (void)apply:(NSButton*)s{[self send:[@{@"operation":@"apply",@"approved":@YES,@"choice":@(s.tag)}mutableCopy]];}
 - (void)cancel:(id)s{[self send:[@{@"operation":@"cancel"}mutableCopy]];}
 - (void)undo:(id)s{[self send:[@{@"operation":@"undo",@"approved":@YES}mutableCopy]];}
-- (void)selectTrack:(id)s{NSDictionary* t=self.manifest[@"tracks"][[self.tracks indexOfSelectedItem]];self.trackField.stringValue=t[@"id"];}
+- (void)reloadTracks{
+ [self.tracks removeAllItems];NSArray* rows=self.manifest[@"tracks"];
+ if(!rows.count){[self.tracks addItemWithTitle:self.manifest?@"handoffにTrackがありません":@"Music Studio連携用：handoff JSON読込後に選択（Logic自動検出なし）"];self.tracks.enabled=NO;return;}
+ self.tracks.enabled=YES;
+ for(NSDictionary* t in rows)[self.tracks addItemWithTitle:[NSString stringWithFormat:@"%@ / ID %@ / ch %@",t[@"name"]?:@"",t[@"id"],t[@"channel"]?:@"?"]];
+ [self selectTrack:nil];
+}
+- (void)selectTrack:(id)s{
+ NSInteger index=self.tracks.indexOfSelectedItem;NSArray* rows=self.manifest[@"tracks"];
+ if(index<0||index>=rows.count)return;
+ self.trackField.stringValue=rows[index][@"id"];
+}
 - (void)importFile:(id)s{
  NSOpenPanel* panel=[NSOpenPanel openPanel];panel.allowedContentTypes=@[UTTypeJSON];panel.allowsMultipleSelection=NO;
  if([panel runModal]!=NSModalResponseOK)return;
@@ -226,9 +237,7 @@ static const AudioUnitPropertyID Command=64000, Snapshot=64001;
  if(![m isKindOfClass:NSDictionary.class]||![m[@"format"] isEqual:@"nova-logic-instrument-package-v1"]||![m[@"projectId"] isKindOfClass:NSString.class]||![m[@"tracks"] isKindOfClass:NSArray.class]){self.report.stringValue=@"PR #501形式のhandoff JSONではありません";return;}
  NSMutableSet* ids=[NSMutableSet set];for(id t in m[@"tracks"]){if(![t isKindOfClass:NSDictionary.class]||![t[@"id"] isKindOfClass:NSString.class]||[ids containsObject:t[@"id"]]){self.report.stringValue=@"Track IDが不明または重複しています";return;}[ids addObject:t[@"id"]];}
  // Registry status is evidence from Music Studio, not proof of installation on this Logic machine.
- self.manifest=m;self.projectField.stringValue=m[@"projectId"];[self.tracks removeAllItems];
- for(NSDictionary* t in m[@"tracks"])[self.tracks addItemWithTitle:[NSString stringWithFormat:@"%@ / ID %@ / ch %@",t[@"name"]?:@"",t[@"id"],t[@"channel"]?:@"?"]];
- if([m[@"tracks"] count])[self selectTrack:nil];self.report.stringValue=@"読み取り専用で読み込みました。Logicの挿入先とID・ch・音域を照合後、対象を確認してください。音源インストールの確認・切替は行いません。";
+ self.manifest=m;self.projectField.stringValue=m[@"projectId"];[self reloadTracks];self.report.stringValue=@"読み取り専用で読み込みました。Logicの挿入先とID・ch・音域を照合後、対象を確認してください。音源インストールの確認・切替は行いません。";
 }
 @end
 @interface NovaMixViewFactory : NSObject <AUCocoaUIBase>
