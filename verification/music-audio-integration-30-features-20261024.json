@@ -410,7 +410,7 @@
       "formal": "C",
       "onlyPhysicalRemaining": false,
       "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
-      "unclosedRequirementOrEvidence": "Successful MIDI editor saves now append automatic revision/domain/session records. Automatic logging for non-MIDI editing paths, current-head browser UI/restart/IndexedDB/complete binary archive checks, and standalone distribution/policy acceptance remain unclosed.",
+      "unclosedRequirementOrEvidence": "Successful MIDI, project metadata, lyrics, audio/PCM, vocal, instrument and final-export saves append automatic revision/domain/source/session records. Current-head browser UI/restart/real IndexedDB/complete binary archive acceptance, remaining specialized save-path coverage audit, and standalone distribution/policy acceptance remain unclosed.",
       "newScope": "Native acceptance saves a real project checkpoint and compares complete saved metadata across separate app processes. Pending execution; full production completion not certified.",
       "physicalProcedure": "完成版固定→検索→Session/日次履歴→再Openを確認。",
       "requiredContent": "完成版固定、曲情報、完成曲検索、制作Session、日次記録、完成までの時系列履歴",
@@ -419,9 +419,10 @@
         "music-studio.js: finishedFork/finishedOpen/productionSessionChange/productionHistoryView/versionCommit/compareAndFork",
         "tests/music-song-checkpoints.test.js",
         "tests/music-studio-logic-pro.test.js: automatic production history survives save, session binding and Backup restore",
+        "tests/music-studio-night.test.js: committed non-MIDI project edit history survives Backup restore",
         "scripts/music-song-checkpoints-browser.js"
       ],
-      "thisWorkDelta": "Successful durable MIDI saves now append bounded automatic production-history records with revision, changed domain and active Session linkage. Failed/unsaved edits do not publish history; Backup restore retains the records. Formal C remains because non-MIDI automatic logging and production acceptance are still open."
+      "thisWorkDelta": "Bounded automatic production history now covers successful durable MIDI and representative non-MIDI project, lyrics, audio/PCM, vocal, instrument and final-export saves, recording source plus changed domain, revision and active Session linkage. Failed/unsaved edits do not publish history; JSON/Backup and existing full-archive project metadata retain the records. Formal C remains because production acceptance and the residual specialized-path audit are still open."
     }
   ],
   "prioritization": [
