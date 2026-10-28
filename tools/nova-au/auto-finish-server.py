@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Private loopback transport for the existing NOVA auto-finish CLI."""
-import argparse, hashlib, json, os, secrets, signal, subprocess, sys, threading
+import argparse, hashlib, json, os, secrets, signal, subprocess, sys, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit, parse_qs
@@ -8,10 +8,10 @@ from urllib.parse import unquote, urlsplit, parse_qs
 ROLES={'vocal','piano','strings','bass','drums'}; MAX_STEM=2*1024*1024*1024
 
 class Runtime:
- def __init__(self, root, engine, ffmpeg, scripts):
+ def __init__(self, root, engine, ffmpeg, scripts, expose_token=False, allowed_origin=None):
   self.root=Path(root).resolve(); self.root.mkdir(parents=True,exist_ok=True)
   self.engine=Path(engine).resolve(); self.ffmpeg=Path(ffmpeg).resolve(); self.scripts=Path(scripts).resolve()
-  self.token=secrets.token_urlsafe(32); self.lock=threading.Lock(); self.jobs={}
+  self.token=secrets.token_urlsafe(32); self.lifecycle_session=secrets.token_hex(16); self.expose_token=expose_token; self.allowed_origin=allowed_origin; self.lock=threading.Lock(); self.jobs={}
  def directory(self,sid):
   if len(sid)!=32 or any(c not in '0123456789abcdef' for c in sid): raise ValueError('invalid-session')
   path=(self.root/sid).resolve()
@@ -72,6 +72,22 @@ class Runtime:
    process=self.jobs.get(sid); record=self.load(sid)
    if process and process.poll() is None: os.killpg(process.pid,signal.SIGTERM)
    record['state']='cancelled'; self.save(sid,record)
+ def shutdown(self):
+  with self.lock:
+   active=[process for process in self.jobs.values() if process.poll() is None]
+   for process in active:
+    if process.poll() is None:
+     try: os.killpg(process.pid,signal.SIGTERM)
+     except ProcessLookupError: pass
+  deadline=time.monotonic()+2
+  for process in active:
+   try: process.wait(timeout=max(0,deadline-time.monotonic()))
+   except subprocess.TimeoutExpired:
+    try: os.killpg(process.pid,signal.SIGKILL)
+    except ProcessLookupError: pass
+  for process in active:
+   try: process.wait(timeout=1)
+   except subprocess.TimeoutExpired: pass
  def status(self,sid):
   record=self.load(sid); result={'session':sid,'complete':record['state']=='complete','failed':record['state']=='failed','cancelled':record['state']=='cancelled','message':record.get('error')}
   manifest=self.directory(sid)/'finish'/'auto-finish.json'
@@ -97,6 +113,7 @@ class Handler(BaseHTTPRequestHandler):
  runtime=None
  def origin_ok(self):
   origin=self.headers.get('Origin')
+  if self.runtime.allowed_origin: return origin==self.runtime.allowed_origin
   return origin in (None,'null') or (origin.startswith('http://127.0.0.1:') and origin[17:].isdigit())
  def cors(self):
   origin=self.headers.get('Origin'); self.send_header('Access-Control-Allow-Origin',origin if origin else 'null'); self.send_header('Vary','Origin')
@@ -110,7 +127,10 @@ class Handler(BaseHTTPRequestHandler):
   try:
    parsed=urlsplit(self.path)
    if not self.origin_ok(): return self.reply(403,{'error':'origin-forbidden'})
-   if parsed.path=='/health': return self.reply(200,{'ok':True,'localOnly':True,'host':'127.0.0.1','port':8767,'protocol':1,'token':self.runtime.token})
+   if parsed.path=='/health':
+    value={'ok':True,'localOnly':True,'host':'127.0.0.1','port':8767,'protocol':1,'lifecycleSession':self.runtime.lifecycle_session}
+    if self.runtime.expose_token: value['token']=self.runtime.token
+    return self.reply(200,value)
    parts=parsed.path.strip('/').split('/'); query=parse_qs(parsed.query).get('token',[''])[0]
    if not self.authenticated(query): return self.reply(401,{'error':'authentication-required'})
    if len(parts)==2 and parts[0]=='sessions': return self.reply(200,self.runtime.status(parts[1]))
@@ -158,7 +178,14 @@ class Handler(BaseHTTPRequestHandler):
  def log_message(self,fmt,*args): print('[NOVA Auto Finish] '+fmt%args)
 
 def main():
- parser=argparse.ArgumentParser(); parser.add_argument('--workspace',required=True); parser.add_argument('--engine',required=True); parser.add_argument('--ffmpeg',required=True); parser.add_argument('--scripts',default=Path(__file__).resolve().parent); args=parser.parse_args()
- runtime=Runtime(args.workspace,args.engine,args.ffmpeg,args.scripts); Handler.runtime=runtime
- server=ThreadingHTTPServer(('127.0.0.1',8767),Handler); print(json.dumps({'ok':True,'host':'127.0.0.1','port':8767,'workspace':str(runtime.root)}),flush=True); server.serve_forever()
+ parser=argparse.ArgumentParser(); parser.add_argument('--workspace',required=True); parser.add_argument('--engine',required=True); parser.add_argument('--ffmpeg',required=True); parser.add_argument('--scripts',default=Path(__file__).resolve().parent); parser.add_argument('--expose-token-for-manual-launch',action='store_true'); parser.add_argument('--allowed-origin'); args=parser.parse_args()
+ if args.allowed_origin and args.allowed_origin!='http://127.0.0.1:8765': parser.error('allowed origin must be the packaged Music Studio origin')
+ runtime=Runtime(args.workspace,args.engine,args.ffmpeg,args.scripts,args.expose_token_for_manual_launch,args.allowed_origin); Handler.runtime=runtime
+ server=ThreadingHTTPServer(('127.0.0.1',8767),Handler)
+ def stop(_signum,_frame):
+  runtime.shutdown(); threading.Thread(target=server.shutdown,daemon=True).start()
+ signal.signal(signal.SIGTERM,stop); signal.signal(signal.SIGINT,stop)
+ print(json.dumps({'ok':True,'host':'127.0.0.1','port':8767,'workspace':str(runtime.root),'token':runtime.token,'lifecycleSession':runtime.lifecycle_session}),flush=True)
+ try: server.serve_forever()
+ finally: runtime.shutdown(); server.server_close()
 if __name__=='__main__': main()

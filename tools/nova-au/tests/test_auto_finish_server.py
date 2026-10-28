@@ -1,4 +1,4 @@
-import importlib.util, io, json, tempfile, unittest
+import importlib.util, io, json, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 MODULE=Path(__file__).resolve().parents[1]/'auto-finish-server.py'
@@ -25,5 +25,17 @@ class RuntimeTests(unittest.TestCase):
  def test_build_inventory_contains_transport(self):
   build=(Path(__file__).resolve().parents[1]/'build.sh').read_text()
   self.assertIn('auto-finish-server.py',build)
+ def test_token_is_private_by_default_and_manual_exposure_is_explicit(self):
+  self.assertFalse(self.runtime.expose_token)
+  manual=server.Runtime(Path(self.temp.name)/'manual',Path(self.temp.name)/'engine',Path(self.temp.name)/'ffmpeg',Path(self.temp.name),True)
+  self.assertTrue(manual.expose_token); self.assertNotEqual(manual.lifecycle_session,self.runtime.lifecycle_session)
+ def test_packaged_launch_can_pin_exact_music_studio_origin(self):
+  pinned=server.Runtime(Path(self.temp.name)/'pinned',Path(self.temp.name)/'engine',Path(self.temp.name)/'ffmpeg',Path(self.temp.name),False,'http://127.0.0.1:8765')
+  self.assertEqual(pinned.allowed_origin,'http://127.0.0.1:8765')
+ def test_shutdown_reaps_owned_process_group(self):
+  child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'],start_new_session=True)
+  self.runtime.jobs['owned']=child
+  self.runtime.shutdown()
+  self.assertIsNotNone(child.poll())
 
 if __name__=='__main__': unittest.main()

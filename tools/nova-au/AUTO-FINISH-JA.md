@@ -1,6 +1,6 @@
 # Stemから自動Mix・Mastering（2026-10-27）
 
-`auto-finish.py`は明示した2〜16本のWAVを個別処理し、Mix→既存全曲Mastering→A/B/C完成WAVを生成するローカル補助ツールです。会話モデルは未搭載です。外部通信は行いません。Music StudioのExport画面は`auto-finish-server.py`を通じてStem転送、実行、進捗、停止・再開、A/B/C試聴、承認・Undo、完成WAV保存まで接続します。ヘルパー自体のアプリ起動時自動launchは未接続です。
+`auto-finish.py`は明示した2〜16本のWAVを個別処理し、Mix→既存全曲Mastering→A/B/C完成WAVを生成するローカル補助ツールです。会話モデルは未搭載です。外部通信は行いません。Music StudioのExport画面は`auto-finish-server.py`を通じてStem転送、実行、進捗、停止・再開、A/B/C試聴、承認・Undo、完成WAV保存まで接続します。配布Macアプリは、inventory検証済みの`NovaMix.component`内runtimeが存在する場合だけヘルパーを自動起動し、アプリの保存ゲート成功後に子処理を含めて終了します。
 
 配布componentのresourceからローカルヘルパーを開始する例（workspaceは新規出力専用directory）:
 
@@ -10,6 +10,8 @@
   --scripts "$RES" --engine "$BIN/nova-whole-song" \
   --ffmpeg "$RES/Runtime/FFmpeg/bin/ffmpeg"
 ```
+
+この明示起動をブラウザから使用する場合だけ、末尾に`--expose-token-for-manual-launch`を追加します。配布Macアプリはこの互換フラグを使わず、起動ごとのtokenとlifecycle sessionをネイティブ境界からページへ渡し、originを`http://127.0.0.1:8765`へ固定します。
 
 ヘルパーは`127.0.0.1:8767`だけで待受し、許可したローカル画面originと起動ごとのtokenを要求します。入力WAVはsession別の作業領域へcopyし、元ファイルを変更しません。完成WAVは候補の明示承認後だけ取得できます。
 
