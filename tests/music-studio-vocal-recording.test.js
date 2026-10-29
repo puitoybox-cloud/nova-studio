@@ -235,3 +235,33 @@ test('eight-minute PCM take streams trim and gain, reopens, publishes to Mix and
 test('insufficient storage refuses recording before capture starts and releases microphone',async()=>{
  const f=await setup(),c=capture(f);f.w.AudioContext.prototype.sampleRate=8000;f.w.navigator.storage={estimate:async()=>({quota:1000,usage:999})};const before=JSON.stringify(await f.repo.get(f.p.projectId));const result=await f.a.vocalStart(f.p.projectId);assert.equal(result.ok,false,JSON.stringify({result,message:f.a.vocal.message,nav:!!f.w.navigator.storage}));assert.match(result.error,/storage-capacity/);assert.ok(c.stopped>0);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
 });
+
+test('processor interruption saves validated PCM prefix, stops cycles and survives reopen/archive',async()=>{
+ const f=await setup(),a=f.a,c=scheduledCapture(f),id=f.p.projectId;
+ await a.vocalCycleStart(id,{endTick:480,cycles:2});await new Promise(setImmediate);
+ c.node.port.onmessage({data:{type:'started',atFrame:c.node.frame}});
+ c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(200).fill(.25)}});
+ c.node.onprocessorerror();const result=await a.vocal.completion;
+ assert.equal(result.ok,true,result.error);assert.equal(result.interruption,'vocal-worklet-processor-failed');assert.equal(a.vocalCycle.active,false);
+ const p=await f.repo.get(id);assert.equal(p.longWavAssets[0].frames,200);assert.equal(JSON.stringify(p.midiData),JSON.stringify(f.p.midiData));
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();
+ const rendered=await fresh.a.vocalRender(id,p.longWavAssets[0].id);assert.equal(rendered.frames,200);
+ const restored=await fresh.a.restoreLongWavArchive(await fresh.a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);
+ assert.equal(restored.projects[0].longWavAssets[0].frames,200);
+});
+test('invalid PCM block cannot contaminate saved prefix after interruption',async()=>{
+ const f=await setup(),a=f.a,c=scheduledCapture(f);await a.vocalCycleStart(f.p.projectId,{endTick:480,cycles:2});await new Promise(setImmediate);
+ c.node.port.onmessage({data:{type:'started',atFrame:c.node.frame}});
+ c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(80).fill(.25)}});
+ c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array([NaN])}});
+ const result=await a.vocal.completion;assert.equal(result.ok,true,result.error);assert.equal(result.interruption,'vocal-worklet-sample-invalid');assert.equal((await f.repo.get(f.p.projectId)).longWavAssets[0].frames,80);
+});
+test('processor failure before any PCM never creates an empty Take',async()=>{
+ const f=await setup(),a=f.a,c=scheduledCapture(f),before=JSON.stringify(await f.repo.get(f.p.projectId));await a.vocalCycleStart(f.p.projectId,{endTick:480,cycles:2});await new Promise(setImmediate);c.node.onprocessorerror();assert.equal((await a.vocal.completion).ok,false);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
+});
+test('interrupted Take quota failure preserves existing Take and retry audio',async()=>{
+ const f=await workspaceTakes(),a=f.a,c=scheduledCapture(f),id=f.p.projectId,before=JSON.stringify(await f.repo.get(id));
+ await a.vocalCycleStart(id,{endTick:480,cycles:2});await new Promise(setImmediate);
+ c.node.port.onmessage({data:{type:'started',atFrame:c.node.frame}});c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(80).fill(.25)}});
+ f.indexedDB.fail();c.node.onprocessorerror();assert.equal((await a.vocal.completion).ok,false);assert.equal(a.vocal.pending.frames,80);assert.equal(JSON.stringify(await f.repo.get(id)),before);assert.equal(a.vocalCycle.active,false);a.vocalDiscard();
+});
