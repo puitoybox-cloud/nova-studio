@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto}=require('node:crypto');
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
-function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set((n==='projects'?v.projectId:v.id||v.backupId||v.projectId),structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=(n==='projects'?v.projectId:v.id||v.backupId||v.projectId);if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
+function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{delete:k=>req(()=>map.delete(k)),get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set((n==='projects'?v.projectId:v.id||v.backupId||v.projectId),structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=(n==='projects'?v.projectId:v.id||v.backupId||v.projectId);if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
 let fixtureId=0;
 function fixture(indexedDB=idb()){const instance=++fixtureId;let seq=0;const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>`long-${instance}-${++seq}`},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
 function wav(frames=2100000){const b=new ArrayBuffer(44+frames*2),v=new DataView(b),tag=(p,s)=>[...s].forEach((c,i)=>v.setUint8(p+i,c.charCodeAt()));tag(0,'RIFF');v.setUint32(4,b.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,frames*2,true);const file=new Blob([b],{type:'audio/wav'});file.name='long.wav';return file}
@@ -556,4 +556,53 @@ test('legacy archives without histories restore; malformed histories fail before
 });
 test('history changes during archive export reject publication',async()=>{
  const src=await historySource(),read=src.repo.listMidiHistory;let calls=0;src.repo.listMidiHistory=async()=>{const rows=await read();if(++calls===2)rows[0].filename='concurrent.mid';return rows};await assert.rejects(src.a.createLongWavArchive(),/history-conflict/);
+});
+
+async function automaticSource(audio=false){
+ const src=await setup();if(audio)await src.a.pcmImportLongFile(wav(100),src.p.projectId);
+ src.a.state.settings=src.a.defaultSettings();Object.assign(src.a.state.settings.backup,{automaticEnabled:true,intervalHours:1,maxCopies:1});await src.repo.putSettings(src.a.state.settings);return src;
+}
+const backupDay=n=>`2026-11-${String(n).padStart(2,'0')}T00:00:00.000Z`;
+test('history-only export/import changes refresh automatic archive without audio or stale UI histories',async()=>{
+ const src=await automaticSource();const first=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(first.created,true,first.reason);
+ const project=JSON.stringify(await src.repo.get(src.p.projectId));
+ for(const [day,method,id] of [[2,'putMidiHistory','export'],[3,'putMidiImportHistory','import']]){
+  await src.repo[method]({id,projectId:src.p.projectId,filename:id+'.mid',future:{keep:true}});
+  assert.equal(src.a.state.midiExportHistory.length,0);assert.equal(src.a.state.midiImportHistory.length,0);
+  const result=await src.a.runAutoBackupCheck(backupDay(day));assert.equal(result.created,true,result.reason);assert.ok(result.backup.archive instanceof Blob);
+  const dst=fixture(),repo=dst.a.indexedDbRepository();dst.a.setRepository(repo);const restored=await dst.a.restoreLongWavArchive(result.backup.archive);assert.equal(restored.ok,true,restored.error);
+  assert.equal((await repo.listMidiHistory()).length,1);assert.equal((await repo.listMidiImportHistory()).length,day===3?1:0);
+  assert.equal((await repo.listMidiHistory())[0].projectId,restored.projects[0].projectId);
+ }
+ assert.equal(JSON.stringify(await src.repo.get(src.p.projectId)),project);
+ assert.equal((await src.a.runAutoBackupCheck(backupDay(4))).reason,'unchanged');
+ // Updating a row without changing its ID or timestamp must also be detected.
+ await src.repo.putMidiHistory({id:'export',projectId:src.p.projectId,filename:'renamed.mid'});
+ assert.equal((await src.a.runAutoBackupCheck(backupDay(5))).created,true);
+});
+test('history-only automatic backup quota abort keeps previous committed backup after reopen',async()=>{
+ const src=await automaticSource(true),first=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(first.created,true);
+ await src.repo.putMidiHistory({id:'later',projectId:src.p.projectId});src.indexedDB.fail();
+ const result=await src.a.runAutoBackupCheck(backupDay(2));assert.equal(result.created,false);assert.equal(result.reason,'storage-error');
+ await src.repo.close();const fresh=fixture(src.indexedDB),repo=fresh.a.indexedDbRepository(),records=await repo.listAutoBackups();assert.equal(records.length,1);assert.equal(records[0].backupId,first.backup.backupId);
+ assert.equal(Buffer.compare(Buffer.from(await records[0].archive.arrayBuffer()),Buffer.from(await first.backup.archive.arrayBuffer())),0);
+});
+test('automatic backup interrupted by history mutation rejects publication and keeps last normal copy',async()=>{
+ const src=await automaticSource(true),first=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(first.created,true);
+ await src.repo.putMidiImportHistory({id:'new',projectId:src.p.projectId});
+ const read=src.repo.listMidiImportHistory;let calls=0;src.repo.listMidiImportHistory=async()=>{const rows=await read();if(++calls===2)await src.repo.putMidiImportHistory({id:'during',projectId:src.p.projectId});return rows};
+ const r=await src.a.runAutoBackupCheck(backupDay(2));assert.equal(r.created,false);assert.match(r.reason,/conflict/);assert.equal((await src.repo.listAutoBackups())[0].backupId,first.backup.backupId);
+});
+test('automatic history read failure cannot prune the previous normal backup',async()=>{
+ const src=await automaticSource(),first=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(first.created,true);
+ src.repo.listMidiHistory=async()=>{throw Error('history-read-unavailable')};const r=await src.a.runAutoBackupCheck(backupDay(2));assert.equal(r.created,false);assert.equal(r.reason,'history-read-unavailable');assert.equal((await src.repo.listAutoBackups())[0].backupId,first.backup.backupId);
+});
+test('automatic full archive restores project, production history, settings, MIDI histories and exact WAV bytes',async()=>{
+ const src=await automaticSource(true);const p=await src.repo.get(src.p.projectId);p.productionHistory=[{id:'production-1',operation:'test',future:{keep:true}}];await src.repo.put(p);src.a.state.projects=[p];
+ await src.repo.putMidiHistory({id:'export',projectId:p.projectId,filename:'export.mid'});await src.repo.putMidiImportHistory({id:'import',projectId:p.projectId,fileName:'import.mid'});
+ const result=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(result.created,true,result.reason);
+ const dst=fixture(),repo=dst.a.indexedDbRepository();dst.a.setRepository(repo);const r=await dst.a.restoreLongWavArchive(result.backup.archive);assert.equal(r.ok,true,r.error);
+ const restored=(await repo.list())[0];for(const key of ['midiData','productionHistory','legacy'])assert.equal(JSON.stringify(restored[key]),JSON.stringify(p[key]),key);
+ assert.equal(JSON.stringify(restored.longWavAssets.map(({id,...rest})=>rest)),JSON.stringify(p.longWavAssets.map(({id,...rest})=>rest)));assert.equal((await repo.getSettings()).backup.intervalHours,1);assert.equal((await repo.listMidiHistory())[0].filename,'export.mid');assert.equal((await repo.listMidiImportHistory())[0].fileName,'import.mid');
+ const original=await src.a.pcmLoadLongWav(p.projectId,p.longWavAssets[0].id),copy=await dst.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await copy.arrayBuffer())),0);
 });

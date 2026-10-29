@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.206';
+  const ASSET_VERSION='1.4.207';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -3913,7 +3913,7 @@
   }
   async function restorePreviewedBackup(){const value=state.backupPreview;if(!value)return;if((root.confirm?.('表示中のバックアップを安全に追加・統合しますか？\n既存データは削除しません。')??false)===false)return;const settings=root.document?.querySelector('#restoreSettings')?.checked!==false,projects=root.document?.querySelector('#restoreProjects')?.checked!==false;const result=await restoreBackup(value,{settings,projects,safetyCopy:true});if(state.backupPreview===value)state.backupPreview=null;notice(result.message,result.cancelled?'info':result.failed?'error':'success')}
   function clearBackupPreview(){cancelBackupRestore();state.backupPreview=null;requestPaint()}
-  function backupSignature(){return JSON.stringify({settings:state.settings?.updatedAt||'',projects:state.projects.map(project=>[project.projectId,project.revision,project.updatedAt])})}
+  function backupSignature(histories){return JSON.stringify({settings:state.settings?.updatedAt||'',projects:state.projects.map(project=>[project.projectId,project.revision,project.updatedAt]),midiHistories:histories})}
   function byteLabel(bytes){if(bytes<1024)return`${bytes} B`;if(bytes<1024*1024)return`${(bytes/1024).toFixed(1)} KB`;return`${(bytes/1024/1024).toFixed(1)} MB`}
   async function loadAutoBackups(){try{state.autoBackups=((await repository.listAutoBackups?.())||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));return state.autoBackups}catch(error){console.warn('Music Studio automatic backups could not be read',error);state.autoBackups=[];return[]}}
   let autoBackupPromise=null;
@@ -3928,15 +3928,18 @@
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]);
     const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp),intervalMs=state.settings.backup.intervalHours*3600000;
     if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return{ok:true,created:false,reason:'not-due'};
-    const signature=backupSignature();if(latest?.signature===signature)return{ok:true,created:false,reason:'unchanged'};
-    const binary=state.projects.some(hasArchiveFiles);
+    // The persisted histories can change without a project revision or a refreshed UI list.
+    let histories;try{histories=await readArchiveMidiHistories(target)}catch(error){return{ok:false,created:false,reason:error.message}}
+    const signature=backupSignature(histories);if(latest?.signature===signature)return{ok:true,created:false,reason:'unchanged'};
+    const needsArchive=state.projects.some(hasArchiveFiles)||histories.exports.length>0||histories.imports.length>0;
     let archive;
-    if(binary){
+    if(needsArchive){
       if(typeof target.putAutoBackup!=='function')return{ok:false,created:false,reason:'archive-storage-unavailable'};
       const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
       try{archive=await createLongWavArchive({signal:{get aborted(){return token!==archiveTransfer.generation}}})}catch(error){return{ok:false,created:false,reason:error.message}}finally{archiveTransfer.busy=false;requestPaint()}
     }
-    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline)return{ok:false,created:false,reason:'backup-state-conflict'};
+    let currentHistories;try{currentHistories=await readArchiveMidiHistories(target)}catch(error){return{ok:false,created:false,reason:error.message}}
+    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline||JSON.stringify(currentHistories)!==JSON.stringify(histories))return{ok:false,created:false,reason:'backup-state-conflict'};
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
     const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
