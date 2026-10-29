@@ -606,3 +606,31 @@ test('automatic full archive restores project, production history, settings, MID
  assert.equal(JSON.stringify(restored.longWavAssets.map(({id,...rest})=>rest)),JSON.stringify(p.longWavAssets.map(({id,...rest})=>rest)));assert.equal((await repo.getSettings()).backup.intervalHours,1);assert.equal((await repo.listMidiHistory())[0].filename,'export.mid');assert.equal((await repo.listMidiImportHistory())[0].fileName,'import.mid');
  const original=await src.a.pcmLoadLongWav(p.projectId,p.longWavAssets[0].id),copy=await dst.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await copy.arrayBuffer())),0);
 });
+
+async function rewriteLegacyManifest(archive,change){
+ const header=new DataView(await archive.slice(0,12).arrayBuffer()),length=header.getUint32(8,true),manifest=JSON.parse(await archive.slice(12,12+length).text());
+ change(manifest);const json=new Blob([JSON.stringify(manifest)]),out=new ArrayBuffer(12),v=new DataView(out);v.setUint32(0,0x4e4f5641);v.setUint32(4,1,true);v.setUint32(8,json.size,true);return new Blob([out,json,archive.slice(12+length)]);
+}
+for(const route of ['project','backup','archive'])for(const historical of [false,true])test(`legacy MIDI validation protects ${route} stores, historical=${historical}`,async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(100),src.p.projectId);
+ let p=await src.repo.get(src.p.projectId);p.midiData={ppq:480,tracks:[{notes:[{note:60,start:0,duration:480}]}]};
+ if(historical)p=src.a.versionCapture(p,'Legacy');await src.repo.put(p);src.a.state.projects=[p];const archive=await src.a.createLongWavArchive();
+ const corrupt=p=>{const target=historical?p.songVersions.checkpoints[0].snapshot:p;target.midiData.tracks[0].notes[0].duration=0};
+ const bad=await rewriteLegacyManifest(archive,m=>corrupt(m.projects[0])),metadata=JSON.parse(JSON.stringify(p));delete metadata.longWavAssets;if(historical)delete metadata.songVersions.checkpoints[0].snapshot.longWavAssets;corrupt(metadata);
+ const dst=await setup();await dst.repo.putSettings(dst.a.defaultSettings());await dst.repo.putAutoBackup({backupId:'safe',createdAt:'2026-10-29T00:00:00Z',snapshot:dst.a.backupObject()});
+ const before=JSON.stringify([...dst.indexedDB.stores].map(([k,v])=>[k,[...v]]));
+ const result=route==='project'?await dst.a.importText(JSON.stringify(metadata)):route==='backup'?await dst.a.restoreBackup({format:dst.a.BACKUP_FORMAT,version:dst.a.BACKUP_VERSION,projects:[metadata]},{settings:false}):await dst.a.restoreLongWavArchive(bad);
+ assert.equal(result.ok,false);assert.match(result.error||result.message,/invalid|不正/);
+ assert.equal(JSON.stringify([...dst.indexedDB.stores].map(([k,v])=>[k,[...v]])),before);
+ const reopened=fixture(dst.indexedDB);reopened.a.setRepository(reopened.a.indexedDbRepository());assert.equal((await reopened.a.restoreLongWavArchive(archive)).ok,true);
+ assert.equal((await reopened.a.indexedDbRepository().listAutoBackups()).length,1);
+});
+test('pre-history archive preserves legacy aliases, opaque data, historical WAV and settings after reopen',async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(100),src.p.projectId);let p=await src.repo.get(src.p.projectId);
+ p.midiData={ppq:480,tracks:[{notes:[{note:64,start:0,duration:480,legacyExtension:{keep:true}}]}],opaque:'keep'};p=src.a.versionCapture(p,'Legacy');p.longWavAssets=[];
+ await src.repo.put(p);src.a.state.projects=[p];const original=JSON.stringify(p),archive=await rewriteLegacyManifest(await src.a.createLongWavArchive(),m=>delete m.midiHistories),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());
+ const result=await dst.a.restoreLongWavArchive(archive);assert.equal(result.ok,true,result.error);await dst.a.indexedDbRepository().close();const fresh=fixture(dst.indexedDB),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);const copy=await repo.get(result.projects[0].projectId);
+ assert.equal(JSON.stringify(copy.midiData),JSON.stringify(p.midiData));assert.equal(JSON.stringify(copy.songVersions.checkpoints[0].snapshot.midiData),JSON.stringify(p.midiData));assert.equal(copy.legacy.keep,true);
+ const asset=copy.songVersions.checkpoints[0].snapshot.longWavAssets[0],record=await repo.getLongWav(asset.id);assert.equal(Buffer.compare(Buffer.from(await record.blob.arrayBuffer()),Buffer.from(await wav(100).arrayBuffer())),0);
+ assert.equal((await repo.listMidiHistory()).length,0);assert.equal((await repo.listMidiImportHistory()).length,0);assert.equal((await repo.getSettings()).format,src.a.defaultSettings().format);assert.equal(JSON.stringify(await src.repo.get(p.projectId)),original);
+});

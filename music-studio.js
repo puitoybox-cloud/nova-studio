@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.207';
+  const ASSET_VERSION='1.4.208';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -119,6 +119,46 @@
     const preserve=['sections','chordProgressions','melodies','instruments','midiAssets','audioAssets','lyrics','syllableAssignments','soundSelections','plugins','mixNotes','masteringNotes','productionHistory','integrations','legacy','midiData','importSource','aiWorkspace','pcmMix','finalExportPlan','finalExportHistory','finalExportDeliveries','vocalWorkspace','longWavAssets','longMasterWorkspace','vocalInputProfiles','instrumentLibrary','logicInstruments','songVersions','vocalReplacement','vocalComp'];
     preserve.forEach(key=>{if(input[key]!=null)project[key]=clone(input[key])});
     return project;
+  }
+  // One ingress contract for Project JSON, metadata backups and full archives.
+  // Legacy note/start/duration aliases are validated without rewriting opaque data.
+  // Empty audio-only stem placeholders historically used channel 0; preserve them.
+  function validateRestoredMidi(p){
+    const errors=[],warnings=[],prefix='MIDI',object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v),integer=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max;
+    if(Object.hasOwn(p,'midiData')){
+      const m=p.midiData;
+      if(!object(m)){errors.push(`${prefix}: malformed-midi`)}else{
+        if(m.version!==undefined&&m.version!==1)errors.push(`${prefix}: unsupported-midi-version`);
+        if(m.ppq!==undefined&&!integer(m.ppq,24,32767))errors.push(`${prefix}: invalid-midi-ppq`);
+        if(m.tempo!==undefined&&(!Number.isFinite(m.tempo)||m.tempo<20||m.tempo>400))errors.push(`${prefix}: invalid-midi-tempo`);
+        if(m.timeSignature!==undefined&&(!integer(m.timeSignature?.numerator,1,255)||![1,2,4,8,16,32].includes(m.timeSignature?.denominator)))errors.push(`${prefix}: invalid-midi-signature`);
+        if(m.totalTick!==undefined&&!integer(m.totalTick,0,0x0fffffff))errors.push(`${prefix}: invalid-midi-length`);
+        if(m.tracks===undefined)warnings.push(`${prefix}: legacy-midi-without-tracks`);else if(!Array.isArray(m.tracks))errors.push(`${prefix}: malformed-midi-tracks`);
+        const ids=new Set();
+        for(const t of Array.isArray(m.tracks)?m.tracks:[]){
+          if(!object(t)||!Array.isArray(t.notes)){errors.push(`${prefix}: malformed-midi-track`);continue}
+          if(t.id!==undefined){if(typeof t.id!=='string'||!t.id||ids.has(t.id))errors.push(`${prefix}: invalid-midi-track-id`);ids.add(t.id)}else warnings.push(`${prefix}: legacy-track-id`);
+          if(t.channel!=null&&!(t.channel===0&&t.notes.length===0)&&!integer(t.channel,1,16))errors.push(`${prefix}: invalid-midi-channel`);
+          if(t.program!=null&&!integer(t.program,0,127))errors.push(`${prefix}: invalid-midi-program`);
+          for(const n of t.notes){
+            if(!object(n)){errors.push(`${prefix}: malformed-midi-note`);continue}
+            const start=n.startTick??n.start,duration=n.durationTicks??n.duration,pitch=n.pitch??n.note;
+            if(!integer(pitch,0,127)||!integer(start,0,0x0fffffff)||!integer(duration,1,0x0fffffff)||start+duration>0x0fffffff||(n.velocity!==undefined&&!integer(n.velocity,1,127)))errors.push(`${prefix}: invalid-midi-note`);
+            if(m.totalTick!==undefined&&start+duration>m.totalTick)errors.push(`${prefix}: midi-note-after-end`);
+          }
+        }
+        for(const field of ['tempoMap','timeSignatureMap','keySignatureMap']){
+          if(m[field]!==undefined&&!Array.isArray(m[field])){errors.push(`${prefix}: malformed-${field}`);continue}
+          for(const item of m[field]||[]){
+            if(!object(item)||!integer(item.tick,0,0x0fffffff)||(m.totalTick!==undefined&&item.tick>m.totalTick)){errors.push(`${prefix}: invalid-${field}`);continue}
+            if(field==='tempoMap'){const bpm=item.bpm??(60000000/item.microsecondsPerQuarter);if(!Number.isFinite(bpm)||bpm<20||bpm>400)errors.push(`${prefix}: invalid-tempoMap`)}
+            if(field==='timeSignatureMap'&&(!integer(item.numerator,1,255)||![1,2,4,8,16,32].includes(item.denominator)))errors.push(`${prefix}: invalid-timeSignatureMap`);
+            if(field==='keySignatureMap'&&(!integer(item.sharps,-7,7)||![true,false,0,1].includes(item.minor)))errors.push(`${prefix}: invalid-keySignatureMap`);
+          }
+        }
+      }
+    }
+    return{errors,warnings};
   }
   function validateProject(value){
     const errors=[];
@@ -379,41 +419,11 @@
   function restorePreflight(value,{settings=true,projects=true}={}){
     const checked=validateBackup(value),errors=[...checked.errors],warnings=[],dependencies=[];
     const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
-    const integer=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max;
     for(const [index,p] of (projects&&Array.isArray(value?.projects)?value.projects:[]).entries()){
       const prefix=`Project ${index+1}`,metadata=validateProject(p);errors.push(...metadata.errors.map(e=>`${prefix}: ${e}`));if(!object(p))continue;
-      if(Object.hasOwn(p,'midiData')){
-        const m=p.midiData;
-        if(!object(m)){errors.push(`${prefix}: malformed-midi`)}else{
-          if(m.version!==undefined&&m.version!==1)errors.push(`${prefix}: unsupported-midi-version`);
-          if(m.ppq!==undefined&&!integer(m.ppq,24,32767))errors.push(`${prefix}: invalid-midi-ppq`);
-          if(m.tempo!==undefined&&(!Number.isFinite(m.tempo)||m.tempo<20||m.tempo>400))errors.push(`${prefix}: invalid-midi-tempo`);
-          if(m.timeSignature!==undefined&&(!integer(m.timeSignature?.numerator,1,255)||![1,2,4,8,16,32].includes(m.timeSignature?.denominator)))errors.push(`${prefix}: invalid-midi-signature`);
-          if(m.totalTick!==undefined&&!integer(m.totalTick,0,0x0fffffff))errors.push(`${prefix}: invalid-midi-length`);
-          if(m.tracks===undefined)warnings.push(`${prefix}: legacy-midi-without-tracks`);else if(!Array.isArray(m.tracks))errors.push(`${prefix}: malformed-midi-tracks`);
-          const ids=new Set();
-          for(const t of Array.isArray(m.tracks)?m.tracks:[]){
-            if(!object(t)||!Array.isArray(t.notes)){errors.push(`${prefix}: malformed-midi-track`);continue}
-            if(t.id!==undefined){if(typeof t.id!=='string'||!t.id||ids.has(t.id))errors.push(`${prefix}: invalid-midi-track-id`);ids.add(t.id)}else warnings.push(`${prefix}: legacy-track-id`);
-            if(t.channel!==undefined&&!integer(t.channel,1,16))errors.push(`${prefix}: invalid-midi-channel`);
-            if(t.program!=null&&!integer(t.program,0,127))errors.push(`${prefix}: invalid-midi-program`);
-            for(const n of t.notes){
-              if(!object(n)){errors.push(`${prefix}: malformed-midi-note`);continue}
-              const start=n.startTick??n.start,duration=n.durationTicks??n.duration,pitch=n.pitch??n.note;
-              if(!integer(pitch,0,127)||!integer(start,0,0x0fffffff)||!integer(duration,1,0x0fffffff)||start+duration>0x0fffffff||(n.velocity!==undefined&&!integer(n.velocity,1,127)))errors.push(`${prefix}: invalid-midi-note`);
-              if(m.totalTick!==undefined&&start+duration>m.totalTick)errors.push(`${prefix}: midi-note-after-end`);
-            }
-          }
-          for(const field of ['tempoMap','timeSignatureMap','keySignatureMap']){
-            if(m[field]!==undefined&&!Array.isArray(m[field])){errors.push(`${prefix}: malformed-${field}`);continue}
-            for(const item of m[field]||[]){
-              if(!object(item)||!integer(item.tick,0,0x0fffffff)||(m.totalTick!==undefined&&item.tick>m.totalTick)){errors.push(`${prefix}: invalid-${field}`);continue}
-              if(field==='tempoMap'){const bpm=item.bpm??(60000000/item.microsecondsPerQuarter);if(!Number.isFinite(bpm)||bpm<20||bpm>400)errors.push(`${prefix}: invalid-tempoMap`)}
-              if(field==='timeSignatureMap'&&(!integer(item.numerator,1,255)||![1,2,4,8,16,32].includes(item.denominator)))errors.push(`${prefix}: invalid-timeSignatureMap`);
-              if(field==='keySignatureMap'&&(!integer(item.sharps,-7,7)||![true,false,0,1].includes(item.minor)))errors.push(`${prefix}: invalid-keySignatureMap`);
-            }
-          }
-        }
+      for(const [snapshotIndex,snapshot] of [p,...(metadata.valid?versionSnapshots(p):[])].entries()){
+        const midi=validateRestoredMidi(snapshot),location=snapshotIndex?`${prefix}.history[${snapshotIndex-1}]`:prefix;
+        errors.push(...midi.errors.map(e=>`${location}: ${e}`));warnings.push(...midi.warnings.map(w=>`${location}: ${w}`));
       }
       if(p.longWavAssets?.length||versionSnapshots(p).some(s=>s.longWavAssets?.length))errors.push(`${prefix}: long-wav-binary-backup-not-supported`);
       const identities=new Map(),assets=[];
@@ -1398,6 +1408,7 @@
     for(const original of projects){
       for(const p of [original,...versionSnapshots(original)]){
       if(!validateProject(p).valid||p===original&&ids.has(p.projectId))throw Error('archive-project-invalid');ids.add(p.projectId);
+      const midi=validateRestoredMidi(p);if(midi.errors.length)throw Error('archive-project-invalid: '+midi.errors.join('; '));
       // Never claim a full archive when external referenced bytes are absent.
       const references=referenceBinaries(p);for(const b of references){const identity=JSON.stringify([b.size,b.hashes,'reference']);if(assets.has(b.id)&&assets.get(b.id)!==identity)throw Error('archive-shared-asset-conflict');assets.set(b.id,identity)}
       if(p.longWavAssets!==undefined&&!Array.isArray(p.longWavAssets))throw Error('archive-assets-invalid');
@@ -3822,6 +3833,7 @@
   async function importText(text,control={}){
     let parsed;try{parsed=JSON.parse(text)}catch(_){return{ok:false,message:'JSONが壊れているため読み込めません。既存データは変更していません。'}}
     const checked=validateProject(parsed);if(!checked.valid)return{ok:false,message:`読み込めません：${checked.errors.join(' ')}`};
+    const midiErrors=[parsed,...versionSnapshots(parsed)].flatMap(p=>validateRestoredMidi(p).errors);if(midiErrors.length)return{ok:false,message:'読み込めません：'+midiErrors.join('; ')};
     const target=repository,guard=()=>{control.check?.();if(repository!==target)throw Error('stale-repository')};guard();
     if(typeof target.compareAndPut!=='function')throw Error('atomic-project-import-unavailable');
     let incoming=clone(parsed),duplicated=false;

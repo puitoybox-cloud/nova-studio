@@ -33,3 +33,8 @@ test('custom repository without atomic capability fails before per-project publi
 test('legacy editor-only MIDI restores without manufacturing tracks',async()=>{const{app,repo}=load(),p=project(app,'editor-only');p.midiData={editor:{view:{snapEnabled:false},unknown:{keep:true}}};assert.equal((await app.restoreBackup(backup(app,[p]),{settings:false})).ok,true);assert.deepEqual(plain((await repo.get(p.projectId)).midiData),plain(p.midiData))});
 
 test('refresh failure after commit reports committed metadata rather than false rollback',async()=>{const{app,repo}=load(),p=project(app,'committed');repo.list=async()=>{throw Error('injected-refresh-failure')};const result=await app.restoreBackup(backup(app,[p]),{settings:false});assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.viewRefreshPending,true);assert.equal(await repo.has(p.projectId),true)});
+test('legacy external tracks with null channel survive metadata restore without inventing a MIDI channel',async()=>{
+ const{app,repo}=load(),p=project(app,'unassigned');p.midiData.tracks[0].channel=null;p.midiData.tracks[0].program=null;
+ const result=await app.restoreBackup(backup(app,[p]),{settings:false});assert.equal(result.ok,true,result.message);assert.equal((await repo.get(p.projectId)).midiData.tracks[0].channel,null);
+ const bad=plain(p);bad.projectId='bad-channel';bad.midiData.tracks[0].channel=0;assert.equal((await app.restoreBackup(backup(app,[bad]),{settings:false})).ok,false);assert.equal(await repo.has('bad-channel'),false);
+});
