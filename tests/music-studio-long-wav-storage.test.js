@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto}=require('node:crypto');
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
-function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set(v.projectId||v.id||v.backupId,structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=v.projectId||v.id||v.backupId;if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
+function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set((n==='projects'?v.projectId:v.id||v.backupId||v.projectId),structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=(n==='projects'?v.projectId:v.id||v.backupId||v.projectId);if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
 let fixtureId=0;
 function fixture(indexedDB=idb()){const instance=++fixtureId;let seq=0;const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>`long-${instance}-${++seq}`},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
 function wav(frames=2100000){const b=new ArrayBuffer(44+frames*2),v=new DataView(b),tag=(p,s)=>[...s].forEach((c,i)=>v.setUint8(p+i,c.charCodeAt()));tag(0,'RIFF');v.setUint32(4,b.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,frames*2,true);const file=new Blob([b],{type:'audio/wav'});file.name='long.wav';return file}
@@ -521,4 +521,39 @@ test('automatic archive short backing read cannot replace an existing backup',as
  const archive=Object.assign(new Blob(['next']),{slice(){return{arrayBuffer:async()=>new ArrayBuffer(1)}}});
  await assert.rejects(repo.putAutoBackup({backupId:'keep',archive}),/long-wav-binary-chunks-invalid/);
  assert.equal(await (await repo.listAutoBackups())[0].archive.text(),'original');
+});
+
+async function historySource(){
+ const src=await setup();await src.a.pcmImportLongFile(wav(100),src.p.projectId);
+ await src.repo.putMidiHistory({id:'export-one',projectId:src.p.projectId,createdAt:'2026-10-29',filename:'song.mid',future:{keep:true}});
+ await src.repo.putMidiImportHistory({id:'import-one',projectId:src.p.projectId,createdAt:'2026-10-29',fileName:'source.mid',warningCount:2});
+ return src;
+}
+async function changeManifest(archive,edit){const v=new DataView(await archive.slice(0,12).arrayBuffer()),n=v.getUint32(8,true),m=JSON.parse(await archive.slice(12,12+n).text());edit(m);const body=new Blob([JSON.stringify(m)]);v.setUint32(8,body.size,true);return new Blob([v.buffer,body,archive.slice(12+n)])}
+test('complete archive migrates MIDI histories with remapped identities and fresh repository reload',async()=>{
+ const src=await historySource(),archive=await src.a.createLongWavArchive(),dst=await setup();
+ await dst.repo.putMidiHistory({id:'export-one',projectId:dst.p.projectId,filename:'existing.mid'});
+ for(let i=0;i<2;i++){
+  const r=await dst.a.restoreLongWavArchive(archive);assert.equal(r.ok,true,r.error);
+  const exports=await dst.repo.listMidiHistory(),imports=await dst.repo.listMidiImportHistory();
+  const e=exports.find(x=>x.projectId===r.projects[0].projectId),im=imports.find(x=>x.projectId===r.projects[0].projectId);
+  assert.equal(e.filename,'song.mid');assert.equal(e.future.keep,true);assert.notEqual(e.id,'export-one');assert.equal(im.warningCount,2);assert.notEqual(im.id,'import-one');
+ }
+ const fresh=fixture(dst.indexedDB),repo=fresh.a.indexedDbRepository();assert.equal((await repo.listMidiHistory()).length,3);assert.equal((await repo.listMidiImportHistory()).length,2);assert.equal((await repo.listMidiHistory()).find(x=>x.id==='export-one').filename,'existing.mid');
+});
+test('history write failure atomically rolls back audio, settings, projects and both histories',async()=>{
+ const src=await historySource(),archive=await src.a.createLongWavArchive(),dst=await setup();const before=JSON.stringify(await dst.repo.list());
+ const restore=dst.repo.restoreLongArchive.bind(dst.repo);dst.repo.restoreLongArchive=(...args)=>{args[5].imports.push(args[5].imports[0]);return restore(...args)};
+ const r=await dst.a.restoreLongWavArchive(archive);assert.equal(r.ok,false);assert.equal(JSON.stringify(await dst.repo.list()),before);assert.equal((await dst.repo.listMidiHistory()).length,0);assert.equal((await dst.repo.listMidiImportHistory()).length,0);assert.equal(dst.indexedDB.stores.get('longWavBinaries').size,0);assert.equal(await dst.repo.getSettings(),undefined);
+});
+test('legacy archives without histories restore; malformed histories fail before writing',async()=>{
+ const src=await historySource(),archive=await src.a.createLongWavArchive();
+ for(const value of [null,{}, {exports:[{id:'x'}],imports:[]}]){
+  const dst=await setup(),before=JSON.stringify(await dst.repo.list()),bad=await changeManifest(archive,m=>m.midiHistories=value);
+  const r=await dst.a.restoreLongWavArchive(bad);assert.equal(r.ok,false);assert.match(r.error,/history-invalid/);assert.equal(JSON.stringify(await dst.repo.list()),before);
+ }
+ const dst=await setup(),legacy=await changeManifest(archive,m=>delete m.midiHistories);assert.equal((await dst.a.restoreLongWavArchive(legacy)).ok,true);assert.equal((await dst.repo.listMidiHistory()).length,0);
+});
+test('history changes during archive export reject publication',async()=>{
+ const src=await historySource(),read=src.repo.listMidiHistory;let calls=0;src.repo.listMidiHistory=async()=>{const rows=await read();if(++calls===2)rows[0].filename='concurrent.mid';return rows};await assert.rejects(src.a.createLongWavArchive(),/history-conflict/);
 });
