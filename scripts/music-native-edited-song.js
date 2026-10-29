@@ -108,6 +108,18 @@ if(input.phase==='write'){
  for(const link of p.integrations.logicPro.filter(l=>l.batchId)){const asset=p.longWavAssets.find(x=>x.id===link.assetId);assert(asset?.midiRender?.stemTrackId===link.trackId,'restored native track correspondence');assert(p.midiData.tracks.some(t=>t.id===link.trackId),'returned MIDI identity missing')}
  const output=await a.finalPreview(id,p.finalExportPlan);assert(output.ok,'returned batch restored export: '+output.error);assert((await a.finalSave(id)).ok,'returned batch restored history save');
 }else throw Error('invalid native acceptance phase');
+assert((await a.prepareForShutdown()).ok,'save before menu navigation failed');
+// Reproduce the physical Mac menu path in the actual packaged WKWebView.
+const documentURL=location.href.split('#')[0];
+for(const [menuRoute,expectedRoute] of [['projects','music-studio/recent-projects'],['settings','music-studio/settings'],['backup','music-studio/backup'],['home','music-studio']]){
+ document.querySelector('.nova-menu-toggle').click();
+ const button=document.querySelector('.nova-menu-panel [data-route="'+menuRoute+'"]');
+ assert(button,'native menu destination missing: '+menuRoute);button.click();
+ await wait(()=>location.hash==='#'+expectedRoute);
+ assert(location.href.split('#')[0]===documentURL,'menu left packaged document');
+ assert(window.MusicStudio===a,'menu discarded save API');
+ assert((await a.prepareForShutdown()).ok,'save after menu navigation failed');
+}
 stage='shutdown';assert((await a.prepareForShutdown()).ok,'page save gate refused');
 stage='saved-audio-readback';p=await repo.get(id);const audio={};for(const asset of p.longWavAssets||[])audio[asset.id]=await to64(await loadAudio(id,asset.id));
 const archive=['read','restore'].includes(input.phase)?await to64(await a.createLongWavArchive()):null;

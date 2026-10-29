@@ -5,6 +5,10 @@ on:
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
       - 'scripts/music-native-edited-song.js'
+      - 'scripts/music-standalone-menu-browser.js'
+      - 'tests/music-standalone-menu.test.js'
+      - 'nova-menu.js'
+      - 'music-studio.html'
       - 'scripts/music-native-edited-song.py'
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
@@ -74,6 +78,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-real-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-standalone-menu-browser.js
       - name: Real long candidates through IndexedDB and browser restart
         env:
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
