@@ -156,12 +156,35 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-intel-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-intel-browser/node_modules" CHROME_EXECUTABLE='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node scripts/music-local-real-browser.js
-      - name: Record candidate files and archive SHA256 without release publication
+      - name: Assemble ordinary Intel test app without CI script hooks
+        run: python tools/music-local-generation/build_intel_app.py --work "$RUNNER_TEMP/nova-intel-test-build" --output "$RUNNER_TEMP/Music Studio.app"
+      - name: Verify ordinary app native startup and owned shutdown
+        run: python scripts/music-intel-native-launch.py "$RUNNER_TEMP/Music Studio.app" > "$RUNNER_TEMP/test-app-native-launch.json"
+      - name: Verify ordinary app packaged inference
+        env:
+          NOVA_PACKAGE_APP: ${{ runner.temp }}/Music Studio.app
+        run: node scripts/music-local-real-generation.js > "$RUNNER_TEMP/test-app-generation.log" 2>&1
+      - name: Archive ordinary Intel test app and record exact identity
         run: |
-          cp "$RUNNER_TEMP/relocated app/Music Studio Candidate.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/package-candidate.json"
-          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/relocated app/Music Studio Candidate.app" "$RUNNER_TEMP/music-intel-candidate.zip"
-          shasum -a 256 "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-sha256.txt"
-          stat -f '%z' "$RUNNER_TEMP/music-intel-candidate.zip" > "$RUNNER_TEMP/package-archive-bytes.txt"
+          cp "$RUNNER_TEMP/Music Studio.app/Contents/Resources/package-candidate.json" "$RUNNER_TEMP/test-app-candidate.json"
+          APP_ZIP="Music-Studio-Intel-Test-${{ github.event.pull_request.head.sha || github.sha }}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/Music Studio.app" "$RUNNER_TEMP/$APP_ZIP"
+          (cd "$RUNNER_TEMP" && shasum -a 256 "$APP_ZIP") > "$RUNNER_TEMP/package-archive-sha256.txt"
+          stat -f '%z' "$RUNNER_TEMP/$APP_ZIP" > "$RUNNER_TEMP/package-archive-bytes.txt"
+          cp verification/music-intel-test-install-20261029.md "$RUNNER_TEMP/READ-ME-FIRST.md"
+      - name: Preserve actual ordinary Intel test app
+        uses: actions/upload-artifact@v4
+        with:
+          name: music-studio-intel-test-app-${{ github.event.pull_request.head.sha || github.sha }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          path: |
+            ${{ runner.temp }}/Music-Studio-Intel-Test-*.zip
+            ${{ runner.temp }}/package-archive-sha256.txt
+            ${{ runner.temp }}/package-archive-bytes.txt
+            ${{ runner.temp }}/test-app-candidate.json
+            ${{ runner.temp }}/READ-ME-FIRST.md
       - name: Preserve inventory evidence even if later package acceptance fails
         if: always()
         run: |
@@ -175,13 +198,14 @@ jobs:
                   shutil.copyfile(report, root/'package-candidate.json')
                   break
           PYREPORT
-      # Binary publication remains blocked by license/source, native lifecycle,
-      # Developer ID, notarization and physical acceptance gates.
+      # Internal test artifact only; formal release eligibility remains false.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-intel-package-evidence
           path: |
+            ${{ runner.temp }}/test-app-native-launch.json
+            ${{ runner.temp }}/test-app-generation.log
             ${{ runner.temp }}/package-candidate.json
             ${{ runner.temp }}/package-native-launch.json
             ${{ runner.temp }}/native-edited-song.json
