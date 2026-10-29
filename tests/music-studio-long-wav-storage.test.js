@@ -649,3 +649,40 @@ test('separation history in current and checkpoint snapshots remaps only verifie
  for(const x of [copy,...fresh.a.versionSnapshots(copy)]){assert.equal(x.audioSeparationHistory[0].assetIds[0],x.longWavAssets[0].id);assert.notEqual(x.audioSeparationHistory[0].assetIds[0],p.longWavAssets[0].id);assert.equal(x.audioSeparationHistory[0].opaque.keep,true)}
  assert.equal(JSON.stringify(await src.repo.get(p.projectId)),JSON.stringify(p));
 });
+
+test('metadata Restore protects current WAVs and MIDI histories in a complete safety archive',async()=>{
+ const f=await setup();assert.equal((await f.a.pcmImportLongFile(wav(100),f.p.projectId)).ok,true);
+ await f.repo.putMidiHistory({id:'old-export',projectId:f.p.projectId,createdAt:new Date().toISOString(),fileName:'old.mid'});
+ const downloads=[];f.w.URL={createObjectURL:blob=>{downloads.push(blob);return'blob:safety'}};
+ f.w.document={querySelector:()=>null,createElement:()=>({click(){},remove(){}}),body:{dataset:{},appendChild(){}}};
+ const backup={format:f.a.BACKUP_FORMAT,version:f.a.BACKUP_VERSION,settings:f.a.defaultSettings(),projects:[]};
+ const result=await f.a.restoreBackup(backup,{safetyCopy:true});assert.equal(result.ok,true,result.message);assert.equal(downloads.length,1);
+ const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(downloads[0]);assert.equal(restored.ok,true,restored.error);
+ assert.equal(restored.projects[0].longWavAssets.length,1);assert.equal((await dst.a.state.midiExportHistory).length,1);
+});
+
+test('missing current WAV blocks metadata Restore before settings replacement',async()=>{
+ const f=await setup();const imported=await f.a.pcmImportLongFile(wav(100),f.p.projectId);assert.equal(imported.ok,true);
+ const settings=f.a.defaultSettings();settings.projectDefaults.bpm=91;await f.repo.putSettings(settings);f.a.state.settings=settings;
+ const before=JSON.stringify(await f.repo.list());f.indexedDB.stores.get('longWavBinaries').delete(imported.assetId);
+ const incoming=f.a.defaultSettings();incoming.projectDefaults.bpm=155;
+ const result=await f.a.restoreBackup({format:f.a.BACKUP_FORMAT,version:f.a.BACKUP_VERSION,settings:incoming,projects:[]},{safetyCopy:true});
+ assert.equal(result.ok,false);assert.match(result.message,/restore-safety-copy-failed/);assert.equal((await f.repo.getSettings()).projectDefaults.bpm,91);assert.equal(JSON.stringify(await f.repo.list()),before);
+});
+
+test('safety archive download failure blocks metadata Restore and retains old settings',async()=>{
+ const f=await setup();await f.repo.putMidiHistory({id:'history',projectId:f.p.projectId,createdAt:new Date().toISOString()});
+ const settings=f.a.defaultSettings();settings.projectDefaults.bpm=92;await f.repo.putSettings(settings);f.a.state.settings=settings;
+ f.w.URL={createObjectURL(){throw Error('download-denied')}};f.w.document={querySelector:()=>null};
+ const result=await f.a.restoreBackup({format:f.a.BACKUP_FORMAT,version:f.a.BACKUP_VERSION,settings:f.a.defaultSettings(),projects:[]},{safetyCopy:true});
+ assert.equal(result.ok,false);assert.match(result.message,/download-denied/);assert.equal((await f.repo.getSettings()).projectDefaults.bpm,92);
+});
+
+test('cancellation during safety archive publication prevents metadata Restore commit',async()=>{
+ const f=await setup();await f.repo.putMidiHistory({id:'history',projectId:f.p.projectId,createdAt:new Date().toISOString()});
+ const settings=f.a.defaultSettings();settings.projectDefaults.bpm=93;await f.repo.putSettings(settings);f.a.state.settings=settings;
+ f.w.URL={createObjectURL:()=>{f.a.cancelBackupRestore();return'blob:cancel'}};
+ f.w.document={querySelector:()=>null,createElement:()=>({click(){},remove(){}}),body:{dataset:{},appendChild(){}}};
+ const result=await f.a.restoreBackup({format:f.a.BACKUP_FORMAT,version:f.a.BACKUP_VERSION,settings:f.a.defaultSettings(),projects:[]},{safetyCopy:true});
+ assert.equal(result.ok,false);assert.equal(result.cancelled,true);assert.equal((await f.repo.getSettings()).projectDefaults.bpm,93);assert.equal((await f.repo.list()).length,1);
+});

@@ -1,5 +1,7 @@
 # Music Studio 30大機能：実物棚卸しと一本化計画
 
+2026-10-30 JST：[最新production照合・30機能の残要件・日程算定限界](../../verification/music-completion-focus-20261030.md)。以下の2026-10-04時点の表は履歴であり、最新状況は追記先を参照。録音/歌声/長時間Mix・Master/完全Archive等の後続実装を反映。全要件完成認定0/30、工数/完了日は未確定。No.22/23の復元前完全安全コピーをproduction修正。
+
 2026-10-05 JST追記：[本番metadata一括RestoreとChrome停止修復](ATOMIC_METADATA_RESTORE_V1.md)。#298のChrome停止を新Draftで再現・修復し、productionの複数Project/設定を既存IndexedDB v5の一つのtransactionで追加復元する。全入力MIDI/依存metadata事前検査、legacy/unknown保持、Cancel/stale/retryと途中失敗のrollbackを検証。完全binary Backup/実resolver/配布契約は残るためStage 2 software/contract OPEN、physical PENDING、A 0/30を維持。
 
 2026-10-05 JST追記：[offline binary resolver / generation境界](BINARY_RESOLVER_BOUNDARY_V1.md)。明示的なbyte解決・完全Restoreのfail closed・候補Backup完全性・generation recovery validatorをproduction入口へ接続。実binary永続adapter/package codecは未実装のためStage 2 software OPEN／physical PENDING／policy REQUIRED。A 0/30。

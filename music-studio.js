@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.208';
+  const ASSET_VERSION='1.4.209';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -3919,7 +3919,15 @@
         if(binaryPreflight.dependencies.length&&(!generationAdapter||generationAdapter.metadataRepository!==target||generationAdapter.atomicGeneration!==true||typeof generationAdapter.restoreGeneration!=='function'))throw Error('atomic-binary-generation-adapter-unavailable');
       }
       if(typeof target.restoreMetadata!=='function')throw Error('atomic-metadata-restore-unavailable');
-      if(safetyCopy)exportBackup(true);
+      if(safetyCopy){
+        // Settings may be replaced even during add-only Restore. Preserve every
+        // durable asset and MIDI history before allowing that transaction.
+        const histories=await readArchiveMidiHistories(target);assertRestoreCurrent(control);
+        const needsArchive=state.projects.some(hasArchiveFiles)||histories.exports.length>0||histories.imports.length>0;
+        const safety=needsArchive?await exportLongWavArchive():exportBackup(true);
+        assertRestoreCurrent(control);
+        if(safety?.ok===false)throw Error('restore-safety-copy-failed: '+(safety.error||'backup-unavailable'));
+      }
       const incomingSettings=settings&&snapshot.settings?preserveRestoreSettings({...snapshot.settings,id:SETTINGS_ID,createdAt:state.settings?.createdAt||snapshot.settings.createdAt,updatedAt:now()}):null;
       const committed=binaryPreflight?.dependencies.length?await root.MusicStudioBinaryBoundary.commit(binaryPreflight,{adapter:generationAdapter,settings:incomingSettings,control}):await target.restoreMetadata(projects?snapshot.projects:[],incomingSettings,control);committedResult=committed;
       // A completed transaction cannot be undone by a later Cancel. Report its commit honestly.
