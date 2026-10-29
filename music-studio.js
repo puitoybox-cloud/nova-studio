@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.205';
+  const ASSET_VERSION='1.4.206';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -555,8 +555,8 @@
       }catch(e){abort(e)}};
     }))}
     // Add-only recovery: metadata, original binaries and settings commit together.
-    async function restoreLongArchive(projects,records,settings,guard,baselineSettings){const encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard(true)}records=encoded;return database.then(db=>new Promise((resolve,reject)=>{
-      guard(true);const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME],'readwrite',{durability:'strict'});let failure;
+    async function restoreLongArchive(projects,records,settings,guard,baselineSettings,histories={exports:[],imports:[]}){const encoded=[];for(const record of records){encoded.push(await encodeLongBinary(record,guard));guard(true)}records=encoded;return database.then(db=>new Promise((resolve,reject)=>{
+      guard(true);const tx=db.transaction([STORE_NAME,'longWavBinaries',SETTINGS_STORE_NAME,MIDI_HISTORY_STORE_NAME,MIDI_IMPORT_HISTORY_STORE_NAME],'readwrite',{durability:'strict'});let failure;
       const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
       const timer=root.setTimeout?.(()=>abort(Error('archive-transaction-timeout')),30000);
       const done=()=>root.clearTimeout?.(timer);
@@ -566,6 +566,8 @@
       const watch=r=>{r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard(true)}catch(e){abort(e)}}};
       const check=tx.objectStore(SETTINGS_STORE_NAME).get(SETTINGS_ID);check.onerror=()=>abort(check.error);check.onsuccess=()=>{try{guard(true);if(JSON.stringify(check.result)!==baselineSettings)throw Error('archive-settings-conflict');for(const p of projects)watch(tx.objectStore(STORE_NAME).add(clone(p)));
         for(const r of records)watch(tx.objectStore('longWavBinaries').add(r));
+        for(const r of histories.exports)watch(tx.objectStore(MIDI_HISTORY_STORE_NAME).add(clone(r)));
+        for(const r of histories.imports)watch(tx.objectStore(MIDI_IMPORT_HISTORY_STORE_NAME).add(clone(r)));
         if(settings)watch(tx.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
       }catch(e){abort(e)}};
     }))}
@@ -1490,11 +1492,28 @@
     if(!list.length)return inspection;
     return`<details class="music-project-details"${fresh?' open':''}><summary>Recover source（履歴の元ファイルを復旧）</summary>${inspection}<p>現在の曲・過去候補版・部分採用履歴が参照するファイルを選べます。欠落した本体だけを復旧し、サイズとSHA-256が一致しないファイルは拒否します。既存本体は置換しません。</p><form onsubmit="event.preventDefault();${h(`MusicStudio.recoverMissingBinarySubmit(event,${id})`)}"><label>Source（依存ファイル）<select name="recoveryBinary">${list.map(a=>`<option value="${h(a.id)}">${h(a.name||a.id)} · ${h(a.size)} bytes</option>`).join('')}</select></label><label>Original file（元ファイル）<input type="file" name="recoveryFile" required></label><button class="music-secondary"${archiveTransfer.busy||versionPanel.busy?' disabled':''}>Recover（照合して復旧）</button></form></details>`;
   }
+  function archiveMidiHistories(value){
+    if(value===undefined)return{exports:[],imports:[]}; // Archives created before history support.
+    if(!value||typeof value!=='object'||Array.isArray(value))throw Error('archive-midi-history-invalid');
+    for(const key of ['exports','imports']){
+      if(!Array.isArray(value[key]))throw Error('archive-midi-history-invalid');
+      const ids=new Set();for(const row of value[key]){
+        if(!row||typeof row!=='object'||Array.isArray(row)||typeof row.id!=='string'||!row.id||ids.has(row.id)||typeof row.projectId!=='string'||!row.projectId)throw Error('archive-midi-history-invalid');
+        ids.add(row.id);
+      }
+    }
+    return value;
+  }
+  async function readArchiveMidiHistories(target){
+    if(!target.listMidiHistory||!target.listMidiImportHistory)throw Error('archive-midi-history-unavailable');
+    return archiveMidiHistories({exports:await target.listMidiHistory(),imports:await target.listMidiImportHistory()});
+  }
   async function createLongWavArchive(options={}){
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,archiveTransfer.generation,baseline);guard(true);
     if(target.kind!=='indexeddb'||!target.getLongWav)throw Error('archive-durable-storage-required');
     const projects=await target.list();guard(true);archiveValidateProjects(projects);
     const storedSettings=await target.getSettings(),settings=preserveRestoreSettings(storedSettings||state.settings||defaultSettings()),parts=[],entries=[],packed=new Set();
+    const histories=await readArchiveMidiHistories(target);guard(true);
     for(const p of projects)for(const a of archiveBinaries(p)){
       guard();if(packed.has(a.id))continue;packed.add(a.id);const record=await target.getLongWav(a.id);
       if(!record?.blob||record.blob.size!==a.size||JSON.stringify(record.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(record.blob,guard))!==JSON.stringify(a.hashes))throw Error('archive-binary-corrupt-or-missing');
@@ -1508,7 +1527,8 @@
       guard();parts.push(record.blob);entries.push({id:a.id,size:a.size});
     }
     if(JSON.stringify(await target.list())!==JSON.stringify(projects)||JSON.stringify(await target.getSettings())!==JSON.stringify(storedSettings))throw Error('archive-export-conflict');guard(true);
-    const manifest=new Blob([JSON.stringify({format:LONG_ARCHIVE_FORMAT,projects,settings,entries})]);
+    if(JSON.stringify(await readArchiveMidiHistories(target))!==JSON.stringify(histories))throw Error('archive-export-history-conflict');guard(true);
+    const manifest=new Blob([JSON.stringify({format:LONG_ARCHIVE_FORMAT,projects,settings,entries,midiHistories:histories})]);
     if(manifest.size>PCM_JSON_LIMIT)throw Error('archive-manifest-capacity');
     const header=new ArrayBuffer(12),v=new DataView(header);v.setUint32(0,0x4e4f5641);v.setUint32(4,1,true);v.setUint32(8,manifest.size,true);
     guard(true);return new Blob([header,manifest,...parts],{type:'application/octet-stream'});
@@ -1548,6 +1568,7 @@
       const manifest=JSON.parse(await file.slice(12,12+length).text());guard();
       if(manifest.format!==LONG_ARCHIVE_FORMAT||!validateSettings(manifest.settings).valid||!Array.isArray(manifest.entries))throw Error('archive-manifest-invalid');
       archiveValidateProjects(manifest.projects);
+      const sourceHistories=archiveMidiHistories(manifest.midiHistories);
       const expected=[...new Map(manifest.projects.flatMap(p=>archiveBinaries(p)).map(a=>[a.id,a])).values()];
       if(expected.length!==manifest.entries.length)throw Error('archive-binary-count');
       const capacity=await archiveCapacity(expected.reduce((n,a)=>n+a.size,0)+length,guard);guard();
@@ -1579,10 +1600,14 @@
         if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);}
         return p});
       if(projects.some(p=>!validateProject(p).valid))throw Error('archive-remapped-project-invalid');
+      const historyProjectMapping=new Map(projectMapping);
+      const remapHistory=row=>{if(!historyProjectMapping.has(row.projectId))historyProjectMapping.set(row.projectId,uuid());return{...clone(row),id:uuid(),projectId:historyProjectMapping.get(row.projectId)}};
+      const histories={exports:sourceHistories.exports.map(remapHistory),imports:sourceHistories.imports.map(remapHistory)};
       if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,size:file.size,settingsIncluded:true,capacity};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
-      guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings);
+      guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings,histories);
       // Success is emitted only after the single transaction completes.
       state.projects=[...state.projects,...projects];if(options.settings!==false){state.settings=preserveRestoreSettings(manifest.settings);state.settingsDraft=clone(state.settings)}archiveTransfer.preview=null;configureAutosave();
+      await loadMidiHistory();await loadMidiImportHistory();
       notice('元ファイル・プロジェクト・設定の復元が完了しました。既存曲は保持しています。','success');
       return{ok:true,projects};
     }catch(e){notice('復元できません：'+e.message,'error');return{ok:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
