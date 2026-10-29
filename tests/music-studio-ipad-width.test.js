@@ -23,7 +23,7 @@ test('standalone iPad home reuses the formal Nova Studio hero and bridge assets'
   assert.match(html, /style\.css\?v=1\.4\.9/);
   assert.match(html, /nova-unified-ui\.css\?v=1\.1\.10/);
   assert.match(html, /gemini-bridge\.js\?v=1\.5\.2/);
-  assert.match(html, /nova-menu\.js\?v=1\.0\.4/);
+  assert.match(html, /nova-menu\.js\?v=1\.0\.5/);
   assert.equal((html.match(/data-music-home-style/g) || []).length, 4);
   const app = fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8');
   assert.match(app, /function standaloneHero\(\).*music-studio-home-hero-20260804-3\.jpeg.*MUSIC PRODUCTION.*Music Studio/s);
