@@ -30,7 +30,7 @@
 | 22 | 保存・曲バージョン管理 | strict IndexedDB保存、Checkpoint、範囲合成・競合拒否 | 独立した可聴A/B比較、依存する範囲合成の残条件、強制終了受入 | music-studio.js: versionRangeCompose/versionCompare; tests/music-song-checkpoints.test.js |
 | 23 | バックアップ・復旧・移行 | 完全Archive、checksum/依存検査、履歴再結合、add-only原子復元、自動Backup。今回安全コピー失敗の阻止 | Cloud Sync、識別不能な旧依存、更新/別Mac/電源断の受入 | music-studio.js: restoreBackup/createLongWavArchive/restoreLongWavArchive; tests/music-studio-long-wav-storage.test.js |
 | 24 | Music Studio診断・安全修復 | MIDI安全修復、依存検査・binary再選択 | 製品全体の性能原因診断→軽量化・安全修復 | music-studio-scoped-midi-repair.js; music-studio.js: recoverMissingBinary |
-| 25 | AI実行環境・作品保護 | ローカル生成runtime、外部送信設定、単独Intelアプリ梱包 | Intel/Apple Silicon全処理の配布閉包、署名・公証、再配布許諾 | tools/music-local-generation/model-lock.json; tools/music-native; music-studio.js: normalizeSettings |
+| 25 | AI実行環境・作品保護 | ローカル生成runtime、外部送信設定、単独Intelアプリ梱包 | Intel/Apple Silicon全処理の配布閉包、署名・公証、再配布許諾 | tools/music-local-generation/model-lock.json; tools/music-native-wrapper; music-studio.js: normalizeSettings |
 | 26 | AI料金管理 | 設定・部分編集Provider入口はある。料金管理の完成実装は確認できない | 料金事前表示/予約/月額上限/失敗取消/使用量台帳、Provider条件確定 | music-studio.js: editorRunPartialEditProvider; music-studio-ai-workflow.js |
 | 27 | AIモデル管理・互換性 | 固定ONNX/Sinsyのバージョン固定と既存成果保存 | Provider/モデル交換・旧モデル・更新前品質互換試験 | tools/music-local-generation/model-lock.json; music-studio-generation-adapter.js（保存世代adapterでありModel交換ではない） |
 | 28 | スマートUI | 作業別UI、お気に入り、限定語による画面案内、単独Menu修正 | 自由な自然言語ルーティング、全編集状態・touch/a11yの統合受入 | music-studio.js: normalizeWorkspace/resolveWorkRequest; nova-menu.js; tests/music-studio-workspace.test.js |
@@ -66,4 +66,4 @@
 
 新規4ケース：安全Archiveの別repository復元でWAV/履歴保持、欠落WAVで旧設定保持、Archiveダウンロード失敗で旧設定保持、作成中Cancelでzero-write。起点コードはWAV保護/欠落WAV拒否の2ケースで実害を再現。書出失敗テストは起点でもJSON書出エラーとして拒否するが、新コードでは完全Archive側の失敗を検証する。Cancelは既存契約の回帰。
 
-追加の関連回帰100件は成功。ローカル実ブラウザはChromium実行ファイル不在で起動不可。追加した実IndexedDB/安全Archive検証はGitHub CIで実行する。GitHub CIはこの独立ブランチの最終HEADで確認しPRに結果を追記する。電源断・物理Macの受入は未実施。
+全Node回帰2,683件成功・失敗0件（112.5秒）。追加の関連回帰100件、Home 23件、追加4件も成功。ローカル実ブラウザはChromium実行ファイル不在で起動不可。追加した実IndexedDB/安全Archive検証はHEAD 66cf8b393c2e8d48ef7741acb277ec119003c148のGitHub CI run 40900571562で成功。ブラウザ再起動、履歴限定binary、完全安全コピーと書出拒否時zero-write、Undo/Redo/再復元を含む。最終文書更新ではruntime/testの内容は変更しない。GitHub CIはこの独立ブランチの最終HEADで確認しPRに結果を追記する。電源断・物理Macの受入は未実施。
