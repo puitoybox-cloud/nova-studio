@@ -1412,6 +1412,14 @@
       // Never claim a full archive when external referenced bytes are absent.
       const references=referenceBinaries(p);for(const b of references){const identity=JSON.stringify([b.size,b.hashes,'reference']);if(assets.has(b.id)&&assets.get(b.id)!==identity)throw Error('archive-shared-asset-conflict');assets.set(b.id,identity)}
       if(p.longWavAssets!==undefined&&!Array.isArray(p.longWavAssets))throw Error('archive-assets-invalid');
+      if(p.audioSeparationHistory!==undefined){
+        if(!Array.isArray(p.audioSeparationHistory))throw Error('archive-separation-history-invalid');
+        const available=new Set((p.longWavAssets||[]).map(a=>a?.id));
+        for(const row of p.audioSeparationHistory){
+          if(!row||!Array.isArray(row.assetIds)||!row.assetIds.length||new Set(row.assetIds).size!==row.assetIds.length)throw Error('archive-separation-history-invalid');
+          if(row.assetIds.some(id=>typeof id!=='string'||!available.has(id)))throw Error('archive-separation-history-asset-missing');
+        }
+      }
       for(const a of p.longWavAssets||[]){
         if(a?.mixHistory)longMixHistory(a);if(a?.vocalTake)vocalHistory(a);
         if(!a||typeof a.id!=='string'||!a.id||!Number.isSafeInteger(a.size)||a.size<44||!Array.isArray(a.hashes)||a.hashes.length!==Math.ceil(a.size/1048576)||a.hashes.some(h=>typeof h!=='string'||! /^[a-f0-9]{64}$/.test(h)))throw Error('archive-asset-invalid');
@@ -1600,6 +1608,7 @@
       const projects=manifest.projects.map(source=>{const p=clone(source);p.projectId=projectMapping.get(source.projectId);p.projectName+='（復元）';p.updatedAt=now();
         versionRebind(p,'（復元）');const restored=p;for(const p of [restored,...versionSnapshots(restored)]){p.projectId=restored.projectId;
         p.longWavAssets=(p.longWavAssets||[]).map(a=>({...a,id:mapping.get(a.id)}));
+        if(p.audioSeparationHistory)p.audioSeparationHistory=p.audioSeparationHistory.map(row=>({...row,assetIds:row.assetIds.map(id=>mapping.get(id))}));
         const remapPlan=plan=>plan?{...plan,routes:plan.routes.map(r=>({...r,key:r.key.startsWith('wav:')?'wav:'+(mapping.get(r.key.slice(4))||r.key.slice(4)):r.key}))}:plan;
         p.finalExportPlan=remapPlan(p.finalExportPlan);
         if(Array.isArray(p.integrations?.logicPro))p.integrations.logicPro=p.integrations.logicPro.map(link=>({...link,...(link.kind==='audio-return'&&mapping.has(link.assetId)?{assetId:mapping.get(link.assetId)}:{}),...(projectMapping.has(link.sourceProjectId)?{sourceProjectId:projectMapping.get(link.sourceProjectId),originalSourceProjectId:link.originalSourceProjectId||link.sourceProjectId}:{})}));

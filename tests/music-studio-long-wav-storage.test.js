@@ -492,6 +492,8 @@ test('Demucs six WAV adoption preserves source bytes and restores independent au
  const dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());
  const restored=await dst.a.restoreLongWavArchive(await f.a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);
  const p=restored.projects.find(p=>p.audioSeparationHistory?.length);assert.ok(p);
+ assert.deepEqual(JSON.parse(JSON.stringify(p.audioSeparationHistory[0].assetIds)),p.longWavAssets.map(a=>a.id));
+ assert.ok(p.audioSeparationHistory[0].assetIds.every(id=>!r.project.audioSeparationHistory[0].assetIds.includes(id)));
  for(const asset of p.longWavAssets)assert.equal((await dst.a.pcmLoadLongWav(p.projectId,asset.id)).size,entries[0].file.size);
  assert.equal((await dst.a.loadReferenceFile(p.projectId,'fileReferences',0)).blob.size,original.size);
 });
@@ -633,4 +635,17 @@ test('pre-history archive preserves legacy aliases, opaque data, historical WAV 
  assert.equal(JSON.stringify(copy.midiData),JSON.stringify(p.midiData));assert.equal(JSON.stringify(copy.songVersions.checkpoints[0].snapshot.midiData),JSON.stringify(p.midiData));assert.equal(copy.legacy.keep,true);
  const asset=copy.songVersions.checkpoints[0].snapshot.longWavAssets[0],record=await repo.getLongWav(asset.id);assert.equal(Buffer.compare(Buffer.from(await record.blob.arrayBuffer()),Buffer.from(await wav(100).arrayBuffer())),0);
  assert.equal((await repo.listMidiHistory()).length,0);assert.equal((await repo.listMidiImportHistory()).length,0);assert.equal((await repo.getSettings()).format,src.a.defaultSettings().format);assert.equal(JSON.stringify(await src.repo.get(p.projectId)),original);
+});
+
+test('separation history in current and checkpoint snapshots remaps only verified assets; dangling history is rejected without writes',async()=>{
+ const src=await setup();await src.a.pcmImportLongFile(wav(100),src.p.projectId);let p=await src.repo.get(src.p.projectId);
+ p.audioSeparationHistory=[{model:'legacy-model',assetIds:[p.longWavAssets[0].id],opaque:{keep:true}}];p=src.a.versionCapture(p,'Separation');await src.repo.put(p);src.a.state.projects=[p];const archive=await src.a.createLongWavArchive(),dst=await setup();
+ await dst.repo.putAutoBackup({backupId:'safe',createdAt:'2026-10-29T00:00:00Z',snapshot:dst.a.backupObject()});const before=JSON.stringify([...dst.indexedDB.stores].map(([k,v])=>[k,[...v]]));
+ for(const historical of [false,true]){
+  const bad=await rewriteLegacyManifest(archive,m=>{const x=historical?m.projects[0].songVersions.checkpoints[0].snapshot:m.projects[0];x.audioSeparationHistory[0].assetIds=['missing']});
+  const result=await dst.a.restoreLongWavArchive(bad);assert.equal(result.ok,false);assert.match(result.error,/separation-history-asset-missing/);assert.equal(JSON.stringify([...dst.indexedDB.stores].map(([k,v])=>[k,[...v]])),before);
+ }
+ const result=await dst.a.restoreLongWavArchive(archive);assert.equal(result.ok,true,result.error);await dst.repo.close();const fresh=fixture(dst.indexedDB),repo=fresh.a.indexedDbRepository(),copy=await repo.get(result.projects[0].projectId);
+ for(const x of [copy,...fresh.a.versionSnapshots(copy)]){assert.equal(x.audioSeparationHistory[0].assetIds[0],x.longWavAssets[0].id);assert.notEqual(x.audioSeparationHistory[0].assetIds[0],p.longWavAssets[0].id);assert.equal(x.audioSeparationHistory[0].opaque.keep,true)}
+ assert.equal(JSON.stringify(await src.repo.get(p.projectId)),JSON.stringify(p));
 });
