@@ -1,7 +1,20 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto}=require('node:crypto');
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
-function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set(v.projectId||v.id||v.backupId,structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=v.projectId||v.id||v.backupId;if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
+function idb(){
+ const stores=new Map(),queue=[];let fault=false,busy=false,failId='';
+ const next=()=>{if(busy||!queue.length)return;busy=true;queue.shift()()};
+ const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){
+  names=Array.isArray(names)?names:[names];let staged,pending=0,aborted=false,active=false,timer;const work=[];
+  const release=()=>{busy=false;next()};
+  const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);if(active)setImmediate(()=>{tx.onabort?.();release()})},objectStore(n){
+   function req(op){pending++;const r={};const run=()=>setImmediate(()=>{if(aborted)return;try{r.result=op(staged.get(n));r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.();release()})}});if(active)run();else work.push(run);return r}
+   return{delete:k=>req(map=>{if(fault)throw Error('QuotaExceededError');return map.delete(k)}),get:k=>req(map=>structuredClone(map.get(k))),getAll:()=>req(map=>structuredClone([...map.values()])),getKey:k=>req(map=>map.has(k)?k:undefined),put:v=>req(map=>{if(fault||v.id===failId)throw Error('QuotaExceededError');map.set(v.projectId||v.id||v.backupId,structuredClone(v))}),add:v=>req(map=>{if(fault||v.id===failId)throw Error('QuotaExceededError');const key=v.projectId||v.id||v.backupId;if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}
+  }};
+  queue.push(()=>{active=true;staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));if(aborted){setImmediate(()=>{tx.onabort?.();release()})}else for(const run of work)run()});setImmediate(next);return tx;
+ }};
+ return{stores,failOnId(id){failId=id},repair(){fault=false;failId=''},fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}
+}
 function fixture(indexedDB=idb()){let seq=0;const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>webcrypto.randomUUID()},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
 function wav(frames=2100000){const b=new ArrayBuffer(44+frames*2),v=new DataView(b),tag=(p,s)=>[...s].forEach((c,i)=>v.setUint8(p+i,c.charCodeAt()));tag(0,'RIFF');v.setUint32(4,b.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,frames*2,true);const file=new Blob([b],{type:'audio/wav'});file.name='long.wav';return file}
 async function setup(){const f=fixture(),a=f.a,repo=a.indexedDbRepository(),p=a.makeProject({projectId:'long-project',projectName:'Long',midiData:{unchanged:true},legacy:{keep:true}});a.setRepository(repo);await repo.put(p);a.state.projects=[p];a.pcmOpen(p.projectId);return{...f,repo,p}}
@@ -264,4 +277,66 @@ test('interrupted Take quota failure preserves existing Take and retry audio',as
  await a.vocalCycleStart(id,{endTick:480,cycles:2});await new Promise(setImmediate);
  c.node.port.onmessage({data:{type:'started',atFrame:c.node.frame}});c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(80).fill(.25)}});
  f.indexedDB.fail();c.node.onprocessorerror();assert.equal((await a.vocal.completion).ok,false);assert.equal(a.vocal.pending.frames,80);assert.equal(JSON.stringify(await f.repo.get(id)),before);assert.equal(a.vocalCycle.active,false);a.vocalDiscard();
+});
+
+async function interruptedJournal({chunks=3,existing=false}={}){
+ const f=existing?await workspaceTakes():await setup(),c=scheduledCapture(f),a=f.a;
+ assert.equal((await a.vocalStart(f.p.projectId)).ok,true);const recorder=a.vocal.recorder;
+ for(let i=0;i<chunks;i++){c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(80).fill((i+1)/10)}});await recorder.journalTail}
+ const m=await f.repo.getVocalJournal(recorder.journalId);assert.equal(m.frames,chunks*80);assert.equal(m.next,chunks);
+ // A fresh JS runtime has no recorder, pending WAV, or old application memory.
+ const fresh=fixture(f.indexedDB),b=fresh.a;b.setRepository(b.indexedDbRepository());await b.refresh();
+ return{...f,c,recorder,m,b};
+}
+function ageJournal(f){f.indexedDB.stores.get('vocalJournals').get(f.m.id).updatedAt=0}
+test('committed in-flight PCM survives fresh runtime, restores exact bytes and preserves existing takes',async()=>{
+ const f=await interruptedJournal({existing:true});ageJournal(f);const before=await f.repo.get(f.p.projectId),originals=await Promise.all(before.longWavAssets.map(x=>f.a.pcmLoadLongWav(f.p.projectId,x.id)));
+ await f.b.vocalDiscoverRecovery();assert.equal(f.b.vocalRecovery.items.length,1);assert.match(f.b.vocalView(f.b.state.projects[0]),/取得済み音声を復旧/);
+ const r=await f.b.vocalRecoverJournal(f.m.id);assert.equal(r.ok,true,r.error);const p=await f.repo.get(f.p.projectId);assert.equal(p.longWavAssets.length,3);assert.equal(p.longWavAssets[2].frames,240);
+ const bytes=await f.b.pcmLoadLongWav(p.projectId,r.assetId),expected=f.b.vocalWav([Float32Array.from({length:240},(_,i)=>Math.fround((Math.floor(i/80)+1)/10))],8000).blob;
+ assert.deepEqual(Buffer.from(await bytes.arrayBuffer()),Buffer.from(await expected.arrayBuffer()));
+ for(let i=0;i<2;i++)assert.deepEqual(Buffer.from(await originals[i].arrayBuffer()),Buffer.from(await(await f.b.pcmLoadLongWav(p.projectId,before.longWavAssets[i].id)).arrayBuffer()));
+ assert.deepEqual(JSON.parse(JSON.stringify(p.longWavAssets.slice(0,2))),JSON.parse(JSON.stringify(before.longWavAssets)));assert.equal((await f.repo.listVocalJournals()).length,0);assert.equal(f.indexedDB.stores.get('vocalJournalChunks').size,0);
+ assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,false);
+ f.a.vocalDiscard();
+});
+test('active journal refuses recovery, missing first chunk leaves all data and project intact',async()=>{
+ const f=await interruptedJournal(),before=JSON.stringify(await f.repo.get(f.p.projectId));assert.match((await f.b.vocalRecoverJournal(f.m.id)).error,/may-be-active/);
+ ageJournal(f);f.indexedDB.stores.get('vocalJournalChunks').delete(f.m.id+':0');const r=await f.b.vocalRecoverJournal(f.m.id);assert.equal(r.ok,false);assert.match(r.error,/no-valid/);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);assert.ok(await f.repo.getVocalJournal(f.m.id));f.a.vocalDiscard();
+});
+test('corrupt or missing trailing chunk recovers only hash-verified prefix and retains damaged journal',async()=>{
+ for(const missing of [true,false]){const f=await interruptedJournal();ageJournal(f);const store=f.indexedDB.stores.get('vocalJournalChunks');if(missing)store.delete(f.m.id+':1');else store.get(f.m.id+':1').bytes=new Uint8Array(160).buffer;
+ const r=await f.b.vocalRecoverJournal(f.m.id);assert.equal(r.ok,true,r.error);assert.match(r.warning,/corrupt/);assert.equal(r.project.longWavAssets[0].frames,80);assert.equal((await f.repo.getVocalJournal(f.m.id)).consumed,80);assert.equal(store.size,missing?2:3);
+ assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,false);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets.length,1);f.a.vocalDiscard()}
+});
+test('journal append quota failure stops capture, retains committed prefix after fresh runtime',async()=>{
+ const f=await interruptedJournal({chunks:1}),before=JSON.stringify(await f.repo.get(f.p.projectId));f.indexedDB.fail();
+ f.c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(80).fill(.5)}});await f.recorder.journalTail;
+ const r=await f.a.vocal.completion;assert.equal(r.ok,false);assert.equal(f.a.vocal.pending.frames,160);assert.equal((await f.repo.getVocalJournal(f.m.id)).frames,80);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);assert.equal(f.indexedDB.stores.get('vocalJournalChunks').size,1);
+ f.indexedDB.repair();ageJournal(f);assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,true);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets[0].frames,80);f.a.vocalDiscard();
+});
+test('Take transaction abort preserves journal and old takes; retry after another restart succeeds once',async()=>{
+ const f=await interruptedJournal({existing:true});ageJournal(f);const before=JSON.stringify(await f.repo.get(f.p.projectId));
+ const repo=f.b.indexedDbRepository(),write=repo.putLongWav;f.b.setRepository(repo);repo.putLongWav=async(...args)=>{f.indexedDB.fail();return write(...args)};
+ const r=await f.b.vocalRecoverJournal(f.m.id);assert.equal(r.ok,false);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);assert.equal((await f.repo.getVocalJournal(f.m.id)).consumed,0);
+ f.indexedDB.repair();const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal((await fresh.a.vocalRecoverJournal(f.m.id)).ok,true);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets.length,3);f.a.vocalDiscard();
+});
+test('sealed journal rejects live append and concurrent recovery cannot duplicate audio',async()=>{
+ const f=await interruptedJournal();ageJournal(f);await f.repo.sealVocalJournal(f.m.id,f.m);
+ await assert.rejects(f.repo.appendVocalJournal(f.m.id,f.m.next,new Uint8Array(160).buffer,[]),/conflict/);
+ const other=fixture(f.indexedDB);other.a.setRepository(other.a.indexedDbRepository());await other.a.refresh();
+ const result=await Promise.all([f.b.vocalRecoverJournal(f.m.id),other.a.vocalRecoverJournal(f.m.id)]);assert.equal(result.filter(x=>x.ok).length,1);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets.length,1);f.a.vocalDiscard();
+});
+test('interruption between chunk add and journal metadata commit leaves the earlier prefix intact',async()=>{
+ const f=await interruptedJournal({chunks:1});f.indexedDB.failOnId(f.m.id);
+ await assert.rejects(f.repo.appendVocalJournal(f.m.id,1,new Uint8Array(160).buffer,['hash']),/Quota/);
+ assert.equal((await f.repo.getVocalJournal(f.m.id)).frames,80);assert.equal(await f.repo.getVocalJournalChunk(f.m.id+':1'),undefined);assert.equal((await f.repo.getVocalJournalChunk(f.m.id+':0')).bytes.byteLength,160);
+ f.indexedDB.repair();ageJournal(f);assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,true);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets[0].frames,80);f.a.vocalDiscard();
+});
+test('restart after the first gapless Take commits recovers only unsaved frames',async()=>{
+ const f=await setup(),c=scheduledCapture(f),a=f.a;assert.equal((await a.vocalCycleStart(f.p.projectId,{endTick:480,cycles:2,gapless:true})).ok,true);
+ c.node.port.onmessage({data:{type:'started',atFrame:c.node.frame}});c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(4096).fill(.2)}});await a.vocal.recorder.journalTail;c.node.port.onmessage({data:{type:'pcm',samples:new Float32Array(1904).fill(.4)}});await a.vocal.recorder.journalTail;
+ const journalId=a.vocal.journalId,write=f.repo.putLongWav;let saved=0;f.repo.putLongWav=async(...args)=>{if(saved++)f.indexedDB.fail();return write(...args)};
+ c.node.port.onmessage({data:{type:'stopped',frames:6000,sampleRate:8000}});assert.equal((await a.vocal.completion).ok,false);assert.equal((await f.repo.getVocalJournal(journalId)).consumed,4000);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets.length,1);
+ f.indexedDB.repair();const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();const r=await fresh.a.vocalRecoverJournal(journalId);assert.equal(r.ok,true,r.error);assert.equal(r.project.longWavAssets.length,2);assert.equal(r.project.longWavAssets[1].frames,2000);assert.equal((await f.repo.listVocalJournals()).length,0);a.vocalDiscard();
 });
