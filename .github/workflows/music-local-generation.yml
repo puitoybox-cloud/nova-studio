@@ -104,7 +104,7 @@ jobs:
             ${{ runner.temp }}/music-long-production-browser.json
   intel-mac-generation:
     runs-on: macos-15-intel
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
