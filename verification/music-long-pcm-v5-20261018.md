@@ -1,0 +1,15 @@
+# Long PCM vocal increment — 2026-10-18 JST
+
+Source: PR #454 / 93879ee70daf52006dd7451ebbfc1ec05d640602. Fresh main is 552d56eafddfd192970c09f7d6278696cf8775c3. All 201 Open PR collections and 199 Draft HEAD/base/mergeability snapshots retrieved; no newer PR. PR #454 has seven successful PR-event workflows. Full historical changed-file/commit/CI-log audit is not complete.
+
+PCM Worklet recording now accepts an explicit 480-second budget. Its historical default remains 120 seconds. Worklet stops at the exact frame budget even if document timers stop. Main-thread capture independently checks 480 seconds and the existing 64 MiB encoded-byte bound. Short 4096-frame blocks become PCM16 Blobs; floating-point capture blocks are not retained. Blob pieces are released after Stop. No claim that the browser writes these temporary Blobs to disk, no constant total memory claim, and no recording-in-progress crash recovery. At 48 kHz mono, eight minutes is 46,080,044 WAV bytes. Higher negotiated rates can fail the byte-budget preflight.
+
+MediaRecorder fallback and local AI/Sinsy generation retain their existing 120-second limits. Explicit fallback punch ranges over that limit fail rather than truncate. PCM gapless captures may total eight minutes. Storage estimate is checked before starting the recorder; final atomic quota/conflict checks remain authoritative. Missing Storage Estimate support does not guarantee capacity.
+
+Existing bounded WAV inspection/waveform, frame-accurate split, trim/gain/placement metadata, Undo/Redo, reopen, separate Mix publication and full binary archive paths are reused. New eight-minute 8 kHz PCM fixture checks exact natural stop with pause/resume, save, trim/gain/move, Undo/Redo, fresh repository reopen, Mix publication and byte-identical original/rendered archive recovery. This is synthetic software verification, not physical microphone or eight-minute real-time browser acceptance. Advanced pitch/time processing and Comp retain their existing 125-second/sample-capacity limits.
+
+Python: 509 tests, 504 pass / existing 5 skips. Generation constraints 6, transport 3, startup 4 pass. Tracked JavaScript syntax and Python compilation pass. Browser execution attempted but installed Playwright Chromium executable is absent; 1440/1180/820/390, console and physical device results are not newly certified. Swift, ONNX and Sinsy are not installed locally; exact-head CI must establish those results.
+
+Formal classification stays A0/B0/C30: this increment does not close all requirements of any large feature. The prior feature ledger remains the baseline, not a fresh full specification audit. Remaining production scope includes durable recording-in-progress recovery, long advanced correction/Comp, full HTTPS reconnect/unsaved protection, AI quality/composition criteria and distributable runtime/policy closure. No claim of 20–30 independently completed items or 100% completion.
+
+Draft only. No main edits, Ready/Merge, Force push, Live Provider calls, or new models/samples. Existing project and binary stores retained. Exact final test/CI results belong in the new PR body.

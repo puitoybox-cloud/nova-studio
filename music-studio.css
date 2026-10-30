@@ -654,3 +654,172 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover){font-size:.84rem}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(input[type=range],input[type=checkbox],input[type=radio]){accent-color:var(--music-editor-accent)}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) output{color:var(--music-violet)}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(input,select,button):focus-visible{border-color:var(--music-editor-accent);outline:2px solid rgba(139,92,246,.28);outline-offset:1px}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) .music-primary{border-color:var(--music-editor-accent);background:rgba(109,40,217,.2);color:var(--music-violet)}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) .music-note-length-preview{border-color:var(--music-editor-accent);background:rgba(139,92,246,.07)}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(.music-correction-grid,.music-correction-batch-grid){gap:4px 6px}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(.music-tempo-panel,.music-transpose-panel,.music-note-length-panel){margin-top:5px;padding:6px}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(.music-correction-target,.music-transpose-direction){gap:4px 7px;margin:5px 0;padding:6px 7px;border-width:1px;border-radius:8px}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(.music-correction-target,.music-transpose-direction) legend{float:none;grid-column:1/-1;width:auto;margin:0 0 4px;padding:0;background:transparent;font-size:.76rem;line-height:1.25}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) label{font-size:.76rem;line-height:1.2}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) :is(select,input[type=number]){min-height:30px;padding:3px 6px;font-size:.76rem}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) input[type=range]{min-height:20px}.music-midi-editor-page :is(.music-correction-popover,.music-cleanup-popover) button{height:auto;min-height:28px;padding:3px 8px;font-size:.74rem;line-height:1.15}
 .music-midi-editor-page .music-correction-popover{overflow-y:auto}.music-midi-editor-page .music-correction-sticky-header{position:sticky;z-index:5;top:-8px;display:flex;justify-content:flex-end;margin:-8px -8px 4px;padding:8px 8px 2px;background:#081421}.music-midi-editor-page .music-correction-panel-close{position:static;margin:0}.music-midi-editor-page .music-correction-group{margin:5px 0}.music-midi-editor-page .music-correction-group-title{margin:0 0 4px;color:var(--music-violet);font-size:.76rem;font-weight:800;line-height:1.25}.music-midi-editor-page .music-correction-batch-grid .music-correction-group-title{color:var(--music-violet)}.music-midi-editor-page .music-correction-group :is(.music-correction-target,.music-transpose-direction){margin:0}.music-midi-editor-page .music-editor-popover:not(.music-correction-popover){max-height:min(70vh,calc(100vh - 88px));overflow-y:auto}.music-midi-editor-page .music-popup-close-row{position:sticky;z-index:6;top:0;display:flex;flex:0 0 100%;justify-content:flex-end;box-sizing:border-box;width:100%;margin:0 0 5px;background:#081421}.music-midi-editor-page .music-popup-close{height:auto;min-height:28px;margin:0;padding:3px 8px;font-size:.74rem;line-height:1.15}
 .music-external-import{display:grid;gap:7px;padding:9px;border:1px solid #67569a;border-radius:10px;background:#111a2b}.music-external-import>.music-file-action{min-width:0;padding:7px 9px}.music-external-import-status,.music-external-import-result p{margin:0;color:var(--music-muted);font-size:.75rem}.music-external-import-result{display:grid;gap:5px;padding:7px;border-radius:8px;background:#0b1725;font-size:.75rem}.music-external-import-result.is-success{border:1px solid #2f855a;color:var(--music-green)}.music-external-import-result.is-error{border:1px solid #b45353;color:#fca5a5}.music-external-import-result>span{overflow-wrap:anywhere}.music-external-import-result dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0}.music-external-import-result dl div{display:grid;gap:1px}.music-external-import-result dt{color:var(--music-muted)}.music-external-import-result dd{margin:0;font-weight:800}\n@media(max-width:600px){.music-external-import-result dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Exact A bars can be shorter than the label. Preserve their hit areas and show numbers first. */
+.music-midi-editor-page .music-measure{container-type:inline-size;display:block;white-space:nowrap;overflow:hidden;padding-inline:1px;min-width:0}
+@container (max-width:50px){.music-measure-prefix{display:none}}
+@media(max-width:600px){
+  .music-midi-editor-page .music-part-tabs .music-part-tab-list{width:auto;min-width:0;flex:1 1 0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group{flex:0 0 auto}
+  .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{width:92px;min-width:92px;flex:0 0 92px}
+}
+
+.music-original-files .music-auto-backup-row{flex-wrap:wrap}.music-original-files .music-auto-backup-row>div{min-width:0;flex:1 1 180px;overflow-wrap:anywhere}.music-original-files label{min-width:0;max-width:100%}.music-original-files input[type=file]{max-width:100%;width:100%;box-sizing:border-box}
+@media(max-width:600px){.music-original-files .music-auto-backup-row>div{flex:0 1 auto}}
+
+.music-vocal-panel{margin-top:1rem}.music-vocal-panel article{border-top:1px solid #777;padding-top:1rem;margin-top:1rem}.music-vocal-panel form{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end}.music-vocal-panel label{display:flex;flex-direction:column;max-width:100%;min-width:0}.music-vocal-panel input,.music-vocal-panel select{max-width:100%;width:180px}.music-vocal-panel svg{display:block;max-width:100%}
+
+.music-vocal-advanced{margin-top:.75rem}.music-vocal-advanced summary{cursor:pointer;font-weight:600}.music-vocal-advanced input[type=checkbox]{width:auto}.music-vocal-candidate-list{max-height:220px;overflow:auto}.music-vocal-candidate-list label{display:flex;flex-direction:row;gap:.5rem}.music-vocal-comp{border-top:1px solid #777;margin-top:1rem;padding-top:1rem}.music-vocal-comp li{overflow-wrap:anywhere}.music-vocal-advanced table{width:100%;border-collapse:collapse}.music-vocal-advanced td{padding:.5rem;vertical-align:top}.music-vocal-panel svg{cursor:crosshair}.music-vocal-panel details{overflow-wrap:anywhere}
+
+/* Vocal controls use the same readable dark surfaces as the settings panel. */
+.music-vocal-panel .music-vocal-advanced,.music-vocal-panel .music-vocal-comp{padding:16px;border:1px solid #527085;border-radius:12px;background:#112031;color:#eef6ff}
+.music-vocal-panel :is(p,label,summary,h3,th,td){color:#eef6ff}
+.music-vocal-panel input:not([type=checkbox]),.music-vocal-panel select{min-height:42px;padding:8px 10px;border:1px solid #527085;border-radius:8px;background:#081524;color:#eef6ff;font:inherit}
+.music-vocal-panel input[type=checkbox]{width:18px;height:18px;min-height:18px;padding:0;margin:2px 5px 2px 0;flex:0 0 18px;accent-color:#7dd3fc}
+/* Selected-take workspace retains the original editor and all source audio. */
+.music-vocal-workspace{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:12px;border:1px solid #527085;border-radius:8px;background:#112031}
+.music-vocal-workspace>label,.music-vocal-workspace form{flex:1 1 240px;min-width:0}
+.music-vocal-workspace label{gap:4px;line-height:1.35}
+.music-vocal-workspace :is(input,select){box-sizing:border-box;width:100%;min-height:44px;padding:6px 10px}
+.music-vocal-workspace button{min-height:44px;padding:6px 10px}
+.music-vocal-workspace>p{flex:1 1 100%;margin:0;font-size:.82rem;line-height:1.4}
+.music-vocal-comp-fold{margin-top:12px;padding:12px;border:1px solid #527085;border-radius:8px}
+.music-studio-shell .music-vocal-comp-fold>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;background:#112031;color:#eef6ff}
+.music-vocal-comp-fold .music-vocal-comp{margin-top:4px;padding:12px}
+@media(min-width:821px) and (orientation:landscape){.music-vocal-workspace{position:sticky;top:0;z-index:2}.music-vocal-panel article{margin-top:12px;padding-top:12px}.music-vocal-panel form{gap:4px 12px}.music-vocal-panel form label{gap:4px}}
+.music-vocal-panel .music-vocal-advanced :is(table,thead,tbody,tr,th,td){background:transparent}
+/* Recording and project details remain accessible without dominating the editor. */
+.music-project-details,.music-vocal-help,.music-vocal-record-settings{margin:4px 0;border:1px solid #527085;border-radius:8px;padding:0 12px;background:#112031;color:#eef6ff}
+.music-studio-shell :is(.music-project-details,.music-vocal-help,.music-vocal-record-settings)>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#eef6ff;background:#112031}
+.music-vocal-record-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 12px;padding:12px 0}
+.music-vocal-record-grid>p{grid-column:1/-1}
+.music-vocal-panel>form{display:block}
+.music-vocal-record-actions,.music-vocal-take-step{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.music-vocal-panel :is(button,summary,select,input:not([type=checkbox])){min-height:44px;box-sizing:border-box;padding:6px 10px}
+.music-vocal-panel label{gap:4px}
+.music-vocal-panel .music-vocal-take-step{flex:0 1 auto}
+@media(min-width:821px) and (orientation:landscape){
+ .music-project-page:has(.music-vocal-panel){padding:8px 12px;margin:0 auto}
+ .music-project-page:has(.music-vocal-panel) .music-project-panel{padding:12px}
+ .music-project-page:has(.music-vocal-panel) .music-section-heading :is(p,h1){margin:4px 0}
+ .music-vocal-panel{margin-top:4px;padding:12px}
+ .music-vocal-panel>h2,.music-vocal-panel>p,.music-vocal-panel article>h3,.music-vocal-panel article>p{margin:4px 0;line-height:1.35}
+ .music-vocal-panel article form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-vocal-panel article form button{align-self:end}
+ .music-vocal-workspace{gap:4px 12px;padding:12px;position:static}
+ .music-vocal-workspace>p{font-size:.75rem}
+ .music-vocal-panel .music-form-actions{gap:4px}
+ .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:60dvh;overflow:auto;overscroll-behavior:contain}
+}
+.music-production-navigation{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.music-mix-versions summary,.music-mix-advanced summary{min-height:44px;box-sizing:border-box;padding:6px 10px;background:#112031;color:#f3f6ff;cursor:pointer;display:flex;align-items:center}
+.music-mix-versions article{padding:12px;border:1px solid #527085}
+.music-mix-advanced>div{padding:12px;max-height:60dvh;overflow:auto;overscroll-behavior:contain}
+@media(min-width:821px) and (orientation:landscape){
+ .music-mix-focused{padding:8px 12px;margin:0 auto}
+ .music-mix-focused>.music-project-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;padding:12px}
+ .music-mix-focused>.music-project-panel>:not(form){grid-column:1/-1;margin:4px 0}
+ .music-mix-focused>.music-project-panel>.music-mix-help{grid-column:1}
+ .music-mix-focused>.music-project-panel>label{grid-column:2/4}
+ .music-mix-focused .music-mix-focus-open{display:none}
+ .music-mix-focused .music-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+ .music-mix-focused label{gap:4px}
+ .music-mix-focused :is(input,select,button){min-height:44px;box-sizing:border-box;padding:6px 10px}
+ .music-mix-focused .music-form-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .music-mix-focused .music-form-actions button{font-size:.8rem;line-height:1.2}
+ .music-mix-focused>.music-project-panel>p{font-size:.78rem;line-height:1.3}
+ .music-mix-focused h1{font-size:1.2rem;line-height:1.3}
+}
+.music-production-navigation button{min-height:44px;box-sizing:border-box;padding:6px 10px;flex:1 1 130px}
+.music-vocal-capture{margin:4px 0;border:1px solid #527085;border-radius:8px;padding:0 12px;background:#112031;color:#eef6ff}
+.music-studio-shell .music-vocal-capture>summary{min-height:44px;display:flex;align-items:center;background:#112031;color:#eef6ff;cursor:pointer}
+.music-vocal-capture>form{display:block}
+.music-vocal-focus-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:4px 0}
+.music-vocal-focus-heading h1{min-width:0;overflow-wrap:anywhere;font-size:1.25rem;margin:4px 0;line-height:1.35}
+.music-vocal-focused{padding:12px;min-height:0}
+.music-vocal-focused .music-vocal-panel{padding:12px;margin:4px 0}
+@media(min-width:821px) and (orientation:landscape){
+ .music-project-page:has(.music-vocal-panel){min-height:0}
+ .music-vocal-focused .music-vocal-panel article form{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .music-vocal-focused .music-vocal-panel article :is(input,select){width:100%}
+ .music-vocal-focused .music-vocal-panel article>p{font-size:.75rem}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 200px}
+ .music-vocal-focused .music-vocal-panel :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings)[open]{max-height:50dvh}
+}
+/* Landscape: keep the selected waveform/editor beside the recording/take dock. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-vocal-focused .music-vocal-panel:has(>article){display:grid;grid-template-columns:260px minmax(0,1fr);gap:4px 12px;align-items:start}
+ .music-vocal-focused .music-vocal-panel:has(>article)>*{grid-column:1;min-width:0}
+ .music-vocal-focused .music-vocal-panel>h2{grid-row:1;font-size:1.05rem}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-help{grid-row:2}
+ .music-vocal-focused .music-vocal-panel>[data-vocal-status]{grid-row:3}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-capture{grid-row:4}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-workspace{grid-row:5;padding:12px;gap:4px}
+ .music-vocal-focused .music-vocal-panel>.music-vocal-comp-fold{grid-row:6}
+ .music-vocal-focused .music-vocal-panel>article{grid-column:2!important;margin:0;padding-top:4px}
+ .music-vocal-focused .music-vocal-panel>article:first-of-type{grid-row:1/span 7}
+ .music-vocal-focused .music-vocal-workspace>label,.music-vocal-focused .music-vocal-workspace form{flex:1 1 100%}
+ .music-vocal-focused .music-vocal-workspace form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:end}
+ .music-vocal-focused .music-vocal-workspace form label{grid-column:1}
+ .music-vocal-focused .music-vocal-workspace form button{grid-column:2}
+ .music-vocal-focused .music-vocal-take-step{width:100%;flex:1 1 100%;margin:0}
+ .music-vocal-focused .music-vocal-take-step button{flex:1 1 0;min-width:0;font-size:.8rem;line-height:1.35}
+ .music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold):not([open]){padding:0 12px;margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article .music-form-actions{margin-top:4px}
+ .music-vocal-focused .music-vocal-panel article form label{font-size:.8rem;line-height:1.35}
+ .music-vocal-focused .music-vocal-panel article form input{font-size:1rem}
+ .music-vocal-focused .music-vocal-panel .music-vocal-capture>form{display:block}
+}
+.music-vocal-focused label:has(input[type=checkbox]){min-height:44px;justify-content:center}
+
+/* Multisample editing stays inside the existing MIDI popup. */
+.music-instrument-options{min-width:0}.music-instrument-options details{margin-block:4px}.music-instrument-options :is(input,select){max-width:100%;min-width:0;box-sizing:border-box}.music-instrument-options form{display:grid;gap:4px}.music-instrument-options label{display:grid;gap:2px;min-width:0}.music-instrument-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.music-instrument-options input:not([type=checkbox]),.music-instrument-options select{width:100%;min-height:32px}.music-instrument-options summary{white-space:normal}.music-instrument-options p{overflow-wrap:anywhere}.music-instrument-options input[type=checkbox]{width:auto}.music-instrument-options button{white-space:normal;min-height:32px}
+
+@media(pointer:coarse){.music-instrument-options :is(button,select,input:not([type=checkbox]),summary){min-height:44px}}
+
+/* Dedicated production tabs share their existing editors and transaction guards. */
+.music-ai-focused>.music-editor-layout,
+.music-ai-focused>.music-editor-heading,.music-ai-focused>.music-back{display:none}
+.music-ai-focused .music-ai-panel{margin:4px 0}
+.music-ai-focused.music-midi-editor-page .music-ai-focus[open]{position:static;inset:auto;height:auto;max-height:none;box-shadow:none;overflow:visible}
+.music-ai-focused.music-midi-editor-page .music-ai-focus[open]>summary{position:static}
+.music-ai-focused.music-midi-editor-page .music-ai-focus[open]>summary::after{content:''}
+.music-production-navigation{position:sticky;top:0;z-index:30;background:#111a2b;padding:0;border-radius:8px}
+.music-production-navigation button{flex:1 1 100px;font-size:.8rem;line-height:1.25;min-width:0}
+@media(min-width:1000px) and (max-height:900px) and (orientation:landscape){
+ .music-ai-focused{padding:4px 12px}
+ .music-ai-focused.music-midi-editor-page .music-ai-focus[open]{max-height:calc(100dvh - 220px);display:flex;flex-direction:column;overflow:hidden;padding:6px}
+ .music-ai-focused .music-ai-focus[open]>.music-ai-body{min-height:0;overflow:auto;overscroll-behavior:contain}
+ .music-ai-focused .music-ai-focus>:is(header,nav,summary){flex-shrink:0}
+ .music-ai-focused .music-ai-panel :is(header h2,header p){margin:0}
+ .music-ai-focused .music-ai-form-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .music-ai-focused .music-ai-panel :is(button,select,input:not([type=checkbox]),textarea){min-height:44px;box-sizing:border-box;padding:6px 10px}
+ .music-ai-focused .music-ai-panel label{gap:4px}
+ .music-lyrics-focused .music-project-panel{padding:8px 12px}
+ .music-lyrics-focused #musicLyricsForm .music-form-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+ .music-lyrics-focused #musicLyricsForm label{gap:4px}
+ .music-lyrics-focused #musicLyricsForm :is(select,input,button){min-height:44px;box-sizing:border-box;padding:6px 10px}
+ .music-lyrics-focused .music-track-table-wrap{max-height:220px;overflow:auto;overscroll-behavior:contain}
+}
+
+.music-lyrics-help>summary,.music-lyrics-saved>summary{min-height:44px;box-sizing:border-box;padding:6px 10px;display:flex;align-items:center;cursor:pointer}
+@media(min-width:1000px) and (max-height:900px) and (orientation:landscape){
+ .music-lyrics-focused .music-project-panel{position:relative}
+ .music-lyrics-focused .music-project-panel>h1{font-size:1.2rem;margin:4px 0}
+ .music-lyrics-focused #musicLyricsForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;align-items:start}
+ .music-lyrics-focused #musicLyricsForm>.music-form-grid{grid-column:1/-1}
+ .music-lyrics-focused #musicLyricsForm .music-form-grid>label{grid-column:span 2}
+ .music-lyrics-focused #musicLyricsForm .music-form-grid>.music-span-2{grid-column:span 3}
+ .music-lyrics-focused #musicLyricsForm textarea{min-height:56px;height:56px;resize:vertical}
+ .music-lyrics-focused #musicLyricsForm>button{min-height:44px;margin:0}
+ .music-lyrics-focused .music-project-panel>p{margin:4px 0;min-height:0}
+ .music-lyrics-focused .music-lyrics-help[open],.music-lyrics-focused .music-lyrics-saved[open]{position:fixed;inset:12px;z-index:1100;overflow:auto;overscroll-behavior:contain;padding:12px;background:#111a2b;color:#eef2ff;border:1px solid #67569a;border-radius:8px}
+ .music-lyrics-focused :is(.music-lyrics-help,.music-lyrics-saved)[open]>summary{position:sticky;top:-12px;background:#111a2b;z-index:2}
+ .music-lyrics-focused :is(.music-lyrics-help,.music-lyrics-saved)[open]>summary::after{content:'Close（閉じる）';margin-left:auto}
+}
+
+@media(min-width:1000px) and (max-height:900px) and (orientation:landscape){
+ .music-lyrics-focused.music-project-page{height:100dvh;min-height:0;max-height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding:8px 12px}
+ .music-lyrics-focused>:not(.music-project-panel){flex-shrink:0}
+ .music-lyrics-focused>.music-project-panel{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:4px}
+}

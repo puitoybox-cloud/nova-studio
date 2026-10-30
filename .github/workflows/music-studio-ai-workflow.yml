@@ -1,0 +1,27 @@
+name: Music Studio AI workflow foundation
+on:
+  pull_request:
+    paths:
+      - 'music-studio-ai-workflow.js'
+      - 'tests/music-studio-ai-workflow.test.js'
+      - 'verification/music-ai-workflow-foundation.md'
+      - '.github/workflows/music-studio-ai-workflow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/music-studio-ai-workflow.test.js
+      - run: node --test
+      - run: find . -type f -name '*.js' -not -path './.git/*' -print0 | sort -z | xargs -0 -n1 node --check
+      - run: git diff --check "origin/${{ github.base_ref }}...HEAD"
