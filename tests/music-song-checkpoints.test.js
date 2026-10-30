@@ -86,3 +86,10 @@ test('saving a checkpoint does not clear a new capture draft typed during the at
  f.repo.compareAndPut=async(...args)=>{fields.checkpointName.value='Next';fields.checkpointKind.value='working';f.a.versionCaptureChanged(event,'song');return put(...args)};
  const r=await f.a.versionSubmit(event,'song');assert.equal(r.ok,true,r.error);assert.equal(f.a.versionPanel.captureDraft.name,'Next');assert.equal(f.a.versionPanel.captureDraft.kind,'working');assert.equal((await f.repo.get('song')).songVersions.checkpoints[0].kind,'finished');
 });
+
+test('checkpoint disclosure ignores detached toggle events after status repaint',()=>{
+ const {a,p}=fixture();a.versionDisclosureChanged({open:true,isConnected:true});assert.equal(a.versionPanel.open,true);a.versionDisclosureChanged({open:false,isConnected:false});assert.equal(a.versionPanel.open,true);assert.match(a.versionView(p),/music-song-versions" open/);a.versionDisclosureChanged({open:false,isConnected:true});assert.equal(a.versionPanel.open,false);assert.match(a.versionView(p),/versionDisclosureChanged\(this\)/);
+});
+test('status repaint captures the live checkpoint disclosure before a queued toggle event',()=>{
+ const {a,w}=fixture();w.document={querySelector:s=>s==='.music-song-versions'?{open:true}:null,querySelectorAll:()=>[]};a.versionPanel.open=false;a.repaint();assert.equal(a.versionPanel.open,true);w.document.querySelector=s=>s==='.music-song-versions'?{open:false}:null;a.repaint();assert.equal(a.versionPanel.open,false);
+});

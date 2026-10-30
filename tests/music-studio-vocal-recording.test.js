@@ -403,3 +403,35 @@ test('undecodable encoded journal remains portable in automatic archive and resc
  const f=await encodedJournal(),a=f.fresh.a;a.state.settings=a.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:2}});await f.repo.putSettings(a.state.settings);f.fresh.w.AudioContext.prototype.decodeAudioData=async()=>{throw Error('undecodable')};assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);
  const r=await a.runAutoBackupCheck('2026-10-30T00:00:00Z');assert.equal(r.created,true,JSON.stringify(r));const rescue=await a.vocalJournalAction(f.m.id);assert.equal(rescue.ok,true);assert.equal(rescue.entries[0].verified,true);assert.ok(await f.repo.getVocalJournal(f.m.id));assert.equal((await f.repo.get(f.p.projectId)).longWavAssets?.length||0,0);f.a.vocalDiscard();
 });
+
+test('rescue import migrates PCM to a separate database and recovers once without changing source history',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const source=JSON.stringify(await f.repo.list()),r=await f.b.vocalJournalAction(f.m.id),fresh=await setup();
+ const imported=await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId);assert.equal(imported.ok,true,imported.error);assert.equal(imported.damaged,0);assert.notEqual(imported.journalId,f.m.id);
+ const reopened=fixture(fresh.indexedDB);reopened.a.setRepository(reopened.a.indexedDbRepository());await reopened.a.refresh();const recovered=await reopened.a.vocalRecoverJournal(imported.journalId);assert.equal(recovered.ok,true,recovered.error);assert.equal(recovered.project.longWavAssets[0].frames,f.m.frames);assert.equal((await reopened.a.vocalRecoverJournal(imported.journalId)).ok,false);assert.equal(JSON.stringify(await f.repo.list()),source);assert.ok(await f.repo.getVocalJournal(f.m.id));f.a.vocalDiscard();
+});
+async function mutateRescue(blob,edit){const bytes=await blob.arrayBuffer(),n=new DataView(bytes).getUint32(0,true),h=JSON.parse(Buffer.from(bytes.slice(4,4+n)).toString());edit(h);const header=new Blob([JSON.stringify(h)]),length=new ArrayBuffer(4);new DataView(length).setUint32(0,header.size,true);return new Blob([length,header,bytes.slice(4+n)])}
+test('rescue import rejects changed bytes, malformed manifests, truncation and trailing bytes before writing',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),before=JSON.stringify(await fresh.repo.list());const b=new Uint8Array(await r.blob.arrayBuffer());b[b.length-1]^=1;
+ const bad=[new Blob([b]),r.blob.slice(0,-1),new Blob([r.blob,'x']),await mutateRescue(r.blob,h=>h.entries[0].seq=1),await mutateRescue(r.blob,h=>h.entries[0].offset=1),await mutateRescue(r.blob,h=>h.metadata.rate=1),await mutateRescue(r.blob,h=>h.entries.pop())];
+ for(const blob of bad){const out=await fresh.a.vocalImportRescue(blob,fresh.p.projectId);assert.equal(out.ok,false,JSON.stringify(out));assert.equal((await fresh.repo.listVocalJournals()).length,0);assert.equal(JSON.stringify(await fresh.repo.list()),before)}f.a.vocalDiscard();
+});
+test('rescue import preserves original damage and gaps and only recovers the validated PCM prefix',async()=>{
+ const f=await interruptedJournal();ageJournal(f);f.indexedDB.stores.get('vocalJournalChunks').delete(f.m.id+':1');const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),out=await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId);assert.equal(out.ok,true,out.error);assert.equal(out.damaged,1);assert.equal(await fresh.repo.getVocalJournalChunk(out.journalId+':1'),undefined);
+ const recovered=await fresh.a.vocalRecoverJournal(out.journalId);assert.equal(recovered.ok,true,recovered.error);assert.equal(recovered.project.longWavAssets[0].frames,80);assert.ok(await fresh.repo.getVocalJournal(out.journalId));assert.equal((await fresh.a.vocalRecoverJournal(out.journalId)).ok,false);f.a.vocalDiscard();
+});
+test('rescue import does not relabel corrupt bytes as verified audio',async()=>{
+ const f=await interruptedJournal();ageJournal(f);f.indexedDB.stores.get('vocalJournalChunks').get(f.m.id+':0').bytes=new ArrayBuffer(160);const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),out=await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId);assert.equal(out.ok,true);assert.equal(out.damaged,1);assert.equal((await fresh.a.vocalRecoverJournal(out.journalId)).ok,false);assert.equal((await fresh.repo.get(fresh.p.projectId)).longWavAssets?.length||0,0);assert.ok(await fresh.repo.getVocalJournal(out.journalId));f.a.vocalDiscard();
+});
+test('rescue import rolls back quota failure and rejects concurrent project edits or unsaved state',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),before=JSON.stringify(await fresh.repo.list());fresh.indexedDB.fail();assert.equal((await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId)).ok,false);fresh.indexedDB.repair();assert.equal((await fresh.repo.listVocalJournals()).length,0);assert.equal(JSON.stringify(await fresh.repo.list()),before);
+ fresh.a.state.dirty=true;assert.equal((await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId)).error,'vocal-recovery-busy');fresh.a.state.dirty=false;
+ const put=fresh.repo.importVocalJournal;fresh.repo.importVocalJournal=async(...args)=>{await fresh.repo.put({...fresh.p,revision:99});return put(...args)};assert.equal((await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId)).ok,false);assert.equal((await fresh.repo.listVocalJournals()).length,0);assert.equal((await fresh.repo.get(fresh.p.projectId)).revision,99);f.a.vocalDiscard();
+});
+test('rescue import keeps undecodable MediaRecorder bytes for later recovery or export',async()=>{
+ const f=await encodedJournal(),r=await f.fresh.a.vocalJournalAction(f.m.id),fresh=await setup();capture(fresh);fresh.w.AudioContext.prototype.decodeAudioData=async()=>{throw Error('undecodable')};const out=await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId);assert.equal(out.ok,true,out.error);assert.equal((await fresh.a.vocalRecoverJournal(out.journalId)).ok,false);assert.equal(Buffer.from((await fresh.repo.getVocalJournalChunk(out.journalId+':0')).bytes).toString(),'encoded prefix');assert.equal((await fresh.a.vocalJournalAction(out.journalId)).ok,true);f.a.vocalDiscard();
+});
+test('rescue chunk write failure rolls back metadata and earlier chunks as one transaction',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),write=fresh.repo.importVocalJournal;let attempted;
+ fresh.repo.importVocalJournal=async(m,...args)=>{attempted=m.id;fresh.indexedDB.failOnId(m.id+':1');return write(m,...args)};
+ assert.equal((await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId)).ok,false);fresh.indexedDB.repair();assert.equal(await fresh.repo.getVocalJournal(attempted),undefined);assert.equal(await fresh.repo.getVocalJournalChunk(attempted+':0'),undefined);assert.equal((await fresh.repo.get(fresh.p.projectId)).longWavAssets?.length||0,0);f.a.vocalDiscard();
+});
