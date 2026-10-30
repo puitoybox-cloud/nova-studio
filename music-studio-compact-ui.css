@@ -282,3 +282,8 @@ main.music-studio-shell.music-export-focused{position:static;min-height:0;margin
 .music-studio-shell [data-work-request] label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .music-studio-shell [data-work-request] input { width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; }
 .music-studio-shell [data-work-request-result] { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Fixed disclosures leave grid rows behind; bound the underlying dock and keep all controls scrollable. */
+@media(min-width:821px) and (max-height:900px) and (orientation:landscape){
+ .music-studio-shell.music-vocal-focused{box-sizing:border-box;height:100dvh;max-height:100dvh;overflow:auto;overscroll-behavior:contain}
+}

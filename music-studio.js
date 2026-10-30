@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.215';
+  const ASSET_VERSION='1.4.216';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1946,10 +1946,10 @@
   }
   const vocalRecovery={items:[],error:''};
   async function vocalDiscoverRecovery(){try{vocalRecovery.items=await repository.listVocalJournals?.()||[];vocalRecovery.error=''}catch(e){vocalRecovery.error=e.message}requestPaint();return vocalRecovery.items}
-  async function vocalRecoverJournal(journalId){
+  async function vocalRecoverJournal(journalId,options={}){
     if(vocalBusy()||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'vocal-recovery-busy'};
     const target=repository;vocal.phase='stopping';requestPaint();
-    try{const m=await target.getVocalJournal(journalId);if(m?.encoding)return await vocalRecoverEncodedJournal(m,target);const p=state.projects.find(x=>x.projectId===m?.owner);
+    try{const m=await target.getVocalJournal(journalId);if(m?.encoding)return await vocalRecoverEncodedJournal(m,target,options);const p=state.projects.find(x=>x.projectId===m?.owner);
       if(!m||m.format!=='nova-vocal-journal-v1'||!p||!Number.isInteger(m.rate)||m.rate<8000||m.rate>192000||!Number.isSafeInteger(m.next)||m.next<1||m.next>90000||!Number.isSafeInteger(m.frames)||m.frames<1||m.frames>m.rate*VOCAL_CAPTURE_MAX_SECONDS||!Number.isSafeInteger(m.consumed)||m.consumed<0||m.consumed>=m.frames||!Number.isSafeInteger(m.startTick)||m.startTick<0||!Number.isFinite(m.latencyMs)||Math.abs(m.latencyMs)>2000)throw Error('vocal-journal-metadata-invalid');
       vocalJournalMetadata(m);
       if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
@@ -1972,17 +1972,25 @@
       const result=await vocalSave();if(result.ok){vocal.message='中断した録音の有効な音声を復旧しました。'+(damage?'破損した後続部分は復旧できません。':'');result.warning=damage}await vocalDiscoverRecovery();return result;
     }catch(e){vocal.phase='error';vocal.message='復旧できません：'+e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
-  async function vocalRecoverEncodedJournal(m,target){
+  async function vocalRecoverEncodedJournal(m,target,options={}){
     let context;try{
       vocalJournalMetadata(m);if(m.recoveredAt!==undefined)throw Error('vocal-encoded-journal-already-recovered-source-retained');const p=state.projects.find(p=>p.projectId===m.owner);if(!p||!m.next)throw Error('vocal-journal-no-valid-unsaved-audio');if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
       const baseline=JSON.stringify(p),guard=()=>{if(repository!==target||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};await target.sealVocalJournal(m.id,m);guard();const pieces=[];let size=0;
       for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);guard();if(!c||!(c.bytes instanceof ArrayBuffer)||c.bytes.byteLength<1||c.bytes.byteLength>1048576||JSON.stringify(await longWavDigest(new Blob([c.bytes]),guard))!==JSON.stringify(c.hash))throw Error('vocal-encoded-journal-corrupt');size+=c.bytes.byteLength;pieces.push(c.bytes);}
-      if(size!==m.encodedBytes)throw Error('vocal-encoded-journal-size-mismatch');const Context=root.AudioContext||root.webkitAudioContext;if(!Context)throw Error('vocal-audio-decoder-unavailable');context=new Context();const buffer=await context.decodeAudioData(await new Blob(pieces,{type:m.encoding}).arrayBuffer());guard();const wav=vocalDecodedWav(buffer);
-      Object.assign(vocal,{projectId:p.projectId,target,baseline,journalId:m.id,journalConsumed:0,journalExpectedNext:m.next,journalRetain:true,pendingQueue:[],pending:{...wav,name:'Recovered-'+m.id+'.wav',captureMime:m.encoding,startTick:m.startTick,latencyMs:m.latencyMs,recordingPlan:m.recordingPlan,...(m.cycle?{cycle:clone(m.cycle)}:{})},phase:'pending'});
-      const result=await vocalSave();if(result.ok){result.warning='vocal-encoded-completeness-unverified-source-retained';vocal.message='デコードできた音声を保存しました。圧縮音声全体の完全性は確認できないため、元データを保持しました。必要なら退避できます。'}await vocalDiscoverRecovery();return result;
+      if(size!==m.encodedBytes)throw Error('vocal-encoded-journal-size-mismatch');const Context=root.AudioContext||root.webkitAudioContext;if(!Context)throw Error('vocal-audio-decoder-unavailable');context=new Context();let buffer,dropped=0;try{buffer=await context.decodeAudioData(await new Blob(pieces,{type:m.encoding}).arrayBuffer())}catch(error){
+        // Explicit salvage only: bounded prefix probes never rewrite/delete the source.
+        if(options.salvageTail!==true)throw error;
+        let budget=0;for(let n=1;n<=Math.min(8,pieces.length-1);n++){
+          guard();const prefix=new Blob(pieces.slice(0,-n),{type:m.encoding});budget+=prefix.size;if(budget>33554432)break;
+          try{buffer=await context.decodeAudioData(await prefix.arrayBuffer());dropped=n;break}catch(_){}
+        }
+        if(!buffer)throw Error('vocal-encoded-tail-salvage-unavailable-source-retained');
+      }guard();const wav=vocalDecodedWav(buffer);
+      Object.assign(vocal,{projectId:p.projectId,target,baseline,journalId:m.id,journalConsumed:0,journalExpectedNext:m.next,journalRetain:true,pendingQueue:[],pending:{...wav,name:(dropped?'Recovered-prefix-':'Recovered-')+m.id+'.wav',captureMime:m.encoding,startTick:m.startTick,latencyMs:m.latencyMs,recordingPlan:m.recordingPlan,...(m.cycle?{cycle:clone(m.cycle)}:{})},phase:'pending'});
+      const result=await vocalSave();if(result.ok){result.warning=dropped?'vocal-encoded-prefix-only-source-retained':'vocal-encoded-completeness-unverified-source-retained';result.excludedTailChunks=dropped;vocal.message='デコードできた音声を保存しました。圧縮音声全体の完全性は確認できないため、元データを保持しました。必要なら退避できます。'+(dropped?'末尾 '+dropped+' チャンクを除いた部分復旧です。':'')}await vocalDiscoverRecovery();return result;
     }catch(e){vocal.phase='error';vocal.message='互換録音を復旧できません（元データは保持）：'+e.message;return{ok:false,error:e.message}}finally{await context?.close?.().catch(()=>{});requestPaint()}
   }
-  async function vocalJournalAction(journalId,remove=false){
+  async function vocalJournalAction(journalId,remove=false,diagnose=false){
     if(vocalBusy()||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'vocal-recovery-busy'};
     const target=repository,previousPhase=vocal.phase;vocal.phase='stopping';requestPaint();
     try{
@@ -1996,7 +2004,12 @@
         // Rescue container preserves observed bytes, including corrupt chunks. It is not a verified audio backup.
         const parts=[],entries=[];let offset=0;
         for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);if(!c||!(c.bytes instanceof ArrayBuffer)){entries.push({seq:i,missing:true});continue}if(c.bytes.byteLength>1048576||offset+c.bytes.byteLength>VOCAL_MAX_BYTES)throw Error('vocal-journal-rescue-capacity');const observed=await longWavDigest(new Blob([c.bytes]),()=>{});entries.push({seq:i,offset,size:c.bytes.byteLength,expected:c.hash,observed,verified:JSON.stringify(observed)===JSON.stringify(c.hash)});parts.push(c.bytes);offset+=c.bytes.byteLength;}
-        await guard();const header=new Blob([JSON.stringify({format:'nova-vocal-rescue-v1',metadata:m,entries})]),length=new ArrayBuffer(4);new DataView(length).setUint32(0,header.size,true);const blob=new Blob([length,header,...parts],{type:'application/octet-stream'});
+        await guard();if(diagnose){
+          vocalJournalMetadata(m);let prefixFrames=0,prefix=true;
+          for(const e of entries){const valid=e.verified&&!e.missing&&e.size>=2&&e.size<=8192&&e.size%2===0;if(!valid)prefix=false;if(prefix)prefixFrames+=e.size/2;}
+          const report={encoding:m.encoding||'pcm16',chunks:m.next,bytes:offset,verified:entries.filter(e=>e.verified).length,missing:entries.filter(e=>e.missing).length,damaged:entries.filter(e=>!e.missing&&!e.verified).length,unsavedPrefixFrames:m.encoding?null:Math.max(0,Math.min(prefixFrames,m.frames)-m.consumed),decodedCompleteness:'unverified',recovered:m.recoveredAt!==undefined};
+          vocal.message='録音診断：照合一致 '+report.verified+' / 欠落 '+report.missing+' / 照合不一致 '+report.damaged+' チャンク。'+(m.encoding?'圧縮音声の復号・末尾の完全性は未確認です。':'復旧候補 '+report.unsavedPrefixFrames+' PCMフレーム。')+'原本は変更していません。';return{ok:true,report};
+        }const header=new Blob([JSON.stringify({format:'nova-vocal-rescue-v1',metadata:m,entries})]),length=new ArrayBuffer(4);new DataView(length).setUint32(0,header.size,true);const blob=new Blob([length,header,...parts],{type:'application/octet-stream'});
         if(root.document&&root.URL?.createObjectURL){const url=root.URL.createObjectURL(blob),link=root.document.createElement('a');try{link.href=url;link.download=safeFileName(m.id)+'.nova-recording';root.document.body.appendChild(link);link.click();link.remove()}finally{root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000)}}
         vocal.message='元データを退避しました。破損・欠落を含む調査用データで、音声の復旧は保証されません。';return{ok:true,blob,entries};
       }
@@ -2036,7 +2049,7 @@
     }catch(e){vocal.message='取り込めません（既存データは保持）：'+e.message;return{ok:false,error:e.message}}
     finally{vocal.phase=previousPhase;await vocalDiscoverRecovery();requestPaint()}
   }
-  function vocalRecoveryView(p){return `<label>退避録音を取り込む <input type="file" accept=".nova-recording" onchange="${escapeHtml('MusicStudio.vocalImportRescue(this.files[0],'+JSON.stringify(p.projectId)+')')}" ${vocalBusy()?'disabled':''}></label>`+vocalRecovery.items.filter(m=>m.owner===p.projectId).map(m=>`<p>未完了録音（${escapeHtml(m.id)}）${m.recoveredAt!==undefined?"デコード済み音声を保存済み・元の圧縮データを保持中。":""}${[['vocalRecoverJournal','取得済み音声を復旧',''],['vocalJournalAction','元データを退避',''],['vocalJournalAction','完全に削除',',true']].filter(([action])=>m.recoveredAt===undefined||action!=='vocalRecoverJournal').map(([action,label,arg])=>`<button type="button" onclick="${escapeHtml('MusicStudio.'+action+'('+JSON.stringify(m.id)+arg+')')}" ${vocalBusy()?'disabled':''}>${label}</button>`).join('')}</p>`).join('')+(vocalRecovery.error?`<p>${escapeHtml(vocalRecovery.error)}</p>`:'')}
+  function vocalRecoveryView(p){return `<label>退避録音を取り込む <input type="file" accept=".nova-recording" onchange="${escapeHtml('MusicStudio.vocalImportRescue(this.files[0],'+JSON.stringify(p.projectId)+')')}" ${vocalBusy()?'disabled':''}></label>`+vocalRecovery.items.filter(m=>m.owner===p.projectId).map(m=>`<p>未完了録音（${escapeHtml(m.id)}）${m.recoveredAt!==undefined?"デコード済み音声を保存済み・元の圧縮データを保持中。":""}${[['vocalRecoverJournal','取得済み音声を復旧',''],...(m.encoding?[['vocalRecoverJournal','末尾を除いた復旧を試す（原本保持）',',{salvageTail:true}']]:[]),['vocalJournalAction','録音データを診断',',false,true'],['vocalJournalAction','元データを退避',''],['vocalJournalAction','完全に削除',',true']].filter(([action])=>m.recoveredAt===undefined||action!=='vocalRecoverJournal').map(([action,label,arg])=>`<button type="button" onclick="${escapeHtml('MusicStudio.'+action+'('+JSON.stringify(m.id)+arg+')')}" ${vocalBusy()?'disabled':''}>${label}</button>`).join('')}</p>`).join('')+(vocalRecovery.error?`<p>${escapeHtml(vocalRecovery.error)}</p>`:'')}
 
   async function vocalPCMRecorder(stream,context,active,recordSeconds=VOCAL_CAPTURE_MAX_SECONDS){
     await context.audioWorklet.addModule('./music-studio-vocal-worklet.js?v=1.0.4');if(!active())throw Error('vocal-worklet-start-cancelled');

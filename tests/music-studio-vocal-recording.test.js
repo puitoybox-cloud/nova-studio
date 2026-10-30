@@ -465,3 +465,25 @@ test('decoded compressed prefix retains original container atomically and cannot
  const m=await f.repo.getVocalJournal(f.m.id);assert.equal(m.consumed,0);assert.equal(m.recoveredFrames,800);assert.equal((await a.vocalRecoverJournal(m.id)).ok,false);
  const file=await a.createLongWavArchive(),other=fixture();capture(other);const b=other.a,repo=b.indexedDbRepository();b.setRepository(repo);await b.refresh();const r=await b.restoreLongWavArchive(file,{settings:false});assert.equal(r.ok,true,r.error);const [copy]=await repo.listVocalJournals();assert.equal(copy.recoveredFrames,800);assert.equal((await b.vocalRecoverJournal(copy.id)).ok,false);assert.equal(r.projects[0].longWavAssets.length,1);assert.equal((await b.vocalJournalAction(copy.id)).ok,true);f.a.vocalDiscard();
 });
+
+test('explicit encoded tail salvage saves a decoded prefix once and preserves every original byte across remigration',async()=>{
+ const f=await encodedJournal();f.rec.ondataavailable({data:new Blob(['broken tail'])});await f.rec.journalTail;f.indexedDB.stores.get('vocalJournals').get(f.m.id).updatedAt=0;
+ const a=f.fresh.a,decode=f.fresh.w.AudioContext.prototype.decodeAudioData;let calls=0;
+ f.fresh.w.AudioContext.prototype.decodeAudioData=async function(bytes){calls++;if(Buffer.from(bytes).toString().endsWith('broken tail'))throw Error('truncated-tail');return decode.call(this,bytes)};
+ const before=Buffer.from((await f.repo.getVocalJournalChunk(f.m.id+':1')).bytes);
+ assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);assert.equal(calls,1);assert.equal((await f.repo.get(f.p.projectId)).longWavAssets?.length||0,0);
+ const r=await a.vocalRecoverJournal(f.m.id,{salvageTail:true});assert.equal(r.ok,true,r.error);assert.equal(r.excludedTailChunks,1);assert.match(r.warning,/prefix-only/);assert.match(r.project.longWavAssets[0].name,/Recovered-prefix/);
+ assert.deepEqual(Buffer.from((await f.repo.getVocalJournalChunk(f.m.id+':1')).bytes),before);
+ const rescue=await a.vocalJournalAction(f.m.id),other=await setup(),imported=await other.a.vocalImportRescue(rescue.blob,other.p.projectId);assert.equal(imported.ok,true,imported.error);
+ assert.equal((await other.a.vocalRecoverJournal(imported.journalId,{salvageTail:true})).ok,false);assert.deepEqual(Buffer.from((await other.repo.getVocalJournalChunk(imported.journalId+':1')).bytes),before);f.a.vocalDiscard();
+});
+test('encoded tail salvage is bounded and wholly undecodable input leaves the project and original chunks intact',async()=>{
+ const f=await encodedJournal();for(let i=0;i<10;i++){f.rec.ondataavailable({data:new Blob(['tail'+i])});await f.rec.journalTail}f.indexedDB.stores.get('vocalJournals').get(f.m.id).updatedAt=0;
+ const before=JSON.stringify(await f.repo.get(f.p.projectId));let calls=0;f.fresh.w.AudioContext.prototype.decodeAudioData=async()=>{calls++;throw Error('undecodable')};
+ const r=await f.fresh.a.vocalRecoverJournal(f.m.id,{salvageTail:true});assert.equal(r.ok,false);assert.match(r.error,/salvage-unavailable/);assert.equal(calls,9);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);assert.equal((await f.repo.getVocalJournal(f.m.id)).next,11);assert.ok(await f.repo.getVocalJournalChunk(f.m.id+':10'));f.a.vocalDiscard();
+});
+test('read-only recording diagnosis reports missing/corrupt chunks and verified unsaved prefix without writes',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const chunks=f.indexedDB.stores.get('vocalJournalChunks');chunks.get(f.m.id+':1').bytes=new ArrayBuffer(160);chunks.delete(f.m.id+':2');
+ const before=JSON.stringify(await f.repo.list()),meta=JSON.stringify(await f.repo.getVocalJournal(f.m.id));const r=await f.b.vocalJournalAction(f.m.id,false,true);
+ assert.equal(r.ok,true,r.error);assert.equal(r.report.verified,1);assert.equal(r.report.missing,1);assert.equal(r.report.damaged,1);assert.equal(r.report.unsavedPrefixFrames,80);assert.equal(r.blob,undefined);assert.equal(JSON.stringify(await f.repo.list()),before);assert.equal(JSON.stringify(await f.repo.getVocalJournal(f.m.id)),meta);assert.equal(chunks.size,2);f.a.vocalDiscard();
+});

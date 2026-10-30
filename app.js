@@ -1462,7 +1462,7 @@ if(!document.querySelector('link[data-music-studio]')){
  document.head.appendChild(musicAIStylesheet);
  const musicCompactStylesheet=document.createElement('link');
  musicCompactStylesheet.rel='stylesheet';
- musicCompactStylesheet.href='./music-studio-compact-ui.css?v=1.0.13';
+ musicCompactStylesheet.href='./music-studio-compact-ui.css?v=1.0.14';
  musicCompactStylesheet.dataset.musicStudioCompact='true';
  document.head.appendChild(musicCompactStylesheet);
 }
@@ -1500,6 +1500,6 @@ loadMusicStudioScript('music-studio-midi','./music-studio-midi.js?v=1.4.2',()=>B
  .then(()=>loadMusicStudioScript('music-studio-ingress','./music-studio-ingress.js?v=1.0.0',()=>Boolean(window.MusicStudioIngress?.create)))
  .then(()=>loadMusicStudioScript('music-studio-binary-boundary','./music-studio-binary-boundary.js?v=1.0.0',()=>Boolean(window.MusicStudioBinaryBoundary?.resolve)))
  .then(()=>loadMusicStudioScript('music-studio-loopback','./music-studio-loopback.js?v=1.0.1',()=>Boolean(window.MusicStudioLoopback?.analyzeBatch)))
- .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.215',()=>window.MusicStudio?.ASSET_VERSION==='1.4.215'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))
- .then(()=>{if(typeof window.MusicStudioEditor.createCoordinatedSession!=='function')throw Error('coordinated-editor-unavailable');window.MusicStudioRuntime=Object.freeze({hostLoader:'1.5.95',stylesheet:'1.4.159',editor:window.MusicStudioEditor.ASSET_VERSION,studio:window.MusicStudio.ASSET_VERSION,reviewApi:typeof window.MusicStudioEditor.externalReviewTracks})})
+ .then(()=>loadMusicStudioScript('music-studio','./music-studio.js?v=1.4.216',()=>window.MusicStudio?.ASSET_VERSION==='1.4.216'&&typeof window.MusicStudio.externalTrackReviewHtml==='function'))
+ .then(()=>{if(typeof window.MusicStudioEditor.createCoordinatedSession!=='function')throw Error('coordinated-editor-unavailable');window.MusicStudioRuntime=Object.freeze({hostLoader:'1.5.96',stylesheet:'1.4.159',editor:window.MusicStudioEditor.ASSET_VERSION,studio:window.MusicStudio.ASSET_VERSION,reviewApi:typeof window.MusicStudioEditor.externalReviewTracks})})
  .catch(error=>console.error('Music Studio scripts could not be initialized',error));
