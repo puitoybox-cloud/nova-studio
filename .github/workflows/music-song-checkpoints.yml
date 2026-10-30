@@ -7,6 +7,7 @@ on:
       - 'tests/music-song-checkpoints.test.js'
       - 'scripts/music-song-checkpoints-browser.js'
       - 'scripts/music-pcm-journal-crash-browser.js'
+      - 'scripts/music-encoded-journal-crash-browser.js'
       - 'tests/music-studio-vocal-recording.test.js'
       - '.github/workflows/music-song-checkpoints.yml'
 permissions:
@@ -47,6 +48,11 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/checkpoint-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome
         run: node scripts/music-pcm-journal-crash-browser.js
+      - name: MediaRecorder SIGKILL recovery and unfinished archive migration
+        env:
+          NODE_PATH: ${{ runner.temp }}/checkpoint-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-encoded-journal-crash-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -54,4 +60,5 @@ jobs:
           path: |
             verification/music-song-checkpoints-browser.json
             verification/music-pcm-journal-crash-browser.json
+            verification/music-encoded-journal-crash-browser.json
             verification/music-checkpoint-*.png
