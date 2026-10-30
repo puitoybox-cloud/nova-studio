@@ -19,27 +19,43 @@ final class MusicStudioWebMidiBridge {
       if (typeof navigator.requestMIDIAccess === 'function') return;
 
       const listeners = new Set();
+      let sourceAvailable = false;
+      let sourceRevision = 0;
+      let explicitlyClosed = false;
       let lastTimestamp = 0;
+      const heldNotes = new Map();
+      let releasingHeldNotes = false;
+      const stateListeners = new Set();
+      const portStateListeners = new Set();
       const input = {
         id: 'nova-native-core-midi',
         manufacturer: 'Apple Core MIDI',
         name: 'Core MIDI (Native)',
         type: 'input',
-        state: 'connected',
-        connection: 'open',
+        state: 'disconnected',
+        connection: 'closed',
         onmidimessage: null,
+        onstatechange: null,
         addEventListener(type, handler) {
           if (type === 'midimessage' && typeof handler === 'function') listeners.add(handler);
+          if (type === 'statechange' && typeof handler === 'function') portStateListeners.add(handler);
         },
         removeEventListener(type, handler) {
           if (type === 'midimessage') listeners.delete(handler);
+          if (type === 'statechange') portStateListeners.delete(handler);
         },
         open() {
+          if (!sourceAvailable || releasingHeldNotes) return Promise.reject(new Error('MIDI input unavailable'));
+          explicitlyClosed = false;
           this.connection = 'open';
           return Promise.resolve(this);
         },
         close() {
+          // Block reentrant MIDI delivery before notifying handlers of note-offs.
+          // Those handlers may synchronously invoke dispatch() or close() again.
+          explicitlyClosed = true;
           this.connection = 'closed';
+          releaseHeldNotes();
           return Promise.resolve(this);
         }
       };
@@ -48,6 +64,12 @@ final class MusicStudioWebMidiBridge {
         inputs: new Map([[input.id, input]]),
         outputs: new Map(),
         onstatechange: null,
+        addEventListener(type, handler) {
+          if (type === 'statechange' && typeof handler === 'function') stateListeners.add(handler);
+        },
+        removeEventListener(type, handler) {
+          if (type === 'statechange') stateListeners.delete(handler);
+        },
         sysexEnabled: false
       };
 
@@ -57,10 +79,121 @@ final class MusicStudioWebMidiBridge {
         return lastTimestamp;
       }
 
+      function releaseHeldNotes() {
+        if (releasingHeldNotes) return;
+        releasingHeldNotes = true;
+        // Clear before callbacks: a MIDI handler may synchronously call close().
+        const notes = Array.from(heldNotes.values());
+        heldNotes.clear();
+        try {
+          for (const note of notes) {
+            // Each outstanding same-pitch note-on needs a matching release.
+            // Emit all releases before moving to the next held pitch.
+            // A bounded count prevents a malformed internal state from
+            // monopolizing the page while releasing held notes.
+            const outstanding = Number.isSafeInteger(note.count) && note.count > 0
+              ? Math.min(note.count, 65535) : 1;
+            for (let press = 0; press < outstanding; press++) {
+              // A callback can close/reconnect the port. Continue releasing
+              // the snapshot, but never deliver a new note-on mid-cleanup.
+              const bytes = [0x80 | note.channel, note.pitch, 0];
+            const timeStamp = pageTimestamp();
+            const makeEvent = () => ({ data: Uint8Array.from(bytes), timeStamp, target: input, currentTarget: input });
+            const onMessage = input.onmidimessage;
+            const recipients = Array.from(listeners);
+            try { if (typeof onMessage === 'function') onMessage(makeEvent()); } catch (_) {}
+            for (const listener of recipients) {
+              try { listener(makeEvent()); } catch (_) {}
+            }
+            }
+          }
+        } finally {
+          releasingHeldNotes = false;
+          // Reentrant reconnects are deferred until note-off cleanup ends.
+          // Publish the new connected state once, without reopening a port
+          // explicitly closed by the page.
+          if (sourceAvailable && input.state === 'connected' && input.connection === 'closed' && !explicitlyClosed) {
+            input.connection = 'open';
+            const revision = sourceRevision;
+            const accessEvent = { port: input, target: access, currentTarget: access, transitionState: 'connected' };
+            const accessHandler = access.onstatechange;
+            const accessRecipients = Array.from(stateListeners);
+            const portHandler = input.onstatechange;
+            const portRecipients = Array.from(portStateListeners);
+            try { if (typeof accessHandler === 'function') accessHandler(accessEvent); } catch (_) {}
+            if (revision !== sourceRevision) return;
+            for (const listener of accessRecipients) {
+              if (revision !== sourceRevision) return;
+              try { listener(accessEvent); } catch (_) {}
+            }
+            if (revision !== sourceRevision) return;
+            const portEvent = { port: input, target: input, currentTarget: input, transitionState: 'connected' };
+            try { if (typeof portHandler === 'function') portHandler(portEvent); } catch (_) {}
+            if (revision !== sourceRevision) return;
+            for (const listener of portRecipients) {
+              if (revision !== sourceRevision) return;
+              try { listener(portEvent); } catch (_) {}
+            }
+          }
+        }
+      }
+
+      function setSourceAvailable(available) {
+        const next = available === true;
+        if (next === sourceAvailable) return;
+        // A reconnect reported during synthetic note-off cleanup must not
+        // reopen the port until the current release has completed.
+        if (next && releasingHeldNotes) {
+          sourceAvailable = true;
+          ++sourceRevision;
+          input.state = 'connected';
+          input.connection = 'closed';
+          return;
+        }
+        sourceAvailable = next;
+        const revision = ++sourceRevision;
+        // Reject reentrant note delivery before notifying listeners of unplug.
+        input.state = next ? 'connected' : 'disconnected';
+        input.connection = next && !explicitlyClosed ? 'open' : 'closed';
+        if (!next) {
+          releaseHeldNotes();
+        }
+        // A note-off callback may synchronously change source availability.
+        // Only the newest transition may notify subscribers.
+        if (revision !== sourceRevision) return;
+        // Snapshot both recipient sets before user callbacks: an onstatechange
+        // property handler may synchronously remove or add either listener.
+        const accessHandler = access.onstatechange;
+        const accessRecipients = Array.from(stateListeners);
+        const portHandler = input.onstatechange;
+        const portRecipients = Array.from(portStateListeners);
+        // Preserve the event's state at dispatch time. Nested reconnects must
+        // not change what listeners of the earlier transition observe.
+        const transitionState = input.state;
+        const event = { port: input, target: access, currentTarget: access, transitionState };
+        try { if (typeof accessHandler === 'function') accessHandler(event); } catch (_) {}
+        if (revision !== sourceRevision) return;
+        for (const listener of accessRecipients) {
+          if (revision !== sourceRevision) return;
+          try { listener(event); } catch (_) {}
+        }
+        if (revision !== sourceRevision) return;
+        const portEvent = { port: input, target: input, currentTarget: input, transitionState };
+        try { if (typeof portHandler === 'function') portHandler(portEvent); } catch (_) {}
+        if (revision !== sourceRevision) return;
+        for (const listener of portRecipients) {
+          if (revision !== sourceRevision) return;
+          try { listener(portEvent); } catch (_) {}
+        }
+      }
+
       function dispatch(payload) {
-        const data = Array.from(payload?.data || []);
+        if (!sourceAvailable || input.connection !== 'open') return { accepted: false, reason: 'midi-disconnected' };
+        const raw = payload?.data;
+        if (!Array.isArray(raw) && !(raw instanceof Uint8Array)) return { accepted: false, reason: 'invalid-message' };
+        const data = Array.from(raw);
         if (data.length !== 3) return { accepted: false, reason: 'invalid-message' };
-        if (data.some((value, index) => !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > (index === 0 ? 255 : 127))) {
+        if (data.some((value, index) => typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > (index === 0 ? 255 : 127))) {
           return { accepted: false, reason: 'invalid-message' };
         }
         const status = Number(data[0]);
@@ -69,25 +202,63 @@ final class MusicStudioWebMidiBridge {
           return { accepted: false, reason: 'invalid-message' };
         }
 
-        const event = {
-          data: Uint8Array.from(data.map(Number)),
-          timeStamp: pageTimestamp(),
+        const channel = status & 0x0f;
+        const pitch = Number(data[1]);
+        const key = channel + ':' + pitch;
+        // Avoid retaining stale held notes if a reentrant disconnect/close
+        // occurs while notifying handlers of this incoming note.
+        if (command === 0x90 && Number(data[2]) > 0) {
+          // Repeated note-on messages for the same pitch must each have a
+          // matching note-off before the note is considered fully released.
+          const prior = heldNotes.get(key);
+          heldNotes.set(key, { channel, pitch, count: Math.min((prior?.count ?? 0) + 1, 65535) });
+        } else {
+          const prior = heldNotes.get(key);
+          if (prior && prior.count > 1) heldNotes.set(key, { channel, pitch, count: prior.count - 1 });
+          else heldNotes.delete(key);
+        }
+        const timeStamp = pageTimestamp();
+        // Each recipient receives original validated bytes even when another
+        // page handler mutates the Uint8Array in its event.
+        const makeEvent = () => ({
+          data: Uint8Array.from(data),
+          timeStamp,
           target: input,
           currentTarget: input
-        };
-        if (typeof input.onmidimessage === 'function') input.onmidimessage(event);
-        for (const listener of listeners) listener(event);
+        });
+        const onMessage = input.onmidimessage;
+        const recipients = Array.from(listeners);
+        try {
+          if (typeof onMessage === 'function') onMessage(makeEvent());
+        } catch (_) {
+          // Keep other consumers alive after a page callback failure.
+        }
+        for (const listener of recipients) {
+          try { listener(makeEvent()); } catch (_) {}
+        }
         return { accepted: true };
       }
 
       Object.defineProperty(navigator, 'requestMIDIAccess', {
         configurable: true,
-        value: async () => access
+        value: async (options = {}) => {
+          if (options?.sysex === true) throw new Error('Native MIDI SysEx is not supported');
+          return access;
+        }
       });
 
-      window.NovaMusicNativeMidiShim = { access, input, dispatch };
+      window.NovaMusicNativeMidiShim = { access, input, dispatch, setSourceAvailable };
     })();
     """#
+
+    func setSourceAvailable(_ available: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            self?.webView?.callAsyncJavaScript(
+                "return window.NovaMusicNativeMidiShim?.setSourceAvailable(available) ?? null;",
+                arguments: ["available": available], in: nil, in: .page
+            ) { _ in }
+        }
+    }
 
     func sendNoteMessage(_ bytes: [UInt8]) {
         guard bytes.count == 3 else { return }

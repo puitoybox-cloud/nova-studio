@@ -1,0 +1,46 @@
+{
+  "source": "assets/music-acoustic-v1/piano-72.wav",
+  "sourceSha256": "6525450e5a4ae8ca5748eee7e39ed778a2e150e3a302dfc978779260a1702999",
+  "modelSha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+  "midiSha256": "14993c45e4cb1ef53dae0be648738be68d0d884a05d92b935d48488bc123b6db",
+  "noteOnCount": 5,
+  "events": [
+    [
+      0.011363636363636364,
+      "note_on",
+      72,
+      108
+    ],
+    [
+      0.1159090909090909,
+      "note_on",
+      44,
+      50
+    ],
+    [
+      0.44090909090909086,
+      "note_on",
+      44,
+      52
+    ],
+    [
+      1.6477272727272727,
+      "note_on",
+      44,
+      71
+    ],
+    [
+      2.172727272727273,
+      "note_on",
+      44,
+      61
+    ]
+  ],
+  "date": "2026-10-23 JST",
+  "mode": "existing non-strict server.transcribe_pitched_stem",
+  "basicPitchVersion": "0.4.0",
+  "license": "Apache-2.0; package LICENSE and NOTICE retained in isolated runtime",
+  "qualityAccepted": false,
+  "limitation": "5 note-ons include 4 pitch-44 artifacts in a pitch-72 source; no musical accuracy or production distribution acceptance",
+  "midiBase64": "TVRoZAAAAAYAAQACANxNVHJrAAAAEwD/UQMHoSAA/1gEBAIYCAH/LwBNVHJrAAAAKQDABAWQSGwuLDI9LABSLDRSLACDQSxHgS8sADgsPYItLAAzSAAB/y8A"
+}

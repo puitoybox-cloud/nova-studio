@@ -1,0 +1,213 @@
+{
+  "valid": true,
+  "issues": [],
+  "dependencies": [
+    {
+      "path": "style.css",
+      "exists": true
+    },
+    {
+      "path": "nova-menu.css",
+      "exists": true
+    },
+    {
+      "path": "nova-unified-ui.css",
+      "exists": true
+    },
+    {
+      "path": "gemini-bridge.css",
+      "exists": true
+    },
+    {
+      "path": "gemini-bridge-enhancement.css",
+      "exists": true
+    },
+    {
+      "path": "music-studio.css",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-assistant-panel.css",
+      "exists": true
+    },
+    {
+      "path": "music-studio-dynamic-track-selection.css",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ipad.css",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ipad-pr250-layout.css",
+      "exists": true
+    },
+    {
+      "path": "security.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-midi.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-midi-parser.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-editor.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-meter-map.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-measure-locks.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-external-song-import.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-midi-input.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-audio.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-playback.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-scoped-midi-repair.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-workflow.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-composition.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-candidate-preview.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-family-preview.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-family-apply.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-assistant-ui.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ai-assistant-panel.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-ipad-touch.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-audio-pipeline.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-dynamic-track-selection.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-dynamic-track-playback.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-dynamic-track-recording.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-external-review-popover.js",
+      "exists": true
+    },
+    {
+      "path": "nova-menu.js",
+      "exists": true
+    },
+    {
+      "path": "gemini-bridge.js",
+      "exists": true
+    },
+    {
+      "path": "gemini-bridge-enhancement.js",
+      "exists": true
+    },
+    {
+      "path": "music-studio-dependency-inspection.js",
+      "exists": true,
+      "scope": "optional-tooling"
+    },
+    {
+      "path": "tools/music-audio-pipeline/server.py",
+      "exists": true,
+      "scope": "optional-tooling"
+    },
+    {
+      "path": "tools/music-audio-pipeline/requirements.txt",
+      "exists": true,
+      "scope": "optional-tooling"
+    },
+    {
+      "path": "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+      "exists": true,
+      "scope": "optional-tooling"
+    }
+  ],
+  "pythonRequirements": [
+    "setuptools<82",
+    "demucs>=4,<5",
+    "basic-pitch>=0.4,<1",
+    "mido>=1.3,<2",
+    "librosa>=0.10,<1",
+    "soundfile>=0.12,<1",
+    "numpy<2"
+  ],
+  "boundaries": [
+    {
+      "feature": "Standalone MIDI editor/save/JSON/Backup",
+      "dependency": "local browser scripts + IndexedDB",
+      "verification": "static-only"
+    },
+    {
+      "feature": "Audio-to-MIDI/Stem",
+      "dependency": "explicit loopback 127.0.0.1:8766, pipeline revision 2, Python packages and model weights",
+      "verification": "runtime-unassessed"
+    },
+    {
+      "feature": "native MIDI",
+      "dependency": "optional WKWebView/CoreMIDI wrapper; browser Web MIDI is separate",
+      "verification": "physical-pending"
+    },
+    {
+      "feature": "Dream Architect/Nova navigation",
+      "dependency": "optional host routes/window; not standalone music persistence",
+      "verification": "runtime-unassessed"
+    }
+  ],
+  "transitiveAssets": "unassessed",
+  "modelAvailability": "unassessed",
+  "licenseCompatibility": "unassessed",
+  "physicalVerification": "pending"
+}

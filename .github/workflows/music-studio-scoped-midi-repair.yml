@@ -3,6 +3,7 @@ name: Music Studio scoped MIDI repair
 on:
   pull_request:
     paths:
+      - 'assets/music-acoustic-v1/**'
       - 'music-studio-scoped-midi-repair.js'
       - 'music-studio-editor.js'
       - 'music-studio.js'
