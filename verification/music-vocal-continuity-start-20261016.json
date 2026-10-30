@@ -1,0 +1,2407 @@
+[
+  {
+    "number": 438,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-score-vocal-return-v1",
+      "sha": "60afb805cb4c0ecb198cd50d7fd76345ab5061eb"
+    },
+    "base": {
+      "ref": "feature/music-japanese-lyrics-score-export-v1",
+      "sha": "d62d36149e47545015016d68394268293360a2b8"
+    },
+    "updated_at": "2026-10-16T10:44:46Z"
+  },
+  {
+    "number": 437,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-japanese-lyrics-score-export-v1",
+      "sha": "d62d36149e47545015016d68394268293360a2b8"
+    },
+    "base": {
+      "ref": "feature/music-local-midi-output-candidates-v1",
+      "sha": "9d7a6c65a7959313a66bc1fb9a163ee678843041"
+    },
+    "updated_at": "2026-10-16T10:33:28Z"
+  },
+  {
+    "number": 436,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-local-midi-output-candidates-v1",
+      "sha": "9d7a6c65a7959313a66bc1fb9a163ee678843041"
+    },
+    "base": {
+      "ref": "feature/music-candidate-review-ci-trigger-v1",
+      "sha": "22fa885d0b955ca74bab2dbcad7745fc1681006b"
+    },
+    "updated_at": "2026-10-16T09:26:20Z"
+  },
+  {
+    "number": 435,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-candidate-review-ci-trigger-v1",
+      "sha": "22fa885d0b955ca74bab2dbcad7745fc1681006b"
+    },
+    "base": {
+      "ref": "feature/music-candidate-review-ci-closure-v1",
+      "sha": "4e4fba9e0e1441588dca39e25d2b5efb5bf5aed0"
+    },
+    "updated_at": "2026-10-16T08:41:54Z"
+  },
+  {
+    "number": 434,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-candidate-review-ci-closure-v1",
+      "sha": "4e4fba9e0e1441588dca39e25d2b5efb5bf5aed0"
+    },
+    "base": {
+      "ref": "feature/music-candidate-audition-review-stability-v1",
+      "sha": "8926d6e75f88101cfee37f15fdfc375f796f2659"
+    },
+    "updated_at": "2026-10-16T08:33:03Z"
+  },
+  {
+    "number": 433,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-candidate-audition-review-stability-v1",
+      "sha": "8926d6e75f88101cfee37f15fdfc375f796f2659"
+    },
+    "base": {
+      "ref": "feature/music-candidate-edit-production-v1",
+      "sha": "d30fbd4fc5c6a4c0a53d1d9769da6ccc4604bd47"
+    },
+    "updated_at": "2026-10-16T08:16:53Z"
+  },
+  {
+    "number": 432,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-candidate-edit-production-v1",
+      "sha": "d30fbd4fc5c6a4c0a53d1d9769da6ccc4604bd47"
+    },
+    "base": {
+      "ref": "feature/music-candidate-audition-v1",
+      "sha": "4ffa0919627c303d72df00dead1179b6a10a7bdc"
+    },
+    "updated_at": "2026-10-16T08:07:34Z"
+  },
+  {
+    "number": 431,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-candidate-audition-v1",
+      "sha": "4ffa0919627c303d72df00dead1179b6a10a7bdc"
+    },
+    "base": {
+      "ref": "feature/music-generation-continuation-v1",
+      "sha": "7fc43cb97dad2cf71457248424d548108c87feea"
+    },
+    "updated_at": "2026-10-16T07:40:19Z"
+  },
+  {
+    "number": 430,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-generation-continuation-v1",
+      "sha": "7fc43cb97dad2cf71457248424d548108c87feea"
+    },
+    "base": {
+      "ref": "feature/music-multisample-production-v1",
+      "sha": "05bebf78a422202572165a8a6bad2d1f557d2775"
+    },
+    "updated_at": "2026-10-16T07:03:14Z"
+  },
+  {
+    "number": 429,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-multisample-production-v1",
+      "sha": "05bebf78a422202572165a8a6bad2d1f557d2775"
+    },
+    "base": {
+      "ref": "feature/music-instrument-production-v1",
+      "sha": "b488548d6e8a24d85aa503f8f8e6d30f71abc8bc"
+    },
+    "updated_at": "2026-10-16T03:04:51Z"
+  },
+  {
+    "number": 428,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-instrument-production-v1",
+      "sha": "b488548d6e8a24d85aa503f8f8e6d30f71abc8bc"
+    },
+    "base": {
+      "ref": "feature/music-continuous-capture-live-latency-v1",
+      "sha": "48912060821046652cbde9adeff337f7140ae7bc"
+    },
+    "updated_at": "2026-10-15T05:53:25Z"
+  },
+  {
+    "number": 427,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-continuous-capture-live-latency-v1",
+      "sha": "48912060821046652cbde9adeff337f7140ae7bc"
+    },
+    "base": {
+      "ref": "feature/music-vocal-cycle-natural-stop-v1",
+      "sha": "e1d4c67e40d7c9c1dbed32df46b2bce1fa6134f7"
+    },
+    "updated_at": "2026-10-15T05:05:06Z"
+  },
+  {
+    "number": 426,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-cycle-natural-stop-v1",
+      "sha": "e1d4c67e40d7c9c1dbed32df46b2bce1fa6134f7"
+    },
+    "base": {
+      "ref": "feature/music-loopback-consensus-integrity-v1",
+      "sha": "81219cb621fce98d87410f7dff809a8ab86e436b"
+    },
+    "updated_at": "2026-10-15T04:35:10Z"
+  },
+  {
+    "number": 425,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-loopback-consensus-integrity-v1",
+      "sha": "81219cb621fce98d87410f7dff809a8ab86e436b"
+    },
+    "base": {
+      "ref": "feature/music-loopback-consensus-v1",
+      "sha": "a6322f5e272ebf22748a0e4373c40e89f96a51db"
+    },
+    "updated_at": "2026-10-14T22:50:37Z"
+  },
+  {
+    "number": 424,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-loopback-consensus-v1",
+      "sha": "a6322f5e272ebf22748a0e4373c40e89f96a51db"
+    },
+    "base": {
+      "ref": "feature/music-recording-workspace-continuation-v1",
+      "sha": "f84d03579bee9be47e67e26aaa21044b4a7733b6"
+    },
+    "updated_at": "2026-10-14T22:45:26Z"
+  },
+  {
+    "number": 423,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-recording-workspace-continuation-v1",
+      "sha": "f84d03579bee9be47e67e26aaa21044b4a7733b6"
+    },
+    "base": {
+      "ref": "feature/music-ai-partial-note-review-v1",
+      "sha": "63901c436f702d8c44b6c31e5c502364cf578245"
+    },
+    "updated_at": "2026-10-14T22:38:49Z"
+  },
+  {
+    "number": 422,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-partial-note-review-v1",
+      "sha": "63901c436f702d8c44b6c31e5c502364cf578245"
+    },
+    "base": {
+      "ref": "feature/music-ai-form-preservation-v1",
+      "sha": "920de97f16645775cdf41392cd5a08413086c709"
+    },
+    "updated_at": "2026-10-14T13:47:13Z"
+  },
+  {
+    "number": 421,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-form-preservation-v1",
+      "sha": "920de97f16645775cdf41392cd5a08413086c709"
+    },
+    "base": {
+      "ref": "feature/music-ai-landscape-focus-v1",
+      "sha": "779ba900c5151a11fbab2beb5bba25b371acadd2"
+    },
+    "updated_at": "2026-10-14T13:39:09Z"
+  },
+  {
+    "number": 420,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-landscape-focus-v1",
+      "sha": "779ba900c5151a11fbab2beb5bba25b371acadd2"
+    },
+    "base": {
+      "ref": "feature/music-midi-bottom-touch-controls-v1",
+      "sha": "a8b20f0ff02d0c9db088e8fa0fb2c5cf9e4020de"
+    },
+    "updated_at": "2026-10-14T13:32:09Z"
+  },
+  {
+    "number": 419,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-bottom-touch-controls-v1",
+      "sha": "a8b20f0ff02d0c9db088e8fa0fb2c5cf9e4020de"
+    },
+    "base": {
+      "ref": "feature/music-midi-touch-targets-v1",
+      "sha": "5cb00c97a01242276973ef634a0cd15ecf77cdca"
+    },
+    "updated_at": "2026-10-14T13:28:02Z"
+  },
+  {
+    "number": 418,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-touch-targets-v1",
+      "sha": "5cb00c97a01242276973ef634a0cd15ecf77cdca"
+    },
+    "base": {
+      "ref": "feature/music-midi-landscape-controls-v1",
+      "sha": "bf8abb50cab7e3938d56db3553a53aa49ad48f4e"
+    },
+    "updated_at": "2026-10-14T13:25:11Z"
+  },
+  {
+    "number": 417,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-landscape-controls-v1",
+      "sha": "bf8abb50cab7e3938d56db3553a53aa49ad48f4e"
+    },
+    "base": {
+      "ref": "feature/music-input-refresh-race-guards-v1",
+      "sha": "03f9ef635075d6e6a6f8020ad85664818a7259d0"
+    },
+    "updated_at": "2026-10-14T13:18:24Z"
+  },
+  {
+    "number": 416,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-input-refresh-race-guards-v1",
+      "sha": "03f9ef635075d6e6a6f8020ad85664818a7259d0"
+    },
+    "base": {
+      "ref": "feature/music-vocal-input-refresh-preserve-v1",
+      "sha": "fcf6e984b3d3cad882a567bef4383d2fcc0eaff9"
+    },
+    "updated_at": "2026-10-14T13:12:13Z"
+  },
+  {
+    "number": 415,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-input-refresh-preserve-v1",
+      "sha": "fcf6e984b3d3cad882a567bef4383d2fcc0eaff9"
+    },
+    "base": {
+      "ref": "feature/music-input-latency-profiles-v1",
+      "sha": "7758e6497dff470f91d0758d71d7bae99d31be04"
+    },
+    "updated_at": "2026-10-14T13:04:03Z"
+  },
+  {
+    "number": 414,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-input-latency-profiles-v1",
+      "sha": "7758e6497dff470f91d0758d71d7bae99d31be04"
+    },
+    "base": {
+      "ref": "feature/music-long-master-workspace-versions-v1",
+      "sha": "e4a8c54ab8db2ab7864cdfdf477cf9f7c1699d54"
+    },
+    "updated_at": "2026-10-14T12:51:25Z"
+  },
+  {
+    "number": 413,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-long-master-workspace-versions-v1",
+      "sha": "e4a8c54ab8db2ab7864cdfdf477cf9f7c1699d54"
+    },
+    "base": {
+      "ref": "feature/music-master-versions-workspace-v1",
+      "sha": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24"
+    },
+    "updated_at": "2026-10-14T12:21:52Z"
+  },
+  {
+    "number": 412,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-master-versions-workspace-v1",
+      "sha": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24"
+    },
+    "base": {
+      "ref": "feature/music-mix-versions-workspace-v1",
+      "sha": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55"
+    },
+    "updated_at": "2026-10-14T05:04:29Z"
+  },
+  {
+    "number": 411,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-mix-versions-workspace-v1",
+      "sha": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55"
+    },
+    "base": {
+      "ref": "feature/music-landscape-workspace-v1",
+      "sha": "4a5128a1521dc676a45cd626029ad5dcff235a29"
+    },
+    "updated_at": "2026-10-14T04:07:01Z"
+  },
+  {
+    "number": 410,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-landscape-workspace-v1",
+      "sha": "4a5128a1521dc676a45cd626029ad5dcff235a29"
+    },
+    "base": {
+      "ref": "feature/music-ipad-recovery-production-v1",
+      "sha": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c"
+    },
+    "updated_at": "2026-10-14T02:45:02Z"
+  },
+  {
+    "number": 409,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ipad-recovery-production-v1",
+      "sha": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c"
+    },
+    "base": {
+      "ref": "feature/music-export-history-replay-v1",
+      "sha": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883"
+    },
+    "updated_at": "2026-10-13T11:08:49Z"
+  },
+  {
+    "number": 408,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-export-history-replay-v1",
+      "sha": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883"
+    },
+    "base": {
+      "ref": "feature/music-work-modes-favorites-v1",
+      "sha": "3326d50ffcca629e06ed5a24d77ed4b100a4b836"
+    },
+    "updated_at": "2026-10-12T13:13:23Z"
+  },
+  {
+    "number": 407,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-work-modes-favorites-v1",
+      "sha": "3326d50ffcca629e06ed5a24d77ed4b100a4b836"
+    },
+    "base": {
+      "ref": "feature/music-final-export-production-v1",
+      "sha": "fc9d934169f6ee1f6551d32933a94a296972da1b"
+    },
+    "updated_at": "2026-10-12T12:49:46Z"
+  },
+  {
+    "number": 406,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-final-export-production-v1",
+      "sha": "fc9d934169f6ee1f6551d32933a94a296972da1b"
+    },
+    "base": {
+      "ref": "feature/music-unified-ui-production-v1",
+      "sha": "33c87c1b8903fa73234d5d488ec2189a65ef4e61"
+    },
+    "updated_at": "2026-10-12T11:26:46Z"
+  },
+  {
+    "number": 405,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-unified-ui-production-v1",
+      "sha": "33c87c1b8903fa73234d5d488ec2189a65ef4e61"
+    },
+    "base": {
+      "ref": "feature/music-vocal-transport-cycle-v1",
+      "sha": "509bcd570590549283a417ee1bf52ef3ee92307c"
+    },
+    "updated_at": "2026-10-12T08:41:15Z"
+  },
+  {
+    "number": 404,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-transport-cycle-v1",
+      "sha": "509bcd570590549283a417ee1bf52ef3ee92307c"
+    },
+    "base": {
+      "ref": "feature/music-vocal-production-next-v1",
+      "sha": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1"
+    },
+    "updated_at": "2026-10-12T05:04:14Z"
+  },
+  {
+    "number": 403,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-production-next-v1",
+      "sha": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1"
+    },
+    "base": {
+      "ref": "feature/music-vocal-correction-comp-sync-v1",
+      "sha": "fc3f315547943eb83142a2c6751e2a9f2c3e179f"
+    },
+    "updated_at": "2026-10-11T23:40:55Z"
+  },
+  {
+    "number": 402,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-correction-comp-sync-v1",
+      "sha": "fc3f315547943eb83142a2c6751e2a9f2c3e179f"
+    },
+    "base": {
+      "ref": "feature/music-vocal-recording-production-v1",
+      "sha": "5f9a0409271db30fa946a7095e339a9123afa3e2"
+    },
+    "updated_at": "2026-10-11T12:52:09Z"
+  },
+  {
+    "number": 401,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-recording-production-v1",
+      "sha": "5f9a0409271db30fa946a7095e339a9123afa3e2"
+    },
+    "base": {
+      "ref": "feature/music-long-master-production-v1",
+      "sha": "f522db43e63858c2ae0d8043136af0985f309f26"
+    },
+    "updated_at": "2026-10-11T12:15:15Z"
+  },
+  {
+    "number": 400,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-long-master-production-v1",
+      "sha": "f522db43e63858c2ae0d8043136af0985f309f26"
+    },
+    "base": {
+      "ref": "feature/music-vocal-harmony-mastering-v1",
+      "sha": "33cc706c7d1bc1e2451d967181ee3924127ce354"
+    },
+    "updated_at": "2026-10-11T11:24:05Z"
+  },
+  {
+    "number": 399,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-vocal-harmony-mastering-v1",
+      "sha": "33cc706c7d1bc1e2451d967181ee3924127ce354"
+    },
+    "base": {
+      "ref": "feature/music-referenced-binary-archive-v1",
+      "sha": "0fc8657918b0c29b053f0a9beebf85b411b5dde1"
+    },
+    "updated_at": "2026-10-11T10:41:46Z"
+  },
+  {
+    "number": 398,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-referenced-binary-archive-v1",
+      "sha": "0fc8657918b0c29b053f0a9beebf85b411b5dde1"
+    },
+    "base": {
+      "ref": "feature/music-production-continuation-v1",
+      "sha": "3a60972e487d7c85f05e73488df52c4b969880b1"
+    },
+    "updated_at": "2026-10-11T09:20:10Z"
+  },
+  {
+    "number": 397,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-production-continuation-v1",
+      "sha": "3a60972e487d7c85f05e73488df52c4b969880b1"
+    },
+    "base": {
+      "ref": "feature/music-production-session-completion-v1",
+      "sha": "0f36624de7cfde69e35180ecc128584fb06fcad2"
+    },
+    "updated_at": "2026-10-11T08:02:36Z"
+  },
+  {
+    "number": 396,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-production-session-completion-v1",
+      "sha": "0f36624de7cfde69e35180ecc128584fb06fcad2"
+    },
+    "base": {
+      "ref": "feature/music-midi-open-after-explicit-close-v1",
+      "sha": "459306debbb96cf6831622d6fe833b39dfd96b9d"
+    },
+    "updated_at": "2026-10-11T05:42:23Z"
+  },
+  {
+    "number": 395,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-open-after-explicit-close-v1",
+      "sha": "459306debbb96cf6831622d6fe833b39dfd96b9d"
+    },
+    "base": {
+      "ref": "feature/music-midi-closed-port-release-regressions-v1",
+      "sha": "f3d43f38b0fc67618b0807d803ba8d53e25fe255"
+    },
+    "updated_at": "2026-10-11T05:14:25Z"
+  },
+  {
+    "number": 394,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-closed-port-release-regressions-v1",
+      "sha": "f3d43f38b0fc67618b0807d803ba8d53e25fe255"
+    },
+    "base": {
+      "ref": "fix/music-midi-overlap-test-contract-v1",
+      "sha": "267dc4a6974bbf5c6e085799b187024afb912061"
+    },
+    "updated_at": "2026-10-11T05:11:41Z"
+  },
+  {
+    "number": 393,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-overlap-test-contract-v1",
+      "sha": "267dc4a6974bbf5c6e085799b187024afb912061"
+    },
+    "base": {
+      "ref": "feature/music-midi-reentrant-note-release-safety-v1",
+      "sha": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7"
+    },
+    "updated_at": "2026-10-11T05:10:56Z"
+  },
+  {
+    "number": 392,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-reentrant-note-release-safety-v1",
+      "sha": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7"
+    },
+    "base": {
+      "ref": "fix/music-midi-release-count-bounds-v1",
+      "sha": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0"
+    },
+    "updated_at": "2026-10-11T04:42:48Z"
+  },
+  {
+    "number": 391,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-release-count-bounds-v1",
+      "sha": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0"
+    },
+    "base": {
+      "ref": "fix/music-midi-overlap-release-bound-v1",
+      "sha": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612"
+    },
+    "updated_at": "2026-10-11T04:41:27Z"
+  },
+  {
+    "number": 390,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-overlap-release-bound-v1",
+      "sha": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612"
+    },
+    "base": {
+      "ref": "feature/music-midi-note-count-release-v1",
+      "sha": "f0d5b5745a017f3689e63cbffa06020f71f3f563"
+    },
+    "updated_at": "2026-10-11T04:40:03Z"
+  },
+  {
+    "number": 389,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-note-count-release-v1",
+      "sha": "f0d5b5745a017f3689e63cbffa06020f71f3f563"
+    },
+    "base": {
+      "ref": "feature/music-midi-multi-press-held-count-v1",
+      "sha": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade"
+    },
+    "updated_at": "2026-10-11T04:38:01Z"
+  },
+  {
+    "number": 388,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-multi-press-held-count-v1",
+      "sha": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade"
+    },
+    "base": {
+      "ref": "fix/music-midi-release-reentrant-notify-v1",
+      "sha": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a"
+    },
+    "updated_at": "2026-10-11T04:37:18Z"
+  },
+  {
+    "number": 387,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-release-reentrant-notify-v1",
+      "sha": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a"
+    },
+    "base": {
+      "ref": "fix/music-midi-reconnect-notification-consistency-v1",
+      "sha": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088"
+    },
+    "updated_at": "2026-10-11T04:36:13Z"
+  },
+  {
+    "number": 386,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-reconnect-notification-consistency-v1",
+      "sha": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088"
+    },
+    "base": {
+      "ref": "fix/music-midi-reconnect-release-ci-v1",
+      "sha": "10c30b9146d45a1d7456841a89e4c3339f214f3e"
+    },
+    "updated_at": "2026-10-11T04:34:44Z"
+  },
+  {
+    "number": 385,
+    "draft": true,
+    "head": {
+      "ref": "fix/music-midi-reconnect-release-ci-v1",
+      "sha": "10c30b9146d45a1d7456841a89e4c3339f214f3e"
+    },
+    "base": {
+      "ref": "feature/music-midi-atomic-reconnect-state-v1",
+      "sha": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f"
+    },
+    "updated_at": "2026-10-11T04:33:59Z"
+  },
+  {
+    "number": 384,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-atomic-reconnect-state-v1",
+      "sha": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f"
+    },
+    "base": {
+      "ref": "feature/music-midi-close-reopen-atomic-v1",
+      "sha": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8"
+    },
+    "updated_at": "2026-10-11T00:50:34Z"
+  },
+  {
+    "number": 383,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-close-reopen-atomic-v1",
+      "sha": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8"
+    },
+    "base": {
+      "ref": "feature/music-midi-state-event-snapshots-v1",
+      "sha": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8"
+    },
+    "updated_at": "2026-10-10T12:28:23Z"
+  },
+  {
+    "number": 382,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-state-event-snapshots-v1",
+      "sha": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8"
+    },
+    "base": {
+      "ref": "feature/music-midi-strict-event-payload-v1",
+      "sha": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514"
+    },
+    "updated_at": "2026-10-10T12:26:43Z"
+  },
+  {
+    "number": 381,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-strict-event-payload-v1",
+      "sha": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514"
+    },
+    "base": {
+      "ref": "feature/music-midi-delivery-fault-containment-v1",
+      "sha": "63a631c868295b03a7224f27c5a740a17922dd43"
+    },
+    "updated_at": "2026-10-10T12:25:14Z"
+  },
+  {
+    "number": 380,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-delivery-fault-containment-v1",
+      "sha": "63a631c868295b03a7224f27c5a740a17922dd43"
+    },
+    "base": {
+      "ref": "feature/music-midi-reentrant-source-state-v1",
+      "sha": "1e24007696cf5f2462e429fb02e38d09d2688d18"
+    },
+    "updated_at": "2026-10-10T12:23:20Z"
+  },
+  {
+    "number": 379,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-reentrant-source-state-v1",
+      "sha": "1e24007696cf5f2462e429fb02e38d09d2688d18"
+    },
+    "base": {
+      "ref": "feature/music-midi-source-notification-lock-v1",
+      "sha": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec"
+    },
+    "updated_at": "2026-10-10T12:17:49Z"
+  },
+  {
+    "number": 378,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-source-notification-lock-v1",
+      "sha": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec"
+    },
+    "base": {
+      "ref": "feature/music-midi-listener-fault-isolation-v1",
+      "sha": "5e30ba49cbed0825cfb052f708b8c8d4862f7120"
+    },
+    "updated_at": "2026-10-10T12:01:48Z"
+  },
+  {
+    "number": 377,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-listener-fault-isolation-v1",
+      "sha": "5e30ba49cbed0825cfb052f708b8c8d4862f7120"
+    },
+    "base": {
+      "ref": "feature/music-midi-production-edge-closure-v1",
+      "sha": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f"
+    },
+    "updated_at": "2026-10-10T11:51:52Z"
+  },
+  {
+    "number": 376,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-production-edge-closure-v1",
+      "sha": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f"
+    },
+    "base": {
+      "ref": "feature/music-midi-close-before-release-v1",
+      "sha": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7"
+    },
+    "updated_at": "2026-10-10T11:49:06Z"
+  },
+  {
+    "number": 375,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-close-before-release-v1",
+      "sha": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7"
+    },
+    "base": {
+      "ref": "feature/music-midi-source-state-tests-v1",
+      "sha": "384465f3b38ecf54a756e05b85181ae8830c2e47"
+    },
+    "updated_at": "2026-10-10T11:45:18Z"
+  },
+  {
+    "number": 374,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-source-state-tests-v1",
+      "sha": "384465f3b38ecf54a756e05b85181ae8830c2e47"
+    },
+    "base": {
+      "ref": "feature/music-midi-source-state-v1",
+      "sha": "8a001a4d683acd64ead56d91a81c29851496be61"
+    },
+    "updated_at": "2026-10-10T11:39:58Z"
+  },
+  {
+    "number": 373,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-source-state-v1",
+      "sha": "8a001a4d683acd64ead56d91a81c29851496be61"
+    },
+    "base": {
+      "ref": "feature/music-native-file-import-v1",
+      "sha": "9087f6a7871ae52542caf56b433f3b34892c5130"
+    },
+    "updated_at": "2026-10-10T09:24:09Z"
+  },
+  {
+    "number": 372,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-file-import-v1",
+      "sha": "9087f6a7871ae52542caf56b433f3b34892c5130"
+    },
+    "base": {
+      "ref": "feature/music-spm-assets-migration-v1",
+      "sha": "97d6cdecf61f07ca6d896819704c68d978f40461"
+    },
+    "updated_at": "2026-10-10T08:56:05Z"
+  },
+  {
+    "number": 371,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-spm-assets-migration-v1",
+      "sha": "97d6cdecf61f07ca6d896819704c68d978f40461"
+    },
+    "base": {
+      "ref": "feature/music-bundled-midi-production-v1",
+      "sha": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf"
+    },
+    "updated_at": "2026-10-10T08:36:20Z"
+  },
+  {
+    "number": 370,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-bundled-midi-production-v1",
+      "sha": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf"
+    },
+    "base": {
+      "ref": "feature/music-midi-session-cancellation-v1",
+      "sha": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443"
+    },
+    "updated_at": "2026-10-10T08:01:17Z"
+  },
+  {
+    "number": 369,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-session-cancellation-v1",
+      "sha": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443"
+    },
+    "base": {
+      "ref": "feature/music-midi-disconnect-countin-v1",
+      "sha": "1587ed74025970282810f43f50295931dd7e0f79"
+    },
+    "updated_at": "2026-10-10T05:33:15Z"
+  },
+  {
+    "number": 368,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-disconnect-countin-v1",
+      "sha": "1587ed74025970282810f43f50295931dd7e0f79"
+    },
+    "base": {
+      "ref": "feature/music-aligned-candidates-spatial-history-v1",
+      "sha": "29d61d61b673c90e7df276cde0614b6da2454773"
+    },
+    "updated_at": "2026-10-10T05:08:58Z"
+  },
+  {
+    "number": 367,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-aligned-candidates-spatial-history-v1",
+      "sha": "29d61d61b673c90e7df276cde0614b6da2454773"
+    },
+    "base": {
+      "ref": "feature/music-aligned-spatial-v1",
+      "sha": "cc40af3b1e8fa58b99d561fdca08a4790f368d05"
+    },
+    "updated_at": "2026-10-10T04:39:56Z"
+  },
+  {
+    "number": 366,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-aligned-spatial-v1",
+      "sha": "cc40af3b1e8fa58b99d561fdca08a4790f368d05"
+    },
+    "base": {
+      "ref": "feature/music-pcm-collision-proposals-v1",
+      "sha": "13bf1acb1cb6380559e66b4336575e989fdb9b56"
+    },
+    "updated_at": "2026-10-10T02:15:18Z"
+  },
+  {
+    "number": 365,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-collision-proposals-v1",
+      "sha": "13bf1acb1cb6380559e66b4336575e989fdb9b56"
+    },
+    "base": {
+      "ref": "feature/music-measured-mix-proposals-v1",
+      "sha": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a"
+    },
+    "updated_at": "2026-10-10T00:55:08Z"
+  },
+  {
+    "number": 364,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-measured-mix-proposals-v1",
+      "sha": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a"
+    },
+    "base": {
+      "ref": "feature/music-long-wav-mix-ui-v1",
+      "sha": "84e8064e77049f2a268bc305da36c9474c63a4eb"
+    },
+    "updated_at": "2026-10-09T14:44:20Z"
+  },
+  {
+    "number": 363,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-long-wav-mix-ui-v1",
+      "sha": "84e8064e77049f2a268bc305da36c9474c63a4eb"
+    },
+    "base": {
+      "ref": "feature/music-long-wav-archive-v1",
+      "sha": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff"
+    },
+    "updated_at": "2026-10-09T14:04:03Z"
+  },
+  {
+    "number": 362,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-long-wav-archive-v1",
+      "sha": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff"
+    },
+    "base": {
+      "ref": "feature/music-long-wav-durable-v1",
+      "sha": "0ece49e1b1767e221c9ce5708a97bdc823c19eba"
+    },
+    "updated_at": "2026-10-09T12:46:59Z"
+  },
+  {
+    "number": 361,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-long-wav-durable-v1",
+      "sha": "0ece49e1b1767e221c9ce5708a97bdc823c19eba"
+    },
+    "base": {
+      "ref": "feature/music-wav-async-render-chat-v1",
+      "sha": "e60c44209fbed9c3ce710db1b505a01908101b36"
+    },
+    "updated_at": "2026-10-09T12:26:56Z"
+  },
+  {
+    "number": 360,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-wav-async-render-chat-v1",
+      "sha": "e60c44209fbed9c3ce710db1b505a01908101b36"
+    },
+    "base": {
+      "ref": "feature/music-wav-stream-read-chat-v1",
+      "sha": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4"
+    },
+    "updated_at": "2026-10-09T11:16:48Z"
+  },
+  {
+    "number": 359,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-wav-stream-read-chat-v1",
+      "sha": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4"
+    },
+    "base": {
+      "ref": "feature/music-pcm-continuous-chunks-chat-v1",
+      "sha": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94"
+    },
+    "updated_at": "2026-10-09T11:05:30Z"
+  },
+  {
+    "number": 358,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-continuous-chunks-chat-v1",
+      "sha": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94"
+    },
+    "base": {
+      "ref": "feature/music-pcm-compression-integrated-chat-v1",
+      "sha": "65abb1cb496304bec90dfd594d004b9b892e4e9d"
+    },
+    "updated_at": "2026-10-09T10:57:44Z"
+  },
+  {
+    "number": 357,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-compression-integrated-chat-v1",
+      "sha": "65abb1cb496304bec90dfd594d004b9b892e4e9d"
+    },
+    "base": {
+      "ref": "feature/music-pcm-compression-chat-v1",
+      "sha": "ae40df2bbed0c89201f8d776b06a8e6e66838076"
+    },
+    "updated_at": "2026-10-09T10:41:50Z"
+  },
+  {
+    "number": 356,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-compression-chat-v1",
+      "sha": "ae40df2bbed0c89201f8d776b06a8e6e66838076"
+    },
+    "base": {
+      "ref": "feature/music-pcm-eq-persist-verify-chat-v1",
+      "sha": "0835135cea49977697e260b34dcd1ce753e9372d"
+    },
+    "updated_at": "2026-10-09T10:39:02Z"
+  },
+  {
+    "number": 355,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-eq-persist-verify-chat-v1",
+      "sha": "0835135cea49977697e260b34dcd1ce753e9372d"
+    },
+    "base": {
+      "ref": "feature/music-pcm-eq-persist-chat-v1",
+      "sha": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e"
+    },
+    "updated_at": "2026-10-09T10:28:53Z"
+  },
+  {
+    "number": 354,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-eq-persist-chat-v1",
+      "sha": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e"
+    },
+    "base": {
+      "ref": "feature/music-pcm-eq-preview-chat-v1",
+      "sha": "73009702854ab77049174e27f5ab2848896fbd2f"
+    },
+    "updated_at": "2026-10-09T10:27:40Z"
+  },
+  {
+    "number": 353,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-eq-preview-chat-v1",
+      "sha": "73009702854ab77049174e27f5ab2848896fbd2f"
+    },
+    "base": {
+      "ref": "feature/music-pcm-peaking-eq-chat-v1",
+      "sha": "3c40354e65d6945df14676efe317771e3a715947"
+    },
+    "updated_at": "2026-10-09T10:24:28Z"
+  },
+  {
+    "number": 352,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-peaking-eq-chat-v1",
+      "sha": "3c40354e65d6945df14676efe317771e3a715947"
+    },
+    "base": {
+      "ref": "feature/music-pcm-mix-v1",
+      "sha": "2523803b25d9182cc05cd5b27688b34beeecffdc"
+    },
+    "updated_at": "2026-10-09T10:19:23Z"
+  },
+  {
+    "number": 351,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-pcm-mix-v1",
+      "sha": "2523803b25d9182cc05cd5b27688b34beeecffdc"
+    },
+    "base": {
+      "ref": "feature/music-lyrics-note-assignment-v1",
+      "sha": "752a4bf3522736b9c69e4635ba4635c3a52307e8"
+    },
+    "updated_at": "2026-10-09T10:06:23Z"
+  },
+  {
+    "number": 350,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-lyrics-note-assignment-v1",
+      "sha": "752a4bf3522736b9c69e4635ba4635c3a52307e8"
+    },
+    "base": {
+      "ref": "feature/music-native-format-closure-v1",
+      "sha": "ffaf8dc45205d421d928e53964948dd0f2498ee3"
+    },
+    "updated_at": "2026-10-09T09:38:10Z"
+  },
+  {
+    "number": 349,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-format-closure-v1",
+      "sha": "ffaf8dc45205d421d928e53964948dd0f2498ee3"
+    },
+    "base": {
+      "ref": "feature/music-package-native-graph-v1",
+      "sha": "6ef95994a939817b5d579ff452997598da356673"
+    },
+    "updated_at": "2026-10-09T08:59:17Z"
+  },
+  {
+    "number": 348,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-package-native-graph-v1",
+      "sha": "6ef95994a939817b5d579ff452997598da356673"
+    },
+    "base": {
+      "ref": "feature/music-package-macho-loader-v1",
+      "sha": "412cb636d43e60a1466f51dbb011cc1b711427a1"
+    },
+    "updated_at": "2026-10-09T08:35:31Z"
+  },
+  {
+    "number": 347,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-package-macho-loader-v1",
+      "sha": "412cb636d43e60a1466f51dbb011cc1b711427a1"
+    },
+    "base": {
+      "ref": "feature/music-wrapper-build-inventory-v1",
+      "sha": "1303a26041c07425bb0469f5abcfc017307a9ebb"
+    },
+    "updated_at": "2026-10-09T08:01:30Z"
+  },
+  {
+    "number": 346,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-wrapper-build-inventory-v1",
+      "sha": "1303a26041c07425bb0469f5abcfc017307a9ebb"
+    },
+    "base": {
+      "ref": "feature/music-unsigned-app-layout-v1",
+      "sha": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e"
+    },
+    "updated_at": "2026-10-09T07:39:59Z"
+  },
+  {
+    "number": 345,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-unsigned-app-layout-v1",
+      "sha": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e"
+    },
+    "base": {
+      "ref": "feature/music-unsigned-generation-assembly-v1",
+      "sha": "765d0396a5079486a2c0eabc25dcfca834a3d248"
+    },
+    "updated_at": "2026-10-09T07:06:06Z"
+  },
+  {
+    "number": 344,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-unsigned-generation-assembly-v1",
+      "sha": "765d0396a5079486a2c0eabc25dcfca834a3d248"
+    },
+    "base": {
+      "ref": "feature/music-validated-publication-snapshot-v1",
+      "sha": "61435e4ff3ac20d06559ffb56abd9f544e368714"
+    },
+    "updated_at": "2026-10-09T03:51:08Z"
+  },
+  {
+    "number": 343,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-validated-publication-snapshot-v1",
+      "sha": "61435e4ff3ac20d06559ffb56abd9f544e368714"
+    },
+    "base": {
+      "ref": "feature/music-sealed-summary-immutability-v1",
+      "sha": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96"
+    },
+    "updated_at": "2026-10-09T03:19:53Z"
+  },
+  {
+    "number": 342,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-sealed-summary-immutability-v1",
+      "sha": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96"
+    },
+    "base": {
+      "ref": "feature/music-native-observation-snapshot-v1",
+      "sha": "f63d635fbc45757641f7852a257895ecb7ae2f01"
+    },
+    "updated_at": "2026-10-09T03:04:33Z"
+  },
+  {
+    "number": 341,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-observation-snapshot-v1",
+      "sha": "f63d635fbc45757641f7852a257895ecb7ae2f01"
+    },
+    "base": {
+      "ref": "feature/music-terminal-transport-callback-v1",
+      "sha": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8"
+    },
+    "updated_at": "2026-10-09T02:30:16Z"
+  },
+  {
+    "number": 340,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-terminal-transport-callback-v1",
+      "sha": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8"
+    },
+    "base": {
+      "ref": "feature/music-terminal-shutdown-failure-v1",
+      "sha": "e4a44b2585af87b001d94158dc3dea3dae3b4426"
+    },
+    "updated_at": "2026-10-09T01:23:02Z"
+  },
+  {
+    "number": 339,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-terminal-shutdown-failure-v1",
+      "sha": "e4a44b2585af87b001d94158dc3dea3dae3b4426"
+    },
+    "base": {
+      "ref": "feature/music-request-authority-isolation-v1",
+      "sha": "7930d40f733e736bd6b66b1dfcf2680cd27ae659"
+    },
+    "updated_at": "2026-10-09T00:51:19Z"
+  },
+  {
+    "number": 338,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-request-authority-isolation-v1",
+      "sha": "7930d40f733e736bd6b66b1dfcf2680cd27ae659"
+    },
+    "base": {
+      "ref": "feature/music-authorized-result-generation-v1",
+      "sha": "f1d555c739525c92a33ced647f3af2f96e2c8665"
+    },
+    "updated_at": "2026-10-08T19:31:55Z"
+  },
+  {
+    "number": 337,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-authorized-result-generation-v1",
+      "sha": "f1d555c739525c92a33ced647f3af2f96e2c8665"
+    },
+    "base": {
+      "ref": "feature/music-final-response-output-recheck-v1",
+      "sha": "5ce9979c7c162ae487a430c7b0927cf264c60428"
+    },
+    "updated_at": "2026-10-08T13:29:35Z"
+  },
+  {
+    "number": 336,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-final-response-output-recheck-v1",
+      "sha": "5ce9979c7c162ae487a430c7b0927cf264c60428"
+    },
+    "base": {
+      "ref": "feature/music-stem-output-continuity-v1",
+      "sha": "4517279de9f227972ca0681b399ce2868ba10b9a"
+    },
+    "updated_at": "2026-10-08T12:46:25Z"
+  },
+  {
+    "number": 335,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-stem-output-continuity-v1",
+      "sha": "4517279de9f227972ca0681b399ce2868ba10b9a"
+    },
+    "base": {
+      "ref": "feature/music-processing-publication-continuity-v1",
+      "sha": "f00bc150c5ab025c63416fcade9ee3a50187b9af"
+    },
+    "updated_at": "2026-10-08T11:59:42Z"
+  },
+  {
+    "number": 334,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-processing-publication-continuity-v1",
+      "sha": "f00bc150c5ab025c63416fcade9ee3a50187b9af"
+    },
+    "base": {
+      "ref": "feature/music-owned-health-continuity-v1",
+      "sha": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f"
+    },
+    "updated_at": "2026-10-08T10:33:29Z"
+  },
+  {
+    "number": 333,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-owned-health-continuity-v1",
+      "sha": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f"
+    },
+    "base": {
+      "ref": "feature/music-parent-owned-origin-binding-v1",
+      "sha": "7657ddac3e860f4c9e470a6e3357419df44b90cf"
+    },
+    "updated_at": "2026-10-08T09:55:52Z"
+  },
+  {
+    "number": 332,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-parent-owned-origin-binding-v1",
+      "sha": "7657ddac3e860f4c9e470a6e3357419df44b90cf"
+    },
+    "base": {
+      "ref": "feature/music-owned-process-origin-v1",
+      "sha": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0"
+    },
+    "updated_at": "2026-10-07T23:06:33Z"
+  },
+  {
+    "number": 331,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-owned-process-origin-v1",
+      "sha": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0"
+    },
+    "base": {
+      "ref": "feature/music-packaged-native-runtime-origin-v1",
+      "sha": "0351f6d9ccefe843eec24ee99732e15cf467d9de"
+    },
+    "updated_at": "2026-10-07T16:12:40Z"
+  },
+  {
+    "number": 330,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-packaged-native-runtime-origin-v1",
+      "sha": "0351f6d9ccefe843eec24ee99732e15cf467d9de"
+    },
+    "base": {
+      "ref": "feature/music-private-runtime-unified-checkpoint-v1",
+      "sha": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df"
+    },
+    "updated_at": "2026-10-07T13:38:04Z"
+  },
+  {
+    "number": 329,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-private-runtime-unified-checkpoint-v1",
+      "sha": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df"
+    },
+    "base": {
+      "ref": "feature/music-private-runtime-production-slots-v1",
+      "sha": "1491d6732155f500cb929d4e927bf9a5cb83eaae"
+    },
+    "updated_at": "2026-10-07T12:51:48Z"
+  },
+  {
+    "number": 328,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-private-runtime-production-slots-v1",
+      "sha": "1491d6732155f500cb929d4e927bf9a5cb83eaae"
+    },
+    "base": {
+      "ref": "feature/music-swift-private-summary-ack-v1",
+      "sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396"
+    },
+    "updated_at": "2026-10-07T12:40:48Z"
+  },
+  {
+    "number": 327,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-private-python-anchored-routing-v1",
+      "sha": "96c7d8698847a22afd53dc991c61b0110d5d3902"
+    },
+    "base": {
+      "ref": "feature/music-swift-private-summary-ack-v1",
+      "sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396"
+    },
+    "updated_at": "2026-10-07T12:29:19Z"
+  },
+  {
+    "number": 326,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-swift-private-summary-ack-v1",
+      "sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396"
+    },
+    "base": {
+      "ref": "feature/music-owned-descendant-final-delivery-v1",
+      "sha": "95287bd846009004e705f267e965510cce56a455"
+    },
+    "updated_at": "2026-10-07T12:00:40Z"
+  },
+  {
+    "number": 325,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-owned-descendant-final-delivery-v1",
+      "sha": "95287bd846009004e705f267e965510cce56a455"
+    },
+    "base": {
+      "ref": "feature/music-owned-exit-delivery-v1",
+      "sha": "f909543081adcb7bef0254b0230ce825a319caf0"
+    },
+    "updated_at": "2026-10-07T09:43:09Z"
+  },
+  {
+    "number": 324,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-owned-exit-delivery-v1",
+      "sha": "f909543081adcb7bef0254b0230ce825a319caf0"
+    },
+    "base": {
+      "ref": "feature/music-record-manifest-production-assembly-v1",
+      "sha": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6"
+    },
+    "updated_at": "2026-10-06T16:13:09Z"
+  },
+  {
+    "number": 323,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-record-manifest-production-assembly-v1",
+      "sha": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6"
+    },
+    "base": {
+      "ref": "feature/music-private-runtime-assembly-v1",
+      "sha": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d"
+    },
+    "updated_at": "2026-10-06T15:20:11Z"
+  },
+  {
+    "number": 322,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-private-runtime-assembly-v1",
+      "sha": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d"
+    },
+    "base": {
+      "ref": "feature/music-installed-dependency-assembly-v1",
+      "sha": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2"
+    },
+    "updated_at": "2026-10-06T14:42:07Z"
+  },
+  {
+    "number": 321,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-installed-dependency-assembly-v1",
+      "sha": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2"
+    },
+    "base": {
+      "ref": "feature/music-exact-backend-candidates-v1",
+      "sha": "9bf70a4289d4384c8010bee62b42d7a4538af74c"
+    },
+    "updated_at": "2026-10-06T13:19:21Z"
+  },
+  {
+    "number": 320,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-exact-backend-candidates-v1",
+      "sha": "9bf70a4289d4384c8010bee62b42d7a4538af74c"
+    },
+    "base": {
+      "ref": "feature/music-backend-bundle-evidence-v1",
+      "sha": "17525108dc6939e2a10f3dab630f78a3e7270479"
+    },
+    "updated_at": "2026-10-06T12:11:37Z"
+  },
+  {
+    "number": 319,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-backend-bundle-evidence-v1",
+      "sha": "17525108dc6939e2a10f3dab630f78a3e7270479"
+    },
+    "base": {
+      "ref": "feature/music-production-source-preflight-v1",
+      "sha": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52"
+    },
+    "updated_at": "2026-10-06T10:17:46Z"
+  },
+  {
+    "number": 318,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-production-source-preflight-v1",
+      "sha": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52"
+    },
+    "base": {
+      "ref": "feature/music-browser-stream-audit-v1",
+      "sha": "8b1a4640be4960e99a8e040caf6615f3a68bc72e"
+    },
+    "updated_at": "2026-10-06T09:19:08Z"
+  },
+  {
+    "number": 317,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-browser-stream-audit-v1",
+      "sha": "8b1a4640be4960e99a8e040caf6615f3a68bc72e"
+    },
+    "base": {
+      "ref": "feature/music-authorized-shutdown-v1",
+      "sha": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0"
+    },
+    "updated_at": "2026-10-06T08:42:51Z"
+  },
+  {
+    "number": 316,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-authorized-shutdown-v1",
+      "sha": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0"
+    },
+    "base": {
+      "ref": "feature/music-owned-result-lifecycle-v1",
+      "sha": "d244983a4643490e8a8fedf501cdb65cb6299ecf"
+    },
+    "updated_at": "2026-10-06T07:46:12Z"
+  },
+  {
+    "number": 315,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-owned-result-lifecycle-v1",
+      "sha": "d244983a4643490e8a8fedf501cdb65cb6299ecf"
+    },
+    "base": {
+      "ref": "feature/music-dispatch-evidence-v1",
+      "sha": "24730636102cdec68b952bc5834be50a94b00a5b"
+    },
+    "updated_at": "2026-10-06T06:47:21Z"
+  },
+  {
+    "number": 314,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-dispatch-evidence-v1",
+      "sha": "24730636102cdec68b952bc5834be50a94b00a5b"
+    },
+    "base": {
+      "ref": "feature/music-native-runtime-events-v1",
+      "sha": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b"
+    },
+    "updated_at": "2026-10-06T04:24:17Z"
+  },
+  {
+    "number": 313,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-runtime-events-v1",
+      "sha": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b"
+    },
+    "base": {
+      "ref": "feature/music-native-image-routing-v2",
+      "sha": "a43af2d282e50b229a2828e4be2de3b102b5c2c1"
+    },
+    "updated_at": "2026-10-06T04:02:23Z"
+  },
+  {
+    "number": 312,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-image-routing-v2",
+      "sha": "a43af2d282e50b229a2828e4be2de3b102b5c2c1"
+    },
+    "base": {
+      "ref": "feature/music-native-routing-closure-v1",
+      "sha": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db"
+    },
+    "updated_at": "2026-10-06T03:39:47Z"
+  },
+  {
+    "number": 311,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-routing-closure-v1",
+      "sha": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db"
+    },
+    "base": {
+      "ref": "feature/music-processing-closure-v1",
+      "sha": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142"
+    },
+    "updated_at": "2026-10-06T01:02:59Z"
+  },
+  {
+    "number": 310,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-processing-closure-v1",
+      "sha": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142"
+    },
+    "base": {
+      "ref": "feature/music-production-lifecycle-v1",
+      "sha": "d268830e9b84ae39d5791499f6a99f05ba773561"
+    },
+    "updated_at": "2026-10-05T15:24:42Z"
+  },
+  {
+    "number": 309,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-production-lifecycle-v1",
+      "sha": "d268830e9b84ae39d5791499f6a99f05ba773561"
+    },
+    "base": {
+      "ref": "feature/music-scoped-loaded-library-receipts-v1",
+      "sha": "79741ef371ea513032d78a0834f7ac041c84036b"
+    },
+    "updated_at": "2026-10-05T13:52:11Z"
+  },
+  {
+    "number": 308,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-scoped-loaded-library-receipts-v1",
+      "sha": "79741ef371ea513032d78a0834f7ac041c84036b"
+    },
+    "base": {
+      "ref": "feature/music-native-runtime-verification-v1",
+      "sha": "8317535ffe327f8437f39827f836d3c893ce98d9"
+    },
+    "updated_at": "2026-10-05T09:41:54Z"
+  },
+  {
+    "number": 307,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-native-runtime-verification-v1",
+      "sha": "8317535ffe327f8437f39827f836d3c893ce98d9"
+    },
+    "base": {
+      "ref": "feature/music-demucs-receipt-closure-v1",
+      "sha": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5"
+    },
+    "updated_at": "2026-10-05T08:57:31Z"
+  },
+  {
+    "number": 306,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-demucs-receipt-closure-v1",
+      "sha": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5"
+    },
+    "base": {
+      "ref": "feature/music-runtime-inventory-v2",
+      "sha": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4"
+    },
+    "updated_at": "2026-10-05T06:40:18Z"
+  },
+  {
+    "number": 305,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-runtime-inventory-v2",
+      "sha": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4"
+    },
+    "base": {
+      "ref": "feature/music-distribution-identity-v1",
+      "sha": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55"
+    },
+    "updated_at": "2026-10-05T05:50:20Z"
+  },
+  {
+    "number": 304,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-distribution-identity-v1",
+      "sha": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55"
+    },
+    "base": {
+      "ref": "feature/music-runtime-ingress-identity-v1",
+      "sha": "3b3b178f81a5b6096af421a577f80fe49fa6b74e"
+    },
+    "updated_at": "2026-10-05T03:56:23Z"
+  },
+  {
+    "number": 303,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-runtime-ingress-identity-v1",
+      "sha": "3b3b178f81a5b6096af421a577f80fe49fa6b74e"
+    },
+    "base": {
+      "ref": "feature/music-resource-runtime-contract-v1",
+      "sha": "5adfc3cf13ef488ce116c8c655166f5dce0560df"
+    },
+    "updated_at": "2026-10-05T03:26:45Z"
+  },
+  {
+    "number": 302,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-resource-runtime-contract-v1",
+      "sha": "5adfc3cf13ef488ce116c8c655166f5dce0560df"
+    },
+    "base": {
+      "ref": "feature/music-durable-package-generation-v1",
+      "sha": "16db7aecd30313618837beaefa235bb8a3032a28"
+    },
+    "updated_at": "2026-10-05T01:18:23Z"
+  },
+  {
+    "number": 301,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-durable-package-generation-v1",
+      "sha": "16db7aecd30313618837beaefa235bb8a3032a28"
+    },
+    "base": {
+      "ref": "feature/music-binary-resolver-boundary-v1",
+      "sha": "4fef6c143340f4ff0c9d01b1796a38f4641dce12"
+    },
+    "updated_at": "2026-10-05T00:48:20Z"
+  },
+  {
+    "number": 300,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-binary-resolver-boundary-v1",
+      "sha": "4fef6c143340f4ff0c9d01b1796a38f4641dce12"
+    },
+    "base": {
+      "ref": "feature/music-restore-atomic-safety-v1",
+      "sha": "269c29a74004e9e883de0fee2e59ac3e71b57d73"
+    },
+    "updated_at": "2026-10-05T00:12:59Z"
+  },
+  {
+    "number": 299,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-restore-atomic-safety-v1",
+      "sha": "269c29a74004e9e883de0fee2e59ac3e71b57d73"
+    },
+    "base": {
+      "ref": "feature/music-transaction-completion-safety-v1",
+      "sha": "031def44c194787f4e8e17552961d62e93b10df2"
+    },
+    "updated_at": "2026-10-04T15:28:49Z"
+  },
+  {
+    "number": 298,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-transaction-completion-safety-v1",
+      "sha": "031def44c194787f4e8e17552961d62e93b10df2"
+    },
+    "base": {
+      "ref": "feature/music-production-verification-contract-v1",
+      "sha": "f4402bc7d4dee5470b454f0f8058c57c96b3c601"
+    },
+    "updated_at": "2026-10-04T13:51:15Z"
+  },
+  {
+    "number": 297,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-production-verification-contract-v1",
+      "sha": "f4402bc7d4dee5470b454f0f8058c57c96b3c601"
+    },
+    "base": {
+      "ref": "feature/music-disposable-durable-recovery-v1",
+      "sha": "89570b292efc2417b5a927cf94037e4fe878063a"
+    },
+    "updated_at": "2026-10-04T13:35:16Z"
+  },
+  {
+    "number": 296,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-disposable-durable-recovery-v1",
+      "sha": "89570b292efc2417b5a927cf94037e4fe878063a"
+    },
+    "base": {
+      "ref": "feature/music-observed-byte-fault-evidence-v1",
+      "sha": "120b4527780bbfe00b164875c57f852c4055cc9a"
+    },
+    "updated_at": "2026-10-04T13:12:08Z"
+  },
+  {
+    "number": 295,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-observed-byte-fault-evidence-v1",
+      "sha": "120b4527780bbfe00b164875c57f852c4055cc9a"
+    },
+    "base": {
+      "ref": "feature/music-package-restore-review-v1",
+      "sha": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519"
+    },
+    "updated_at": "2026-10-04T12:51:38Z"
+  },
+  {
+    "number": 294,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-package-restore-review-v1",
+      "sha": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519"
+    },
+    "base": {
+      "ref": "feature/music-dependency-closure-boundaries-v1",
+      "sha": "d22ad93e738c96bdded6064013f79fd48129bc3c"
+    },
+    "updated_at": "2026-10-04T10:44:26Z"
+  },
+  {
+    "number": 293,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-dependency-closure-boundaries-v1",
+      "sha": "d22ad93e738c96bdded6064013f79fd48129bc3c"
+    },
+    "base": {
+      "ref": "feature/music-storage-contract-inspection-v1",
+      "sha": "29a9223d23a16bb4de5cac0040ce6867dd4a7201"
+    },
+    "updated_at": "2026-10-04T10:13:31Z"
+  },
+  {
+    "number": 292,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-storage-contract-inspection-v1",
+      "sha": "29a9223d23a16bb4de5cac0040ce6867dd4a7201"
+    },
+    "base": {
+      "ref": "feature/music-asset-dependency-inspection-v1",
+      "sha": "58ea34fa6c6ef14a070f84664f49621d7d9323a1"
+    },
+    "updated_at": "2026-10-04T09:35:47Z"
+  },
+  {
+    "number": 291,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-asset-dependency-inspection-v1",
+      "sha": "58ea34fa6c6ef14a070f84664f49621d7d9323a1"
+    },
+    "base": {
+      "ref": "feature/music-completion-foundation-v1",
+      "sha": "bd9fdd7bf777f4bbc34dd02481805572a0005169"
+    },
+    "updated_at": "2026-10-04T07:46:03Z"
+  },
+  {
+    "number": 290,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-completion-foundation-v1",
+      "sha": "bd9fdd7bf777f4bbc34dd02481805572a0005169"
+    },
+    "base": {
+      "ref": "feature/music-ai-arrangement-destination-inspection-v1",
+      "sha": "418dc57429f91ffcef6b578a7edfda36012576fd"
+    },
+    "updated_at": "2026-10-04T05:35:16Z"
+  },
+  {
+    "number": 289,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-arrangement-destination-inspection-v1",
+      "sha": "418dc57429f91ffcef6b578a7edfda36012576fd"
+    },
+    "base": {
+      "ref": "feature/music-ai-arrangement-track-inspection-v1",
+      "sha": "c041822d9715622302478f40d3f74ada8f830ee2"
+    },
+    "updated_at": "2026-10-04T05:02:38Z"
+  },
+  {
+    "number": 288,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-arrangement-track-inspection-v1",
+      "sha": "c041822d9715622302478f40d3f74ada8f830ee2"
+    },
+    "base": {
+      "ref": "feature/music-ai-arrangement-reference-inspection-v1",
+      "sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe"
+    },
+    "updated_at": "2026-10-03T14:34:18Z"
+  },
+  {
+    "number": 287,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-arrangement-reference-inspection-v1",
+      "sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe"
+    },
+    "base": {
+      "ref": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f"
+    },
+    "updated_at": "2026-10-03T14:05:01Z"
+  },
+  {
+    "number": 286,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f"
+    },
+    "base": {
+      "ref": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "sha": "58d4d358b4ba5844f1494844060fbf7239ef3815"
+    },
+    "updated_at": "2026-10-03T13:28:17Z"
+  },
+  {
+    "number": 285,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "sha": "58d4d358b4ba5844f1494844060fbf7239ef3815"
+    },
+    "base": {
+      "ref": "feature/music-ai-continuation-source-preview-v1",
+      "sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb"
+    },
+    "updated_at": "2026-10-03T09:53:18Z"
+  },
+  {
+    "number": 284,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-continuation-source-preview-v1",
+      "sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb"
+    },
+    "base": {
+      "ref": "feature/music-ai-arrangement-entry-preview-v1",
+      "sha": "2cef9c22c99cceb231263fa75f0091470309a103"
+    },
+    "updated_at": "2026-10-03T08:40:03Z"
+  },
+  {
+    "number": 283,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-arrangement-entry-preview-v1",
+      "sha": "2cef9c22c99cceb231263fa75f0091470309a103"
+    },
+    "base": {
+      "ref": "feature/music-ai-lyrics-exact-preview-v1",
+      "sha": "b2075209428dedd91775de52ea45585ed9ba7bbd"
+    },
+    "updated_at": "2026-10-03T08:21:57Z"
+  },
+  {
+    "number": 282,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-lyrics-exact-preview-v1",
+      "sha": "b2075209428dedd91775de52ea45585ed9ba7bbd"
+    },
+    "base": {
+      "ref": "feature/music-ai-project-section-apply-v1",
+      "sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57"
+    },
+    "updated_at": "2026-10-03T06:28:16Z"
+  },
+  {
+    "number": 281,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-project-section-apply-v1",
+      "sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57"
+    },
+    "base": {
+      "ref": "feature/music-ai-section-exact-preview-v1",
+      "sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7"
+    },
+    "updated_at": "2026-10-03T06:06:06Z"
+  },
+  {
+    "number": 280,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-section-exact-preview-v1",
+      "sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7"
+    },
+    "base": {
+      "ref": "feature/music-ai-family-metadata-range-v1",
+      "sha": "c6a73c24706e31a95120201f1b552dbca43f6312"
+    },
+    "updated_at": "2026-10-03T05:23:07Z"
+  },
+  {
+    "number": 279,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-family-metadata-range-v1",
+      "sha": "c6a73c24706e31a95120201f1b552dbca43f6312"
+    },
+    "base": {
+      "ref": "feature/music-ai-partial-family-history-v1",
+      "sha": "0777660e8871830b0d167fd00cbc13ced150d1c4"
+    },
+    "updated_at": "2026-10-03T03:04:16Z"
+  },
+  {
+    "number": 278,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-partial-family-history-v1",
+      "sha": "0777660e8871830b0d167fd00cbc13ced150d1c4"
+    },
+    "base": {
+      "ref": "feature/music-ai-family-apply-transaction-v1",
+      "sha": "f7383c988f9d98f0854a652edeb9171d949a8fd2"
+    },
+    "updated_at": "2026-10-02T17:02:27Z"
+  },
+  {
+    "number": 277,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-family-apply-transaction-v1",
+      "sha": "f7383c988f9d98f0854a652edeb9171d949a8fd2"
+    },
+    "base": {
+      "ref": "feature/music-ai-family-preview-v1",
+      "sha": "8b40e3eebb0890fc3bf6c5c580f67936e060f573"
+    },
+    "updated_at": "2026-10-02T15:14:48Z"
+  },
+  {
+    "number": 276,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-family-preview-v1",
+      "sha": "8b40e3eebb0890fc3bf6c5c580f67936e060f573"
+    },
+    "base": {
+      "ref": "feature/music-ai-exact-partial-adoption-v1",
+      "sha": "58c523ddeac2f5b77ae94fed50cca7b197bd5027"
+    },
+    "updated_at": "2026-10-02T14:38:34Z"
+  },
+  {
+    "number": 275,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-exact-partial-adoption-v1",
+      "sha": "58c523ddeac2f5b77ae94fed50cca7b197bd5027"
+    },
+    "base": {
+      "ref": "feature/music-ai-candidate-family-v1",
+      "sha": "cde821afe4a7f115c670b5b7f822520771d57eac"
+    },
+    "updated_at": "2026-10-02T14:23:19Z"
+  },
+  {
+    "number": 274,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-candidate-family-v1",
+      "sha": "cde821afe4a7f115c670b5b7f822520771d57eac"
+    },
+    "base": {
+      "ref": "feature/music-ai-candidate-preview-v1",
+      "sha": "5227f6c91d1892aad15cde3bdd6279845fbb53d9"
+    },
+    "updated_at": "2026-10-02T11:41:11Z"
+  },
+  {
+    "number": 273,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-candidate-preview-v1",
+      "sha": "5227f6c91d1892aad15cde3bdd6279845fbb53d9"
+    },
+    "base": {
+      "ref": "feature/music-ai-composition-workflow-v1",
+      "sha": "1240a62bc88b8bd38e483ed5b5b674e048eb4877"
+    },
+    "updated_at": "2026-10-02T11:20:14Z"
+  },
+  {
+    "number": 272,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-composition-workflow-v1",
+      "sha": "1240a62bc88b8bd38e483ed5b5b674e048eb4877"
+    },
+    "base": {
+      "ref": "feature/music-ai-assistant-ui-v1",
+      "sha": "e7bdbb2b558e9e368cf38ec4051198f7eef21316"
+    },
+    "updated_at": "2026-10-02T11:08:29Z"
+  },
+  {
+    "number": 271,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-assistant-ui-v1",
+      "sha": "e7bdbb2b558e9e368cf38ec4051198f7eef21316"
+    },
+    "base": {
+      "ref": "feature/music-ai-workflow-foundation-v1",
+      "sha": "44c2e3f5c53481d46054d76d4e0595c7a765905b"
+    },
+    "updated_at": "2026-10-02T10:33:00Z"
+  },
+  {
+    "number": 270,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-ai-workflow-foundation-v1",
+      "sha": "44c2e3f5c53481d46054d76d4e0595c7a765905b"
+    },
+    "base": {
+      "ref": "feature/music-coordinated-a-browser-v1",
+      "sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52"
+    },
+    "updated_at": "2026-10-02T06:51:46Z"
+  },
+  {
+    "number": 269,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-coordinated-a-browser-v1",
+      "sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-02T06:31:35Z"
+  },
+  {
+    "number": 268,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-editor-commit-lock-guard-v1",
+      "sha": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-02T04:51:05Z"
+  },
+  {
+    "number": 267,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-measure-lock-compat-v1",
+      "sha": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T15:14:52Z"
+  },
+  {
+    "number": 266,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-structure-descriptors-v1",
+      "sha": "0101b246e219e3307ef55836b372f36fa331fa48"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T11:52:47Z"
+  },
+  {
+    "number": 265,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-meter-boundaries-v1",
+      "sha": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T11:52:45Z"
+  },
+  {
+    "number": 264,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-midi-metadata-export-v1",
+      "sha": "c052f1614155f8ccd8e84235d6218e81ccc53758"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T11:18:19Z"
+  },
+  {
+    "number": 263,
+    "draft": true,
+    "head": {
+      "ref": "feature/music-structure-metadata-maps-v1",
+      "sha": "9c877b267a181b560332e07071b7f86539eb1cbf"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T11:52:42Z"
+  },
+  {
+    "number": 262,
+    "draft": true,
+    "head": {
+      "ref": "verification/music-studio-all-drafts-255",
+      "sha": "a857c27674d6949488ff8884948499966f9bca40"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-10-01T10:52:55Z"
+  },
+  {
+    "number": 261,
+    "draft": true,
+    "head": {
+      "ref": "verification/music-studio-baseline-combined",
+      "sha": "3d818bb1a2ba598f396822bb2e79c6d586d88265"
+    },
+    "base": {
+      "ref": "agent/music-studio-cache-version-consistency",
+      "sha": "9fce9944f8112fab9b5dea7f3e1953175bea5c09"
+    },
+    "updated_at": "2026-09-23T12:01:14Z"
+  },
+  {
+    "number": 260,
+    "draft": true,
+    "head": {
+      "ref": "agent/music-studio-cache-version-consistency",
+      "sha": "9fce9944f8112fab9b5dea7f3e1953175bea5c09"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-09-23T11:11:04Z"
+  },
+  {
+    "number": 259,
+    "draft": true,
+    "head": {
+      "ref": "agent/music-selected-track-invalid-id-guard",
+      "sha": "8da76987e8c0a46df703d34643f432ab57730768"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-09-23T09:57:36Z"
+  },
+  {
+    "number": 258,
+    "draft": true,
+    "head": {
+      "ref": "agent/music-audio-bridge-midi-guard",
+      "sha": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-09-23T23:15:25Z"
+  },
+  {
+    "number": 257,
+    "draft": true,
+    "head": {
+      "ref": "agent/music-audio-helper-boundary-tests",
+      "sha": "fbd7ef3c982890a5fc5912362367d9810ff95583"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-09-23T12:21:11Z"
+  },
+  {
+    "number": 256,
+    "draft": true,
+    "head": {
+      "ref": "agent/music-studio-current-main-build-verification",
+      "sha": "d814d508bf992942376b32463e9122b9ffdb4fc8"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "552d56eafddfd192970c09f7d6278696cf8775c3"
+    },
+    "updated_at": "2026-09-22T12:17:20Z"
+  },
+  {
+    "number": 35,
+    "draft": false,
+    "head": {
+      "ref": "codex/add-url-registration-for-story-archive",
+      "sha": "0066ce391b5f5dd54f04612edd1111d59ed5d763"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "091fd97890712b98e0934511be64c6408b81821a"
+    },
+    "updated_at": "2026-07-15T13:09:02Z"
+  },
+  {
+    "number": 10,
+    "draft": false,
+    "head": {
+      "ref": "codex/scene",
+      "sha": "060bf78b8cadf773209c441a332d420043c356f5"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "38e14b57ddfa5e0d340724a5dc1e17278d8365c6"
+    },
+    "updated_at": "2026-07-14T09:07:11Z"
+  }
+]

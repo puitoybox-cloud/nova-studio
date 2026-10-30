@@ -1,0 +1,254 @@
+[
+  {
+    "width": 1440,
+    "screens": [
+      {
+        "route": "midi-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "ai-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "lyrics-notes",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "vocal",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-workspace",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-long-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-export",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      }
+    ],
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 1180,
+    "screens": [
+      {
+        "route": "midi-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "ai-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "lyrics-notes",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "vocal",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-workspace",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-long-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-export",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      }
+    ],
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 820,
+    "screens": [
+      {
+        "route": "midi-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "ai-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "lyrics-notes",
+        "horizontalOverflow": false,
+        "documentHeight": 1038,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "vocal",
+        "horizontalOverflow": false,
+        "documentHeight": 851,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-workspace",
+        "horizontalOverflow": false,
+        "documentHeight": 1450,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-master",
+        "horizontalOverflow": false,
+        "documentHeight": 999,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-long-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-export",
+        "horizontalOverflow": false,
+        "documentHeight": 980,
+        "viewportHeight": 820,
+        "small": 0
+      }
+    ],
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 390,
+    "screens": [
+      {
+        "route": "midi-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "ai-editor",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "lyrics-notes",
+        "horizontalOverflow": false,
+        "documentHeight": 1362,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "vocal",
+        "horizontalOverflow": false,
+        "documentHeight": 1249,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-workspace",
+        "horizontalOverflow": false,
+        "documentHeight": 2338,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-master",
+        "horizontalOverflow": false,
+        "documentHeight": 1287,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-long-master",
+        "horizontalOverflow": false,
+        "documentHeight": 820,
+        "viewportHeight": 820,
+        "small": 0
+      },
+      {
+        "route": "mixing-export",
+        "horizontalOverflow": false,
+        "documentHeight": 1312,
+        "viewportHeight": 820,
+        "small": 0
+      }
+    ],
+    "errors": [],
+    "external": []
+  }
+]
