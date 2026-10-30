@@ -1,0 +1,31 @@
+# Production diagnostics, MIDI materials and local cost visibility
+
+Date: 2026-10-30 JST. Parent: PR #545, `6221ebc908c4dcbaefcfb25aebbdf78ca2d3b3e3`. Independent branch `fix/music-production-diagnostics-20261030`. Existing PR #510, #537–545 and main remain unchanged. No Ready, merge or force push.
+
+## Production changes
+
+- No.12/23: explicit encoded-tail recovery can stop at the first missing/corrupt chunk and decode only the authenticated contiguous prefix. Default recovery still rejects corrupt recordings before calling the decoder. Tail probing stays bounded (8 probes / 32MiB cumulative probe data); whole initial decoding retains the existing recording capacity. Every source chunk remains intact, including corrupted tails. Recovery keeps the original journal identity and existing atomic recovered marker, preventing repeat recovery after rescue migration. A successful decode never asserts the complete original recording was recovered.
+- No.24: Project tools now has one diagnostic entry for project validation, restored MIDI validation, current metadata backup, stored automatic-backup metadata, dependency hashes including history, and recording journals. Reports distinguish missing, corrupt, unverified and valid evidence. Archive presence is explicitly **not** byte verification. Existing authenticated missing-binary recovery is exposed in the same panel: matching size/SHA-256 only; existing corrupt content is not overwritten. Recording repair remains an explicit Vocal action. Diagnosis does not write project data or claim automatic repair.
+- No.26: local MIDI edit execution refuses declared positive/unknown costs before generation. Local executions record separate zero-API-charge attempts with timestamps and completed/failed/cancelled/running states; concurrent runs of one request are refused and attempts are bounded. Month summaries include local provider counts and identify legacy untracked requests. Records use existing AI workspace persistence, serialization and history/backup paths. UI states that paid execution is disabled and external-account charges cannot be verified. This is **not** a paid-provider billing ledger, financial receipt or network sandbox.
+- No.29: project-owned MIDI material library (64 items, 2MiB serialized metadata bound), explicit name/description/range capture, normalized text-term filtering and new-project creation with BPM ratio and semitone adjustment. Drums keep their pitches; out-of-range pitches reject the entire operation. Boundary-crossing notes, unsupported partial variable maps, inconsistent base tempo and external sample-instrument bindings reject safely. Range markers are rebased, transient editor selection removed. Source/project and destination are protected with existing atomic compare-and-put / compare-and-fork. Material metadata and capture/create history travel through ordinary Project JSON, backups and Full WAV Archive without a new database store. Imported invalid materials are rejected by the project ingress contract.
+- No.22/30: existing Take/PCM/WAV/MIDI, checkpoints, production history, backup atomicity and finished-version handling are retained. New material operations append explicit production history. Asset cache version is 1.4.217 across standalone/host entry points and regression expectations.
+
+## Scope and remaining acceptance
+
+| Feature | Classification | Still required |
+| --- | --- | --- |
+| 12 Vocal recording | Partial implementation | Real-codec coverage, audio quality, microphone/latency and Intel/WebKit acceptance; missing or never-committed audio cannot be reconstructed by this patch. |
+| 23 Backup/recovery/migration | Partial implementation | Separate-device/power-loss acceptance, Cloud Sync architecture and remaining master-plan requirements. Corrupt compressed tail bytes are retained for rescue, never claimed repaired. |
+| 24 Diagnosis/safe repair | Partial implementation | Product-wide performance diagnosis, safe reduction, additional repair classes and physical acceptance. Metadata-valid backup is not proof of complete binary coverage. |
+| 26 AI cost management | Partial implementation | Paid provider/pricing selection and evidence, global monthly budget, reservations/settlement and reconciliation. The implemented scope is recorded local MIDI edits with paid execution disabled. Other AI execution paths and external-account usage are not metered by this ledger. |
+| 29 Materials/templates | Partial implementation | Semantic natural-language search, explicit target-key spelling/metadata, insertion into existing songs, audio material tempo/pitch processing, full-song templates and physical UI acceptance. Current search is text filtering, current material is MIDI only. |
+
+No feature-wide completion certification is added. All-requirements implementation + automated verification: **0/30**. Final completion: **0/30**. This does not mean no implementation exists; remaining requirements and physical evidence prohibit those completion classifications. No percentage or completion date is inferred.
+
+## Verification
+
+Dedicated material tests cover backup migration, rhythm preservation, CAS conflict, quota failure, invalid backup refusal and unchanged source. Dedicated real repository/Full WAV Archive test covers reopen, independent migration and unchanged Take bytes. Encoded corrupt-tail regression covers default rejection, explicit authenticated-prefix decode, original-byte retention and duplicate prevention after migration. Cost tests cover failure/retry/completion/cancellation, one-request concurrency, serialization/reload, invalid record refusal and untracked legacy requests.
+
+Final local suite and exact-head CI results are recorded in the resulting Draft PR. Local browser executable is unavailable; GitHub browser/layout jobs provide the actual browser evidence. Intel physical acceptance is pending.
+
+Final local validation: `node --test` **2,735 passed, 0 failed/cancelled/skipped**, 125.325 seconds; entry/cache focused regression **57/57 passed**, 3.007 seconds; changed production JavaScript syntax and `git diff --check` passed. Before-start PR #545 CI snapshot: 22 success, 0 failure, 3 running / 25 workflows. New Draft exact-head CI is a separate check and must not be inferred from parent results.
