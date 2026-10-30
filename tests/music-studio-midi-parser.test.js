@@ -25,6 +25,7 @@ test('SysEx clears running status and is summarized',()=>{const p=load().parser,
 test('Japanese track name, lyric and marker decode',()=>{const p=load().parser,e=new TextEncoder(),parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[...e.encode('ピアノ🎹')]),...meta(0,5,[...e.encode('歌詞')]),...meta(0,6,[...e.encode('Aメロ')]),...meta(0,47,[])])]));assert.equal(parsed.normalized.tracks[0].name,'ピアノ🎹');assert.equal(parsed.normalized.lyrics[0].text,'歌詞');assert.equal(parsed.normalized.markers[0].text,'Aメロ')})
 test('invalid UTF-8 uses replacement and warning',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[255]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.some(w=>w.code==='text-encoding'))})
 test('tempo and time signature changes are mapped',()=>{const p=load().parser,body=[...meta(0,81,[7,161,32]),...meta(480,81,[6,239,145]),...meta(0,88,[3,2,24,8]),...meta(480,88,[6,3,24,8]),...meta(0,47,[])],n=p.parseMidiFile(smf(0,[track(body)])).normalized;assert.equal(n.tempoMap.length,2);assert.ok(Math.abs(n.tempoMap[1].bpm-132)<.01);assert.equal(n.timeSignatureMap[1].display,'6/8');assert.ok(n.estimatedDurationSeconds>0)})
+test('conversion preserves changing time and key signature maps',()=>{const p=load().parser,body=[...meta(0,88,[4,2,24,8]),...meta(0,89,[0,0]),...meta(960,88,[3,2,24,8]),...meta(0,89,[253,1]),...meta(0,47,[])],parsed=p.parseMidiFile(smf(0,[track(body)])),data=p.convertParsedMidiToProjectData(parsed,{fileName:'structure.mid'});assert.equal(JSON.stringify(data.timeSignatureMap.map(item=>[item.tick,item.display])),JSON.stringify([[0,'4/4'],[960,'3/4']]));assert.equal(JSON.stringify(data.keySignatureMap.map(item=>[item.tick,item.sharps,item.minor])),JSON.stringify([[0,0,false],[960,-3,true]]));assert.equal(data.keySignature.tick,0);assert.equal(data.importSource.fileName,'structure.mid')})
 test('missing tempo and signature get explicit defaults',()=>{const n=load().parser.parseMidiFile(smf(0,[track(meta(0,47,[]))])).normalized;assert.equal(n.tempo,120);assert.equal(`${n.timeSignature.numerator}/${n.timeSignature.denominator}`,'4/4');assert.equal(n.tempoMap[0].defaulted,true)})
 test('invalid tempo and signature produce warnings',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,81,[0,0,0]),...meta(0,88,[4,9,24,8]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.filter(w=>w.code==='invalid-meta').length>=2)})
 test('chords, repeated pitches and velocity-zero note-off assemble',()=>{const p=load().parser,body=[0,144,60,90,0,144,64,100,...vlq(240),128,60,12,0,64,0,0,144,60,80,...vlq(120),128,60,1,...meta(0,47,[])],notes=p.parseMidiFile(smf(0,[track(body)])).normalized.tracks[0].notes;assert.equal(notes.length,3);assert.equal(notes.map(n=>n.durationTicks).join(','),'240,240,120')})
@@ -57,3 +58,20 @@ test('unknown MIDI tracks remain additional tracks regardless of position',()=>{
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
+
+
+test('key changes on separate Type 1 tracks are imported chronologically without losing provenance',()=>{
+  const p=load().parser;
+  const first=track([...meta(960,89,[2,0]),...meta(0,47,[])]);
+  const second=track([...meta(0,89,[253,1]),...meta(480,89,[0,0]),...meta(480,47,[])]);
+  const parsed=p.parseMidiFile(smf(1,[first,second])),data=p.convertParsedMidiToProjectData(parsed);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.keySignatureMap.map(e=>[e.tick,e.sharps,e.minor,e.track]))),[[0,-3,true,2],[480,0,false,2],[960,2,false,1]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(data.keySignature)),{tick:0,sharps:-3,minor:true,track:2});
+  assert.equal(parsed.tracks[0].events[0].tick,960);
+});
+
+test('project conversion preserves section-source markers without inventing sections',()=>{
+ const p=load().parser,first=track([...meta(960,6,[66]),...meta(0,47,[])]),second=track([...meta(0,6,[65]),...meta(960,47,[])]),parsed=p.parseMidiFile(smf(1,[first,second])),data=p.convertParsedMidiToProjectData(parsed);
+ assert.deepEqual(JSON.parse(JSON.stringify(data.markers)),[{tick:0,text:'A',track:2},{tick:960,text:'B',track:1}]);
+ assert.equal(data.sections,undefined);assert.equal(parsed.tracks[0].events[0].tick,960);
+});

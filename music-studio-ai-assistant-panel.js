@@ -1,0 +1,508 @@
+/* Music Studio compact local-only AI Assistant panel. Optional loopback host; no external provider path. */
+(function(root){
+  'use strict';
+  const states=new Map(),tabs=new Map();
+  const FAMILY_COMPONENTS=[['melody','Melody（メロディ）'],['chord','Chord / Bass（コード候補からBass）'],['section','Section（構成）'],['arrangement','Arrangement（編成metadata）'],['lyrics-structure','Lyrics（歌詞metadata）'],['continuation','Continuation（続き）']];
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const app=()=>root.MusicStudio,ui=()=>root.MusicStudioAIAssistantUI,ai=()=>root.MusicStudioAIWorkflow,composition=()=>root.MusicStudioAIComposition,materializer=()=>root.MusicStudioAICandidatePreview,familyPreview=()=>root.MusicStudioAIFamilyPreview,familyApply=()=>root.MusicStudioAIFamilyApply,core=()=>root.MusicStudioEditor;
+  function project(id){return app()?.state.projects.find(item=>item.projectId===id)||null}
+  function stateFor(project){let record=states.get(project.projectId);if(record?.revision===project.revision)return record;try{record={state:ui().createState(project,{workspace:project.aiWorkspace}),revision:project.revision,pending:false,error:'',message:''}}catch(error){record={state:null,revision:project.revision,pending:false,error:error.message,message:''}}record.harmonyAnalysis=clone(record.state?.workspace?.harmonyReview?.analysis||null);record.modelChords=record.state?.workspace?.harmonyReview?.chords;states.set(project.projectId,record);return record}
+  function targetInfo(project,session,record){const model=ui().viewModel(record.state,project,session,core()),track=core().getTrackById(session.midiData.tracks,model.target.trackId);return{model,trackName:track?.name||model.target.trackId,range:`${model.target.range.startMeasure}–${model.target.range.endMeasure}小節`,notes:model.target.selectedNoteIds.length?model.target.selectedNoteIds.join(', '):`${core().notesInRange(session,model.target.range).length} notes in range`}}
+  function activeRequest(state){return state.workspace.requests.find(item=>item.requestId===state.activeRequestId)||[...state.workspace.requests].reverse().find(item=>item.kind==='edit')||null}
+  function assistant(project,session,record){const info=targetInfo(project,session,record),request=activeRequest(record.state),changes=request?.proposal?.result?.changes,history=record.state.workspace.history.slice(-5).reverse(),choices=(changes?.updates||[]).map(note=>`<label><input type="checkbox" name="musicAINote" value="${esc(note.id)}" ${record.noteReviews?.get(request?.requestId)?.get(note.id)===false?'':'checked'} onchange="MusicStudioAIAssistantPanel.captureNoteReview('${esc(project.projectId)}')"> ${esc(note.id)} → MIDI ${note.pitch}</label>`).join('');return`<div class="music-ai-context"><span>Track <b>${esc(info.trackName)}</b></span><span>Range <b>${esc(info.range)}</b></span><span>Note <b>${esc(info.notes)}</b></span></div><label class="music-ai-instruction"><span>指示（端末内・日本語の移調／音声処理）</span><textarea id="musicAIInstruction" rows="2" maxlength="2000" placeholder="例：「Piano」の2小節目の音を2半音下げる">${esc(record.state.instruction)}</textarea></label><label>対象音声<input type="file" accept="audio/*,.wav,.flac" onchange="MusicStudioAIAssistantPanel.captureAudioFile('${esc(project.projectId)}',this.files[0])"></label><small>音声指示は規則解析です。「この音声をボーカルと楽器に分けて」「このピアノ音声をMIDIにして」に対応。選択ファイル全体を実モデルへ渡します。</small><div class="music-ai-actions"><button class="music-primary" type="button" onclick="MusicStudioAIAssistantPanel.previewEdit('${esc(project.projectId)}')">Preview（確認）</button><button class="music-primary" type="button" onclick="MusicStudioAIAssistantPanel.applyEdit('${esc(project.projectId)}')" ${request?.status==='preview'||record.audioPlan?'':'disabled'}>Apply（採用）</button><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.rejectEdit('${esc(project.projectId)}')" ${['requested','preview'].includes(request?.status)?'':'disabled'}>Reject</button><button class="music-secondary" type="button" onclick="MusicStudio.editorUndo()">Undo（元に戻す）</button></div><p class="music-ai-status" role="status">${esc(record.message||status(request))}</p>${choices?`<fieldset class="music-ai-note-choice" data-request-id="${esc(request?.requestId||'')}"><legend>部分採用するnote</legend><div class="music-ai-note-review"><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.selectAllNotes('${esc(project.projectId)}',true)">All（全て選択）</button><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.selectAllNotes('${esc(project.projectId)}',false)">None（選択解除）</button><span>Checked notes only（チェックした音符だけ採用）</span></div>${choices}<label><input type="checkbox" id="aiFamilyMetadataOnly" ${record.familyMetadataOnly?'checked':''} onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"> Metadata only（採用記録のみ／MIDIを変更しない）</label></fieldset>`:''}<details><summary>変更理由・provenance・履歴</summary><p>${esc(request?.reason||'User instruction / deterministic local preview')}</p><ol>${history.map(row=>`<li>${esc(row.kind)} / ${esc(row.requestId||row.setId||'local')}</li>`).join('')||'<li>履歴はまだありません。</li>'}</ol></details>`}
+  function status(request){if(!request)return'Previewまでは原本を変更しません。';const c=request.proposal?.result?.changes;return`${request.status} / ${request.provenance.adapter||'local'}${c?` / 更新 ${c.updates.length}・追加 ${c.adds.length}・削除 ${c.deleteNoteIds.length}`:''}`}
+  function song(project,record){const draft=record.state.newSongDraft,plan=record.state.newSongPreview;return`<div class="music-ai-form-grid"><label>曲名<input id="aiSongTitle" value="${esc(draft.title||'新しい曲')}"></label><label>BPM<input id="aiSongBpm" type="number" min="20" max="400" value="${esc(draft.bpm)}"></label><label>拍子<input id="aiSongMeter" value="${draft.numerator}/${draft.denominator}"></label><label>Key（調）<input id="aiSongKey" value="${esc(draft.key||'C')}"></label><label>小節数<input id="aiSongBars" type="number" min="1" max="10000" value="${esc(draft.bars)}"></label><label>雰囲気<input id="aiSongMood" value="${esc(draft.mood)}"></label><label>ジャンル<input id="aiSongGenre" value="${esc(draft.genre)}"></label><label>編成<input id="aiSongTracks" value="${esc(draft.tracks.join(', '))}"></label><label class="music-ai-wide">参考メモ<textarea id="aiSongMemo" rows="2">${esc(draft.memo)}</textarea></label></div><div class="music-ai-actions"><button class="music-primary" onclick="MusicStudioAIAssistantPanel.previewSong('${esc(project.projectId)}')">Preview（確認）</button><button class="music-primary" onclick="MusicStudioAIAssistantPanel.confirmSong('${esc(project.projectId)}')" ${plan?'':'disabled'}>Confirmして新規作成</button></div>${plan?`<div class="music-ai-preview"><b>${esc(plan.title)}</b><span>${plan.bpm} BPM / ${plan.signature.numerator}/${plan.signature.denominator} / ${esc(plan.key||'Key未設定')} / ${plan.bars}小節</span><span>Tracks: ${plan.tracks.map(track=>esc(track.name)).join(', ')}</span><span>現在のProjectは上書きしません。</span></div>`:'<p class="music-ai-status">Confirm前はProjectを作成しません。</p>'}`}
+  function candidateValues(kind){const service=composition();if(!service)throw Error('ai-composition-unavailable');return service.candidateValues(kind,service.defaultContext())}
+  function candidateValuesForProject(kind,project,session,generation){const service=composition();if(!service)throw Error('ai-composition-unavailable');return service.candidateValues(kind,{...service.createContext(project,session,core()),...(generation?{generation}:{} )})}
+  function activeCandidateSet(record){return record.state.workspace.candidateSets.find(item=>item.setId===record.state.activeCandidateSetId)||record.state.workspace.candidateSets.at(-1)||null}
+  function captureGeneration(id,strict=false){const record=stateFor(project(id));try{const seed=value('#aiGenerationSeed').trim(),register=value('#aiGenerationRegister')||'mid';record.generation=seed===''?null:composition().generationOptions({seed:Number(seed),register});return record.generation}catch(error){record.message=`生成設定拒否: ${error.message}`;if(strict)throw error;return null}}
+  function generationControls(project,record,set){const g=record.generation===undefined?set?.candidates?.[0]?.value?.generation:record.generation;return`<details class="music-ai-generation-controls"><summary>Local recipe（端末内の生成設定）</summary><p>規則によるMelody / Continuation候補です。実モデル作曲は別の「AI model」から実行します。Seedが空欄の場合は従来の候補を使います。</p><div class="music-ai-range"><label>Seed（再現番号）<input id="aiGenerationSeed" type="number" min="0" max="999999" step="1" value="${esc(g?.seed??'')}" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}"></label><label>Register（音域）<select id="aiGenerationRegister" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}">${[['mid','Mid（中央）'],['mid-high','High（高め）'],['low-mid','Low（低め）']].map(([id,title])=>`<option value="${id}" ${id===(g?.register||'mid')?'selected':''}>${title}</option>`).join('')}</select></label></div></details>`}
+  function candidateSelection(candidateId){const rawFrom=value(`#aiFrom${candidateId}`).trim(),rawTo=value(`#aiTo${candidateId}`).trim();if(!rawFrom&&!rawTo){const picker=root.document?.querySelector?.(`#aiParts${candidateId}`);if(!picker?.value||picker.value==='all')return null;const record=states.get(app()?.state?.midiEditor?.projectId),candidate=record&&activeCandidateSet(record)?.candidates.find(c=>c.candidateId===candidateId);if(!candidate?.value?.ensemble)return null;return{startMeasure:candidate.value.range.startMeasure,endMeasure:candidate.value.range.endMeasure,roles:[picker.value]};}const from=Number(rawFrom),to=Number(rawTo);if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)throw Error('invalid-candidate-selection');const picker=root.document?.querySelector?.(`#aiParts${candidateId}`);return{startMeasure:from,endMeasure:to,...(picker?{roles:picker.value==='all'?['piano','bass','strings','drums']:[picker.value]}:{})}}
+  function candidatePreviewText(bundle){if(!bundle)return'';if(bundle.value?.ensemble)return 'Ensemble Preview（原本変更なし） / '+(bundle.companion?.ensembleDiff||[]).map(d=>`${d.role} → ${d.replacedTrackId||d.trackId}: +${d.notes} / -${d.removed||0}`).join(' / ')+' / Note metrics（音符分布・聴感評価ではありません）: '+(bundle.companion?.performance||[]).map(m=>`${m.role}: ${m.notes} notes / MIDI ${m.pitchMin}–${m.pitchMax}${m.maxVoiceLeap===null?'':` / onset voice leap ≤${m.maxVoiceLeap} semitones`}`).join(' / ');if(bundle.type==='metadata-preview')return'Metadata Preview / 原本変更なし'+(bundle.companion?.timeline?.segments||[]).map(part=>` / Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`).join('')+composition().lyricsTimelineRows(bundle.companion?.timeline).map(line=>` / ${line}`).join('');const changes=bundle.result?.changes||{updates:[],adds:[],deleteNoteIds:[]};return`MIDI Preview → ${bundle.targetTrackId} / 更新 ${changes.updates.length}・追加 ${changes.adds.length}・削除 ${changes.deleteNoteIds.length} / 原本変更なし${bundle.companion?.instrumentFit?` / Sample fit（音源の音域・強さ）: ${bundle.companion.instrumentFit.changed?'調整あり':'範囲内'}`:''}`}
+  function candidateEditHtml(project,candidate){
+    let edits;try{edits=materializer().previewEdits(candidate.value.previewEdits)}catch(error){return`<p role="alert">${esc(error.message)}</p>`}
+    const call=esc(`MusicStudioAIAssistantPanel.editCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)})`),reset=esc(`MusicStudioAIAssistantPanel.editCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)},true)`);
+    return`<details data-candidate-edit="${esc(candidate.candidateId)}"><summary>Edit（候補を調整）</summary><div class="music-ai-range"><label>Transpose（半音）<input id="aiTranspose${candidate.candidateId}" type="number" min="-24" max="24" value="${edits.transpose}"></label><label>Velocity（強さ差）<input id="aiVelocity${candidate.candidateId}" type="number" min="-64" max="64" value="${edits.velocity}"></label><label>Length（音の長さ％）<input id="aiLength${candidate.candidateId}" type="number" min="25" max="200" value="${edits.lengthPercent}"></label></div><div class="music-ai-actions"><button class="music-secondary" onclick="${call}">調整をPreview</button><button class="music-secondary" onclick="${reset}">調整をリセット</button></div><small>原本への反映はApply。調整は保存対象です。</small></details>`;
+  }
+  function editCandidate(id,candidateId,reset=false){
+    app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),set=activeCandidateSet(record),candidate=set?.candidates.find(c=>c.candidateId===candidateId);
+    try{
+      if(!candidate||!['melody','chord','continuation'].includes(set.kind))throw Error('midi-candidate-required');
+      const read=selector=>{const raw=value(selector).trim();if(!raw)throw Error('candidate-edit-required');return Number(raw)},edits=reset?null:materializer().previewEdits({transpose:read(`#aiTranspose${candidateId}`),velocity:read(`#aiVelocity${candidateId}`),lengthPercent:read(`#aiLength${candidateId}`)});
+      const next=clone(candidate);if(reset)delete next.value.previewEdits;else next.value.previewEdits=edits;
+      const session=app().state.midiEditor,bundle=materializer().createPreview(session,core(),next,{project:p});
+      // Reuse adoption preflight to reject stale/locked targets before persisting edits.
+      materializer().auditionPlan(session,core(),bundle,candidateSelection(candidateId));
+      touch(id);candidate.value=next.value;record.candidatePreview=bundle;record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message=reset?'候補の調整をリセットしました。':'調整をPreviewしました。Listenで試聴し、Applyで採用できます。';
+    }catch(error){record.message=`候補調整拒否: ${error.message}`}refresh(id,{preserveCandidateDrafts:false});
+  }
+  function candidatePreviewHtml(bundle){const rows=[...(bundle?.companion?.ensembleDiff||[]).map(d=>`${d.role} → ${d.replacedTrackId||d.trackId}: ${d.replacedTrackId?'置換 / ':''}+${d.notes}音 / ${d.method}`),...composition().lyricsTimelineRows(bundle?.companion?.timeline),...composition().arrangementTimelineRows(bundle?.companion?.timeline),...materializer().continuationSourceRows(bundle?.companion?.sourcePreview)];return rows.length?`<section class="music-ai-status"><p>${bundle.type==='midi-preview'?esc(candidatePreviewText(bundle)):'Metadata Preview / 原本変更なし'}</p><ul>${rows.map(row=>`<li>${esc(row)}</li>`).join('')}</ul></section>`:`<p class="music-ai-status">${esc(candidatePreviewText(bundle))}</p>`}
+  function familyPreviewHtml(project,record){
+    const preview=record.familyPreview;if(!preview)return'';
+    const rows=familyPreview().familyRows(preview).map(row=>`<li>${esc(row)}</li>`).join('');
+    const state=preview.familyMismatch?'Family ID mismatch':preview.complete?'Complete family':'Incomplete family';
+    const selected=record.familyKinds||familyApply().DEFAULT_KINDS;
+    const choices=FAMILY_COMPONENTS.map(([kind,label])=>`<label><input type="checkbox" name="musicAIFamilyComponent" value="${kind}" ${selected.includes(kind)?'checked':''} onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"> ${label}</label>`).join('');
+    return`<div class="music-ai-preview"><b>Family ${esc(preview.variant)} Preview / ${esc(state)}</b><span>原本変更なし</span><ul>${rows}</ul><fieldset class="music-ai-note-choice"><legend>Applyするcomponent（依存不足はBLOCKED）</legend>${choices}<label><input type="checkbox" id="aiFamilyMetadataOnly" ${record.familyMetadataOnly?'checked':''} onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"> Metadata only（採用記録のみ／MIDIを変更しない）</label><label><input type="checkbox" id="aiFamilyProjectSections" ${record.familyProjectSections?'checked':''} onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"> Apply Section to Project（曲構成へ追加）</label></fieldset><div class="music-ai-range"><label>開始小節<input id="aiFamilyFrom" type="number" min="1" value="${esc(record.familyRangeInput?.from??'')}" onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"></label><label>終了小節<input id="aiFamilyTo" type="number" min="1" value="${esc(record.familyRangeInput?.to??'')}" onchange="MusicStudioAIAssistantPanel.selectFamilyComponents('${esc(project.projectId)}')"></label></div><small>Chord / Bassは既存のBass生成を利用。通常のSection・Arrangement・Lyricsは採用metadataのみ。曲構成への追加は上の明示選択が必要です。既存構成と重なる範囲は拒否します。空の小節欄は候補の全範囲。</small><div class="music-ai-actions"><button class="music-primary" onclick="MusicStudioAIAssistantPanel.createFamilyApplyPlan('${esc(project.projectId)}')">Apply Planを作成</button></div></div>`
+  }
+  function familyApplyHtml(project,record){
+    const plan=record.familyApplyPlan;if(!plan)return'';
+    const rows=familyApply().planRows(plan).map(row=>`<li>${esc(row)}</li>`).join(''),pre=record.familyApplyPreflight;
+    const preflight=pre?(pre.ok?'Preflight PASS':`Preflight BLOCKED: ${pre.errors.join(', ')}`):'Preflight未実行';
+    return`<div class="music-ai-preview"><b>Family Apply Plan</b><span>${esc(preflight)}</span><ul>${rows}</ul><div class="music-ai-actions"><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.preflightFamilyApply('${esc(project.projectId)}')">Preflight</button>${pre?.ok?`<button class="music-primary" onclick="MusicStudioAIAssistantPanel.confirmFamilyApply('${esc(project.projectId)}')">Confirm Family Apply</button>`:''}<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelFamilyApply('${esc(project.projectId)}')">Cancel Plan</button></div><small>Confirm前はMIDI・candidate adoptionを変更しません。</small></div>`
+  }
+  function instrumentAnalysisHtml(project,session){
+    if(!session?.midiData)return'';
+    const rows=composition().analyzeInstrumentRoles(session,core());
+    return`<details class="music-ai-generation-controls"><summary>Instrument analysis（楽器・役割分析）</summary><small>選択小節内の規則推定です。AI推論・確率ではありません。役割は自動変更しません。EditorのRole設定で修正できます。</small>${rows.map(r=>`<p>${esc(r.name)}: ${esc(r.role)} / Uncertainty（不確実性）${r.uncertainty==='high'?'高':'中'} / Ch ${esc(r.channel)}・GM ${esc(r.program)} / ${r.noteCount}音・${r.minPitch??'—'}〜${r.maxPitch??'—'} / ${r.notesPerQuarter.toFixed(2)}音/四分音符 / ${esc(r.reasons.join(' / '))}</p>`).join('')}</details>`;
+  }
+  function analyzeHarmony(id){
+    const p=project(id),session=app()?.state?.midiEditor;if(!p||session?.projectId!==id)return;
+    const record=stateFor(p);
+    try{record.harmonyAnalysis=composition().analyzeChords(session,core());for(const row of record.harmonyAnalysis.rows)row.estimatedSymbol=row.symbol;record.message='コード候補を確認・修正してください。未確定箇所は空欄です。';}catch(error){record.message=error.message;}
+    refresh(id);
+  }
+  function useHarmony(id){
+    const p=project(id),session=app()?.state?.midiEditor;if(!p||session?.projectId!==id)return;
+    const record=stateFor(p),analysis=record.harmonyAnalysis;
+    try{
+      if(!analysis||analysis.midiSignature!==JSON.stringify(session.midiData)||JSON.stringify(analysis.range)!==JSON.stringify(composition().analyzeChords(session,core()).range))throw Error('MIDI・範囲が変更されました。再分析してください。');
+      const symbols=analysis.rows.map((row,i)=>{const symbol=root.document.querySelector('#aiHarmony'+i)?.value.trim();if(!symbol||composition().ensembleChords(symbol).length!==1)throw Error('全小節のコードを確認・入力してください。');return symbol;});
+      const text=symbols.join(' ');if(text.length>256)throw Error('コード入力は256文字までです。');
+      const workspace=record.state.workspace,before=clone(workspace),after=clone(workspace),previous=workspace.harmonyReview;
+      const rows=analysis.rows.map((row,i)=>{
+        const saved=previous?.rows.find(item=>item.startTick===row.startTick&&item.endTick===row.endTick);
+        if(saved?.locked&&saved.symbol!==symbols[i])throw Error('固定コードは解除してから変更してください。');
+        return {...clone(row),symbol:symbols[i],estimatedSymbol:row.estimatedSymbol??null,status:(row.estimatedSymbol??null)===symbols[i]?'confirmed':'corrected',locked:saved?.locked===true};
+      });
+      after.harmonyReview={version:1,chords:text,analysis:{...clone(analysis),rows:clone(rows)},rows};
+      const committed=core().applyAtomicMidiSnapshot(session,session.midiData,session.midiData,{workspace,before,after});if(!committed.applied)throw Error(committed.reason);
+      record.harmonyAnalysis=clone(after.harmonyReview.analysis);record.pending=true;record.modelChords=text;record.message='確認済みコードを保存対象へ追加しました。Saveで保存、Undo/Redoで確認を戻せます。元MIDIは変更していません。';
+      refresh(id);
+    }catch(error){record.message=error.message;refresh(id);}
+  }
+  function toggleHarmonyLock(id,index){
+    const p=project(id),session=app()?.state?.midiEditor;if(!p||session?.projectId!==id)return;
+    const record=stateFor(p);
+    try{
+      const workspace=record.state.workspace,before=clone(workspace),after=clone(workspace),review=after.harmonyReview;
+      if(!Number.isInteger(index)||!review?.rows[index])throw Error('確認済みコードを選択してください。');
+      review.rows[index].locked=!review.rows[index].locked;review.analysis.rows[index].locked=review.rows[index].locked;
+      const result=core().applyAtomicMidiSnapshot(session,session.midiData,session.midiData,{workspace,before,after});if(!result.applied)throw Error(result.reason);
+      record.harmonyAnalysis=clone(review.analysis);record.pending=true;record.message='コード固定を変更しました。Saveで保存できます。';
+    }catch(error){record.message=error.message}refresh(id);
+  }
+  function harmonyControls(project,record){
+    const a=record.harmonyAnalysis;
+    return `<details><summary>Chord analysis（コード候補・規則推定）</summary><p>複数Trackの音高・発音時間を小節ごとに比較。メロディーの重みを下げます。確信度は規則の目安で、確率ではありません。小節内の変更は未対応。確認後はSaveでProjectへ保存します。未確認の分析は画面内のみ保持します。</p><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.analyzeHarmony('${esc(project.projectId)}')">Analyze MIDI（選択範囲を分析・最大64小節）</button>${a?`<div class="music-ai-form-grid">${a.rows.map((r,i)=>`<label>M${r.measure} / ${esc(r.confidence)} / ${r.status==='corrected'?'Corrected（修正済）':r.status==='confirmed'?'Confirmed（確認済）':'Estimated（推定）'} / ${esc(r.candidates.map(c=>c.symbol).join(' / '))}<input id="aiHarmony${i}" maxlength="8" value="${esc(r.symbol||'')}" ${r.locked?'readonly':''} placeholder="未確定・コードを入力" onchange="MusicStudioAIAssistantPanel._states.get('${esc(project.projectId)}').harmonyAnalysis.rows[${i}].symbol=this.value">${r.status?`<button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.toggleHarmonyLock('${esc(project.projectId)}',${i})">${r.locked?'Unlock（固定解除）':'Lock（固定）'}</button>`:''}</label>`).join('')}</div><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.useHarmony('${esc(project.projectId)}')">Confirm to Chords（確認して編曲入力へ）</button>`:''}</details>`;
+  }
+  function saveSectionArrangement(id){
+    const p=project(id),session=app()?.state?.midiEditor;if(!p||session?.projectId!==id)return;
+    const record=stateFor(p);
+    try{
+      const range=composition().createContext(p,session,core()).range,section={name:value('#aiSectionName'),density:value('#aiSectionDensity'),roles:['piano','bass','strings','drums'].filter(role=>root.document.querySelector('#aiSection'+role)?.checked),targets:Object.fromEntries(['piano','bass','strings','drums'].map(role=>[role,value('#aiSectionTarget'+role)]))};
+      // Reuse the candidate validator before changing project metadata.
+      composition().bindEnsemble({importedMidi:{notes:[{}]},summary:''},{},'',section);
+      const workspace=record.state.workspace,before=clone(workspace),after=clone(workspace),settings=after.sectionArrangements||[];
+      if(settings.some(item=>item.range.startTick<range.endTick&&item.range.endTick>range.startTick&&JSON.stringify(item.range)!==JSON.stringify(range)))throw Error('重なる設定は既存範囲を選択して変更してください。');
+      after.sectionArrangements=[...settings.filter(item=>JSON.stringify(item.range)!==JSON.stringify(range)),{range:clone(range),...section}];
+      if(after.sectionArrangements.length>64)throw Error('Section設定は64件までです。');
+      const result=core().applyAtomicMidiSnapshot(session,session.midiData,session.midiData,{workspace,before,after});if(!result.applied)throw Error(result.reason);
+      record.pending=true;record.message='選択小節のSection編成を設定しました。Saveで保存。Ensemble生成時に使用します。';
+    }catch(error){record.message=error.message}refresh(id);
+  }
+  function sectionArrangementControls(p,record){
+    const session=app()?.state?.midiEditor;if(!session)return'';
+    const range=composition().createContext(p,session,core()).range,setting=record.state.workspace.sectionArrangements?.find(item=>JSON.stringify(item.range)===JSON.stringify(range));
+    return `<details><summary>Section orchestration（選択小節の規則編曲）</summary><small>範囲はEditorの開始・終了小節で指定します。コード指定時の伴奏密度・強さと楽器構成、規則ドラムの密度を変更します。AI推論によるSection解釈ではありません。</small><p>M${range.startMeasure}–${range.endMeasure}</p><label>Section（構成）<select id="aiSectionName">${[['intro','Intro（イントロ）'],['verse','Verse（Aメロ）'],['prechorus','Prechorus（Bメロ）'],['chorus','Chorus（サビ）'],['bridge','Bridge（展開）'],['interlude','Interlude（間奏）'],['outro','Outro（アウトロ）']].map(([key,label])=>`<option value="${key}" ${key===(setting?.name||'verse')?'selected':''}>${label}</option>`).join('')}</select></label><label>Density（演奏密度）<select id="aiSectionDensity">${[['sparse','Sparse（控えめ）'],['normal','Normal（標準）'],['rich','Rich（豊か）']].map(([key,label])=>`<option value="${key}" ${key===(setting?.density||'normal')?'selected':''}>${label}</option>`).join('')}</select></label>${[['piano','Piano（ピアノ）'],['bass','Bass（ベース）'],['strings','Strings（ストリングス）'],['drums','Drums（ドラム）']].map(([role,label])=>`<label><input type="checkbox" id="aiSection${role}" ${(!setting||setting.roles.includes(role))?'checked':''}>${label}<select id="aiSectionTarget${role}"><option value="">New track（新規Track）</option>${session.midiData.tracks.filter(t=>core().resolveCoreTrackRole(t)!=='melody'&&((role==='drums')===core().isDrumTrack(t))).map(t=>`<option value="${esc(t.id)}" ${setting?.targets?.[role]===t.id?'selected':''}>Replace（差し替え）: ${esc(t.name||t.id)}</option>`).join('')}</select></label>`).join('')}<small>差し替え先を明示した場合だけ、採用小節の既存音符を置換します。ロック音符・境界をまたぐ音符・他Trackは保持。A/B/C生成中は変更しません。</small><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.saveSectionArrangement('${esc(p.projectId)}')">Set Section（設定・Undo対応）</button><p>${(record.state.workspace.sectionArrangements||[]).map(item=>`${esc(item.name)} M${item.range.startMeasure}–${item.range.endMeasure} / ${esc(item.density)} / ${esc(item.roles.join(', '))}`).join(' / ')}</p></details>`;
+  }
+  function localModelControls(project,record){
+    if(!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return'';
+    return `${harmonyControls(project,record)}${sectionArrangementControls(project,record)}<details><summary>Japanese instructions（日本語の定型指示）</summary><small>例：Aメロは静かに。サビを豪華に。元のメロディーは変更しない。対象は設定済Section。対応操作：静かに／豪華に／ベースだけ作り直す／ストリングスを追加する／もう少し切なく／ピアノ中心に（ピアノのみ生成）。音高・感情理解は規則変換です。未対応文は拒否します。</small><textarea id="aiJapaneseArrangement" rows="2" maxlength="500" placeholder="Aメロは静かに。サビを豪華に。">${esc(record.japanesePlan?.plan.instruction||'')}</textarea><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.previewJapaneseArrangement('${esc(project.projectId)}')">Preview instructions（解釈を確認）</button>${record.japanesePlan?`<ul>${record.japanesePlan.plan.changes.map(row=>`<li>${esc(row)}</li>`).join('')}</ul><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.applyJapaneseArrangement('${esc(project.projectId)}')">Set instructions（設定へ反映・Undo対応）</button>`:''}</details><details><summary>Whole song（全曲一括編曲）</summary><p>全小節にSectionを設定してから実行。最大256小節、小節完了ごとに中断地点を自動保存。各小節の選択Track先頭64音を入力。休符小節は元曲入力なし。1小節ずつA/B/Cを順次生成し、伴奏とドラムを規則補完します。元メロディーは保持。途中のテンポ・キー変更は小節境界のみ対応。入力Track全曲の音楽的理解・自然な接続は未受入。</p><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.generateWholeSong('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>Generate whole A/B/C（全曲候補を生成）</button><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.stopWholeSong('${esc(project.projectId)}')" ${record.wholeSongToken?'':'disabled'}>Pause（中断・完了小節を保持）</button>${record.state.workspace.wholeSongCheckpoint?`<p>Checkpoint（中断地点）: 完了${esc(record.state.workspace.wholeSongCheckpoint.results?.length||0)} / ${esc(record.state.workspace.wholeSongCheckpoint.total)}小節。完成候補ではありません。小節完了ごとに自動保存。保存失敗時はSave checkpointで再保存。</p><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.generateWholeSong('${esc(project.projectId)}',true)" ${record.localModelBusy?'disabled':''}>Resume（続きから再開）</button><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.saveWholeSongCheckpoint('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>Save checkpoint（中断地点を保存）</button><button type="button" class="music-secondary" onclick="MusicStudioAIAssistantPanel.clearWholeSongCheckpoint('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>Discard checkpoint（中断地点を取消）</button>`:''}</details><details class="music-ai-generation-controls"><summary>AI model / Remake（実モデル作曲・既存曲修正）</summary><label>Operation（操作）<select id="aiRemakeMode"><option value="new">New phrase（独立した旋律を追加）</option><option value="revise" ${record.remakeMode==='revise'?'selected':''}>Revise（元のリズムを保持して音高修正）</option><option value="ensemble" ${record.remakeMode==='ensemble'?'selected':''}>Ensemble（複数楽器・元曲保持）</option><option value="layer" ${record.remakeMode==='layer'?'selected':''}>Layer（元の音符を保持して重ねる）</option></select></label><label>Layer destination（追加先）<select id="aiRemakeDestination"><option value="">Selected track（選択中のTrack）</option>${[['piano','Piano（新規ピアノ）'],['bass','Bass（新規ベース）'],['strings','Strings（新規ストリングス）']].map(([role,label])=>`<option value="new:${role}" ${record.remakeDestination===`new:${role}`?'selected':''}>${label}</option>`).join('')}${(app().state.midiEditor?.midiData.tracks||[]).filter(t=>core().resolveCoreTrackRole(t)!=='drums'&&!core().resolveTrackCapabilities?.(t)?.supportsDrumLabels).map(t=>`<option value="${esc(t.id)}" ${record.remakeDestination===t.id?'selected':''}>${esc(t.name||t.id)}</option>`).join('')}</select></label><label>Change（修正する音符の割合）<select id="aiRemakeAmount">${[25,50,100].map(n=>`<option value="${n}" ${n===(record.remakeAmount||50)?'selected':''}>${n}%</option>`).join('')}</select></label><small>Remakeは選択Track・選択小節の先頭64音をモデルの入力に使います。生成された続きの音高を元の音符へ順番に割り当てる処理、または先頭へ戻して重ねる処理です。追加先は既存のBass・Strings等のTrackを選択できます。新規Piano/Bass/StringsはApply時に作成。音色はGM指定の規則処理で、音源は既存の簡易音源を使用し、Piano/Stringsの本物の音色は追加しません。新規BassはE1〜G3に補正します。Ensembleはコード指定時に根音ベース・和音ピアノ・近接声部ストリングスを規則生成し、規則ドラムを追加。コード未指定時は同じモデル旋律から3楽器を規則で配置。対応コード: C / Cm / C7 / Cm7 / Cmaj7 / Cdim と臨時記号。1小節1個・選択先頭から反復。独立した4楽器のAI推論ではありません。256小節まで。変更割合は修正モードだけに適用します。</small><p>SkyTNT MIDIモデル / Apache-2.0。旋律A/B/Cを生成し、既存の試聴・部分採用・保存へ送ります。BPM・拍子・Keyは現在の曲を使います。Keyと音域は推論後の音符補正、曲調は推論のサンプリング設定です。</p><div class="music-ai-range"><label>Style（曲調・変化量）<select id="aiModelStyle" ${record.localModelBusy?'disabled':''}><option value="balanced" ${record.modelStyle==='balanced'?'selected':''}>Balanced（標準）</option><option value="gentle" ${record.modelStyle==='gentle'?'selected':''}>Gentle（控えめ）</option><option value="varied" ${record.modelStyle==='varied'?'selected':''}>Varied（変化多め）</option></select></label><label>Voice range（歌唱音域）<select id="aiModelRange" ${record.localModelBusy?'disabled':''}><option value="48:84" ${record.modelRange==='48:84'?'selected':''}>Wide（C3〜C6）</option><option value="57:77" ${record.modelRange==='57:77'?'selected':''}>Female guide（A3〜F5・目安）</option><option value="28:55" ${record.modelRange==='28:55'?'selected':''}>Bass（E1〜G3）</option><option value="60:72" ${record.modelRange==='60:72'?'selected':''}>Narrow（C4〜C5）</option></select></label></div><small>歌いやすさには個人差があります。対応語は下記のみ。曲調・ジャンルは変化量への規則変換、コードは生成後の音高補正です。自然さ・ジャンル再現は保証しません。コードは選択範囲の先頭から1小節に1個、繰り返します。発音開始位置で補正し、コード指定時はKeyの音階よりコード構成音を優先します。</small><div class="music-ai-range"><label>Mood（曲調）<input id="aiModelMood" maxlength="120" placeholder="優しい / 切ない / 明るい" value="${esc(record.modelMood||'')}" ${record.localModelBusy?'disabled':''}></label><label>Genre（ジャンル）<select id="aiModelGenre" ${record.localModelBusy?'disabled':''}><option value="">指定なし</option><option value="ballad" ${record.modelGenre==='ballad'?'selected':''}>Ballad（バラード）</option><option value="pop" ${record.modelGenre==='pop'?'selected':''}>Pop（ポップ）</option></select></label><label>Chords（コード・1小節1個）<input id="aiModelChords" maxlength="256" placeholder="C Am F G7" value="${esc(record.modelChords||'')}" ${record.localModelBusy?'disabled':''}></label></div><button class="music-secondary" type="button" onclick="MusicStudioAIAssistantPanel.generateLocalModel('${esc(project.projectId)}')" ${record.localModelBusy?'disabled':''}>${record.localModelBusy?'Generating（推論中）':'Generate model A/B/C（実モデルで生成）'}</button></details>`;
+  }
+  function previewJapaneseArrangement(id){const p=project(id),record=stateFor(p);try{const plan=composition().japaneseArrangement(value('#aiJapaneseArrangement'),record.state.workspace);record.japanesePlan={plan,workspace:JSON.stringify(record.state.workspace),midi:JSON.stringify(app().state.midiEditor.midiData)};record.message='解釈を確認してからSet instructionsを押してください。まだ設定・MIDIは変更していません。';}catch(error){record.japanesePlan=null;record.message=error.message;}refresh(id);}
+  function applyJapaneseArrangement(id){const p=project(id),record=stateFor(p),session=app().state.midiEditor;try{const saved=record.japanesePlan;if(!saved||saved.workspace!==JSON.stringify(record.state.workspace)||saved.midi!==JSON.stringify(session.midiData))throw Error('指示を再確認してください。');const workspace=record.state.workspace,before=clone(workspace),after=clone(workspace);after.sectionArrangements=clone(saved.plan.settings);const result=core().applyAtomicMidiSnapshot(session,session.midiData,session.midiData,{workspace,before,after});if(!result.applied)throw Error(result.reason);record.pending=true;record.japanesePlan=null;record.message='Section設定へ反映しました。元MIDIは保持。全曲候補を生成して試聴してください。';}catch(error){record.message=error.message;}refresh(id);}
+  // Checkpoints contain completed model responses only, never adoptable partial candidates.
+  function wholeSongBinding(p,session,workspace){
+    return JSON.stringify({recipe:'sequential-bar-model-plus-rule-orchestration-v1',midi:session.midiData,music:{...p.musicalSettings,bpm:Number(session.midiData.tempo)},track:core().currentTrackId(session),sections:workspace.sectionArrangements,review:workspace.harmonyReview});
+  }
+  function wholeSongWorkspace(workspace){const copy=clone(workspace);delete copy.wholeSongCheckpoint;delete copy.baseRevision;delete copy.updatedAt;return JSON.stringify(copy);}
+  function stopWholeSong(id){const record=states.get(id);if(record){const requestId=record.wholeSongToken?.requestId;record.wholeSongToken=null;record.wholeSongAbort?.abort();if(requestId)app().localGenerationRequest('cancel-compose',{requestId}).catch(()=>{});record.message='全曲生成を中断しました。完了済み小節を保持。Save checkpointで保存し、Resumeで続きから再開できます。サーバーへも停止を要求します。実行中の単一モデル処理は終了待ちになる場合があります。';refresh(id);}}
+  async function saveWholeSongCheckpoint(id){
+    const record=states.get(id),session=app()?.state?.midiEditor;if(!record?.state?.workspace.wholeSongCheckpoint)return;
+    if(session?.projectId!==id){record.message='対象の曲をOpenしてから中断地点を保存してください。';refresh(id);return;}
+    if(record.localModelBusy){record.message='先にPauseを押し、処理の終了後に保存してください。';refresh(id);return;}
+    const result=await app().saveMidiEditor({silent:true});
+    if(states.get(id)===record){record.message=result.ok&&!result.stale&&app().state.midiEditor===session?'Checkpoint saved（中断地点を保存しました）。再Open・完全バックアップから再開できます。':'Checkpoint save failed（保存失敗）。画面内の完了済み小節を保持しています。再保存してください。';refresh(id);}
+  }
+  function clearWholeSongCheckpoint(id){const record=states.get(id);if(!record||record.localModelBusy)return;delete record.state.workspace.wholeSongCheckpoint;touch(id);record.message='中断地点を取り消しました。元曲・完成候補は保持しています。';refresh(id);}
+  async function generateWholeSong(id,resume=false,autoSave=true){
+    let p=project(id);const session=app()?.state?.midiEditor;if(!p||session?.projectId!==id)return;
+    const record=stateFor(p);if(record.localModelBusy||!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return;
+    const token={},signature=JSON.stringify(session.midiData),workspace=wholeSongWorkspace(record.state.workspace),track=core().currentTrackId(session);
+    let music=JSON.stringify(p.musicalSettings);
+    const current=()=>record.wholeSongToken===token&&project(id)===p&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&wholeSongWorkspace(record.state.workspace)===workspace&&JSON.stringify(p.musicalSettings)===music&&core().currentTrackId(session)===track;
+    let plan,checkpoint;
+    try{
+      plan=composition().wholeSongPlan(p,session,core(),record.state.workspace);
+      const saved=record.state.workspace.wholeSongCheckpoint,binding=wholeSongBinding(p,session,record.state.workspace);
+      if(saved&&!resume)throw Error('中断地点があります。ResumeまたはDiscard checkpointを選択してください。');
+      if(resume){
+        if(!saved||saved.version!==1||saved.binding!==binding||saved.total!==plan.chunks.length||!Array.isArray(saved.results)||(saved.results.length>0&&(typeof saved.revision!=='string'||!saved.revision))||saved.results.length>plan.chunks.length||new root.TextEncoder().encode(JSON.stringify(saved)).byteLength>16777216)throw Error('中断地点と元曲・コード・Section・モデル条件が一致しません。元の条件へ戻すか中断地点を取り消してください。');
+        checkpoint=clone(saved);
+      }else checkpoint={version:1,binding,total:plan.chunks.length,results:[],status:'paused',revision:null};
+    }catch(error){record.message=error.message;refresh(id);return;}
+    record.wholeSongToken=token;record.localModelBusy=true;
+    record.wholeSongAbort=typeof root.AbortController==='function'?new root.AbortController():null;
+    const parts=[[],[],[]];
+    const decode=(result,n)=>{
+      const chunk=plan.chunks[n];
+      if(result.model!=='skytnt/midi-model-tv2o-medium'||typeof result.revision!=='string'||!result.revision||result.synthetic!==false||result.candidates?.length!==3||(checkpoint.revision&&checkpoint.revision!==result.revision)||(chunk.modelInputNotes&&(result.sourceConditioning?.method!=='source-prefix-then-rebase-continuation'||result.sourceConditioning.notes!==chunk.modelInputNotes)))throw Error('invalid-whole-song-model-result');
+      return result.candidates.map((c,i)=>{
+        if(c.variant!==String.fromCharCode(65+i)||typeof c.midiBase64!=='string'||c.midiBase64.length>1400000)throw Error('invalid-whole-song-variant');
+        const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0)),file={name:c.variant+'-whole.mid',size:bytes.length};
+        let v=composition().midiCandidate(bytes,file,{key:chunk.key,range:chunk.range},i,session.midiData.ppq);
+        v.modelGeneration={model:result.model,revision:result.revision,seed:c.seed,...(c.samplingTrace?{sampling:{requestedSeed:c.requestedSeed,attempts:c.samplingAttempts,trace:clone(c.samplingTrace),performance:clone(c.performance||{})}}:{}),constraints:clone(c.constraints||{}),inputNotes:chunk.modelInputNotes,inputRange:clone(chunk.range),...(result.performance?{performance:clone(result.performance)}:{})};
+        return composition().bindEnsemble(v,chunk.source,chunk.chords,chunk.section);
+      });
+    };
+    try{
+      // Validate all restored responses before issuing another request or publishing anything.
+      for(let n=0;n<checkpoint.results.length;n++){
+        if(!current())return;
+        decode(checkpoint.results[n],n).forEach((v,i)=>parts[i].push(v));
+        if((n+1)%4===0){
+          record.message=`Restoring（保存済み小節を確認中） ${n+1}/${checkpoint.results.length}。未生成小節の推論前に検証します。`;refresh(id);
+          await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve());
+          if(!current())return;
+        }
+      }
+      record.state.workspace.wholeSongCheckpoint=clone(checkpoint);record.pending=true;
+      // Commit the source and job before the first new inference, including resumed jobs.
+      // Otherwise a crash during that request loses unsaved source edits or retry progress.
+      if(autoSave){
+        const saved=await app().saveMidiEditor({silent:true});
+        if(!saved.ok)throw Error('checkpoint-save-failed: 開始前の保存に失敗。推論は開始していません。再保存してください。');
+        if(record.wholeSongToken!==token||states.get(id)!==record||app().state.midiEditor!==session)return;
+        if(saved.stale){record.message='開始前の保存中に編集が変わったため中断しました。条件を確認して再開してください。';return;}
+        p=saved.project||project(id);music=JSON.stringify(p.musicalSettings);
+        if(!current()){record.message='開始前の保存後に条件が変わったため中断しました。保存済みCheckpointを保持しています。';return;}
+      }
+      for(let n=checkpoint.results.length;n<plan.chunks.length;n++){
+        if(!current())return;const chunk=plan.chunks[n];token.requestId='whole_'+(root.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));record.message=`Whole song（全曲） 完了${n}/${plan.chunks.length}小節・残り${plan.chunks.length-n}小節 / 元曲保持`;refresh(id);
+        const result=await app().localGenerationRequest('compose',{requestId:token.requestId,seed:72+n*3,events:64,max_ticks:Math.floor((chunk.range.endTick-chunk.range.startTick)*480/session.midiData.ppq),bpm:chunk.bpm,key:chunk.key,numerator:chunk.numerator,denominator:chunk.denominator,pitch_min:48,pitch_max:84,style:chunk.section.density==='sparse'?'gentle':chunk.section.density==='rich'?'varied':'balanced',description:chunk.section.mood||'',genre:'',chords:chunk.chords,...(chunk.modelInputNotes?{sourceNotes:composition().remakePrompt(chunk.source,session.midiData.ppq)}:{})},{signal:record.wholeSongAbort?.signal});
+        if(!current())return;
+        const decoded=decode(result,n),next={...checkpoint,revision:result.revision,results:[...checkpoint.results,clone(result)]};
+        if(new root.TextEncoder().encode(JSON.stringify(next)).byteLength>16777216)throw Error('checkpoint-size-limit-16MiB');
+        decoded.forEach((v,i)=>parts[i].push(v));checkpoint=next;
+        record.state.workspace.wholeSongCheckpoint=clone(checkpoint);record.pending=true;
+        if(autoSave){
+          const saved=await app().saveMidiEditor({silent:true});
+          if(!saved.ok)throw Error('checkpoint-save-failed: 完了小節を画面内に保持。再保存してください。');
+          if(record.wholeSongToken!==token||states.get(id)!==record||app().state.midiEditor!==session)return;
+          if(saved.stale){record.message='Checkpoint保存中に編集が変わったため中断しました。元の条件を確認して再開してください。';return;}
+          p=saved.project||project(id);music=JSON.stringify(p.musicalSettings);
+          if(!current()){record.message='保存後に条件が変わったため中断しました。保存済みCheckpointを保持しています。';return;}
+        }
+      }
+      if(!current())return;
+      const values=parts.map((list,i)=>composition().wholeSongCandidate(plan,list,i));
+      for(const v of values){
+        if(!current())return;
+        record.message=`Finalizing（全曲候補を検証中） ${v.variant} / A・B・C。完了済み小節は保存されています。`;refresh(id);
+        await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve());
+        if(!current())return;
+        materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
+      }
+      if(!current())return;
+      touch(id);ui().createCandidates(record.state,'melody',{range:clone(plan.range)},values,{adapter:'local-whole-song-model-v1',reason:'Sequential bar inference with explicit section rule orchestration; original melody preserved'});
+      delete record.state.workspace.wholeSongCheckpoint;
+      record.candidatePreview=null;record.candidateSelections={};record.message='全曲A/B/Cを作成しました。小節・楽器を指定し、Preview→Listen→Applyで採用してください。伴奏は規則補完、音楽品質は未受入です。';
+      if(autoSave){const saved=await app().saveMidiEditor({silent:true});if(!saved.ok)record.message='全曲候補の保存に失敗しました。候補は画面内に保持。最後の完了Checkpointから復旧できます。Saveで再保存してください。';else{p=saved.project||project(id);if(saved.stale)record.message+=' 保存中に加わった変更はSaveで再保存してください。';}}
+    }catch(error){if(current())record.message=`全曲生成中断: ${error.message} / 完了済み小節を保持。Save checkpoint→Resumeで再開できます。`;}
+    finally{record.localModelBusy=false;record.wholeSongToken=null;record.wholeSongAbort=null;if(states.get(id)===record&&project(id)&&app().state.midiEditor===session)refresh(id);}
+  }
+  async function generateLocalModel(id){
+    const p=project(id),session=app()?.state?.midiEditor;
+    if(!p||!session||session.projectId!==id)return{ok:false,reason:'midi-session-required'};
+    const record=stateFor(p);
+    if(record.localModelBusy||!(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true))return;
+    const mode=value('#aiRemakeMode')||'new',amount=Number(value('#aiRemakeAmount')||50);
+    record.remakeMode=mode;record.remakeAmount=amount;
+    const destination=value('#aiRemakeDestination');record.remakeDestination=destination;
+    let remake;try{if(mode!=='new'){if(!['revise','layer','ensemble'].includes(mode)||![25,50,100].includes(amount))throw Error('invalid-remake-choice');const newTrack=mode==='layer'&&destination.startsWith('new:')?composition().remakeNewTrack(session,destination.slice(4)):null;remake={source:composition().remakeSource(session,core()),mode,amount,destinationTrackId:newTrack?.id||(mode==='layer'?(destination||core().currentTrackId(session)):core().currentTrackId(session)),newTrack};}}catch(error){record.message=error.message;refresh(id);return}
+    const musicSignature=JSON.stringify(p.musicalSettings);
+    const signature=JSON.stringify(session?.midiData),workspace=JSON.stringify(record.state.workspace),range=JSON.stringify(session?.editRange),track=core().currentTrackId(session);
+    const current=()=>project(id)===p&&JSON.stringify(p.musicalSettings)===musicSignature&&states.get(id)===record&&app().state.midiEditor===session&&JSON.stringify(session.midiData)===signature&&JSON.stringify(record.state.workspace)===workspace&&JSON.stringify(session.editRange)===range&&core().currentTrackId(session)===track;
+    const modelStyle=value('#aiModelStyle')||'balanced',modelRange=remake?.newTrack?.roleAssignment==='bass'?[28,55]:(value('#aiModelRange')||'48:84').split(':').map(Number);
+    const seedText=value('#aiGenerationSeed').trim(),seed=seedText===''?72:Number(seedText);
+    const description=value('#aiModelMood').trim(),genre=value('#aiModelGenre'),chords=value('#aiModelChords').trim();
+    if(remake?.mode==='ensemble'){try{composition().ensembleChords(chords);remake.chords=chords;const currentRange=composition().createContext(p,session,core()).range;remake.section=clone(record.state.workspace.sectionArrangements?.find(item=>JSON.stringify(item.range)===JSON.stringify(currentRange))||null);}catch(error){record.message=error.message;refresh(id);return;}}
+    record.modelMood=description;record.modelGenre=genre;record.modelChords=chords;
+    record.modelStyle=modelStyle;record.modelRange=modelRange.join(':');
+    record.localModelBusy=true;record.message='実モデル推論中です。';refresh(id);
+    try{
+      const result=await app().localGenerationRequest('compose',{seed,events:64,max_ticks:Math.floor((session.editRange?composition().createContext(p,session,core()).range.endTick-composition().createContext(p,session,core()).range.startTick:7680)*480/(session.midiData.ppq||480)),bpm:Math.round(session.midiData.tempo||p.musicalSettings?.bpm||72),key:p.musicalSettings?.key||null,numerator:(session.midiData.timeSignature||p.musicalSettings?.timeSignature||{numerator:4}).numerator,denominator:(session.midiData.timeSignature||p.musicalSettings?.timeSignature||{denominator:4}).denominator,pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords,...(remake?{sourceNotes:composition().remakePrompt(remake.source,session.midiData.ppq)}:{})});
+      if(!current())return;
+      if(result.model!=='skytnt/midi-model-tv2o-medium'||result.synthetic!==false||result.candidates?.length!==3)throw Error('invalid-model-result');
+      if(remake){if(result.sourceConditioning?.method!=='source-prefix-then-rebase-continuation'||result.sourceConditioning.notes!==Math.min(64,remake.source.notes.length))throw Error('source-conditioned-result-required');result.remake=remake;}
+      const files=result.candidates.map(c=>{const bytes=Uint8Array.from(root.atob(c.midiBase64),x=>x.charCodeAt(0));return new root.File([bytes],`${c.variant}-SkyTNT.mid`,{type:'audio/midi'})});
+      await importMidiCandidates(id,{files,value:''},result);
+      if(current())record.message='実モデルA/B/Cを生成しました。Preview→Listen→Applyで採用できます。';
+    }catch(error){if(current())record.message=`実モデル生成: ${error.message}`}
+    finally{record.localModelBusy=false;if(project(id)===p&&states.get(id)===record&&app().state.midiEditor===session)refresh(id)}
+  }
+  function candidates(project,record,session){
+    const set=activeCandidateSet(record),kinds=[['melody','Melody'],['chord','Chord'],['section','Section'],['arrangement','Arrangement'],['continuation','Continuation'],['lyrics-structure','Lyrics / Melody']];
+    const familyTools=`<div class="music-ai-actions"><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.generateFamilyCandidates('${esc(project.projectId)}')">Family A/B/Cを生成</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.previewFamily('${esc(project.projectId)}','A')">Family A Preview</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.previewFamily('${esc(project.projectId)}','B')">Family B Preview</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.previewFamily('${esc(project.projectId)}','C')">Family C Preview</button></div>`;
+    return`<details class="music-ai-generation-controls"><summary>Remake target（既存曲の対象）</summary><p>EditorのTrackと小節範囲を選んでから生成。通常のMIDI Importで複数Track・Tempo・Meterを保持します。元ファイルは変更しません。</p><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.deleteRemake('${esc(project.projectId)}')">Delete preview（選択範囲の削除候補・規則操作）</button><button class="music-secondary" onclick="MusicStudio.editorPlayMelody()">Original（元の曲を再生）</button><button class="music-secondary" onclick="MusicStudio.editorStopMelody()">Stop（停止）</button><small>削除はAIの判断ではありません。Applyするまで音符を変更しません。Undo / RedoとEditor保存を使えます。</small></details>${instrumentAnalysisHtml(project,session)}${localModelControls(project,record)}<details class="music-ai-generation-controls"><summary>MIDI output（生成済み候補を読み込む）</summary><p>端末内の別ツール等で書き出した旋律MIDIを1〜3個選択。各1 MB・4096音まで。拍位置と休符を保ち、選択範囲の先頭に配置します。Projectのテンポ・拍子・音源を使います。CC・Pitch Bend・複数演奏Trackは通常のMIDI Importをご利用ください。</p><label>MIDI candidates（候補ファイル）<input type="file" accept=".mid,.midi,audio/midi" multiple onchange="MusicStudioAIAssistantPanel.importMidiCandidates('${esc(project.projectId)}',this)"></label><small>このファイル読み込みでは生成元・モデル・素材の利用条件を判定しません。端末内の実生成には専用ホストをご利用ください。</small></details>${generationControls(project,record,set)}<div class="music-ai-candidate-tools"><label>候補の種類<select id="aiCandidateKind">${kinds.map(([id,label])=>`<option value="${id}"${id===(set?.kind||'melody')?' selected':''}>${label}</option>`).join('')}</select></label><button class="music-primary" onclick="MusicStudioAIAssistantPanel.generateCandidates('${esc(project.projectId)}')">A/B/Cを生成</button></div>${record.message?`<p class="music-ai-status music-ai-candidate-status" role="status">${esc(record.candidatePreview?.kind==='lyrics-structure'&&record.message===candidatePreviewText(record.candidatePreview)?'Lyrics Preview / 小節anchor（音符割付は未実行）':record.message)}</p>`:''}${familyTools}${familyPreviewHtml(project,record)}${familyApplyHtml(project,record)}${set?`<div class="music-ai-candidates">${set.candidates.map(candidate=>{const selection=record.candidateSelections?.[candidate.candidateId],preview=record.candidatePreview?.candidateId===candidate.candidateId?record.candidatePreview:null,details=composition().detailLines(candidate.value).map(line=>`<li>${esc(line)}</li>`).join(''),midi=['melody','chord','continuation'].includes(set.kind);return`<article><b>${candidate.candidateId} / ${esc(set.kind)}</b><p>${esc(candidate.value.summary)}</p><ul>${details}</ul><small>${esc(candidate.provenance.adapter)} / ${esc(candidate.status)}</small><div class="music-ai-range"><label>開始小節<input id="aiFrom${candidate.candidateId}" ${set.kind==='arrangement'?`oninput="MusicStudioAIAssistantPanel.clearArrangementDestination('${esc(project.projectId)}')"`: ''} type="number" min="1" value="${esc(selection?.startMeasure??candidate.value.range?.startMeasure??'')}"></label><label>終了小節<input id="aiTo${candidate.candidateId}" ${set.kind==='arrangement'?`oninput="MusicStudioAIAssistantPanel.clearArrangementDestination('${esc(project.projectId)}')"`: ''} type="number" min="1" value="${esc(selection?.endMeasure??candidate.value.range?.endMeasure??'')}"></label></div><div class="music-ai-actions"><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.previewCandidate('${esc(project.projectId)}','${candidate.candidateId}')">${midi?'MIDI Preview':'Preview'}</button>${preview?.type==='midi-preview'?`<button class="music-secondary" onclick="${esc(`MusicStudioAIAssistantPanel.auditionCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)})`)}">Listen（候補を試聴）</button><button class="music-secondary" onclick="${esc(`MusicStudioAIAssistantPanel.auditionCandidate(${JSON.stringify(project.projectId)},${JSON.stringify(candidate.candidateId)},'original')`)}">Original（元MIDIを比較）</button><button class="music-secondary" onclick="MusicStudio.editorStopCandidateAudition()">Stop（試聴停止）</button><button class="music-primary" onclick="MusicStudioAIAssistantPanel.applyCandidatePreview('${esc(project.projectId)}','${candidate.candidateId}')">PreviewをApply</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelCandidatePreview('${esc(project.projectId)}')">Preview取消</button>`:!midi?`<button class="music-primary" onclick="MusicStudioAIAssistantPanel.decideCandidate('${esc(project.projectId)}','${candidate.candidateId}','adopt')">採用記録</button>`:''}<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.decideCandidate('${esc(project.projectId)}','${candidate.candidateId}','reject')">Reject</button></div>${set.kind==='lyrics-structure'?`<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectLyricsMelody('${esc(project.projectId)}','${candidate.candidateId}')">Melody参照を確認</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.listLyricsMelody('${esc(project.projectId)}','${candidate.candidateId}')">Melody参照候補を表示</button>${lyricsMelodyChoicesHtml(record,candidate,session)}${lyricsMelodyHtml(record,candidate,session)}`:''}${set.kind==='arrangement'?`<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectArrangementReference('${esc(project.projectId)}','${candidate.candidateId}')">Section / Chord参照を確認</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectArrangementTracks('${esc(project.projectId)}','${candidate.candidateId}')">Role / Track対応を確認</button>${arrangementReferenceHtml(record,candidate,session)}`:''}${candidate.value.ensemble?`<label>Parts（試聴・採用する楽器）<select id="aiParts${candidate.candidateId}"><option value="all">All（全楽器）</option>${['piano','bass','strings','drums'].map(role=>`<option value="${role}" ${selection?.roles?.length===1&&selection.roles[0]===role?'selected':''}>${({piano:'Piano（ピアノ）',bass:'Bass（ベース）',strings:'Strings（ストリングス）',drums:'Drums（ドラム）'})[role]}</option>`).join('')}</select></label><small>Sectionの差し替え先を設定した楽器のみ既存Trackを置換し、それ以外は新Trackへ追加します。小節欄が空でも選択楽器のみ試聴・採用します。採用後は別の部分も再生成が必要です。</small>`:midi?candidateEditHtml(project,candidate):''}${preview?candidatePreviewHtml(preview):''}</article>`}).join('')}</div>`:'<p class="music-ai-status">候補は原本と分離して保持します。PreviewまではMIDI原本を変更しません。</p>'}`
+  }
+  function projectSectionsHtml(project,session){
+    const current=core()?.projectSectionsSnapshot?.(session,project),items=current?.items;
+    if(!Array.isArray(items)||!items.length)return'';
+    return`<details class="music-ai-project-sections"><summary>Project Sections（曲構成） / ${items.length}</summary><ul>${items.map(item=>`<li>${esc(item?.label||item?.id||'Section')} / M${esc(item?.startMeasure??'?')}-${esc(item?.endMeasure??'?')} / tick ${esc(item?.startTick??'?')}-${esc(item?.endTick??'?')}</li>`).join('')}</ul></details>`;
+  }
+  function render(project,session){if(!ui()||!ai())return'';const record=stateFor(project),tab=tabs.get(project.projectId)||'assistant';if(record.error)return`<section class="music-ai-panel is-error"><h2>AI Assistant</h2><p>AI制作データを安全に開けません：${esc(record.error)}</p><p>ProjectとMIDIは変更していません。</p></section>`;const body=tab==='song'?song(project,record):tab==='candidates'?candidates(project,record,session):assistant(project,session,record);
+    // Preserve the AI drawer across preview/apply repaint; do not discard drafts
+    // just because a different candidate tab or editor row refreshed.
+    const previous=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===project.projectId);
+    const prior=previous?.querySelector?.('.music-ai-focus');
+    const landscape=Boolean(root.matchMedia?.('(min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse)')?.matches);
+    const expanded=prior?prior.open:!landscape;
+    return`<section class="music-ai-panel" data-project-id="${esc(project.projectId)}"><details class="music-ai-focus" onkeydown="MusicStudioAIAssistantPanel.closeOnEscape(event,this)" ${expanded||String(root.location?.hash||'').replace(/^#/,'').startsWith('music-studio/ai-editor/')?'open':''}><summary aria-label="AI Assistant（AI制作パネルを開閉）">AI Assistant（AI制作）<span>Local only（端末内）</span></summary><header><div><p class="music-kicker">LOCAL-ONLY / MIDI CANDIDATES</p><h2>AI Assistant</h2></div><span class="music-ai-safe">External request 0</span></header><nav><button class="${tab==='assistant'?'music-primary':'music-secondary'}" onclick="MusicStudioAIAssistantPanel.setTab('${esc(project.projectId)}','assistant')">Assistant</button><button class="${tab==='song'?'music-primary':'music-secondary'}" onclick="MusicStudioAIAssistantPanel.setTab('${esc(project.projectId)}','song')">New Song（新しい曲）</button><button class="${tab==='candidates'?'music-primary':'music-secondary'}" onclick="MusicStudioAIAssistantPanel.setTab('${esc(project.projectId)}','candidates')">A/B/C候補</button></nav><div class="music-ai-body">${projectSectionsHtml(project,session)}${body}</div></details></section>`}
+  function closeOnEscape(event,detail){
+    if(event.key!=='Escape'||!detail?.open)return false;
+    event.preventDefault();event.stopPropagation();detail.open=false;
+    detail.querySelector?.('summary')?.focus?.();return true;
+  }
+  function refresh(id,{preserveCandidateDrafts=true}={}){
+    const target=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===id),
+      p=project(id),s=app()?.state.midiEditor;
+    if(!target||!p||!s)return;
+    // Only preserve the editor's local, unsubmitted AI text fields when the
+    // same tab is re-rendered. The persisted project and proposal results
+    // remain controlled by their existing explicit preview/adoption paths.
+    const drafts=Array.from(target.querySelectorAll?.('textarea[id],input[id],select[id]')||[])
+      .filter(node=>node.id==='musicAIInstruction'||node.id.startsWith('aiSong')||(preserveCandidateDrafts&&/^ai(?:Transpose|Velocity|Length)[a-zA-Z0-9_-]+$/.test(node.id)))
+      .map(node=>({id:node.id,value:node.value}));
+    const editPanels=Array.from(target.querySelectorAll?.('details[data-candidate-edit]')||[]).filter(node=>node.open).map(node=>node.dataset.candidateEdit);
+    captureNoteReview(id);
+    const previousRequest=target.querySelector?.('.music-ai-note-choice')?.dataset?.requestId;
+    const checkedNotes=new Map(Array.from(target.querySelectorAll?.('input[name="musicAINote"]')||[]).map(node=>[node.value,node.checked]));
+    target.outerHTML=render(p,s);
+    const fresh=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===id);
+    for(const draft of drafts){
+      const node=Array.from(fresh?.querySelectorAll?.('textarea[id],input[id],select[id]')||[]).find(x=>x.id===draft.id);
+      if(node&&typeof draft.value==='string')node.value=draft.value;
+    }
+    for(const node of Array.from(fresh?.querySelectorAll?.('details[data-candidate-edit]')||[]))
+      if(editPanels.includes(node.dataset.candidateEdit))node.open=true;
+    // Preserve users' note-by-note review choices on rejected adoption/error
+    // repaints. Never auto-select a note that the user explicitly unchecked.
+    for(const node of Array.from(fresh?.querySelectorAll?.('input[name="musicAINote"]')||[])){
+      if(previousRequest===activeRequest(stateFor(p).state)?.requestId){if(checkedNotes.has(node.value))node.checked=checkedNotes.get(node.value);}
+    }
+  }
+  function touch(id){const record=stateFor(project(id));record.pending=true;record.message='';return record}
+  async function previewEdit(id){const p=project(id),record=touch(id),instruction=root.document.querySelector('#musicAIInstruction')?.value?.trim();try{record.audioPlan=null;const prior=activeRequest(record.state);if(prior&&['requested','preview'].includes(prior.status))ui().rejectActive(record.state,'Superseded by new instruction');const audio=root.MusicStudioAudioPipeline?.parseAudioInstruction(instruction);if(audio){if(!record.audioFile)throw Error('対象音声を選択してください');record.audioPlan={...audio,file:record.audioFile,baseline:JSON.stringify(p)};record.message=`対象 ${record.audioFile.name} / 全音声 / ${audio.model}。Apply後に実行確認。元作品を保持。`;refresh(id);return}let instrumentIntent=null;try{instrumentIntent=root.NovaLogicInstruments?.parse(instruction)}catch{}if(instrumentIntent&&app().logicInstrumentOpen){const previous=activeRequest(record.state);if(previous&&['requested','preview'].includes(previous.status))ui().rejectActive(record.state,'Instrument selection opens explicit local registry preview');return app().logicInstrumentOpen(id,instruction,core().currentTrackId(app().state.midiEditor))}const plan=ai().japaneseEditPlan(instruction,app().state.midiEditor,core());const previous=activeRequest(record.state);if(previous&&['requested','preview'].includes(previous.status))ui().rejectActive(record.state,'Superseded by new instruction');ui().setInstruction(record.state,instruction);ui().previewEdit(record.state,p,app().state.midiEditor,core(),{...plan,reason:'User approved local Japanese transpose preview'});await ui().runPreview(record.state,core(),ai().japaneseEditAdapter(plan));record.message=`対象 ${plan.trackId} / ${plan.range.startMeasure}–${plan.range.endMeasure}小節 / ${plan.semitones}半音。リズム・歌詞・音声・対象外Trackは保持。Applyで採用後、Saveで保存してください。`}catch(error){const previous=activeRequest(record.state);if(previous&&['requested','preview'].includes(previous.status))ui().rejectActive(record.state,'Invalid or unsupported instruction');record.message=`Preview拒否: ${error.message}`}refresh(id)}
+  function noteReviewInputs(id){
+    const panel=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===id);
+    return Array.from(panel?.querySelectorAll?.('input[name="musicAINote"]')||[]);
+  }
+  function captureNoteReview(id){
+    const record=states.get(id);if(!record)return;
+    const panel=[...(root.document?.querySelectorAll?.('.music-ai-panel[data-project-id]')||[])].find(node=>node.dataset.projectId===id);
+    const requestId=panel?.querySelector?.('.music-ai-note-choice')?.dataset?.requestId;if(!requestId)return;
+    record.noteReviews||=new Map();record.noteReviews.set(requestId,new Map(noteReviewInputs(id).map(note=>[note.value,note.checked])));
+    // Review state belongs to the current proposal, never to another preview.
+    while(record.noteReviews.size>8)record.noteReviews.delete(record.noteReviews.keys().next().value);
+  }
+  function selectAllNotes(id,checked){
+    const notes=noteReviewInputs(id);for(const note of notes)note.checked=Boolean(checked);
+    captureNoteReview(id);return notes.length;
+  }
+  function captureAudioFile(id,file){const record=states.get(id);if(record){record.audioFile=file;record.audioPlan=null}}
+  async function applyAudioPlan(id,record){
+    const plan=record.audioPlan;record.audioPlan=null;
+    if(!plan||plan.file!==record.audioFile||JSON.stringify(project(id))!==plan.baseline){record.message='音声プレビューが古くなりました。';refresh(id);return {ok:false}}
+    const wasPending=record.pending;record.pending=false;
+    try{const bridge=root.MusicStudioAudioPipeline;
+    const result=plan.kind==='separate'?await bridge.importSeparatedAudio(plan.file):await bridge.importAudioFile(plan.file,{mode:'transcribe'});
+    record.message=result.ok?'実処理の結果を確認してください。':'音声処理を採用できません：'+(result.error||result.message||'取消');refresh(id);return result;}finally{record.pending=wasPending}
+  }
+  function applyEdit(id){
+    const audioRecord=states.get(id);if(audioRecord?.audioPlan)return applyAudioPlan(id,audioRecord);
+    const p=project(id),record=touch(id),notes=noteReviewInputs(id),ids=notes.filter(input=>input.checked).map(input=>input.value);
+    try{
+      if(!ids.length)throw Error('adoption-requires-selected-notes');
+      const session=app().state.midiEditor,request=activeRequest(record.state);
+      if(request?.provenance.adapter?.startsWith('local-japanese-transpose-')){
+        // Existing partial-edit commands require the exact target in editor context.
+        // Bind it only for this explicit adoption; restore the user's view afterwards.
+        const keys=['selectedTrackId','part','selectionTrackId','selectedNoteId','selectedNoteIds','selectedMeasures','lockedMeasures','regenerationRequest','editRange'],view={};
+        for(const key of keys)view[key]=session[key]===undefined?undefined:clone(session[key]);
+        try{core().selectTrackById(session,request.context.target.trackId);session.editRange=clone(request.context.target.range);ui().applyActive(record.state,p,session,core(),{updateIds:ids,addIds:[],deleteIds:[]});}
+        finally{for(const key of keys){if(view[key]===undefined)delete session[key];else session[key]=view[key];}}
+      }else ui().applyActive(record.state,p,session,core(),{updateIds:ids,addIds:[],deleteIds:[]});
+      record.message='選択した提案だけをApplyしました。';app().repaintEditor()
+    }catch(error){record.message=`Apply拒否: ${error.message}`;refresh(id)}
+  }
+  function rejectEdit(id){const record=touch(id);record.audioPlan=null;try{ui().rejectActive(record.state,'User rejected preview');record.message='Rejectしました。原本は変更していません。'}catch(error){record.message=`Reject拒否: ${error.message}`}refresh(id)}
+  function value(selector){return root.document?.querySelector?.(selector)?.value||''}
+  function previewSong(id){const record=touch(id),meter=value('#aiSongMeter').split('/').map(Number),tracks=value('#aiSongTracks').split(',').map(item=>item.trim()).filter(Boolean);try{ui().setNewSongDraft(record.state,{title:value('#aiSongTitle'),bpm:Number(value('#aiSongBpm')),numerator:meter[0],denominator:meter[1],key:value('#aiSongKey'),bars:Number(value('#aiSongBars')),mood:value('#aiSongMood'),genre:value('#aiSongGenre'),memo:value('#aiSongMemo'),tracks});ui().previewNewSong(record.state)}catch(error){record.message=`New Song Preview拒否: ${error.message}`}refresh(id)}
+  async function confirmSong(id){const record=touch(id);try{const made=ui().confirmNewSong(record.state),created=await app().createAIProject(made);app().openMidiEditor(created.projectId)}catch(error){record.message=`新規作成拒否: ${error.message}`;refresh(id)}}
+  async function importMidiCandidates(id,input,modelResult=null){
+    const files=Array.from(input?.files||[]);if(input)input.value='';if(!files.length)return;
+    app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor;
+    const token={};record.midiImportToken=token;
+    const midiSignature=JSON.stringify(session.midiData),workspaceSignature=JSON.stringify(record.state.workspace),trackId=core().currentTrackId(session),rangeSignature=JSON.stringify(session.editRange);
+    const current=()=>project(id)===p&&states.get(id)===record&&app()?.state.midiEditor===session&&record.midiImportToken===token&&JSON.stringify(session.midiData)===midiSignature&&JSON.stringify(record.state.workspace)===workspaceSignature&&core().currentTrackId(session)===trackId&&JSON.stringify(session.editRange)===rangeSignature;
+    try{
+      if(files.length>3||files.some(f=>f.size>1048576)||files.reduce((n,f)=>n+f.size,0)>3145728)throw Error('1 MB以下のMIDIを1〜3個選んでください。');
+      const context=composition().createContext(p,session,core()),values=[];
+      for(let i=0;i<files.length;i++){
+        const bytes=await files[i].arrayBuffer();if(!current())return;
+        let v=composition().midiCandidate(bytes,files[i],context,i,session.midiData.ppq);
+        if(modelResult?.remake)v=modelResult.remake.mode==='ensemble'?composition().bindEnsemble(v,modelResult.remake.source,modelResult.remake.chords||'',modelResult.remake.section||null):composition().bindRemake(v,modelResult.remake.source,modelResult.remake.mode,modelResult.remake.amount,modelResult.remake.destinationTrackId,modelResult.remake.newTrack);
+        const bundle=materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
+        materializer().auditionPlan(session,core(),bundle,null);
+        if(modelResult){const source=modelResult.candidates[i];v.modelGeneration={model:modelResult.model,revision:modelResult.revision,seed:source.seed,...(source.samplingTrace?{sampling:{requestedSeed:source.requestedSeed,attempts:source.samplingAttempts,trace:clone(source.samplingTrace),performance:clone(source.performance||{})}}:{}),constraints:clone(source.constraints||{}),adjustedNotes:source.adjustedNotes||0};v.summary+=` / ${source.constraints?.description||''} ${source.constraints?.genre||''} ${(source.constraints?.chords||[]).join(' → ')} / ${source.constraints?.style||'balanced'} / ${source.constraints?.key||'Key自由'} / ${source.constraints?.pitchMin??48}–${source.constraints?.pitchMax??84} / ${v.importedMidi.notes.length}音 / 補正${source.adjustedNotes||0}音`;}
+        values.push(v);
+      }
+      if(!current())return;
+      touch(id);ui().createCandidates(record.state,'melody',{range:clone(session.editRange),music:{key:context.key,mode:context.mode,source:'imported-midi-output'}},values,{adapter:'local-midi-output-import-v1',reason:'User supplied MIDI output; model and license origin unverified'});
+      record.candidatePreview=null;record.candidateSelections={};record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;
+      record.message=`MIDI候補${values.length}個を読み込みました。Preview→Listen→Applyで採用できます。${modelResult?.remake?'選択Track・範囲の操作内容を確認してください。':'既存音符は保持します。'}`;
+    }catch(error){if(current())record.message=`MIDI候補Import拒否: ${error.message}`}
+    finally{if(states.get(id)===record&&record.midiImportToken===token){record.midiImportToken=null;if(project(id)===p&&app()?.state.midiEditor===session)refresh(id)}}
+  }
+  function deleteRemake(id){
+    const p=project(id),record=stateFor(p),session=app().state.midiEditor;
+    try{
+      const source=composition().remakeSource(session,core(),{operation:'delete'}),v=composition().bindRemake(null,source,'delete',100);
+      const preview=materializer().createPreview(session,core(),{candidateId:'A',value:v},{project:p});
+      materializer().auditionPlan(session,core(),preview,null);
+      touch(id);ui().createCandidates(record.state,'melody',{range:clone(session.editRange)},[v],{adapter:'structured-midi-delete-v1',reason:'Explicit selected-track deletion, deterministic; no model inference'});
+      record.candidatePreview=null;record.candidateSelections={};record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message='削除候補を作成しました。対象Track・範囲・削除数をPreviewで確認してApplyしてください。';
+    }catch(error){record.message=`削除候補: ${error.message}`}refresh(id);
+  }
+  function generateCandidates(id){app()?.editorStopCandidateAudition?.();const record=touch(id),kind=value('#aiCandidateKind')||'melody',p=project(id),session=app().state.midiEditor;try{const generation=captureGeneration(id,true),values=candidateValuesForProject(kind,p,session,generation),context=composition().createContext(p,session,core());ui().createCandidates(record.state,kind,{range:clone(session.editRange),music:{key:context.key,mode:context.mode,source:context.source}},values,{adapter:'deterministic-composition-v1',reason:'local deterministic composition candidate'});record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.candidateSelections={};record.message='A/B/C候補を作成しました。原本は変更していません。'}catch(error){record.message=`候補生成拒否: ${error.message}`}refresh(id)}
+  function generateFamilyCandidates(id){app()?.editorStopCandidateAudition?.();const record=touch(id),p=project(id),session=app().state.midiEditor;try{if(!familyPreview())throw Error('family-preview-unavailable');const generation=captureGeneration(id,true),context={...composition().createContext(p,session,core()),...(generation?{generation}:{})};let firstSet=null;for(const kind of familyPreview().KINDS){const set=ui().createCandidates(record.state,kind,{range:clone(session.editRange),music:{key:context.key,mode:context.mode,source:context.source}},composition().candidateValues(kind,context),{adapter:'deterministic-family-v1',reason:'linked local deterministic candidate family'});if(kind==='melody')firstSet=set}if(firstSet)record.state.activeCandidateSetId=firstSet.setId;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.candidateSelections={};record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message='Family A/B/Cを生成しました。まだ原本は変更していません。'}catch(error){record.message=`Family生成拒否: ${error.message}`}refresh(id)}
+  function previewFamily(id,variant){const record=stateFor(project(id)),p=project(id),session=app().state.midiEditor;try{if(!familyPreview())throw Error('family-preview-unavailable');record.familyApplyPlan=null;record.familyApplyPreflight=null;record.familyPreview=familyPreview().createFamilyPreview(record.state.workspace,variant,session,core(),p,{composition:composition(),materializer:materializer()});record.message=`Family ${variant}をまとめてPreviewしました。原本は変更していません。`}catch(error){record.familyPreview=null;record.message=`Family Preview拒否: ${error.message}`}refresh(id)}
+  function selectFamilyComponents(id){const record=stateFor(project(id));record.familyKinds=[...root.document.querySelectorAll('input[name="musicAIFamilyComponent"]:checked')].map(input=>input.value);const from=value('#aiFamilyFrom').trim(),to=value('#aiFamilyTo').trim();record.familyMetadataOnly=root.document.querySelector('#aiFamilyMetadataOnly')?.checked===true;record.familyProjectSections=root.document.querySelector('#aiFamilyProjectSections')?.checked===true;record.familyRangeInput={from,to};record.familyRange=from&&to?{startMeasure:Number(from),endMeasure:Number(to)}:null;record.familyApplyPlan=null;record.familyApplyPreflight=null;refresh(id)}
+  function familySelection(record){const raw=record.familyRangeInput;if(!raw||(!raw.from&&!raw.to))return null;const startMeasure=Number(raw.from),endMeasure=Number(raw.to);if(!raw.from||!raw.to||!Number.isInteger(startMeasure)||!Number.isInteger(endMeasure)||startMeasure<1||endMeasure<startMeasure)throw Error('invalid-family-selection');return{startMeasure,endMeasure}}
+  function createFamilyApplyPlan(id){const record=stateFor(project(id)),p=project(id),session=app().state.midiEditor;try{if(!record.familyPreview)throw Error('family-preview-required');if(!familyApply())throw Error('family-apply-unavailable');record.projectId=id;record.familyApplyPlan=familyApply().createPlan(record.state.workspace,record.familyPreview.variant,p,session,core(),{kinds:record.familyKinds||familyApply().DEFAULT_KINDS,measureRange:familySelection(record),metadataOnly:record.familyMetadataOnly===true,applyProjectSections:record.familyProjectSections===true});record.familyApplyPreflight=null;record.message='Family Apply Planを作成しました。まだ原本は変更していません。'}catch(error){record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message=`Family Apply Plan拒否: ${error.message}`}refresh(id)}
+  function preflightFamilyApply(id){const record=stateFor(project(id)),p=project(id),session=app().state.midiEditor;try{if(!record.familyApplyPlan)throw Error('family-apply-plan-required');record.familyApplyPreflight=familyApply().simulate(record.familyApplyPlan,record.state.workspace,p,session,core());record.message=record.familyApplyPreflight.ok?'Preflight PASS。Confirm前なので原本は変更していません。':`Preflight BLOCKED: ${record.familyApplyPreflight.errors.join(', ')}`}catch(error){record.familyApplyPreflight={ok:false,errors:[error.message],mutates:false};record.message=`Preflight拒否: ${error.message}`}refresh(id)}
+  function confirmFamilyApply(id){const record=touch(id),p=project(id),session=app().state.midiEditor;try{if(!record.familyApplyPlan||!record.familyApplyPreflight?.ok)throw Error('family-preflight-required');const result=familyApply().applyPlan(record.familyApplyPlan,record.state.workspace,p,session,core());if(!result.applied)throw Error(result.errors?.join(', ')||result.reason||'family-apply-rejected');record.familyApplyPlan=null;record.familyApplyPreflight=null;record.familyPreview=null;record.message=`Family ${result.variant}をatomic Applyしました。Undo単位 ${result.undoUnits}。`;app().repaintEditor()}catch(error){record.message=`Family Apply拒否: ${error.message}`;refresh(id)}}
+  function cancelFamilyApply(id){const record=stateFor(project(id));record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message='Family Apply Planを取消しました。原本は変更していません。';refresh(id)}
+  function arrangementReferenceHtml(record,candidate,session){
+    const saved=record.arrangementReferencePreview;if(!saved||saved.candidateId!==candidate.candidateId)return'';
+    const current=saved.workspaceSignature===JSON.stringify(record.state.workspace)&&saved.midiSignature===JSON.stringify(session.midiData)&&saved.setId===activeCandidateSet(record)?.setId;
+    return`<section class="music-ai-status"><p>${current?'Arrangement references（編成参照）':'参照が変更されました。再確認してください。'}</p>${current?`<ul>${composition().arrangementReferenceRows(saved.preview).map(row=>`<li>${esc(row)}</li>`).join('')}</ul>${saved.preview.trackTargets?`<label>Destination候補（既存Role / Track）<select id="aiDestinationChoice${candidate.candidateId}" onchange="MusicStudioAIAssistantPanel.clearArrangementDestination('${esc(record.state.workspace.projectId)}')"><option value="">明示選択してください</option>${saved.preview.trackTargets.map((item,index)=>`<option value="${index+1}"${saved.destinationChoice===index+1?' selected':''}>${esc(item.role)} / ${esc(item.trackId)}</option>`).join('')}</select></label><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectArrangementDestination('${esc(record.state.workspace.projectId)}','${candidate.candidateId}')">Destination identityを確認</button>`:''}`:''}<button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelArrangementReference('${esc(record.state.workspace.projectId)}')">編成参照取消</button></section>`;
+  }
+  function clearArrangementDestination(id){
+    const record=stateFor(project(id)),saved=record.arrangementReferencePreview,verified=!!saved?.preview.destinationInspection;
+    if(saved){delete saved.preview.destinationInspection;delete saved.destinationChoice}
+    if(verified)record.message='Destination選択・範囲が変更されました。再確認してください。';
+    // Keep the DOM choice, but immediately remove the previously verified output.
+    const panel=root.document?.querySelector?.('.music-ai-panel');
+    if(verified&&panel?.querySelector){const status=panel.querySelector('.music-ai-candidate-status');if(status)status.textContent=record.message}
+    if(panel?.querySelectorAll)for(const row of panel.querySelectorAll('li'))if(row.textContent.startsWith('Explicit destination identity verified:'))row.remove();
+  }
+  function inspectArrangementDestination(id,candidateId){
+    const record=stateFor(project(id)),session=app().state.midiEditor,saved=record.arrangementReferencePreview;
+    try{
+      if(!saved||!saved.preview.trackTargets||saved.candidateId!==candidateId)throw Error('arrangement-track-inspection-required');
+      delete saved.preview.destinationInspection;delete saved.destinationChoice;
+      const selection=candidateSelection(candidateId),set=activeCandidateSet(record);
+      if(saved.workspaceSignature!==JSON.stringify(record.state.workspace)||saved.midiSignature!==JSON.stringify(session.midiData)||saved.setId!==set?.setId||saved.preview.timeline.range.startMeasure!==selection?.startMeasure||saved.preview.timeline.range.endMeasure!==selection?.endMeasure)throw Error('stale-arrangement-destination');
+      const text=value('#aiDestinationChoice'+candidateId),choice=Number(text);
+      if(!/^[1-9][0-9]*$/.test(text)||!Number.isSafeInteger(choice)||choice>saved.preview.trackTargets.length)throw Error('explicit-arrangement-destination-required');
+      const candidates=set.candidates.filter(item=>item.candidateId===candidateId);
+      if(candidates.length!==1)throw Error('arrangement-candidate-required');
+      saved.preview=composition().arrangementDestinationPreview(candidates[0].value,record.state.workspace,session,core(),saved.preview.trackTargets[choice-1],selection);saved.destinationChoice=choice;
+      record.message='Destination identityを明示確認しました。読み取り専用です。';
+    }catch(error){record.message=`Destination確認拒否: ${error.message}`;record.arrangementReferencePreview=null}
+    refresh(id);
+  }
+  function inspectArrangementTracks(id,candidateId){return inspectArrangementReference(id,candidateId,true)}
+  function inspectArrangementReference(id,candidateId,inspectTracks=false){
+    const record=stateFor(project(id)),session=app().state.midiEditor,set=activeCandidateSet(record);record.arrangementReferencePreview=null;
+    try{
+      const candidates=set?.candidates.filter(item=>item.candidateId===candidateId)||[];
+      if(set?.kind!=='arrangement'||candidates.length!==1)throw Error('arrangement-candidate-required');
+      const selection=candidateSelection(candidateId),preview=composition()[inspectTracks?'arrangementTrackPreview':'arrangementReferencePreview'](candidates[0].value,record.state.workspace,session,core(),selection);
+      (record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;
+      record.arrangementReferencePreview={candidateId,setId:set.setId,preview,workspaceSignature:JSON.stringify(record.state.workspace),midiSignature:JSON.stringify(session.midiData)};record.message='編成参照のidentityを確認しました。楽器・演奏内容は未生成です。';
+    }catch(error){record.message=`編成参照拒否: ${error.message}`}
+    refresh(id);
+  }
+  function cancelArrangementReference(id){const record=stateFor(project(id));record.arrangementReferencePreview=null;record.message='編成参照Previewを取り消しました。';refresh(id)}
+  function lyricsReferenceCurrent(record,saved,session){return saved.workspaceSignature===JSON.stringify(record.state.workspace)&&saved.midiSignature===JSON.stringify(session.midiData)&&saved.lyricsSetId===activeCandidateSet(record)?.setId}
+  function lyricsMelodyChoicesHtml(record,candidate,session){
+    const saved=record.lyricsMelodyChoices;if(!saved||saved.candidateId!==candidate.candidateId)return'';
+    if(!lyricsReferenceCurrent(record,saved,session))return`<p class="music-ai-status">参照候補が変更されました。候補を再表示してください。</p><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelLyricsMelody('${esc(record.state.workspace.projectId)}')">参照候補取消</button>`;
+    return`<section class="music-ai-status"><label>Melody reference（参照候補）<select id="aiMelodyChoice${candidate.candidateId}" onchange="MusicStudioAIAssistantPanel.clearLyricsMelodyChoice('${esc(record.state.workspace.projectId)}','${candidate.candidateId}')"><option value="">選択してください</option>${saved.choices.choices.map((choice,index)=>`<option value="${choice.setIndex}:${choice.candidateIndex}" ${choice.error?'disabled':''} ${saved.selectedChoice===`${choice.setIndex}:${choice.candidateIndex}`?'selected':''}>${esc(`${index+1} / ${choice.setId} / ${choice.candidateId} / ${choice.summary} / ${choice.error||choice.status}`)}</option>`).join('')}</select></label><small>この選択は参照Previewのみ。歌詞や音符の割付・採用記録は変更しません。</small><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.inspectSelectedLyricsMelody('${esc(record.state.workspace.projectId)}','${candidate.candidateId}')">選択したMelody参照を確認</button><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelLyricsMelody('${esc(record.state.workspace.projectId)}')">参照候補取消</button></section>`;
+  }
+  function listLyricsMelody(id,candidateId){
+    const record=stateFor(project(id)),session=app().state.midiEditor,set=activeCandidateSet(record);record.lyricsMelodyPreview=null;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;
+    try{
+      const candidate=set?.candidates.find(item=>item.candidateId===candidateId);if(set?.kind!=='lyrics-structure'||!candidate)throw Error('lyrics-candidate-required');
+      const selection=candidateSelection(candidateId),choices=composition().lyricsMelodyReferenceChoices(candidate.value,record.state.workspace,session,core(),selection);
+      (record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;
+      record.lyricsMelodyChoices={candidateId,lyricsSetId:set.setId,choices,workspaceSignature:JSON.stringify(record.state.workspace),midiSignature:JSON.stringify(session.midiData)};record.message='参照候補を表示しました。明示的に選択して確認してください。';
+    }catch(error){record.message=`Melody参照候補表示拒否: ${error.message}`}refresh(id);
+  }
+  function clearLyricsMelodyChoice(id,candidateId){const record=stateFor(project(id));record.lyricsMelodyPreview=null;if(record.lyricsMelodyChoices)record.lyricsMelodyChoices.selectedChoice=value(`#aiMelodyChoice${candidateId}`);record.message='選択した候補は確認前です。';refresh(id)}
+  function inspectSelectedLyricsMelody(id,candidateId){
+    const record=stateFor(project(id)),session=app().state.midiEditor,saved=record.lyricsMelodyChoices;record.lyricsMelodyPreview=null;
+    try{
+      if(!saved||saved.candidateId!==candidateId)throw Error('lyrics-melody-choices-required');
+      if(!lyricsReferenceCurrent(record,saved,session))throw Error('stale-lyrics-melody-choice');
+      const chosen=value(`#aiMelodyChoice${candidateId}`),choice=saved.choices.choices.find(item=>`${item.setIndex}:${item.candidateIndex}`===chosen);
+      if(!choice)throw Error('explicit-lyrics-melody-choice-required');saved.selectedChoice=chosen;if(choice.error)throw Error(choice.error);
+      inspectLyricsMelody(id,candidateId,{setIndex:choice.setIndex,candidateIndex:choice.candidateIndex,workspaceSignature:saved.workspaceSignature});return;
+    }catch(error){record.message=`Melody参照選択拒否: ${error.message}`}refresh(id);
+  }
+  function lyricsMelodyHtml(record,candidate,session){
+    const saved=record.lyricsMelodyPreview;if(!saved||saved.candidateId!==candidate.candidateId)return'';
+    if(!lyricsReferenceCurrent(record,saved,session))return'<p class="music-ai-status">参照が変更されました。Melody参照を再確認してください。</p>';
+    return`<section class="music-ai-status"><ul>${composition().lyricsMelodyReferenceRows(saved.preview).map(row=>`<li>${esc(row)}</li>`).join('')}</ul><button class="music-secondary" onclick="MusicStudioAIAssistantPanel.cancelLyricsMelody('${esc(record.state.workspace.projectId)}')">参照Preview取消</button></section>`;
+  }
+  function inspectLyricsMelody(id,candidateId,explicit=null){
+    const record=stateFor(project(id)),session=app().state.midiEditor,set=activeCandidateSet(record);
+    record.lyricsMelodyPreview=null;
+    try{
+      const candidate=set?.candidates.find(item=>item.candidateId===candidateId);if(set?.kind!=='lyrics-structure'||!candidate)throw Error('lyrics-candidate-required');
+      const selection=candidateSelection(candidateId),preview=composition().lyricsMelodyReferencePreview(candidate.value,record.state.workspace,session,core(),selection,explicit);
+      (record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;
+      record.lyricsMelodyPreview={candidateId,lyricsSetId:set.setId,preview,workspaceSignature:JSON.stringify(record.state.workspace),midiSignature:JSON.stringify(session.midiData)};record.message='Melody参照を確認しました。音符割付は未実行です。';
+    }catch(error){record.message=`Melody参照確認拒否: ${error.message}`}
+    refresh(id);
+  }
+  function cancelLyricsMelody(id){const record=stateFor(project(id));record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.message='参照Previewを取り消しました。';refresh(id)}
+  function previewCandidate(id,candidateId){app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor,set=activeCandidateSet(record),candidate=set?.candidates.find(item=>item.candidateId===candidateId);try{if(!candidate)throw Error('candidate-required');const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;if(!materializer())throw Error('candidate-preview-unavailable');const context=composition().createContext(p,session,core());record.candidatePreview=materializer().createPreview(session,core(),candidate,{project:p,context,measureRange:['section','lyrics-structure','arrangement'].includes(set.kind)?selection:null});record.message=candidatePreviewText(record.candidatePreview)}catch(error){record.message=`候補Preview拒否: ${error.message}`;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null}refresh(id)}
+  async function auditionCandidate(id,candidateId,source='candidate'){
+    const p=project(id),record=stateFor(p),bundle=record.candidatePreview,session=app().state.midiEditor;
+    const generation=record.auditionGeneration=(record.auditionGeneration||0)+1;
+    const current=()=>states.get(id)===record&&project(id)===p&&app()?.state.midiEditor===session&&record.candidatePreview===bundle&&record.auditionGeneration===generation;
+    try{
+      if(!bundle||bundle.candidateId!==candidateId)throw Error('candidate-preview-required');
+      const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;const plan=materializer().auditionPlan(session,core(),bundle,selection,{source});
+      if(plan.silent){app().editorStopCandidateAudition();record.message=source==='original'?'Original（元MIDI）の選択範囲は無音です。':'この候補の選択範囲は無音です。削除対象を確認してApplyできます。';refresh(id);return;}
+      const result=await app().editorAuditionCandidate(plan,session);
+      if(!current())return;
+      record.message=result.ok?(source==='original'?'Original（元MIDI）を同じ小節範囲・テンポで試聴中。MIDI原本は変更していません。':`候補${candidateId}を試聴中。MIDI原本は変更していません。`):`試聴停止: ${result.reason}`;
+    }catch(error){if(!current())return;record.message=`候補試聴拒否: ${error.message}`}
+    if(current())refresh(id);
+  }
+  function applyCandidatePreview(id,candidateId){app()?.editorStopCandidateAudition?.();const record=touch(id),bundle=record.candidatePreview,session=app().state.midiEditor,previousTrack=core().currentTrackId(session);try{const selection=candidateSelection(candidateId);if(!bundle||bundle.candidateId!==candidateId)throw Error('candidate-preview-required');if(previousTrack!==bundle.targetTrackId)core().selectTrackById(session,bundle.targetTrackId);const applied=materializer().applyPreview(session,core(),bundle,selection);ui().decideCandidate(record.state,candidateId,'adopt',selection?{measures:[selection.startMeasure,selection.endMeasure],mode:'midi-preview',targetTrackId:applied.targetTrackId}:{mode:'midi-preview',targetTrackId:applied.targetTrackId});record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message=selection?`${selection.startMeasure}–${selection.endMeasure}小節だけを${applied.targetTrackId}へ安全にApplyしました。`:`候補${candidateId}のPreviewを${applied.targetTrackId}へ安全にApplyしました。`;app().repaintEditor()}catch(error){if(previousTrack&&core().currentTrackId(session)!==previousTrack)core().selectTrackById(session,previousTrack);record.message=`候補Apply拒否: ${error.message}`;refresh(id)}}
+  function cancelCandidatePreview(id){app()?.editorStopCandidateAudition?.();const record=stateFor(project(id));record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message='候補Previewを取り消しました。原本は変更していません。';refresh(id)}
+  function decideCandidate(id,candidateId,decision){app()?.editorStopCandidateAudition?.();const record=touch(id);try{const selection=candidateSelection(candidateId),set=activeCandidateSet(record);if(decision==='adopt'&&['lyrics-structure','arrangement'].includes(set?.kind)){const candidate=set.candidates.find(item=>item.candidateId===candidateId);materializer().createPreview(app().state.midiEditor,core(),candidate,{project:project(id),measureRange:selection})}ui().decideCandidate(record.state,candidateId,decision,selection?{measures:[selection.startMeasure,selection.endMeasure]}:null);record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message=selection&&decision==='adopt'?`${selection.startMeasure}–${selection.endMeasure}小節だけを採用記録しました。`:`候補${candidateId}を${decision==='adopt'?'採用':'却下'}しました。`}catch(error){record.message=`候補判断拒否: ${error.message}`}refresh(id)}
+  function workspaceForSave(project,revision){const record=states.get(project.projectId);if(!record?.state)return project.aiWorkspace?clone(project.aiWorkspace):null;return ui().workspaceForRevision(record.state,project.projectId,revision)}
+  function workspaceContent(value){const result=clone(value);delete result.baseRevision;delete result.updatedAt;return JSON.stringify(result)}
+  function markSaved(project,expectedWorkspace){const record=states.get(project.projectId);if(record){const workspace=record.state.workspace,changed=expectedWorkspace&&workspaceContent(workspace)!==workspaceContent(expectedWorkspace);if(changed){workspace.baseRevision=project.revision;record.pending=true}else{const next=ui().createState(project,{workspace:project.aiWorkspace});for(const key of Object.keys(workspace))delete workspace[key];Object.assign(workspace,next.workspace);next.workspace=workspace;record.state=next;record.pending=false}record.revision=project.revision;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.familyPreview=null;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null}}
+  function historyChanged(id){const record=states.get(id);if(record?.state){record.harmonyAnalysis=clone(record.state.workspace.harmonyReview?.analysis||null);record.modelChords=record.state.workspace.harmonyReview?.chords;record.pending=true;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.familyPreview=null;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null;record.message='MIDIとFamily採用metadataをEditor履歴から復元しました。'}}
+  root.MusicStudioAIAssistantPanel={captureAudioFile,saveWholeSongCheckpoint,clearWholeSongCheckpoint,previewJapaneseArrangement,applyJapaneseArrangement,generateWholeSong,stopWholeSong,saveSectionArrangement,toggleHarmonyLock,analyzeHarmony,useHarmony,deleteRemake,generateLocalModel,importMidiCandidates,editCandidate,auditionCandidate,captureGeneration,render,closeOnEscape,captureNoteReview,selectAllNotes,setTab(id,tab){app()?.editorStopCandidateAudition?.();captureNoteReview(id);tabs.set(id,tab);refresh(id)},previewEdit,applyEdit,rejectEdit,previewSong,confirmSong,generateCandidates,generateFamilyCandidates,previewFamily,selectFamilyComponents,createFamilyApplyPlan,preflightFamilyApply,confirmFamilyApply,cancelFamilyApply,clearArrangementDestination,inspectArrangementDestination,inspectArrangementTracks,inspectArrangementReference,cancelArrangementReference,listLyricsMelody,clearLyricsMelodyChoice,inspectSelectedLyricsMelody,inspectLyricsMelody,cancelLyricsMelody,previewCandidate,applyCandidatePreview,cancelCandidatePreview,decideCandidate,hasPending(id){return states.get(id)?.pending===true},workspaceForSave,markSaved,historyChanged,_states:states,_candidateValues:candidateValues};
+})(typeof window!=='undefined'?window:globalThis);
