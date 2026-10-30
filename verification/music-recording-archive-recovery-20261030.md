@@ -27,3 +27,5 @@ No.12 and No.23 are still partial. Physical power loss and storage hardware fail
 The 30-feature ledger remains: partial implementation confirmed 28/30, formal partial implementation unconfirmed for No.26 and No.29; all requirements implemented and automatically verified 0/30; final completion 0/30. This is a feature-level acceptance count, not an implementation percentage. See `verification/music-completion-focus-20261030.md` and `docs/music-studio/COMPLETION_MASTER_PLAN_V1.md` for the unchanged broader requirements.
 
 Independent branch/Draft PR only. Existing PRs #510 and #537–#540 and main are not modified. No Ready, Merge, force push or physical Mac operation.
+
+CI follow-up: initial recording recovery run https://github.com/puitoybox-cloud/nova-studio/actions/runs/41056223791 passed the existing PCM SIGKILL test (61,440 committed frames, 48 kHz, byte-identical recovery/archive). The new MediaRecorder harness initially rejected its asynchronous start-event wait state before recording began; allow that state while polling. This is a test harness correction, with production code unchanged. Final browser result still requires the corrected-head run.
