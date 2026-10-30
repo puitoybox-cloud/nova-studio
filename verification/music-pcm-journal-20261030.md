@@ -14,9 +14,9 @@ Startup discovers unfinished sessions and exposes an explicit recovery action in
 
 Eight added fault regressions cover fresh runtime restoration with byte comparison and old Take preservation; active-session/missing-first-chunk refusal; corrupt/missing trailing chunk prefix recovery; quota failure during append; failed final Take transaction followed by another restart; concurrent recovery; abort between chunk insertion and metadata update; and restart after the first continuous Take has committed.
 
-Initial whole JS regression: 2,693 passed, zero failed (145.752 seconds). The two additional fault cases pass with all eight targeted cases. Final whole regression is being rerun before final reporting. Syntax and whitespace checks pass.
+Initial whole JS regression: 2,693 passed, zero failed (145.752 seconds). The two additional fault cases pass with all eight targeted cases. Final whole JS regression: 2,695 passed, zero failed (172.286 seconds). Syntax and whitespace checks pass.
 
-`scripts/music-pcm-journal-crash-browser.js` is wired into the checkpoint CI. It uses a synthetic microphone with actual Chromium and persistent browser storage, sends SIGKILL while recording, launches a fresh process with the same profile, waits for the real heartbeat expiry, recovers the journal, compares every committed PCM byte and the full WAV archive copy, and rejects a second recovery. Local execution is unavailable because no Chromium executable is installed in this environment. CI results must be consulted; no local process-kill success is claimed.
+`scripts/music-pcm-journal-crash-browser.js` is wired into the checkpoint CI. It uses a synthetic microphone with actual Chromium and persistent browser storage, sends SIGKILL while recording, launches a fresh process with the same profile, waits for the real heartbeat expiry, recovers the journal, compares every committed PCM byte and the full WAV archive copy, and rejects a second recovery. Local execution is unavailable because no Chromium executable is installed in this environment. CI results must be consulted; no local process-kill success is claimed. The first CI attempt failed in temporary profile cleanup; cleanup now waits for browser-process exit and cannot mask the original scenario error.
 
 ## PR #539 CI cancellation investigation
 
