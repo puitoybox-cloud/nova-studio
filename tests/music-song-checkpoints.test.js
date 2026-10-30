@@ -93,3 +93,9 @@ test('checkpoint disclosure ignores detached toggle events after status repaint'
 test('status repaint captures the live checkpoint disclosure before a queued toggle event',()=>{
  const {a,w}=fixture();w.document={querySelector:s=>s==='.music-song-versions'?{open:true}:null,querySelectorAll:()=>[]};a.versionPanel.open=false;a.repaint();assert.equal(a.versionPanel.open,true);w.document.querySelector=s=>s==='.music-song-versions'?{open:false}:null;a.repaint();assert.equal(a.versionPanel.open,false);
 });
+
+test('interactive project search matches initial listing for finished names, unrelated queries and normalized text',async()=>{
+ const f=fixture();await f.a.versionSave('song','ＦＩＮＡＬ <mix>',{kind:'finished'});const p=await f.repo.get('song');p.songTitle='ＣＡＦＥ';await f.repo.put(p);f.a.state.projects=[p];f.a.state.loaded=true;let html='';f.w.document={querySelector:()=>({set innerHTML(value){html=value}})};
+ for(const [query,count] of [['final',1],['cafe',1],['unrelated',0],['  ＦＩＮＡＬ  ',1],['',1]]){f.a.searchProjects(query);assert.equal(f.a.matchingProjects(query).length,count,query);assert.equal(html.includes('music-project-row'),count===1,query);assert.equal(f.a.listView().includes('music-project-row'),count===1,query)}
+ assert.equal((await f.repo.get('song')).songVersions.checkpoints[0].name,'ＦＩＮＡＬ <mix>');
+});

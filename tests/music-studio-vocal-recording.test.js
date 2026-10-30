@@ -363,7 +363,7 @@ test('gapless crash recovery recreates exact Take boundaries and cycle metadata'
 });
 async function encodedJournal(){const f=await setup();capture(f);assert.equal((await f.a.vocalStart(f.p.projectId,{latencyMs:13})).ok,true);const rec=f.a.vocal.recorder;rec.ondataavailable({data:new Blob(['encoded prefix'])});await rec.journalTail;const m=f.indexedDB.stores.get('vocalJournals').get(rec.journalId);m.updatedAt=0;const fresh=fixture(f.indexedDB);capture(fresh);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();return{...f,rec,m,fresh};}
 test('MediaRecorder commits encoded chunks during capture, reopens and consumes once after decoded Take commit',async()=>{
- const f=await encodedJournal(),a=f.fresh.a;assert.equal(f.m.encodedBytes,14);assert.equal(f.m.next,1);const r=await a.vocalRecoverJournal(f.m.id);assert.equal(r.ok,true,r.error);assert.equal(r.project.longWavAssets[0].frames,800);assert.equal(r.project.longWavAssets[0].vocalTake.recordingPlan.latencyMs,13);assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);assert.equal((await f.repo.listVocalJournals()).length,0);f.a.vocalDiscard();
+ const f=await encodedJournal(),a=f.fresh.a;assert.equal(f.m.encodedBytes,14);assert.equal(f.m.next,1);const r=await a.vocalRecoverJournal(f.m.id);assert.equal(r.ok,true,r.error);assert.equal(r.project.longWavAssets[0].frames,800);assert.equal(r.project.longWavAssets[0].vocalTake.recordingPlan.latencyMs,13);assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);assert.equal((await f.repo.listVocalJournals()).length,1);assert.ok((await f.repo.getVocalJournal(f.m.id)).recoveredAt);assert.equal((await f.repo.getVocalJournal(f.m.id)).consumed,0);f.a.vocalDiscard();
 });
 test('MediaRecorder undecodable or corrupt containers stay retained and never modify project',async()=>{
  for(const kind of ['decode','corrupt']){const f=await encodedJournal(),before=JSON.stringify(await f.repo.get(f.p.projectId));if(kind==='decode')f.fresh.w.AudioContext.prototype.decodeAudioData=async()=>{throw Error('incomplete-container')};else f.indexedDB.stores.get('vocalJournalChunks').get(f.m.id+':0').bytes=new ArrayBuffer(14);const r=await f.fresh.a.vocalRecoverJournal(f.m.id);assert.equal(r.ok,false);assert.ok(await f.repo.getVocalJournal(f.m.id));assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);f.a.vocalDiscard();}
@@ -434,4 +434,34 @@ test('rescue chunk write failure rolls back metadata and earlier chunks as one t
  const f=await interruptedJournal();ageJournal(f);const r=await f.b.vocalJournalAction(f.m.id),fresh=await setup(),write=fresh.repo.importVocalJournal;let attempted;
  fresh.repo.importVocalJournal=async(m,...args)=>{attempted=m.id;fresh.indexedDB.failOnId(m.id+':1');return write(m,...args)};
  assert.equal((await fresh.a.vocalImportRescue(r.blob,fresh.p.projectId)).ok,false);fresh.indexedDB.repair();assert.equal(await fresh.repo.getVocalJournal(attempted),undefined);assert.equal(await fresh.repo.getVocalJournalChunk(attempted+':0'),undefined);assert.equal((await fresh.repo.get(fresh.p.projectId)).longWavAssets?.length||0,0);f.a.vocalDiscard();
+});
+
+test('explicit complete archive preserves damaged PCM bytes, gaps and original hashes across atomic migration',async()=>{
+ const f=await interruptedJournal();ageJournal(f);const store=f.indexedDB.stores.get('vocalJournalChunks'),expected=structuredClone(store.get(f.m.id+':0').hash);store.get(f.m.id+':0').bytes=new ArrayBuffer(160);store.delete(f.m.id+':1');
+ await assert.rejects(f.b.createLongWavArchive(),/corrupt/);
+ const archive=await f.b.exportLongWavArchive();assert.equal(archive.ok,true,archive.error);const other=fixture(),a=other.a,repo=a.indexedDbRepository();a.setRepository(repo);await a.refresh();
+ other.indexedDB.fail();assert.equal((await a.restoreLongWavArchive(archive.blob,{settings:false})).ok,false);assert.equal((await repo.list()).length,0);assert.equal((await repo.listVocalJournals()).length,0);other.indexedDB.repair();
+ const r=await a.restoreLongWavArchive(archive.blob,{settings:false});assert.equal(r.ok,true,r.error);const [m]=await repo.listVocalJournals(),chunk=await repo.getVocalJournalChunk(m.id+':0');assert.deepEqual(chunk.hash,expected);assert.deepEqual(Buffer.from(chunk.bytes),Buffer.alloc(160));assert.equal(await repo.getVocalJournalChunk(m.id+':1'),undefined);assert.equal((await a.vocalRecoverJournal(m.id)).ok,false);assert.ok(await repo.getVocalJournal(m.id));assert.equal((await repo.list())[0].longWavAssets?.length||0,0);f.a.vocalDiscard();
+});
+test('damaged archive transport checks observed digests and rejects tampering, truncation and unknown preservation versions',async()=>{
+ const f=await interruptedJournal();ageJournal(f);f.indexedDB.stores.get('vocalJournalChunks').get(f.m.id+':1').bytes=new ArrayBuffer(160);const file=await f.b.createLongWavArchive({preserveDamagedJournals:true});
+ const raw=await file.arrayBuffer(),v=new DataView(raw),n=v.getUint32(8,true),manifest=JSON.parse(Buffer.from(raw.slice(12,12+n)).toString()),other=fixture(),a=other.a,repo=a.indexedDbRepository();a.setRepository(repo);await a.refresh();
+ assert.equal(manifest.vocalJournals[0].preservation,'observed-v1');
+ const changed=new Uint8Array(raw.slice(0));changed[changed.length-1]^=1;for(const invalid of [new Blob([changed]),file.slice(0,-1)])assert.equal((await a.restoreLongWavArchive(invalid,{settings:false})).ok,false);
+ manifest.vocalJournals[0].preservation='future';const body=new Blob([JSON.stringify(manifest)]),head=raw.slice(0,12);new DataView(head).setUint32(8,body.size,true);assert.equal((await a.restoreLongWavArchive(new Blob([head,body,raw.slice(12+n)]),{settings:false})).ok,false);assert.equal((await repo.list()).length,0);
+ assert.equal((await a.restoreLongWavArchive(file,{settings:false})).ok,true);const [m]=await repo.listVocalJournals(),r=await a.vocalRecoverJournal(m.id);assert.equal(r.ok,true,r.error);assert.match(r.warning,/corrupt/);assert.equal(r.project.longWavAssets[0].frames,80);assert.ok(await repo.getVocalJournal(m.id));f.a.vocalDiscard();
+});
+test('damaged encoded archive retains undecodable source and expected digest after migration',async()=>{
+ const f=await encodedJournal();f.indexedDB.stores.get('vocalJournalChunks').get(f.m.id+':0').bytes=new ArrayBuffer(14);const out=await f.fresh.a.exportLongWavArchive();assert.equal(out.ok,true,out.error);const other=fixture();capture(other);const a=other.a,repo=a.indexedDbRepository();a.setRepository(repo);await a.refresh();assert.equal((await a.restoreLongWavArchive(out.blob,{settings:false})).ok,true);const [m]=await repo.listVocalJournals();let decoded=false;other.w.AudioContext.prototype.decodeAudioData=async()=>{decoded=true;throw Error('bad')};assert.equal((await a.vocalRecoverJournal(m.id)).ok,false);assert.equal(decoded,false);assert.deepEqual(Buffer.from((await repo.getVocalJournalChunk(m.id+':0')).bytes),Buffer.alloc(14));f.a.vocalDiscard();
+});
+
+test('encoded recovery rejects multichannel decoder output without dropping channels or consuming source',async()=>{
+ const f=await encodedJournal(),before=JSON.stringify(await f.repo.get(f.p.projectId));f.fresh.w.AudioContext.prototype.decodeAudioData=async()=>({sampleRate:8000,numberOfChannels:3,getChannelData:()=>new Float32Array(800)});
+ const r=await f.fresh.a.vocalRecoverJournal(f.m.id);assert.equal(r.ok,false);assert.match(r.error,/channels-invalid/);assert.ok(await f.repo.getVocalJournal(f.m.id));assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);f.a.vocalDiscard();
+});
+
+test('decoded compressed prefix retains original container atomically and cannot create duplicate recovered Takes after archive migration',async()=>{
+ const f=await encodedJournal(),a=f.fresh.a,first=await a.vocalRecoverJournal(f.m.id);assert.equal(first.ok,true,first.error);assert.match(first.warning,/completeness-unverified/);assert.equal(Buffer.from((await f.repo.getVocalJournalChunk(f.m.id+':0')).bytes).toString(),'encoded prefix');
+ const m=await f.repo.getVocalJournal(f.m.id);assert.equal(m.consumed,0);assert.equal(m.recoveredFrames,800);assert.equal((await a.vocalRecoverJournal(m.id)).ok,false);
+ const file=await a.createLongWavArchive(),other=fixture();capture(other);const b=other.a,repo=b.indexedDbRepository();b.setRepository(repo);await b.refresh();const r=await b.restoreLongWavArchive(file,{settings:false});assert.equal(r.ok,true,r.error);const [copy]=await repo.listVocalJournals();assert.equal(copy.recoveredFrames,800);assert.equal((await b.vocalRecoverJournal(copy.id)).ok,false);assert.equal(r.projects[0].longWavAssets.length,1);assert.equal((await b.vocalJournalAction(copy.id)).ok,true);f.a.vocalDiscard();
 });
