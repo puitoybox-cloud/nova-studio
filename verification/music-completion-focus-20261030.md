@@ -126,3 +126,7 @@ No.26/29は隣接実装のみで、正式要件の部分実装の認定も保留
 ## 録音完全復旧の追加照合（2026-10-30 JST、PR #540の後続）
 
 No.12/23の追加production実装：未完了PCMとMediaRecorder圧縮データのFull WAV Archive同梱・別IDへの原子復元、録音設定の永続化、gapless Take境界・番号の復元。MediaRecorderは取得済み圧縮コンテナをデコードできる場合のみ復旧し、失敗時は元データを保持する。元の全件表のNo.12「録音途中の強制終了復旧」はPCMについてPR #540のCI証拠があるが、物理電源断や全ブラウザ・全codecの保証は未了。自動metadata backup単独には録音journal本体を含まない。詳細と検証境界は `verification/music-recording-archive-recovery-20261030.md`。28/30・0/30・0/30の全機能指標は変更しない。
+
+## PR #541後続：未完了録音の自動バックアップと管理（2026-10-30 JST）
+
+自動バックアップ署名に未完了録音metadataを含め、録音だけの追加・更新による作成漏れを修正。既存Full WAV Archive経由でjournal音声本体を含める。未完了録音の確認付き原子削除と、破損・復号不能データの調査用退避を追加。退避は修復成功を意味しない。実装・試験・残件は `verification/music-journal-backup-controls-20261030.md`。No.12/23は引き続き部分実装。28/30・0/30・0/30の機能単位指標を維持。

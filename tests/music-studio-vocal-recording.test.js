@@ -371,3 +371,35 @@ test('MediaRecorder undecodable or corrupt containers stay retained and never mo
 test('MediaRecorder journal archive preserves encoded bytes and rolls back failed Take save for retry',async()=>{
  const f=await encodedJournal(),archive=await f.fresh.a.createLongWavArchive(),other=fixture();capture(other);const a=other.a,repo=a.indexedDbRepository();a.setRepository(repo);await a.refresh();const r=await a.restoreLongWavArchive(archive,{settings:false});assert.equal(r.ok,true,r.error);const [m]=await repo.listVocalJournals();assert.equal(Buffer.from((await repo.getVocalJournalChunk(m.id+':0')).bytes).toString(),'encoded prefix');other.indexedDB.fail();assert.equal((await a.vocalRecoverJournal(m.id)).ok,false);other.indexedDB.repair();assert.ok(await repo.getVocalJournal(m.id));assert.equal((await a.vocalRecoverJournal(m.id)).ok,true);f.a.vocalDiscard();
 });
+
+test('journal-only automatic backup creates complete archive, tracks later chunks, and restores in a fresh database',async()=>{
+ const f=await interruptedJournal({chunks:1});ageJournal(f);const a=f.b; a.state.settings=a.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:5}});await f.repo.putSettings(a.state.settings);
+ const first=await a.runAutoBackupCheck('2026-10-30T00:00:00Z');assert.equal(first.created,true,JSON.stringify(first));assert.ok(first.backup.archive);
+ const meta=f.indexedDB.stores.get('vocalJournals').get(f.m.id);const chunk=await f.repo.getVocalJournalChunk(f.m.id+':0');await f.repo.appendVocalJournal(meta.id,meta.next,chunk.bytes,chunk.hash);ageJournal(f);
+ const second=await a.runAutoBackupCheck('2026-10-30T02:00:00Z');assert.equal(second.created,true,JSON.stringify(second));assert.notEqual(second.backup.signature,first.backup.signature);
+ const fresh=fixture(),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);await fresh.a.refresh();assert.equal((await fresh.a.restoreLongWavArchive(second.backup.archive,{settings:false})).ok,true);const [m]=await repo.listVocalJournals();assert.equal(m.frames,160);assert.equal((await fresh.a.vocalRecoverJournal(m.id)).ok,true);assert.equal((await repo.list())[0].longWavAssets[0].frames,160);f.a.vocalDiscard();
+});
+test('journal deletion requires confirmation, rejects active or changed metadata, and atomically preserves Takes',async()=>{
+ const f=await interruptedJournal({existing:true}),a=f.b,before=JSON.stringify(await f.repo.list());f.w.confirm=()=>true;
+ assert.equal((await a.vocalJournalAction(f.m.id,true)).ok,false);ageJournal(f);
+ assert.equal((await a.vocalJournalAction(f.m.id,true)).cancelled,true);assert.ok(await f.repo.getVocalJournal(f.m.id));
+ // The recovery runtime has its own confirmation surface.
+ const fresh=fixture(f.indexedDB);fresh.w.confirm=()=>true;fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();
+ f.indexedDB.fail();assert.equal((await fresh.a.vocalJournalAction(f.m.id,true)).ok,false);f.indexedDB.repair();assert.ok(await f.repo.getVocalJournalChunk(f.m.id+':0'));
+ const stale=await f.repo.getVocalJournal(f.m.id);await f.repo.closeVocalJournal(f.m.id);await assert.rejects(f.repo.deleteVocalJournal(f.m.id,stale),/conflict/);
+ assert.equal((await fresh.a.vocalJournalAction(f.m.id,true)).ok,true);assert.equal(await f.repo.getVocalJournal(f.m.id),undefined);assert.equal(await f.repo.getVocalJournalChunk(f.m.id+':0'),undefined);assert.equal(JSON.stringify(await f.repo.list()),before);f.a.vocalDiscard();
+});
+test('rescue export preserves corrupted bytes and missing-chunk positions without modifying source or Takes',async()=>{
+ const f=await interruptedJournal(),a=f.b;ageJournal(f);const before=JSON.stringify(await f.repo.list());const chunks=f.indexedDB.stores.get('vocalJournalChunks');chunks.get(f.m.id+':0').bytes=new ArrayBuffer(160);chunks.delete(f.m.id+':1');
+ const r=await a.vocalJournalAction(f.m.id);assert.equal(r.ok,true,r.error);assert.equal(r.entries[0].verified,false);assert.equal(r.entries[1].missing,true);
+ const bytes=await r.blob.arrayBuffer(),n=new DataView(bytes).getUint32(0,true),header=JSON.parse(Buffer.from(bytes.slice(4,4+n)).toString());assert.equal(header.format,'nova-vocal-rescue-v1');assert.deepEqual(Buffer.from(bytes.slice(4+n,4+n+160)),Buffer.alloc(160));assert.ok(await f.repo.getVocalJournal(f.m.id));assert.equal(JSON.stringify(await f.repo.list()),before);f.a.vocalDiscard();
+});
+test('corrupt journal blocks replacement automatic backup and retains previous complete archive',async()=>{
+ const f=await interruptedJournal({chunks:1});ageJournal(f);const a=f.b;a.state.settings=a.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});await f.repo.putSettings(a.state.settings);const r=await a.runAutoBackupCheck('2026-10-30T00:00:00Z');assert.equal(r.created,true);
+ const m=f.indexedDB.stores.get('vocalJournals').get(f.m.id);m.updatedAt=1;f.indexedDB.stores.get('vocalJournalChunks').get(f.m.id+':0').bytes=new ArrayBuffer(160);
+ const failed=await a.runAutoBackupCheck('2026-10-30T02:00:00Z');assert.equal(failed.ok,false);const [kept]=await f.repo.listAutoBackups();assert.equal(kept.backupId,r.backup.backupId);assert.deepEqual(Buffer.from(await kept.archive.arrayBuffer()),Buffer.from(await r.backup.archive.arrayBuffer()));f.a.vocalDiscard();
+});
+test('undecodable encoded journal remains portable in automatic archive and rescue output',async()=>{
+ const f=await encodedJournal(),a=f.fresh.a;a.state.settings=a.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:2}});await f.repo.putSettings(a.state.settings);f.fresh.w.AudioContext.prototype.decodeAudioData=async()=>{throw Error('undecodable')};assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);
+ const r=await a.runAutoBackupCheck('2026-10-30T00:00:00Z');assert.equal(r.created,true,JSON.stringify(r));const rescue=await a.vocalJournalAction(f.m.id);assert.equal(rescue.ok,true);assert.equal(rescue.entries[0].verified,true);assert.ok(await f.repo.getVocalJournal(f.m.id));assert.equal((await f.repo.get(f.p.projectId)).longWavAssets?.length||0,0);f.a.vocalDiscard();
+});
