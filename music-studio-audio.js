@@ -1,6 +1,11 @@
 /* MS-RESTART-07: lightweight Web Audio melody monitor and playback synth. */
 (function(root){
   'use strict';
+  const renderMeasurements=[];
+  const measurementClock=()=>{const t=root.performance?.now?.();return Number.isFinite(t)?t:Date.now()};
+  async function measuredAudioRender(context){const start=measurementClock();let failed=true;try{const buffer=await context.startRendering();failed=false;return buffer}finally{const ms=measurementClock()-start;if(Number.isFinite(ms)&&ms>=0){renderMeasurements.push({ms,failed,frames:context.length??null,sampleRate:context.sampleRate??null});if(renderMeasurements.length>64)renderMeasurements.shift()}}}
+  function performanceSnapshot(){const rows=renderMeasurements;return{source:'OfflineAudioContext.startRendering',unit:'ms',scope:'直近64回以内・この起動中・非同期完了までの経過時間・CPU時間ではない',count:rows.length,failed:rows.filter(r=>r.failed).length,lastMs:rows.length?rows.at(-1).ms:null,maxMs:rows.length?Math.max(...rows.map(r=>r.ms)):null,meanMs:rows.length?rows.reduce((n,r)=>n+r.ms,0)/rows.length:null,last:rows.length?{...rows.at(-1)}:null}}
+
   const clamp=(value,min,max)=>Math.min(max,Math.max(min,Number(value)||0));
   const frequency=pitch=>440*Math.pow(2,(clamp(pitch,0,127)-69)/12);
   function resolveTrackAudio(track={}){const role=String(track.role||track.part||'').toLowerCase();if(role==='drums')return{mode:'drums',fallback:false,reason:null};if(role==='bass')return{mode:'bass',fallback:false,reason:null};if(role==='melody')return{mode:'melody',fallback:false,reason:null};return{mode:'melody',fallback:true,reason:'missing-core-role'}}
@@ -114,7 +119,7 @@
     try{
       synth.setSampleBank(entries);const schedule=Playback.schedulePlaybackTracks(synth,tracks,{ppq,bpm:tempo,tempoMap:midi.tempoMap,startTick:0,startTime:0,leadSeconds:0});
       if(!schedule.ok||schedule.noteCount!==notes.length||schedule.scheduledNotes.some(n=>!n.audible))throw Error('midi-render-missing-or-unmapped-sample');
-      guard();const buffer=await context.startRendering();guard();
+      guard();const buffer=await measuredAudioRender(context);guard();
       if(buffer.sampleRate!==48000||buffer.numberOfChannels!==2||buffer.length!==frames)throw Error('midi-render-output-invalid');
       return{buffer,frames,sampleRate:48000,channels:2,seconds,tail,noteCount:notes.length,trackIds:tracks.map(t=>t.id)};
     }finally{synth.dispose()}
@@ -149,7 +154,7 @@
             const tracks=active.filter(t=>t.notes.length).map(t=>({...t.track,notes:t.notes.map(n=>n.note)}));
             const schedule=Playback.schedulePlaybackTracks(synth,tracks,{ppq:plan.ppq,bpm:plan.tempo,tempoMap:midi.tempoMap,startTick:originTick,startTime:0,leadSeconds:0});
             if(!schedule.ok||schedule.noteCount!==selected.length||schedule.scheduledNotes.some(n=>!n.audible))throw Error('midi-render-missing-or-unmapped-sample');
-            guard();buffer=await context.startRendering();guard();offset=first-originFrame;
+            guard();buffer=await measuredAudioRender(context);guard();offset=first-originFrame;
             if(buffer.sampleRate!==48000||buffer.numberOfChannels!==2||buffer.length!==length)throw Error('midi-render-output-invalid');
           }
           for(let at=first;at<last;at+=16384){guard();const count=Math.min(16384,last-at),begin=offset+at-first;yield{sampleRate:48000,channels:[0,1].map(c=>buffer?Array.from(buffer.getChannelData(c).subarray(begin,begin+count)):Array(count).fill(0))}}
@@ -161,5 +166,5 @@
     options.onProgress?.({frames:0,totalFrames:plan.frames,ratio:0});
     const {tracks,notes,...metadata}=plan;return{...metadata,chunks:chunks()};
   }
-  root.MusicStudioAudio={createSynth,frequency,resolveTrackAudio,renderMidi,renderMidiStream};
+  root.MusicStudioAudio={performanceSnapshot,createSynth,frequency,resolveTrackAudio,renderMidi,renderMidiStream};
 })(typeof window!=='undefined'?window:globalThis);
