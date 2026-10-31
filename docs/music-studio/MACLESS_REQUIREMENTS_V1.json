@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-10-31 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 552,
-  "baselineHead": "8bc4ae9ac2a8d49e326b3760588137197fbfba63",
-  "baselineTree": "2d26ee28bab780ee0e6a8955942a47282a2ca0d6",
+  "baselinePR": 553,
+  "baselineHead": "74aef13a454ad3352ce5e82b2dc385d1dcca524f",
+  "baselineTree": "494cc53e11d7201bcb559d4a27ac45a48c8b127f",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -2367,17 +2367,39 @@
       "feature": 24,
       "category": "A",
       "requirement": "全体性能原因の診断",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "cause-specific diagnosis measures render and layout separately without touching storage or Undo",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "performance observations stay bounded and preserve thrown render errors and stale rejection",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "production playback timing is distinct from rendering and diagnosis does not create an audio context",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-audio.test.js",
+          "acceptance": "audio processing diagnostic measures actual offline rendering and failures with bounded detached snapshots",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
-        "baselinePR": 552,
+        "baselinePR": 553,
         "classification": "実装が必要",
-        "note": "全プロジェクト/DOM/イベントループ遅延の観測と候補診断を実装。描画・音声スケジューリング等の原因別計測範囲は不足。全体性能診断の全受入を完了認定しない。",
+        "note": "実際の描画構築/DOM更新/音符レイアウト/ノート予約とOfflineAudioContext処理の経過時間を独立計測。直近64回以内・未観測・重複範囲・閾値を表示。CPU/GPU/音声dropout/聴感と実機負荷はBで未確認。要件文言・分類・分母は変更しない。",
         "reviewedSource": [
           "music-studio-editor.js",
-          "music-studio.js"
+          "music-studio.js",
+          "music-studio-audio.js"
         ]
       }
     },
