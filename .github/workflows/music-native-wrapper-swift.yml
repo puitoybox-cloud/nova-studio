@@ -3,13 +3,34 @@ name: Music Native Wrapper Swift
 on:
   push:
     branches:
-      - agent/music-studio-core-midi-wrapper-foundation
-      - agent/music-studio-native-app-shell
-      - agent/music-studio-native-app-target-foundation
-      - agent/music-studio-xcode-app-foundation
-      - agent/music-studio-native-web-midi-shim
+      - main
+      - agent/music-studio-current-main-build-verification
+      - verification/music-studio-all-drafts-255
     paths:
+      - 'assets/music-acoustic-v1/**'
+      - 'app.js'
+      - 'index.html'
+      - 'music-studio.html'
+      - 'music-studio-ai-*.js'
+      - 'music-studio.js'
+      - 'scripts/music-listening-*.js'
       - 'tools/music-native-wrapper/**'
+      - 'tools/music-local-generation/**'
+      - 'tools/music-audio-pipeline/*.py'
+      - 'music-studio-audio-pipeline.js'
+      - '.github/workflows/music-native-wrapper-swift.yml'
+  pull_request:
+    paths:
+      - 'app.js'
+      - 'index.html'
+      - 'music-studio.html'
+      - 'music-studio-ai-*.js'
+      - 'music-studio.js'
+      - 'scripts/music-listening-*.js'
+      - 'tools/music-native-wrapper/**'
+      - 'tools/music-local-generation/**'
+      - 'tools/music-audio-pipeline/*.py'
+      - 'music-studio-audio-pipeline.js'
       - '.github/workflows/music-native-wrapper-swift.yml'
   workflow_dispatch:
 
@@ -19,14 +40,20 @@ permissions:
 jobs:
   swift-test:
     runs-on: macos-15-intel
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Swift version
         run: swift --version
 
       - name: Xcode version
         run: xcodebuild -version
+
+      - name: Stage current Swift Package web resources
+        run: python3 scripts/music-stage-native-web.py tools/music-native-wrapper/MusicStudioWeb
 
       - name: Build native wrapper package
         working-directory: tools/music-native-wrapper
@@ -40,26 +67,113 @@ jobs:
         working-directory: tools/music-native-wrapper
         run: swift build --product MusicStudioNativeApp
 
+      - name: Verify executable resource bundle exact bytes
+        working-directory: tools/music-native-wrapper
+        run: swift run MusicStudioNativeApp --verify-bundled-assets
+
       - name: Build macOS Xcode app target
         working-directory: tools/music-native-wrapper
         run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
 
       - name: Build iPad simulator Xcode app target
         working-directory: tools/music-native-wrapper
-        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build
+
+      - name: Record actual native package architecture and linkage
+        working-directory: tools/music-native-wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAC_APP="build/DerivedData/Build/Products/Debug/Music Studio.app"
+          IPAD_APP="build/iPadDerivedData/Build/Products/Debug-iphonesimulator/Music Studio.app"
+          python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$MAC_APP" --scope PACKAGE_OBSERVATION > macos-package-evidence.json
+          python3 ../music-audio-pipeline/bundle_evidence.py --package-root "$IPAD_APP" --scope PACKAGE_OBSERVATION > ipad-simulator-package-evidence.json
+          MAC_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$MAC_APP/Contents/Info.plist")
+          IPAD_EXEC=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$IPAD_APP/Info.plist")
+          {
+            printf 'macOS actual binary architectures:\n'
+            /usr/bin/lipo -archs "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            /usr/bin/file "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            /usr/bin/otool -L "$MAC_APP/Contents/MacOS/$MAC_EXEC"
+            printf 'iPad Simulator actual binary architectures (not physical iPad evidence):\n'
+            /usr/bin/lipo -archs "$IPAD_APP/$IPAD_EXEC"
+            /usr/bin/file "$IPAD_APP/$IPAD_EXEC"
+            /usr/bin/otool -L "$IPAD_APP/$IPAD_EXEC"
+          } > native-architecture-linkage-evidence.txt
+          cat native-architecture-linkage-evidence.txt
+
+      - name: Observe Wrapper build without approving production assets
+        working-directory: tools/music-native-wrapper
+        env:
+          WRAPPER_BUILD_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - <<'PYOBS'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('../music-audio-pipeline').resolve()))
+          from wrapper_build_inventory import observe
+          from unsigned_app import layout
+          report = observe('build/DerivedData/Build/Products/Debug/Music Studio.app',
+                           os.environ['WRAPPER_BUILD_REVISION'], 'x86_64')
+          assert report['status'] == 'INCOMPLETE' and report['complete'] is False
+          assert report['approvedAnchor'] is False and report['publicationEligible'] is False
+          assert report['observedGraph'] is not None and report['files'] and report['nativeImages']
+          assert all(node['evidence'] == 'OBSERVED_METADATA_ONLY' and
+                     node['licenseStatus'] == 'REVIEW_REQUIRED' for node in report['observedGraph']['nodes'])
+          assert all(slot['status'] == 'MISSING' for slot in report['missingApprovedAssets'])
+          assert all(image['packageRouting']['scope'] == 'PACKAGE_DISK_SYNTAX_ONLY' and
+                     image['packageRouting']['runtimeSelectionVerified'] is False for image in report['nativeImages'])
+          candidate = layout('build/DerivedData/Build/Products/Debug/Music Studio.app',
+                             report['observedGraph'], 'x86_64')
+          assert candidate['layoutComplete'] and candidate['status'] == 'PARTIAL'
+          assert candidate['nativeDiskRoutesComplete'] is False and candidate['publicationEligible'] is False
+          assert candidate['dynamicLinkers'] and candidate['externalPaths']
+          assert all(loader['path'] == '/usr/lib/dyld' and loader['status'] == 'UNVERIFIED'
+                     for loader in candidate['dynamicLinkers'])
+          native_graph = candidate['nativeDependencyGraph']
+          assert native_graph['externalSystemPolicyComplete'] is False
+          assert native_graph['publicationEligible'] is False and native_graph['approvedAnchor'] is False
+          assert all(native_graph[key] is False for key in ('parentLaunchAuthenticated',
+              'parentKernelOriginVerified','mappedBytesVerified','actualLoaded','runtimeSelectionVerified'))
+          assert native_graph['edgeCounts']['APPLE_SYSTEM_CANDIDATE_POLICY_REQUIRED'] > 0
+          print(json.dumps({'nativeGraphCounts':native_graph['edgeCounts'],
+              'nativeGraphDiagnostics':native_graph['diagnostics'],
+              'packageInternalNativeClosureComplete':native_graph['packageInternalNativeClosureComplete'],
+              'externalSystemPolicyComplete':native_graph['externalSystemPolicyComplete']}))
+          report['packageLayoutCandidate'] = candidate
+          print(json.dumps({'packageLayout': candidate}))
+          Path('wrapper-build-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
+          print(json.dumps({'status': report['status'], 'complete': report['complete'],
+              'fileCount': len(report['files']), 'nativeImageCount': len(report['nativeImages']),
+              'graphNodeCount': len(report['observedGraph']['nodes']),
+              'nativeRoutingStatus': [image['routingStatus'] for image in report['nativeImages']],
+              'missingApprovedAssets': report['missingApprovedAssets'], 'approvedAnchor': False,
+              'publicationEligible': False, 'buildRevision': report['buildRevision']}))
+          PYOBS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Native-package-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            tools/music-native-wrapper/macos-package-evidence.json
+            tools/music-native-wrapper/ipad-simulator-package-evidence.json
+            tools/music-native-wrapper/native-architecture-linkage-evidence.txt
+            tools/music-native-wrapper/wrapper-build-inventory.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Package macOS app for real-device verification
         working-directory: tools/music-native-wrapper
         run: |
-          printf '%s\n' "${GITHUB_SHA}" > PR248_EXACT_HEAD.txt
-          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-PR248.zip"
+          printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
+          ditto -c -k --sequesterRsrc --keepParent "build/DerivedData/Build/Products/Debug/Music Studio.app" "MusicStudioMac-Exact-Head.zip"
 
       - name: Upload macOS app verification artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MusicStudioMac-PR248-${{ github.sha }}
+          name: MusicStudioMac-Exact-Head-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            tools/music-native-wrapper/MusicStudioMac-PR248.zip
-            tools/music-native-wrapper/PR248_EXACT_HEAD.txt
+            tools/music-native-wrapper/MusicStudioMac-Exact-Head.zip
+            tools/music-native-wrapper/MUSIC_STUDIO_NATIVE_EXACT_HEAD.txt
           if-no-files-found: error
           retention-days: 7

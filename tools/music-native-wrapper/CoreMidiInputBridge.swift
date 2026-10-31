@@ -15,9 +15,11 @@ final class CoreMidiInputBridge {
     private let connectionLock = NSLock()
     private let sourceRefreshQueue = DispatchQueue(label: "NovaMusicStudio.CoreMidiSources")
     private let onMessage: MessageHandler
+    private let onSourceAvailability: (Bool) -> Void
 
-    init(onMessage: @escaping MessageHandler) {
+    init(onMessage: @escaping MessageHandler, onSourceAvailability: @escaping (Bool) -> Void = { _ in }) {
         self.onMessage = onMessage
+        self.onSourceAvailability = onSourceAvailability
     }
 
     deinit {
@@ -69,6 +71,7 @@ final class CoreMidiInputBridge {
         let clientToDispose = client
         client = 0
         connectionLock.unlock()
+        onSourceAvailability(false)
 
         // Disposing a client may synchronously emit a setup notification. Do
         // not hold the connection lock across that callback.
@@ -77,8 +80,10 @@ final class CoreMidiInputBridge {
 
     private func refreshSources() {
         connectionLock.lock()
-        defer { connectionLock.unlock() }
-        guard inputPort != 0 else { return }
+        guard inputPort != 0 else {
+            connectionLock.unlock()
+            return
+        }
 
         let availableSources = (0..<MIDIGetNumberOfSources())
             .map(MIDIGetSource)
@@ -96,17 +101,25 @@ final class CoreMidiInputBridge {
         for source in changes.connect where MIDIPortConnectSource(inputPort, source, nil) == noErr {
             connectedSources.append(source)
         }
+        let available = !connectedSources.isEmpty
+        connectionLock.unlock()
+
+        // Never invoke app callbacks while holding the Core MIDI connection
+        // lock. A synchronous consumer may call stop() or restart the bridge.
+        onSourceAvailability(available)
     }
 
     static func sourceChanges(
         available: [MIDIEndpointRef],
         connected: [MIDIEndpointRef]
     ) -> (connect: [MIDIEndpointRef], disconnect: [MIDIEndpointRef]) {
-        let availableSet = Set(available)
-        let connectedSet = Set(connected)
+        let availableSet = Set(available.filter { $0 != 0 })
+        let connectedSet = Set(connected.filter { $0 != 0 })
+        var seenConnect = Set<MIDIEndpointRef>()
+        var seenDisconnect = Set<MIDIEndpointRef>()
         return (
-            connect: available.filter { !connectedSet.contains($0) },
-            disconnect: connected.filter { !availableSet.contains($0) }
+            connect: available.filter { $0 != 0 && !connectedSet.contains($0) && seenConnect.insert($0).inserted },
+            disconnect: connected.filter { $0 != 0 && !availableSet.contains($0) && seenDisconnect.insert($0).inserted }
         )
     }
 
