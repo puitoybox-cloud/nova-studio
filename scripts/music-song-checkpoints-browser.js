@@ -114,5 +114,47 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   p=await r.get(id);if(p.lyrics.versions[0].text!=='original lyric'||p.mixNotes!=='original mix'||p.productionNotes!=='original note')throw Error('cross-redo-mismatch');
   return true;
  });
+
+ // MS06-A02/A03: targeted audio/lyrics adoption must reject stale comparisons,
+ // leave unrelated domains untouched and persist reversible history over restart.
+ report.targetedUndo=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository(),rows=[];
+  for(const kind of ['audio','music']){
+   const id='targeted-'+kind+'-undo';
+   let p=a.makeProject({projectId:id,projectName:'Targeted '+kind,productionNotes:'original note'});
+   p.lyrics={versions:[{id:'source-lyrics',text:'original lyric'}],activeVersionId:'source-lyrics'};
+   p.mixNotes='original mix';await r.put(p);await a.refresh();a.openProject(id);
+   let x=await a.versionSave(id,'Targeted before edit');if(!x.ok)throw Error(kind+' checkpoint '+x.error);
+   p=await r.get(id);if(kind==='audio')p.mixNotes='changed mix';else p.lyrics.versions[0].text='changed lyric';
+   p.revision++;await r.put(p);await a.refresh();a.openProject(id);
+   const checkpointId=p.songVersions.checkpoints[0].id;
+   x=a.versionPreview(id,checkpointId,[kind]);if(!x.ok)throw Error(kind+' preview '+x.error);
+   p=await r.get(id);p.productionNotes='concurrent unrelated note';p.revision++;await r.put(p);await a.refresh();
+   const before=JSON.stringify(await r.get(id));x=await a.versionApply(id);
+   if(x.ok||JSON.stringify(await r.get(id))!==before)throw Error(kind+' stale preview damaged stored data');
+   x=a.versionPreview(id,checkpointId,[kind]);if(!x.ok)throw Error(kind+' recompare '+x.error);
+   x=await a.versionApply(id);if(!x.ok)throw Error(kind+' targeted apply '+x.error);
+   p=await r.get(id);
+   if(p.lyrics.versions[0].text!=='original lyric'||p.mixNotes!=='original mix'||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' targeted selection leaked');
+   rows.push({kind,staleRejected:true,unrelatedNotePreserved:true});
+  }
+  return rows;
+ });
+ await browser.close();page=await open();
+ report.targetedUndoRestart=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository(),rows=[];
+  await a.refresh();
+  for(const kind of ['audio','music']){
+   const id='targeted-'+kind+'-undo';
+   let x=await a.versionUndoRedo(id,-1);if(!x.ok)throw Error(kind+' restart undo '+x.error);
+   let p=await r.get(id);
+   if(p.mixNotes!==(kind==='audio'?'changed mix':'original mix')||p.lyrics.versions[0].text!==(kind==='music'?'changed lyric':'original lyric')||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' restart undo mismatch');
+   x=await a.versionUndoRedo(id,1);if(!x.ok)throw Error(kind+' restart redo '+x.error);
+   p=await r.get(id);
+   if(p.mixNotes!=='original mix'||p.lyrics.versions[0].text!=='original lyric'||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' restart redo mismatch');
+   rows.push({kind,persistentUndoRedo:true});
+  }
+  return rows;
+ });
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
  }finally{await browser?.close();server.close();fs.rmSync(profile,{recursive:true,force:true});fs.writeFileSync('verification/music-song-checkpoints-browser.json',JSON.stringify(report,null,2)+'\n')}})().catch(e=>{console.error(e);process.exitCode=1});
