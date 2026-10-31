@@ -28,7 +28,7 @@ def main():
  a=[r for r in rows if r['category']=='A']; done=sum(r['status']=='verified' for r in a); counts=Counter(r['category'] for r in rows)
  output=['# Macなし開発・受入台帳 v1','',f"確認日：{ledger['date']}。基準：[PR #{ledger['baselinePR']}](https://github.com/puitoybox-cloud/nova-studio/pull/{ledger['baselinePR']})、HEAD `{ledger['baselineHead']}`。",'',ledger['scope'],'',f"A：総数 **{len(a)}**、証拠付き完了 **{done}**、残数 **{len(a)-done}**、受入確認率 **{100*done/len(a):.2f}%**。B：{counts['B']}。C：{counts['C']}。",'',
  'この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。', '',
- '優先順：①既存実装20件の全受入証明（規格参照fixture・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。MS24-A02の原因別実処理計測を今回認定。MS24-A03/MS28-A03の既存証拠も維持。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。', '',
+ f'優先順：①既存実装{sum(r["status"]=="open" and r.get("triage",{}).get("classification")=="実装済み・検証不足" for r in rows)}件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。', '',
  '更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。','',
  '| No. | A総数 | 完了 | 残数 | B | C |','|---|---:|---:|---:|---:|---:|']
  for no in range(1,31):

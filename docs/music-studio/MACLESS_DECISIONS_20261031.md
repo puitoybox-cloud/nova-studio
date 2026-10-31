@@ -32,3 +32,16 @@
 候補・固定版・ライセンス本文の存在と、C要件全体の決定済みを区別する。`tools/music-local-generation/model-lock.json`はSkyTNTモデルの固定revision/ONNX2本/configのサイズ・SHA-256とApache-2.0欄を持つ。`vendor/SkyTNT-LICENSE`と`vendor/NIT-SONG070-COPYING`等の本文も既存資料として存在する。これらを「モデル名も本文も全く不明」とは扱わない。一方、日本語理解、歌唱品質、評価課題/閾値、最終配布物全体と承認証拠は別途照合が必要であり、C18件と依存A63件のstatusは変更しない。
 
 `EXACT_BACKEND_CANDIDATES_20261006.md`は候補調査であり、採用済み配布manifestではない。旧ライセンス台帳の最終更新日2026-07-20だけを現在の全素材判定の根拠にはしない。今回の変更はモデルの採用・許諾取得・外部有料API実行を含まない。詳細は`verification/music-macless-cause-diagnostics-20261031.md`。
+
+## PR #554からの根拠照合（2026-10-31 JST）
+
+`verification/music-macless-decision-evidence-20261031.json` に、18判断と依存A63件の対応、既存資料11本のSHA-256を保存した。今回はリポジトリ内の記録を読み直したものであり、現時点の外部配布条件や許諾取得を確認した記録ではない。
+
+| 対象 | 確認できた根拠 | 決定までに必要な検証 |
+|---|---|---|
+| MIDI生成 | `model-lock.json`にモデル名・revision・ONNX2本・configのhash/size。3ファイル合計938,377,284 bytes。ライセンス欄はApache-2.0、本文はvendor内。 | 実際の同梱物とhash一致、全依存物の表示、Intel CPU上の実行・メモリ・品質評価。日本語理解の能力をこのモデル名から推測しない。 |
+| 歌唱 | `source-lock.json`にSinsy/HTS/声庫archiveとvoiceFile hash。vendorに各COPYING、声庫本文はCC BY 3.0との記載。 | archive展開物と配布物の対応・帰属表示、入力発音/アクセント、歌唱品質の課題・閾値。本文の存在を最終配布許諾の完了と扱わない。 |
+| 分離・音声→MIDI | `tools/music-audio-pipeline/requirements.txt`はDemucs/Basic Pitch等のバージョン範囲指定。10月6日候補資料に公式source/weight参照先。 | 範囲指定を正確なweight/runtime固定と混同しない。採用する配布物のhash・依存物・条件と権利確認済み評価データが必要。 |
+| Cloud/Logic/課金/検索 | 台帳に入出力・競合・暗号化・公式連携・価格・検索品質の判断項目がある。 | 各契約と評価方法の確定証拠は確認できません。有料APIは禁止を維持。 |
+
+次に行う技術作業は、既存lockを起点に候補ごとの「exact配布物→依存物→表示義務→評価fixture→実行結果」を一対一にしたmanifestを作ること。モデルの採用・品質閾値・許諾を今回推測で確定しない。C18件および依存A63件はすべてopen。

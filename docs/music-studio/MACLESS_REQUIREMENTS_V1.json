@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-10-31 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 553,
-  "baselineHead": "74aef13a454ad3352ce5e82b2dc385d1dcca524f",
-  "baselineTree": "494cc53e11d7201bcb559d4a27ac45a48c8b127f",
+  "baselinePR": 554,
+  "baselineHead": "459f13243d3c2754dc2f3b4b8b1020376ac55d5c",
+  "baselineTree": "57aadd4da7abfe6ab7e9e93a4697a5648a91d8d0",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -216,8 +216,14 @@
       "feature": 2,
       "category": "A",
       "requirement": "テンポ拍子変化録音の再保存往復",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-midi-variable-roundtrip.test.js",
+          "acceptance": "variable tempo and meter live MIDI recording survives save reopen JSON Backup and SMF roundtrip",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1295,8 +1301,34 @@
       "feature": 12,
       "category": "A",
       "requirement": "PunchとCycleの保存再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "scheduled punch-in omits preroll samples and captures exact punch-out without UI timer",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "restart after the first gapless Take commits recovers only unsaved frames",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "gapless crash recovery recreates exact Take boundaries and cycle metadata",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1921,8 +1953,92 @@
       "feature": 19,
       "category": "A",
       "requirement": "LUFS計測の規格参照fixture拡張",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent loudness references bind exact generated PCM and source provenance",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: mono-997",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: stereo-997",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: low-50",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: high-10000",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: intersample-12000",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: high-19000",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: absolute-gate",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: relative-gate",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: silence-tail",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: asymmetric-stereo",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: hard-onset-12000",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: clipped-997",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: silence",
+          "declaration": "for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -3027,8 +3143,14 @@
       "feature": 30,
       "category": "A",
       "requirement": "Session日次時系列の移行受入",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "session and daily timeline migration preserves links and immutable events across reopen JSON Backup and archive",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",

@@ -1,21 +1,21 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-10-31 JST。基準：[PR #553](https://github.com/puitoybox-cloud/nova-studio/pull/553)、HEAD `74aef13a454ad3352ce5e82b2dc385d1dcca524f`。
+確認日：2026-10-31 JST。基準：[PR #554](https://github.com/puitoybox-cloud/nova-studio/pull/554)、HEAD `459f13243d3c2754dc2f3b4b8b1020376ac55d5c`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率 **38.52%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率 **41.48%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装20件の全受入証明（規格参照fixture・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。MS24-A02の原因別実処理計測を今回認定。MS24-A03/MS28-A03の既存証拠も維持。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装16件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
 | No. | A総数 | 完了 | 残数 | B | C |
 |---|---:|---:|---:|---:|---:|
 | 1 | 5 | 5 | 0 | 1 | 0 |
-| 2 | 3 | 2 | 1 | 1 | 0 |
+| 2 | 3 | 3 | 0 | 1 | 0 |
 | 3 | 5 | 1 | 4 | 1 | 1 |
 | 4 | 5 | 1 | 4 | 1 | 1 |
 | 5 | 4 | 1 | 3 | 1 | 1 |
@@ -25,14 +25,14 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | 9 | 4 | 1 | 3 | 1 | 1 |
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
-| 12 | 4 | 1 | 3 | 1 | 0 |
+| 12 | 4 | 2 | 2 | 1 | 0 |
 | 13 | 4 | 3 | 1 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
 | 17 | 4 | 1 | 3 | 1 | 1 |
 | 18 | 5 | 4 | 1 | 1 | 0 |
-| 19 | 4 | 2 | 2 | 1 | 0 |
+| 19 | 4 | 3 | 1 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
 | 21 | 4 | 1 | 3 | 1 | 1 |
 | 22 | 4 | 1 | 3 | 1 | 0 |
@@ -43,7 +43,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | 27 | 5 | 1 | 4 | 1 | 1 |
 | 28 | 4 | 2 | 2 | 1 | 0 |
 | 29 | 4 | 1 | 3 | 1 | 1 |
-| 30 | 4 | 1 | 3 | 1 | 0 |
+| 30 | 4 | 2 | 2 | 1 | 0 |
 
 | ID | 分類 | 受入要件 | 状態 | 根拠/依存 |
 |---|---|---|---|---|
@@ -55,7 +55,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS01-B01 | B | Piano Rollと全Trackの物理操作 | open | 未確認 |
 | MS02-A01 | A | unsupported Web MIDI environment is reported without throwing | verified | [tests/music-studio-midi-input.test.js](../../tests/music-studio-midi-input.test.js) — `unsupported Web MIDI environment is reported without throwing` |
 | MS02-A02 | A | 切断と再接続の自動状態遷移 | verified | [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `disconnect cancels pending audio unlock and reconnect permits recording`; [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `quota failure after disconnect retains exact Track notes for retry and reopen`; [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `superseded MIDI access and saved old state callback cannot replace current input` |
-| MS02-A03 | A | テンポ拍子変化録音の再保存往復 | open | 未確認 |
+| MS02-A03 | A | テンポ拍子変化録音の再保存往復 | verified | [tests/music-studio-midi-variable-roundtrip.test.js](../../tests/music-studio-midi-variable-roundtrip.test.js) — `variable tempo and meter live MIDI recording survives save reopen JSON Backup and SMF roundtrip` |
 | MS02-B01 | B | Keystation権限・再接続・入力遅延 | open | 未確認 |
 | MS03-A01 | A | explicit key changes select key and scale family at their exact tick | verified | [tests/music-studio-structure-info.test.js](../../tests/music-studio-structure-info.test.js) — `explicit key changes select key and scale family at their exact tick` |
 | MS03-A02 | A | 音声BPM解析 | open | MS03-C01 |
@@ -120,7 +120,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS11-C01 | C | 歌唱モデルの配布ライセンスと品質基準 | open | 未確認 |
 | MS12-A01 | A | selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes` |
 | MS12-A02 | A | 長時間録音中断からの全保存経路の復旧検証 | open | 未確認 |
-| MS12-A03 | A | PunchとCycleの保存再開 | open | 未確認 |
+| MS12-A03 | A | PunchとCycleの保存再開 | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `scheduled punch-in omits preroll samples and captures exact punch-out without UI timer`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `restart after the first gapless Take commits recovers only unsaved frames`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `gapless crash recovery recreates exact Take boundaries and cycle metadata` |
 | MS12-A04 | A | 歌詞スクロール同期 | open | 未確認 |
 | MS12-B01 | B | マイク権限・monitor・latency・長時間録音 | open | 未確認 |
 | MS13-A01 | A | peak normalization previews measured PCM, adopts only on request and survives history/archive | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `peak normalization previews measured PCM, adopts only on request and survives history/archive` |
@@ -156,7 +156,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS18-A03 | A | 複数Mix版の保存比較と再開 | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `two named Mix versions survive reopen and independently rerender exact audio`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `named Long Mix version rerenders exact saved settings after other edits and fresh reopen` |
 | MS18-B01 | B | 実曲Mixの音質と全曲聴取 | open | 未確認 |
 | MS19-A01 | A | 997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1 | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1` |
-| MS19-A02 | A | LUFS計測の規格参照fixture拡張 | open | 未確認 |
+| MS19-A02 | A | LUFS計測の規格参照fixture拡張 | verified | [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent loudness references bind exact generated PCM and source provenance`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: mono-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: stereo-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: low-50`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: high-10000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: intersample-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: high-19000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: absolute-gate`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: relative-gate`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: silence-tail`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: asymmetric-stereo`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: hard-onset-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: clipped-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: silence` |
 | MS19-A03 | A | true peakとclipping検査 | open | 未確認 |
 | MS19-A04 | A | 複数Master版の保存再開 | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `two named Master versions survive reopen and independently rerender exact audio`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `named Long Master settings and original bytes survive complete Archive into fresh app then re-edit`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `long master compares distinct measured targets; explicit gain-only selection preserves EQ and saves chosen provenance` |
 | MS19-B01 | B | 実曲Masterの音質と最終音量 | open | 未確認 |
@@ -221,7 +221,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS30-A01 | A | finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup` |
 | MS30-A02 | A | 特殊保存入口の制作履歴網羅 | open | 未確認 |
 | MS30-A03 | A | 完成版の全変更入口での固定 | open | 未確認 |
-| MS30-A04 | A | Session日次時系列の移行受入 | open | 未確認 |
+| MS30-A04 | A | Session日次時系列の移行受入 | verified | [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `session and daily timeline migration preserves links and immutable events across reopen JSON Backup and archive` |
 | MS30-B01 | B | 配布版の完成曲固定と移行受入 | open | 未確認 |
 | MS18-A04 | A | 開始と再開の前に保存Stemのhash・長さ・identityを再照合 | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_changed_same_size_stem_refuses_start_and_resume_without_spawn` |
 | MS23-A05 | A | 転送中断時に既存Stemとmanifestを保持しpartialを除去 | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_failed_reupload_keeps_previous_valid_bytes_and_manifest` |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 11 | 0 |
-| 実装済み・検証不足 | 24 | 20 |
+| 実装済み・検証不足 | 24 | 16 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -248,7 +248,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS01-A04 | 実装が必要 | verified |
 | MS01-A05 | 実装が必要 | verified |
 | MS02-A02 | 実装済み・検証不足 | verified |
-| MS02-A03 | 実装済み・検証不足 | open |
+| MS02-A03 | 実装済み・検証不足 | verified |
 | MS03-A02 | 仕様判断待ち | open |
 | MS03-A03 | 仕様判断待ち | open |
 | MS03-A04 | 仕様判断待ち | open |
@@ -285,7 +285,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS11-A02 | 仕様判断待ち | open |
 | MS11-A03 | 仕様判断待ち | open |
 | MS12-A02 | 実装済み・検証不足 | open |
-| MS12-A03 | 実装済み・検証不足 | open |
+| MS12-A03 | 実装済み・検証不足 | verified |
 | MS12-A04 | 実装済み・検証不足 | open |
 | MS13-A02 | 実装が必要 | verified |
 | MS13-A03 | 実装済み・検証不足 | verified |
@@ -304,7 +304,7 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS17-A04 | 仕様判断待ち | open |
 | MS18-A02 | 実装済み・検証不足 | open |
 | MS18-A03 | 実装済み・検証不足 | verified |
-| MS19-A02 | 実装済み・検証不足 | open |
+| MS19-A02 | 実装済み・検証不足 | verified |
 | MS19-A03 | 実装済み・検証不足 | open |
 | MS19-A04 | 実装済み・検証不足 | verified |
 | MS20-A02 | 仕様判断待ち | open |
@@ -340,4 +340,4 @@ A：総数 **135**、証拠付き完了 **52**、残数 **83**、受入確認率
 | MS29-A04 | 仕様判断待ち | open |
 | MS30-A02 | 実装済み・検証不足 | open |
 | MS30-A03 | 実装済み・検証不足 | open |
-| MS30-A04 | 実装済み・検証不足 | open |
+| MS30-A04 | 実装済み・検証不足 | verified |

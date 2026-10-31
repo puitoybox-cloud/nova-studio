@@ -4,7 +4,7 @@
   "passed": 22,
   "failed": 0,
   "durationMs": null,
-  "logSha256": "5c05bb296bd07d3c0c352651d08d005c6798bf4665b25eea01b902356f36d34a",
+  "logSha256": "78c0b18341fc26986d9a45fb27841ccd5d74c27c4c2a2bab3522819ae970d0ca",
   "sourceHashes": {
     "tools/nova-au/tests/test_auto_finish_server.py": "f334bd7e0b85152f8e62d122f0f33d00ee980859effe6a4e82b21470020c7f76"
   },
