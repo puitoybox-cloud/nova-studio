@@ -193,7 +193,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "60ed42c33f56b0d2bf6ef30a0fb8ba49127fe8f37b58d6835633fc21cc0cd2e2",
+    "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14"
@@ -3021,5 +3021,11 @@
     "navigation permits HTTPS and explicit loopback HTTP only",
     "file size, depth, collections, strings, and preview totals are bounded",
     "validation failure occurs before import mutation path"
-  ]
+  ],
+  "supplementaryCiValidation": {
+    "date": "2026-10-31 JST",
+    "head": "d230cd82c6a23092109838e24c32ed148f4eeab4",
+    "workflowRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41196444449",
+    "note": "Earlier PR #556 CI reran all 2822 Node tests and validated source hash at preceding commit; the new internal-route fix changes runtime source. Pending final HEAD CI must validate the new digest. Historical local test log remains tied to PR #555."
+  }
 }
