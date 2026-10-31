@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-31 JST",
+  "baselineHead": "74aef13a454ad3352ce5e82b2dc385d1dcca524f",
+  "stableFields": [
+    "id",
+    "feature",
+    "category",
+    "requirement",
+    "dependsOn"
+  ],
+  "unchanged": true,
+  "definitionsSha256": "653d1a31dfef2596b4b43a574ed0cc1ff8600df70e70a7cb2871f2d2fafc555a",
+  "statusChanges": [
+    {
+      "id": "MS24-A02",
+      "from": "open",
+      "to": "verified"
+    }
+  ],
+  "categories": {
+    "A": 135,
+    "B": 30,
+    "C": 18
+  },
+  "openDecisionDependent": 63,
+  "physicalVerified": 0,
+  "rawTestLogHashes": {
+    "focused": "34f333e39847a58d494e5f16b3e7ed1914bde15949beca6403b088baa3cfbbfe",
+    "cache": "a944a97718692bd4e0a20cdce7c1d30a90f33f1400df39c6fecb2a64f70103ca",
+    "performanceBaseline": "8e3b09ab8e2f8918ce9d094947f560162f6118b4c9d84200e9af8942652275a6",
+    "aiBaseline": "d2cb29456eda54da3e5c77ac96a3c1b890f4b08f0ff495524d3270e07eb2262a",
+    "helper": "ab8cdc40f600191a94d978a4191d0c98d64d426c5ee01481abc3c3600779da94"
+  }
+}

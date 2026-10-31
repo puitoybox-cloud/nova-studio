@@ -1,0 +1,289 @@
+/* One spacing scale for Music Studio forms, cards and production panels. */
+.music-studio-shell {
+  --music-space-label: 4px;
+  --music-space-control-y: 6px;
+  --music-space-control-x: 10px;
+  --music-space-panel: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", sans-serif;
+}
+.music-studio-shell :is(.music-project-panel,.music-placeholder-panel,.music-recent,.music-setting-section,.music-feature-card) {
+  padding: var(--music-space-panel);
+  border-radius: 12px;
+  min-width: 0;
+}
+.music-studio-shell :is(.music-feature-card,.music-status-summary>div) { min-height: 0; }
+.music-studio-shell :is(h1,h2,h3,h4,p) { margin-block: 6px; overflow-wrap: anywhere; }
+.music-studio-shell :is(.music-project-panel,.music-placeholder-panel) h1 { font-size: clamp(1.5rem,3vw,2rem); line-height: 1.25; }
+.music-studio-shell:not(.music-midi-editor-page) h1 { font-size: clamp(1.5rem,3vw,2rem); line-height: 1.25; }
+.music-studio-shell input[type=file] { background: #081421; color: #ecf4ff; border: 1px solid #526985; border-radius: 8px; min-width: 0; max-width: 100%; padding: 6px; }
+.music-studio-shell input[type=file]::file-selector-button { background: #142235; color: #ecf4ff; border: 1px solid #526985; border-radius: 6px; padding: 6px 10px; margin-right: 6px; font: inherit; }
+.music-studio-shell .music-section-heading { margin-bottom: 10px; gap: 10px; }
+.music-studio-shell .music-section-heading h2 { font-size: clamp(1.3rem,2.5vw,1.7rem); line-height: 1.3; }
+.music-studio-shell :is(.music-feature-grid,.music-form-grid,.music-status-summary) { gap: 10px; margin-block: 10px; }
+.music-studio-shell :is(.music-form-actions,.music-project-tools,.music-quick-nav,.music-placeholder-actions) { gap: 6px; margin-block: 10px; }
+.music-studio-shell :is(.music-primary,.music-secondary) { padding: var(--music-space-control-y) var(--music-space-control-x); min-height: 44px; line-height: 1.35; border-radius: 8px; white-space: normal; max-width: 100%; }
+.music-studio-shell :is(.music-form-grid label,.music-search,.music-vocal-panel label) { gap: var(--music-space-label); line-height: 1.4; }
+.music-studio-shell :is(.music-form-grid,.music-vocal-panel,.music-search) :is(input,select,textarea):not([type=checkbox]):not([type=range]) {
+  padding: var(--music-space-control-y) var(--music-space-control-x);
+  min-height: 44px;
+  border-radius: 8px;
+  font: inherit;
+  min-width: 0;
+  max-width: 100%;
+}
+.music-studio-shell button:focus-visible,.music-studio-shell [tabindex="0"]:focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
+.music-studio-shell button:disabled { cursor: default; transform: none; }
+.music-studio-shell .music-vocal-panel form { display: flex; flex-wrap: wrap; align-items: end; gap: 6px 10px; margin-block: 10px; }
+.music-studio-shell .music-vocal-panel form>label { display: flex; flex-direction: column; flex: 1 1 180px; min-width: 0; }
+.music-studio-shell .music-vocal-panel form>p { flex-basis: 100%; }
+.music-studio-shell .music-vocal-panel article { padding: 12px 0; border-top: 1px solid var(--music-line); }
+.music-studio-shell .music-vocal-lyric-follow { border: 1px solid var(--music-line); background: #0d1725; padding: 10px; border-radius: 8px; }
+.music-studio-shell [data-vocal-lyrics] { position: relative; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; scroll-behavior: auto; }
+.music-studio-shell [data-vocal-lyrics]>span { padding: 6px 8px; border: 1px solid #526985; border-radius: 6px; color: #ecf4ff; }
+.music-studio-shell [data-vocal-lyrics] small { color: #bac9dc; }
+.music-studio-shell [data-vocal-lyrics] .is-current { color: #082032; background: #dff8ff; border-color: #a5f3fc; font-weight: 800; }
+.music-studio-shell [data-vocal-lyrics] .is-current small { color: #082032; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card { padding: 12px; min-height: 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card h2 { margin: 6px 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"] .music-feature-card p { margin: 6px 0; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-section-heading { padding-left: 0; margin-bottom: 10px; }
+.is-studio-route .music-studio-shell>section[aria-labelledby="musicFeaturesTitle"]>.music-feature-grid { gap: 10px; }
+@media (max-width: 600px) {
+  .music-studio-shell :is(.music-primary,.music-secondary) { min-height: 44px; }
+  .music-studio-shell .music-vocal-panel form>label { flex-basis: 100%; }
+  .music-studio-shell :is(input,select,textarea) { font-size: 16px; }
+}
+/* Dense desktop spacing also supports iPad pointer/touch and large text. */
+.music-studio-shell :is(button,input:not([type=checkbox]):not([type=range]),select) { min-height: 44px; }
+.music-studio-shell :is(button,input,select,textarea) { font: inherit; }
+.music-studio-shell :is(.music-production-tools,.music-final-export) label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.music-studio-shell .music-final-routes { display: grid; gap: 6px; }
+.music-studio-shell .music-final-routes fieldset { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 12px; border: 1px solid #526985; min-width: 0; background: #0d1725; color: #ecf4ff; }
+.music-studio-shell .music-final-routes legend { color: #ecf4ff; }
+.music-studio-shell .music-final-export>details { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; }
+.music-studio-shell :is(.music-setting-section,.music-project-panel,.music-editor-popover) :is(input,select,textarea):not([type=checkbox]):not([type=range]) { background: #081421; color: #ecf4ff; border: 1px solid #526985; }
+.music-studio-shell .music-final-routes label { flex: 1 1 140px; }
+.music-studio-shell .music-final-routes :is(input,select) { width: 100%; min-width: 0; padding: 6px 10px; background: #081421; color: #ecf4ff; border: 1px solid #526985; border-radius: 8px; }
+.music-studio-shell .music-final-export input[type=checkbox] { width: 20px; height: 20px; margin: 0; }
+.music-studio-shell .music-final-export label:has(input[type=checkbox]) { flex-direction: row; align-items: center; min-height: 44px; }
+.music-studio-shell summary { padding: 6px 0; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+.music-studio-shell :is(.music-final-export,.music-mix-help) summary { color: #ecf4ff; }
+.music-studio-shell .music-mix-help { background: #0d1725; color: #ecf4ff; padding: 12px; border: 1px solid #526985; border-radius: 8px; margin-block: 6px; }
+.music-studio-shell summary:focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
+@media (max-width: 600px) { .music-studio-shell .music-final-routes label { flex-basis: 100%; } }
+/* Shared controls keep compact text spacing and a separate touch-sized hit area. */
+.music-studio-shell .music-workspace { padding: 12px; margin-block: 6px; border: 1px solid #526985; border-radius: 8px; background: #0d1725; color: #ecf4ff; }
+.music-studio-shell .music-workspace summary { padding: 6px 0; line-height: 1.35; color: #ecf4ff !important; }
+.music-studio-shell.music-midi-editor-page .music-workspace { margin-left: 42px; }
+.music-studio-shell .music-work-controls { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.music-studio-shell .music-work-controls label { display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px; min-width: 0; }
+.music-studio-shell .music-work-controls select { padding: 6px 10px; min-width: 0; width: 100%; border: 1px solid #526985; border-radius: 8px; background: #081421; color: #ecf4ff; }
+.music-studio-shell .music-work-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.music-studio-shell .music-work-action { display: flex; gap: 4px; min-width: 0; }
+.music-studio-shell .music-work-star { min-width: 44px; flex-shrink: 0; }
+.music-studio-shell .music-workspace :is(button,select) { min-height: 44px !important; height: auto !important; max-height: none !important; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog,.music-feature-card,.music-recent,.music-project-list) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; box-sizing: border-box; }
+.music-studio-shell :is(.music-project-panel,.music-setting-section,.music-ai-panel,dialog) label { gap: 4px; line-height: 1.35; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) { padding: 12px; box-sizing: border-box; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) label { gap: 4px; line-height: 1.35; }
+.music-studio-shell.music-midi-editor-page :is(.music-editor-popover,.music-correction-popover) :is(button,select,input:not([type=checkbox]):not([type=radio]):not([type=range])) { min-height: 44px !important; height: auto !important; max-height: none !important; padding: 6px 10px; line-height: 1.35; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) :is(select,input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea) { padding: 6px 10px; line-height: 1.35; min-width: 0; max-width: 100%; background: #081421; color: #ecf4ff; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) label:has(input:is([type=checkbox],[type=radio])) { min-height: 44px; align-items: center; }
+.music-studio-shell :is(.music-ai-panel,.music-editor-popover,.music-correction-popover,dialog) input:is([type=checkbox],[type=radio]) { min-height: 20px; height: 20px; min-width: 20px; width: 20px; }
+.music-studio-shell :is(.music-settings-nav,.music-quick-nav) a { min-height: 44px; display: inline-flex; align-items: center; padding: 6px 10px; line-height: 1.35; box-sizing: border-box; }
+.music-studio-shell :is(button,input,select,textarea,a):focus-visible { outline: 3px solid var(--music-amber); outline-offset: 2px; }
+@media (max-width: 600px) { .music-studio-shell .music-work-action { width: 100%; } .music-studio-shell .music-work-action>button:first-child { flex: 1; } }
+
+.music-final-history-row { padding: 12px; margin-block: 4px; border: 1px solid #506075; border-radius: 8px; }
+.music-final-history-row p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.music-final-export [data-final-file] { max-width: 100%; }
+/* Focused production overrides are loaded after the shared compact scale. */
+.music-studio-shell.music-vocal-focused>.music-vocal-focus-heading{position:static!important;inset:auto!important;background:#112031!important;color:#eef6ff;padding:0 12px;border:1px solid #527085;border-radius:8px;min-height:44px}
+.music-studio-shell.music-vocal-focused>.music-vocal-focus-heading h1{color:#eef6ff!important;font-size:1.25rem!important;line-height:1.35;margin:4px 0}
+.music-studio-shell.music-vocal-focused>.music-workspace:not([open]){padding:0 12px;margin:4px 0}
+.music-studio-shell.music-vocal-focused button:disabled{background:#243449;color:#aebdd0;border-color:#53657c;opacity:1}
+.music-studio-shell .music-vocal-name-settings,.music-studio-shell .music-vocal-lyrics-fold{flex:1 1 100%;width:100%;border:1px solid #527085;border-radius:8px;padding:0 12px;margin:4px 0;background:#112031;color:#eef6ff}
+.music-studio-shell :is(.music-vocal-name-settings,.music-vocal-lyrics-fold)>summary{display:flex;align-items:center;min-height:44px;color:#eef6ff;background:#112031}
+.music-studio-shell.music-vocal-focused .music-vocal-comp-fold{background:#112031;color:#eef6ff}
+body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;background-image:none!important}
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-vocal-focused .music-vocal-panel article form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px 12px;margin:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-panel article{padding:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-workspace form{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:4px;margin:4px 0}
+ .music-studio-shell.music-vocal-focused .music-vocal-workspace form button{font-size:.8rem}
+ .music-studio-shell.music-vocal-focused .music-vocal-lyrics-fold{grid-column:1;grid-row:7}
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-name-settings,.music-vocal-lyrics-fold)[open]{max-height:50dvh;overflow:auto;overscroll-behavior:contain}
+ .music-studio-shell.music-vocal-focused .music-vocal-panel>.music-vocal-capture>form{display:block;margin:4px 0}
+}
+
+/* The home stylesheet's generic sticky nav must not overlay production tabs. */
+.music-studio-shell>.music-production-navigation{position:static!important;inset:auto!important;transform:none!important;z-index:auto!important}
+
+/* Focused PCM view neutralizes inherited form margins without clipping the page. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-mix-focused{min-height:0;padding:8px 12px;margin:0 auto}
+ .music-studio-shell.music-mix-focused>.music-project-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;padding:12px;margin:0;align-items:start}
+ .music-studio-shell.music-mix-focused>.music-project-panel>form{grid-column:auto;margin:0;min-width:0}
+ .music-studio-shell.music-mix-focused .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0 0 4px}
+ .music-studio-shell.music-mix-focused label{margin:0;gap:4px;line-height:1.25;font-size:.85rem}
+ .music-studio-shell.music-mix-focused :is(input,select,button){margin:0;min-height:44px;padding:6px 10px}
+ .music-studio-shell.music-mix-focused .music-form-actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0}
+ .music-studio-shell.music-mix-focused :is(h1,h2){font-size:1.15rem;line-height:1.25;margin:0}
+ .music-studio-shell.music-mix-focused summary{margin:0;padding:6px 10px;min-height:44px;box-sizing:border-box}
+ .music-studio-shell.music-mix-focused>.music-project-panel>p{margin:0;font-size:.78rem;line-height:1.3}
+}
+
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-mix-focused :is(.music-mix-help,.music-mix-advanced,.music-mix-history):not([open]){padding:0;border:0;margin:0}
+}
+
+.music-studio-shell.music-mix-focused>.music-project-panel{background:#112031;color:#eef6ff}
+.music-studio-shell.music-mix-focused label{color:#eef6ff}
+.music-master-focused{min-height:0;padding:8px 12px;color:#eef6ff}
+.music-master-focused>.music-vocal-focus-heading{position:static;background:#112031;color:#eef6ff;padding:6px 12px;border:1px solid #527085;border-radius:8px;gap:4px;display:flex;align-items:center;justify-content:space-between}
+.music-master-focused>.music-vocal-focus-heading h1{margin:0;font-size:1.15rem;color:#eef6ff}
+.music-master-focused>.music-master-tools{padding:12px;background:#112031;color:#eef6ff}
+.music-master-focused label{margin:0;color:#eef6ff;gap:4px}
+.music-master-focused :is(input,select,button,summary){min-height:44px;box-sizing:border-box;padding:6px 10px;margin:0}
+.music-master-focused :is(h2,h3,p){margin:4px 0}
+.music-master-focused :is(.music-master-history,.music-master-recipes):not([open]){padding:0;border:0;margin:4px 0}
+.music-master-focused details[open]{max-height:40dvh;overflow:auto}
+.music-master-focused summary{background:#112031;color:#eef6ff}
+.music-master-choices{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+.music-master-focused .music-master-focus-open{display:none}
+@media(min-width:821px) and (orientation:landscape){
+ .music-master-focused .music-form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:4px 0}
+ .music-master-compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:4px;align-items:end}
+ .music-master-compare label{display:grid;gap:4px}
+ .music-master-focused .music-production-tools>p{font-size:.78rem;line-height:1.3}
+}
+.music-studio-shell.music-mix-focused .music-mix-history>summary{background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+
+.music-master-focused .music-master-tools button{background:#142235;color:#eef6ff;border:1px solid #527085;border-radius:8px;font-size:.9rem;line-height:1.25;margin-right:4px;margin-bottom:4px}
+.music-master-focused .music-master-tools button[onclick*="productionSave"]{background:#dff9fc;color:#12395d;border-color:#5bc3d7}
+.music-master-focused .music-master-tools :is(input,select){background:#081421;color:#ecf4ff;border:1px solid #526985;border-radius:8px}
+.music-master-focused>.music-vocal-focus-heading>button[onclick*="pcmOpen"]{background:#dff9fc;color:#12395d;border:1px solid #5bc3d7;border-radius:8px}
+
+/* Long-WAV Mastering reuses its real chunked processing and explicit adoption. */
+.music-long-master-focused .music-long-master-panel{padding:12px;margin:4px 0;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+.music-long-master-focused .music-long-master-panel>h3{display:none}
+.music-long-master-focused .music-long-master-actions{display:flex;flex-wrap:wrap;gap:4px}
+.music-long-master-focused .music-master-tools .music-long-adopt{background:#dff9fc;color:#12395d;border-color:#5bc3d7}
+.music-long-master-focused .music-long-versions form{display:flex;flex-wrap:wrap;gap:4px;align-items:end}
+.music-long-master-focused .music-long-versions form label{flex:1;min-width:120px}
+.music-long-master-focused .music-long-master-panel form{margin:0}
+.music-long-master-focused .music-long-master-panel form button{margin:4px 4px 0 0}
+.music-long-master-focused .music-long-master-panel .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.music-studio-shell.music-long-master-focused .music-master-tools :is(.music-long-master-help,.music-long-master-history,.music-long-versions){align-self:start;min-height:0;padding:0!important;margin:0;background:#112031!important;color:#eef6ff;border:1px solid #527085;border-radius:8px;box-shadow:none}
+.music-studio-shell.music-long-master-focused .music-master-tools :is(.music-long-master-help,.music-long-master-history,.music-long-versions)>summary{min-height:44px;padding:6px 10px;margin:0;border-radius:8px}
+.music-studio-shell.music-long-master-focused .music-master-tools details[open]>:not(summary){margin:4px 10px}
+body.music-studio-page:has(.music-long-master-focused){background:#08111d!important;background-image:none!important}
+@media(min-width:821px) and (orientation:landscape){
+ .music-long-master-focused>.music-master-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-long-master-focused .music-master-tools>label{grid-column:1/3}
+ .music-long-master-focused .music-master-tools>[data-long-mix-status]{grid-column:3;font-size:.8rem;align-self:center}
+ .music-long-master-focused .music-long-master-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px}
+ .music-long-master-focused .music-long-master-panel>.music-long-master-help{grid-column:1;grid-row:1}
+ .music-long-master-focused .music-long-master-panel>form{grid-column:2/4;grid-row:1}
+ .music-long-master-focused .music-long-master-panel>p{font-size:.8rem;line-height:1.35}
+ .music-long-master-focused .music-long-master-panel>p:last-child{grid-column:1/-1}
+ .music-long-master-focused .music-long-master-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+ .music-long-master-focused .music-long-master-actions button{margin:0;min-height:44px}
+ .music-long-master-focused .music-long-master-history{grid-column:1}
+ .music-long-master-focused .music-long-versions{grid-column:2/4}
+ .music-long-master-focused details[open]{max-height:35dvh;overflow:auto;overscroll-behavior:contain}
+}
+
+/* Advanced vocal work lives in a bounded disclosure panel, while the ordinary editor stays in place. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings,.music-vocal-lyrics-fold)[open]{position:fixed;inset:12px;z-index:1100;box-sizing:border-box;width:auto;max-width:none;height:auto;max-height:calc(100dvh - 24px);margin:0;padding:12px;overflow:auto;overscroll-behavior:contain;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:12px;box-shadow:0 8px 32px #000a}
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings,.music-vocal-lyrics-fold)[open]>summary{position:sticky;top:-12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:6px 10px;box-sizing:border-box;background:#112031;color:#eef6ff;border-bottom:1px solid #527085;cursor:pointer}
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings,.music-vocal-lyrics-fold)[open]>summary::after{content:'Close（閉じる）';flex:none;font-weight:600}
+ .music-studio-shell.music-vocal-focused :is(.music-vocal-advanced,.music-vocal-comp-fold,.music-vocal-record-settings,.music-vocal-lyrics-fold)[open] :is(button,select,input:not([type=checkbox])){min-height:44px;padding:6px 10px}
+ .music-studio-shell.music-vocal-focused .music-vocal-input-profiles>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+}
+
+.music-export-focused{padding:8px 12px;min-height:0;color:#eef6ff}
+.music-export-focused>.music-vocal-focus-heading{position:static;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#112031;color:#eef6ff;padding:6px 12px;border:1px solid #527085;border-radius:8px}
+.music-export-focused>.music-vocal-focus-heading h1{font-size:1.15rem;margin:0;color:#eef6ff}
+.music-export-focused .music-final-export{margin:4px 0;background:#112031;color:#eef6ff}
+.music-export-focused summary{min-height:44px;box-sizing:border-box;padding:6px 10px;display:flex;align-items:center;cursor:pointer}
+.music-export-focused .music-export-files{flex-basis:100%}
+.music-export-focused .music-export-files[open]{display:flex;flex-wrap:wrap;gap:4px}
+.music-export-focused .music-export-files>summary{flex-basis:100%}
+@media(min-width:821px) and (orientation:landscape){
+ .music-export-focused .music-form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;margin:4px 0}
+ .music-export-focused .music-form-actions{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+ .music-export-focused>.music-auto-finish-audition{padding-block:10px}
+ .music-export-focused .music-export-sources[open]{position:fixed;inset:12px;z-index:1100;box-sizing:border-box;padding:12px;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:12px;box-shadow:0 8px 32px #000a}
+ .music-export-focused .music-export-sources[open]>summary{position:sticky;top:-12px;z-index:2;justify-content:space-between;background:#112031;color:#eef6ff;border-bottom:1px solid #527085}
+ .music-export-focused .music-export-sources[open]>summary::after{content:'Close（閉じる）';font-weight:600}
+ .music-export-focused .music-final-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell>.music-production-navigation{flex-wrap:nowrap}
+ .music-studio-shell>.music-production-navigation button{flex:1 1 0;min-width:0;font-size:.82rem;white-space:nowrap;min-height:44px}
+ .music-studio-shell.music-vocal-focused:has([data-vocal-take]) .music-vocal-capture[open]{position:fixed;inset:12px;z-index:1099;box-sizing:border-box;width:auto;max-width:none;max-height:calc(100dvh - 24px);overflow:auto;padding:12px;margin:0;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:12px;box-shadow:0 8px 32px #000a}
+}
+
+/* Keep export controls and output audition side by side; advanced lists remain available in panels. */
+@media(min-width:821px) and (orientation:landscape){
+ .music-studio-shell.music-export-focused>.music-workspace:not([open]){padding:0 12px;margin:4px 0}
+ .music-studio-shell.music-export-focused>.music-final-export{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;padding:12px;align-items:start}
+ .music-studio-shell.music-export-focused>.music-final-export>h2{grid-column:1/-1;font-size:1.15rem;margin:0;min-height:44px;display:flex;align-items:center}
+ .music-studio-shell.music-export-focused>.music-final-export>.music-export-help{grid-column:1;grid-row:2}
+ .music-studio-shell.music-export-focused>.music-final-export>form{grid-column:1;grid-row:3/span 4;margin:0;min-width:0}
+ .music-studio-shell.music-export-focused>.music-final-export>p:not([role=status]){grid-column:2;grid-row:2;margin:0;font-size:.85rem}
+ .music-studio-shell.music-export-focused>.music-final-export>.music-form-actions{grid-column:2;grid-row:3;margin:0;gap:4px;min-width:0}
+ .music-studio-shell.music-export-focused>.music-final-export>.music-export-stop{grid-column:2;grid-row:4;display:flex;flex-wrap:wrap;gap:4px}
+ .music-studio-shell.music-export-focused>.music-final-export>p[role=status]{grid-column:2;grid-row:5;margin:0;font-size:.85rem}
+ .music-studio-shell.music-export-focused>.music-final-export>.music-export-history{grid-column:1;grid-row:7}
+ .music-studio-shell.music-export-focused>.music-final-export>.music-export-delivery{grid-column:2;grid-row:7}
+ .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery):not([open]){padding:0 12px;margin:0;min-height:44px}
+ .music-studio-shell.music-export-focused .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;margin:4px 0}
+ .music-studio-shell.music-export-focused .music-form-grid label{font-size:.85rem}
+ .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery)[open]{position:fixed;inset:12px;z-index:1100;box-sizing:border-box;width:auto;max-width:none;height:auto;max-height:calc(100dvh - 24px);padding:12px;margin:0;overflow:auto;overscroll-behavior:contain;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:12px;box-shadow:0 8px 32px #000a}
+ .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery)[open]>summary{position:sticky;top:-12px;z-index:2;display:flex;justify-content:space-between;gap:12px;background:#112031;color:#eef6ff;border-bottom:1px solid #527085}
+ .music-studio-shell.music-export-focused :is(.music-export-help,.music-export-sources,.music-export-files,.music-export-history,.music-export-delivery)[open]>summary::after{content:'Close（閉じる）';font-weight:600}
+}
+
+body.music-studio-page:has(.music-export-focused) #music-studio-app{display:block;min-height:0;margin:0;padding:0}
+main.music-studio-shell.music-export-focused{position:static;min-height:0;margin:0 auto;padding:8px 12px}
+
+/* A dedicated in-screen workspace for measure comparison on landscape tablets. */
+@media (min-width: 1000px) and (max-height: 900px) and (orientation: landscape) {
+ .music-studio-shell.music-vocal-focused [data-vocal-replacement][open] {
+  position: fixed; inset: 96px 24px auto auto; width: min(880px,calc(100vw - 48px));
+  max-height: calc(100dvh - 120px) !important; overflow: auto; z-index: 30;
+  box-sizing: border-box; padding: 8px 12px; border: 2px solid #7acfff;
+  border-radius: 8px; background: #112031; color: #eef6ff; box-shadow: 0 8px 24px #0009;
+ }
+ .music-studio-shell.music-vocal-focused [data-vocal-replacement]>summary {
+  min-height: 44px; display: flex; align-items: center; cursor: pointer;
+ }
+ .music-studio-shell.music-vocal-focused [data-vocal-replacement][open] form {
+  display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px 8px;
+ }
+ .music-studio-shell.music-vocal-focused [data-vocal-replacement] :is(button,input,select) {
+  min-height: 44px; padding: 4px 8px; margin: 0; box-sizing: border-box;
+ }
+ .music-studio-shell.music-vocal-focused [data-vocal-replacement] p {margin: 4px 0; line-height: 1.35;}
+}
+
+/* Keep generated MIDI audio controls consistent with the focused export workspace. */
+.music-export-focused>.music-midi-render{margin:4px 0;padding:4px 12px;background:#112031;color:#eef6ff;border:1px solid #527085;border-radius:8px}
+.music-export-focused>.music-midi-render p{margin:4px 0}
+.music-export-focused>.music-midi-render button{min-height:44px;box-sizing:border-box;margin:2px;padding:6px 10px}
+.music-export-focused .music-export-sources{background:#0d1725;color:#eef6ff;border:1px solid #526985;border-radius:8px}
+.music-export-focused .music-export-sources>summary{color:#eef6ff}
+/* Workspace visibility and local screen discovery remain usable at narrow widths. */
+.music-studio-shell [data-work-visibility] label { display: flex; align-items: center; gap: 4px; min-height: 44px; }
+.music-studio-shell [data-work-request] label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.music-studio-shell [data-work-request] input { width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box; }
+.music-studio-shell [data-work-request-result] { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Fixed disclosures leave grid rows behind; bound the underlying dock and keep all controls scrollable. */
+@media(min-width:821px) and (max-height:900px) and (orientation:landscape){
+ .music-studio-shell.music-vocal-focused{box-sizing:border-box;height:100dvh;max-height:100dvh;overflow:auto;overscroll-behavior:contain}
+}

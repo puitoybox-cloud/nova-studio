@@ -1,0 +1,12 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{createHash}=require('node:crypto');
+const {cases,signal}=require('./fixtures/music-meter-signals'),ref=require('./fixtures/music-meter-ffmpeg-reference.json');
+function app(){const w={console,Date,Math,JSON,Intl,Blob,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);return w.MusicStudio}
+const plain=x=>JSON.parse(JSON.stringify(x));
+test('independent loudness references bind exact generated PCM and source provenance',()=>{assert.equal(createHash('sha256').update(fs.readFileSync('tests/fixtures/music-meter-signals.js')).digest('hex'),ref.signalSourceSha256);assert.equal(ref.rows.length,cases.length);for(const c of cases){const pcm=signal(c),bytes=Buffer.alloc(pcm.channels[0].length*pcm.channels.length*4);for(let i=0;i<pcm.channels[0].length;i++)for(let k=0;k<pcm.channels.length;k++)bytes.writeFloatLE(pcm.channels[k][i],4*(i*pcm.channels.length+k));assert.equal(createHash('sha256').update(bytes).digest('hex'),ref.rows.find(r=>r.id===c.id).pcmSha256)}});
+for(const c of cases)test('independent FFmpeg loudness and clipping reference: '+c.id,async()=>{const a=app(),pcm=signal(c),before=JSON.stringify(pcm),expected=ref.rows.find(r=>r.id===c.id),whole=await a.masterMeasure([pcm]);if(c.amp===0)assert.equal(whole.lufs,null);else assert.ok(Math.abs(whole.lufs-expected.lufs)<=ref.lufsTolerance,`${c.id} ${whole.lufs} vs ${expected.lufs}`);
+ assert.equal(whole.clippingSamples,pcm.channels.reduce((sum,channel)=>sum+channel.filter(v=>Math.abs(v)>=1).length,0));assert.equal(JSON.stringify(pcm),before);
+ if(!c.hard&&c.amp)assert.ok(Math.abs(whole.truePeakDb-expected.truePeakDb)<=ref.steadyTruePeakToleranceDb,`${c.id} TP ${whole.truePeakDb} vs ${expected.truePeakDb}`);
+ const chunks=[];for(let at=0;at<pcm.channels[0].length;at+=7919)chunks.push({sampleRate:48000,channels:pcm.channels.map(c=>c.slice(at,at+7919))});assert.deepEqual(plain(await a.masterMeasure(chunks)),plain(whole));
+});
+test('hard onset true peak disagreement remains explicit, not a conformance claim',async()=>{const c=cases.find(c=>c.id==='hard-onset-12000'),m=await app().masterMeasure([signal(c)]),r=ref.rows.find(r=>r.id===c.id);assert.ok(Math.abs(m.truePeakDb-r.truePeakDb)>.2);assert.equal(ref.discontinuousTruePeakCharacterizationOnly,true);assert.ok(m.truePeak>m.peak)});
