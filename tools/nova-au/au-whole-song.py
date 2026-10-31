@@ -29,7 +29,7 @@ def validate(q):
             raise ValueError('explicit binding required: ' + key)
     if q.get('kind') not in ('track', 'bus', 'stereo-out') or q.get('role') not in ('piano', 'strings', 'bass', 'drums', 'vocal', 'unspecified'):
         raise ValueError('explicit kind/role required')
-    if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'development-fixture'):
+    if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'project-render', 'development-fixture'):
         raise ValueError('explicit audio origin required')
     if q.get('sourceTap') not in ('pre-nova-confirmed', 'post-or-unknown'):
         raise ValueError('explicit pre/post NOVA source confirmation required')

@@ -137,3 +137,29 @@ test('encoded loudness pass measurements belong to saved export and survive back
  assert.deepEqual(plain(d.a.state.projects.find(p=>p.projectId==='p').finalExportHistory),plain(saved.finalExportHistory));
  assert.deepEqual(plain(saved.finalExportHistory.at(-1).measurements),plain(m.measurements));
 });
+
+test('Auto-Finish prepares real project PCM into aligned stereo stems without source writes',async()=>{
+ const {a,p,repo,plan}=fixture();a.state.loaded=true;const baseline=JSON.stringify(await repo.get('p'));
+ const routes=plan.routes.map((r,i)=>({...r,role:i?'vocal':'piano'}));
+ const r=await a.autoFinishPrepare('p',routes);assert.equal(r.ok,true,r.error);assert.equal(r.frames,30000);assert.equal(r.channels,2);
+ const stems=await Promise.all(r.stems.map(async s=>a.pcmDecodeWav(await s.file.arrayBuffer())));
+ assert.equal(stems[0].channels[0].length,30000);assert.equal(stems[1].channels[0].slice(0,6000).every(x=>x===0),true);
+ assert.ok(stems[1].channels[0].slice(6000).some(x=>x!==0));assert.deepEqual(stems[1].channels[0],stems[1].channels[1]);
+ assert.equal(JSON.stringify(await repo.get('p')),baseline);assert.equal(JSON.stringify(p),baseline);
+});
+test('Auto-Finish rejects invalid source selection and stale read without publishing partial stems',async()=>{
+ for(const patch of [{key:'pcm:missing'},{role:'instrument'},{startSeconds:-1},{startSeconds:NaN}]){
+  const {a,repo,plan}=fixture();a.state.loaded=true;const baseline=JSON.stringify(await repo.get('p')),routes=plan.routes.map(r=>({...r,role:'piano'}));Object.assign(routes[1],patch);
+  const r=await a.autoFinishPrepare('p',routes);assert.equal(r.ok,false);assert.equal(r.stems,undefined);assert.equal(JSON.stringify(await repo.get('p')),baseline);assert.equal(a.pcmEditor.busy,false);
+ }
+ const {a,repo,plan}=fixture();a.state.loaded=true;const get=repo.get;repo.get=async id=>{a.state.projects[0].revision++;return get(id)};
+ assert.equal((await a.autoFinishPrepare('p',plan.routes.map(r=>({...r,role:'piano'})))).ok,false);
+});
+test('Auto-Finish MIDI material uses production streaming renderer and refuses incomplete conversion',async()=>{
+ const {a,w,p,repo,plan}=fixture();a.state.loaded=true;p.midiData={ppq:480,tempo:120,tracks:[{id:'melody',notes:[{pitch:60,startTick:0,durationTicks:480,velocity:90}]}]};await repo.put(p);
+ let selected;w.MusicStudioAudio={renderMidiStream:async(midi,entries,options)=>{selected=options.trackIds;return{frames:10,sampleRate:48000,channels:2,chunks:(async function*(){yield{sampleRate:48000,channels:[Array(10).fill(.1),Array(10).fill(.1)]}})()}}};
+ const routes=[{key:'midi:melody',role:'piano',startSeconds:0},{...plan.routes[1],role:'vocal'}];
+ const result=await a.autoFinishPrepare('p',routes);assert.equal(result.ok,true,result.error);assert.deepEqual(Array.from(selected),['melody']);assert.equal(result.frames,30000);
+ w.MusicStudioAudio.renderMidiStream=async()=>({frames:11,sampleRate:48000,channels:2,chunks:(async function*(){yield{sampleRate:48000,channels:[[.1],[.1]]}})()});
+ const failed=await a.autoFinishPrepare('p',routes);assert.equal(failed.ok,false);assert.match(failed.error,/incomplete/);assert.equal(failed.stems,undefined);
+});

@@ -700,3 +700,15 @@ test('Auto-Finish approved WAV persists through real repository, reopen, Mix edi
  const archive=await fresh.a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(archive);assert.equal(restored.ok,true,restored.error);
  const q=restored.projects[0];assert.deepEqual(q.midiData,{unchanged:true});assert.deepEqual(Buffer.from(await (await dst.a.pcmLoadLongWav(q.projectId,q.longWavAssets[0].id)).arrayBuffer()),original);
 });
+
+test('Auto-Finish reads authenticated stored WAV and recorded take with saved trim and timeline offset',async()=>{
+ const {a,repo,p}=await setup();a.state.loaded=true;
+ const file=masterWav(a,48000),one=await a.pcmImportLongFile(file,p.projectId),two=await a.pcmImportLongFile(file,p.projectId);assert.equal(one.ok,true);assert.equal(two.ok,true);
+ const project=await repo.get(p.projectId);project.midiData={ppq:480,tempo:120,tempoMap:[],tracks:[]};
+ project.longWavAssets[1].vocalTake={format:'nova-vocal-take-v1',cursor:0,waveform:[],edits:[{first:4800,end:43200,gainDb:-6,latencyMs:0,startTick:480}]};await repo.put(project);a.state.projects=[project];
+ const before=JSON.stringify(project),bytes=Buffer.from(await file.arrayBuffer());
+ const result=await a.autoFinishPrepare(p.projectId,[{key:'wav:'+one.assetId,role:'piano',startSeconds:0},{key:'wav:'+two.assetId,role:'vocal',startSeconds:.125}]);
+ assert.equal(result.ok,true,result.error);assert.equal(result.frames,73200);
+ const vocal=a.pcmDecodeWav(await result.stems[1].file.arrayBuffer());assert.equal(vocal.channels[0].slice(0,34800).every(x=>x===0),true);assert.ok(vocal.channels[0].slice(34800).some(x=>Math.abs(x)>.01));
+ assert.equal(JSON.stringify(await repo.get(p.projectId)),before);assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,one.assetId)).arrayBuffer()),bytes);
+});

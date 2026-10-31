@@ -92,7 +92,7 @@ def main():
     q = json.loads(a.request.read_text())
     if q.get('instruction') not in COMMANDS or q.get('alignmentConfirmed') is not True:
         p.error('unsupported instruction or unconfirmed identical start/alignment')
-    if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'development-fixture'):
+    if q.get('sourceKind') not in ('logic-render', 'recorded-audio', 'project-render', 'development-fixture'):
         p.error('explicit sourceKind required')
     if any(not isinstance(q.get(k), str) or not q[k].strip() for k in ('projectId', 'audioVersion')):
         p.error('projectId/audioVersion required')

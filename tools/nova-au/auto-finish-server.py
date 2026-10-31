@@ -19,7 +19,7 @@ class Runtime:
   return path
  def create(self,value):
   allowed={'projectId','audioVersion','sourceKind','alignmentConfirmed','instruction','stems'}
-  if set(value)!=allowed or value['sourceKind'] not in {'logic-render','recorded-audio'} or value['alignmentConfirmed'] is not True or value['instruction'] not in {'この曲をきれいに仕上げて','この曲を自然に仕上げて','全体の音を自然に整えて'}: raise ValueError('invalid-request')
+  if set(value)!=allowed or value['sourceKind'] not in {'logic-render','recorded-audio','project-render'} or value['alignmentConfirmed'] is not True or value['instruction'] not in {'この曲をきれいに仕上げて','この曲を自然に仕上げて','全体の音を自然に整えて'}: raise ValueError('invalid-request')
   stems=value['stems']
   if not isinstance(stems,list) or not 2<=len(stems)<=16: raise ValueError('invalid-stem-count')
   ids=set()
@@ -89,13 +89,28 @@ class Runtime:
    try: process.wait(timeout=1)
    except subprocess.TimeoutExpired: pass
  def status(self,sid):
-  record=self.load(sid); result={'session':sid,'complete':record['state']=='complete','failed':record['state']=='failed','cancelled':record['state']=='cancelled','message':record.get('error')}
+  record=self.load(sid); result={'projectId':record['request']['projectId'],'audioVersion':record['request']['audioVersion'],'session':sid,'complete':False,'failed':record['state']=='failed','cancelled':record['state']=='cancelled','message':record.get('error')}
   manifest=self.directory(sid)/'finish'/'auto-finish.json'
   if manifest.exists():
    value=json.loads(manifest.read_text()); result['progress']=value.get('progress'); result['renders']=value.get('renders'); result['complete']=bool(value.get('complete')) and record['state']=='complete'
    master=self.directory(sid)/'finish'/'mastering'/'manifest.json'
    if master.exists(): result['adopted']=json.loads(master.read_text()).get('adopted')
   return result
+ def discover(self,project_id):
+  if not isinstance(project_id,str) or not project_id or len(project_id)>200: raise ValueError('invalid-project')
+  results=[]
+  with self.lock:
+   for path in sorted(self.root.iterdir()):
+    if path.is_symlink() or not path.is_dir(): continue
+    try:
+     record=self.load(path.name)
+     if record.get('format')!='nova-auto-finish-session-v1' or record['request']['projectId']!=project_id: continue
+     active=self.jobs.get(path.name)
+     if record['state']=='running' and (not active or active.poll() is not None):
+      record['state']='cancelled'; record['error']='auto-finish-interrupted-restart'; self.save(path.name,record)
+     results.append({**self.status(path.name),'projectId':project_id,'audioVersion':record['request']['audioVersion'],'state':record['state']})
+    except (ValueError,KeyError,OSError): continue
+  return results
  def adopt(self,sid,choice):
   if choice not in {'A','B','C','undo'} or not self.status(sid)['complete']: raise ValueError('invalid-adoption')
   finish=self.directory(sid)/'finish'; request=self.load(sid)['request']
@@ -133,6 +148,8 @@ class Handler(BaseHTTPRequestHandler):
     return self.reply(200,value)
    parts=parsed.path.strip('/').split('/'); query=parse_qs(parsed.query).get('token',[''])[0]
    if not self.authenticated(query): return self.reply(401,{'error':'authentication-required'})
+   if parts==['sessions']:
+    return self.reply(200,{'sessions':self.runtime.discover(parse_qs(parsed.query).get('projectId',[''])[0])})
    if len(parts)==2 and parts[0]=='sessions': return self.reply(200,self.runtime.status(parts[1]))
    if len(parts)==4 and parts[0]=='sessions' and parts[2]=='artifacts':
     path=self.runtime.artifact(parts[1],unquote(parts[3])); self.send_response(200); self.cors(); self.send_header('Content-Type','audio/wav'); self.send_header('Content-Length',str(path.stat().st_size)); self.send_header('Cache-Control','no-store'); self.end_headers()

@@ -23,3 +23,21 @@ test('quota or damaged WAV import fails without marking result saved',async()=>{
 test('repeated start, adoption and download cannot release an in-flight save lock',async()=>{const f=approvedFixture(),a=f.w.MusicStudio;a.autoFinish.state.busy=true;assert.equal((await a.autoFinish.start({preventDefault(){},target:f.form},'p')).ok,false);assert.equal((await a.autoFinish.adopt('B')).ok,false);assert.equal(a.autoFinish.download().ok,false);assert.equal(a.autoFinish.state.busy,true)});
 test('pending project drafts and a refused editor route preserve approved audio for retry',async()=>{const f=approvedFixture(),a=f.w.MusicStudio;a.hasUnsavedChanges=()=>true;f.w.fetch=()=>{throw Error('must not fetch')};assert.equal((await a.autoFinish.saveToProject('p')).ok,false);a.hasUnsavedChanges=()=>false;f.w.fetch=async()=>({ok:true,blob:async()=>new Blob(['WAV'])});a.pcmOpen=()=>false;a.pcmImportLongFile=()=>{throw Error('must not import')};assert.equal((await a.autoFinish.saveToProject('p')).error,'auto-finish-project-busy');assert.equal(a.autoFinish.state.importedAssetId,null)});
 test('cancel and resume cannot unlock an active project WAV transfer',async()=>{const f=approvedFixture(),a=f.w.MusicStudio;let release;f.w.fetch=()=>new Promise(r=>{release=r});const saving=a.autoFinish.saveToProject('p');assert.equal((await a.autoFinish.cancel()).ok,false);assert.equal((await a.autoFinish.resume()).ok,false);assert.equal(a.autoFinish.state.busy,true);release({ok:true,blob:async()=>new Blob(['WAV'])});assert.equal((await saving).ok,true);assert.equal(a.autoFinish.state.saving,false)});
+
+test('restart discovery reconnects only matching saved project revision with fresh helper identity',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,saved={session:'b'.repeat(32),projectId:'p',audioVersion:'project-revision-3',state:'cancelled'};let connects=0;
+ f.w.fetch=async(url,options={})=>{let payload;if(url.endsWith('/health')){connects++;payload={localOnly:true,host:'127.0.0.1',port:8767,protocol:1,lifecycleSession:'f'.repeat(32)}}else if(url.includes('?projectId='))payload={sessions:[saved,{...saved,projectId:'other'}]};else payload={...saved,cancelled:true,complete:false};return{ok:true,json:async()=>payload}};
+ assert.equal((await a.autoFinish.discover('p')).ok,true);assert.equal(a.autoFinish.state.discovered.length,1);assert.equal((await a.autoFinish.reconnect('p',saved.session)).ok,true);assert.equal(connects,2);assert.equal(a.autoFinish.state.session,saved.session);assert.equal(a.autoFinish.state.busy,false);
+ a.state.projects[0].revision++;assert.equal((await a.autoFinish.reconnect('p',saved.session)).ok,false);
+});
+test('reconnection rejects server identity mismatch without replacing the retained session',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,s=a.autoFinish.state;s.discovered=[{session:'b'.repeat(32),projectId:'p',audioVersion:'project-revision-3',state:'complete'}];s.session='a'.repeat(32);
+ const fetch=f.w.fetch;f.w.fetch=async(url,options)=>url.endsWith('/health')?fetch(url,options):{ok:true,json:async()=>({projectId:'other',audioVersion:'project-revision-3',complete:true})};
+ assert.equal((await a.autoFinish.reconnect('p','b'.repeat(32))).ok,false);assert.equal(s.session,'a'.repeat(32));assert.equal(s.busy,false);
+});
+
+test('project-generated transfer refuses revision changes before processing and retains old output',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,prepared={audioVersion:'project-revision-3',stems:[{id:'stem-1',role:'vocal',file:{name:'voice.wav',size:64,type:'audio/wav'}},{id:'stem-2',role:'piano',file:{name:'piano.wav',size:64,type:'audio/wav'}}]},fetch=f.w.fetch;
+ f.w.fetch=async(url,options)=>{const r=await fetch(url,options);if(options?.method==='PUT')a.state.projects[0].revision++;return r};
+ const r=await a.autoFinish.start({preventDefault(){},target:f.form},'p',prepared);assert.equal(r.ok,false);assert.match(r.error,/source-changed/);assert.equal(f.calls.some(x=>x.url.endsWith('/start')),false);assert.equal(a.autoFinish.state.session,'a'.repeat(32));
+});

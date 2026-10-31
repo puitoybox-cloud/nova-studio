@@ -38,4 +38,30 @@ class RuntimeTests(unittest.TestCase):
   self.runtime.shutdown()
   self.assertIsNotNone(child.poll())
 
+ def test_new_runtime_discovers_interrupted_session_without_old_token(self):
+  sid=self.runtime.create(self.request); record=self.runtime.load(sid); record['state']='running'; self.runtime.save(sid,record)
+  fresh=server.Runtime(self.runtime.root,self.runtime.engine,self.runtime.ffmpeg,self.runtime.scripts)
+  rows=fresh.discover('p'); self.assertEqual(len(rows),1); self.assertEqual(rows[0]['session'],sid); self.assertTrue(rows[0]['cancelled']); self.assertEqual(rows[0]['audioVersion'],'v1')
+  self.assertNotEqual(fresh.token,self.runtime.token); self.assertNotIn('token',json.dumps(rows)); self.assertEqual(fresh.discover('other'),[])
+ def test_discovery_keeps_complete_results_and_ignores_corrupt_directory(self):
+  sid=self.runtime.create(self.request); record=self.runtime.load(sid); record['state']='complete'; self.runtime.save(sid,record)
+  (self.runtime.root/('f'*32)).mkdir(); (self.runtime.root/('f'*32)/'session.json').write_text('{')
+  rows=self.runtime.discover('p'); self.assertEqual(len(rows),1); self.assertEqual(rows[0]['state'],'complete'); self.assertEqual(self.runtime.load(sid),record)
+
+ def test_project_render_source_identity_is_retained(self):
+  self.request['sourceKind']='project-render'; sid=self.runtime.create(self.request)
+  self.assertEqual(self.runtime.load(sid)['request']['sourceKind'],'project-render')
+ def test_http_restart_discovery_requires_fresh_authentication(self):
+  import http.client, threading
+  sid=self.runtime.create(self.request); fresh=server.Runtime(self.runtime.root,self.runtime.engine,self.runtime.ffmpeg,self.runtime.scripts)
+  class QuietHandler(server.Handler):
+   runtime=fresh
+   def log_message(self,*args): pass
+  httpd=server.ThreadingHTTPServer(('127.0.0.1',0),QuietHandler); thread=threading.Thread(target=httpd.serve_forever,daemon=True); thread.start()
+  try:
+   conn=http.client.HTTPConnection('127.0.0.1',httpd.server_port)
+   conn.request('GET','/sessions?projectId=p',headers={'X-Nova-Auto-Finish':self.runtime.token}); response=conn.getresponse(); self.assertEqual(response.status,401); response.read()
+   conn.request('GET','/sessions?projectId=p',headers={'X-Nova-Auto-Finish':fresh.token}); response=conn.getresponse(); self.assertEqual(response.status,200); payload=json.loads(response.read()); self.assertEqual(payload['sessions'][0]['session'],sid); self.assertEqual(payload['sessions'][0]['projectId'],'p'); conn.close()
+  finally: httpd.shutdown(); httpd.server_close(); thread.join()
+
 if __name__=='__main__': unittest.main()

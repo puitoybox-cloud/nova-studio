@@ -324,7 +324,7 @@ def main():
     parser.add_argument('--project', required=True)
     parser.add_argument('--track', required=True)
     parser.add_argument('--version', required=True, help='explicit song/audio revision ID')
-    parser.add_argument('--source', choices=['logic-render', 'recorded-audio', 'development-fixture'], required=True)
+    parser.add_argument('--source', choices=['logic-render', 'recorded-audio', 'project-render', 'development-fixture'], required=True)
     parser.add_argument('--kind', choices=['track', 'bus', 'stereo-out'], required=True)
     parser.add_argument('--role', choices=['piano', 'strings', 'bass', 'drums', 'vocal', 'unspecified'], default='unspecified')
     parser.add_argument('--instruction', default='全体の音を自然に整えて')

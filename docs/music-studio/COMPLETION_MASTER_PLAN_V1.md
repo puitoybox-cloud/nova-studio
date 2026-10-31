@@ -1,5 +1,7 @@
 # Music Studio 30大機能：実物棚卸しと一本化計画
 
+2026-10-31 JST追記：[曲内Stem準備・Auto-Finish再接続](../../verification/music-project-stems-reconnect-20261031.md)。選択MIDI/PCM/録音から整列Stemを作るproduction入口と保存済みセッションの認証付き再検出・版照合を追加。実曲・Intel Mac完全終了/再起動・聴感受入は未確認。全要件完成認定0/30を維持。
+
 2026-10-30 JST追記：[録音破損prefix復旧・診断・ローカル料金記録・MIDI素材](../../verification/music-production-tools-20261030.md)。No.12/23/24/26/29の限定要件をproduction実装。5機能とも部分実装、有料料金精算・意味検索・実機受入等は残る。全要件実装・自動検証完成0/30、最終完成0/30を維持。
 
 2026-10-30 JST：[最新production照合・30機能の残要件・日程算定限界](../../verification/music-completion-focus-20261030.md)。以下の2026-10-04時点の表は履歴であり、最新状況は追記先を参照。録音/歌声/長時間Mix・Master/完全Archive等の後続実装を反映。全要件完成認定0/30、工数/完了日は未確定。No.22/23の復元前完全安全コピーをproduction修正。
