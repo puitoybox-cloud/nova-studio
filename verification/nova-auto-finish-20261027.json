@@ -1,0 +1,295 @@
+{
+  "dateJst": "2026-10-27",
+  "developmentFixtureOnly": true,
+  "source": "tools/nova-au/tests/auto-finish.py: 8-second aligned stereo vocal/piano/bass encoded WAVs; not user/Logic audio",
+  "stems": [
+    {
+      "role": "vocal",
+      "balanceDb": 6.0,
+      "beforeRmsDbFS": -36.0910907387292,
+      "afterRmsDbFS": -31.3934422162585,
+      "dsp": {
+        "values": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "processing": [
+          1,
+          179.018630981445,
+          3912.94262695312,
+          2432.880859375,
+          1.25,
+          0.764666855335236,
+          1,
+          -33.5,
+          2,
+          10.771050453186,
+          154.038177490234,
+          6,
+          0
+        ]
+      }
+    },
+    {
+      "role": "piano",
+      "balanceDb": -6.0,
+      "beforeRmsDbFS": -19.0136514534476,
+      "afterRmsDbFS": -26.3889061394461,
+      "dsp": {
+        "values": [
+          0,
+          0.699999809265137,
+          -0.130000114440918,
+          0
+        ],
+        "processing": [
+          1,
+          179.018630981445,
+          3912.94262695312,
+          977.431457519531,
+          0,
+          0.956265985965729,
+          1,
+          -16.5,
+          2,
+          10.771050453186,
+          154.038177490234,
+          6,
+          0
+        ]
+      }
+    },
+    {
+      "role": "bass",
+      "balanceDb": 0.0,
+      "beforeRmsDbFS": -26.9724516266569,
+      "afterRmsDbFS": -29.9363436842292,
+      "dsp": {
+        "values": [
+          0,
+          -2.67000007629395,
+          0,
+          0
+        ],
+        "processing": [
+          1,
+          179.018630981445,
+          3912.94262695312,
+          977.431457519531,
+          0,
+          0.956265985965729,
+          1,
+          -24,
+          2,
+          10.771050453186,
+          154.038177490234,
+          6,
+          0
+        ]
+      }
+    }
+  ],
+  "renders": [
+    {
+      "label": "original",
+      "measurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -21.6205150937524,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -26.4484851382217,
+        "shortTermLufsLast3s": -21.781405199511,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -12.3753993384566,
+        "samplePeakDbFS": -12.3882086287266,
+        "rmsDbFS": -23.9393824446957,
+        "crestDb": 11.5511738159691,
+        "shortTermPercentileSpreadDb": 1.53145498955043,
+        "clippedSamples": 0,
+        "bands": [
+          0.25040903225582,
+          0.74959096748038,
+          2.63799855594388e-10
+        ]
+      },
+      "matchedMeasurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -21.6205150937524,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -26.4484851382217,
+        "shortTermLufsLast3s": -21.781405199511,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -12.3753993384566,
+        "samplePeakDbFS": -12.3882086287266,
+        "rmsDbFS": -23.9393824446957,
+        "crestDb": 11.5511738159691,
+        "shortTermPercentileSpreadDb": 1.53145498955043,
+        "clippedSamples": 0,
+        "bands": [
+          0.25040903225582,
+          0.74959096748038,
+          2.63799855594388e-10
+        ]
+      }
+    },
+    {
+      "label": "A",
+      "measurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -16.5456223529425,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -21.3601664394906,
+        "shortTermLufsLast3s": -16.7068756202646,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -7.33173191158668,
+        "samplePeakDbFS": -7.3433392106263,
+        "rmsDbFS": -18.9027740398944,
+        "crestDb": 11.5594348292681,
+        "shortTermPercentileSpreadDb": 1.52742906707025,
+        "clippedSamples": 0,
+        "bands": [
+          0.223214886236383,
+          0.77678511349286,
+          2.70756653565917e-10
+        ]
+      },
+      "matchedMeasurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -21.62051509424,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -26.4350591791122,
+        "shortTermLufsLast3s": -21.7817683609204,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -12.4066245416571,
+        "samplePeakDbFS": -12.4182318600273,
+        "rmsDbFS": -23.9776667810842,
+        "crestDb": 11.559434921057,
+        "shortTermPercentileSpreadDb": 1.52742906727484,
+        "clippedSamples": 0,
+        "bands": [
+          0.223214886274178,
+          0.776785113455062,
+          2.70759734706231e-10
+        ]
+      }
+    },
+    {
+      "label": "B",
+      "measurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -16.8360918312807,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -20.8124882405353,
+        "shortTermLufsLast3s": -17.019289158669,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -8.18039159860575,
+        "samplePeakDbFS": -8.1944551391917,
+        "rmsDbFS": -19.2197698554566,
+        "crestDb": 11.0253147162649,
+        "shortTermPercentileSpreadDb": 1.26859265826369,
+        "clippedSamples": 0,
+        "bands": [
+          0.196180785000447,
+          0.803819214462961,
+          5.36591649917139e-10
+        ]
+      },
+      "matchedMeasurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -21.6205150923514,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -25.5969115045451,
+        "shortTermLufsLast3s": -21.8037124191234,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -12.9648150202192,
+        "samplePeakDbFS": -12.9788785681299,
+        "rmsDbFS": -24.0041931165042,
+        "crestDb": 11.0253145483743,
+        "shortTermPercentileSpreadDb": 1.26859265854822,
+        "clippedSamples": 0,
+        "bands": [
+          0.196180784986609,
+          0.803819214476793,
+          5.36598571410543e-10
+        ]
+      }
+    },
+    {
+      "label": "C",
+      "measurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -15.8888093902215,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -19.8793779848364,
+        "shortTermLufsLast3s": -16.0717894929819,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -7.26482835518071,
+        "samplePeakDbFS": -7.28058351706545,
+        "rmsDbFS": -18.3039269345683,
+        "crestDb": 11.0233434175029,
+        "shortTermPercentileSpreadDb": 1.27276941087353,
+        "clippedSamples": 0,
+        "bands": [
+          0.173704425833933,
+          0.826295573614075,
+          5.51992137249577e-10
+        ]
+      },
+      "matchedMeasurement": {
+        "complete": true,
+        "frames": 384000,
+        "sampleRate": 48000,
+        "integratedLufs": -21.6205150928829,
+        "loudnessValid": true,
+        "momentaryLufsLast400ms": -25.6110836896813,
+        "shortTermLufsLast3s": -21.8034951959058,
+        "shortTermValid": true,
+        "truePeakEstimateDbTP": -12.9965339657213,
+        "samplePeakDbFS": -13.0122891408872,
+        "rmsDbFS": -24.0356326371574,
+        "crestDb": 11.0233434962702,
+        "shortTermPercentileSpreadDb": 1.27276941129747,
+        "clippedSamples": 0,
+        "bands": [
+          0.173704425875297,
+          0.826295573572713,
+          5.51989347017609e-10
+        ]
+      }
+    }
+  ],
+  "checks": {
+    "node": {
+      "pass": 2644,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "javascriptSyntaxFiles": 262,
+    "sourceHashesUnchanged": true,
+    "adoptionAndUndo": true,
+    "interruptedResume": true,
+    "damagedArtifactRejected": true,
+    "qualityEqCompressor": true,
+    "portableDsp": true,
+    "analysisRegression": true
+  },
+  "newCiExecuted": false,
+  "physicalLogicValidated": false,
+  "modelInference": false
+}

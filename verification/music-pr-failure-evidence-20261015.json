@@ -1,0 +1,514 @@
+[
+  {
+    "pr": 392,
+    "id": 38112452489,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390659283,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:45:10.2874200Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:45:10.2889000Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.661 seconds).",
+          "2026-10-11T04:45:10.3074440Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:45:10.3084860Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:45:10.3091590Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.006 seconds).",
+          "2026-10-11T04:45:10.3317160Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 391,
+    "id": 38112383365,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390452363,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:43:20.5936050Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:43:20.5940570Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.378 seconds).",
+          "2026-10-11T04:43:20.6050770Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:43:20.6055290Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:43:20.6058770Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.005 seconds).",
+          "2026-10-11T04:43:20.6207470Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 390,
+    "id": 38112307487,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390231010,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:41:57.5733830Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:41:57.5749460Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.738 seconds).",
+          "2026-10-11T04:41:57.6653490Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:41:57.6658490Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:41:57.6661950Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.008 seconds).",
+          "2026-10-11T04:41:57.6815800Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 391,
+    "id": 38112383370,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390452467,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:42:50.1576000Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:42:50.1580260Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.353 seconds).",
+          "2026-10-11T04:42:50.1674070Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:42:50.1678740Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:42:50.1681950Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.004 seconds).",
+          "2026-10-11T04:42:50.1812160Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 390,
+    "id": 38112307477,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390230922,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:41:44.1084730Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:41:44.1091360Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.417 seconds).",
+          "2026-10-11T04:41:44.1220970Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:41:44.1227380Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:41:44.1231490Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.005 seconds).",
+          "2026-10-11T04:41:44.1406800Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 392,
+    "id": 38112452498,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114390659057,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:45:44.2139790Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:45:44.2151850Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.585 seconds).",
+          "2026-10-11T04:45:44.2341620Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:45:44.2355640Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:45:44.2364650Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.005 seconds).",
+          "2026-10-11T04:45:44.2779590Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 389,
+    "id": 38112203587,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389912577,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:39:47.1394720Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:39:47.1400610Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.519 seconds).",
+          "2026-10-11T04:39:47.1501380Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:39:47.1516690Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:39:47.1520580Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.004 seconds).",
+          "2026-10-11T04:39:47.1642790Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 388,
+    "id": 38112167150,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389800551,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:39:19.5003610Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:39:19.5010300Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:39:19.5014730Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.784 seconds).",
+          "2026-10-11T04:39:19.5247220Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 388,
+    "id": 38112167165,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389800596,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:40:18.8703870Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:40:18.8709100Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:40:18.8712620Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.817 seconds).",
+          "2026-10-11T04:40:18.9012810Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 389,
+    "id": 38112203524,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389912375,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:39:53.1077780Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:124: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce] : XCTAssertEqual failed: (\"Optional(\"[[128,60,0],[128,60,0],[129,60,0]]\")\") is not equal to (\"Optional(\"[[128,60,0],[129,60,0]]\")\")",
+          "2026-10-11T04:39:53.1085750Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectReleasesAllChannelsAndRepeatedNotesOnce]' failed (0.423 seconds).",
+          "2026-10-11T04:39:53.1265820Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:39:53.1273430Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:39:53.1278200Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.005 seconds).",
+          "2026-10-11T04:39:53.1451720Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 387,
+    "id": 38112112933,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389639301,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:37:53.7078400Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:37:53.7084320Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:37:53.7092640Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.447 seconds).",
+          "2026-10-11T04:37:53.7310150Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 387,
+    "id": 38112112985,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389639516,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:38:35.7634440Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:38:35.7639450Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:38:35.7643060Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.692 seconds).",
+          "2026-10-11T04:38:35.7814420Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 385,
+    "id": 38111992722,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389290191,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:35:31.2659520Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:35:31.2667570Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:35:31.2672680Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.348 seconds).",
+          "2026-10-11T04:35:31.2855850Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 386,
+    "id": 38112031493,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389405764,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:36:46.5286090Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:36:46.5293370Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:36:46.5299010Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.595 seconds).",
+          "2026-10-11T04:36:46.5468840Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 385,
+    "id": 38111992768,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389290207,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T04:35:35.3441130Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:35:35.3446930Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:35:35.3450680Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.377 seconds).",
+          "2026-10-11T04:35:35.3632670Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 386,
+    "id": 38112031491,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114389405642,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T04:36:05.3374240Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:365: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertEqual failed: (\"Optional(\"open\")\") is not equal to (\"Optional(\"closed\")\")",
+          "2026-10-11T04:36:05.3379660Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:366: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput] : XCTAssertFalse failed",
+          "2026-10-11T04:36:05.3383160Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testReconnectDuringReleaseDoesNotReopenInput]' failed (0.402 seconds).",
+          "2026-10-11T04:36:05.3515340Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 384,
+    "id": 38099795914,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114353175531,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-11T00:52:15.9582350Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:305: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectNoteReleaseCannotPublishStaleDisconnectedEventAfterReentrantReconnect] : XCTAssertEqual failed: (\"Optional(\"[\\\"connected\\\"]\")\") is not equal to (\"Optional(\"[\\\"connected\\\",\\\"connected\\\"]\")\")",
+          "2026-10-11T00:52:15.9596310Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectNoteReleaseCannotPublishStaleDisconnectedEventAfterReentrantReconnect]' failed (0.573 seconds).",
+          "2026-10-11T00:52:16.2980880Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 384,
+    "id": 38099795978,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114353175788,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-11T00:53:26.5883930Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:305: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectNoteReleaseCannotPublishStaleDisconnectedEventAfterReentrantReconnect] : XCTAssertEqual failed: (\"Optional(\"[\\\"connected\\\"]\")\") is not equal to (\"Optional(\"[\\\"connected\\\",\\\"connected\\\"]\")\")",
+          "2026-10-11T00:53:26.5935560Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testDisconnectNoteReleaseCannotPublishStaleDisconnectedEventAfterReentrantReconnect]' failed (0.735 seconds).",
+          "2026-10-11T00:53:26.6685420Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 373,
+    "id": 38041257027,
+    "name": "Music native file import offline verification",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114181793206,
+        "name": "native",
+        "steps": [
+          "Swift tests"
+        ],
+        "errors": [
+          "2026-10-10T09:25:28.7194320Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:102: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testRepeatedInjectionDoesNotReplaceInputOrDuplicateListeners] : XCTAssertEqual failed: (\"Optional(0)\") is not equal to (\"Optional(1)\")",
+          "2026-10-10T09:25:28.7198430Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testRepeatedInjectionDoesNotReplaceInputOrDuplicateListeners]' failed (0.003 seconds).",
+          "2026-10-10T09:25:28.7209560Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:61: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:25:28.7214290Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:62: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:25:28.7219040Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:63: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:25:28.7224420Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:64: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertEqual failed: (\"Optional(\"[]\")\") is not equal to (\"Optional(\"[[144,60,100],[128,60,0],[144,61,0]]\")\")",
+          "2026-10-10T09:25:28.7230860Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:9: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : failed - JavaScript exception: TypeError: undefined is not an object (evaluating 'received[0].timeStamp')",
+          "2026-10-10T09:25:28.7237620Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:65: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertEqual failed: (\"Optional(nan)\") is not equal to (\"Optional(42.5)\")",
+          "2026-10-10T09:25:28.7242340Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage]' failed (0.006 seconds).",
+          "2026-10-10T09:25:28.7253260Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:53: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract] : XCTAssertEqual failed: (\"Optional(\"disconnected\")\") is not equal to (\"Optional(\"connected\")\")",
+          "2026-10-10T09:25:28.7258900Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:54: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract] : XCTAssertEqual failed: (\"Optional(\"closed\")\") is not equal to (\"Optional(\"open\")\")",
+          "2026-10-10T09:25:28.7263010Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract]' failed (0.003 seconds).",
+          "2026-10-10T09:25:28.7283260Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:85: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimUsesFiniteNonnegativeMonotonicPageClock] : XCTAssertEqual failed: (\"Optional(\"[]\")\") is not equal to (\"Optional(\"[12,12,12]\")\")",
+          "2026-10-10T09:25:28.7288370Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimUsesFiniteNonnegativeMonotonicPageClock]' failed (0.002 seconds).",
+          "2026-10-10T09:25:28.7317670Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 373,
+    "id": 38041257049,
+    "name": "Music Native Wrapper Swift",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114181793214,
+        "name": "swift-test",
+        "steps": [
+          "Test native wrapper package"
+        ],
+        "errors": [
+          "2026-10-10T09:26:12.7316840Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:102: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testRepeatedInjectionDoesNotReplaceInputOrDuplicateListeners] : XCTAssertEqual failed: (\"Optional(0)\") is not equal to (\"Optional(1)\")",
+          "2026-10-10T09:26:12.7324560Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testRepeatedInjectionDoesNotReplaceInputOrDuplicateListeners]' failed (0.004 seconds).",
+          "2026-10-10T09:26:12.7346810Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:61: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:26:12.7431350Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:62: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:26:12.7437210Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:63: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertTrue failed",
+          "2026-10-10T09:26:12.7444320Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:64: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertEqual failed: (\"Optional(\"[]\")\") is not equal to (\"Optional(\"[[144,60,100],[128,60,0],[144,61,0]]\")\")",
+          "2026-10-10T09:26:12.7451720Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:9: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : failed - JavaScript exception: TypeError: undefined is not an object (evaluating 'received[0].timeStamp')",
+          "2026-10-10T09:26:12.7459610Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:65: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage] : XCTAssertEqual failed: (\"Optional(nan)\") is not equal to (\"Optional(42.5)\")",
+          "2026-10-10T09:26:12.7467690Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimDispatchesNoteOnNoteOffAndVelocityZeroThroughOnMidiMessage]' failed (0.010 seconds).",
+          "2026-10-10T09:26:12.7482440Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:53: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract] : XCTAssertEqual failed: (\"Optional(\"disconnected\")\") is not equal to (\"Optional(\"connected\")\")",
+          "2026-10-10T09:26:12.7489100Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:54: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract] : XCTAssertEqual failed: (\"Optional(\"closed\")\") is not equal to (\"Optional(\"open\")\")",
+          "2026-10-10T09:26:12.7495130Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimExposesTheMusicStudioRequestMIDIAccessContract]' failed (0.007 seconds).",
+          "2026-10-10T09:26:12.7510370Z /Users/runner/work/nova-studio/nova-studio/tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift:85: error: -[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimUsesFiniteNonnegativeMonotonicPageClock] : XCTAssertEqual failed: (\"Optional(\"[]\")\") is not equal to (\"Optional(\"[12,12,12]\")\")",
+          "2026-10-10T09:26:12.7516880Z Test Case '-[NovaMusicNativeWrapperTests.MusicStudioWebMidiBridgeTests testShimUsesFiniteNonnegativeMonotonicPageClock]' failed (0.005 seconds).",
+          "2026-10-10T09:26:12.7563960Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 368,
+    "id": 38026207529,
+    "name": "Music Studio read-only dependencies",
+    "status": "completed",
+    "conclusion": "failure",
+    "failures": [
+      {
+        "job": 114137471329,
+        "name": "verify",
+        "steps": [
+          "Full regression, syntax and whitespace"
+        ],
+        "errors": [
+          "2026-10-10T05:03:47.1902947Z ##[error]Process completed with exit code 1."
+        ]
+      }
+    ]
+  },
+  {
+    "pr": 298,
+    "id": 37207106392,
+    "name": "Music Studio read-only dependencies",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "failures": [
+      {
+        "job": 111450476093,
+        "name": "verify",
+        "steps": [],
+        "errors": [
+          "2026-10-04T19:51:35.1821744Z ##[error]The operation was canceled."
+        ]
+      }
+    ]
+  }
+]

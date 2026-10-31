@@ -1,0 +1,13 @@
+# Arrangement existing role/track inspection — 2026-10-03 JST
+
+Fresh GitHub main 552d56eafddfd192970c09f7d6278696cf8775c3; #287 daadc79ab48772a420bf8720c1ef0f75afe10cbe. All 34 Open PR details fetched: 32 Drafts mergeable, returned head workflow runs successful; two older non-Drafts conflict. Independent branch starts at #287. No AGENTS.md found. Issue #255, verification/TODO records, composition, core role/Track ID contracts, Family transaction/history, persistence and existing tests reviewed.
+
+Safe next foundation: explicit read-only Arrangement Role / Track inspection -> Cancel. Reuses #287 reference and full Section structural validation, exact partial timeline and runtime workspace/MIDI invalidation. Observes core.resolveCoreTrackRole only and shows exact existing Track IDs for all declared roles. Does not select instruments, bind destinations or render notes. No roleAssignment/latest/first-match fallback. Missing/ambiguous roles, malformed track collection/IDs and duplicate Track IDs fail closed, including when entry is outside partial selection. No selection is persisted. Unknown fields untouched; no load-time writes, migration or real song/backup changes.
+
+New regressions cover core part/canonical-ID semantics, exact noncanonical IDs, unknown fields/nonmutation, missing/ambiguous/duplicate/malformed/orphan targets and invalid excluded Section. UI regressions retain original #287 tests and add track inspection/Cancel, stale MIDI/workspace, Save/Reopen, JSON/Backup exclusion. Legacy render performs no resolution. Existing atomic Apply/rollback/Undo/Redo tests retained unchanged; this unit never enters an Apply transaction.
+
+Full node/syntax/whitespace and final-head Chrome CI results recorded in Draft PR. Browser suite retains all existing responsibilities and adds track normal/partial, invalid, stale, Cancel, zero writes and Save/Reopen at 1440/820/390. All fixture repositories synthetic/local.
+
+Deferred: persisted Lyrics duplicate identity/rebinding/history policy; lyric text/syllable allocation; Arrangement instrument/content and explicit destination binding policy; Section replacement/edit; Continuation composition/source-destination/Family policy. No newly discovered contract authorizes those policies.
+
+Physical acceptance: Intel Mac/Chrome and M1 iPad/Safari on separate synthetic project: Family -> Arrangement B -> partial M3–4 -> Role / Track inspection -> Cancel; missing/duplicate role refusal, source change/reinspection, Save/Reopen with no derived inspection. Check Japanese/touch layout. Keystation recording/playback and Intel Mac Audio-to-MIDI accuracy remain physical-only/separate. Ready/Merge/Auto Merge/force push never performed.

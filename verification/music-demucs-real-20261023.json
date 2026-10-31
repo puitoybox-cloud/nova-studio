@@ -1,0 +1,114 @@
+{
+  "sourceSha256": "6525450e5a4ae8ca5748eee7e39ed778a2e150e3a302dfc978779260a1702999",
+  "basicPitchVersion": "0.4.0",
+  "basicPitchModelSha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+  "strictRuntime": false,
+  "qualityAccepted": false,
+  "stems": [
+    {
+      "name": "bass.wav",
+      "sha256": "5b65b6b5a6f73c18e876d4fb1f685f003b9d18da658c2267a0bbb6c8a62ad5c8",
+      "frames": 132300,
+      "sampleRate": 44100
+    },
+    {
+      "name": "drums.wav",
+      "sha256": "5f2825da4bdb5300db002a1b7a4ec9e0d3a1a4148b0aaed9ebf4177a13267b22",
+      "frames": 132300,
+      "sampleRate": 44100
+    },
+    {
+      "name": "guitar.wav",
+      "sha256": "dd6c8456cc9c50ac1a5a06b03fa6a56861e0979521974e08bf649ea072bb0e81",
+      "frames": 132300,
+      "sampleRate": 44100
+    },
+    {
+      "name": "other.wav",
+      "sha256": "9e98c05b968387ad4b38432e5cf43b99d0a1aa9b062edcc26b9f717494bbe9ac",
+      "frames": 132300,
+      "sampleRate": 44100
+    },
+    {
+      "name": "piano.wav",
+      "sha256": "a0d44c825ca2f8f4e089ff0818e9f372e3c42ba98a3a9b2bb8fa787595c03df1",
+      "frames": 132300,
+      "sampleRate": 44100
+    },
+    {
+      "name": "vocals.wav",
+      "sha256": "6dd0d0db50f62de43b078918124b9287088017ba8bc0fc95216244369d37133f",
+      "frames": 132300,
+      "sampleRate": 44100
+    }
+  ],
+  "noteCounts": {
+    "Vocals": 1,
+    "Drums": 3,
+    "Guitar": 4
+  },
+  "demucsVersion": "4.1.0",
+  "midiSha256": "ea6084529521169fbf06ccfa30eb6edfaaaa1c007df8975878d1b718f878ec5e",
+  "noteOnCount": 8,
+  "events": [
+    [
+      0.011706704166666668,
+      "note_on",
+      72,
+      97
+    ],
+    [
+      0.011706704166666668,
+      "note_on",
+      72,
+      108
+    ],
+    [
+      0.06917597916666668,
+      "note_on",
+      38,
+      45
+    ],
+    [
+      0.18624302083333336,
+      "note_on",
+      38,
+      45
+    ],
+    [
+      0.255419,
+      "note_on",
+      38,
+      45
+    ],
+    [
+      0.4523044791666667,
+      "note_on",
+      44,
+      56
+    ],
+    [
+      1.6474525500000001,
+      "note_on",
+      44,
+      65
+    ],
+    [
+      2.2657793791666667,
+      "note_on",
+      44,
+      49
+    ]
+  ],
+  "midiBase64": "TVRoZAAAAAYAAQAEAeBNVHJrAAAAMgD/AxtNdXNpYyBTdHVkaW8gQXVkaW8gUGlwZWxpbmUA/1EDB8t2AP9YBAQCGAgA/y8ATVRyawAAABoA/wMGVm9jYWxzAMA1C5BIYYFkgEgAAP8vAE1UcmsAAAAlAP8DBURydW1zQZkmLTmJJgA1mSYtOIkmAAmZJi04iSYAAP8vAE1UcmsAAAAxAP8DBkd1aXRhcgDDGQuTSGyDHiw4gjEsAIYyLEGBfCwAgkksMYFvLACDKUgAAP8vAA==",
+  "date": "2026-10-23 JST",
+  "source": "assets/music-acoustic-v1/piano-72.wav",
+  "mode": "existing server.process_audio; non-strict developer runtime",
+  "demucsModelSha256": "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd",
+  "limitation": "3-second isolated piano source only; cross-stem leakage and musical transcription quality are not accepted. Packaged strict runtime, separated-WAV Track/archive adoption and physical acceptance remain open.",
+  "earlierSeparatedBuild": {
+    "midiSha256": "8ed09b82d9dfdd6a1cb06654c4b94d9145ffb710ecd573a69fba9bff9a325837",
+    "noteOnCount": 10
+  },
+  "variation": "Demucs default random shifts were retained: full process generated 8 note-ons vs earlier separate/build 10. No deterministic or accuracy claim."
+}
