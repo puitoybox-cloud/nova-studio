@@ -1,0 +1,30 @@
+name: Music Macless requirements and Auto-Finish recovery
+on:
+  pull_request:
+    paths:
+      - 'music-studio-editor.js'
+      - 'music-studio.js'
+      - 'music-studio-auto-finish.js'
+      - 'tests/*.test.js'
+      - 'docs/music-studio/MACLESS_REQUIREMENTS_V1.*'
+      - 'scripts/music-macless-ledger.py'
+      - 'tools/nova-au/auto-finish-server.py'
+      - 'tools/nova-au/tests/test_auto_finish_server.py'
+      - 'verification/music-macless-*'
+      - '.github/workflows/music-macless-ledger.yml'
+permissions:
+  contents: read
+jobs:
+  software-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 -m unittest discover -s tools/nova-au/tests -p test_auto_finish_server.py -v
+      - run: node --test --test-concurrency=2 tests/*.test.js
+      - run: python3 scripts/music-macless-ledger.py
