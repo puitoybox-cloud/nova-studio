@@ -715,6 +715,10 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
 .music-mix-versions summary,.music-mix-advanced summary{min-height:44px;box-sizing:border-box;padding:6px 10px;background:#112031;color:#f3f6ff;cursor:pointer;display:flex;align-items:center}
 .music-mix-versions article{padding:12px;border:1px solid #527085}
 .music-mix-advanced>div{padding:12px;max-height:60dvh;overflow:auto;overscroll-behavior:contain}
+@media(min-width:1000px) and (max-height:900px) and (orientation:landscape){
+ /* Dedicated final-export stage: compact shell whitespace, not 44px controls. */
+ .music-export-focused{padding:8px 12px;margin:0 auto}
+}
 @media(min-width:821px) and (orientation:landscape){
  .music-mix-focused{padding:8px 12px;margin:0 auto}
  .music-mix-focused>.music-project-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;padding:12px}

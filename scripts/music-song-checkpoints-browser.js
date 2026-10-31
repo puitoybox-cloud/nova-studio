@@ -58,7 +58,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
  for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});await page.locator('.music-production-history').screenshot({path:`verification/music-checkpoint-finished-${width}.png`});assert.equal(await page.locator('.music-production-history').evaluate(e=>e.scrollWidth>e.clientWidth+1),false)}
  await browser.close();page=await open();await page.evaluate(()=>MusicStudio.openProject('checkpoint-song'));await page.locator('.music-song-versions').evaluate(e=>e.open=true);
  const original=await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('checkpoint-song')));
- await page.getByRole('button',{name:'Open copy（元を保護して別曲として編集）',exact:true}).click();await page.waitForFunction(()=>!MusicStudio.versionPanel.busy&&location.hash.includes('/project/')&&!location.hash.endsWith('checkpoint-song'));
+ const openCopy=page.getByRole('button',{name:'Open copy（元を保護して別曲として編集）',exact:true});if(await openCopy.count()!==1){const diagnostic=await page.evaluate(async()=>{const a=MusicStudio,p=await a.indexedDbRepository().get('checkpoint-song');return{route:location.hash,loaded:a.state.loaded,currentProject:a.state.projects.find(x=>x.projectId==='checkpoint-song')?.songVersions?.checkpoints?.map(c=>({id:c.id,kind:c.kind})),storedProject:p?.songVersions?.checkpoints?.map(c=>({id:c.id,kind:c.kind})),panel:document.querySelector('.music-production-history')?.outerHTML.slice(0,2500),versionBusy:a.versionPanel.busy}});throw Error('finished-copy-button-missing '+JSON.stringify(diagnostic))}await openCopy.click();await page.waitForFunction(()=>!MusicStudio.versionPanel.busy&&location.hash.includes('/project/')&&!location.hash.endsWith('checkpoint-song'));
  report.finished=await page.evaluate(async(original)=>{const a=MusicStudio,r=a.indexedDbRepository(),all=await r.list(),p=all.find(p=>p.songVersions?.fork?.sourceProjectId==='checkpoint-song');if(!p)throw Error('finished copy missing');if(JSON.stringify(await r.get('checkpoint-song'))!==original)throw Error('original finished overwritten');if(p.productionNotes!=='Original notes'||!p.longWavAssets.length||p.songVersions.sessions[0].endNote!=='完成版を記録'||!p.songVersions.sessions[0].endedAt)throw Error('finished/session data lost');if(p.songVersions.days[0].note!=='完成版を保存した日')throw Error('daily note lost');if(p.aiWorkspace.baseRevision!==p.revision)throw Error('AI binding');const archive=await a.createLongWavArchive();const result=await a.restoreLongWavArchive(archive,{settings:false});if(!result.ok)throw Error(result.error);const copies=(await r.list()).filter(x=>x.songVersions?.fork?.sourceProjectId==='checkpoint-song');if(copies.length<2||copies.some(x=>!a.validateProject(x).valid))throw Error('finished archive restore');return{restart:true,immutableSource:true,editableCopy:true,aiBinding:true,historicalWav:true,sessionAndDailyNote:true,completeArchiveRestore:true}},original);
  await page.evaluate(()=>MusicStudio.openProject('range-song'));
  report.dependencyVerified=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');const result=await a.inspectStoredDependencies('range-song');if(!result.ok||result.report.rows.some(x=>x.status!=='verified'))throw Error('verification failed');if(p.lyrics.versions[0].text!=='保持する歌詞'||p.chordProgressions[0].chords[0]!=='C')throw Error('linked text changed');p.fileReferences.push({name:'legacy.wav'});p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);const legacy=await a.inspectStoredDependencies(p.projectId);if(!legacy.ok||!legacy.report.rows.some(x=>x.status==='unverified-legacy')||!legacy.report.rows.some(x=>x.status==='verified'))throw Error('mixed legacy inspection');return{verified:true,unassignedLyricsRetained:true,legacyReported:true}});
@@ -86,5 +86,33 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    assert.equal(preserved,true);report.singingCancellation.push({width,height:820,originalPreserved:preserved});
  }
  assert.equal(cancellations.length,4);assert.equal(new Set(cancellations.map(c=>c.requestId)).size,4);
+
+ // Checkpoint adoption must atomically span lyrics, audio and production notes,
+ // reject stale comparisons, and survive a real browser process restart.
+ report.crossDomainUndo=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository();let p=a.makeProject({projectId:'cross-domain-undo',projectName:'Cross-domain undo',productionNotes:'original note'});
+  p.lyrics={versions:[{id:'cross-lyrics',text:'original lyric'}],activeVersionId:'cross-lyrics'};
+  p.mixNotes='original mix';await r.put(p);await a.refresh();a.openProject(p.projectId);
+  let x=await a.versionSave(p.projectId,'Before cross-domain edit');if(!x.ok)throw Error('cross-checkpoint-save '+x.error);
+  p=await r.get(p.projectId);p.lyrics.versions[0].text='edited lyric';p.mixNotes='edited mix';p.productionNotes='edited note';p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);
+  const id=p.songVersions.checkpoints[0].id;x=a.versionPreview(p.projectId,id,['music','audio','notes']);if(!x.ok)throw Error('cross-preview '+x.error);
+  p=await r.get(p.projectId);p.productionNotes='concurrent note';p.revision++;await r.put(p);await a.refresh();
+  const before=JSON.stringify(await r.get(p.projectId));x=await a.versionApply(p.projectId);
+  if(x.ok||JSON.stringify(await r.get(p.projectId))!==before)throw Error('cross-domain-stale-overwrite');
+  x=a.versionPreview(p.projectId,id,['music','audio','notes']);if(!x.ok)throw Error('cross-recompare '+x.error);
+  x=await a.versionApply(p.projectId);if(!x.ok)throw Error('cross-adopt '+x.error);
+  const q=await r.get(p.projectId);
+  if(q.lyrics.versions[0].text!=='original lyric'||q.mixNotes!=='original mix'||q.productionNotes!=='original note')throw Error('cross-adoption-incomplete');
+  return{stalePreviewRejected:true,allThreeDomainsAdopted:true};
+ });
+ await browser.close();page=await open();
+ report.crossDomainUndo.restart=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository();await a.refresh();const id='cross-domain-undo';
+  let x=await a.versionUndoRedo(id,-1);if(!x.ok)throw Error('cross-undo '+x.error);
+  let p=await r.get(id);if(p.lyrics.versions[0].text!=='edited lyric'||p.mixNotes!=='edited mix'||p.productionNotes!=='concurrent note')throw Error('cross-undo-mismatch');
+  x=await a.versionUndoRedo(id,1);if(!x.ok)throw Error('cross-redo '+x.error);
+  p=await r.get(id);if(p.lyrics.versions[0].text!=='original lyric'||p.mixNotes!=='original mix'||p.productionNotes!=='original note')throw Error('cross-redo-mismatch');
+  return true;
+ });
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.external,[]);report.completed=true;
  }finally{await browser?.close();server.close();fs.rmSync(profile,{recursive:true,force:true});fs.writeFileSync('verification/music-song-checkpoints-browser.json',JSON.stringify(report,null,2)+'\n')}})().catch(e=>{console.error(e);process.exitCode=1});

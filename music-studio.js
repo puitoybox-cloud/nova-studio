@@ -649,7 +649,18 @@
     state.notice=message;state.noticeKind=kind;requestPaint();
     noticeTimer=root.setTimeout?.(()=>{noticeTimer=null;if(state.notice===message){state.notice='';requestPaint()}},2600)||null;
   }
-  function routeTo(route){lastRoute=route;if(root.document?.body?.dataset.musicStudioStandalone==='true')root.location.hash=route;else if(typeof root.setView==='function')root.setView(route);else root.location.hash=route}
+  function routeTo(route){
+    if(root.document?.body?.dataset.musicStudioStandalone==='true'){
+      // Internal navigation is already guarded by its caller. Paint before a
+      // pending save can make the subsequent hashchange look like an external leave.
+      root.location.hash=route;lastRoute=route;paintStandalone();return;
+    }
+    if(typeof root.setView==='function'){
+      if(root.setView(route)!==false)lastRoute=route;
+      return;
+    }
+    root.location.hash=route;lastRoute=route;root.render?.();
+  }
   function currentRoute(){return (root.location?.hash||`#${HOME_ROUTE}`).slice(1)||HOME_ROUTE}
   function requestPaint(){
     const checkpointPanel=root.document?.querySelector?.('.music-song-versions');if(checkpointPanel)versionPanel.open=checkpointPanel.open;
