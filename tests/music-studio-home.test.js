@@ -9,7 +9,7 @@ const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-play
 
 test('host shell cache-busts the current Music Studio loader',()=>{
   const host=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),loader=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),version=loader.match(/hostLoader:'([^']+)'/)?.[1];
-  assert.equal(version,'1.5.62');
+  assert.equal(version,'1.5.100');
   assert.match(host,new RegExp(`app\\.js\\?v=${version.replaceAll('.','\\.')}`));
 });
 
@@ -52,7 +52,7 @@ test('Music Studio 0.2 exposes beginner guides without changing project storage'
   for(const text of ['クラウド同期ではありません','Project全体の外部バックアップ','Logic ProからStandard MIDI File','用語を確認'])assert.match(html,new RegExp(text));
   for(const text of ['ノート位置・長さをGridへ合わせます','1\/4＝1拍','Export All MIDI','Fit Range','Add Measure','MIDIキーボードを選択して演奏・録音'])assert.match(source,new RegExp(text));
   assert.match(source,/function openHelp\(id\)/);assert.match(source,/function closeHelp\(id\)/);
-  assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,5\)/);
+  assert.match(source,/const DB_NAME='music-studio-projects'/);assert.match(source,/indexedDB\.open\(DB_NAME,7\)/);
 });
 
 test('first-song guide reuses one definition for dialog and named-window route',()=>{
@@ -196,22 +196,22 @@ test('Music Studio dependencies load sequentially without querying detached scri
   const hostSource=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
   const indexSource=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
   const standaloneSource=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8');
-  assert.match(indexSource,/app\.js\?v=1\.5\.62/);
+  assert.match(indexSource,/app\.js\?v=1\.5\.100/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi'.*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio-midi-parser'[\s\S]*?\n\s*\.then\(\(\)=>loadMusicStudioScript\('music-studio'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-midi-input'/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-external-song-import'/);
   assert.match(standaloneSource,/music-studio-external-song-import\.js\?v=1\.0\.0/);
   assert.match(hostSource,/loadMusicStudioScript\('music-studio-audio'/);
   assert.match(fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8'),/@media\(min-width:1181px\) and \(max-width:1366px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
-  assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.4/);
-  assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.2/);
-  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.20/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.20/);
-  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.13/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.13/);
-  assert.match(hostSource,/music-studio\.css\?v=1\.4\.131/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.131/);
-  assert.match(hostSource,/music-studio\.js\?v=1\.4\.112/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.112/);
-  assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.20'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.112'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
-  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.62',stylesheet:'1\.4\.131'/);
+  assert.match(standaloneSource,/nova-menu\.css\?v=1\.1\.3/);assert.match(standaloneSource,/nova-menu\.js\?v=1\.0\.5/);
+  assert.match(hostSource,/music-studio-midi-input\.js\?v=1\.4\.3/);
+  assert.match(hostSource,/music-studio-editor\.js\?v=1\.4\.28/);assert.match(standaloneSource,/music-studio-editor\.js\?v=1\.4\.28/);
+  assert.match(hostSource,/music-studio-audio\.js\?v=1\.4\.21/);assert.match(standaloneSource,/music-studio-audio\.js\?v=1\.4\.21/);
+  assert.match(hostSource,/music-studio\.css\?v=1\.4\.160/);assert.match(standaloneSource,/music-studio\.css\?v=1\.4\.160/);
+  assert.match(hostSource,/music-studio\.js\?v=1\.4\.223/);assert.match(standaloneSource,/music-studio\.js\?v=1\.4\.223/);
+  assert.match(hostSource,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.28'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
+  assert.match(hostSource,/MusicStudio\?\.ASSET_VERSION==='1\.4\.223'&&typeof window\.MusicStudio\.externalTrackReviewHtml==='function'/);
+  assert.match(hostSource,/window\.MusicStudioRuntime=Object\.freeze\(\{hostLoader:'1\.5\.100',stylesheet:'1\.4\.159'/);
   assert.doesNotMatch(hostSource,/const parserScript=document\.querySelector\('script\[data-music-studio-midi-parser\]'\)/);
   assert.match(hostSource,/console\.error\('Music Studio scripts could not be initialized',error\)/);
 });
@@ -298,3 +298,7 @@ test('display assist controls are grouped without changing their actions',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-display-assist>\.music-assist-layout\{grid-auto-rows:max-content;flex:none;gap:10px\}/);assert.match(css,/\.music-display-assist \.music-assist-description\{margin-top:8px;line-height:1\.45\}/);assert.match(css,/@media\(min-width:901px\)\{\s*\.music-midi-editor-page \.music-piano-viewport/);
 });
+
+test('Mastering home entry opens the real selected-project Harmony and Master forms',()=>{const app=loadMusicStudio().MusicStudio;const p=app.makeProject({projectId:'master-home',projectName:'Master home'});app.state.projects=[p];app.state.loaded=true;assert.equal(app.FEATURES.find(f=>f.id==='mastering').status,'working');const html=app.renderRoute('music-studio/mastering');assert.match(html,/Preview master/);assert.match(html,/Preview harmony/);assert.match(html,/music-production-tools music-setting-section/);assert.doesNotMatch(html,/現在は既存データを変更しない安全な準備中画面/)});
+
+test('focused production routes bypass the decorative host Hero without affecting home and full project routes',()=>{const source=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),match=source.match(/function isMusicEditorStudioRoute\(route\)\{[\s\S]*?\n\}/);assert.ok(match);const w={};vm.runInNewContext(match[0]+';window.focused=isMusicEditorStudioRoute',{window:w});for(const route of ['vocal','mixing-workspace','mixing-master','mixing-long-master','mixing-export'])assert.equal(w.focused('music-studio/'+route+'/song'),true);for(const route of ['music-studio','music-studio/project/song','music-studio/mixing/song','storyArchive'])assert.equal(w.focused(route),false)});

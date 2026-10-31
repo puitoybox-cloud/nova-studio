@@ -1,0 +1,63 @@
+name: Music production master loudness
+on:
+  pull_request:
+    paths:
+      - 'music-studio.js'
+      - 'scripts/music-eight-minute-stems-browser.js'
+      - '.github/workflows/music-production-mastering.yml'
+permissions:
+  contents: read
+jobs:
+  acoustic-production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/stem-browser" playwright
+      - name: Prepare immutable same-runner baseline
+        run: |
+          git fetch --depth=1 origin 3a7852f1ea498c3570ad658c35808b4b982444e1
+          git worktree add --detach "$RUNNER_TEMP/music-baseline" 3a7852f1ea498c3570ad658c35808b4b982444e1
+          cp scripts/music-eight-minute-stems-browser.js "$RUNNER_TEMP/music-baseline/scripts/music-eight-minute-stems-browser.js"
+      - name: Baseline acoustic eight-minute production
+        env:
+          NODE_PATH: ${{ runner.temp }}/stem-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: 3a7852f1ea498c3570ad658c35808b4b982444e1
+          NOVA_HQ: '1'
+        run: |
+          cd "$RUNNER_TEMP/music-baseline"
+          node scripts/music-eight-minute-stems-browser.js
+          cp verification/music-eight-minute-stems-browser.json "$GITHUB_WORKSPACE/verification/music-eight-minute-baseline.json"
+      - name: Acoustic eight-minute production restore and export
+        env:
+          NODE_PATH: ${{ runner.temp }}/stem-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_HQ: '1'
+        run: node scripts/music-eight-minute-stems-browser.js
+      - name: Compare identical audio and processing conditions
+        run: |
+          node - <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const before=JSON.parse(fs.readFileSync('verification/music-eight-minute-baseline.json'));
+          const after=JSON.parse(fs.readFileSync('verification/music-eight-minute-stems-browser.json'));
+          assert.equal(before.completed,true);assert.equal(after.completed,true);
+          assert.deepEqual(after.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})),before.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})));
+          assert.equal(after.result.masterHash,before.result.masterHash);
+          assert.deepEqual(after.result.mastering,before.result.mastering);
+          fs.writeFileSync('verification/music-eight-minute-comparison.json',JSON.stringify({baselineHead:before.head,head:after.head,beforeSteps:before.result.steps,afterSteps:after.result.steps,beforeMemory:before.memory,afterMemory:after.memory,audioEqual:true},null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-acoustic-mastering
+          path: |
+            verification/music-eight-minute-stems-browser.json
+            verification/music-eight-minute-baseline.json
+            verification/music-eight-minute-comparison.json

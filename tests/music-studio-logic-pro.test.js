@@ -5,10 +5,35 @@ const test=require('node:test');
 const vm=require('node:vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8');
+test('selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input',async()=>{
+  const input={id:'keys',name:'Keys'},replacement={id:'other',name:'Other'},access={inputs:new Map([['keys',input],['other',replacement]])};
+  const {app,window}=load({requestMIDIAccess:async()=>access}),repo=app.memoryRepository(),project=app.makeProject({projectId:'disconnect-count-in',projectName:'Disconnect'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const jobs=new Map();let sequence=0;window.setTimeout=callback=>{jobs.set(++sequence,callback);return sequence};window.clearTimeout=id=>jobs.delete(id);
+  window.performance={now:()=>1000};window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,allNotesOff(){},stopPreview(){},stopPlayback(){},stopMetronome(){},metronomeClick(){}};
+  await app.editorInitializeMidi();const before=JSON.stringify(await repo.get(project.projectId));
+  const pending=app.editorStartMidiRecording();await new Promise(resolve=>setImmediate(resolve));assert.equal(app.state.midiInput.countingIn,true);
+  const staleJobs=[...jobs.values()];access.inputs.delete('keys');access.onstatechange();
+  const result=await pending;assert.equal(result.countInCancelled,true);assert.equal(app.state.midiInput.recording,false);assert.equal(app.state.midiInput.recorder,null);assert.equal(app.state.midiInput.recordingTrackId,null);assert.equal(app.state.midiInput.countInTimer,null);
+  assert.equal(app.state.midiInput.selectedId,'other');assert.equal(input.onmidimessage,null);
+  for(const callback of staleJobs)callback();assert.equal(app.state.midiInput.recording,false);assert.equal(JSON.stringify(await repo.get(project.projectId)),before);
+});
+test('MIDI input switching and rescan are rejected throughout active transport without requesting access',async()=>{
+  let requests=0;const {app,window}=load({requestMIDIAccess:async()=>{requests++;return{inputs:new Map()}}});
+  const midi=app.state.midiInput;midi.inputs=[{id:'keys'},{id:'other'}];midi.selectedId='keys';
+  for(const phase of ['starting','countingIn','recording','stopping']){
+    midi[phase]=true;
+    for(const id of ['other','__rescan__']){const result=await app.editorSelectMidiInput(id);assert.equal(result.reason,'transport-busy');assert.equal(midi.selectedId,'keys');}
+    midi[phase]=false;
+  }
+  assert.equal(requests,0);assert.equal(window.MusicStudio.state.midiInput.selectedId,'keys');
+});
 function load(navigator={}){
   const values=new Map([['novaStudio_v01','nova-safe'],['aiMusicHelperProject','ai-safe']]);
   let uuidSequence=0;const window={navigator,crypto:{randomUUID:()=>`id-${++uuidSequence}`},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio/logic-pro'},performance:{now:()=>0},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob};window.window=window;
   const midiSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi.js'),'utf8');vm.runInNewContext(midiSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi.js'});const parserSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-parser.js'),'utf8');vm.runInNewContext(parserSource,{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:'music-studio-midi-parser.js'});const editorSource=fs.readFileSync(path.join(__dirname,'..','music-studio-editor.js'),'utf8');vm.runInNewContext(editorSource,{window,globalThis:window},{filename:'music-studio-editor.js'});const inputSource=fs.readFileSync(path.join(__dirname,'..','music-studio-midi-input.js'),'utf8');vm.runInNewContext(inputSource,{window,globalThis:window},{filename:'music-studio-midi-input.js'});const playbackSource=fs.readFileSync(path.join(__dirname,'..','music-studio-playback.js'),'utf8');vm.runInNewContext(playbackSource,{window,globalThis:window},{filename:'music-studio-playback.js'});
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..','music-studio-logic-instruments.js'),'utf8'),{window,globalThis:window});
   vm.runInNewContext(source,{window,globalThis:window},{filename:'music-studio.js'});return{app:window.MusicStudio,values,window};
 }
 function file(name,bytes,type='application/octet-stream'){const data=Uint8Array.from(bytes);return{name,size:data.length,type,async arrayBuffer(){return data.buffer},slice(start,end){const part=data.slice(start,end);return{async arrayBuffer(){return part.buffer}}}}}
@@ -168,7 +193,7 @@ test('MIDI input uses one compact selector and the part tabs omit duplicate note
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/<summary aria-label="MIDI入力">MIDI入力<\/summary>/);assert.match(html,/value="keys" selected>Keystation Mini 32 MK3/);assert.match(html,/value="pads" >MPD218/);assert.match(html,/value="__rescan__">↻ 再検出/);assert.match(html,/接続状態/);
   assert.match(html,/editorToggleMidiRecording\(\)" aria-disabled="false"/);assert.doesNotMatch(html,/editorToggleMidiRecording\(\)" disabled/);
-  await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
+  assert.equal((await app.editorSelectMidiInput('pads')).reason,'transport-busy');assert.equal(app.state.midiInput.selectedId,'keys');app.state.midiInput.recording=false;await app.editorSelectMidiInput('pads');assert.equal(app.state.midiInput.selectedId,'pads');assert.equal(keys.onmidimessage,null);assert.equal(typeof pads.onmidimessage,'function');
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page \.music-correction-popover input\[type=radio\]\{appearance:auto;width:18px!important/);
   assert.match(css,/iPad: let the toolbar own its rendered height/);
@@ -936,7 +961,7 @@ test('Melody Editor visual polish keeps semantic controls while styling piano ke
   assert.match(css,/\.music-midi-editor-page \.music-piano-key\.is-white\{border-right-color:#9ca3af;border-bottom-color:#cbd5e1;background:linear-gradient\(90deg,#fffef9 0,#f8fafc 76%,#e5e7eb 100%\)/);
   assert.match(css,/\.music-midi-editor-page \.music-pitch-name\.is-white\{background:rgba\(255,254,249,\.94\);color:#111827/);assert.match(css,/\.music-midi-editor-page \.music-pitch-name\.is-black\{background:rgba\(7,12,19,\.92\);color:#f8fafc/);
   assert.doesNotMatch(html,/music-piano-key is-black" data-pitch="(?:60|62|64|65|67|69|71)"/);
-  assert.match(html,/>Bar 1<\/button>/);assert.doesNotMatch(html,/>小節 1<\/button>/);
+  assert.match(html,/><span class="music-measure-prefix">Bar <\/span><span>1<\/span><\/button>/);assert.doesNotMatch(html,/>小節 1<\/button>/);
   assert.match(css,/\.music-midi-editor-page\{--music-editor-surface:#0b141f/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-frame\{grid-template-columns:112px minmax\(0,1fr\)\}/);
   assert.match(css,/\.music-midi-editor-page \.music-piano-key-layer,[^}]*\.music-pitch-hit-layer\{position:absolute;top:0/);
@@ -1075,8 +1100,8 @@ test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow ho
     session.view.zoom=zoom;html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
     assert.match(html,new RegExp(`class="music-piano-content" style="width:${zoom*100}%"`));
     assert.match(html,new RegExp(`class="music-piano-header-content" style="width:${zoom*100}%"`));
-    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*>Bar 1<\/button>/);
-    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*>Bar 2<\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>1<\/span><\/button>/);
+    assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>2<\/span><\/button>/);
     assert.match(html,/class="music-loop-selection is-enabled" style="left:6\.25%;width:12\.5%"/);
     assert.match(html,/class="music-playhead" style="left:0%"/);
     assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);
@@ -1085,11 +1110,11 @@ test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow ho
 });
 test('long timelines thin measure text by Zoom without removing measure controls or grid geometry',()=>{
   const{app}=load(),project=app.makeProject({projectId:'long-ruler',projectName:'Long ruler',midiData:{editor:{measureCount:93},tracks:[{part:'melody',notes:[]}]}});app.state.projects=[project];
-  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`),labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.equal((html.match(/class="music-measure /g)||[]).length,93);assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 5','Bar 9','Bar 13','Bar 17']);assert.equal(labels.length,24);
-  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 3','Bar 5','Bar 7','Bar 9']);assert.equal((html.match(/class="music-measure /g)||[]).length,93);
-  for(let step=0;step<3;step++)app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*>(Bar \d+)<\/button>/g)].map(match=>match[1]);
+  for(let step=0;step<3;step++)app.editorZoom(1);html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);labels=[...html.matchAll(/class="music-measure has-label[^>]*><span class="music-measure-prefix">Bar <\/span><span>(\d+)<\/span><\/button>/g)].map(match=>'Bar '+match[1]);
   assert.deepEqual(labels.slice(0,5),['Bar 1','Bar 2','Bar 3','Bar 4','Bar 5']);assert.equal(labels.length,93);assert.match(html,/--measure-size:[^;]+%;--beat-size:[^;]+%;--subdivision-size:/);
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');assert.match(css,/\.music-measure\{height:30px;overflow:visible;[^}]*white-space:nowrap/);assert.match(css,/\.music-measure\.has-label\{z-index:1\}/);
 });
@@ -1194,8 +1219,8 @@ test('recorded Melody correction survives save and editor reload',async()=>{
 });
 test('MIDI edits made while save is pending remain dirty after the older save completes',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'save-race',projectName:'Save race'});await base.put(project);
-  let release;const repo={...base,async put(value){await new Promise(resolve=>{release=resolve});return base.put(value)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  app.editorAddNote();const saving=app.state.midiEditorSavePromise;await Promise.resolve();await Promise.resolve();
+  let release,started;const entered=new Promise(resolve=>started=resolve);const repo={...base,async compareAndPut(...args){started();await new Promise(resolve=>{release=resolve});return base.compareAndPut(...args)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  app.editorAddNote();const saving=app.state.midiEditorSavePromise;await entered;
   app.editorAddNote();release();
   const result=await saving,stored=await base.get(project.projectId);
   assert.equal(result.stale,true);assert.equal(app.state.midiEditor.dirty,true);
@@ -1214,6 +1239,23 @@ test('confirmed MIDI editing starts IndexedDB persistence without a debounce win
   assert.match(app.renderRoute(`music-studio/midi-editor/${project.projectId}`),/>Saved（保存済み）<\/button>/);
   assert.match(source,/addEventListener\?\.\('pagehide'.*flushMidiEditorAutosave/);
   assert.match(source,/addEventListener\?\.\('visibilitychange'.*flushMidiEditorAutosave/);
+});
+test('successful MIDI saves append bounded automatic production history and preserve it through backup restore',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'automatic-edit-history',projectName:'Automatic edit history'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];
+  assert.equal((await app.productionSessionSave(project.projectId,'start','MIDI editing')).ok,true);
+  app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();await app.state.midiEditorSavePromise;
+  const stored=await repo.get(project.projectId),edits=stored.songVersions.edits;
+  assert.equal(edits.length,1);assert.equal(edits[0].source,'midi-editor');assert.equal(edits[0].revision,stored.revision);assert.deepEqual(Array.from(edits[0].groups),['music']);assert.equal(edits[0].sessionId,stored.songVersions.sessions[0].id);
+  assert.match(app.versionTimeline(stored),/Automatic edit（自動保存）/);assert.equal(app.validateProject(stored).valid,true);
+  app.state.midiEditor=null;app.state.projects=[stored];assert.equal((await app.restoreBackup(app.backupObject(),{settings:false})).ok,true);
+  const restored=(await repo.list()).find(item=>item.projectId!==project.projectId);assert.equal(restored.songVersions.edits.length,1);assert.equal(restored.songVersions.edits[0].revision,edits[0].revision);assert.equal(app.validateProject(restored).valid,true);
+});
+test('automatic edit history rotates its oldest metadata without blocking later MIDI saves',async()=>{
+  const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'bounded-edit-history',projectName:'Bounded edit history'}),createdAt='2026-10-28T00:00:00.000Z';
+  project.songVersions={format:'nova-song-checkpoints-v1',checkpoints:[],operations:[],path:[],cursor:0,edits:Array.from({length:512},(_,i)=>({id:`old-${i}`,createdAt,revision:i+1,source:'midi-editor',groups:['music']}))};project.revision=513;
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);app.editorAddNote();const result=await app.state.midiEditorSavePromise,stored=await repo.get(project.projectId);
+  assert.equal(result.ok,true);assert.equal(stored.songVersions.edits.length,512);assert.equal(stored.songVersions.edits.some(edit=>edit.id==='old-0'),false);assert.equal(stored.songVersions.edits.at(-1).revision,stored.revision);assert.equal(app.validateProject(stored).valid,true);
 });
 test('Drums input and persisted editor measure state also save immediately',async()=>{
   const{app}=load(),repo=app.memoryRepository(),project=app.makeProject({projectId:'all-durable-edits',projectName:'All durable edits'});
@@ -1252,9 +1294,9 @@ test('Bass Piano Roll identifies track range pitch and program without leaking t
 });
 test('an edit during immediate save is serialized and the final state is persisted',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'immediate-race',projectName:'Immediate race'});await base.put(project);
-  let release,puts=0;const repo={...base,async put(value){puts++;if(puts===1)await new Promise(resolve=>{release=resolve});return base.put(value)}};
+  let release,started,puts=0;const entered=new Promise(resolve=>started=resolve);const repo={...base,async compareAndPut(...args){puts++;if(puts===1){started();await new Promise(resolve=>{release=resolve})}return base.compareAndPut(...args)}};
   app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  app.editorAddNote();const firstSave=app.state.midiEditorSavePromise;await Promise.resolve();await Promise.resolve();
+  app.editorAddNote();const firstSave=app.state.midiEditorSavePromise;await entered;
   app.editorAddNote();release();await firstSave;await Promise.resolve();await Promise.resolve();
   const finalSave=app.state.midiEditorSavePromise;if(finalSave)await finalSave;
   const stored=await base.get(project.projectId);
@@ -1263,7 +1305,7 @@ test('an edit during immediate save is serialized and the final state is persist
 });
 test('immediate MIDI save failure keeps the edited notes dirty in memory',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'immediate-failure',projectName:'Immediate failure'});await base.put(project);
-  app.setRepository({...base,async put(){throw Error('storage unavailable')}});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  app.setRepository({...base,async compareAndPut(){throw Error('storage unavailable')}});app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   const originalError=console.error;console.error=()=>{};let result;try{app.editorAddNote();result=await app.state.midiEditorSavePromise}finally{console.error=originalError}
   assert.equal(result.ok,false);assert.equal(app.state.midiEditor.dirty,true);
   assert.equal(app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody').notes.length,1);
@@ -1284,7 +1326,7 @@ test('Apply is reflected in latest unsaved MIDI export input without touching ot
 });
 test('a failed recording autosave keeps the recorded notes dirty and available for manual retry',async()=>{
   const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'failed-recording',projectName:'Failed recording'});await base.put(project);
-  const repo={...base,async put(value){if(value.midiData)throw Error('storage unavailable');return base.put(value)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const repo={...base,async compareAndPut(value,...args){if(value.midiData)throw Error('storage unavailable');return base.compareAndPut(value,...args)}};app.setRepository(repo);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   app.state.midiInput.recording=true;app.state.midiInput.recorder={stop:()=>[{id:'unsaved-note',pitch:67,startTick:0,durationTicks:240,velocity:88,channel:1}]};
   const originalError=console.error;console.error=()=>{};let result;try{result=await app.editorStopMidiRecording()}finally{console.error=originalError}
   const stored=await base.get(project.projectId),melody=app.state.midiEditor.midiData.tracks.find(track=>track.part==='melody');
@@ -1377,7 +1419,7 @@ test('Overdub preserves locked and unlocked existing notes while recording an un
 
 test('Lock Unlock participates in dirty autosave successful save and failed save lifecycle',async()=>{
   const{app,window}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'lock-save-lifecycle',projectName:'Lock save',midiData:{tracks:[{part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}});await base.put(project);app.setRepository(base);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const core=window.MusicStudioEditor,session=app.state.midiEditor;core.selectNote(session,'n');assert.equal(session.dirty,false);assert.equal(app.editorLockSelectedNotes(),true);assert.equal(session.dirty,true);assert.ok(app.state.midiEditorSavePromise);await app.state.midiEditorSavePromise;assert.equal(session.dirty,false);assert.equal((await base.get(project.projectId)).midiData.tracks.find(track=>track.part==='melody').notes[0].locked,true);assert.equal(app.editorUnlockSelectedNotes(),true);assert.equal(session.dirty,true);await app.state.midiEditorSavePromise;assert.equal(session.dirty,false);
-  const failingProject=await base.get(project.projectId);core.selectNote(session,'n');app.setRepository({...base,async put(){throw Error('storage unavailable')}});const originalError=console.error;console.error=()=>{};let failed;try{app.editorLockSelectedNotes();failed=await app.state.midiEditorSavePromise}finally{console.error=originalError}assert.equal(failed.ok,false);assert.equal(session.dirty,true);assert.equal(failingProject.midiData.tracks.find(track=>track.part==='melody').notes[0].locked,false);
+  const failingProject=await base.get(project.projectId);core.selectNote(session,'n');app.setRepository({...base,async compareAndPut(){throw Error('storage unavailable')}});const originalError=console.error;console.error=()=>{};let failed;try{app.editorLockSelectedNotes();failed=await app.state.midiEditorSavePromise}finally{console.error=originalError}assert.equal(failed.ok,false);assert.equal(session.dirty,true);assert.equal(failingProject.midiData.tracks.find(track=>track.part==='melody').notes[0].locked,false);
 });
 
 test('a selected locked note remains previewable through the existing voice path',async()=>{
@@ -1404,7 +1446,7 @@ test('Edit Range does not constrain Melody Drums or Bass recording targets',asyn
 });
 
 test('failed Edit Range autosave keeps dirty state and leaves stored project unchanged',async()=>{
-  const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'range-save-failure',projectName:'Range failure',midiData:{editor:{measureCount:8,editRange:{startMeasure:1,endMeasure:1}}}});await base.put(project);app.setRepository(base);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const session=app.state.midiEditor;app.setRepository({...base,async put(){throw Error('storage unavailable')}});const originalError=console.error;console.error=()=>{};let failed;try{app.editorSetEditRange(2,4);assert.equal(session.dirty,true);failed=await app.state.midiEditorSavePromise}finally{console.error=originalError}assert.equal(failed.ok,false);assert.equal(session.dirty,true);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:4});assert.deepEqual(JSON.parse(JSON.stringify((await base.get(project.projectId)).midiData.editor.editRange)),{startMeasure:1,endMeasure:1});
+  const{app}=load(),base=app.memoryRepository(),project=app.makeProject({projectId:'range-save-failure',projectName:'Range failure',midiData:{editor:{measureCount:8,editRange:{startMeasure:1,endMeasure:1}}}});await base.put(project);app.setRepository(base);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);const session=app.state.midiEditor;app.setRepository({...base,async compareAndPut(){throw Error('storage unavailable')}});const originalError=console.error;console.error=()=>{};let failed;try{app.editorSetEditRange(2,4);assert.equal(session.dirty,true);failed=await app.state.midiEditorSavePromise}finally{console.error=originalError}assert.equal(failed.ok,false);assert.equal(session.dirty,true);assert.deepEqual(JSON.parse(JSON.stringify(session.editRange)),{startMeasure:2,endMeasure:4});assert.deepEqual(JSON.parse(JSON.stringify((await base.get(project.projectId)).midiData.editor.editRange)),{startMeasure:1,endMeasure:1});
 });
 
 test('Partial Edit UI creates a transient preview and applies it as one Undo Redo step',async()=>{
@@ -1412,7 +1454,7 @@ test('Partial Edit UI creates a transient preview and applies it as one Undo Red
   assert.match(html,/id="partialEditTitle">Partial Edit/);assert.match(html,/Start Edit/);assert.match(html,/Pitch \+1 Preview/);assert.match(html,/Updated[\s\S]*Added[\s\S]*Deleted[\s\S]*Unchanged/);assert.equal(app.state.partialEditSession,null);
   core.selectNote(session,'open');const partial=app.editorStartPartialEdit();assert.equal(partial.status,'created');assert.equal(JSON.stringify(session.midiData),before);assert.equal(session.dirty,false);assert.doesNotMatch(JSON.stringify(project),/partialEditSession/);
   const preview=app.editorPreviewPartialEditPitchUp();assert.equal(preview.summary.updated,1);assert.equal(preview.summary.unchanged,1);assert.equal(JSON.stringify(session.midiData),before);assert.equal(session.undo.length,0);assert.equal(JSON.stringify(preview.beforeNotes.find(note=>note.id==='locked')),JSON.stringify(preview.afterNotes.find(note=>note.id==='locked')));
-  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/preview-ready/);assert.match(html,/<dt>Updated<\/dt><dd>1<\/dd>/);
+  html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/preview-ready/);assert.match(html,/<dt>Updated（更新）<\/dt><dd>1<\/dd>/);
   const applied=app.editorApplyPartialEdit();assert.equal(applied.applied,true);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='open').pitch,61);assert.equal(core.currentTrack(session).notes.find(note=>note.id==='locked').pitch,64);assert.equal(session.undo.length,1);assert.equal(session.dirty,true);const doubleApply=app.editorApplyPartialEdit();assert.equal(doubleApply.applied,false);assert.equal(doubleApply.reason,'already-applied');assert.equal(session.undo.length,1);
   app.editorUndo();assert.equal(core.currentTrack(session).notes.find(note=>note.id==='open').pitch,60);app.editorRedo();assert.equal(core.currentTrack(session).notes.find(note=>note.id==='open').pitch,61);await app.state.midiEditorSavePromise;const stored=await repo.get(project.projectId);assert.equal(stored.midiData.tracks.find(track=>track.part==='melody').notes.find(note=>note.id==='open').pitch,61);assert.doesNotMatch(JSON.stringify(stored),/partialEditSession|preview-ready/);assert.doesNotMatch(JSON.stringify(app.backupObject()),/partialEditSession|preview-ready/);
 });
@@ -1479,4 +1521,111 @@ test('External current Track download pins selection rejects stale Track and lea
 
 test('Editor exposes selected External Track export while preserving Core part and All export UI',()=>{
   const{app,window}=load(),project=app.makeProject({projectId:'single-export-ui',projectName:'Single Export UI',midiData:{tracks:[{id:'melody',part:'melody',name:'Melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:480,velocity:90}]},{id:'external-track',name:'External Strings',roleAssignment:'strings',trackType:'midi-melodic',channel:3,program:48,notes:[{id:'e',pitch:72,startTick:0,durationTicks:960,velocity:82}]}]}});app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/Export Melody MIDI（書き出す）/);assert.match(html,/Export All MIDI（全て書き出す）/);window.MusicStudioEditor.selectTrackById(app.state.midiEditor,'external-track');html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);assert.match(html,/Export Current Track MIDI（書き出す）/);assert.match(html,/performCurrentTrackMidiExport\('single-export-ui'\)/);assert.equal(app.midiExportSummary({...project,midiData:app.state.midiEditor.midiData},'track','external-track').filename,'Single-Export-UI_External-Strings.mid');assert.match(html,/Export All MIDI（全て書き出す）/)
+});
+
+async function pendingRecordingFixture(stage){
+  let resolve;const gate=new Promise(r=>resolve=r),input={id:'keys',name:'Keys'},access={inputs:new Map([['keys',input]])};
+  const{app,window}=load({requestMIDIAccess:()=>stage==='permission'?gate:Promise.resolve(access)}),repo=app.memoryRepository(),project=app.makeProject({projectId:'pending-session',projectName:'Pending'});
+  app.setRepository(repo);await repo.put(project);app.state.projects=[project];app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  window.requestAnimationFrame=()=>1;window.cancelAnimationFrame=()=>{};
+  app.state.melodyAudio.synth={supported:()=>true,unlock:()=>stage==='audio'?gate:Promise.resolve(true),noteOn(){},noteOff(){},allNotesOff(){},stopPreview(){},stopPlayback(){},stopMetronome(){}};
+  if(stage==='audio')await app.editorInitializeMidi();
+  return{app,window,input,access,repo,project,resolve:()=>resolve(stage==='permission'?access:true)};
+}
+for(const stage of ['audio','permission'])for(const action of ['stop','route','session'])test(`${action} invalidates pending ${stage} MIDI start`,async()=>{
+  const f=await pendingRecordingFixture(stage),before=JSON.stringify(await f.repo.get(f.project.projectId));
+  const pending=f.app.editorStartMidiRecording({skipCountIn:true});await new Promise(r=>setImmediate(r));
+  assert.equal(f.app.state.midiInput.starting,true);
+  if(action==='stop'){assert.equal((await f.app.editorStopTransport()).startCancelled,true);await f.app.editorStopTransport()}
+  else if(action==='route')f.app.renderRoute('music-studio');
+  else{const other=f.app.makeProject({projectId:'other',projectName:'Other'});f.app.state.projects.push(other);f.app.renderRoute('music-studio/midi-editor/other')}
+  f.resolve();assert.equal((await pending).reason,'start-cancelled');assert.equal(f.app.state.midiInput.recording,false);assert.equal(f.app.state.midiInput.starting,false);assert.equal(f.app.state.midiInput.recorder,null);assert.equal(JSON.stringify(await f.repo.get(f.project.projectId)),before);
+});
+test('stale input callback cannot enter a later recording session',async()=>{
+  const f=await pendingRecordingFixture('audio');f.resolve();await f.app.editorStartMidiRecording({skipCountIn:true});const old=f.input.onmidimessage;
+  await f.app.editorStopTransport();await f.app.editorStartMidiRecording({skipCountIn:true});const fresh=f.input.onmidimessage;
+  old({data:[0x90,60,90],timeStamp:10});assert.equal(f.app.state.midiInput.liveNotes.length,0);
+  fresh({data:[0x90,64,90],timeStamp:20});await f.app.editorStopTransport();assert.equal((await f.repo.get(f.project.projectId)).midiData.tracks.find(t=>t.part==='melody').notes.length,1);
+});
+test('audio unlock failure releases transport and permits a subsequent start',async()=>{
+  const f=await pendingRecordingFixture('audio');f.app.state.melodyAudio.synth.unlock=async()=>{throw Error('unlock-denied')};
+  assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).reason,'start-failed');assert.equal(f.app.state.midiInput.starting,false);
+  f.app.state.melodyAudio.synth.unlock=async()=>true;assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).recording,true);await f.app.editorStopTransport();
+});
+
+test('disconnect cancels pending audio unlock and reconnect permits recording',async()=>{
+ const f=await pendingRecordingFixture('audio'),pending=f.app.editorStartMidiRecording({skipCountIn:true});await new Promise(r=>setImmediate(r));
+ f.access.inputs.clear();f.access.onstatechange();f.resolve();assert.equal((await pending).reason,'start-cancelled');assert.equal(f.app.state.midiInput.recording,false);
+ f.access.inputs.set('keys',f.input);f.access.onstatechange();assert.equal((await f.app.editorStartMidiRecording({skipCountIn:true})).recording,true);await f.app.editorStopTransport();
+});
+test('a stale animation callback cannot advance a new recording',async()=>{
+ const f=await pendingRecordingFixture('audio');f.resolve();let frame,clock=1000;f.window.performance={now:()=>clock};f.window.requestAnimationFrame=cb=>{frame=cb;return 1};
+ await f.app.editorStartMidiRecording({skipCountIn:true});const old=frame;await f.app.editorStopTransport();await f.app.editorStartMidiRecording({skipCountIn:true});const current=frame,before=f.app.state.midiEditor.playheadTick;
+ clock=1250;old();assert.equal(f.app.state.midiEditor.playheadTick,before);current();assert.ok(f.app.state.midiEditor.playheadTick>before);await f.app.editorStopTransport();
+});
+test('quota failure after disconnect retains exact Track notes for retry and reopen',async()=>{
+ const f=await pendingRecordingFixture('audio');f.resolve();let fail=true,clock=1000;const original=JSON.stringify(await f.repo.get(f.project.projectId));
+ f.app.setRepository({...f.repo,compareAndPut:async(p,...args)=>{if(fail){const error=Error('quota');error.name='QuotaExceededError';throw error}return f.repo.compareAndPut(p,...args)}});f.window.performance={now:()=>clock};
+ await f.app.editorStartMidiRecording({skipCountIn:true});const trackId=f.app.state.midiInput.recordingTrackId;
+ f.input.onmidimessage({data:[0x90,67,91],timeStamp:1000});clock=1250;f.access.inputs.clear();f.access.onstatechange();await new Promise(r=>setImmediate(r));
+ assert.equal(f.app.state.midiInput.recording,false);assert.equal(f.app.state.midiInput.stopping,false);assert.equal(f.app.state.midiEditor.dirty,true);assert.equal(JSON.stringify(await f.repo.get(f.project.projectId)),original);
+ const notes=f.app.state.midiEditor.midiData.tracks.find(t=>t.id===trackId).notes;assert.equal(notes.length,1);assert.equal(notes[0].pitch,67);assert.equal(notes[0].durationTicks,240);
+ fail=false;assert.equal((await f.app.saveMidiEditor()).ok,true);const saved=await f.repo.get(f.project.projectId);f.app.state.projects=[saved];f.app.state.midiEditor=null;f.app.renderRoute(`music-studio/midi-editor/${saved.projectId}`);
+ assert.equal(JSON.stringify(f.app.state.midiEditor.midiData.tracks.find(t=>t.id===trackId).notes),JSON.stringify(notes));
+});
+
+test('superseded MIDI access and saved old state callback cannot replace current input',async()=>{
+ let firstResolve;const firstPending=new Promise(r=>firstResolve=r),first={inputs:new Map([['old',{id:'old'}]])},second={inputs:new Map([['new',{id:'new'}]])},third={inputs:new Map([['third',{id:'third'}]])};let requests=0;
+ const{app}=load({requestMIDIAccess:()=>++requests===1?firstPending:Promise.resolve(requests===2?second:third)});
+ const old=app.editorInitializeMidi();await app.editorInitializeMidi({forceRefresh:true});firstResolve(first);assert.equal((await old).reason,'access-superseded');assert.equal(app.state.midiInput.access,second);assert.equal(app.state.midiInput.selectedId,'new');
+ const stale=second.onstatechange;await app.editorInitializeMidi({forceRefresh:true});second.inputs.clear();stale();assert.equal(app.state.midiInput.access,third);assert.equal(app.state.midiInput.selectedId,'third');
+});
+
+test('Logic return candidates survive renamed reordered IDs and never silently bind ambiguous tracks',()=>{
+  const {app}=load(),note={pitch:60,startTick:480,durationTicks:240,velocity:90};
+  const before={ppq:480,tracks:[{id:'old-a',name:'Piano',channel:1,notes:[note]},{id:'old-b',name:'Double',channel:1,notes:[note]}]};
+  const after={ppq:960,tracks:[{id:'rewritten',name:'Renamed',channel:1,notes:[{...note,startTick:960,durationTicks:480}]}]};
+  const snapshot=JSON.stringify([before,after]),difference=app.logicMidiDifference(before,after),entry=difference.trackCorrespondence[0];
+  assert.equal(entry.status,'confirmation-required');assert.equal(entry.candidates.length,2);
+  assert.ok(entry.candidates.every(c=>c.reasons.includes('notes-and-velocity')));
+  assert.equal(entry.sourceTrackId,undefined);assert.equal(JSON.stringify([before,after]),snapshot);
+  const changed=structuredClone(after);changed.tracks[0].notes[0].velocity=20;
+  assert.ok(app.logicMidiDifference(before,changed).trackCorrespondence[0].candidates.every(c=>!c.reasons.includes('notes-and-velocity')));
+  const unrelated={ppq:480,tracks:[{id:'old-a',name:'Unknown',channel:9,notes:[{...note,pitch:80}]}]};
+  assert.equal(app.logicMidiDifference(before,unrelated).trackCorrespondence[0].status,'unmatched');
+});
+
+test('Logic manual confirmation refuses duplicate or stale bindings and leaves unknown tracks separate',()=>{
+ const {app}=load(),before={ppq:480,tracks:[{id:'a',notes:[]},{id:'b',notes:[]}]},after={ppq:480,tracks:[{id:'x',notes:[]},{id:'y',notes:[]}]};
+ const rows=app.logicConfirmTrackCandidates(before,after,i=>i===0?'b':'');
+ assert.equal(rows[0].status,'user-confirmed');assert.equal(rows[0].sourceTrackId,'b');assert.equal(rows[1].status,'unmatched');
+ assert.throws(()=>app.logicConfirmTrackCandidates(before,after,()=> 'a'),/duplicate/);
+ assert.throws(()=>app.logicConfirmTrackCandidates(before,after,()=> 'missing'),/invalid/);
+});
+
+test('confirmed changed-ID MIDI return survives fork reopen and metadata backup without mutating source',async()=>{
+ const {app,window}=load(),repo=app.memoryRepository(),source=app.makeProject({projectId:'origin',projectName:'Origin',midiData:window.MusicStudioMidi.createTestMidiData()});
+ app.setRepository(repo);await repo.put(source);app.state.projects=[source];const original=JSON.stringify(await repo.get('origin'));
+ const bytes=window.MusicStudioMidi.createMidiFile(source.midiData).bytes;await app.inspectMidiFile(file('return.mid',bytes));
+ const sourceId=source.midiData.tracks[0].id;
+ let choice=sourceId;window.document={getElementById:id=>id==='logicMidiTrack0'?{value:choice}:null};window.render=()=>{choice=''};
+ const result=await app.saveMidiImport('duplicate');assert.equal(result.ok,true,result.error?.message);
+ delete window.document;
+ const saved=await repo.get(result.project.projectId),rows=saved.integrations.logicPro.at(-1).difference.trackCorrespondence;
+ assert.equal(rows[0].status,'user-confirmed');assert.equal(rows[0].sourceTrackId,sourceId);assert.equal(JSON.stringify(await repo.get('origin')),original);
+ const d=load();d.app.setRepository(d.app.memoryRepository());assert.equal((await d.app.restoreBackup(app.backupObject(),{settings:false,projects:true})).ok,true);
+ assert.equal(JSON.stringify(d.app.state.projects.find(p=>p.projectId===saved.projectId).integrations),JSON.stringify(saved.integrations));
+});
+
+test('Logic instrument binding survives repository reopen and complete project backup restore',async()=>{
+ const {app,window,values}=load(),n=window.NovaLogicInstruments,repo=app.memoryRepository();app.setRepository(repo);
+ let p=app.makeProject({projectId:'logic-binding',projectName:'Logic binding',midiData:{version:1,ppq:480,tempo:72,timeSignature:{numerator:4,denominator:4},tracks:[{id:'piano',part:'melody',name:'Piano',channel:1,notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}});
+ p=n.register(p,{id:'confirmed',name:'User Piano',kind:'logic',family:'piano',version:'user-confirmed',method:'patch',reference:'User Piano.patch',preset:'User Piano',machineId:'mac',installed:true,verifiedAt:'2026-10-24',range:[21,108],tags:['温かい'],roles:[]});
+ await repo.put(p);app.state.projects=[p];values.set(app.LAST_PROJECT_KEY,p.projectId);
+ const plan=n.preview(p,{trackId:'piano',entryId:'confirmed',machineId:'mac',expression:{velocityScale:0.8}});
+ const saved=await app.versionCommit(p.projectId,source=>{const next=n.apply(source,plan,{approved:true});next.revision++;return next});assert.equal(saved.ok,true,JSON.stringify(saved));
+ const reopened=await repo.get(p.projectId);assert.equal(reopened.midiData.tracks[0].notes[0].velocity,64);assert.equal(reopened.logicInstruments.history.length,1);
+ const normalized=app.makeProject(reopened);assert.equal(JSON.stringify(normalized.logicInstruments),JSON.stringify(reopened.logicInstruments));
+ const backup=JSON.parse(JSON.stringify(app.backupObject())),fresh=app.memoryRepository();app.setRepository(fresh);const restored=await app.restoreBackup(backup,{settings:false,projects:true,safetyCopy:false});assert.equal(restored.ok,true,JSON.stringify(restored));const row=(await fresh.list()).find(p=>p.projectId==='logic-binding');assert.equal(JSON.stringify(row.logicInstruments),JSON.stringify(reopened.logicInstruments));assert.equal(n.undo(row,{approved:true}).midiData.tracks[0].notes[0].velocity,80);app.state.projects=[row];assert.match(app.renderRoute('music-studio/logic-pro'),/NOVA AI Instrument Assistant/);
+ const controls=Object.fromEntries(Object.entries({novaLogicMachine:'mac',novaLogicTrack:'piano',novaLogicRequest:'ピアノをもっと温かい音にして',novaLogicVelocity:'0.8',novaLogicTiming:'0',novaLogicLength:'1'}).map(([id,value])=>['#'+id,{value}]));window.document={querySelector:s=>controls[s]||null,querySelectorAll:()=>[]};app.logicInstrumentRecommend();controls['#novaLogicVelocity'].value='1.1';const stale=await app.logicInstrumentApply(0);assert.equal(stale.ok,false);assert.match(stale.error,/form-changed/);assert.equal(app.state.projects[0].midiData.tracks[0].notes[0].velocity,64);controls['#novaLogicVelocity'].value='0.8';app.logicInstrumentRecommend();const approved=await app.logicInstrumentApply(0);assert.equal(approved.ok,true,JSON.stringify(approved));assert.equal(approved.project.midiData.tracks[0].notes[0].velocity,51);
 });
