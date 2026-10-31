@@ -686,3 +686,17 @@ test('cancellation during safety archive publication prevents metadata Restore c
  const result=await f.a.restoreBackup({format:f.a.BACKUP_FORMAT,version:f.a.BACKUP_VERSION,settings:f.a.defaultSettings(),projects:[]},{safetyCopy:true});
  assert.equal(result.ok,false);assert.equal(result.cancelled,true);assert.equal((await f.repo.getSettings()).projectDefaults.bpm,93);assert.equal((await f.repo.list()).length,1);
 });
+test('Auto-Finish approved WAV persists through real repository, reopen, Mix editing and full archive',async()=>{
+ const f=await setup(),{a,w,p,repo,indexedDB}=f,source=masterWav(a),original=Buffer.from(await source.arrayBuffer());
+ w.fetch=async()=>({ok:true,blob:async()=>source});w.setTimeout=()=>0;
+ vm.runInNewContext(fs.readFileSync('music-studio-auto-finish.js','utf8'),{window:w,globalThis:w,console});
+ const s=a.autoFinish.state;s.projectId=p.projectId;s.session='a'.repeat(32);s.token='t'.repeat(43);s.manifest={complete:true,adopted:{label:'B',sha256:'b'.repeat(64)}};
+ const r=await a.autoFinish.saveToProject(p.projectId);assert.equal(r.ok,true,r.error);
+ assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,r.assetId)).arrayBuffer()),original);
+ const saved=await repo.get(p.projectId);assert.deepEqual(saved.midiData,{unchanged:true});assert.equal(saved.longWavAssets.length,1);
+ const fresh=fixture(indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());fresh.a.state.projects=await fresh.a.indexedDbRepository().list();fresh.a.pcmOpen(p.projectId);
+ const preview=await fresh.a.longMasterPreview(p.projectId,r.assetId,-18,-3);assert.equal(preview.ok,true,preview.error);assert.equal((await fresh.a.longMixSave(p.projectId,r.assetId)).ok,true);
+ const rendered=await fresh.a.longMixExport(p.projectId,r.assetId);assert.equal(rendered.ok,true,rendered.error);assert.deepEqual(Buffer.from(await rendered.blob.arrayBuffer()),Buffer.from(await preview.blob.arrayBuffer()));
+ const archive=await fresh.a.createLongWavArchive(),dst=fixture();dst.a.setRepository(dst.a.indexedDbRepository());const restored=await dst.a.restoreLongWavArchive(archive);assert.equal(restored.ok,true,restored.error);
+ const q=restored.projects[0];assert.deepEqual(q.midiData,{unchanged:true});assert.deepEqual(Buffer.from(await (await dst.a.pcmLoadLongWav(q.projectId,q.longWavAssets[0].id)).arrayBuffer()),original);
+});
