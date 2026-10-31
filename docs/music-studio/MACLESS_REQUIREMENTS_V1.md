@@ -1,14 +1,14 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-10-31 JST。基準：[PR #551](https://github.com/puitoybox-cloud/nova-studio/pull/551)、HEAD `e1ea5c4dcb1b39d5efcce93e13da8200557fc389`。
+確認日：2026-10-31 JST。基準：[PR #552](https://github.com/puitoybox-cloud/nova-studio/pull/552)、HEAD `8bc4ae9ac2a8d49e326b3760588137197fbfba63`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率 **36.30%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **51**、残数 **84**、受入確認率 **37.78%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①MS18-A04/MS23-A05〜A07の今回修正と回帰を維持、②MS15の仮歌/Take比較、MS13のVibrato、MS24の全体性能診断、③MS04/05/07/08/10/11のC依存契約と生成・日本語操作、④音声比較/計測/完成パッケージ、⑤全保存入口/移行。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①MS24-A02の描画・音声処理を含む原因別性能計測、②既存実装20件の全受入証明（規格参照fixture・修復transaction・編集状態別遷移・保存再開）、③C依存63件の契約・品質・許諾の確定と共通処理。MS24-A03の表示限定軽量化とMS28-A03の日本語画面案内は今回認定済み。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -37,11 +37,11 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 | 21 | 4 | 1 | 3 | 1 | 1 |
 | 22 | 4 | 1 | 3 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
-| 24 | 4 | 1 | 3 | 1 | 0 |
+| 24 | 4 | 2 | 2 | 1 | 0 |
 | 25 | 5 | 2 | 3 | 1 | 1 |
 | 26 | 5 | 1 | 4 | 1 | 1 |
 | 27 | 5 | 1 | 4 | 1 | 1 |
-| 28 | 4 | 1 | 3 | 1 | 0 |
+| 28 | 4 | 2 | 2 | 1 | 0 |
 | 29 | 4 | 1 | 3 | 1 | 1 |
 | 30 | 4 | 1 | 3 | 1 | 0 |
 
@@ -184,7 +184,7 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 | MS23-C01 | C | Cloud Sync同期先・暗号化・競合・offline方針 | open | 未確認 |
 | MS24-A01 | A | diagnosis exposes unavailable byte verification without claiming repair or writing project state | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `diagnosis exposes unavailable byte verification without claiming repair or writing project state` |
 | MS24-A02 | A | 全体性能原因の診断 | open | 未確認 |
-| MS24-A03 | A | 診断結果から安全軽量化 | open | 未確認 |
+| MS24-A03 | A | 診断結果から安全軽量化 | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `global performance inventory measures every project and reports unavailable signals without writes` |
 | MS24-A04 | A | 修復同意とtransaction再開 | open | 未確認 |
 | MS24-B01 | B | 実機負荷と軽量化効果 | open | 未確認 |
 | MS25-A01 | A | missing local runtime reports failure and retains notes/candidate workspace | verified | [tests/music-studio-local-model.test.js](../../tests/music-studio-local-model.test.js) — `missing local runtime reports failure and retains notes/candidate workspace` |
@@ -209,7 +209,7 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 | MS27-C01 | C | Provider交換と旧モデルの互換方針 | open | 未確認 |
 | MS28-A01 | A | mode and favorites save, reopen and full JSON restore without changing songs | verified | [tests/music-studio-workspace.test.js](../../tests/music-studio-workspace.test.js) — `mode and favorites save, reopen and full JSON restore without changing songs` |
 | MS28-A02 | A | 全編集状態での作業別UI遷移 | open | 未確認 |
-| MS28-A03 | A | 自然言語画面案内の統合 | open | 未確認 |
+| MS28-A03 | A | 自然言語画面案内の統合 | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `Japanese production guidance routes composition and final WAV with explicit project and no generation` |
 | MS28-A04 | A | キーボード操作とa11y自動検証 | open | 未確認 |
 | MS28-B01 | B | 日本語glyph・touch・Pencil・a11y | open | 未確認 |
 | MS29-A01 | A | MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums` |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 11 | 3 |
+| 実装が必要 | 11 | 1 |
 | 実装済み・検証不足 | 24 | 20 |
 | 仕様判断待ち | 63 | 63 |
 
@@ -319,7 +319,7 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 | MS23-A03 | 仕様判断待ち | open |
 | MS23-A04 | 仕様判断待ち | open |
 | MS24-A02 | 実装が必要 | open |
-| MS24-A03 | 実装が必要 | open |
+| MS24-A03 | 実装が必要 | verified |
 | MS24-A04 | 実装済み・検証不足 | open |
 | MS25-A02 | 仕様判断待ち | open |
 | MS25-A03 | 仕様判断待ち | open |
@@ -333,7 +333,7 @@ A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率
 | MS27-A04 | 仕様判断待ち | open |
 | MS27-A05 | 仕様判断待ち | open |
 | MS28-A02 | 実装済み・検証不足 | open |
-| MS28-A03 | 実装が必要 | open |
+| MS28-A03 | 実装が必要 | verified |
 | MS28-A04 | 実装済み・検証不足 | open |
 | MS29-A02 | 仕様判断待ち | open |
 | MS29-A03 | 仕様判断待ち | open |

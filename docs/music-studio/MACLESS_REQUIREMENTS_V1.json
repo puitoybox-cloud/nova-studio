@@ -2,8 +2,8 @@
   "version": 1,
   "date": "2026-10-31 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 551,
-  "baselineHead": "e1ea5c4dcb1b39d5efcce93e13da8200557fc389",
+  "baselinePR": 552,
+  "baselineHead": "8bc4ae9ac2a8d49e326b3760588137197fbfba63",
   "baselineTree": "2d26ee28bab780ee0e6a8955942a47282a2ca0d6",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
@@ -2372,9 +2372,9 @@
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
-        "baselinePR": 550,
+        "baselinePR": 552,
         "classification": "実装が必要",
-        "note": "要件全体を満たす専用経路の追加・修正が必要。汎用処理の存在は完成証明にしない。",
+        "note": "全プロジェクト/DOM/イベントループ遅延の観測と候補診断を実装。描画・音声スケジューリング等の原因別計測範囲は不足。全体性能診断の全受入を完了認定しない。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -2386,8 +2386,14 @@
       "feature": 24,
       "category": "A",
       "requirement": "診断結果から安全軽量化",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "global performance inventory measures every project and reports unavailable signals without writes",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -2797,8 +2803,14 @@
       "feature": 28,
       "category": "A",
       "requirement": "自然言語画面案内の統合",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "Japanese production guidance routes composition and final WAV with explicit project and no generation",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
