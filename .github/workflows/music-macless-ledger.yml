@@ -2,6 +2,10 @@ name: Music Macless requirements and Auto-Finish recovery
 on:
   pull_request:
     paths:
+      - 'music-studio-editor.js'
+      - 'music-studio.js'
+      - 'music-studio-auto-finish.js'
+      - 'tests/*.test.js'
       - 'docs/music-studio/MACLESS_REQUIREMENTS_V1.*'
       - 'scripts/music-macless-ledger.py'
       - 'tools/nova-au/auto-finish-server.py'

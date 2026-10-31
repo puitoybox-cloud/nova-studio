@@ -42,13 +42,17 @@
   if(state.busy)return{ok:false,error:'auto-finish-busy'};
   if(projectId!==state.projectId||!state.session||!['A','B','C'].includes(state.manifest?.adopted?.label))return fail('承認済みの元プロジェクトで保存してください。');
   if(state.importedAssetId)return{ok:true,assetId:state.importedAssetId,alreadySaved:true};
-  const app=root.MusicStudio,project=()=>app.state.projects.find(p=>p.projectId===projectId),baseline=JSON.stringify(project()),session=state.session,choice=state.manifest.adopted.label;
+  const app=root.MusicStudio,project=()=>app.state.projects.find(p=>p.projectId===projectId),baseline=JSON.stringify(project()),session=state.session,choice=state.manifest.adopted.label,expectedHash=state.manifest.adopted.sha256;
   if(!project()||(state.audioVersion&&state.audioVersion!==`project-revision-${project()?.revision}`)||app.hasUnsavedChanges?.()||app.state.dirty||app.pcmEditor?.busy||typeof app.pcmImportLongFile!=='function')return fail('先に編集中の内容を保存してください。');
   state.busy=true;state.saving=true;state.message='承認済みWAVを曲へ保存しています。';repaint();
   try{
    const response=await root.fetch(`${ENDPOINT}/sessions/${encodeURIComponent(session)}/artifacts/adopted.wav`,{cache:'no-store',headers:{'X-Nova-Auto-Finish':state.token}});
    if(!response.ok)throw Error('auto-finish-wav-unavailable');
    const blob=await response.blob();
+   if(!/^[a-f0-9]{64}$/.test(expectedHash||'')||!root.crypto?.subtle||blob.size<1||blob.size>480*1048576)throw Error('auto-finish-wav-integrity-unavailable');
+   const digest=await root.crypto.subtle.digest('SHA-256',await blob.arrayBuffer()),actualHash=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');
+   if(actualHash!==expectedHash)throw Error('auto-finish-wav-hash-mismatch');
+   if(state.manifest?.adopted?.sha256!==expectedHash)throw Error('auto-finish-approval-changed');
    if(session!==state.session||choice!==state.manifest?.adopted?.label||baseline!==JSON.stringify(project())||app.hasUnsavedChanges?.()||app.state.dirty||app.pcmEditor?.busy)throw Error('auto-finish-project-changed');
    const file=new root.Blob([blob],{type:'audio/wav'});file.name=`Auto-Finish-${session}-${choice}.wav`;
    if(app.pcmOpen(projectId)===false)throw Error('auto-finish-project-busy');const result=await app.pcmImportLongFile(file,projectId);

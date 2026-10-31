@@ -1,21 +1,21 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-10-31 JST。基準：[PR #549](https://github.com/puitoybox-cloud/nova-studio/pull/549)、HEAD `0b874b0b8270dbec1c47085503d011309ef56e49`。
+確認日：2026-10-31 JST。基準：[PR #550](https://github.com/puitoybox-cloud/nova-studio/pull/550)、HEAD `5a08add6e8296f6e7076b91d69cc90825e5e0638`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率 **27.41%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率 **33.33%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①MS18-A04/MS23-A05〜A07の今回修正と回帰を維持、②MS01-A02〜A05のcore Bass/Key/Chord移調整合、③MS04/05/07/08/10/11の生成・日本語操作、④音声比較/計測/完成パッケージ、⑤全保存入口/移行。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①MS18-A04/MS23-A05〜A07の今回修正と回帰を維持、②MS15の仮歌/Take比較、MS13のVibrato、MS24の全体性能診断、③MS04/05/07/08/10/11のC依存契約と生成・日本語操作、④音声比較/計測/完成パッケージ、⑤全保存入口/移行。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
 | No. | A総数 | 完了 | 残数 | B | C |
 |---|---:|---:|---:|---:|---:|
-| 1 | 5 | 1 | 4 | 1 | 0 |
-| 2 | 3 | 1 | 2 | 1 | 0 |
+| 1 | 5 | 5 | 0 | 1 | 0 |
+| 2 | 3 | 2 | 1 | 1 | 0 |
 | 3 | 5 | 1 | 4 | 1 | 1 |
 | 4 | 5 | 1 | 4 | 1 | 1 |
 | 5 | 4 | 1 | 3 | 1 | 1 |
@@ -26,13 +26,13 @@ A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 1 | 3 | 1 | 0 |
-| 13 | 4 | 1 | 3 | 1 | 0 |
+| 13 | 4 | 2 | 2 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
 | 15 | 4 | 1 | 3 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
 | 17 | 4 | 1 | 3 | 1 | 1 |
-| 18 | 5 | 3 | 2 | 1 | 0 |
-| 19 | 4 | 1 | 3 | 1 | 0 |
+| 18 | 5 | 4 | 1 | 1 | 0 |
+| 19 | 4 | 2 | 2 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
 | 21 | 4 | 1 | 3 | 1 | 1 |
 | 22 | 4 | 1 | 3 | 1 | 0 |
@@ -48,13 +48,13 @@ A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率
 | ID | 分類 | 受入要件 | 状態 | 根拠/依存 |
 |---|---|---|---|---|
 | MS01-A01 | A | normalizes existing MIDI without dropping metadata or note extensions | verified | [tests/music-studio-editor.test.js](../../tests/music-studio-editor.test.js) — `normalizes existing MIDI without dropping metadata or note extensions` |
-| MS01-A02 | A | 全旋律Trackとcore Bassを含む移調 | open | 未確認 |
-| MS01-A03 | A | 曲Key変更の同期 | open | 未確認 |
-| MS01-A04 | A | コード進行移調の同期 | open | 未確認 |
-| MS01-A05 | A | 移調時の範囲保護と一括Undo | open | 未確認 |
+| MS01-A02 | A | 全旋律Trackとcore Bassを含む移調 | verified | [tests/music-studio-whole-song-transpose.test.js](../../tests/music-studio-whole-song-transpose.test.js) — `whole-song transpose changes all melodic tracks together and includes core bass and excludes drums`; [tests/music-studio-song-transpose-storage.test.js](../../tests/music-studio-song-transpose-storage.test.js) — `whole-song key chords bass save reopen backup and undo persist as one transaction` |
+| MS01-A03 | A | 曲Key変更の同期 | verified | [tests/music-studio-whole-song-transpose.test.js](../../tests/music-studio-whole-song-transpose.test.js) — `whole-song transpose synchronizes project minor key, slash chords and MIDI modulation with exact undo`; [tests/music-studio-song-transpose-storage.test.js](../../tests/music-studio-song-transpose-storage.test.js) — `whole-song key chords bass save reopen backup and undo persist as one transaction` |
+| MS01-A04 | A | コード進行移調の同期 | verified | [tests/music-studio-whole-song-transpose.test.js](../../tests/music-studio-whole-song-transpose.test.js) — `whole-song transpose synchronizes project minor key, slash chords and MIDI modulation with exact undo`; [tests/music-studio-song-transpose-storage.test.js](../../tests/music-studio-song-transpose-storage.test.js) — `whole-song save failure and concurrent harmony edits preserve source and pending transaction` |
+| MS01-A05 | A | 移調時の範囲保護と一括Undo | verified | [tests/music-studio-whole-song-transpose.test.js](../../tests/music-studio-whole-song-transpose.test.js) — `whole-song transpose rejects fixed notes, core bass overflow, invalid chords and stale metadata without partial mutation`; [tests/music-studio-whole-song-transpose.test.js](../../tests/music-studio-whole-song-transpose.test.js) — `whole-song apply refuses modified candidate metadata and MIDI before creating history`; [tests/music-studio-song-transpose-storage.test.js](../../tests/music-studio-song-transpose-storage.test.js) — `whole-song coordinated measure locks reject transpose before metadata or notes change`; [tests/music-studio-song-transpose-storage.test.js](../../tests/music-studio-song-transpose-storage.test.js) — `whole-song key chords bass save reopen backup and undo persist as one transaction` |
 | MS01-B01 | B | Piano Rollと全Trackの物理操作 | open | 未確認 |
 | MS02-A01 | A | unsupported Web MIDI environment is reported without throwing | verified | [tests/music-studio-midi-input.test.js](../../tests/music-studio-midi-input.test.js) — `unsupported Web MIDI environment is reported without throwing` |
-| MS02-A02 | A | 切断と再接続の自動状態遷移 | open | 未確認 |
+| MS02-A02 | A | 切断と再接続の自動状態遷移 | verified | [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `disconnect cancels pending audio unlock and reconnect permits recording`; [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `quota failure after disconnect retains exact Track notes for retry and reopen`; [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `superseded MIDI access and saved old state callback cannot replace current input` |
 | MS02-A03 | A | テンポ拍子変化録音の再保存往復 | open | 未確認 |
 | MS02-B01 | B | Keystation権限・再接続・入力遅延 | open | 未確認 |
 | MS03-A01 | A | explicit key changes select key and scale family at their exact tick | verified | [tests/music-studio-structure-info.test.js](../../tests/music-studio-structure-info.test.js) — `explicit key changes select key and scale family at their exact tick` |
@@ -125,7 +125,7 @@ A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率
 | MS12-B01 | B | マイク権限・monitor・latency・長時間録音 | open | 未確認 |
 | MS13-A01 | A | peak normalization previews measured PCM, adopts only on request and survives history/archive | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `peak normalization previews measured PCM, adopts only on request and survives history/archive` |
 | MS13-A02 | A | Vibrato補正とUndo | open | 未確認 |
-| MS13-A03 | A | Crossfade補正とUndo | open | 未確認 |
+| MS13-A03 | A | Crossfade補正とUndo | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp blends real opposite-polarity samples, persists recipe Undo/Redo, saves editable WAV and fully restores`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `stereo Comp linear crossfade limits seam steps and retains both channels`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp quota failures and concurrent metadata reject without modifying old audio` |
 | MS13-A04 | A | 波形歌詞音符同期の保存再開 | open | 未確認 |
 | MS13-B01 | B | 各音声補正の聴感品質 | open | 未確認 |
 | MS14-A01 | A | harmony produces actual diatonic pitches only in selected note range | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `harmony produces actual diatonic pitches only in selected note range` |
@@ -153,12 +153,12 @@ A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率
 | MS17-C01 | C | 変換モデルの対象楽器と精度基準 | open | 未確認 |
 | MS18-A01 | A | actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input | verified | [tests/music-studio-pcm-mix.test.js](../../tests/music-studio-pcm-mix.test.js) — `actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input` |
 | MS18-A02 | A | 全素材形式の曲全体Mix統合 | open | 未確認 |
-| MS18-A03 | A | 複数Mix版の保存比較と再開 | open | 未確認 |
+| MS18-A03 | A | 複数Mix版の保存比較と再開 | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `two named Mix versions survive reopen and independently rerender exact audio`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `named Long Mix version rerenders exact saved settings after other edits and fresh reopen` |
 | MS18-B01 | B | 実曲Mixの音質と全曲聴取 | open | 未確認 |
 | MS19-A01 | A | 997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1 | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1` |
 | MS19-A02 | A | LUFS計測の規格参照fixture拡張 | open | 未確認 |
 | MS19-A03 | A | true peakとclipping検査 | open | 未確認 |
-| MS19-A04 | A | 複数Master版の保存再開 | open | 未確認 |
+| MS19-A04 | A | 複数Master版の保存再開 | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `two named Master versions survive reopen and independently rerender exact audio`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `named Long Master settings and original bytes survive complete Archive into fresh app then re-edit`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `long master compares distinct measured targets; explicit gain-only selection preserves EQ and saves chosen provenance` |
 | MS19-B01 | B | 実曲Masterの音質と最終音量 | open | 未確認 |
 | MS20-A01 | A | selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input | verified | [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input` |
 | MS20-A02 | A | 返送WAVとStemの対応差分管理 | open | MS20-C01 |
@@ -230,3 +230,114 @@ A：総数 **135**、証拠付き完了 **37**、残数 **98**、受入確認率
 | MS25-A05 | A | 空Project・版identityを永続作成前に拒否 | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_empty_project_identity_is_rejected_before_writing` |
 | MS18-A05 | A | 旧実行の完了通知で新しい実行状態を上書きしない | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_old_waiter_cannot_complete_a_new_execution` |
 | MS23-A08 | A | 開始状態の保存失敗時に起動済み子processを終了回収 | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_metadata_failure_after_launch_reaps_process_and_closes_log` |
+
+## 未完了項目の分類（PR #550開始時点98件）
+
+| 分類 | 開始時点 | 現在の未完了 |
+|---|---:|---:|
+| 実装が必要 | 11 | 7 |
+| 実装済み・検証不足 | 24 | 20 |
+| 仕様判断待ち | 63 | 63 |
+
+仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
+
+| ID | 分類 | 現在の状態 |
+|---|---|---|
+| MS01-A02 | 実装が必要 | verified |
+| MS01-A03 | 実装が必要 | verified |
+| MS01-A04 | 実装が必要 | verified |
+| MS01-A05 | 実装が必要 | verified |
+| MS02-A02 | 実装済み・検証不足 | verified |
+| MS02-A03 | 実装済み・検証不足 | open |
+| MS03-A02 | 仕様判断待ち | open |
+| MS03-A03 | 仕様判断待ち | open |
+| MS03-A04 | 仕様判断待ち | open |
+| MS03-A05 | 仕様判断待ち | open |
+| MS04-A02 | 仕様判断待ち | open |
+| MS04-A03 | 仕様判断待ち | open |
+| MS04-A04 | 仕様判断待ち | open |
+| MS04-A05 | 仕様判断待ち | open |
+| MS05-A02 | 仕様判断待ち | open |
+| MS05-A03 | 仕様判断待ち | open |
+| MS05-A04 | 仕様判断待ち | open |
+| MS06-A02 | 実装済み・検証不足 | open |
+| MS06-A03 | 実装済み・検証不足 | open |
+| MS06-A04 | 実装済み・検証不足 | open |
+| MS07-A02 | 仕様判断待ち | open |
+| MS07-A03 | 仕様判断待ち | open |
+| MS07-A04 | 仕様判断待ち | open |
+| MS07-A05 | 仕様判断待ち | open |
+| MS07-A06 | 仕様判断待ち | open |
+| MS08-A02 | 仕様判断待ち | open |
+| MS08-A03 | 仕様判断待ち | open |
+| MS08-A04 | 仕様判断待ち | open |
+| MS08-A05 | 仕様判断待ち | open |
+| MS09-A02 | 仕様判断待ち | open |
+| MS09-A03 | 仕様判断待ち | open |
+| MS09-A04 | 仕様判断待ち | open |
+| MS10-A02 | 仕様判断待ち | open |
+| MS10-A03 | 仕様判断待ち | open |
+| MS10-A04 | 仕様判断待ち | open |
+| MS10-A05 | 仕様判断待ち | open |
+| MS10-A06 | 仕様判断待ち | open |
+| MS10-A07 | 仕様判断待ち | open |
+| MS10-A08 | 仕様判断待ち | open |
+| MS11-A02 | 仕様判断待ち | open |
+| MS11-A03 | 仕様判断待ち | open |
+| MS12-A02 | 実装済み・検証不足 | open |
+| MS12-A03 | 実装済み・検証不足 | open |
+| MS12-A04 | 実装済み・検証不足 | open |
+| MS13-A02 | 実装が必要 | open |
+| MS13-A03 | 実装済み・検証不足 | verified |
+| MS13-A04 | 実装済み・検証不足 | open |
+| MS14-A02 | 仕様判断待ち | open |
+| MS14-A03 | 仕様判断待ち | open |
+| MS14-A04 | 仕様判断待ち | open |
+| MS14-A05 | 仕様判断待ち | open |
+| MS15-A02 | 実装が必要 | open |
+| MS15-A03 | 実装が必要 | open |
+| MS15-A04 | 実装が必要 | open |
+| MS16-A02 | 仕様判断待ち | open |
+| MS16-A03 | 仕様判断待ち | open |
+| MS17-A02 | 仕様判断待ち | open |
+| MS17-A03 | 仕様判断待ち | open |
+| MS17-A04 | 仕様判断待ち | open |
+| MS18-A02 | 実装済み・検証不足 | open |
+| MS18-A03 | 実装済み・検証不足 | verified |
+| MS19-A02 | 実装済み・検証不足 | open |
+| MS19-A03 | 実装済み・検証不足 | open |
+| MS19-A04 | 実装済み・検証不足 | verified |
+| MS20-A02 | 仕様判断待ち | open |
+| MS20-A03 | 仕様判断待ち | open |
+| MS21-A02 | 仕様判断待ち | open |
+| MS21-A03 | 仕様判断待ち | open |
+| MS21-A04 | 仕様判断待ち | open |
+| MS22-A02 | 実装済み・検証不足 | open |
+| MS22-A03 | 実装済み・検証不足 | open |
+| MS22-A04 | 実装済み・検証不足 | open |
+| MS23-A02 | 仕様判断待ち | open |
+| MS23-A03 | 仕様判断待ち | open |
+| MS23-A04 | 仕様判断待ち | open |
+| MS24-A02 | 実装が必要 | open |
+| MS24-A03 | 実装が必要 | open |
+| MS24-A04 | 実装済み・検証不足 | open |
+| MS25-A02 | 仕様判断待ち | open |
+| MS25-A03 | 仕様判断待ち | open |
+| MS25-A04 | 仕様判断待ち | open |
+| MS26-A02 | 仕様判断待ち | open |
+| MS26-A03 | 仕様判断待ち | open |
+| MS26-A04 | 仕様判断待ち | open |
+| MS26-A05 | 仕様判断待ち | open |
+| MS27-A02 | 仕様判断待ち | open |
+| MS27-A03 | 仕様判断待ち | open |
+| MS27-A04 | 仕様判断待ち | open |
+| MS27-A05 | 仕様判断待ち | open |
+| MS28-A02 | 実装済み・検証不足 | open |
+| MS28-A03 | 実装が必要 | open |
+| MS28-A04 | 実装済み・検証不足 | open |
+| MS29-A02 | 仕様判断待ち | open |
+| MS29-A03 | 仕様判断待ち | open |
+| MS29-A04 | 仕様判断待ち | open |
+| MS30-A02 | 実装済み・検証不足 | open |
+| MS30-A03 | 実装済み・検証不足 | open |
+| MS30-A04 | 実装済み・検証不足 | open |

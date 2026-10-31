@@ -690,7 +690,7 @@ test('Auto-Finish approved WAV persists through real repository, reopen, Mix edi
  const f=await setup(),{a,w,p,repo,indexedDB}=f,source=masterWav(a),original=Buffer.from(await source.arrayBuffer());
  w.fetch=async()=>({ok:true,blob:async()=>source});w.setTimeout=()=>0;
  vm.runInNewContext(fs.readFileSync('music-studio-auto-finish.js','utf8'),{window:w,globalThis:w,console});
- const s=a.autoFinish.state;s.projectId=p.projectId;s.session='a'.repeat(32);s.token='t'.repeat(43);s.manifest={complete:true,adopted:{label:'B',sha256:'b'.repeat(64)}};
+ const s=a.autoFinish.state;s.projectId=p.projectId;s.session='a'.repeat(32);s.token='t'.repeat(43);s.manifest={complete:true,adopted:{label:'B',sha256:require('node:crypto').createHash('sha256').update(original).digest('hex')}};
  const r=await a.autoFinish.saveToProject(p.projectId);assert.equal(r.ok,true,r.error);
  assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,r.assetId)).arrayBuffer()),original);
  const saved=await repo.get(p.projectId);assert.deepEqual(saved.midiData,{unchanged:true});assert.equal(saved.longWavAssets.length,1);
@@ -711,4 +711,14 @@ test('Auto-Finish reads authenticated stored WAV and recorded take with saved tr
  assert.equal(result.ok,true,result.error);assert.equal(result.frames,73200);
  const vocal=a.pcmDecodeWav(await result.stems[1].file.arrayBuffer());assert.equal(vocal.channels[0].slice(0,34800).every(x=>x===0),true);assert.ok(vocal.channels[0].slice(34800).some(x=>Math.abs(x)>.01));
  assert.equal(JSON.stringify(await repo.get(p.projectId)),before);assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,one.assetId)).arrayBuffer()),bytes);
+});
+for(const kind of ['Mix','Master'])test(`two named ${kind} versions survive reopen and independently rerender exact audio`,async()=>{
+ const f=await masterSetup(),{a,p,assetId}=f,expected=[];
+ for(let i=0;i<2;i++){
+  const result=kind==='Master'?await a.longMasterPreview(p.projectId,assetId,i?-20:-16,-1):await a.longMixPreview(p.projectId,assetId,{...a.longMixHistory(a.state.projects[0].longWavAssets[0]).settings[0],gainDb:i?-12:-6});assert.equal(result.ok,true,result.error);expected.push(Buffer.from(await result.blob.arrayBuffer()));
+  assert.equal((await a.longMixVersionSave(versionEvent(`${kind} ${i+1}`),p.projectId,assetId)).ok,true);
+ }
+ assert.notDeepEqual(expected[0],expected[1]);const fresh=fixture(f.indexedDB),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);await fresh.a.refresh();fresh.a.pcmOpen(p.projectId);const saved=await repo.get(p.projectId),versions=saved.longWavAssets[0].mixVersions;assert.equal(versions.length,2);
+ for(let i=0;i<2;i++){const result=await fresh.a.longMixVersionRecall(p.projectId,assetId,versions[i].id);assert.equal(result.ok,true,result.error);assert.deepEqual(Buffer.from(await result.blob.arrayBuffer()),expected[i]);if(kind==='Master')assert.equal(result.mastering.targetLufs,i?-20:-16)}
+ assert.deepEqual(await repo.get(p.projectId),saved);
 });
