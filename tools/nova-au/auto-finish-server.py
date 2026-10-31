@@ -19,35 +19,59 @@ class Runtime:
   return path
  def create(self,value):
   allowed={'projectId','audioVersion','sourceKind','alignmentConfirmed','instruction','stems'}
-  if set(value)!=allowed or value['sourceKind'] not in {'logic-render','recorded-audio','project-render'} or value['alignmentConfirmed'] is not True or value['instruction'] not in {'この曲をきれいに仕上げて','この曲を自然に仕上げて','全体の音を自然に整えて'}: raise ValueError('invalid-request')
+  if not isinstance(value,dict) or set(value)!=allowed or value['sourceKind'] not in {'logic-render','recorded-audio','project-render'} or value['alignmentConfirmed'] is not True or value['instruction'] not in {'この曲をきれいに仕上げて','この曲を自然に仕上げて','全体の音を自然に整えて'}: raise ValueError('invalid-request')
+  if any(not isinstance(value[k],str) or not value[k].strip() or len(value[k])>200 for k in ('projectId','audioVersion')): raise ValueError('invalid-project-identity')
   stems=value['stems']
   if not isinstance(stems,list) or not 2<=len(stems)<=16: raise ValueError('invalid-stem-count')
   ids=set()
   for stem in stems:
-   if set(stem)!={'id','role','name','size','type'} or stem['role'] not in ROLES or not isinstance(stem['id'],str) or not stem['id'] or stem['id'] in ids or not isinstance(stem['size'],int) or not 44<=stem['size']<=MAX_STEM: raise ValueError('invalid-stem')
+   if not isinstance(stem,dict) or set(stem)!={'id','role','name','size','type'} or stem['role'] not in ROLES or not isinstance(stem['id'],str) or not stem['id'] or stem['id'] in ids or type(stem['size']) is not int or not 44<=stem['size']<=MAX_STEM: raise ValueError('invalid-stem')
    ids.add(stem['id'])
   sid=secrets.token_hex(16); directory=self.directory(sid); (directory/'stems').mkdir(parents=True)
-  (directory/'session.json').write_text(json.dumps({'format':'nova-auto-finish-session-v1','request':value,'uploaded':{},'state':'uploading'},ensure_ascii=False,sort_keys=True))
+  self.save(sid,{'format':'nova-auto-finish-session-v1','request':value,'uploaded':{},'state':'uploading'})
   return sid
  def load(self,sid): return json.loads((self.directory(sid)/'session.json').read_text())
  def save(self,sid,value):
-  path=self.directory(sid)/'session.json'; temp=path.with_suffix('.partial'); temp.write_text(json.dumps(value,ensure_ascii=False,sort_keys=True)); os.replace(temp,path)
+  path=self.directory(sid)/'session.json'; temp=path.with_suffix('.partial')
+  with temp.open('w') as handle:
+   json.dump(value,handle,ensure_ascii=False,sort_keys=True); handle.flush(); os.fsync(handle.fileno())
+  os.replace(temp,path)
+  self.sync_directory(path.parent)
+ def sync_directory(self,path):
+  fd=os.open(path,os.O_RDONLY)
+  try: os.fsync(fd)
+  finally: os.close(fd)
+ def verified_uploads(self,sid,record):
+  expected=record['request']['stems']; uploaded=record['uploaded']
+  if set(uploaded)!={x['id'] for x in expected}: raise ValueError('stems-incomplete')
+  for stem in expected:
+   saved=uploaded[stem['id']]; path=self.directory(sid)/'stems'/(hashlib.sha256(stem['id'].encode()).hexdigest()+'.wav')
+   if path.is_symlink() or str(path)!=saved.get('path') or not path.is_file() or saved.get('role')!=stem['role'] or saved.get('size')!=stem['size'] or path.stat().st_size!=stem['size']: raise ValueError('stem-integrity-mismatch')
+   digest=hashlib.sha256()
+   with path.open('rb') as handle:
+    for chunk in iter(lambda:handle.read(1024*1024),b''): digest.update(chunk)
+   if digest.hexdigest()!=saved.get('sha256'): raise ValueError('stem-integrity-mismatch')
  def upload(self,sid,stem_id,stream,length,role):
   with self.lock:
    record=self.load(sid)
    expected=next((x for x in record['request']['stems'] if x['id']==stem_id),None)
    if record['state']!='uploading' or not expected or expected['role']!=role or expected['size']!=length: raise ValueError('stem-identity-mismatch')
    target=self.directory(sid)/'stems'/(hashlib.sha256(stem_id.encode()).hexdigest()+'.wav'); partial=target.with_suffix('.partial'); digest=hashlib.sha256(); remaining=length
-   with partial.open('wb') as handle:
-    while remaining:
-     chunk=stream.read(min(1024*1024,remaining))
-     if not chunk: raise ValueError('stem-upload-truncated')
-     handle.write(chunk); digest.update(chunk); remaining-=len(chunk)
-   os.replace(partial,target); record['uploaded'][stem_id]={'path':str(target),'sha256':digest.hexdigest(),'size':length,'role':role}; self.save(sid,record)
+   try:
+    with partial.open('wb') as handle:
+     while remaining:
+      chunk=stream.read(min(1024*1024,remaining))
+      if not chunk: raise ValueError('stem-upload-truncated')
+      handle.write(chunk); digest.update(chunk); remaining-=len(chunk)
+     handle.flush(); os.fsync(handle.fileno())
+    os.replace(partial,target); self.sync_directory(target.parent)
+   finally:
+    partial.unlink(missing_ok=True)
+   record['uploaded'][stem_id]={'path':str(target),'sha256':digest.hexdigest(),'size':length,'role':role}; self.save(sid,record)
  def command(self,sid,resume=False):
   with self.lock:
    record=self.load(sid)
-   if set(record['uploaded'])!={x['id'] for x in record['request']['stems']}: raise ValueError('stems-incomplete')
+   self.verified_uploads(sid,record)
    active=self.jobs.get(sid)
    if active and active.poll() is None: raise ValueError('already-running')
    request={k:v for k,v in record['request'].items() if k!='stems'}
@@ -56,14 +80,26 @@ class Runtime:
    output=self.directory(sid)/'finish'; args=[sys.executable,'-I','-B',str(self.scripts/'auto-finish.py'),str(request_path),'--engine',str(self.engine),'--ffmpeg',str(self.ffmpeg),'--output',str(output)]
    if resume: args.append('--resume')
    log=(self.directory(sid)/'process.log').open('ab')
-   process=subprocess.Popen(args,stdout=log,stderr=log,start_new_session=True); self.jobs[sid]=process
-   record['state']='running'; record.pop('error',None); self.save(sid,record)
+   try: process=subprocess.Popen(args,stdout=log,stderr=log,start_new_session=True)
+   except Exception:
+    log.close(); raise
+   self.jobs[sid]=process
+   record['state']='running'; record.pop('error',None)
+   try: self.save(sid,record)
+   except Exception:
+    try:
+     if process.poll() is None: os.killpg(process.pid,signal.SIGTERM)
+     try: process.wait(timeout=2)
+     except subprocess.TimeoutExpired:
+      os.killpg(process.pid,signal.SIGKILL); process.wait(timeout=1)
+    finally: log.close()
+    raise
    threading.Thread(target=self._wait,args=(sid,process,log),daemon=True).start()
  def _wait(self,sid,process,log):
   code=process.wait(); log.close()
   with self.lock:
    record=self.load(sid)
-   if record['state']=='cancelled': return
+   if self.jobs.get(sid) is not process or record['state']=='cancelled': return
    record['state']='complete' if code==0 else 'failed'; record['returnCode']=code
    if code: record['error']='auto-finish-process-failed'
    self.save(sid,record)
@@ -109,7 +145,7 @@ class Runtime:
      if record['state']=='running' and (not active or active.poll() is not None):
       record['state']='cancelled'; record['error']='auto-finish-interrupted-restart'; self.save(path.name,record)
      results.append({**self.status(path.name),'projectId':project_id,'audioVersion':record['request']['audioVersion'],'state':record['state']})
-    except (ValueError,KeyError,OSError): continue
+    except (ValueError,KeyError,OSError,TypeError,AttributeError): continue
   return results
  def adopt(self,sid,choice):
   if choice not in {'A','B','C','undo'} or not self.status(sid)['complete']: raise ValueError('invalid-adoption')

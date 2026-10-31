@@ -1,3 +1,4 @@
+from unittest.mock import patch, Mock
 import importlib.util, io, json, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
@@ -63,5 +64,75 @@ class RuntimeTests(unittest.TestCase):
    conn.request('GET','/sessions?projectId=p',headers={'X-Nova-Auto-Finish':self.runtime.token}); response=conn.getresponse(); self.assertEqual(response.status,401); response.read()
    conn.request('GET','/sessions?projectId=p',headers={'X-Nova-Auto-Finish':fresh.token}); response=conn.getresponse(); self.assertEqual(response.status,200); payload=json.loads(response.read()); self.assertEqual(payload['sessions'][0]['session'],sid); self.assertEqual(payload['sessions'][0]['projectId'],'p'); conn.close()
   finally: httpd.shutdown(); httpd.server_close(); thread.join()
+
+ def uploaded_session(self):
+  sid=self.runtime.create(self.request)
+  for stem in self.request['stems']: self.runtime.upload(sid,stem['id'],io.BytesIO(b'RIFF'+b'0'*40),44,stem['role'])
+  return sid
+ def test_changed_same_size_stem_refuses_start_and_resume_without_spawn(self):
+  sid=self.uploaded_session(); record=self.runtime.load(sid); path=Path(record['uploaded']['voice']['path']); path.write_bytes(b'RIFF'+b'1'*40)
+  before=(self.runtime.directory(sid)/'session.json').read_bytes()
+  with patch.object(server.subprocess,'Popen') as spawn:
+   for resume in (False,True):
+    with self.assertRaisesRegex(ValueError,'integrity'): self.runtime.command(sid,resume)
+   spawn.assert_not_called()
+  self.assertEqual((self.runtime.directory(sid)/'session.json').read_bytes(),before)
+  self.assertFalse((self.runtime.directory(sid)/'request.json').exists())
+ def test_missing_truncated_or_rebound_stem_refuses_execution(self):
+  for fault in ('missing','short','path','role'):
+   with self.subTest(fault=fault):
+    sid=self.uploaded_session(); record=self.runtime.load(sid); saved=record['uploaded']['voice']; path=Path(saved['path'])
+    if fault=='missing': path.unlink()
+    elif fault=='short': path.write_bytes(b'RIFF')
+    else: saved[fault]='wrong'; self.runtime.save(sid,record)
+    with patch.object(server.subprocess,'Popen') as spawn:
+     with self.assertRaisesRegex(ValueError,'integrity'): self.runtime.command(sid)
+     spawn.assert_not_called()
+ def test_valid_uploads_verify_after_fresh_runtime(self):
+  sid=self.uploaded_session(); fresh=server.Runtime(self.runtime.root,self.runtime.engine,self.runtime.ffmpeg,self.runtime.scripts)
+  fresh.verified_uploads(sid,fresh.load(sid))
+ def test_failed_reupload_keeps_previous_valid_bytes_and_manifest(self):
+  sid=self.uploaded_session(); record=self.runtime.load(sid); path=Path(record['uploaded']['voice']['path']); before=path.read_bytes()
+  with self.assertRaisesRegex(ValueError,'truncated'): self.runtime.upload(sid,'voice',io.BytesIO(b'RIFF'),44,'vocal')
+  self.assertEqual(path.read_bytes(),before); self.assertEqual(self.runtime.load(sid),record); self.assertFalse(path.with_suffix('.partial').exists())
+ def test_failed_metadata_replace_preserves_committed_session(self):
+  sid=self.uploaded_session(); before=self.runtime.load(sid)
+  with patch.object(server.os,'replace',side_effect=OSError('disk failure')):
+   with self.assertRaises(OSError): self.runtime.save(sid,{**before,'state':'failed'})
+  self.assertEqual(self.runtime.load(sid),before)
+ def test_fsync_failure_does_not_publish_uploaded_bytes(self):
+  sid=self.runtime.create(self.request); before=self.runtime.load(sid)
+  with patch.object(server.os,'fsync',side_effect=OSError('disk failure')):
+   with self.assertRaises(OSError): self.runtime.upload(sid,'voice',io.BytesIO(b'RIFF'+b'0'*40),44,'vocal')
+  self.assertEqual(self.runtime.load(sid),before); self.assertEqual(list((self.runtime.directory(sid)/'stems').iterdir()),[])
+ def test_discovery_isolates_nonobject_and_wrong_shape_records(self):
+  sid=self.uploaded_session()
+  for i,value in enumerate(([],None,{'format':'nova-auto-finish-session-v1','request':None})):
+   path=self.runtime.root/format(i,'032x'); path.mkdir(); (path/'session.json').write_text(json.dumps(value))
+  self.assertEqual([r['session'] for r in self.runtime.discover('p')],[sid])
+ def test_empty_project_identity_is_rejected_before_writing(self):
+  for key in ('projectId','audioVersion'):
+   for value in ('',None,1,' '*3):
+    with self.subTest(key=key,value=value):
+     request={**self.request,key:value}
+     with self.assertRaisesRegex(ValueError,'identity'): self.runtime.create(request)
+  self.assertEqual(list(self.runtime.root.iterdir()),[])
+
+ def test_old_waiter_cannot_complete_a_new_execution(self):
+  sid=self.uploaded_session(); record=self.runtime.load(sid); record['state']='running'; self.runtime.save(sid,record)
+  old=Mock(); old.wait.return_value=0; self.runtime.jobs[sid]=Mock(); log=Mock()
+  self.runtime._wait(sid,old,log)
+  self.assertEqual(self.runtime.load(sid)['state'],'running'); log.close.assert_called_once()
+ def test_metadata_failure_after_launch_reaps_process_and_closes_log(self):
+  sid=self.uploaded_session(); process=Mock(); process.poll.return_value=None; process.pid=12345
+  with patch.object(server.subprocess,'Popen',return_value=process), patch.object(self.runtime,'save',side_effect=OSError('disk failure')), patch.object(server.os,'killpg') as kill:
+   with self.assertRaises(OSError): self.runtime.command(sid)
+   kill.assert_called_once_with(process.pid,server.signal.SIGTERM); process.wait.assert_called_once_with(timeout=2)
+  self.assertEqual(self.runtime.load(sid)['state'],'uploading')
+ def test_spawn_failure_leaves_saved_session_retryable(self):
+  sid=self.uploaded_session(); before=self.runtime.load(sid)
+  with patch.object(server.subprocess,'Popen',side_effect=OSError('cannot launch')):
+   with self.assertRaises(OSError): self.runtime.command(sid)
+  self.assertEqual(self.runtime.load(sid),before); self.assertNotIn(sid,self.runtime.jobs)
 
 if __name__=='__main__': unittest.main()

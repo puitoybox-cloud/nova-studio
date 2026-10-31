@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-31 JST",
+  "command": "python3 -m unittest discover -s tools/nova-au/tests -p test_auto_finish_server.py -v",
+  "passed": 22,
+  "failed": 0,
+  "durationMs": null,
+  "logSha256": "5c05bb296bd07d3c0c352651d08d005c6798bf4665b25eea01b902356f36d34a",
+  "sourceHashes": {
+    "tools/nova-au/tests/test_auto_finish_server.py": "f334bd7e0b85152f8e62d122f0f33d00ee980859effe6a4e82b21470020c7f76"
+  },
+  "runtimeHashes": {
+    "tools/nova-au/auto-finish-server.py": "75fd0d1b906a7ebe16682e58590b49ce3ca9a655d9bf1fa70c83e82023362203"
+  },
+  "acceptedCases": [
+    "test_changed_same_size_stem_refuses_start_and_resume_without_spawn",
+    "test_discovery_isolates_nonobject_and_wrong_shape_records",
+    "test_empty_project_identity_is_rejected_before_writing",
+    "test_failed_metadata_replace_preserves_committed_session",
+    "test_failed_reupload_keeps_previous_valid_bytes_and_manifest",
+    "test_metadata_failure_after_launch_reaps_process_and_closes_log",
+    "test_old_waiter_cannot_complete_a_new_execution"
+  ]
+}
