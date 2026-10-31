@@ -1,0 +1,9 @@
+# NOVA Acoustic Samples v1 — 2026-10-20
+
+Piano, acoustic bass, string ensemble: FluidR3_GM, Frank Wen (2000–2002, 2008), rendered samples distributed by the MIDI.js Soundfonts project, revision 044fab8e1456bfafc5776e86dfd6bb8697149aef. Rendered sample license: Creative Commons Attribution 3.0 United States, https://creativecommons.org/licenses/by/3.0/us/ . Upstream Fluid SoundFont: MIT, see Fluid-MIT.txt and Fluid-README.txt. The distributor's license statement is retained in Soundfont-source-README.md. Source: https://github.com/gleitz/midi-js-soundfonts . Attribution and notices must accompany redistributed sample files, including a commercial product. No endorsement is implied.
+
+Kick, snare and closed/open hi-hat and two toms: Versilian Community Sample Library (VCSL), Versilian Studios LLC / Sam Gossner. CC0 1.0 Universal, https://creativecommons.org/publicdomain/zero/1.0/ . Source revision c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e, https://github.com/sgossner/VCSL . Original license retained in VCSL-LICENSE.txt.
+
+NOVA modifications: selected C-note samples and six kit sounds; decoded MP3 where applicable, downmixed to mono, resampled to 24 kHz 16-bit PCM, bounded to 0.5–5 seconds, final 30 ms fade. No claims of studio-library quality or physical listening acceptance. Piano/bass have one recorded dynamic layer; MIDI velocity scales gain. Strings are a finite ensemble recording, without looping or a true legato transition engine. Kit supports GM keys 36, 38, 42, 45, 46, 50; other keys reject adoption and retain the current sound. Original MIDI remains unchanged.
+
+Manifest.json records file sizes, SHA256, immutable source URLs and source SHA256. Imported PCM plus provenance is stored in each project and included in JSON/complete backups, avoiding future network dependence for saved songs. HTTP serving, native HTTPS/file handling and Safari acceptance still require verification. Existing Synth remains selectable.

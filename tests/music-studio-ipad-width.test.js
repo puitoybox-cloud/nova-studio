@@ -11,8 +11,8 @@ const css = fs.readFileSync(path.join(root, 'music-studio-ipad.css'), 'utf8');
 const followUpCss = fs.readFileSync(path.join(root, 'music-studio-ipad-pr250-layout.css'), 'utf8');
 
 test('standalone Music Studio loads the current iPad override after base styles', () => {
-  const base = html.indexOf('./music-studio.css?v=1.4.131');
-  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.16');
+  const base = html.indexOf('./music-studio.css?v=1.4.160');
+  const ipad = html.indexOf('./music-studio-ipad.css?v=1.0.19');
   const followUp = html.indexOf('./music-studio-ipad-pr250-layout.css?v=1.0.6');
   assert.ok(base >= 0);
   assert.ok(ipad > base);
@@ -23,7 +23,7 @@ test('standalone iPad home reuses the formal Nova Studio hero and bridge assets'
   assert.match(html, /style\.css\?v=1\.4\.9/);
   assert.match(html, /nova-unified-ui\.css\?v=1\.1\.10/);
   assert.match(html, /gemini-bridge\.js\?v=1\.5\.2/);
-  assert.match(html, /nova-menu\.js\?v=1\.0\.4/);
+  assert.match(html, /nova-menu\.js\?v=1\.0\.5/);
   assert.equal((html.match(/data-music-home-style/g) || []).length, 4);
   const app = fs.readFileSync(path.join(root, 'music-studio.js'), 'utf8');
   assert.match(app, /function standaloneHero\(\).*music-studio-home-hero-20260804-3\.jpeg.*MUSIC PRODUCTION.*Music Studio/s);
@@ -98,4 +98,25 @@ test('Snap and Quantize controls retain the accepted compact layout', () => {
 
 test('iPad Piano Roll CSS does not globally disable WKWebView pinch gestures', () => {
   assert.doesNotMatch(css, /touch-action\s*:\s*none/);
+});
+
+// Coarse-pointer landscape MIDI toolbar must remain reachable when labels overflow.
+test('landscape MIDI topbar is horizontally reachable and reveals open menus',()=>{
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar\{[^}]*overflow-x:auto/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar:has\(\.music-editor-menu\[open\]\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-topbar>button,[\s\S]*flex-shrink:0/);
+});
+
+test('primary landscape MIDI touch rows use 44px without hiding the timeline',()=>{
+  assert.match(css,/\.music-editor-topbar\{\s*height:44px;min-height:44px;max-height:44px/);
+  assert.match(css,/\.music-part-tabs\{\s*min-height:44px;height:44px/);
+  assert.match(css,/\.music-part-tabs \.music-part-tab-group>button:not\(\.music-part-tab\)\{\s*width:44px/);
+  assert.match(css,/\.music-editor-layout\{\s*height:calc\(50svh - 42px\)!important/);
+});
+
+test('lower MIDI dock uses scrollable 44px touch controls without hiding settings',()=>{
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom\{\s*overflow-x:auto;overflow-y:auto;overscroll-behavior:contain/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom :is\(button,select,input:not\(\[type=checkbox\]\):not\(\[type=radio\]\),textarea\)/);
+  assert.match(css,/\.music-midi-editor-page \.music-editor-bottom \.music-partial-edit-provider textarea,/);
+  assert.match(css,/min-height:44px;height:auto;max-height:none/);
 });
