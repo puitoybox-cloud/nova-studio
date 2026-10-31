@@ -121,7 +121,7 @@ body.music-studio-page:has(.music-vocal-focused){background:#08111d!important;ba
 
 /* Focused PCM view neutralizes inherited form margins without clipping the page. */
 @media(min-width:821px) and (orientation:landscape){
- .music-studio-shell.music-mix-focused{min-height:0;padding:8px 12px;margin:0 auto}
+ .music-studio-shell.music-mix-focused{min-height:0;padding:4px 12px;margin:0 auto}
  .music-studio-shell.music-mix-focused>.music-project-panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;padding:12px;margin:0;align-items:start}
  .music-studio-shell.music-mix-focused>.music-project-panel>form{grid-column:auto;margin:0;min-width:0}
  .music-studio-shell.music-mix-focused .music-form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:0 0 4px}
