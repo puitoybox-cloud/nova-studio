@@ -1,5 +1,12 @@
 # Nova Studio Changelog
 
+## Music Studio IndexedDB Durable Recovery Hardening
+
+- Project、設定、自動Backup、MIDI履歴、MIDI取込履歴の全汎用IndexedDB書込を`durability: strict` transactionへ統一
+- JSON／通常BackupのProject＋設定一括Restoreにも同じstrict durabilityを適用し、transaction完了前は成功を返さない既存原子性を維持
+- Full WAV Archiveの既存strict単一transaction、本体hash検査、追加復元、旧Project／MIDI／PCM／音声／制作履歴互換を維持
+- schema／DB Version／保存形式は変更せず、正常再起動と異常終了直前の確定書込の耐久性を強化
+
 ## Dynamic MIDI Track Model / Capability Registry Foundation
 
 - Track identity, optional technical type, musical role, exact core compatibility slot, display name, role cardinality, and derived capabilitiesを独立したmodelとして定義

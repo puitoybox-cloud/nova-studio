@@ -1,0 +1,120 @@
+name: Music Studio read-only dependencies
+on:
+  pull_request:
+    paths:
+      - 'assets/music-acoustic-v1/**'
+      - 'tools/music-audio-pipeline/*.py'
+      - 'scripts/music-local-lifecycle*'
+      - 'tests/music-studio-runtime-bootstrap.test.js'
+      - 'tools/music-audio-pipeline/runtime_inventory.py'
+      - 'tools/music-audio-pipeline/test_runtime_inventory.py'
+      - 'scripts/music-offline-asset-inventory.py'
+      - 'tools/music-audio-pipeline/distribution_binding.py'
+      - 'tools/music-audio-pipeline/test_distribution_binding.py'
+      - 'music-studio-distribution-identity.js'
+      - 'tests/music-studio-distribution-identity.test.js'
+      - 'tools/music-audio-pipeline/dependency_identity.py'
+      - 'tools/music-audio-pipeline/test_dependency_identity.py'
+      - 'music-studio-ingress.js'
+      - 'music-studio-publication-prebinding.js'
+      - 'music-studio-audio-pipeline.js'
+      - 'tools/music-audio-pipeline/helper_identity.py'
+      - 'tools/music-audio-pipeline/test_helper_identity.py'
+      - 'tests/music-studio-runtime-ingress-identity.test.js'
+      - 'music-studio-package-resources.js'
+      - 'music-studio-runtime-capabilities.js'
+      - 'music-studio-distribution-capabilities.js'
+      - 'music-studio-binding-prerequisites.js'
+      - 'tests/music-studio-resource-runtime.test.js'
+      - 'music-studio-generation-adapter.js'
+      - 'music-studio-portable-package.js'
+      - 'tests/music-studio-generation-package.test.js'
+      - 'scripts/music-generation-fixture-backend.js'
+      - 'scripts/music-generation-package-browser.js'
+      - 'music-studio.js'
+      - 'music-studio-binary-boundary.js'
+      - 'tests/music-studio-binary-boundary.test.js'
+      - 'scripts/music-binary-boundary-browser.js'
+      - 'scripts/music-transaction-regression.js'
+      - 'music-studio-production-verification-contract.js'
+      - 'tests/music-studio-production-verification-contract.test.js'
+      - 'music-studio-dependency-inspection.js'
+      - 'music-studio-storage-contract-inspection.js'
+      - 'music-studio-dependency-closure-inspection.js'
+      - 'music-studio-package-restore-review.js'
+      - 'music-studio-observed-byte-verification.js'
+      - 'scripts/music-studio-disposable-durable-backend.js'
+      - 'tests/music-studio-disposable-durable-recovery.test.js'
+      - 'tests/music-studio-observed-byte-verification.test.js'
+      - 'tests/music-studio-package-restore-review.test.js'
+      - 'tests/music-studio-dependency-closure-inspection.test.js'
+      - 'tests/music-studio-storage-contract-inspection.test.js'
+      - 'scripts/music-studio-standalone-dependency-inspection.js'
+      - 'tests/music-studio*dependency-inspection.test.js'
+      - 'tools/music-audio-pipeline/verify_real_conversion.py'
+      - 'music-studio-midi-parser.js'
+      - '.github/workflows/music-studio-dependency-inspection.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Full regression, syntax and whitespace
+        run: |
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_verification.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_demucs_closure.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_runtime_inventory.py -v
+          python3 scripts/music-offline-asset-inventory.py > /tmp/music-offline-inventory.json
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_production_lifecycle.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_processing_closure.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_routing.py -v
+          node --test
+          find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
+          python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py tools/music-audio-pipeline/helper_identity.py tools/music-audio-pipeline/server.py
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_distribution_binding.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_dependency_identity.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_helper_identity.py -v
+          python3 -m unittest discover -s tools/music-audio-pipeline -p test_server_boundary.py -v
+          git diff --check "origin/${{ github.base_ref || 'main' }}...HEAD"
+      - name: Real Chrome at 1440 / 820 / 390
+        timeout-minutes: 12
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
+          google-chrome --version
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-local-lifecycle-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-generation-package-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-binary-boundary-browser.js
+          git show 031def44c194787f4e8e17552961d62e93b10df2:scripts/music-transaction-regression.js > "$RUNNER_TEMP/original-298.js"
+          set +e
+          timeout --kill-after=5s 40s env NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node "$RUNNER_TEMP/original-298.js" > verification/music-298-original-diagnostic.log 2>&1
+          diagnostic_status=$?
+          set -e
+          echo "Original #298 diagnostic exit: $diagnostic_status" | tee -a verification/music-298-original-diagnostic.log
+          cat verification/music-298-original-diagnostic.log
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 100s node scripts/music-transaction-regression.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome timeout --kill-after=5s 600s node scripts/music-studio-ai-assistant-browser-smoke.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-completion-browser-verification
+          path: |
+            verification/music-local-lifecycle-browser-report.json
+            verification/music-local-lifecycle-*.png
+            verification/music-generation-browser-report.json
+            verification/music-generation-*.png
+            verification/music-binary-browser-report.json
+            verification/music-binary-*.png
+            verification/music-transaction-browser-report.json
+            verification/music-298-original-diagnostic.log
+            music-ai-*.png
+            verification/music-ai-assistant-browser-report-20261002.json

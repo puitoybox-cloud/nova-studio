@@ -85,3 +85,30 @@ test('Music Studio never overwrites Nova Studio or ai-music-helper keys',async()
   assert.equal(app.DB_NAME,'music-studio-projects');
   assert.equal(app.LAST_PROJECT_KEY,'musicStudio_lastProjectId_v1');
 });
+
+test('JSON import cannot overwrite a song inserted after the ID existence check',async()=>{
+  const {app}=load();const repo=app.memoryRepository();app.setRepository(repo);
+  const incoming=app.makeProject({projectId:'racing-import',projectName:'Incoming'});
+  const protectedSong=app.makeProject({projectId:'racing-import',projectName:'Protected'});
+  const originalHas=repo.has;let raced=false;
+  repo.has=async id=>{const found=await originalHas(id);if(!raced){raced=true;await repo.put(protectedSong)}return found};
+  const result=await app.importText(JSON.stringify(incoming));
+  assert.equal(result.ok,true);
+  assert.equal((await repo.get('racing-import')).projectName,'Protected');
+  assert.notEqual(result.project.projectId,'racing-import');
+  assert.equal((await repo.list()).length,2);
+});
+
+test('JSON import fails closed without an atomic repository adapter',async()=>{
+  const {app}=load();const repo=app.memoryRepository();let writes=0;
+  app.setRepository({...repo,compareAndPut:undefined,put:async()=>{writes++}});
+  await assert.rejects(app.importText(JSON.stringify(app.makeProject({projectName:'Protected import'}))),/atomic-project-import-unavailable/);
+  assert.equal(writes,0);assert.equal((await repo.list()).length,0);
+});
+
+test('JSON import propagates storage failure without retrying or modifying existing songs',async()=>{
+  const {app}=load();const repo=app.memoryRepository();const original=app.makeProject({projectName:'Original'});await repo.put(original);let attempts=0;
+  app.setRepository({...repo,compareAndPut:async()=>{attempts++;throw Error('quota')}});
+  await assert.rejects(app.importText(JSON.stringify(original)),/quota/);
+  assert.equal(attempts,1);assert.equal(JSON.stringify(await repo.get(original.projectId)),JSON.stringify(original));assert.equal((await repo.list()).length,1);
+});
