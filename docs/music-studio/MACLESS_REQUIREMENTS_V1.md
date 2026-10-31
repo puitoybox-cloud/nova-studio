@@ -1,10 +1,10 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-10-31 JST。基準：[PR #550](https://github.com/puitoybox-cloud/nova-studio/pull/550)、HEAD `5a08add6e8296f6e7076b91d69cc90825e5e0638`。
+確認日：2026-10-31 JST。基準：[PR #551](https://github.com/puitoybox-cloud/nova-studio/pull/551)、HEAD `e1ea5c4dcb1b39d5efcce93e13da8200557fc389`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率 **33.33%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **49**、残数 **86**、受入確認率 **36.30%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -26,9 +26,9 @@ A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 1 | 3 | 1 | 0 |
-| 13 | 4 | 2 | 2 | 1 | 0 |
+| 13 | 4 | 3 | 1 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
-| 15 | 4 | 1 | 3 | 1 | 0 |
+| 15 | 4 | 4 | 0 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
 | 17 | 4 | 1 | 3 | 1 | 1 |
 | 18 | 5 | 4 | 1 | 1 | 0 |
@@ -124,7 +124,7 @@ A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率
 | MS12-A04 | A | 歌詞スクロール同期 | open | 未確認 |
 | MS12-B01 | B | マイク権限・monitor・latency・長時間録音 | open | 未確認 |
 | MS13-A01 | A | peak normalization previews measured PCM, adopts only on request and survives history/archive | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `peak normalization previews measured PCM, adopts only on request and survives history/archive` |
-| MS13-A02 | A | Vibrato補正とUndo | open | 未確認 |
+| MS13-A02 | A | Vibrato補正とUndo | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery` |
 | MS13-A03 | A | Crossfade補正とUndo | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp blends real opposite-polarity samples, persists recipe Undo/Redo, saves editable WAV and fully restores`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `stereo Comp linear crossfade limits seam steps and retains both channels`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp quota failures and concurrent metadata reject without modifying old audio` |
 | MS13-A04 | A | 波形歌詞音符同期の保存再開 | open | 未確認 |
 | MS13-B01 | B | 各音声補正の聴感品質 | open | 未確認 |
@@ -136,9 +136,9 @@ A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率
 | MS14-B01 | B | Harmony・Double・Chorusの聴感品質 | open | 未確認 |
 | MS14-C01 | C | 本人声モデルと同意・ライセンス | open | 未確認 |
 | MS15-A01 | A | actual PCM pitch analysis detects A4 and rejects silence and nonfinite audio | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `actual PCM pitch analysis detects A4 and rejects silence and nonfinite audio` |
-| MS15-A02 | A | 仮歌とTakeの音程比較 | open | 未確認 |
-| MS15-A03 | A | 仮歌とTakeのTiming比較 | open | 未確認 |
-| MS15-A04 | A | 比較から録り直しと補正への操作接続 | open | 未確認 |
+| MS15-A02 | A | 仮歌とTakeの音程比較 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `reference vocal and Take comparison measures actual pitch and voiced timing differences without changing sources` |
+| MS15-A03 | A | 仮歌とTakeのTiming比較 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `reference vocal and Take comparison measures actual pitch and voiced timing differences without changing sources` |
+| MS15-A04 | A | 比較から録り直しと補正への操作接続 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `comparison actions create MIDI correction previews and record a separate Take while preserving both originals` |
 | MS15-B01 | B | 診断結果と録り直し判断の実制作受入 | open | 未確認 |
 | MS16-A01 | A | audio pipeline bridge recognizes supported local audio and keeps MIDI separate | verified | [tests/music-studio-audio-pipeline.test.js](../../tests/music-studio-audio-pipeline.test.js) — `audio pipeline bridge recognizes supported local audio and keeps MIDI separate` |
 | MS16-A02 | A | 6音声Stemの保存再開と移行の統合 | open | MS16-C01 |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 11 | 7 |
+| 実装が必要 | 11 | 3 |
 | 実装済み・検証不足 | 24 | 20 |
 | 仕様判断待ち | 63 | 63 |
 
@@ -287,16 +287,16 @@ A：総数 **135**、証拠付き完了 **45**、残数 **90**、受入確認率
 | MS12-A02 | 実装済み・検証不足 | open |
 | MS12-A03 | 実装済み・検証不足 | open |
 | MS12-A04 | 実装済み・検証不足 | open |
-| MS13-A02 | 実装が必要 | open |
+| MS13-A02 | 実装が必要 | verified |
 | MS13-A03 | 実装済み・検証不足 | verified |
 | MS13-A04 | 実装済み・検証不足 | open |
 | MS14-A02 | 仕様判断待ち | open |
 | MS14-A03 | 仕様判断待ち | open |
 | MS14-A04 | 仕様判断待ち | open |
 | MS14-A05 | 仕様判断待ち | open |
-| MS15-A02 | 実装が必要 | open |
-| MS15-A03 | 実装が必要 | open |
-| MS15-A04 | 実装が必要 | open |
+| MS15-A02 | 実装が必要 | verified |
+| MS15-A03 | 実装が必要 | verified |
+| MS15-A04 | 実装が必要 | verified |
 | MS16-A02 | 仕様判断待ち | open |
 | MS16-A03 | 仕様判断待ち | open |
 | MS17-A02 | 仕様判断待ち | open |

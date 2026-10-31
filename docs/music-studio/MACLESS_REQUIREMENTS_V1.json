@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-10-31 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 550,
-  "baselineHead": "5a08add6e8296f6e7076b91d69cc90825e5e0638",
-  "baselineTree": "47b532460fc8e2090429548256215e3c72fbeb04",
+  "baselinePR": 551,
+  "baselineHead": "e1ea5c4dcb1b39d5efcce93e13da8200557fc389",
+  "baselineTree": "2d26ee28bab780ee0e6a8955942a47282a2ca0d6",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -1357,8 +1357,14 @@
       "feature": 13,
       "category": "A",
       "requirement": "Vibrato補正とUndo",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1571,8 +1577,14 @@
       "feature": 15,
       "category": "A",
       "requirement": "仮歌とTakeの音程比較",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "reference vocal and Take comparison measures actual pitch and voiced timing differences without changing sources",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1590,8 +1602,14 @@
       "feature": 15,
       "category": "A",
       "requirement": "仮歌とTakeのTiming比較",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "reference vocal and Take comparison measures actual pitch and voiced timing differences without changing sources",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1609,8 +1627,14 @@
       "feature": 15,
       "category": "A",
       "requirement": "比較から録り直しと補正への操作接続",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "comparison actions create MIDI correction previews and record a separate Take while preserving both originals",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -3105,6 +3129,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "要件の追加・削除・受入文変更なし。未完了98項目を実装が必要11、実装済み・検証不足24、仕様判断待ち63に分類。verifiedは実行証拠を伴うものだけ更新。"
+    },
+    {
+      "date": "2026-10-31 JST",
+      "baselinePR": 551,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS13-A02/MS15-A02〜A04のproduction実装とPCM・保存復元・失敗時保護を検証。要件ID・分母・受入文は変更なし。49件確認、残86件（実装3・検証不足20・C依存63）。"
     }
   ]
 }

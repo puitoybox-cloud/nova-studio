@@ -498,3 +498,28 @@ test('MIDI materials survive real repository reopen and Full WAV Archive migrati
  const saved=await a.materialCapture(p.projectId,{name:'Takeと共存するMIDI',description:'保存移行'});assert.equal(saved.ok,true,saved.error);const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal(fresh.a.materialSearch('保存移行').length,1);
  const archive=await fresh.a.createLongWavArchive(),other=fixture();other.a.setRepository(other.a.indexedDbRepository());await other.a.refresh();const restored=await other.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0];assert.equal(copy.materialLibrary[0].name,'Takeと共存するMIDI');const bytes=await other.a.pcmLoadLongWav(copy.projectId,copy.longWavAssets[0].id);assert.deepEqual(Buffer.from(await bytes.arrayBuffer()),original);const made=await other.a.materialCreate(copy.projectId,copy.materialLibrary[0].id,{bpm:100,semitones:1});assert.equal(made.ok,true,made.error);assert.equal(made.project.midiData.tracks[0].notes[0].pitch,61);
 });
+
+test('Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery',async()=>{
+ const f=await setup();capture(f);const rate=8000,samples=new Float32Array(rate*2);let phase=0;
+ for(let i=0;i<samples.length;i++){phase+=2*Math.PI*220*2**((.5*Math.sin(2*Math.PI*5*i/rate))/12)/rate;samples[i]=.3*Math.sin(phase)}
+ f.w.AudioContext.prototype.decodeAudioData=async()=>({sampleRate:rate,numberOfChannels:1,getChannelData:()=>samples});
+ await f.a.vocalStart(f.p.projectId);assert.equal((await f.a.vocalStop()).ok,true);const a=f.a,id=f.p.projectId,asset=(await f.repo.get(id)).longWavAssets[0],original=Buffer.from(await(await a.pcmLoadLongWav(id,asset.id)).arrayBuffer()),before=await a.vocalRender(id,asset.id);
+ const r=await a.vocalAnalyze(id,asset.id,{vibrato:true,strength:.8});assert.equal(r.ok,true,r.error);assert.ok(r.candidates.length>10);assert.ok(r.candidates.every(c=>c.ratio===1&&Math.abs(c.semitones)<1));
+ const prepared=a.vocalProcessPCM(a.vocalCorrection.preview.pcm,a.vocalCandidateSetting(a.vocalCorrection.preview));
+ const dry=a.vocalDetectPitch(samples,rate).map(r=>r.midi),wet=a.vocalDetectPitch(prepared.channels[0],rate).map(r=>r.midi),spread=x=>Math.sqrt(x.reduce((s,v)=>s+(v-57)**2,0)/x.length);
+ assert.ok(spread(wet)<spread(dry)*.95,`${spread(wet)} >= ${spread(dry)}`);
+ assert.equal((await a.vocalCorrectionApply()).ok,true);const after=await a.vocalRender(id,asset.id);assert.equal(after.blob.size,before.blob.size);assert.notDeepEqual(Buffer.from(await after.blob.arrayBuffer()),Buffer.from(await before.blob.arrayBuffer()));
+ assert.equal((await a.vocalEdit(id,asset.id,null,-1)).ok,true);assert.deepEqual(Buffer.from(await(await a.vocalRender(id,asset.id)).blob.arrayBuffer()),Buffer.from(await before.blob.arrayBuffer()));await a.vocalEdit(id,asset.id,null,1);
+ const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.deepEqual(Buffer.from(await(await fresh.a.vocalRender(id,asset.id)).blob.arrayBuffer()),Buffer.from(await after.blob.arrayBuffer()));
+ const archive=await fresh.a.createLongWavArchive(),restored=await fresh.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0];assert.deepEqual(Buffer.from(await(await fresh.a.vocalRender(copy.projectId,copy.longWavAssets[0].id)).blob.arrayBuffer()),Buffer.from(await after.blob.arrayBuffer()));assert.deepEqual(Buffer.from(await(await fresh.a.pcmLoadLongWav(id,asset.id)).arrayBuffer()),original);
+});
+test('Vibrato controls reject invalid strengths and preserve silence, steady pitch and note jumps',()=>{
+ const {a}=fixture();for(const strength of [-1,2,NaN,Infinity])assert.throws(()=>a.vocalVibratoCandidates([],8000,strength),/strength/);
+ const rows=Array.from({length:15},(_,i)=>({first:i*320,end:(i+1)*320,midi:i<7?57:60,confidence:.99}));assert.equal(a.vocalVibratoCandidates(rows,8000).length,0);assert.equal(a.vocalVibratoCandidates([],8000).length,0);assert.equal(a.vocalVibratoCandidates(rows.map(r=>({...r,midi:57+Math.sin(r.first),confidence:.5})),8000).length,0);
+});
+test('Vibrato cancellation and storage failure preserve original audio and edit cursor',async()=>{
+ const f=await setup();capture(f);await f.a.vocalStart(f.p.projectId);await f.a.vocalStop();const a=f.a,id=f.p.projectId,asset=(await f.repo.get(id)).longWavAssets[0],baseline=JSON.stringify(await f.repo.get(id));
+ assert.equal((await a.vocalAnalyze(id,asset.id,{vibrato:true})).ok,true);a.vocalCorrectionCancel();assert.equal((await a.vocalCorrectionApply()).ok,false);assert.equal(JSON.stringify(await f.repo.get(id)),baseline);
+ // Exercise the same atomic publisher with a selected oscillation correction.
+ const pcm=await a.vocalReadPCM(id,asset.id);a.vocalCorrection.preview={id,assetId:asset.id,baseline,analysis:[],candidates:[{first:0,end:400,semitones:.1,ratio:1,count:1}],selected:[0],setting:a.vocalHistory(asset).edits[0],pcm};f.indexedDB.fail();assert.equal((await a.vocalCorrectionApply()).ok,false);assert.equal(JSON.stringify(await f.repo.get(id)),baseline);
+});
