@@ -1,0 +1,2006 @@
+{
+  "version": 1,
+  "date": "2026-10-31 JST",
+  "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+  "baselinePR": 549,
+  "baselineHead": "0b874b0b8270dbec1c47085503d011309ef56e49",
+  "baselineTree": "249aa944c193192a44285d4798dda749afc8c1c6",
+  "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
+  "requirements": [
+    {
+      "id": "MS01-A01",
+      "feature": 1,
+      "category": "A",
+      "requirement": "normalizes existing MIDI without dropping metadata or note extensions",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-editor.test.js",
+          "acceptance": "normalizes existing MIDI without dropping metadata or note extensions",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS01-A02",
+      "feature": 1,
+      "category": "A",
+      "requirement": "全旋律Trackとcore Bassを含む移調",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS01-A03",
+      "feature": 1,
+      "category": "A",
+      "requirement": "曲Key変更の同期",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS01-A04",
+      "feature": 1,
+      "category": "A",
+      "requirement": "コード進行移調の同期",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS01-A05",
+      "feature": 1,
+      "category": "A",
+      "requirement": "移調時の範囲保護と一括Undo",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS01-B01",
+      "feature": 1,
+      "category": "B",
+      "requirement": "Piano Rollと全Trackの物理操作",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS02-A01",
+      "feature": 2,
+      "category": "A",
+      "requirement": "unsupported Web MIDI environment is reported without throwing",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-midi-input.test.js",
+          "acceptance": "unsupported Web MIDI environment is reported without throwing",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS02-A02",
+      "feature": 2,
+      "category": "A",
+      "requirement": "切断と再接続の自動状態遷移",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS02-A03",
+      "feature": 2,
+      "category": "A",
+      "requirement": "テンポ拍子変化録音の再保存往復",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS02-B01",
+      "feature": 2,
+      "category": "B",
+      "requirement": "Keystation権限・再接続・入力遅延",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS03-A01",
+      "feature": 3,
+      "category": "A",
+      "requirement": "explicit key changes select key and scale family at their exact tick",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-structure-info.test.js",
+          "acceptance": "explicit key changes select key and scale family at their exact tick",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS03-A02",
+      "feature": 3,
+      "category": "A",
+      "requirement": "音声BPM解析",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A03",
+      "feature": 3,
+      "category": "A",
+      "requirement": "音声KeyとScale解析",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A04",
+      "feature": 3,
+      "category": "A",
+      "requirement": "音声拍子解析",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A05",
+      "feature": 3,
+      "category": "A",
+      "requirement": "音声セクション解析",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-B01",
+      "feature": 3,
+      "category": "B",
+      "requirement": "解析結果の実曲受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS03-C01",
+      "feature": 3,
+      "category": "C",
+      "requirement": "音声解析方式と品質閾値",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS04-A01",
+      "feature": 4,
+      "category": "A",
+      "requirement": "hosted editor never dispatches model requests; local host must be explicit",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-local-model.test.js",
+          "acceptance": "hosted editor never dispatches model requests; local host must be explicit",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS04-A02",
+      "feature": 4,
+      "category": "A",
+      "requirement": "文章と歌詞からBPMとKeyを提案",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A03",
+      "feature": 4,
+      "category": "A",
+      "requirement": "文章と歌詞からコードとメロディを生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A04",
+      "feature": 4,
+      "category": "A",
+      "requirement": "構成と編成を生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A05",
+      "feature": 4,
+      "category": "A",
+      "requirement": "生成物をPreviewから新曲保存へ統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-B01",
+      "feature": 4,
+      "category": "B",
+      "requirement": "新曲の音楽品質聴取",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS04-C01",
+      "feature": 4,
+      "category": "C",
+      "requirement": "文章理解・作曲モデルとライセンス・品質基準",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS05-A01",
+      "feature": 5,
+      "category": "A",
+      "requirement": "workspace is optional serializable state and does not mutate the project",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-ai-workflow.test.js",
+          "acceptance": "workspace is optional serializable state and does not mutate the project",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS05-A02",
+      "feature": 5,
+      "category": "A",
+      "requirement": "複数依頼の計画と機能呼出し",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS05-A03",
+      "feature": 5,
+      "category": "A",
+      "requirement": "会話文脈を維持した次工程案内",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS05-A04",
+      "feature": 5,
+      "category": "A",
+      "requirement": "完成経路までの日本語オーケストレーション",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS05-B01",
+      "feature": 5,
+      "category": "B",
+      "requirement": "実制作会話フローの利用受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS05-C01",
+      "feature": 5,
+      "category": "C",
+      "requirement": "会話理解モデルと実行権限契約",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS06-A01",
+      "feature": 6,
+      "category": "A",
+      "requirement": "Lyrics Family metadata Plan narrows anchors and shares one adoption Undo without changing source lines",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-ai-family-apply.test.js",
+          "acceptance": "Lyrics Family metadata Plan narrows anchors and shares one adoption Undo without changing source lines",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS06-A02",
+      "feature": 6,
+      "category": "A",
+      "requirement": "音声の特定変更Undoと競合拒否",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS06-A03",
+      "feature": 6,
+      "category": "A",
+      "requirement": "歌詞の特定変更Undoと競合拒否",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS06-A04",
+      "feature": 6,
+      "category": "A",
+      "requirement": "領域横断変更の永続再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS06-B01",
+      "feature": 6,
+      "category": "B",
+      "requirement": "Preview・採用・Undoの実操作",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS07-A01",
+      "feature": 7,
+      "category": "A",
+      "requirement": "full-song preview/listen/partial instrument adoption preserves source and other bars; single undo/redo exact",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-whole-song.test.js",
+          "acceptance": "full-song preview/listen/partial instrument adoption preserves source and other bars; single undo/redo exact",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS07-A02",
+      "feature": 7,
+      "category": "A",
+      "requirement": "続きと2番の実生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A03",
+      "feature": 7,
+      "category": "A",
+      "requirement": "ラスサビとIntroの実生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A04",
+      "feature": 7,
+      "category": "A",
+      "requirement": "InterludeとOutroの実生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A05",
+      "feature": 7,
+      "category": "A",
+      "requirement": "時間指定生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A06",
+      "feature": 7,
+      "category": "A",
+      "requirement": "部分再生成と固定範囲保護",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-B01",
+      "feature": 7,
+      "category": "B",
+      "requirement": "各Sectionの音楽品質聴取",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS07-C01",
+      "feature": 7,
+      "category": "C",
+      "requirement": "生成モデルとSection配置方針",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS08-A01",
+      "feature": 8,
+      "category": "A",
+      "requirement": "Arrangement exact changing-meter entry is an anchor and leaves source MIDI and workspace unchanged",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-ai-arrangement-entry.test.js",
+          "acceptance": "Arrangement exact changing-meter entry is an anchor and leaves source MIDI and workspace unchanged",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS08-A02",
+      "feature": 8,
+      "category": "A",
+      "requirement": "複数Sectionアレンジの実生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A03",
+      "feature": 8,
+      "category": "A",
+      "requirement": "単一Track再生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A04",
+      "feature": 8,
+      "category": "A",
+      "requirement": "複数Track再生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A05",
+      "feature": 8,
+      "category": "A",
+      "requirement": "メロディ固定と範囲固定の保存往復",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-B01",
+      "feature": 8,
+      "category": "B",
+      "requirement": "音色と演奏表現の聴取",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS08-C01",
+      "feature": 8,
+      "category": "C",
+      "requirement": "Destinationと音源生成モデルの契約",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS09-A01",
+      "feature": 9,
+      "category": "A",
+      "requirement": "MIDI harmonic analysis weights sounding durations, excludes drums, preserves source and exposes silence",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-ai-composition.test.js",
+          "acceptance": "MIDI harmonic analysis weights sounding durations, excludes drums, preserves source and exposes silence",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS09-A02",
+      "feature": 9,
+      "category": "A",
+      "requirement": "実音声のコード解析",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS09-A03",
+      "feature": 9,
+      "category": "A",
+      "requirement": "コード追従補正",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS09-A04",
+      "feature": 9,
+      "category": "A",
+      "requirement": "別Voicing候補生成と採用保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS09-B01",
+      "feature": 9,
+      "category": "B",
+      "requirement": "解析と別案の音楽的妥当性聴取",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS09-C01",
+      "feature": 9,
+      "category": "C",
+      "requirement": "実音声コード解析モデルと品質基準",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS10-A01",
+      "feature": 10,
+      "category": "A",
+      "requirement": "Explicit reading assigns exact chronological note IDs, melisma and real timing without MIDI mutation",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-lyrics-note-assignment.test.js",
+          "acceptance": "Explicit reading assigns exact chronological note IDs, melisma and real timing without MIDI mutation",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS10-A02",
+      "feature": 10,
+      "category": "A",
+      "requirement": "歌詞本文生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A03",
+      "feature": 10,
+      "category": "A",
+      "requirement": "歌詞本文修正",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A04",
+      "feature": 10,
+      "category": "A",
+      "requirement": "読みとアクセント整合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A05",
+      "feature": 10,
+      "category": "A",
+      "requirement": "文字数と音節割付",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A06",
+      "feature": 10,
+      "category": "A",
+      "requirement": "固定歌詞再生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A07",
+      "feature": 10,
+      "category": "A",
+      "requirement": "固定メロディ再生成",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A08",
+      "feature": 10,
+      "category": "A",
+      "requirement": "重複歌詞の再結合と競合履歴",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-B01",
+      "feature": 10,
+      "category": "B",
+      "requirement": "日本語歌詞と旋律の歌唱受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS10-C01",
+      "feature": 10,
+      "category": "C",
+      "requirement": "歌詞生成モデル・読みアクセント方式",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS11-A01",
+      "feature": 11,
+      "category": "A",
+      "requirement": "WAV preflight reports measured duration and silence without writing audio or project",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "WAV preflight reports measured duration and silence without writing audio or project",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS11-A02",
+      "feature": 11,
+      "category": "A",
+      "requirement": "試聴中の日本語部分修正",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS11-C01"
+      ]
+    },
+    {
+      "id": "MS11-A03",
+      "feature": 11,
+      "category": "A",
+      "requirement": "メロディ歌詞変更後の仮歌再生成と非破壊保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS11-C01"
+      ]
+    },
+    {
+      "id": "MS11-B01",
+      "feature": 11,
+      "category": "B",
+      "requirement": "日本語仮歌の聴感品質",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS11-C01",
+      "feature": 11,
+      "category": "C",
+      "requirement": "歌唱モデルの配布ライセンスと品質基準",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS12-A01",
+      "feature": 12,
+      "category": "A",
+      "requirement": "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-recording.test.js",
+          "acceptance": "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS12-A02",
+      "feature": 12,
+      "category": "A",
+      "requirement": "長時間録音中断からの全保存経路の復旧検証",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS12-A03",
+      "feature": 12,
+      "category": "A",
+      "requirement": "PunchとCycleの保存再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS12-A04",
+      "feature": 12,
+      "category": "A",
+      "requirement": "歌詞スクロール同期",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS12-B01",
+      "feature": 12,
+      "category": "B",
+      "requirement": "マイク権限・monitor・latency・長時間録音",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS13-A01",
+      "feature": 13,
+      "category": "A",
+      "requirement": "peak normalization previews measured PCM, adopts only on request and survives history/archive",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-correction-comp.test.js",
+          "acceptance": "peak normalization previews measured PCM, adopts only on request and survives history/archive",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS13-A02",
+      "feature": 13,
+      "category": "A",
+      "requirement": "Vibrato補正とUndo",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS13-A03",
+      "feature": 13,
+      "category": "A",
+      "requirement": "Crossfade補正とUndo",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS13-A04",
+      "feature": 13,
+      "category": "A",
+      "requirement": "波形歌詞音符同期の保存再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS13-B01",
+      "feature": 13,
+      "category": "B",
+      "requirement": "各音声補正の聴感品質",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS14-A01",
+      "feature": 14,
+      "category": "A",
+      "requirement": "harmony produces actual diatonic pitches only in selected note range",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-harmony-mastering.test.js",
+          "acceptance": "harmony produces actual diatonic pitches only in selected note range",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS14-A02",
+      "feature": 14,
+      "category": "A",
+      "requirement": "歌声Harmonyレンダーと保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A03",
+      "feature": 14,
+      "category": "A",
+      "requirement": "Doubleレンダーと保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A04",
+      "feature": 14,
+      "category": "A",
+      "requirement": "Chorusレンダーと保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A05",
+      "feature": 14,
+      "category": "A",
+      "requirement": "本人声生成の非破壊統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-B01",
+      "feature": 14,
+      "category": "B",
+      "requirement": "Harmony・Double・Chorusの聴感品質",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS14-C01",
+      "feature": 14,
+      "category": "C",
+      "requirement": "本人声モデルと同意・ライセンス",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS15-A01",
+      "feature": 15,
+      "category": "A",
+      "requirement": "actual PCM pitch analysis detects A4 and rejects silence and nonfinite audio",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-correction-comp.test.js",
+          "acceptance": "actual PCM pitch analysis detects A4 and rejects silence and nonfinite audio",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS15-A02",
+      "feature": 15,
+      "category": "A",
+      "requirement": "仮歌とTakeの音程比較",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS15-A03",
+      "feature": 15,
+      "category": "A",
+      "requirement": "仮歌とTakeのTiming比較",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS15-A04",
+      "feature": 15,
+      "category": "A",
+      "requirement": "比較から録り直しと補正への操作接続",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS15-B01",
+      "feature": 15,
+      "category": "B",
+      "requirement": "診断結果と録り直し判断の実制作受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS16-A01",
+      "feature": 16,
+      "category": "A",
+      "requirement": "audio pipeline bridge recognizes supported local audio and keeps MIDI separate",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-audio-pipeline.test.js",
+          "acceptance": "audio pipeline bridge recognizes supported local audio and keeps MIDI separate",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS16-A02",
+      "feature": 16,
+      "category": "A",
+      "requirement": "6音声Stemの保存再開と移行の統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS16-C01"
+      ]
+    },
+    {
+      "id": "MS16-A03",
+      "feature": 16,
+      "category": "A",
+      "requirement": "実モデル分離の失敗取消と原音保持",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS16-C01"
+      ]
+    },
+    {
+      "id": "MS16-B01",
+      "feature": 16,
+      "category": "B",
+      "requirement": "実曲分離品質と配布版実行",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS16-C01",
+      "feature": 16,
+      "category": "C",
+      "requirement": "分離モデルweightと再配布許諾",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS17-A01",
+      "feature": 17,
+      "category": "A",
+      "requirement": "repair only the selected track and measures; preserve input and locked notes",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-scoped-midi-repair.test.js",
+          "acceptance": "repair only the selected track and measures; preserve input and locked notes",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS17-A02",
+      "feature": 17,
+      "category": "A",
+      "requirement": "単音和音設定の実モデル接続",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS17-A03",
+      "feature": 17,
+      "category": "A",
+      "requirement": "信頼度と比較修正UIの統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS17-A04",
+      "feature": 17,
+      "category": "A",
+      "requirement": "変換後の自動整理と保存再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS17-B01",
+      "feature": 17,
+      "category": "B",
+      "requirement": "Intel実Helperで6音精度と一般作品精度",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS17-C01",
+      "feature": 17,
+      "category": "C",
+      "requirement": "変換モデルの対象楽器と精度基準",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-A01",
+      "feature": 18,
+      "category": "A",
+      "requirement": "actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-pcm-mix.test.js",
+          "acceptance": "actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-A02",
+      "feature": 18,
+      "category": "A",
+      "requirement": "全素材形式の曲全体Mix統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-A03",
+      "feature": 18,
+      "category": "A",
+      "requirement": "複数Mix版の保存比較と再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-B01",
+      "feature": 18,
+      "category": "B",
+      "requirement": "実曲Mixの音質と全曲聴取",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS19-A01",
+      "feature": 19,
+      "category": "A",
+      "requirement": "997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-harmony-mastering.test.js",
+          "acceptance": "997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS19-A02",
+      "feature": 19,
+      "category": "A",
+      "requirement": "LUFS計測の規格参照fixture拡張",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS19-A03",
+      "feature": 19,
+      "category": "A",
+      "requirement": "true peakとclipping検査",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS19-A04",
+      "feature": 19,
+      "category": "A",
+      "requirement": "複数Master版の保存再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS19-B01",
+      "feature": 19,
+      "category": "B",
+      "requirement": "実曲Masterの音質と最終音量",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS20-A01",
+      "feature": 20,
+      "category": "A",
+      "requirement": "selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-logic-pro.test.js",
+          "acceptance": "selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS20-A02",
+      "feature": 20,
+      "category": "A",
+      "requirement": "返送WAVとStemの対応差分管理",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS20-C01"
+      ]
+    },
+    {
+      "id": "MS20-A03",
+      "feature": 20,
+      "category": "A",
+      "requirement": "受渡し前検査の統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS20-C01"
+      ]
+    },
+    {
+      "id": "MS20-B01",
+      "feature": 20,
+      "category": "B",
+      "requirement": "Logic Proの実往復",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS20-C01",
+      "feature": 20,
+      "category": "C",
+      "requirement": "Logic直接操作とlogicxの公式方式",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS21-A01",
+      "feature": 21,
+      "category": "A",
+      "requirement": "final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-final-export.test.js",
+          "acceptance": "final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS21-A02",
+      "feature": 21,
+      "category": "A",
+      "requirement": "MasterとInstrumentalとStemとMIDI一括出力の全経路",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS21-A03",
+      "feature": 21,
+      "category": "A",
+      "requirement": "配信前の欠落と音量検査",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS21-A04",
+      "feature": 21,
+      "category": "A",
+      "requirement": "配信前の権利申告漏れ検査",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS21-B01",
+      "feature": 21,
+      "category": "B",
+      "requirement": "完成パッケージの実再生",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS21-C01",
+      "feature": 21,
+      "category": "C",
+      "requirement": "音源と依存物の再配布条件",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS22-A01",
+      "feature": 22,
+      "category": "A",
+      "requirement": "explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS22-A02",
+      "feature": 22,
+      "category": "A",
+      "requirement": "Checkpoint可聴A/Bの統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS22-A03",
+      "feature": 22,
+      "category": "A",
+      "requirement": "依存範囲合成の全条件受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS22-A04",
+      "feature": 22,
+      "category": "A",
+      "requirement": "全保存入口の強制終了再開検証",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS22-B01",
+      "feature": 22,
+      "category": "B",
+      "requirement": "完全終了・再起動・再編集",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A01",
+      "feature": 23,
+      "category": "A",
+      "requirement": "real import route stores >2M samples as Blob and a fresh repository reload verifies every byte",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-long-wav-storage.test.js",
+          "acceptance": "real import route stores >2M samples as Blob and a fresh repository reload verifies every byte",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A02",
+      "feature": 23,
+      "category": "A",
+      "requirement": "旧依存識別不能時の原本保持",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS23-A03",
+      "feature": 23,
+      "category": "A",
+      "requirement": "更新前復元と移行のソフトウェア受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS23-A04",
+      "feature": 23,
+      "category": "A",
+      "requirement": "Cloud Syncの競合とoffline復旧実装",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS23-B01",
+      "feature": 23,
+      "category": "B",
+      "requirement": "別Mac移行と電源断復旧",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-C01",
+      "feature": 23,
+      "category": "C",
+      "requirement": "Cloud Sync同期先・暗号化・競合・offline方針",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS24-A01",
+      "feature": 24,
+      "category": "A",
+      "requirement": "diagnosis exposes unavailable byte verification without claiming repair or writing project state",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "diagnosis exposes unavailable byte verification without claiming repair or writing project state",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS24-A02",
+      "feature": 24,
+      "category": "A",
+      "requirement": "全体性能原因の診断",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS24-A03",
+      "feature": 24,
+      "category": "A",
+      "requirement": "診断結果から安全軽量化",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS24-A04",
+      "feature": 24,
+      "category": "A",
+      "requirement": "修復同意とtransaction再開",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS24-B01",
+      "feature": 24,
+      "category": "B",
+      "requirement": "実機負荷と軽量化効果",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS25-A01",
+      "feature": 25,
+      "category": "A",
+      "requirement": "missing local runtime reports failure and retains notes/candidate workspace",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-local-model.test.js",
+          "acceptance": "missing local runtime reports failure and retains notes/candidate workspace",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS25-A02",
+      "feature": 25,
+      "category": "A",
+      "requirement": "Project単位の外部送信禁止境界",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS25-A03",
+      "feature": 25,
+      "category": "A",
+      "requirement": "送信内容の明示と取消",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS25-A04",
+      "feature": 25,
+      "category": "A",
+      "requirement": "全処理の配布依存閉包検証",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS25-B01",
+      "feature": 25,
+      "category": "B",
+      "requirement": "IntelとApple Siliconの署名配布と容量",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS25-C01",
+      "feature": 25,
+      "category": "C",
+      "requirement": "対象モデルの容量・配布許諾・署名公証方式",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS26-A01",
+      "feature": 26,
+      "category": "A",
+      "requirement": "local cost tracking records failed retry, successful preview and cancellation separately without paid charges",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-ai-workflow.test.js",
+          "acceptance": "local cost tracking records failed retry, successful preview and cancellation separately without paid charges",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS26-A02",
+      "feature": 26,
+      "category": "A",
+      "requirement": "事前料金表示",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A03",
+      "feature": 26,
+      "category": "A",
+      "requirement": "月額上限と予約",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A04",
+      "feature": 26,
+      "category": "A",
+      "requirement": "Provider別使用量",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A05",
+      "feature": 26,
+      "category": "A",
+      "requirement": "失敗とCancelの料金精算",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-B01",
+      "feature": 26,
+      "category": "B",
+      "requirement": "採用Provider明細との精算一致",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS26-C01",
+      "feature": 26,
+      "category": "C",
+      "requirement": "有料Provider・価格根拠・課金取消契約",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS27-A01",
+      "feature": 27,
+      "category": "A",
+      "requirement": "complete portable package to separate durable origin reload preserves logical state/settings/bytes",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-generation-package.test.js",
+          "acceptance": "complete portable package to separate durable origin reload preserves logical state/settings/bytes",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS27-A02",
+      "feature": 27,
+      "category": "A",
+      "requirement": "Provider交換と互換拒否",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A03",
+      "feature": 27,
+      "category": "A",
+      "requirement": "旧モデル保持と切替",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A04",
+      "feature": 27,
+      "category": "A",
+      "requirement": "更新前fixture品質互換ゲート",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A05",
+      "feature": 27,
+      "category": "A",
+      "requirement": "モデルの速度容量報告",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-B01",
+      "feature": 27,
+      "category": "B",
+      "requirement": "実モデル速度品質と互換受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS27-C01",
+      "feature": 27,
+      "category": "C",
+      "requirement": "Provider交換と旧モデルの互換方針",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS28-A01",
+      "feature": 28,
+      "category": "A",
+      "requirement": "mode and favorites save, reopen and full JSON restore without changing songs",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-workspace.test.js",
+          "acceptance": "mode and favorites save, reopen and full JSON restore without changing songs",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS28-A02",
+      "feature": 28,
+      "category": "A",
+      "requirement": "全編集状態での作業別UI遷移",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS28-A03",
+      "feature": 28,
+      "category": "A",
+      "requirement": "自然言語画面案内の統合",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS28-A04",
+      "feature": 28,
+      "category": "A",
+      "requirement": "キーボード操作とa11y自動検証",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS28-B01",
+      "feature": 28,
+      "category": "B",
+      "requirement": "日本語glyph・touch・Pencil・a11y",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS29-A01",
+      "feature": 29,
+      "category": "A",
+      "requirement": "MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-production-tools.test.js",
+          "acceptance": "MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS29-A02",
+      "feature": 29,
+      "category": "A",
+      "requirement": "曲と部分素材の全形式保存",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    },
+    {
+      "id": "MS29-A03",
+      "feature": 29,
+      "category": "A",
+      "requirement": "素材KeyとBPM追従",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    },
+    {
+      "id": "MS29-A04",
+      "feature": 29,
+      "category": "A",
+      "requirement": "意味を用いた文章検索",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    },
+    {
+      "id": "MS29-B01",
+      "feature": 29,
+      "category": "B",
+      "requirement": "実素材を用いた作曲受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS29-C01",
+      "feature": 29,
+      "category": "C",
+      "requirement": "文章意味検索モデルとライセンス",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS30-A01",
+      "feature": 30,
+      "category": "A",
+      "requirement": "finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS30-A02",
+      "feature": 30,
+      "category": "A",
+      "requirement": "特殊保存入口の制作履歴網羅",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS30-A03",
+      "feature": 30,
+      "category": "A",
+      "requirement": "完成版の全変更入口での固定",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS30-A04",
+      "feature": 30,
+      "category": "A",
+      "requirement": "Session日次時系列の移行受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS30-B01",
+      "feature": 30,
+      "category": "B",
+      "requirement": "配布版の完成曲固定と移行受入",
+      "status": "open",
+      "evidence": [],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-A04",
+      "feature": 18,
+      "category": "A",
+      "requirement": "開始と再開の前に保存Stemのhash・長さ・identityを再照合",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_changed_same_size_stem_refuses_start_and_resume_without_spawn",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A05",
+      "feature": 23,
+      "category": "A",
+      "requirement": "転送中断時に既存Stemとmanifestを保持しpartialを除去",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_failed_reupload_keeps_previous_valid_bytes_and_manifest",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A06",
+      "feature": 23,
+      "category": "A",
+      "requirement": "metadata原子置換失敗で以前のsessionを保持",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_failed_metadata_replace_preserves_committed_session",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A07",
+      "feature": 23,
+      "category": "A",
+      "requirement": "不正形状のsessionを隔離し他の保存sessionを再発見",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_discovery_isolates_nonobject_and_wrong_shape_records",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS25-A05",
+      "feature": 25,
+      "category": "A",
+      "requirement": "空Project・版identityを永続作成前に拒否",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_empty_project_identity_is_rejected_before_writing",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS18-A05",
+      "feature": 18,
+      "category": "A",
+      "requirement": "旧実行の完了通知で新しい実行状態を上書きしない",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_old_waiter_cannot_complete_a_new_execution",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "MS23-A08",
+      "feature": 23,
+      "category": "A",
+      "requirement": "開始状態の保存失敗時に起動済み子processを終了回収",
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tools/nova-au/tests/test_auto_finish_server.py",
+          "acceptance": "test_metadata_failure_after_launch_reaps_process_and_closes_log",
+          "run": "verification/music-macless-helper-summary.json"
+        }
+      ],
+      "dependsOn": []
+    }
+  ]
+}
