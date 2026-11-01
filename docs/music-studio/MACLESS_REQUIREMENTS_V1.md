@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率 **41.48%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率 **43.70%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装16件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装13件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -19,7 +19,7 @@ A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率
 | 3 | 5 | 1 | 4 | 1 | 1 |
 | 4 | 5 | 1 | 4 | 1 | 1 |
 | 5 | 4 | 1 | 3 | 1 | 1 |
-| 6 | 4 | 1 | 3 | 1 | 0 |
+| 6 | 4 | 4 | 0 | 1 | 0 |
 | 7 | 6 | 1 | 5 | 1 | 1 |
 | 8 | 5 | 1 | 4 | 1 | 1 |
 | 9 | 4 | 1 | 3 | 1 | 1 |
@@ -78,9 +78,9 @@ A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率
 | MS05-B01 | B | 実制作会話フローの利用受入 | open | 未確認 |
 | MS05-C01 | C | 会話理解モデルと実行権限契約 | open | 未確認 |
 | MS06-A01 | A | Lyrics Family metadata Plan narrows anchors and shares one adoption Undo without changing source lines | verified | [tests/music-studio-ai-family-apply.test.js](../../tests/music-studio-ai-family-apply.test.js) — `Lyrics Family metadata Plan narrows anchors and shares one adoption Undo without changing source lines` |
-| MS06-A02 | A | 音声の特定変更Undoと競合拒否 | open | 未確認 |
-| MS06-A03 | A | 歌詞の特定変更Undoと競合拒否 | open | 未確認 |
-| MS06-A04 | A | 領域横断変更の永続再開 | open | 未確認 |
+| MS06-A02 | A | 音声の特定変更Undoと競合拒否 | verified | [scripts/music-song-checkpoints-browser.js](../../scripts/music-song-checkpoints-browser.js) — `report.targetedUndoRestart` |
+| MS06-A03 | A | 歌詞の特定変更Undoと競合拒否 | verified | [scripts/music-song-checkpoints-browser.js](../../scripts/music-song-checkpoints-browser.js) — `report.targetedUndo` |
+| MS06-A04 | A | 領域横断変更の永続再開 | verified | [scripts/music-song-checkpoints-browser.js](../../scripts/music-song-checkpoints-browser.js) — `report.crossDomainUndo` |
 | MS06-B01 | B | Preview・採用・Undoの実操作 | open | 未確認 |
 | MS07-A01 | A | full-song preview/listen/partial instrument adoption preserves source and other bars; single undo/redo exact | verified | [tests/music-studio-whole-song.test.js](../../tests/music-studio-whole-song.test.js) — `full-song preview/listen/partial instrument adoption preserves source and other bars; single undo/redo exact` |
 | MS07-A02 | A | 続きと2番の実生成 | open | MS07-C01 |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 11 | 0 |
-| 実装済み・検証不足 | 24 | 16 |
+| 実装済み・検証不足 | 24 | 13 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -260,9 +260,9 @@ A：総数 **135**、証拠付き完了 **56**、残数 **79**、受入確認率
 | MS05-A02 | 仕様判断待ち | open |
 | MS05-A03 | 仕様判断待ち | open |
 | MS05-A04 | 仕様判断待ち | open |
-| MS06-A02 | 実装済み・検証不足 | open |
-| MS06-A03 | 実装済み・検証不足 | open |
-| MS06-A04 | 実装済み・検証不足 | open |
+| MS06-A02 | 実装済み・検証不足 | verified |
+| MS06-A03 | 実装済み・検証不足 | verified |
+| MS06-A04 | 実装済み・検証不足 | verified |
 | MS07-A02 | 仕様判断待ち | open |
 | MS07-A03 | 仕様判断待ち | open |
 | MS07-A04 | 仕様判断待ち | open |
