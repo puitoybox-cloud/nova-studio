@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-01 JST",
+  "command": "node scripts/music-song-checkpoints-browser.js",
+  "testedHead": "75e3fed57fe977c6951c0b00ebe4b4c8dda03106",
+  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41287169228",
+  "passed": 1,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-song-checkpoints-browser.js": "3f2ab59a90887db8e6b89621be1bc5b95f867918508005716cb12684cb325ff4"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
+    "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
+  },
+  "acceptedCases": [
+    "report.rangeGuards",
+    "report.range=",
+    "report.binaryRecovery",
+    "report.dependencyVerified"
+  ],
+  "scope": "Chromium real-browser test: positive scoped MIDI adoption, 14 unsafe/invalid range and selection combinations refused, saved song preservation, linked binary recovery. No actual Mac device or listening acceptance."
+}
