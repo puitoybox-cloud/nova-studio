@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率 **43.70%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率 **44.44%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装13件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装12件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -35,7 +35,7 @@ A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率
 | 19 | 4 | 3 | 1 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
 | 21 | 4 | 1 | 3 | 1 | 1 |
-| 22 | 4 | 1 | 3 | 1 | 0 |
+| 22 | 4 | 2 | 2 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
 | 24 | 4 | 3 | 1 | 1 | 0 |
 | 25 | 5 | 2 | 3 | 1 | 1 |
@@ -173,7 +173,7 @@ A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率
 | MS21-C01 | C | 音源と依存物の再配布条件 | open | 未確認 |
 | MS22-A01 | A | explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation` |
 | MS22-A02 | A | Checkpoint可聴A/Bの統合 | open | 未確認 |
-| MS22-A03 | A | 依存範囲合成の全条件受入 | open | 未確認 |
+| MS22-A03 | A | 依存範囲合成の全条件受入 | verified | [scripts/music-song-checkpoints-browser.js](../../scripts/music-song-checkpoints-browser.js) — `report.meterRangeRestart=`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `range adoption rejects linked dependencies, boundary notes, locks, identities and tampered selection without writes`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `range uses exact mid-bar meter boundaries and keeps out-of-range notes` |
 | MS22-A04 | A | 全保存入口の強制終了再開検証 | open | 未確認 |
 | MS22-B01 | B | 完全終了・再起動・再編集 | open | 未確認 |
 | MS23-A01 | A | real import route stores >2M samples as Blob and a fresh repository reload verifies every byte | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `real import route stores >2M samples as Blob and a fresh repository reload verifies every byte` |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 11 | 0 |
-| 実装済み・検証不足 | 24 | 13 |
+| 実装済み・検証不足 | 24 | 12 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -313,7 +313,7 @@ A：総数 **135**、証拠付き完了 **59**、残数 **76**、受入確認率
 | MS21-A03 | 仕様判断待ち | open |
 | MS21-A04 | 仕様判断待ち | open |
 | MS22-A02 | 実装済み・検証不足 | open |
-| MS22-A03 | 実装済み・検証不足 | open |
+| MS22-A03 | 実装済み・検証不足 | verified |
 | MS22-A04 | 実装済み・検証不足 | open |
 | MS23-A02 | 仕様判断待ち | open |
 | MS23-A03 | 仕様判断待ち | open |
