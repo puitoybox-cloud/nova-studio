@@ -95,6 +95,30 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   if(JSON.stringify(saved)!==JSON.stringify(p))throw Error('range-guard validation mutated saved project');
   return{rejected:cases.map(c=>c[0]),selectionRejected:choices.map(c=>c[0]),originalPersisted:true};
  });
+
+ // A meter change in the middle of a bar must not turn a scoped adoption into
+ // a global note rewrite. This exercises the browser's real meter-map module.
+ report.meterRange=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository();
+  const id='meter-scope-real-browser';
+  let p=a.makeProject({projectId:id,projectName:'Meter scope verification',midiData:{ppq:480,timeSignatureMap:[{tick:960,numerator:3,denominator:4}],tracks:[{id:'lead',notes:[{id:'first',pitch:60,velocity:80,startTick:0,durationTicks:480},{id:'second',pitch:62,velocity:80,startTick:960,durationTicks:480}]}]}});
+  await r.put(p);await a.refresh();a.openProject(id);
+  let result=await a.versionSave(id,'Meter scoped reference');if(!result.ok)throw Error('meter checkpoint '+result.error);
+  p=await r.get(id);p.midiData.tracks[0].notes[0].pitch=70;p.midiData.tracks[0].notes[1].pitch=75;p.revision++;await r.put(p);await a.refresh();a.openProject(id);
+  const checkpointId=p.songVersions.checkpoints[0].id;
+  result=a.versionPreview(id,checkpointId,['music'],{trackId:'lead',startMeasure:2,endMeasure:2});
+  if(!result.ok)throw Error('meter range preview '+result.error);
+  result=await a.versionApply(id);if(!result.ok)throw Error('meter range apply '+result.error);
+  p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==62)throw Error('meter range unexpectedly replaced unrelated notes');
+  result=await a.versionUndoRedo(id,-1);if(!result.ok)throw Error('meter scoped undo '+result.error);
+  p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==75)throw Error('meter scoped undo mismatch');
+  result=await a.versionUndoRedo(id,1);if(!result.ok)throw Error('meter scoped redo '+result.error);
+  p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==62)throw Error('meter scoped redo mismatch');
+  return{midBarMeterRange:true,unrelatedNotesRetained:true,reversible:true};
+ });
  report.range=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');if(p.midiData.tracks[0].notes[1].pitch!==77||p.midiData.tracks[1].notes[0].pitch!==40)throw Error('range leaked');p.fileReferences=[];p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);await new Promise((resolve,reject)=>{const req=indexedDB.open('music-studio-projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction('longWavBinaries','readwrite');tx.objectStore('longWavBinaries').delete(window.__recoveryId);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});const before=JSON.stringify(await r.get('range-song'));const failed=await a.recoverMissingBinary('range-song',window.__recoveryId,new Blob([new Uint8Array([0,0,0,0,0,0,0,0])]));if(failed.ok||JSON.stringify(await r.get('range-song'))!==before)throw Error('incorrect file accepted');return{otherTrackAndRangeRetained:true,incorrectOriginalRejected:true}});
  report.dependencyMissing=await page.evaluate(async()=>{const r=await MusicStudio.inspectStoredDependencies('range-song');if(!r.ok||!r.report.rows.some(x=>x.status==='missing'))throw Error('missing dependency inspection');return true});
  await page.locator('details').filter({has:page.locator('[name=recoveryFile]')}).last().evaluate(e=>e.open=true);await page.locator('[name=recoveryFile]').setInputFiles({name:'original.mid',mimeType:'application/octet-stream',buffer:Buffer.from([77,84,104,100,1,2,3,4])});await page.locator('button').filter({hasText:'Recover（照合して復旧）'}).click();await page.waitForFunction(()=>!MusicStudio.archiveTransfer.busy);
