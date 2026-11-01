@@ -1,12 +1,12 @@
 {
   "date": "2026-11-01 JST",
   "command": "node scripts/music-song-checkpoints-browser.js",
-  "testedHead": "210a949aa346531c2bcbb88eb84dd716da6543e7",
-  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41298582869",
+  "testedHead": "000fbb4564a1e8cacb9975aa84c347745a0dce86",
+  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41357154618",
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-song-checkpoints-browser.js": "5930f1da7fe136efd8d2e97113216c1a90158468adf300d14087b754bff9568e"
+    "scripts/music-song-checkpoints-browser.js": "e5532a8763cfa81bc2e0171b6f2e741563013d010bd6ee00e5f25f709c5057b1"
   },
   "runtimeHashes": {
     "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
@@ -16,7 +16,10 @@
     "report.rangeGuards",
     "report.range=",
     "report.binaryRecovery",
-    "report.dependencyVerified"
+    "report.dependencyVerified",
+    "report.meterRange=",
+    "report.meterRangeStale=",
+    "report.meterRangeRestart="
   ],
-  "scope": "Chromium real-browser: positive scoped MIDI adoption and 22 unsafe or invalid scope/selection and historical-source cases refused; original stored song preserved, binary recovery verified. Not the entire MS22-A03 acceptance contract or Mac real-device test."
+  "scope": "Chromium browser success: 22 unsafe-range/selection/historical-source refusal cases, selective adoption across meter change, rejected stale preview and retry, undo/redo across full Chromium restart, unchanged unrelated notes and production notes, persisted binary recovery; unit test exercises locked measure, midbar map and historical dependencies. Intel Mac hardware and listening are separate."
 }
