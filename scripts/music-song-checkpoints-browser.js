@@ -59,7 +59,11 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    ['audio-drift',range,{...p,mixNotes:'drifted mix'},source,/checkpoint-range-dependency-conflict:mixNotes/],
    ['track-settings',range,{...p,midiData:{...p.midiData,tracks:p.midiData.tracks.map(t=>t.id==='piano'?{...t,name:'Renamed'}:t)}},source,/checkpoint-range-track-settings-conflict/],
    ['timeline',range,{...p,midiData:{...p.midiData,ppq:960}},source,/checkpoint-range-timeline-conflict/],
-   ['linked-score',range,{...p,melodies:[{id:'linked'}]}, {...source,melodies:[{id:'linked'}]},/checkpoint-range-linked-score-use-bundle/]
+   ['linked-score',range,{...p,melodies:[{id:'linked'}]}, {...source,melodies:[{id:'linked'}]},/checkpoint-range-linked-score-use-bundle/],
+   ['locked-track',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].locked=true;return q})(),(()=>{const q=JSON.parse(JSON.stringify(source));q.midiData.tracks[0].locked=true;return q})(),/checkpoint-range-locked-track/],
+   ['locked-note',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[0].locked=true;return q})(),source,/checkpoint-range-locked-note/],
+   ['crossing-note',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[0].durationTicks=2400;return q})(),source,/checkpoint-range-crossing-note/],
+   ['duplicate-note-id',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[1].id='one';return q})(),source,/checkpoint-range-note-identity-conflict/]
   ];
   for(const [name,scope,current,historical,error] of cases){
    let failed=false;try{a.versionRangeCompose(current,historical,scope)}catch(e){failed=error.test(String(e.message))}
