@@ -595,20 +595,14 @@
       "feature": 6,
       "category": "A",
       "requirement": "音声の特定変更Undoと競合拒否",
-      "status": "verified",
-      "evidence": [
-        {
-          "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "real PCM gain-history selective checkpoint adoption and stale-preview rejection, with original PCM retained, unrelated production notes untouched and undo/redo after Chromium profile restart",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41273681736"
-        }
-      ],
+      "status": "open",
+      "evidence": [],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "実PCM gain historyを用いた独立ブラウザプロセス再起動・Undo/Redo・競合拒否のCI成功。Intel Mac実機受入とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -620,20 +614,14 @@
       "feature": 6,
       "category": "A",
       "requirement": "歌詞の特定変更Undoと競合拒否",
-      "status": "verified",
-      "evidence": [
-        {
-          "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "selective lyrics checkpoint adoption rejects a stale saved preview, preserves unrelated notes and restarts with durable undo/redo",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
-        }
-      ],
+      "status": "open",
+      "evidence": [],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -645,20 +633,14 @@
       "feature": 6,
       "category": "A",
       "requirement": "領域横断変更の永続再開",
-      "status": "verified",
-      "evidence": [
-        {
-          "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "one atomic lyrics/audio/notes checkpoint adoption rejects a competing saved edit and survives browser-process restart with undo/redo",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
-        }
-      ],
+      "status": "open",
+      "evidence": [],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3324,6 +3306,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS06-A02: selective actual PCM gain-history undo/redo passes real Chromium restart and stale-preview rejection; source PCM and unrelated notes retained. Total A verified 59/135, open 76."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 558,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Correct premature MS06-A02/A03/A04 verified classifications: real browser CI passed but mandatory repository-local evidence JSON and source/runtime hash proof were not registered. Restore open until formal acceptance evidence is committed and validated; count returns to 56/135."
     }
   ]
 }
