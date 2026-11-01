@@ -119,6 +119,44 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==62)throw Error('meter scoped redo mismatch');
   return{midBarMeterRange:true,unrelatedNotesRetained:true,reversible:true};
  });
+
+ // Scope selection is an optimistic compare-and-put. An intervening save
+ // cannot silently overwrite a newer song, even if only its notes changed.
+ report.meterRangeStale=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository(),id='meter-scope-real-browser';
+  let p=await r.get(id);p.midiData.tracks[0].notes[1].pitch=78;p.revision++;
+  await r.put(p);await a.refresh();a.openProject(id);
+  const checkpointId=p.songVersions.checkpoints[0].id,scope={trackId:'lead',startMeasure:2,endMeasure:2};
+  let result=a.versionPreview(id,checkpointId,['music'],scope);
+  if(!result.ok)throw Error('meter stale preview '+result.error);
+  p=await r.get(id);p.productionNotes='concurrent unsaved preview protection';p.revision++;
+  await r.put(p);await a.refresh();
+  const baseline=JSON.stringify(await r.get(id));
+  result=await a.versionApply(id);
+  if(result.ok||JSON.stringify(await r.get(id))!==baseline)throw Error('meter stale scope overwrote unrelated change');
+  result=a.versionPreview(id,checkpointId,['music'],scope);
+  if(!result.ok)throw Error('meter updated preview '+result.error);
+  result=await a.versionApply(id);
+  if(!result.ok)throw Error('meter updated scope adoption '+result.error);
+  p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==62||p.productionNotes!=='concurrent unsaved preview protection')throw Error('meter updated scope leaked');
+  return{staleDenied:true,unrelatedNoteRetained:true,adoptionAfterRecompare:true};
+ });
+ await browser.close();page=await open();
+ report.meterRangeRestart=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository(),id='meter-scope-real-browser';
+  await a.refresh();a.openProject(id);
+  let result=await a.versionUndoRedo(id,-1);
+  if(!result.ok)throw Error('meter restart undo '+result.error);
+  let p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==78||p.productionNotes!=='concurrent unsaved preview protection')throw Error('meter restart undo mismatch');
+  result=await a.versionUndoRedo(id,1);
+  if(!result.ok)throw Error('meter restart redo '+result.error);
+  p=await r.get(id);
+  if(p.midiData.tracks[0].notes[0].pitch!==70||p.midiData.tracks[0].notes[1].pitch!==62||p.productionNotes!=='concurrent unsaved preview protection')throw Error('meter restart redo mismatch');
+  return{restart:true,undoRedo:true,otherNotesAndNotesPreserved:true};
+ });
+ await page.evaluate(()=>MusicStudio.openProject('range-song'));
  report.range=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');if(p.midiData.tracks[0].notes[1].pitch!==77||p.midiData.tracks[1].notes[0].pitch!==40)throw Error('range leaked');p.fileReferences=[];p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);await new Promise((resolve,reject)=>{const req=indexedDB.open('music-studio-projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction('longWavBinaries','readwrite');tx.objectStore('longWavBinaries').delete(window.__recoveryId);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});const before=JSON.stringify(await r.get('range-song'));const failed=await a.recoverMissingBinary('range-song',window.__recoveryId,new Blob([new Uint8Array([0,0,0,0,0,0,0,0])]));if(failed.ok||JSON.stringify(await r.get('range-song'))!==before)throw Error('incorrect file accepted');return{otherTrackAndRangeRetained:true,incorrectOriginalRejected:true}});
  report.dependencyMissing=await page.evaluate(async()=>{const r=await MusicStudio.inspectStoredDependencies('range-song');if(!r.ok||!r.report.rows.some(x=>x.status==='missing'))throw Error('missing dependency inspection');return true});
  await page.locator('details').filter({has:page.locator('[name=recoveryFile]')}).last().evaluate(e=>e.open=true);await page.locator('[name=recoveryFile]').setInputFiles({name:'original.mid',mimeType:'application/octet-stream',buffer:Buffer.from([77,84,104,100,1,2,3,4])});await page.locator('button').filter({hasText:'Recover（照合して復旧）'}).click();await page.waitForFunction(()=>!MusicStudio.archiveTransfer.busy);
