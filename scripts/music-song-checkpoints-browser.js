@@ -63,7 +63,10 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    ['locked-track',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].locked=true;return q})(),(()=>{const q=JSON.parse(JSON.stringify(source));q.midiData.tracks[0].locked=true;return q})(),/checkpoint-range-locked-track/],
    ['locked-note',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[0].locked=true;return q})(),source,/checkpoint-range-locked-note/],
    ['crossing-note',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[0].durationTicks=2400;return q})(),source,/checkpoint-range-crossing-note/],
-   ['duplicate-note-id',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[1].id='one';return q})(),source,/checkpoint-range-note-identity-conflict/]
+   ['duplicate-note-id',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[1].id='one';return q})(),source,/checkpoint-range-note-identity-conflict/],
+   ['missing-midi-tracks',range,{...p,midiData:{ppq:480}},source,/checkpoint-range-midi-missing/],
+   ['protected-note',range,(()=>{const q=JSON.parse(JSON.stringify(p));q.midiData.tracks[0].notes[0].protected=true;return q})(),source,/checkpoint-range-locked-note/],
+   ['unbounded-measures',{...range,endMeasure:10001},p,source,/checkpoint-range-invalid/]
   ];
   for(const [name,scope,current,historical,error] of cases){
    let failed=false;try{a.versionRangeCompose(current,historical,scope)}catch(e){failed=error.test(String(e.message))}
