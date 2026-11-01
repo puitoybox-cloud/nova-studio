@@ -595,14 +595,21 @@
       "feature": 6,
       "category": "A",
       "requirement": "音声の特定変更Undoと競合拒否",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "declaration": "report.targetedUndoRestart",
+          "acceptance": "report.targetedUndoRestart",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -614,14 +621,21 @@
       "feature": 6,
       "category": "A",
       "requirement": "歌詞の特定変更Undoと競合拒否",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "declaration": "report.targetedUndo",
+          "acceptance": "report.targetedUndo",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -633,14 +647,21 @@
       "feature": 6,
       "category": "A",
       "requirement": "領域横断変更の永続再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "declaration": "report.crossDomainUndo",
+          "acceptance": "report.crossDomainUndo",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "実ブラウザ回帰CIでは対象動作が成功。ただし正式受入CLIが要求するコミット内の証拠JSON、sourceHashes、runtimeHashes、acceptedCasesが未登録。受入証拠の照合完了までopenを維持。",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3313,6 +3334,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "Correct premature MS06-A02/A03/A04 verified classifications: real browser CI passed but mandatory repository-local evidence JSON and source/runtime hash proof were not registered. Restore open until formal acceptance evidence is committed and validated; count returns to 56/135."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 558,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Register MS06-A02/A03/A04 verified using committed browser CI evidence JSON with source SHA256 and runtime SHA256. Denominator unchanged; 59/135 verified."
     }
   ]
 }
