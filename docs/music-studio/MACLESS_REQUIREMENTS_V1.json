@@ -2346,14 +2346,30 @@
       "feature": 22,
       "category": "A",
       "requirement": "依存範囲合成の全条件受入",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "acceptance": "report.meterRangeRestart=",
+          "run": "verification/music-checkpoint-range-proof-20261101.json"
+        },
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "range adoption rejects linked dependencies, boundary notes, locks, identities and tampered selection without writes",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "range uses exact mid-bar meter boundaries and keeps out-of-range notes",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-02 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "実ブラウザの22拒否条件と拍子変更を含む選択的復元、競合拒否・再比較、完全再起動後のUndo/Redo・原本保持、Nodeのmeasure lock/boundary/meter受入に合格。証拠はCI実行番号とソース/ランタイムSHA-256に紐付く。Intel Mac実機確認とは別。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3341,6 +3357,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "Register MS06-A02/A03/A04 verified using committed browser CI evidence JSON with source SHA256 and runtime SHA256. Denominator unchanged; 59/135 verified."
+    },
+    {
+      "date": "2026-11-02 JST",
+      "baselinePR": 564,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS22-A03 range dependency composition accepted: 22 browser rejection cases, meter map positive selection, stale-edit guard, restart undo/redo, historical binary recovery, Node locked-measure and meter-map tests; immutable CI-and-hash evidence. 60/135 verified."
     }
   ]
 }
