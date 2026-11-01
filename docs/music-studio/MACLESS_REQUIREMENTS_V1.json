@@ -595,14 +595,20 @@
       "feature": 6,
       "category": "A",
       "requirement": "音声の特定変更Undoと競合拒否",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "acceptance": "real PCM gain-history selective checkpoint adoption and stale-preview rejection, with original PCM retained, unrelated production notes untouched and undo/redo after Chromium profile restart",
+          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41273681736"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "classification": "実装・受入検証済み",
+        "note": "実PCM gain historyを用いた独立ブラウザプロセス再起動・Undo/Redo・競合拒否のCI成功。Intel Mac実機受入とは別。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3311,6 +3317,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS06-A03 and MS06-A04: real-browser checkpoint recovery passed with targeted lyrics and cross-domain undo/redo after browser restart and stale-save rejection. Audio payload selective undo MS06-A02 remains open. Verified 58, open A 77."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 557,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS06-A02: selective actual PCM gain-history undo/redo passes real Chromium restart and stale-preview rejection; source PCM and unrelated notes retained. Total A verified 59/135, open 76."
     }
   ]
 }
