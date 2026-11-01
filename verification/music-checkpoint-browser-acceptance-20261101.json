@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-01 JST",
+  "source": "GitHub Actions checkpoint-recovery on immutable commit aef791ffcaee1a91e6bc3a32d2a3e78d3ac14ada",
+  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41274180748",
+  "command": "node scripts/music-song-checkpoints-browser.js (GitHub Actions checkpoint-recovery)",
+  "passed": 1,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-song-checkpoints-browser.js": "ef12ce496922944ed04b1aeaeba438787274e54b06f155a746d3af62305fe502"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
+    "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
+  },
+  "acceptedCases": [
+    "report.targetedUndo",
+    "report.targetedUndoRestart",
+    "report.crossDomainUndo",
+    "report.rangeGuards"
+  ],
+  "scope": "One successful browser workflow, with checkpoint comparisons, stale concurrent update rejection, and true process restart. Not a Mac hardware or audio listening acceptance."
+}

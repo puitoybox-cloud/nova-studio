@@ -599,16 +599,17 @@
       "evidence": [
         {
           "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "real PCM gain-history selective checkpoint adoption and stale-preview rejection, with original PCM retained, unrelated production notes untouched and undo/redo after Chromium profile restart",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41273681736"
+          "declaration": "report.targetedUndoRestart",
+          "acceptance": "report.targetedUndoRestart",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
         }
       ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "実PCM gain historyを用いた独立ブラウザプロセス再起動・Undo/Redo・競合拒否のCI成功。Intel Mac実機受入とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -624,16 +625,17 @@
       "evidence": [
         {
           "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "selective lyrics checkpoint adoption rejects a stale saved preview, preserves unrelated notes and restarts with durable undo/redo",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
+          "declaration": "report.targetedUndo",
+          "acceptance": "report.targetedUndo",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
         }
       ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -649,16 +651,17 @@
       "evidence": [
         {
           "path": "scripts/music-song-checkpoints-browser.js",
-          "acceptance": "one atomic lyrics/audio/notes checkpoint adoption rejects a competing saved edit and survives browser-process restart with undo/redo",
-          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
+          "declaration": "report.crossDomainUndo",
+          "acceptance": "report.crossDomainUndo",
+          "run": "verification/music-checkpoint-browser-acceptance-20261101.json"
         }
       ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装・受入検証済み",
-        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
+        "classification": "実装済み・検証不足",
+        "note": "CIで実ブラウザと再起動後の回帰に成功。正式証拠JSONにソース・実行証拠と受入ケースを登録。Mac実機確認は別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3324,6 +3327,20 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS06-A02: selective actual PCM gain-history undo/redo passes real Chromium restart and stale-preview rejection; source PCM and unrelated notes retained. Total A verified 59/135, open 76."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 558,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Correct premature MS06-A02/A03/A04 verified classifications: real browser CI passed but mandatory repository-local evidence JSON and source/runtime hash proof were not registered. Restore open until formal acceptance evidence is committed and validated; count returns to 56/135."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 558,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Register MS06-A02/A03/A04 verified using committed browser CI evidence JSON with source SHA256 and runtime SHA256. Denominator unchanged; 59/135 verified."
     }
   ]
 }
