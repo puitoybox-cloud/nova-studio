@@ -123,9 +123,9 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    const id='targeted-'+kind+'-undo';
    let p=a.makeProject({projectId:id,projectName:'Targeted '+kind,productionNotes:'original note'});
    p.lyrics={versions:[{id:'source-lyrics',text:'original lyric'}],activeVersionId:'source-lyrics'};
-   p.mixNotes='original mix';await r.put(p);await a.refresh();a.openProject(id);
+   p.mixNotes='original mix';if(kind==='audio')p=a.pcmImport(p,{sampleRate:48000,channels:[Array.from({length:4800},(_,i)=>Math.fround(.1*Math.sin(i*.1)))]},'Targeted original.wav');await r.put(p);await a.refresh();a.openProject(id);
    let x=await a.versionSave(id,'Targeted before edit');if(!x.ok)throw Error(kind+' checkpoint '+x.error);
-   p=await r.get(id);if(kind==='audio')p.mixNotes='changed mix';else p.lyrics.versions[0].text='changed lyric';
+   p=await r.get(id);if(kind==='audio'){p.mixNotes='changed mix';p.pcmMix.assets[0].gains.push(-6);p.pcmMix.assets[0].cursor=1}else p.lyrics.versions[0].text='changed lyric';
    p.revision++;await r.put(p);await a.refresh();a.openProject(id);
    const checkpointId=p.songVersions.checkpoints[0].id;
    x=a.versionPreview(id,checkpointId,[kind]);if(!x.ok)throw Error(kind+' preview '+x.error);
@@ -135,7 +135,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    x=a.versionPreview(id,checkpointId,[kind]);if(!x.ok)throw Error(kind+' recompare '+x.error);
    x=await a.versionApply(id);if(!x.ok)throw Error(kind+' targeted apply '+x.error);
    p=await r.get(id);
-   if(p.lyrics.versions[0].text!=='original lyric'||p.mixNotes!=='original mix'||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' targeted selection leaked');
+   if(p.lyrics.versions[0].text!=='original lyric'||p.mixNotes!=='original mix'||p.productionNotes!=='concurrent unrelated note'||kind==='audio'&&(p.pcmMix.assets[0].cursor!==0||p.pcmMix.assets[0].gains.length!==1))throw Error(kind+' targeted selection leaked');
    rows.push({kind,staleRejected:true,unrelatedNotePreserved:true});
   }
   return rows;
@@ -148,10 +148,10 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    const id='targeted-'+kind+'-undo';
    let x=await a.versionUndoRedo(id,-1);if(!x.ok)throw Error(kind+' restart undo '+x.error);
    let p=await r.get(id);
-   if(p.mixNotes!==(kind==='audio'?'changed mix':'original mix')||p.lyrics.versions[0].text!==(kind==='music'?'changed lyric':'original lyric')||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' restart undo mismatch');
+   if(p.mixNotes!==(kind==='audio'?'changed mix':'original mix')||p.lyrics.versions[0].text!==(kind==='music'?'changed lyric':'original lyric')||p.productionNotes!=='concurrent unrelated note'||kind==='audio'&&(p.pcmMix.assets[0].cursor!==1||p.pcmMix.assets[0].gains[1]!==-6))throw Error(kind+' restart undo mismatch');
    x=await a.versionUndoRedo(id,1);if(!x.ok)throw Error(kind+' restart redo '+x.error);
    p=await r.get(id);
-   if(p.mixNotes!=='original mix'||p.lyrics.versions[0].text!=='original lyric'||p.productionNotes!=='concurrent unrelated note')throw Error(kind+' restart redo mismatch');
+   if(p.mixNotes!=='original mix'||p.lyrics.versions[0].text!=='original lyric'||p.productionNotes!=='concurrent unrelated note'||kind==='audio'&&(p.pcmMix.assets[0].cursor!==0||p.pcmMix.assets[0].gains.length!==1))throw Error(kind+' restart redo mismatch');
    rows.push({kind,persistentUndoRedo:true});
   }
   return rows;
