@@ -6,7 +6,7 @@
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-song-checkpoints-browser.js": "3f2ab59a90887db8e6b89621be1bc5b95f867918508005716cb12684cb325ff4"
+    "scripts/music-song-checkpoints-browser.js": "5206b76a75a298c58e60ae80b5896649d388711b92aae645e4d308c9dc0a695e"
   },
   "runtimeHashes": {
     "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
