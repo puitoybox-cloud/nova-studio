@@ -595,14 +595,20 @@
       "feature": 6,
       "category": "A",
       "requirement": "音声の特定変更Undoと競合拒否",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "acceptance": "real PCM gain-history selective checkpoint adoption and stale-preview rejection, with original PCM retained, unrelated production notes untouched and undo/redo after Chromium profile restart",
+          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41273681736"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "classification": "実装・受入検証済み",
+        "note": "実PCM gain historyを用いた独立ブラウザプロセス再起動・Undo/Redo・競合拒否のCI成功。Intel Mac実機受入とは別。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -614,14 +620,20 @@
       "feature": 6,
       "category": "A",
       "requirement": "歌詞の特定変更Undoと競合拒否",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "acceptance": "selective lyrics checkpoint adoption rejects a stale saved preview, preserves unrelated notes and restarts with durable undo/redo",
+          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "classification": "実装・受入検証済み",
+        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -633,14 +645,20 @@
       "feature": 6,
       "category": "A",
       "requirement": "領域横断変更の永続再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-song-checkpoints-browser.js",
+          "acceptance": "one atomic lyrics/audio/notes checkpoint adoption rejects a competing saved edit and survives browser-process restart with undo/redo",
+          "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41252856749"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-01 JST",
         "baselinePR": 550,
-        "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "classification": "実装・受入検証済み",
+        "note": "GitHub Actions checkpoint-recovery成功。ブラウザ再起動・競合拒否・原本保持を確認した限定受入。Mac実機確認とは別。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3292,6 +3310,20 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS13-A02/MS15-A02〜A04のproduction実装とPCM・保存復元・失敗時保護を検証。要件ID・分母・受入文は変更なし。49件確認、残86件（実装3・検証不足20・C依存63）。"
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 557,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS06-A03 and MS06-A04: real-browser checkpoint recovery passed with targeted lyrics and cross-domain undo/redo after browser restart and stale-save rejection. Audio payload selective undo MS06-A02 remains open. Verified 58, open A 77."
+    },
+    {
+      "date": "2026-11-01 JST",
+      "baselinePR": 557,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS06-A02: selective actual PCM gain-history undo/redo passes real Chromium restart and stale-preview rejection; source PCM and unrelated notes retained. Total A verified 59/135, open 76."
     }
   ]
 }
