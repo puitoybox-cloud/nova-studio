@@ -47,6 +47,28 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
  await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository();a.setRepository(r);let p=a.makeProject({projectId:'range-song',projectName:'Range recovery',midiData:{ppq:480,tracks:[{id:'piano',name:'Piano',notes:[{id:'one',pitch:60,velocity:80,startTick:0,durationTicks:480},{id:'two',pitch:64,velocity:80,startTick:1920,durationTicks:480}]},{id:'bass',notes:[{id:'b',pitch:40,velocity:70,startTick:0,durationTicks:480}]}]}});p.lyrics={versions:[{id:'text-only',text:'保持する歌詞'}],activeVersionId:'text-only'};p.chordProgressions=[{id:'harmony',chords:['C','F','G']}];await r.put(p);await a.refresh();let file=new Blob([new Uint8Array([77,84,104,100,1,2,3,4])]);file.name='original.mid';let result=await a.retainReferenceFile(p.projectId,'fileReferences',-1,file);if(!result.ok)throw Error(result.error);result=await a.versionSave(p.projectId,'Range source');if(!result.ok)throw Error(result.error);p=await r.get(p.projectId);window.__recoveryId=p.songVersions.checkpoints[0].snapshot.fileReferences[0].binary.id;p.midiData.tracks[0].notes[0].pitch=72;p.midiData.tracks[0].notes[1].pitch=77;p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId)});
  for(const width of [1440,1180,820,390]){await page.setViewportSize({width,height:820});await page.locator('.music-song-versions').evaluate(e=>e.open=true);await page.locator('[name=checkpointGroup][value=music]').check();await page.locator('[name=checkpointTrack]').selectOption('piano');await page.locator('[name=checkpointStart]').fill('1');await page.locator('[name=checkpointEnd]').fill('1');await page.locator('.music-song-versions button').filter({hasText:'Compare（'}).click();await page.waitForFunction(()=>MusicStudio.versionPanel.preview?.impact?.startTick===0);assert.equal(await page.locator('.music-song-versions').evaluate(e=>e.scrollWidth>e.clientWidth+2),false);await page.locator('.music-song-versions').screenshot({path:`verification/music-checkpoint-range-${width}.png`})}
  await page.locator('.music-song-versions button').filter({hasText:'Adopt（'}).click();await page.waitForFunction(()=>!MusicStudio.versionPanel.busy&&MusicStudio.state.projects.find(p=>p.projectId==='range-song').midiData.tracks[0].notes[0].pitch===60);
+ // A scoped checkpoint must fail closed on bad ranges, track identity,
+ // timeline metadata, linked-score bindings and audio dependency drift.
+ report.rangeGuards=await page.evaluate(async()=>{
+  const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');
+  const source=p.songVersions.checkpoints[0].snapshot;
+  const range={trackId:'piano',startMeasure:1,endMeasure:1};
+  const cases=[
+   ['invalid-range',{...range,startMeasure:0},p,source,/checkpoint-range-invalid/],
+   ['unknown-track',{...range,trackId:'missing'},p,source,/checkpoint-range-track-missing/],
+   ['audio-drift',range,{...p,mixNotes:'drifted mix'},source,/checkpoint-range-dependency-conflict:mixNotes/],
+   ['track-settings',range,{...p,midiData:{...p.midiData,tracks:p.midiData.tracks.map(t=>t.id==='piano'?{...t,name:'Renamed'}:t)}},source,/checkpoint-range-track-settings-conflict/],
+   ['timeline',range,{...p,midiData:{...p.midiData,ppq:960}},source,/checkpoint-range-timeline-conflict/],
+   ['linked-score',range,{...p,melodies:[{id:'linked'}]}, {...source,melodies:[{id:'linked'}]},/checkpoint-range-linked-score-use-bundle/]
+  ];
+  for(const [name,scope,current,historical,error] of cases){
+   let failed=false;try{a.versionRangeCompose(current,historical,scope)}catch(e){failed=error.test(String(e.message))}
+   if(!failed)throw Error('scoped checkpoint accepted unsafe '+name);
+  }
+  const saved=await r.get('range-song');
+  if(JSON.stringify(saved)!==JSON.stringify(p))throw Error('range-guard validation mutated saved project');
+  return{rejected:cases.map(c=>c[0]),originalPersisted:true};
+ });
  report.range=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');if(p.midiData.tracks[0].notes[1].pitch!==77||p.midiData.tracks[1].notes[0].pitch!==40)throw Error('range leaked');p.fileReferences=[];p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);await new Promise((resolve,reject)=>{const req=indexedDB.open('music-studio-projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction('longWavBinaries','readwrite');tx.objectStore('longWavBinaries').delete(window.__recoveryId);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});const before=JSON.stringify(await r.get('range-song'));const failed=await a.recoverMissingBinary('range-song',window.__recoveryId,new Blob([new Uint8Array([0,0,0,0,0,0,0,0])]));if(failed.ok||JSON.stringify(await r.get('range-song'))!==before)throw Error('incorrect file accepted');return{otherTrackAndRangeRetained:true,incorrectOriginalRejected:true}});
  report.dependencyMissing=await page.evaluate(async()=>{const r=await MusicStudio.inspectStoredDependencies('range-song');if(!r.ok||!r.report.rows.some(x=>x.status==='missing'))throw Error('missing dependency inspection');return true});
  await page.locator('details').filter({has:page.locator('[name=recoveryFile]')}).last().evaluate(e=>e.open=true);await page.locator('[name=recoveryFile]').setInputFiles({name:'original.mid',mimeType:'application/octet-stream',buffer:Buffer.from([77,84,104,100,1,2,3,4])});await page.locator('button').filter({hasText:'Recover（照合して復旧）'}).click();await page.waitForFunction(()=>!MusicStudio.archiveTransfer.busy);
