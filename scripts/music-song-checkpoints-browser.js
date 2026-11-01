@@ -69,9 +69,23 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    let failed=false;try{a.versionRangeCompose(current,historical,scope)}catch(e){failed=error.test(String(e.message))}
    if(!failed)throw Error('scoped checkpoint accepted unsafe '+name);
   }
+  // The public adoption path must also reject invalid group selections.
+  // Unlike versionRangeCompose, these checks exercise versionCompose and the
+  // persisted checkpoint ledger without publishing any writes.
+  const checkpointId=p.songVersions.checkpoints[0].id;
+  const choices=[
+   ['range-with-audio',p,['music','audio'],range,/checkpoint-range-select-music-only/],
+   ['audio-dependency-drift',{...p,mixNotes:'unrelated-audio-change'},['music'],range,/checkpoint-select-music-and-audio-together/],
+   ['duplicate-groups',p,['music','music'],range,/checkpoint-selection-invalid/],
+   ['unknown-group',p,['unknown'],range,/checkpoint-selection-invalid/]
+  ];
+  for(const [name,current,groups,scope,error] of choices){
+   let failed=false;try{a.versionCompose(current,checkpointId,groups,scope)}catch(e){failed=error.test(String(e.message))}
+   if(!failed)throw Error('checkpoint selection accepted unsafe '+name);
+  }
   const saved=await r.get('range-song');
   if(JSON.stringify(saved)!==JSON.stringify(p))throw Error('range-guard validation mutated saved project');
-  return{rejected:cases.map(c=>c[0]),originalPersisted:true};
+  return{rejected:cases.map(c=>c[0]),selectionRejected:choices.map(c=>c[0]),originalPersisted:true};
  });
  report.range=await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('range-song');if(p.midiData.tracks[0].notes[1].pitch!==77||p.midiData.tracks[1].notes[0].pitch!==40)throw Error('range leaked');p.fileReferences=[];p.revision++;await r.put(p);await a.refresh();a.openProject(p.projectId);await new Promise((resolve,reject)=>{const req=indexedDB.open('music-studio-projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction('longWavBinaries','readwrite');tx.objectStore('longWavBinaries').delete(window.__recoveryId);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});const before=JSON.stringify(await r.get('range-song'));const failed=await a.recoverMissingBinary('range-song',window.__recoveryId,new Blob([new Uint8Array([0,0,0,0,0,0,0,0])]));if(failed.ok||JSON.stringify(await r.get('range-song'))!==before)throw Error('incorrect file accepted');return{otherTrackAndRangeRetained:true,incorrectOriginalRejected:true}});
  report.dependencyMissing=await page.evaluate(async()=>{const r=await MusicStudio.inspectStoredDependencies('range-song');if(!r.ok||!r.report.rows.some(x=>x.status==='missing'))throw Error('missing dependency inspection');return true});
