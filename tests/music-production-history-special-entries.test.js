@@ -73,3 +73,23 @@ test('failed special save cannot overwrite an existing day or active production 
  assert.equal((await app.productionSessionSave('history-song','finish','Rejected session finish')).ok,false);
  assert.equal(snapshot(await repo.get('history-song')),original,'failed persistence must not change saved production history');
 });
+
+test('JSON project import collision preserves production history and original checkpoint provenance',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Original imported session')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Original imported day')).ok,true);
+ assert.equal((await app.versionSave('history-song','Import checkpoint')).ok,true);
+ assert.equal((await app.productionSessionSave('history-song','finish','Original session finished')).ok,true);
+ const initial=await repo.get('history-song'),original=snapshot(initial),day=snapshot(initial.songVersions.days);
+ const result=await app.importText(original);
+ assert.equal(result.ok,true,result.message);
+ assert.equal(result.duplicated,true);
+ assert.notEqual(result.project.projectId,initial.projectId);
+ assert.equal(snapshot(await repo.get('history-song')),original,'JSON import must not modify original history');
+ const copied=await repo.get(result.project.projectId);
+ assert.equal(snapshot(copied.songVersions.days),day,'daily history lost in JSON collision import');
+ assert.equal(copied.songVersions.sessions[0].endNote,'Original session finished');
+ assert.equal(copied.songVersions.checkpoints.length,1);
+ assert.equal(copied.songVersions.checkpoints[0].snapshot.projectId,copied.projectId);
+ assert.equal(app.validateProject(copied).valid,true);
+});
