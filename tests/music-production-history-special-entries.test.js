@@ -93,3 +93,46 @@ test('JSON project import collision preserves production history and original ch
  assert.equal(copied.songVersions.checkpoints[0].snapshot.projectId,copied.projectId);
  assert.equal(app.validateProject(copied).valid,true);
 });
+
+test('active production session survives a fresh application runtime and finished fork closes only its copy',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Started before restart')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Daily note before restart')).ok,true);
+ assert.equal((await app.versionSave('history-song','Finished while active',{kind:'finished'})).ok,true);
+ const original=await repo.get('history-song'),before=snapshot(original),sessionId=original.songVersions.sessions[0].id;
+ const context={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};
+ context.window=context;
+ vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),context);
+ const restarted=context.MusicStudio;
+ restarted.setRepository(repo);
+ restarted.state.projects=await repo.list();
+ restarted.state.settings=restarted.defaultSettings();
+ const reloaded=await repo.get('history-song');
+ assert.equal(reloaded.songVersions.sessions[0].id,sessionId);
+ assert.equal(reloaded.songVersions.sessions[0].endedAt,undefined);
+ assert.equal(reloaded.songVersions.days[0].note,'Daily note before restart');
+ const finished=reloaded.songVersions.checkpoints.find(c=>c.kind==='finished');
+ const result=await restarted.finishedOpen('history-song',finished.id);
+ assert.equal(result.ok,true,result.error);
+ const fork=await repo.get(result.project.projectId);
+ assert.equal(fork.songVersions.sessions[0].id,sessionId);
+ assert.ok(fork.songVersions.sessions[0].endedAt,'fork must close its copy of the active session');
+ assert.equal(fork.songVersions.days[0].note,'Daily note before restart');
+ assert.equal(snapshot(await repo.get('history-song')),before,'fork may not finish or modify the original active session');
+ assert.equal((await restarted.productionSessionSave('history-song','finish','Finished after restart')).ok,true);
+ const completed=await repo.get('history-song');
+ assert.equal(completed.songVersions.sessions[0].endNote,'Finished after restart');
+ assert.equal(fork.songVersions.sessions[0].endNote,undefined,'later source session completion must not affect the finished fork');
+});
+test('malformed project JSON import is rejected without touching existing production history',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Protected working session')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Protected daily note')).ok,true);
+ const before=snapshot(await repo.get('history-song'));
+ for(const raw of ['{broken json',JSON.stringify({...JSON.parse(before),songVersions:{checkpoints:[{id:'bad'}]}})]){
+  const result=await app.importText(raw);
+  assert.equal(result.ok,false);
+  assert.equal(snapshot(await repo.get('history-song')),before);
+  assert.equal((await repo.list()).length,1,'rejected import may not publish a new project');
+ }
+});
