@@ -136,3 +136,37 @@ test('malformed project JSON import is rejected without touching existing produc
   assert.equal((await repo.list()).length,1,'rejected import may not publish a new project');
  }
 });
+
+test('cancelled special history entry and concurrently changed source refuse to commit',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Protected session')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Protected day')).ok,true);
+ const saved=await repo.get('history-song'),baseline=snapshot(saved);
+ for(const action of [
+  ()=>app.productionDaySave('history-song','2026-11-03','Cancelled day',{signal:{aborted:true}}),
+  ()=>app.productionSessionSave('history-song','finish','Cancelled finish',{signal:{aborted:true}}),
+  ()=>app.versionSave('history-song','Cancelled checkpoint',{signal:{aborted:true}})
+ ]){
+  let result;
+  try{result=await action()}catch(error){result={ok:false,error:error.message}}
+  assert.equal(result.ok,false);
+  assert.equal(snapshot(await repo.get('history-song')),baseline);
+ }
+ await repo.put({...saved,productionNotes:'Concurrent edit',revision:saved.revision+1});
+ const changed=snapshot(await repo.get('history-song'));
+ const result=await app.productionDaySave('history-song','2026-11-03','Stale day');
+ assert.equal(result.ok,false);
+ assert.equal(snapshot(await repo.get('history-song')),changed,'concurrent write must not lose the newer song');
+});
+test('invalid history in an additive backup is rejected atomically without affecting existing daily or session records',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Protected backup session')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Protected backup day')).ok,true);
+ const baseline=snapshot(await repo.get('history-song'));
+ const backup=app.backupObject();
+ backup.projects[0].songVersions.days.push({...backup.projects[0].songVersions.days[0],note:'Tampered duplicate history'});
+ const result=await app.restoreBackup(backup,{settings:false});
+ assert.equal(result.ok,false);
+ assert.equal(snapshot(await repo.get('history-song')),baseline,'invalid backup must not overwrite production history');
+ assert.equal((await repo.list()).length,1,'invalid backup must not create partial copies');
+});
