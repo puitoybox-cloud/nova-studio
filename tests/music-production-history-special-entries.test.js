@@ -170,3 +170,40 @@ test('invalid history in an additive backup is rejected atomically without affec
  assert.equal(snapshot(await repo.get('history-song')),baseline,'invalid backup must not overwrite production history');
  assert.equal((await repo.list()).length,1,'invalid backup must not create partial copies');
 });
+
+test('noncolliding JSON transfer into a fresh repository retains session, day and checkpoint provenance',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Transfer session')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Transfer day')).ok,true);
+ assert.equal((await app.versionSave('history-song','Transfer checkpoint')).ok,true);
+ assert.equal((await app.productionSessionSave('history-song','finish','Transfer done')).ok,true);
+ const source=await repo.get('history-song'),serialized=snapshot(source);
+ const context={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};
+ context.window=context;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),context);
+ const other=context.MusicStudio,empty=other.memoryRepository([]);
+ other.setRepository(empty);other.state.projects=[];other.state.settings=other.defaultSettings();
+ const result=await other.importText(serialized);
+ assert.equal(result.ok,true,result.message);
+ assert.equal(result.duplicated,false);
+ const transferred=await empty.get('history-song');
+ assert.ok(transferred);
+ assert.equal(snapshot(transferred.songVersions.days),snapshot(source.songVersions.days));
+ assert.equal(snapshot(transferred.songVersions.sessions),snapshot(source.songVersions.sessions));
+ assert.equal(transferred.songVersions.checkpoints.length,source.songVersions.checkpoints.length);
+ assert.equal(other.validateProject(transferred).valid,true);
+ assert.equal(snapshot(await repo.get('history-song')),serialized,'transfer must not touch original repository');
+});
+test('atomic backup restoration failure leaves active session, daily notes and repository intact',async()=>{
+ const {app,repo}=setup();
+ assert.equal((await app.productionSessionSave('history-song','start','Protected before failed restore')).ok,true);
+ assert.equal((await app.productionDaySave('history-song','2026-11-02','Protected daily history')).ok,true);
+ const before=snapshot(await repo.get('history-song')),backup=app.backupObject();
+ const originalRestore=repo.restoreMetadata;
+ repo.restoreMetadata=async()=>{throw Error('injected-transaction-abort')};
+ const result=await app.restoreBackup(backup,{settings:false});
+ assert.equal(result.ok,false);
+ assert.match(result.message,/injected-transaction-abort/);
+ assert.equal(snapshot(await repo.get('history-song')),before);
+ assert.equal((await repo.list()).length,1);
+ repo.restoreMetadata=originalRestore;
+});
