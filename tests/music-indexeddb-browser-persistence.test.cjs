@@ -6,7 +6,7 @@ const http=require('node:http');
 const {chromium}=require('playwright');
 test('real Chromium IndexedDB persists production sessions, days and checkpoints across browser restart',async()=>{
  const script=fs.readFileSync('music-studio.js');
- const server=http.createServer((req,res)=>{if(req.url==='/music-studio.js'){res.writeHead(200,{'Content-Type':'text/javascript'});res.end(script)}else{res.writeHead(200,{'Content-Type':'text/html'});res.end('<!doctype html><html><body></body></html>')}});
+ const server=http.createServer((req,res)=>{if(req.url==='/music-studio.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});res.end(script)}else{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body></body></html>')}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const origin='http://127.0.0.1:'+server.address().port;
  const dir=fs.mkdtempSync('/tmp/nova-indexeddb-');
