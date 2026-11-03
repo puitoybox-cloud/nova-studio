@@ -16,7 +16,7 @@ test('real Chromium IndexedDB persists production sessions, days and checkpoints
   browser=await launch();
   let page=await browser.newPage();
   const errors=[];
-  page.on('pageerror',error=>errors.push(error.message));
+  page.on('pageerror',error=>errors.push(error.stack||error.message));
   await page.goto(origin);
   await page.addScriptTag({url:origin+'/music-studio.js'});
   assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object','MusicStudio failed to load: '+errors.join(' | '));
