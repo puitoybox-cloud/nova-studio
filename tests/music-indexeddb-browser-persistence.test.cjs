@@ -16,6 +16,9 @@ test('real Chromium IndexedDB persists production sessions, days and checkpoints
   browser=await launch();
   let page=await browser.newPage();
   const errors=[];
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send('Runtime.enable');
+  cdp.on('Runtime.exceptionThrown',({exceptionDetails:d})=>errors.push('CDP '+d.text+' '+(d.url||'')+':'+(d.lineNumber+1)+':'+(d.columnNumber+1)+' '+(d.exception?.description||'')));
   page.on('pageerror',error=>errors.push(error.stack||error.message));
   await page.goto(origin);
   await page.addScriptTag({url:origin+'/music-studio.js'});
