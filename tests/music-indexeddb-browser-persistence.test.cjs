@@ -65,5 +65,29 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    assert.deepEqual(history.days,expected.days);
    assert.deepEqual(history.checkpoints,expected.checkpoints);
   }
+  // Simulate an abrupt Chromium renderer crash, not a graceful page close.
+  // This verifies already committed IndexedDB data; it does not prove
+  // atomicity of an in-flight write or a full OS/process power failure.
+  const crashPage=page;
+  const crashed=new Promise(resolve=>crashPage.once('crash',resolve));
+  const crashSession=await browser.newCDPSession(crashPage);
+  await crashSession.send('Page.crash').catch(()=>{});
+  await Promise.race([crashed,new Promise((_,reject)=>setTimeout(()=>reject(Error('Renderer did not crash within 10 seconds')),10000))]);
+  const recoveredPage=await browser.newPage();
+  await recoveredPage.goto(origin);
+  await recoveredPage.addScriptTag({url:origin+'/music-studio.js'});
+  const recovered=await recoveredPage.evaluate(async()=>{
+   const repo=window.MusicStudio.indexedDbRepository();
+   const projects=await repo.list();
+   return projects.map(p=>({id:p.projectId,sessions:p.songVersions?.sessions,days:p.songVersions?.days,checkpoints:p.songVersions?.checkpoints?.map(x=>({id:x.id,name:x.name}))}));
+  });
+  assert.equal(recovered.length,2,'renderer crash must not remove committed projects');
+  for(const id of [expected.sourceId,expected.importedId]){
+   const item=recovered.find(p=>p.id===id);
+   assert.ok(item,'project must survive renderer crash: '+id);
+   assert.deepEqual(item.sessions,expected.sessions);
+   assert.deepEqual(item.days,expected.days);
+   assert.deepEqual(item.checkpoints,expected.checkpoints);
+  }
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });
