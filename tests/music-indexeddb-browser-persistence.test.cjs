@@ -15,8 +15,11 @@ test('real Chromium IndexedDB persists production sessions, days and checkpoints
   const launch=()=>chromium.launchPersistentContext(dir,{headless:true});
   browser=await launch();
   let page=await browser.newPage();
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin);
   await page.addScriptTag({url:origin+'/music-studio.js'});
+  assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object','MusicStudio failed to load: '+errors.join(' | '));
   const expected=await page.evaluate(async()=>{
    const app=window.MusicStudio;
    const repo=app.indexedDbRepository();
@@ -32,7 +35,8 @@ test('real Chromium IndexedDB persists production sessions, days and checkpoints
   });
   await browser.close();browser=null;
   browser=await launch();
-  page=await browser.newPage();await page.goto(origin);await page.addScriptTag({url:origin+'/music-studio.js'});
+  page=await browser.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);await page.addScriptTag({url:origin+'/music-studio.js'});
+  assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object','MusicStudio failed to reload: '+errors.join(' | '));
   const actual=await page.evaluate(async()=>{
    const app=window.MusicStudio;const project=await app.indexedDbRepository().get('chromium-restart-history');
    if(!project)throw Error('IndexedDB project missing after Chromium restart');
