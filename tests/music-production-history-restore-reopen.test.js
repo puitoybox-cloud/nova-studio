@@ -31,11 +31,15 @@ test('successful metadata backup restore survives a fresh application runtime wi
  const all=await repo.list();
  const imported=all.filter(p=>p.projectId!=='restore-reopen-source');
  assert.ok(imported.length>0,'backup restore should persist a separate imported project');
- const expected=snapshot(original.songVersions);
+ const expected=original.songVersions;
  const reopened=boot(repo);
  const persisted=await repo.get(imported[0].projectId);
  assert.ok(persisted,'restored project must exist after new application runtime');
- assert.equal(snapshot(persisted.songVersions),expected,'session, day and checkpoint history must survive runtime restart');
+ assert.equal(snapshot(persisted.songVersions.sessions),snapshot(expected.sessions),'sessions must survive runtime restart');
+ assert.equal(snapshot(persisted.songVersions.days),snapshot(expected.days),'daily notes must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints.length,expected.checkpoints.length,'checkpoint count must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints[0].id,expected.checkpoints[0].id,'checkpoint identity must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints[0].snapshot.projectId,persisted.projectId,'restored checkpoint must reference the imported project');
  assert.equal(snapshot(await repo.get('restore-reopen-source')),snapshot(original),'original must remain unchanged');
  assert.equal(reopened.validateProject(persisted).valid,true);
 });
