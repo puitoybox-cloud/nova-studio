@@ -5,6 +5,7 @@ on:
       - 'music-studio.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
+      - 'scripts/music-delete-crash-browser.cjs'
       - 'tests/music-studio-final-export.test.js'
       - '.github/workflows/music-indexeddb-browser-persistence.yml'
   workflow_dispatch:
@@ -12,22 +13,32 @@ jobs:
   chromium-indexeddb:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      CHROME_EXECUTABLE: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install isolated Playwright and Chromium
+      - name: Install isolated Playwright and check runner Chrome
+        timeout-minutes: 3
         run: |
           mkdir -p /tmp/nova-browser-test
           npm install --prefix /tmp/nova-browser-test --no-audit --no-fund playwright@1.58.2
-          /tmp/nova-browser-test/node_modules/.bin/playwright install --with-deps chromium
+          test -x "$CHROME_EXECUTABLE"
+          "$CHROME_EXECUTABLE" --version
       - name: Check Music Studio JavaScript syntax
         run: node --check music-studio.js
       - name: Verify persistent IndexedDB across Chromium restart
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
         run: node --test scripts/music-indexeddb-browser-persistence.cjs
+      - name: Verify interrupted journal and backup deletion
+        env:
+          NODE_PATH: /tmp/nova-browser-test/node_modules
+        run: node --test scripts/music-delete-crash-browser.cjs
       - name: Verify export-only production history and recovery contracts
         run: |
           node --test --test-name-pattern='export-only delivery' tests/music-studio-final-export.test.js
