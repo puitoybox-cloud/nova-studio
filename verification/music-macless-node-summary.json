@@ -1,12 +1,11 @@
 {
-  "date": "2026-10-31 JST",
-  "command": "node --test --test-reporter=tap --test-concurrency=2 tests/*.test.js",
-  "passed": 2822,
+  "date": "2026-11-04 JST",
+  "command": "node --test --test-concurrency=2 tests/*.test.js",
+  "passed": 2842,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 315081.333995,
-  "logSha256": "7ef28998442347e5890b36db4613b4c1db31a59be899b242e044dc07007a16ac",
+  "durationMs": 149259.746473,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -78,7 +77,7 @@
     "tests/music-studio-external-track-note-length.test.js": "09f49cfbf23195a5dee32bd2e6cda69631f8ef154a5f285670db808da9f2a7f0",
     "tests/music-studio-external-track-quantize.test.js": "e4db2320db470fee8265bac643cf266d5155478d53a65a7e79de6cbcebaf6210",
     "tests/music-studio-external-track-transpose.test.js": "1d23b614c7eabee80c83d51d5040468ceaa3cfcf94f6341de4f364c2f7e53384",
-    "tests/music-studio-final-export.test.js": "db2ebf61a3753abf2f3385310f2cc97c59cf420e816ec8819a24bd1a6fc61bad",
+    "tests/music-studio-final-export.test.js": "f0ff6fa5247f034db959f7e0f6bdf244fd80d035c22e2559dc47729bc0e86859",
     "tests/music-studio-generated-midi-cleanup.test.js": "75030e7d304e18cac3ffc6ff0b4f8219d71a541e0690aa76e403b8d68f2d67b0",
     "tests/music-studio-generation-package.test.js": "72e3af4deb0326a45380e347b0cb213d014472263211292983e30e3751a96d5e",
     "tests/music-studio-harmony-mastering.test.js": "c7533ff268ebedc5959fe3ce2f088666cbb151bc4ba12dc04508f080579cc183",
@@ -141,7 +140,17 @@
     "tests/nova-studio-hero.test.js": "b9bc05f63dd8f2cdb7ddf4607a2827ef592e712bc1b928bce212d61c3cd59eba",
     "tests/nova-studio-home-cards.test.js": "2ef65ae339d68e2cf43912041614ca705e2a5393239bde1d85b400984fe0a28a",
     "tests/nova-unified-routes.test.js": "f2fe496bbfdafb644afbc84b0e3d973e4283ca23eaeee1c1179e5ec07a25ed31",
-    "tests/security-hardening.test.js": "256d025dce1e0cf4609f3ed10082c5b5b56674526a20240cc512b6a0ad90b62c"
+    "tests/security-hardening.test.js": "256d025dce1e0cf4609f3ed10082c5b5b56674526a20240cc512b6a0ad90b62c",
+    "tests/music-production-history-fork-cancel.test.js": "e246aa8494f07c11a5f4aa78cad3ae8ff87ac7d0749aa428c87245759c275b80",
+    "tests/music-production-history-fork-failure.test.js": "1d7d858edb9edd53084637e0192dbeb7f7a57161c4d84f9d1cd98c7fe9d15980",
+    "tests/music-production-history-fork-reopen.test.js": "7d983aa8bafc7759de0284794a7994534543adf2229aebd6f1ad718ca89662cd",
+    "tests/music-production-history-fork-stale.test.js": "a8356f8db903faac9818631dc190d452cac180d1c3eeffb2f15761043599069f",
+    "tests/music-production-history-import-atomic.test.js": "43c0f4a0f56bff86a3969722e901152212b933ff582dac0ac2b7d4efceb3af3e",
+    "tests/music-production-history-import-cancel.test.js": "4a816a9873039924e788ea0d27b736e0483d4c12a2902c2fd86f84fe35b04f73",
+    "tests/music-production-history-import-roundtrip.test.js": "c569f772fd31d163350c448ef1349644cfcb74ebca25dc14b0736a411be92958",
+    "tests/music-production-history-restore-atomic-failure.test.js": "aabda122a73da7010467dc22c3c4482ea53b66bc2ce36908adeabd57da32d44f",
+    "tests/music-production-history-restore-reopen.test.js": "9f4f703ba9b85dd72ec95fc6f57bf5cd71a4f807969882588bd950d773926244",
+    "tests/music-production-history-special-entries.test.js": "13f7e13daf448521b070393f9f702a0ab9fade3624b8df0f0c6ebb8326762415"
   },
   "runtimeHashes": {
     "app.js": "8a8f167f46f816da679bbb8a6be027768a9507d0284940d576c3c56af0c9f074",
@@ -193,7 +202,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
+    "music-studio.js": "60168dd25815324095e68c4d1b7204effc5e2d02892b924c430f759802a2570b",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14"
@@ -3020,12 +3029,36 @@
     "image previews accept raster data only and reject event or script payloads",
     "navigation permits HTTPS and explicit loopback HTTP only",
     "file size, depth, collections, strings, and preview totals are bounded",
-    "validation failure occurs before import mutation path"
+    "validation failure occurs before import mutation path",
+    "cancelled finished-version fork preserves source production history and publishes no copy",
+    "failed finished-version fork leaves source session, day, checkpoint and repository unchanged",
+    "finished fork remains independently reopenable with provenance after application runtime restart",
+    "finished fork rejects a stale source revision without altering its newer production history",
+    "atomic JSON collision import failure retains source production history without a partial copy",
+    "cancelled JSON import retains active production history and creates no duplicate",
+    "JSON collision import retains original production history and persists an independent copy",
+    "failed atomic metadata restore preserves original song and production history",
+    "pre-aborted backup restore leaves durable production history unchanged",
+    "successful metadata backup restore survives a fresh application runtime without losing production history",
+    "session and daily production history survive selective checkpoint, undo, redo, finished fork and additive backup",
+    "failed special save cannot overwrite an existing day or active production session",
+    "JSON project import collision preserves production history and original checkpoint provenance",
+    "active production session survives a fresh application runtime and finished fork closes only its copy",
+    "malformed project JSON import is rejected without touching existing production history",
+    "cancelled special history entry and concurrently changed source refuse to commit",
+    "invalid history in an additive backup is rejected atomically without affecting existing daily or session records",
+    "noncolliding JSON transfer into a fresh repository retains session, day and checkpoint provenance",
+    "atomic backup restoration failure leaves active session, daily notes and repository intact",
+    "export-only delivery and repeated recipe save publish session-linked production edits atomically"
   ],
   "supplementaryCiValidation": {
     "date": "2026-10-31 JST",
     "head": "d230cd82c6a23092109838e24c32ed148f4eeab4",
     "workflowRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41196444449",
     "note": "Earlier PR #556 CI reran all 2822 Node tests and validated source hash at preceding commit; the new internal-route fix changes runtime source. Pending final HEAD CI must validate the new digest. Historical local test log remains tied to PR #555."
-  }
+  },
+  "testedHead": "4d6d19b39f565f7380ee0303f371c469643f5b96",
+  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41794119574",
+  "jobId": 126454056883,
+  "source": "Successful Node regression step in referenced CI job; subsequent ledger step failed on stale runtime hashes, refreshed here from the tested sources."
 }

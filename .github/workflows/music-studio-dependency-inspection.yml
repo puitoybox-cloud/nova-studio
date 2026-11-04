@@ -69,6 +69,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Full regression, syntax and whitespace
         run: |
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_verification.py -v

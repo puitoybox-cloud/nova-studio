@@ -29,6 +29,9 @@ jobs:
           git rev-parse HEAD
       - name: Node tests
         run: node --test
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Python tests
         run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
       - name: Syntax and whitespace
