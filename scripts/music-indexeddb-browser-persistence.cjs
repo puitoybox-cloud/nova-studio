@@ -53,12 +53,15 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    const app=window.MusicStudio;
    const repo=app.indexedDbRepository();
    app.setRepository(repo);
-   const song=app.makeProject({projectId:'chromium-restart-history',projectName:'Browser durable history'});
+   const song=app.makeProject({projectId:'chromium-restart-history',projectName:'Browser durable history',midiData:{ppq:480,tempo:120,totalTick:480,tracks:[{id:'lead',notes:[{id:'n',pitch:60,velocity:80,startTick:0,durationTicks:480}]}]}});
    await repo.put(song);
    app.state.projects=[song];
    for(const [method,args] of [['productionSessionSave',['chromium-restart-history','start','Session']],['productionDaySave',['chromium-restart-history','2026-11-03','Day']],['versionSave',['chromium-restart-history','Checkpoint']]]){
     const result=await app[method](...args);if(!result.ok)throw Error(method+': '+JSON.stringify(result));
    }
+   for(const name of ['Material before restart']){const r=await app.materialCapture(song.projectId,{name});if(!r.ok)throw Error(r.error)}
+   const materials=app.materialExport(song.projectId).text;
+   const importedMaterials=await app.materialImport(song.projectId,{size:materials.length,text:async()=>materials});if(!importedMaterials.ok)throw Error(importedMaterials.error);
    const project=await repo.get('chromium-restart-history');
    const backup=app.backupObject();
    const restored=await app.restoreBackup(backup,{settings:false});
@@ -67,7 +70,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    if(imported.length!==1)throw Error('Expected one imported project; got '+imported.length);
    const restoredProject=await repo.get(imported[0].projectId);
    if(!restoredProject)throw Error('Imported project missing before restart');
-   return {sourceId:project.projectId,importedId:restoredProject.projectId,sessions:project.songVersions.sessions,days:project.songVersions.days,checkpoints:project.songVersions.checkpoints.map(x=>({id:x.id,name:x.name}))};
+   return {sourceId:project.projectId,importedId:restoredProject.projectId,edits:project.songVersions.edits,materials:project.materialLibrary,sessions:project.songVersions.sessions,days:project.songVersions.days,checkpoints:project.songVersions.checkpoints.map(x=>({id:x.id,name:x.name}))};
   });
   await stop();
   browser=await launch();
@@ -81,12 +84,14 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    if(imported.length!==1)throw Error('Imported project missing or duplicated after restart');
    const restored=await repo.get(imported[0].projectId);
    if(!restored)throw Error('IndexedDB restored project missing after restart');
-   const history=p=>({sessions:p.songVersions.sessions,days:p.songVersions.days,checkpoints:p.songVersions.checkpoints.map(x=>({id:x.id,name:x.name}))});
+   const history=p=>({edits:p.songVersions.edits,materials:p.materialLibrary,sessions:p.songVersions.sessions,days:p.songVersions.days,checkpoints:p.songVersions.checkpoints.map(x=>({id:x.id,name:x.name}))});
    return {sourceId:project.projectId,importedId:restored.projectId,source:history(project),imported:history(restored)};
   });
   assert.equal(actual.sourceId,expected.sourceId);
   assert.equal(actual.importedId,expected.importedId);
   for(const history of [actual.source,actual.imported]){
+   assert.deepEqual(history.edits,expected.edits);
+   assert.deepEqual(history.materials,expected.materials);
    assert.deepEqual(history.sessions,expected.sessions);
    assert.deepEqual(history.days,expected.days);
    assert.deepEqual(history.checkpoints,expected.checkpoints);
@@ -100,46 +105,62 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   const recovered=await recoveredPage.evaluate(async()=>{
    const repo=window.MusicStudio.indexedDbRepository();
    const projects=await repo.list();
-   return projects.map(p=>({id:p.projectId,sessions:p.songVersions?.sessions,days:p.songVersions?.days,checkpoints:p.songVersions?.checkpoints?.map(x=>({id:x.id,name:x.name}))}));
+   return projects.map(p=>({id:p.projectId,edits:p.songVersions?.edits,materials:p.materialLibrary,sessions:p.songVersions?.sessions,days:p.songVersions?.days,checkpoints:p.songVersions?.checkpoints?.map(x=>({id:x.id,name:x.name}))}));
   });
   assert.equal(recovered.length,2,'browser SIGKILL must not remove committed projects');
   for(const id of [expected.sourceId,expected.importedId]){
    const item=recovered.find(p=>p.id===id);
    assert.ok(item,'project must survive browser SIGKILL: '+id);
+   assert.deepEqual(item.edits,expected.edits);
+   assert.deepEqual(item.materials,expected.materials);
    assert.deepEqual(item.sessions,expected.sessions);
    assert.deepEqual(item.days,expected.days);
    assert.deepEqual(item.checkpoints,expected.checkpoints);
   }
-  // Deterministically interrupt a production daily-history save after the put
+  // Interrupt daily history and both material publications after the put
   // request succeeds but before its transaction can commit. Keep the transaction
   // active with real IDB requests; do not replace the repository with a mock.
-  const before=await recoveredPage.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
-  const armed=new Promise(resolve=>recoveredPage.on('console',m=>{if(m.text()==='NOVA_TRANSACTION_ACTIVE')resolve()}));
-  await recoveredPage.evaluate(()=>{
-   const original=IDBObjectStore.prototype.put;
-   IDBObjectStore.prototype.put=function(value,...args){
-    const request=original.call(this,value,...args);
-    if(value?.projectId==='chromium-restart-history'){
-     request.addEventListener('success',()=>{
-      const store=this;
-      const keepAlive=()=>{const next=store.get(value.projectId);next.onsuccess=keepAlive};
-      keepAlive();console.log('NOVA_TRANSACTION_ACTIVE');
-     });
-    }
-    return request;
-   };
-   const app=MusicStudio;app.setRepository(app.indexedDbRepository());
-   window.pendingSave=app.indexedDbRepository().get('chromium-restart-history').then(p=>{
-    app.state.projects=[p];return app.productionDaySave(p.projectId,'2026-11-04','Must not partially publish');
-   });
-   window.pendingSave.then(()=>console.log('NOVA_UNEXPECTED_COMMIT'));
-  });
-  let timer;
-  try{await Promise.race([armed,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('write transaction never became active')),10000)})])}finally{clearTimeout(timer)}
-  await stop('SIGKILL');browser=await launch();
-  const resumed=await browser.newPage();await resumed.goto(origin);await resumed.addScriptTag({url:origin+'/music-studio.js'});
-  assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history')),before,'interrupted transaction must preserve the complete prior project and history');
-  assert.equal(await resumed.evaluate(async()=>{const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);app.state.projects=await repo.list();return (await app.productionDaySave('chromium-restart-history','2026-11-04','Retry after crash')).ok}),true,'save must work after process restart');
-  assert.equal(await resumed.evaluate(async()=> (await MusicStudio.indexedDbRepository().get('chromium-restart-history')).songVersions.days.find(d=>d.day==='2026-11-04')?.note),'Retry after crash');
+  let interruptedPage=recoveredPage;
+  for(const entry of ['productionDaySave','materialCapture','materialImport']){
+   const before=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
+   const armed=new Promise(resolve=>interruptedPage.on('console',m=>{if(m.text()==='NOVA_TRANSACTION_ACTIVE')resolve()}));
+   await interruptedPage.evaluate(entry=>{
+    const original=IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put=function(value,...args){
+     const request=original.call(this,value,...args);
+     if(value?.projectId==='chromium-restart-history'){
+      request.addEventListener('success',()=>{
+       const store=this;
+       const keepAlive=()=>{const next=store.get(value.projectId);next.onsuccess=keepAlive};
+       keepAlive();console.log('NOVA_TRANSACTION_ACTIVE');
+      });
+     }
+     return request;
+    };
+    const app=MusicStudio;app.setRepository(app.indexedDbRepository());
+    window.pendingSave=app.indexedDbRepository().get('chromium-restart-history').then(p=>{
+     app.state.projects=[p];
+     if(entry==='materialCapture')return app.materialCapture(p.projectId,{name:'Interrupted material'});
+     if(entry==='materialImport'){const text=app.materialExport(p.projectId).text;return app.materialImport(p.projectId,{size:text.length,text:async()=>text})}
+     return app.productionDaySave(p.projectId,'2026-11-04','Must not partially publish');
+    });
+    window.pendingSave.then(()=>console.log('NOVA_UNEXPECTED_COMMIT'));
+   },entry);
+   let timer;
+   try{await Promise.race([armed,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('write transaction never became active')),10000)})])}finally{clearTimeout(timer)}
+   await stop('SIGKILL');browser=await launch();
+   const resumed=await browser.newPage();await resumed.goto(origin);await resumed.addScriptTag({url:origin+'/music-studio.js'});
+   assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history')),before,'interrupted transaction must preserve the complete prior project and history');
+   assert.equal(await resumed.evaluate(async entry=>{
+    const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);app.state.projects=await repo.list();const id='chromium-restart-history';
+    if(entry==='materialCapture')return (await app.materialCapture(id,{name:'Retry material'})).ok;
+    if(entry==='materialImport'){const text=app.materialExport(id).text;return (await app.materialImport(id,{size:text.length,text:async()=>text})).ok}
+    return (await app.productionDaySave(id,'2026-11-04','Retry after crash')).ok;
+   },entry),true,entry+' retry must work after restart');
+   const retried=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
+   if(entry==='productionDaySave')assert.equal(retried.songVersions.days.find(d=>d.day==='2026-11-04')?.note,'Retry after crash');
+   else{assert.equal(retried.materialLibrary.length,before.materialLibrary.length+(entry==='materialImport'?before.materialLibrary.length:1));assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'material-library')}
+   interruptedPage=resumed;
+  }
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });
