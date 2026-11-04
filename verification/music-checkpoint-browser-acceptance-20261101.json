@@ -1,14 +1,14 @@
 {
   "date": "2026-11-04 JST",
-  "source": "Successful current-source new-project and fork safety regression",
-  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-save-browser/node_modules node scripts/music-song-checkpoints-browser.js",
+  "source": "Current-source backup retention regression; browser completed=true, errors=[], external=[]",
+  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-old-browser/node_modules node scripts/music-song-checkpoints-browser.js",
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
     "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
   },
   "runtimeHashes": {
-    "music-studio.js": "c1e4cb551ea25e18a0c77e87bbff5d38a1efba6fd723b767471ccb8a55da0b0e",
+    "music-studio.js": "e4ff1b0d5d1dc590d3aea8375b4336d5a488cfe56757ff5c5c3cc63ae572d5fa",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [

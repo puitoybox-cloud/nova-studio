@@ -4260,7 +4260,7 @@
   function clearBackupPreview(){cancelBackupRestore();state.backupPreview=null;requestPaint()}
   function backupSignature(histories,journals=[]){return JSON.stringify({journals,settings:state.settings?.updatedAt||'',projects:state.projects.map(project=>[project.projectId,project.revision,project.updatedAt]),midiHistories:histories})}
   function byteLabel(bytes){if(bytes<1024)return`${bytes} B`;if(bytes<1024*1024)return`${(bytes/1024).toFixed(1)} KB`;return`${(bytes/1024/1024).toFixed(1)} MB`}
-  async function loadAutoBackups(){try{state.autoBackups=((await repository.listAutoBackups?.())||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));return state.autoBackups}catch(error){console.warn('Music Studio automatic backups could not be read',error);state.autoBackups=[];return[]}}
+  async function loadAutoBackups(){const target=repository;try{const records=((await target.listAutoBackups?.())||[]).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));if(repository===target)state.autoBackups=records;return records}catch(error){console.warn('Music Studio automatic backups could not be read',error);if(repository===target)state.autoBackups=[];return[]}}
   let autoBackupPromise=null;
   function runAutoBackupCheck(timestamp=now()){
     if(autoBackupPromise)return autoBackupPromise;
@@ -4270,7 +4270,7 @@
   async function performAutoBackupCheck(timestamp){
     if(!state.settings?.backup.automaticEnabled)return{ok:true,created:false,reason:'disabled'};
     if(hasUnsavedChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,created:false,reason:'backup-unsaved-or-busy'};
-    const target=repository,baseline=JSON.stringify([state.projects,state.settings]);
+    const target=repository,baseline=JSON.stringify([state.projects,state.settings]),keep=state.settings.backup.maxCopies;
     const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp),intervalMs=state.settings.backup.intervalHours*3600000;
     if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return{ok:true,created:false,reason:'not-due'};
     // The persisted histories can change without a project revision or a refreshed UI list.
@@ -4289,7 +4289,18 @@
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
     const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
-    try{if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record);const all=[record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));const keep=state.settings.backup.maxCopies;for(const old of all.slice(keep))await target.deleteAutoBackup?.(old.backupId);await loadAutoBackups();return{ok:true,created:true,backup:record,message:'期限を迎えたため、端末内に自動バックアップを作成しました。'}}catch(error){console.warn('Music Studio automatic backup failed',error);return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'}}
+    try{if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record)}catch(error){console.warn('Music Studio automatic backup failed',error);return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'}}
+    // Publication has committed. Cleanup failure must not report that it did not.
+    // A changed repository or retention policy leaves every older copy intact.
+    const current=()=>repository===target&&JSON.stringify([state.projects,state.settings])===baseline;
+    let cleanupWarning;
+    try{
+      if(!current())throw Error('backup-state-conflict');
+      const all=[record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+      for(const old of all.slice(keep)){if(!current())throw Error('backup-state-conflict');await target.deleteAutoBackup?.(old.backupId)}
+      if(current())await loadAutoBackups();else throw Error('backup-state-conflict');
+    }catch(error){cleanupWarning=error.message;console.warn('Music Studio automatic backup cleanup deferred',error)}
+    return{ok:true,created:true,backup:record,...(cleanupWarning?{cleanupWarning}:{}),message:cleanupWarning?'自動バックアップを保存しました。古いコピーの整理は完了していません。':'期限を迎えたため、端末内に自動バックアップを作成しました。'};
   }
   async function checkAutoBackupNow(){const result=await runAutoBackupCheck();notice(result.message||(result.reason==='disabled'?'自動バックアップは無効です。':result.reason==='not-due'?'次の作成期限にはまだ達していません。':'内容に変更がないため重複作成しませんでした。'),result.ok?'info':'error')}
   async function restoreAutoBackup(id){const record=state.autoBackups.find(item=>item.backupId===id);if(!record)return notice('自動バックアップが見つかりません。','error');if((root.confirm?.(`${formatDate(record.createdAt)} の自動バックアップを追加・統合しますか？\n既存データは削除しません。`)??false)===false)return;if(record.archive){const preview=await previewLongWavArchive(record.archive);notice(preview.ok?'WAVを含む自動バックアップを検証しました。内容を確認して復元してください。':'検証できません：'+preview.error,preview.ok?'info':'error');return preview}const result=await restoreBackup(record.snapshot,{settings:true,projects:true,safetyCopy:true});notice(result.message,result.failed?'error':'success')}
