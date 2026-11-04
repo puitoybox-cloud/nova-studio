@@ -192,7 +192,7 @@ test('lyric follow scrolls active saved assignments after rerender and clears st
  const server=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/music-studio.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8');res.end(req.url==='/music-studio.js'?fs.readFileSync('music-studio.js'):'<!doctype html><html><body></body></html>')});
  let browser;
  try{
-  await new Promise(r=>server.listen(0,'127.0.0.1',r));browser=await chromium.launch({headless:true});const page=await browser.newPage();page.on('pageerror',e=>console.error('LYRIC_PAGE_ERROR',e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/music-studio.js'});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});const page=await browser.newPage();page.on('pageerror',e=>console.error('LYRIC_PAGE_ERROR',e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/music-studio.js'});
   await page.evaluate(()=>{
    const a=MusicStudio;let p=a.makeProject({projectId:'lyrics-scroll',projectName:'Lyrics',midiData:{ppq:480,tempoMap:[{tick:0,bpm:120},{tick:480,bpm:60}],tracks:[{id:'lead',notes:Array.from({length:12},(_,i)=>({id:'n'+i,pitch:60,startTick:i*480,durationTicks:480,velocity:90}))}]}});
    p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:12,text:'あいうえおかきくけこさし',reading:'あ い う え お か き く け こ さ し'}));

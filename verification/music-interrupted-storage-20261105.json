@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-05 JST",
+  "outcomes": [
+    {
+      "scenario": "archive",
+      "kill": "SIGKILL",
+      "uncommittedRequestObserved": true,
+      "reopenedExact": true
+    },
+    {
+      "scenario": "journal",
+      "kill": "SIGKILL",
+      "uncommittedRequestObserved": true,
+      "reopenedExact": true
+    },
+    {
+      "scenario": "backup",
+      "kill": "SIGKILL",
+      "uncommittedRequestObserved": true,
+      "reopenedExact": true
+    }
+  ],
+  "retry": {
+    "restored": 1,
+    "journals": 1,
+    "backupIds": [
+      "new"
+    ]
+  },
+  "physicalPowerLossTested": false,
+  "passed": 3,
+  "failed": 0,
+  "command": "CHROME_EXECUTABLE=/tmp/nova-chromium node --test scripts/music-interrupted-deletion-browser.cjs scripts/music-indexeddb-browser-persistence.cjs",
+  "sourceHashes": {
+    "music-studio.js": "bb2a895ac9de8fbd9bbdf9d7ba3d805e2e747b4f13cab0f10a9f928ed3696e2a",
+    "scripts/music-interrupted-deletion-browser.cjs": "fc2f577ba31cf36eab30e51feecfa39a2a90fe6402f83091fc3c84b6fc93c7b0",
+    "scripts/music-indexeddb-browser-persistence.cjs": "cb2a4c541b86ed54d1a4cb392425da5142828cc02d42b0b261dd2e22dea6e0a9"
+  },
+  "logSha256": "6e440bc46c93e6126c6d9db3bfb87edfdcd1dbb21c00fa563e5f9a73f586559d"
+}

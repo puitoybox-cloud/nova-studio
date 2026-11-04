@@ -29,8 +29,8 @@
   "restore": {
     "historyOnlyAutomaticBackup": true,
     "unchangedHistoriesSkipped": true,
-    "archiveBytes": 19685,
-    "rebackupBytes": 42355,
+    "archiveBytes": 20325,
+    "rebackupBytes": 44081,
     "historicalBinaryCount": 1,
     "restoredAssetBytes": 9644,
     "corruptRestoreRejected": true,

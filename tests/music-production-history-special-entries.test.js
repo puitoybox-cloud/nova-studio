@@ -207,3 +207,23 @@ test('atomic backup restoration failure leaves active session, daily notes and r
  assert.equal((await repo.list()).length,1);
  repo.restoreMetadata=originalRestore;
 });
+test('checkpoint adoption records the executing session while keeping daily links through reopen and backup',async()=>{
+ const{app,repo}=setup();
+ await app.productionSessionSave('history-song','start','Capture session');
+ await app.versionSave('history-song','Original');
+ const original=await repo.get('history-song'),checkpoint=original.songVersions.checkpoints[0];
+ await app.productionSessionSave('history-song','finish','Captured');
+ await app.productionSessionSave('history-song','start','Adoption session');
+ await app.productionDaySave('history-song','2026-11-05','Adopted today');
+ await change(repo,app,p=>{p.productionNotes='changed'});
+ const before=await repo.get('history-song'),session=before.songVersions.sessions.find(s=>!s.endedAt);
+ assert.notEqual(session.id,checkpoint.sessionId);
+ assert.equal(app.versionPreview('history-song',checkpoint.id,['notes']).ok,true);
+ assert.equal((await app.versionApply('history-song')).ok,true);
+ let saved=await repo.get('history-song');assert.equal(saved.songVersions.edits.at(-1).source,'checkpoint-adoption');assert.equal(saved.songVersions.edits.at(-1).sessionId,session.id);assert.equal(saved.songVersions.operations[0].sessionId,session.id);assert.equal(saved.songVersions.days[0].sessionId,session.id);
+ await app.productionSessionSave('history-song','finish','Adopted');await app.productionSessionSave('history-song','start','Review');const review=(await repo.get('history-song')).songVersions.sessions.find(s=>!s.endedAt);
+ for(const direction of [-1,1]){assert.equal((await app.versionUndoRedo('history-song',direction)).ok,true);saved=await repo.get('history-song');assert.equal(saved.songVersions.operations[0].sessionId,session.id);assert.equal(saved.songVersions.days[0].sessionId,session.id);assert.equal(saved.songVersions.edits.at(-1).sessionId,review.id);assert.equal(saved.songVersions.edits.at(-1).source,direction<0?'checkpoint-undo':'checkpoint-redo')}
+ const result=await app.restoreBackup(app.backupObject(),{settings:false});assert.equal(result.ok,true,result.message);
+ const restored=(await repo.list()).find(p=>p.projectId!=='history-song');assert.equal(restored.songVersions.operations[0].sessionId,session.id);assert.equal(restored.songVersions.days[0].sessionId,session.id);
+ const invalid=JSON.parse(JSON.stringify(saved));invalid.songVersions.operations[0].sessionId='missing';assert.throws(()=>app.versionValidate(invalid),/checkpoint-session-missing/);
+});
