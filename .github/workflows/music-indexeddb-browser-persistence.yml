@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'music-studio.js'
+      - 'scripts/music-interrupted-deletion-browser.cjs'
+      - 'tests/music-interrupted-deletion.test.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
       - 'tests/music-studio-final-export.test.js'
@@ -27,7 +29,7 @@ jobs:
       - name: Verify persistent IndexedDB across Chromium restart
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
-        run: node --test scripts/music-indexeddb-browser-persistence.cjs
+        run: node --test scripts/music-indexeddb-browser-persistence.cjs scripts/music-interrupted-deletion-browser.cjs
       - name: Verify export-only production history and recovery contracts
         run: |
           node --test --test-name-pattern='export-only delivery' tests/music-studio-final-export.test.js

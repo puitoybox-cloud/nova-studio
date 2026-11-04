@@ -206,7 +206,7 @@
     details:['projectName','songTitle','purpose','status']
   };
   const AUTOMATIC_EDIT_SOURCES={
-    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し','material-library':'MIDI素材','dependency-recovery':'元ファイル復旧'
+    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し','material-library':'MIDI素材','dependency-recovery':'元ファイル復旧','checkpoint-adoption':'部分採用','checkpoint-undo':'部分採用を戻す','checkpoint-redo':'部分採用をやり直す'
   };
   const versionPanel={open:false,busy:false,draft:null,preview:null,message:'',generation:0,abort:null};
   const versionProof=new WeakMap();
@@ -244,7 +244,7 @@
     if(v.operations.some(o=>!Array.isArray(o.groups)||!o.groups.length||new Set(o.groups).size!==o.groups.length||o.groups.some(k=>!Object.hasOwn(VERSION_GROUPS,k))||!v.checkpoints.some(c=>c.id===o.checkpointId)))throw Error('checkpoint-operation-invalid');
     if(v.operations.some(o=>o.scope&&(!Number.isSafeInteger(o.scope.startMeasure)||!Number.isSafeInteger(o.scope.endMeasure)||o.scope.startMeasure<1||o.scope.endMeasure<o.scope.startMeasure||o.scope.endMeasure>10000||typeof o.scope.trackId!=='string'||!o.scope.trackId||o.groups.length!==1||o.groups[0]!=='music')))throw Error('checkpoint-operation-range-invalid');
     if(v.checkpoints.some(c=>c.sourceRevision!==c.snapshot?.revision||typeof c.name!=='string'||!c.name.trim()||c.name.length>120))throw Error('checkpoint-name-invalid');
-    if(v.checkpoints.some(c=>c.sessionId!==undefined&&!v.sessions?.some(e=>e.id===c.sessionId)))throw Error('checkpoint-session-missing');
+    if([...v.checkpoints,...v.operations].some(c=>c.sessionId!==undefined&&!v.sessions?.some(e=>e.id===c.sessionId)))throw Error('checkpoint-session-missing');
     if(new Set(v.path).size!==v.path.length||v.path.some(id=>!v.operations.some(o=>o.id===id)))throw Error('checkpoint-path-invalid');
     for(const s of versionSnapshots(p)){
       if(!s||Object.hasOwn(s,'songVersions')||s.projectId!==p.projectId||!validateProject(s).valid)throw Error('checkpoint-snapshot-invalid');
@@ -342,7 +342,8 @@
     if(versionContent(next)===versionContent(p))throw Error('checkpoint-no-changes');
     if(v.operations.length>=32)throw Error('checkpoint-history-capacity-backup-required');
     // Abandoned redo branches remain in operations and in complete backups.
-    const entry={id:uuid(),createdAt:now(),checkpointId,groups:clone(groups),...(scope?{scope:clone(scope)}:{}),before:versionSnapshot(p),after:versionSnapshot(next)};
+    const active=v.sessions?.find(e=>e.endedAt===undefined);
+    const entry={id:uuid(),createdAt:now(),checkpointId,...(active?{sessionId:active.id}:{}),groups:clone(groups),...(scope?{scope:clone(scope)}:{}),before:versionSnapshot(p),after:versionSnapshot(next)};
     v.operations.push(entry);v.path=v.path.slice(0,v.cursor);v.path.push(entry.id);v.cursor=v.path.length;next.songVersions=v;versionTouch(next);versionValidate(next);return next;
   }
   function versionStep(p,direction){
@@ -411,8 +412,8 @@
     try{const p=state.projects.find(p=>p.projectId===id);if(!p)throw Error('checkpoint-project-missing');const next=versionCompose(p,checkpointId,groups,scope),preview={projectId:id,checkpointId,groups:clone(groups),...(scope?{scope:clone(scope),impact:versionRangeCompose(p,p.songVersions.checkpoints.find(c=>c.id===checkpointId).snapshot,scope).impact}:{}),comparison:versionCompare(p,checkpointId)};versionPanel.draft={projectId:id,checkpointId,groups:clone(groups),scope:scope?clone(scope):null};versionProof.set(preview,{baseline:JSON.stringify(p),next,proof:JSON.stringify(preview)});versionPanel.preview=preview;versionPanel.message='Compare（変更範囲を確認して採用してください）';requestPaint();return{ok:true,preview}}
     catch(e){versionPanel.preview=null;versionPanel.message=e.message;requestPaint();return{ok:false,error:e.message}}
   }
-  async function versionApply(id,options){const preview=versionPanel.preview,proof=preview&&versionProof.get(preview);return versionCommit(id,p=>{if(!proof||preview.projectId!==id||proof.baseline!==JSON.stringify(p)||proof.proof!==JSON.stringify(preview))throw Error('checkpoint-preview-stale');return clone(proof.next)},options)}
-  async function versionUndoRedo(id,direction,options){return versionCommit(id,p=>versionStep(p,direction),options)}
+  async function versionApply(id,options){const preview=versionPanel.preview,proof=preview&&versionProof.get(preview);return versionCommit(id,p=>{if(!proof||preview.projectId!==id||proof.baseline!==JSON.stringify(p)||proof.proof!==JSON.stringify(preview))throw Error('checkpoint-preview-stale');return automaticEditRecord(p,clone(proof.next),'checkpoint-adoption')},options)}
+  async function versionUndoRedo(id,direction,options){return versionCommit(id,p=>automaticEditRecord(p,versionStep(p,direction),direction<0?'checkpoint-undo':'checkpoint-redo'),options)}
   function versionCaptureChanged(event,id){const f=event.currentTarget;return versionPanel.captureDraft={projectId:id,name:f.elements.checkpointName.value,kind:f.elements.checkpointKind?.value||'working'}}
   async function versionSubmit(event,id){event.preventDefault();const draft=versionCaptureChanged(event,id),result=await versionSave(id,draft.name,{kind:draft.kind});if(result.ok&&versionPanel.captureDraft===draft){versionPanel.captureDraft=null;requestPaint()}return result}
   function versionScopeForm(f){return f.elements.checkpointTrack?.value?{trackId:f.elements.checkpointTrack.value,startMeasure:Number(f.elements.checkpointStart.value),endMeasure:Number(f.elements.checkpointEnd.value)}:null}
@@ -486,7 +487,7 @@
   function memoryRepository(initial=[]){
     const records=new Map(initial.map(item=>[item.projectId,clone(item)]));
     const automaticBackups=new Map();let settings=null;
-    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()]),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);records.set(item.projectId,value);return clone(value)},async put(item){records.set(item.projectId,clone(item));return clone(item)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async putAutoBackup(value){automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id){automaticBackups.delete(id)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
+    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()]),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);records.set(item.projectId,value);return clone(value)},async put(item){records.set(item.projectId,clone(item));return clone(item)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async putAutoBackup(value){automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id){automaticBackups.delete(id)},async deleteAutoBackupIfCurrent(expected,replacement,guard){guard();if(expected.backupId===replacement.backupId||JSON.stringify(automaticBackups.get(expected.backupId))!==JSON.stringify(expected)||JSON.stringify(automaticBackups.get(replacement.backupId))!==JSON.stringify(replacement))throw Error('backup-delete-conflict');await this.deleteAutoBackup(expected.backupId)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
   }
   function indexedDbRepository(){
     if(!root.indexedDB)return memoryRepository();
@@ -567,13 +568,13 @@
       return{id:record.id,hashes:record.hashes,blob:new Blob(nodes,{type:record.type||'application/octet-stream'})};
     }
     // Append-only PCM journal. Metadata and each chunk share a strict commit.
-    function journalWrite(id,operation){return database.then(db=>new Promise((resolve,reject)=>{
+    function journalWrite(id,operation,guard){return database.then(db=>new Promise((resolve,reject)=>{
       const tx=openTransaction(db,['vocalJournals','vocalJournalChunks'],'readwrite');let failure;
       const timer=root.setTimeout?.(()=>abort(Error('vocal-journal-timeout')),15000),clear=()=>root.clearTimeout?.(timer);
       const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
       tx.onabort=()=>{clear();reject(failure||tx.error||Error('vocal-journal-aborted'))};tx.onerror=()=>abort(tx.error||Error('vocal-journal-write-failed'));tx.oncomplete=()=>{clear();resolve()};
       const meta=tx.objectStore('vocalJournals'),chunks=tx.objectStore('vocalJournalChunks'),get=meta.get(id);
-      get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{operation(get.result,meta,chunks,abort)}catch(e){abort(e)}};
+      get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{guard?.();operation(get.result,meta,chunks,abort)}catch(e){abort(e)}};
     }))}
     async function appendVocalJournal(id,seq,bytes,hash){return journalWrite(id,(m,meta,chunks,abort)=>{
       if(!m||m.next!==seq||m.consumed!==0||m.closed)throw Error('vocal-journal-conflict');
@@ -620,7 +621,15 @@
         if(settings)watch(tx.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
       }catch(e){abort(e)}};
     }))}
-    return{kind:'indexeddb',appendVocalJournal,
+    function deleteAutoBackupIfCurrent(expected,replacement,guard){return database.then(db=>new Promise((resolve,reject)=>{
+      const tx=openTransaction(db,[AUTO_BACKUP_STORE_NAME],'readwrite'),store=tx.objectStore(AUTO_BACKUP_STORE_NAME);let failure;
+      const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
+      tx.onabort=()=>reject(failure||tx.error||Error('backup-delete-aborted'));tx.onerror=()=>abort(tx.error||Error('backup-delete-failed'));tx.oncomplete=()=>resolve();
+      const read=store.get(replacement.backupId);read.onerror=()=>abort(read.error);read.onsuccess=()=>{try{guard();if(!read.result||JSON.stringify(read.result)!==JSON.stringify(replacement))throw Error('backup-replacement-conflict');
+        const old=store.get(expected.backupId);old.onerror=()=>abort(old.error);old.onsuccess=()=>{try{guard();if(!old.result||JSON.stringify(old.result)!==JSON.stringify(expected)||expected.backupId===replacement.backupId)throw Error('backup-delete-conflict');const remove=store.delete(expected.backupId);remove.onerror=()=>abort(remove.error);remove.onsuccess=()=>{try{guard()}catch(e){abort(e)}}}catch(e){abort(e)}};
+      }catch(e){abort(e)}};
+    }))}
+    return{kind:'indexeddb',appendVocalJournal,deleteAutoBackupIfCurrent,
       importVocalJournal: (m,items,baseline,guard)=>database.then(db=>new Promise((resolve,reject)=>{
         const tx=openTransaction(db,[STORE_NAME,'vocalJournals','vocalJournalChunks'],'readwrite');let failure;const timer=root.setTimeout?.(()=>abort(Error('vocal-rescue-import-timeout')),15000),done=()=>root.clearTimeout?.(timer);
         const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
@@ -628,7 +637,7 @@
         const r=tx.objectStore(STORE_NAME).get(m.owner);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard();if(JSON.stringify(r.result)!==baseline)throw Error('vocal-recovery-conflict');const watch=q=>{q.onerror=()=>abort(q.error)};watch(tx.objectStore('vocalJournals').add(m));for(const c of items)watch(tx.objectStore('vocalJournalChunks').add(c));}catch(e){abort(e)}};
       })),
       sealVocalJournal: (id,expected)=>journalWrite(id,(m,meta,chunks,abort)=>{if(!m||m.next!==expected.next||m.consumed!==expected.consumed||m.frames!==expected.frames)throw Error('vocal-journal-conflict');const r=meta.put({...m,closed:true});r.onerror=()=>abort(r.error)}),
-      deleteVocalJournal: (id,expected)=>journalWrite(id,(m,meta,chunks,abort)=>{if(!m||JSON.stringify(m)!==JSON.stringify(expected)||(!m.closed&&Date.now()-m.updatedAt<30000)||!Number.isSafeInteger(m.next)||m.next<0||m.next>90000)throw Error('vocal-journal-conflict');for(let i=0;i<m.next;i++){const r=chunks.delete(id+':'+i);r.onerror=()=>abort(r.error)}const r=meta.delete(id);r.onerror=()=>abort(r.error)}),
+      deleteVocalJournal: (id,expected,guard)=>journalWrite(id,(m,meta,chunks,abort)=>{if(!m||JSON.stringify(m)!==JSON.stringify(expected)||(!m.closed&&Date.now()-m.updatedAt<30000)||!Number.isSafeInteger(m.next)||m.next<0||m.next>90000)throw Error('vocal-journal-conflict');for(let i=0;i<m.next;i++){const r=chunks.delete(id+':'+i);r.onerror=()=>abort(r.error)}const r=meta.delete(id);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}},guard),
       createVocalJournal: m=>request('vocalJournals','readwrite',store=>store.add(m)),
       listVocalJournals: ()=>request('vocalJournals','readonly',store=>store.getAll()),
       getVocalJournal: id=>request('vocalJournals','readonly',store=>store.get(id)),
@@ -2036,10 +2045,11 @@
     try{
       const m=await target.getVocalJournal(journalId);if(!m||!Number.isSafeInteger(m.next)||m.next<0||m.next>90000)throw Error('vocal-journal-metadata-invalid');
       if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
-      const guard=async()=>{if(repository!==target||JSON.stringify(await target.getVocalJournal(journalId))!==JSON.stringify(m))throw Error('vocal-journal-conflict')};
+      const current=()=>{if(repository!==target)throw Error('vocal-journal-conflict')};
+      const guard=async()=>{current();const stored=await target.getVocalJournal(journalId);current();if(JSON.stringify(stored)!==JSON.stringify(m))throw Error('vocal-journal-conflict')};
       if(remove){
         if(!(root.confirm?.('この未完了録音を完全に削除しますか？復元できません。必要なら先に「元データを退避」を実行してください。保存済みTakeは削除されません。')??false))return{ok:false,cancelled:true};
-        await guard();await target.deleteVocalJournal(journalId,m);vocal.message='未完了録音を削除しました。';
+        await guard();await target.deleteVocalJournal(journalId,m,current);vocal.message='未完了録音を削除しました。';
       }else{
         // Rescue container preserves observed bytes, including corrupt chunks. It is not a verified audio backup.
         const parts=[],entries=[];let offset=0;
@@ -4298,7 +4308,7 @@
     try{
       if(!current())throw Error('backup-state-conflict');
       const all=[record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-      for(const old of all.slice(keep)){if(!current())throw Error('backup-state-conflict');await target.deleteAutoBackup?.(old.backupId)}
+      for(const old of all.slice(keep)){if(!current())throw Error('backup-state-conflict');if(typeof target.deleteAutoBackupIfCurrent!=='function')throw Error('backup-atomic-delete-unavailable');await target.deleteAutoBackupIfCurrent(old,record,()=>{if(!current())throw Error('backup-state-conflict')})}
       if(current())await loadAutoBackups();else throw Error('backup-state-conflict');
     }catch(error){cleanupWarning=error.message;console.warn('Music Studio automatic backup cleanup deferred',error)}
     return{ok:true,created:true,backup:record,...(cleanupWarning?{cleanupWarning}:{}),message:cleanupWarning?'自動バックアップを保存しました。古いコピーの整理は完了していません。':'期限を迎えたため、端末内に自動バックアップを作成しました。'};
