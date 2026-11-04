@@ -114,7 +114,7 @@ test('cancel and failed external import leave every existing project unchanged',
 });
 
 test('repository failure does not expose a partial external project',async()=>{
-  const{app,writer}=loadApp(),base=app.memoryRepository(),existing=app.makeProject({projectId:'keep',projectName:'Keep'}),repo={...base,async put(project){if(project.projectId!=='keep')throw Error('storage unavailable');return base.put(project)}};app.setRepository(repo);await repo.put(existing);app.state.projects=[existing];const before=JSON.stringify(app.state.projects),result=await app.importExternalSongFile(midiFile('failure.mid',sourceMidi(writer)));
+  const{app,writer}=loadApp(),base=app.memoryRepository(),existing=app.makeProject({projectId:'keep',projectName:'Keep'}),repo={...base,async compareAndPut(){throw Error('storage unavailable')}};app.setRepository(repo);await repo.put(existing);app.state.projects=[existing];const before=JSON.stringify(app.state.projects),result=await app.importExternalSongFile(midiFile('failure.mid',sourceMidi(writer)));
   assert.equal(result.ok,false);assert.equal(JSON.stringify(app.state.projects),before);assert.deepEqual(Array.from(await repo.list(),item=>item.projectId),['keep']);
 });
 
@@ -224,4 +224,8 @@ test('assignment metadata keeps compatibility tracks separate and All MIDI expor
 test('External Track Review CSS remains compact at desktop tablet and phone boundaries',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
   assert.match(css,/\.music-midi-editor-page \.music-external-track-review-entry\{[^}]*white-space:nowrap/);assert.doesNotMatch(css,/\.music-external-track-review::backdrop/);assert.match(css,/\.music-external-track-review\{position:fixed;z-index:85;top:76px;right:12px/);assert.match(css,/grid-template-columns:minmax\(0,1fr\) 150px/);assert.match(css,/@media\(max-width:600px\)\{[^}]*\.music-external-track-review-entry/);assert.match(css,/\.music-external-track-review\{width:calc\(100vw - 16px\);max-height:calc\(100dvh - 20px\)/);
+});
+
+test('repository change while reading external MIDI cannot redirect publication',async()=>{
+ const{app,writer}=loadApp(),first=app.memoryRepository(),second=app.memoryRepository();app.setRepository(first);let release;const file=midiFile('stale.mid',sourceMidi(writer)),read=file.arrayBuffer;file.arrayBuffer=()=>new Promise(resolve=>{release=async()=>resolve(await read.call(file))});const pending=app.importExternalSongFile(file);app.setRepository(second);await release();const result=await pending;assert.equal(result.ok,false);assert.equal((await first.list()).length,0);assert.equal((await second.list()).length,0);
 });
