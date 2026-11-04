@@ -71,7 +71,9 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   const crashPage=page;
   const crashed=new Promise(resolve=>crashPage.once('crash',resolve));
   const crashSession=await browser.newCDPSession(crashPage);
-  await crashSession.send('Page.crash').catch(()=>{});
+  // The DevTools command may never reply after it kills its own renderer.
+  // Do not await its response: wait for the observable page crash instead.
+  void crashSession.send('Page.crash').catch(()=>{});
   await Promise.race([crashed,new Promise((_,reject)=>setTimeout(()=>reject(Error('Renderer did not crash within 10 seconds')),10000))]);
   const recoveredPage=await browser.newPage();
   await recoveredPage.goto(origin);
