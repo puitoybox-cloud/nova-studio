@@ -1,15 +1,15 @@
 {
-  "date": "2026-11-01 JST",
+  "date": "2026-11-04 JST",
   "command": "node scripts/music-song-checkpoints-browser.js",
-  "testedHead": "000fbb4564a1e8cacb9975aa84c347745a0dce86",
-  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41357154618",
+  "testedHead": "4d6d19b39f565f7380ee0303f371c469643f5b96",
+  "ciRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41794119648",
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
     "scripts/music-song-checkpoints-browser.js": "e5532a8763cfa81bc2e0171b6f2e741563013d010bd6ee00e5f25f709c5057b1"
   },
   "runtimeHashes": {
-    "music-studio.js": "701874eba64c42e2146d89e39090d806be146a39f57501f7a250b63e604ca02e",
+    "music-studio.js": "60168dd25815324095e68c4d1b7204effc5e2d02892b924c430f759802a2570b",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [
@@ -21,5 +21,6 @@
     "report.meterRangeStale=",
     "report.meterRangeRestart="
   ],
-  "scope": "Chromium browser success: 22 unsafe-range/selection/historical-source refusal cases, selective adoption across meter change, rejected stale preview and retry, undo/redo across full Chromium restart, unchanged unrelated notes and production notes, persisted binary recovery; unit test exercises locked measure, midbar map and historical dependencies. Intel Mac hardware and listening are separate."
+  "scope": "Chromium browser success: 22 unsafe-range/selection/historical-source refusal cases, selective adoption across meter change, rejected stale preview and retry, undo/redo across full Chromium restart, unchanged unrelated notes and production notes, persisted binary recovery; unit test exercises locked measure, midbar map and historical dependencies. Intel Mac hardware and listening are separate.",
+  "source": "GitHub Actions checkpoint-recovery successful at immutable tested HEAD 4d6d19b39f565f7380ee0303f371c469643f5b96"
 }
