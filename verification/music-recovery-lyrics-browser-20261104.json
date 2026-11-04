@@ -1,19 +1,28 @@
 {
-  "date": "2026-11-04 JST",
-  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-old-browser/node_modules node --test scripts/music-indexeddb-browser-persistence.cjs",
+  "date": "2026-11-05 JST",
+  "command": "node --test scripts/music-indexeddb-browser-persistence.cjs",
   "passed": 2,
   "failed": 0,
   "sourceHashes": {
     "scripts/music-indexeddb-browser-persistence.cjs": "07641542b51856f2fd2b01d1b62096a0d50032f9fba4976402e700591cf7847a"
   },
   "runtimeHashes": {
-    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913"
+    "music-studio.js": "f1cbaeaf4f65545b75d611cf6bf0a93826922895b2ff297f09c34f4d751dda31"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "scope": "Real Chromium SIGKILL during automatic-backup publication preserves prior copies, project and session history; restart and retry publishes a complete snapshot before pruning. Existing dependency, material, create/fork and lyric scroll regressions pass. Physical power loss and hardware remain unverified.",
-  "source": "Current-source automatic backup retention regression"
+  "source": "Current production runtime passed the identified CI step. Entire workflow status is separate; no local browser run claimed.",
+  "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "f74c4bf5931d2e21fbbf26b246f0c57da53da4fe",
+    "runId": 41932807006,
+    "jobId": 126933704518,
+    "step": 6,
+    "stepConclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41932807006/job/126933704518"
+  }
 }

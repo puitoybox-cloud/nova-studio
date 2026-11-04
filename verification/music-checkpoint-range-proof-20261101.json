@@ -1,13 +1,13 @@
 {
-  "date": "2026-11-04 JST",
-  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-old-browser/node_modules node scripts/music-song-checkpoints-browser.js",
+  "date": "2026-11-05 JST",
+  "command": "CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-song-checkpoints-browser.js",
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
     "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
   },
   "runtimeHashes": {
-    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913",
+    "music-studio.js": "f1cbaeaf4f65545b75d611cf6bf0a93826922895b2ff297f09c34f4d751dda31",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [
@@ -20,8 +20,17 @@
     "report.meterRangeRestart="
   ],
   "scope": "Chromium browser success: 22 unsafe-range/selection/historical-source refusal cases, selective adoption across meter change, rejected stale preview and retry, undo/redo across full Chromium restart, unchanged unrelated notes and production notes, persisted binary recovery; unit test exercises locked measure, midbar map and historical dependencies. Intel Mac hardware and listening are separate.",
-  "source": "Current-source backup retention regression; browser completed=true, errors=[], external=[]",
-  "report": "verification/music-song-checkpoints-browser.json",
-  "reportSha256": "cb61fd95d4c055c317db24916b6d3a78e42de90f6ed9862789e041a668bfafb0",
-  "logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540"
+  "source": "Current production runtime passed the identified CI step. Entire workflow status is separate; no local browser run claimed.",
+  "previousRun_report": "verification/music-song-checkpoints-browser.json",
+  "previousRun_reportSha256": "cb61fd95d4c055c317db24916b6d3a78e42de90f6ed9862789e041a668bfafb0",
+  "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "f74c4bf5931d2e21fbbf26b246f0c57da53da4fe",
+    "runId": 41932807016,
+    "jobId": 126933704345,
+    "step": 7,
+    "stepConclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41932807016/job/126933704345"
+  }
 }
