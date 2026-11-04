@@ -69,6 +69,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Full regression, syntax and whitespace
         run: |
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_verification.py -v
@@ -78,7 +81,7 @@ jobs:
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_production_lifecycle.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_processing_closure.py -v
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_native_routing.py -v
-          node --test
+          node --test tests/*.test.js
           find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
           python3 -m py_compile tools/music-audio-pipeline/verify_real_conversion.py tools/music-audio-pipeline/helper_identity.py tools/music-audio-pipeline/server.py
           python3 -m unittest discover -s tools/music-audio-pipeline -p test_distribution_binding.py -v
