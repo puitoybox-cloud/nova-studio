@@ -11,7 +11,7 @@ for(const mode of ['no-consent','wrong-bytes','quota','cancel','mid-hash-cancel'
  if(mode==='mid-hash-cancel'){file={size:blob.size,slice:(...args)=>{const part=blob.slice(...args);return{arrayBuffer:async()=>{const b=await part.arrayBuffer();signal.aborted=true;return b}}}}}
  if(mode==='source-race'){const get=repo.getLongWav;repo.getLongWav=async id=>{const newer=await repo.get(p.projectId);newer.productionNotes='Concurrent user edit';newer.revision++;await repo.put(newer);return get(id)}}
  const result=await a.recoverMissingBinary(p.projectId,'original-binary',file,{signal});assert.equal(result.ok,false,mode);assert.equal(binaries.size,0,mode);if(mode!=='source-race')assert.equal(JSON.stringify(await repo.get(p.projectId)),before);else assert.equal((await repo.get(p.projectId)).productionNotes,'Concurrent user edit');
- f.indexedDB.repair();const fresh=await reopen(f),current=await fresh.repo.get(p.projectId),r=await fresh.a.recoverMissingBinary(p.projectId,'original-binary',blob);assert.equal(r.ok,true,r.error);assert.deepEqual(plain(r.project.fileReferences),plain(current.fileReferences));assert.deepEqual(plain(r.project.midiData),plain(current.midiData));assert.deepEqual(plain(r.project.songVersions),plain(current.songVersions));assert.equal((await fresh.a.inspectStoredDependencies(p.projectId)).report.rows[0].status,'verified');const re=await reopen({...fresh,indexedDB:f.indexedDB});const record=await re.repo.getLongWav('original-binary');assert.deepEqual(Array.from(new Uint8Array(await record.blob.arrayBuffer())),[9,8,7,6]);assert.equal((await re.a.recoverMissingBinary(p.projectId,'original-binary',blob)).alreadyPresent,true);
+ f.indexedDB.repair();const fresh=await reopen(f),current=await fresh.repo.get(p.projectId),r=await fresh.a.recoverMissingBinary(p.projectId,'original-binary',blob);assert.equal(r.ok,true,r.error);assert.deepEqual(plain(r.project.fileReferences),plain(current.fileReferences));assert.deepEqual(plain(r.project.midiData),plain(current.midiData));assert.equal(r.project.songVersions.edits.at(-1).source,'dependency-recovery');assert.equal(r.project.songVersions.edits.length,(current.songVersions?.edits?.length||0)+1);assert.equal((await fresh.a.inspectStoredDependencies(p.projectId)).report.rows[0].status,'verified');const re=await reopen({...fresh,indexedDB:f.indexedDB});const record=await re.repo.getLongWav('original-binary');assert.deepEqual(Array.from(new Uint8Array(await record.blob.arrayBuffer())),[9,8,7,6]);assert.equal((await re.a.recoverMissingBinary(p.projectId,'original-binary',blob)).alreadyPresent,true);
 });
 test('session and daily timeline migration preserves links and immutable events across reopen JSON Backup and archive',async()=>{const f=await setup(),{a,repo,p}=f;assert.equal((await a.recoverMissingBinary(p.projectId,'original-binary',f.blob)).ok,true);
  assert.equal((await a.productionSessionSave(p.projectId,'start','First')).ok,true);assert.equal((await a.productionDaySave(p.projectId,'2026-10-30','Earlier work')).ok,true);assert.equal((await a.versionSave(p.projectId,'Candidate')).ok,true);assert.equal((await a.productionSessionSave(p.projectId,'finish','Saved')).ok,true);
@@ -23,4 +23,28 @@ test('session and daily timeline migration preserves links and immutable events 
  }
  const legacy=plain(saved);delete legacy.songVersions.days;delete legacy.songVersions.sessions;for(const c of legacy.songVersions.checkpoints)delete c.sessionId;const old=fixture();old.a.setRepository(old.a.memoryRepository());const migrated=await old.a.importText(JSON.stringify(legacy));assert.equal(migrated.ok,true);const prior=(await old.a.state.projects)[0];assert.equal(prior.songVersions.days,undefined);assert.equal(prior.songVersions.sessions,undefined);assert.doesNotThrow(()=>old.a.versionTimeline(prior));
  const before=JSON.stringify(await fresh.repo.get(p.projectId));f.indexedDB.fail();assert.equal((await fresh.a.productionDaySave(p.projectId,'2026-11-01','Must not commit')).ok,false);f.indexedDB.repair();assert.equal(JSON.stringify(await fresh.repo.get(p.projectId)),before);
+});
+
+test('binary recovery publishes one session-linked receipt atomically and preserves it across reopen and archive',async()=>{
+ const f=await setup(),{a,repo,p,blob}=f;
+ const references=p.fileReferences;p.fileReferences=[];await repo.put(p);a.state.projects=[p];
+ assert.equal((await a.productionSessionSave(p.projectId,'start','Recover original')).ok,true);
+ const withReference=await repo.get(p.projectId);withReference.fileReferences=references;await repo.put(withReference);a.state.projects=[withReference];
+ const before=await repo.get(p.projectId),sessionId=before.songVersions.sessions[0].id;
+ f.indexedDB.fail();
+ assert.equal((await a.recoverMissingBinary(p.projectId,'original-binary',blob)).ok,false);
+ f.indexedDB.repair();assert.equal(JSON.stringify(await repo.get(p.projectId)),JSON.stringify(before));
+ assert.equal((await repo.getLongWav('original-binary')),undefined);
+ const fresh=await reopen(f),result=await fresh.a.recoverMissingBinary(p.projectId,'original-binary',blob);
+ assert.equal(result.ok,true,result.error);
+ const receipt=result.project.songVersions.edits.at(-1);
+ assert.equal(receipt.source,'dependency-recovery');assert.equal(receipt.sessionId,sessionId);
+ assert.deepEqual(plain(receipt.groups),['audio']);assert.equal(receipt.revision,result.project.revision);
+ const saved=JSON.stringify(await fresh.repo.get(p.projectId));
+ assert.equal((await fresh.a.recoverMissingBinary(p.projectId,'original-binary',blob)).alreadyPresent,true);
+ assert.equal(JSON.stringify(await fresh.repo.get(p.projectId)),saved,'retry must not duplicate receipt');
+ const archive=await fresh.a.createLongWavArchive(),g=fixture(),other=g.a.indexedDbRepository();g.a.setRepository(other);g.a.state.settings=g.a.defaultSettings();g.a.state.loaded=true;
+ const restored=await g.a.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.message);
+ assert.deepEqual(plain((await other.list())[0].songVersions.edits),plain(result.project.songVersions.edits));
+ assert.match(fresh.a.versionTimeline(result.project),/元ファイル復旧/);
 });

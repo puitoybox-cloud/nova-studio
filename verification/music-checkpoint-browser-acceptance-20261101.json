@@ -1,14 +1,14 @@
 {
   "date": "2026-11-04 JST",
-  "source": "Local Chromium checkpoint regression on current material-history runtime",
-  "command": "NODE_PATH=/tmp/nova-browser-test/node_modules CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome node scripts/music-song-checkpoints-browser.js",
+  "source": "Successful local Chromium checkpoint regression on recovery/lyric runtime",
+  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-browser-test/node_modules node scripts/music-song-checkpoints-browser.js",
   "passed": 1,
   "failed": 0,
   "sourceHashes": {
     "scripts/music-song-checkpoints-browser.js": "e5532a8763cfa81bc2e0171b6f2e741563013d010bd6ee00e5f25f709c5057b1"
   },
   "runtimeHashes": {
-    "music-studio.js": "468c6b6efcc108927c4fa7a98aa63293e8607b3e8354829a8276da85940cc9a2",
+    "music-studio.js": "06d3ef3ba2f01cf7690811aad3f14acbfae1a669e10190c3bb8f69d843abac63",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [

@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率 **44.44%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率 **45.93%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装12件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装10件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -25,7 +25,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | 9 | 4 | 1 | 3 | 1 | 1 |
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
-| 12 | 4 | 2 | 2 | 1 | 0 |
+| 12 | 4 | 3 | 1 | 1 | 0 |
 | 13 | 4 | 3 | 1 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
@@ -37,7 +37,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | 21 | 4 | 1 | 3 | 1 | 1 |
 | 22 | 4 | 2 | 2 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
-| 24 | 4 | 3 | 1 | 1 | 0 |
+| 24 | 4 | 4 | 0 | 1 | 0 |
 | 25 | 5 | 2 | 3 | 1 | 1 |
 | 26 | 5 | 1 | 4 | 1 | 1 |
 | 27 | 5 | 1 | 4 | 1 | 1 |
@@ -121,7 +121,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | MS12-A01 | A | selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes` |
 | MS12-A02 | A | 長時間録音中断からの全保存経路の復旧検証 | open | 未確認 |
 | MS12-A03 | A | PunchとCycleの保存再開 | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `scheduled punch-in omits preroll samples and captures exact punch-out without UI timer`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `restart after the first gapless Take commits recovers only unsaved frames`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `gapless crash recovery recreates exact Take boundaries and cycle metadata` |
-| MS12-A04 | A | 歌詞スクロール同期 | open | 未確認 |
+| MS12-A04 | A | 歌詞スクロール同期 | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `lyric following uses explicit saved track, respects tempo and rest, excludes stale and duplicate assignments`; [scripts/music-indexeddb-browser-persistence.cjs](../../scripts/music-indexeddb-browser-persistence.cjs) — `lyric follow scrolls active saved assignments after rerender and clears stopped playback` |
 | MS12-B01 | B | マイク権限・monitor・latency・長時間録音 | open | 未確認 |
 | MS13-A01 | A | peak normalization previews measured PCM, adopts only on request and survives history/archive | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `peak normalization previews measured PCM, adopts only on request and survives history/archive` |
 | MS13-A02 | A | Vibrato補正とUndo | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery` |
@@ -185,7 +185,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | MS24-A01 | A | diagnosis exposes unavailable byte verification without claiming repair or writing project state | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `diagnosis exposes unavailable byte verification without claiming repair or writing project state` |
 | MS24-A02 | A | 全体性能原因の診断 | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `cause-specific diagnosis measures render and layout separately without touching storage or Undo`; [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `performance observations stay bounded and preserve thrown render errors and stale rejection`; [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `production playback timing is distinct from rendering and diagnosis does not create an audio context`; [tests/music-studio-audio.test.js](../../tests/music-studio-audio.test.js) — `audio processing diagnostic measures actual offline rendering and failures with bounded detached snapshots` |
 | MS24-A03 | A | 診断結果から安全軽量化 | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `global performance inventory measures every project and reports unavailable signals without writes` |
-| MS24-A04 | A | 修復同意とtransaction再開 | open | 未確認 |
+| MS24-A04 | A | 修復同意とtransaction再開 | verified | [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction no-consent preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction wrong-bytes preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction quota preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction cancel preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction mid-hash-cancel preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `repair transaction source-race preserves original and retries after fresh runtime reopen`; [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `binary recovery publishes one session-linked receipt atomically and preserves it across reopen and archive`; [scripts/music-indexeddb-browser-persistence.cjs](../../scripts/music-indexeddb-browser-persistence.cjs) — `real Chromium IndexedDB persists production history and backup restore across browser restart` |
 | MS24-B01 | B | 実機負荷と軽量化効果 | open | 未確認 |
 | MS25-A01 | A | missing local runtime reports failure and retains notes/candidate workspace | verified | [tests/music-studio-local-model.test.js](../../tests/music-studio-local-model.test.js) — `missing local runtime reports failure and retains notes/candidate workspace` |
 | MS25-A02 | A | Project単位の外部送信禁止境界 | open | MS25-C01 |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 11 | 0 |
-| 実装済み・検証不足 | 24 | 12 |
+| 実装済み・検証不足 | 24 | 10 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -286,7 +286,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | MS11-A03 | 仕様判断待ち | open |
 | MS12-A02 | 実装済み・検証不足 | open |
 | MS12-A03 | 実装済み・検証不足 | verified |
-| MS12-A04 | 実装済み・検証不足 | open |
+| MS12-A04 | 実装済み・検証不足 | verified |
 | MS13-A02 | 実装が必要 | verified |
 | MS13-A03 | 実装済み・検証不足 | verified |
 | MS13-A04 | 実装済み・検証不足 | open |
@@ -320,7 +320,7 @@ A：総数 **135**、証拠付き完了 **60**、残数 **75**、受入確認率
 | MS23-A04 | 仕様判断待ち | open |
 | MS24-A02 | 実装が必要 | verified |
 | MS24-A03 | 実装が必要 | verified |
-| MS24-A04 | 実装済み・検証不足 | open |
+| MS24-A04 | 実装済み・検証不足 | verified |
 | MS25-A02 | 仕様判断待ち | open |
 | MS25-A03 | 仕様判断待ち | open |
 | MS25-A04 | 仕様判断待ち | open |
