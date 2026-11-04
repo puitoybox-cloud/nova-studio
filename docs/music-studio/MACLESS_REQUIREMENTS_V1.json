@@ -1367,8 +1367,19 @@
       "feature": 12,
       "category": "A",
       "requirement": "歌詞スクロール同期",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-correction-comp.test.js",
+          "acceptance": "lyric following uses explicit saved track, respects tempo and rest, excludes stale and duplicate assignments",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "scripts/music-indexeddb-browser-persistence.cjs",
+          "acceptance": "lyric follow scrolls active saved assignments after rerender and clears stopped playback",
+          "run": "verification/music-recovery-lyrics-browser-20261104.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -1379,6 +1390,11 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "acceptanceReview": {
+        "date": "2026-11-04 JST",
+        "report": "docs/music-studio/verification/RECOVERY_LYRICS_ACCEPTANCE_20261104.md",
+        "scope": "Software acceptance; hardware and listening remain separate B requirements."
       }
     },
     {
@@ -2586,8 +2602,55 @@
       "feature": 24,
       "category": "A",
       "requirement": "修復同意とtransaction再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction no-consent preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction wrong-bytes preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction quota preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction cancel preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction mid-hash-cancel preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "repair transaction source-race preserves original and retries after fresh runtime reopen",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "repair transaction "
+        },
+        {
+          "path": "tests/music-studio-repair-timeline-acceptance.test.js",
+          "acceptance": "binary recovery publishes one session-linked receipt atomically and preserves it across reopen and archive",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "scripts/music-indexeddb-browser-persistence.cjs",
+          "acceptance": "real Chromium IndexedDB persists production history and backup restore across browser restart",
+          "run": "verification/music-recovery-lyrics-browser-20261104.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-10-31 JST",
@@ -2598,6 +2661,11 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "acceptanceReview": {
+        "date": "2026-11-04 JST",
+        "report": "docs/music-studio/verification/RECOVERY_LYRICS_ACCEPTANCE_20261104.md",
+        "scope": "Software acceptance; hardware and listening remain separate B requirements."
       }
     },
     {

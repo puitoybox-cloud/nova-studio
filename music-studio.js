@@ -206,7 +206,7 @@
     details:['projectName','songTitle','purpose','status']
   };
   const AUTOMATIC_EDIT_SOURCES={
-    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し','material-library':'MIDI素材'
+    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し','material-library':'MIDI素材','dependency-recovery':'元ファイル復旧'
   };
   const versionPanel={open:false,busy:false,draft:null,preview:null,message:'',generation:0,abort:null};
   const versionProof=new WeakMap();
@@ -268,6 +268,8 @@
     // Material publication belongs to the production timeline, while checkpoint
     // adoption continues to leave the reusable library untouched.
     if(source==='material-library'&&comparable(previous,'materialLibrary')!==comparable(next,'materialLibrary')&&!groups.includes('music'))groups.push('music');
+    // Restoring missing bytes changes availability without changing descriptors.
+    if(source==='dependency-recovery'&&!groups.includes('audio'))groups.push('audio');
     if(!groups.length)return next;
     const ledger=versionLedger(next),edits=ledger.edits||(ledger.edits=[]);if(edits.length>=512)edits.splice(0,edits.length-511);
     const active=ledger.sessions?.find(session=>session.endedAt===undefined);
@@ -1571,6 +1573,7 @@
       if(existing){if(!existing.blob||existing.blob.size!==descriptor.size||JSON.stringify(await longWavDigest(existing.blob,guard))!==JSON.stringify(hashes))throw Error('reference-recovery-existing-conflict');guard();return{ok:true,alreadyPresent:true}}
       await archiveCapacity(descriptor.size+pcmJsonBytes(p),guard);guard();
       const next=versionTouch(clone(p)),blob=new Blob([file],{type:descriptor.type||'audio/wav'});
+      automaticEditRecord(p,next,'dependency-recovery');
       if(!validateProject(next).valid)throw Error('reference-project-invalid');
       await target.putLongWav(next,{id:binaryId,blob,hashes},baseline,guard);guard();
       state.projects=state.projects.map(x=>x.projectId===projectId?next:x);finalInvalidate();notice('一致する元ファイルを復旧しました。候補版と履歴は保持しています。','success');return{ok:true,project:next};
@@ -1860,13 +1863,18 @@
     if(!Number.isFinite(seconds))return -1;
     return rows.findIndex(r=>seconds>=r.start&&seconds<r.end);
   }
-  function vocalLyricStop(){root.clearTimeout?.(vocal.lyricTimer);vocal.lyricTimer=null;vocal.lyricClock=null;vocal.lyricIndex=-1}
+  function vocalLyricStop(){root.clearTimeout?.(vocal.lyricTimer);vocal.lyricTimer=null;vocal.lyricClock=null;vocal.lyricIndex=-1;
+    const panel=root.document?.querySelector('[data-vocal-lyrics]');
+    for(const item of panel?.querySelectorAll('[data-lyric-index]')||[]){item.classList.remove('is-current');item.removeAttribute('aria-current')}
+  }
   function vocalLyricFollow(rows,clock){
-    vocalLyricStop();vocal.lyricRows=rows;vocal.lyricClock=clock;let last=-2;
+    vocalLyricStop();vocal.lyricRows=rows;vocal.lyricClock=clock;let last=-2,lastItem=null;
     const update=()=>{if(vocal.lyricClock!==clock)return;const seconds=clock(),index=vocalLyricAt(rows,seconds);vocal.lyricIndex=index;
       const panel=root.document?.querySelector('[data-vocal-lyrics]');
       if(panel){const items=panel.querySelectorAll('[data-lyric-index]');for(const item of items){const active=Number(item.dataset.lyricIndex)===index;item.classList.toggle('is-current',active);if(active)item.setAttribute('aria-current','true');else item.removeAttribute('aria-current')}
-        if(index>=0&&last!==index){const item=items[index];if(item)panel.scrollTop=Math.max(0,item.offsetTop-panel.offsetTop-panel.clientHeight/2+item.offsetHeight/2)}
+        const item=index>=0?items[index]:null;
+        if(item&&(last!==index||lastItem!==item))panel.scrollTop=Math.max(0,item.offsetTop-panel.offsetTop-panel.clientHeight/2+item.offsetHeight/2);
+        lastItem=item;
         const time=panel.parentElement.querySelector('[data-lyric-clock]');if(time)time.textContent=seconds<0?'録音開始待ち':`曲位置 ${seconds.toFixed(1)} 秒`;
       }last=index;vocal.lyricTimer=root.setTimeout?.(update,50);
     };update();

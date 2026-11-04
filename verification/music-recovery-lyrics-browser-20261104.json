@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-04 JST",
+  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-browser-test/node_modules node --test scripts/music-indexeddb-browser-persistence.cjs",
+  "passed": 2,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-indexeddb-browser-persistence.cjs": "47bfaad5766cce1c99865247b1143d9143facc2dbd782483c2c4551d810e7514"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "06d3ef3ba2f01cf7690811aad3f14acbfae1a669e10190c3bb8f69d843abac63"
+  },
+  "acceptedCases": [
+    "real Chromium IndexedDB persists production history and backup restore across browser restart",
+    "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
+  ],
+  "logSha256": "8597efbc3c0a3afdff68d74fb3626e40262d2ca8cf8353d1005877013f9c980c",
+  "scope": "Real Chromium process SIGKILL during missing-binary recovery, atomic project/history/binary rollback and retry; saved lyric follow DOM scroll and restart-safe timing. No hardware or power-loss claim."
+}

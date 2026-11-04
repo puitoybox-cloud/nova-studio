@@ -12,6 +12,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const origin='http://127.0.0.1:'+server.address().port;
  const dir=fs.mkdtempSync('/tmp/nova-indexeddb-');
+ const executable=process.env.CHROME_EXECUTABLE||chromium.executablePath();
  let browser,processHandle;
  async function stop(signal='SIGTERM'){
   if(!processHandle)return;
@@ -25,8 +26,8 @@ test('real Chromium IndexedDB persists production history and backup restore acr
  }
  async function launch(){
   fs.rmSync(dir+'/DevToolsActivePort',{force:true});
-  assert.ok(fs.existsSync(chromium.executablePath()),'Playwright Chromium must be installed');
-  processHandle=spawn(chromium.executablePath(),['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});
+  assert.ok(fs.existsSync(executable),'Playwright Chromium must be installed');
+  processHandle=spawn(executable,['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});
   let launchError;processHandle.on('error',error=>{launchError=error});
   const deadline=Date.now()+15000;
   while(!fs.existsSync(dir+'/DevToolsActivePort')){
@@ -121,7 +122,12 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   // request succeeds but before its transaction can commit. Keep the transaction
   // active with real IDB requests; do not replace the repository with a mock.
   let interruptedPage=recoveredPage;
-  for(const entry of ['productionDaySave','materialCapture','materialImport']){
+  for(const entry of ['productionDaySave','materialCapture','materialImport','recoverMissingBinary']){
+   if(entry==='recoverMissingBinary')await interruptedPage.evaluate(async()=>{
+    const repo=MusicStudio.indexedDbRepository(),p=await repo.get('chromium-restart-history');
+    const blob=new Blob(['durable-original']),hashes=[Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('')];
+    p.fileReferences=[{name:'source.wav',binary:{format:'nova-reference-binary-v1',id:'crash-recovery-binary',name:'source.wav',size:blob.size,type:'audio/wav',hashes}}];p.revision++;await repo.put(p);
+   });
    const before=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
    const armed=new Promise(resolve=>interruptedPage.on('console',m=>{if(m.text()==='NOVA_TRANSACTION_ACTIVE')resolve()}));
    await interruptedPage.evaluate(entry=>{
@@ -140,6 +146,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     const app=MusicStudio;app.setRepository(app.indexedDbRepository());
     window.pendingSave=app.indexedDbRepository().get('chromium-restart-history').then(p=>{
      app.state.projects=[p];
+     if(entry==='recoverMissingBinary')return app.recoverMissingBinary(p.projectId,'crash-recovery-binary',new Blob(['durable-original']));
      if(entry==='materialCapture')return app.materialCapture(p.projectId,{name:'Interrupted material'});
      if(entry==='materialImport'){const text=app.materialExport(p.projectId).text;return app.materialImport(p.projectId,{size:text.length,text:async()=>text})}
      return app.productionDaySave(p.projectId,'2026-11-04','Must not partially publish');
@@ -153,14 +160,42 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history')),before,'interrupted transaction must preserve the complete prior project and history');
    assert.equal(await resumed.evaluate(async entry=>{
     const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);app.state.projects=await repo.list();const id='chromium-restart-history';
+    if(entry==='recoverMissingBinary'){if(await repo.getLongWav('crash-recovery-binary'))throw Error('uncommitted binary survived');return (await app.recoverMissingBinary(id,'crash-recovery-binary',new Blob(['durable-original']))).ok}
     if(entry==='materialCapture')return (await app.materialCapture(id,{name:'Retry material'})).ok;
     if(entry==='materialImport'){const text=app.materialExport(id).text;return (await app.materialImport(id,{size:text.length,text:async()=>text})).ok}
     return (await app.productionDaySave(id,'2026-11-04','Retry after crash')).ok;
    },entry),true,entry+' retry must work after restart');
    const retried=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
    if(entry==='productionDaySave')assert.equal(retried.songVersions.days.find(d=>d.day==='2026-11-04')?.note,'Retry after crash');
+   else if(entry==='recoverMissingBinary'){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'dependency-recovery');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.equal(await resumed.evaluate(async()=>await (await MusicStudio.indexedDbRepository().getLongWav('crash-recovery-binary')).blob.text()),'durable-original')}
    else{assert.equal(retried.materialLibrary.length,before.materialLibrary.length+(entry==='materialImport'?before.materialLibrary.length:1));assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'material-library')}
    interruptedPage=resumed;
   }
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
+});
+
+test('lyric follow scrolls active saved assignments after rerender and clears stopped playback',{timeout:30000},async()=>{
+ const server=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/music-studio.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8');res.end(req.url==='/music-studio.js'?fs.readFileSync('music-studio.js'):'<!doctype html><html><body></body></html>')});
+ let browser;
+ try{
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));browser=await chromium.launch({headless:true});const page=await browser.newPage();page.on('pageerror',e=>console.error('LYRIC_PAGE_ERROR',e.message));await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/music-studio.js'});
+  await page.evaluate(()=>{
+   const a=MusicStudio;let p=a.makeProject({projectId:'lyrics-scroll',projectName:'Lyrics',midiData:{ppq:480,tempoMap:[{tick:0,bpm:120},{tick:480,bpm:60}],tracks:[{id:'lead',notes:Array.from({length:12},(_,i)=>({id:'n'+i,pitch:60,startTick:i*480,durationTicks:480,velocity:90}))}]}});
+   p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:12,text:'あいうえおかきくけこさし',reading:'あ い う え お か き く け こ さ し'}));
+   const repo=a.indexedDbRepository();a.setRepository(repo);window.song=p;window.clock=0;a.vocal.projectId=p.projectId;a.vocal.lyricTrackId='lead';a.vocal.lyricRows=a.vocalLyricRows(p,'lead');
+   window.paintLyrics=()=>{document.body.innerHTML=a.vocalLyricView(p);const panel=document.querySelector('[data-vocal-lyrics]');panel.style.cssText='height:60px;overflow:auto;position:relative';for(const item of panel.children)item.style.cssText='display:block;height:30px'};
+   paintLyrics();a.vocalLyricFollow(a.vocalLyricRows(p,'lead'),()=>clock);
+  });
+  await page.evaluate(()=>{clock=7.6});
+  await page.waitForFunction(()=>document.querySelector('[aria-current]')?.dataset.lyricIndex==='8');
+  assert.ok(await page.evaluate(()=>document.querySelector('[data-vocal-lyrics]').scrollTop)>0);
+  await page.evaluate(()=>paintLyrics());
+  await page.waitForFunction(()=>document.querySelector('[data-vocal-lyrics]').scrollTop>0);
+  await page.evaluate(()=>{clock=-1});await page.waitForFunction(()=>!document.querySelector('[aria-current]'));
+  assert.equal(await page.locator('[data-lyric-clock]').textContent(),'録音開始待ち');
+  await page.evaluate(()=>{clock=.1});await page.waitForFunction(()=>document.querySelector('[aria-current]')?.dataset.lyricIndex==='0');
+  await page.evaluate(()=>MusicStudio.vocalLyricStop());
+  assert.equal(await page.locator('[aria-current]').count(),0);assert.equal(await page.locator('.is-current').count(),0);
+  await page.evaluate(async()=>{await MusicStudio.indexedDbRepository().put(song);const p=await MusicStudio.indexedDbRepository().get(song.projectId);if(JSON.stringify(MusicStudio.vocalLyricRows(p,'lead'))!==JSON.stringify(MusicStudio.vocalLyricRows(song,'lead')))throw Error('saved lyric timing changed')});
+ }finally{await browser?.close();await new Promise(r=>server.close(r))}
 });
