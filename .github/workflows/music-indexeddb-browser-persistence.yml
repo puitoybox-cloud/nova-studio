@@ -4,6 +4,7 @@ on:
     paths:
       - 'music-studio.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
+      - 'tests/music-studio-final-export.test.js'
       - '.github/workflows/music-indexeddb-browser-persistence.yml'
   workflow_dispatch:
 jobs:
@@ -26,3 +27,7 @@ jobs:
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
         run: node --test tests/music-indexeddb-browser-persistence.test.cjs
+      - name: Verify export-only production history and recovery contracts
+        run: |
+          node --test --test-name-pattern='export-only delivery' tests/music-studio-final-export.test.js
+          node --test tests/music-production-history-*.test.js

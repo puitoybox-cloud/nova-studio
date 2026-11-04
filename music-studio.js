@@ -261,6 +261,10 @@
     if(!Object.hasOwn(AUTOMATIC_EDIT_SOURCES,source)||!previous||!next||previous.projectId!==next.projectId||!Number.isSafeInteger(next.revision)||next.revision<=previous.revision)throw Error('production-edit-input-invalid');
     const comparable=(project,field)=>{const value=project[field]===undefined?undefined:clone(project[field]);if(field==='aiWorkspace'&&value){delete value.baseRevision;delete value.updatedAt}return JSON.stringify(value)};
     const groups=Object.entries(VERSION_GROUPS).filter(([,fields])=>fields.some(field=>comparable(previous,field)!==comparable(next,field))).map(([group])=>group);
+    // Export-only saves can change receipts/history without changing the recipe.
+    // Keep these append-only records outside checkpoint adoption, but include
+    // their publication in the session's automatic production timeline.
+    if(source==='final-export'&&['finalExportHistory','finalExportDeliveries'].some(field=>comparable(previous,field)!==comparable(next,field))&&!groups.includes('audio'))groups.push('audio');
     if(!groups.length)return next;
     const ledger=versionLedger(next),edits=ledger.edits||(ledger.edits=[]);if(edits.length>=512)edits.splice(0,edits.length-511);
     const active=ledger.sessions?.find(session=>session.endedAt===undefined);

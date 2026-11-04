@@ -163,3 +163,29 @@ test('Auto-Finish MIDI material uses production streaming renderer and refuses i
  w.MusicStudioAudio.renderMidiStream=async()=>({frames:11,sampleRate:48000,channels:2,chunks:(async function*(){yield{sampleRate:48000,channels:[[.1],[.1]]}})()});
  const failed=await a.autoFinishPrepare('p',routes);assert.equal(failed.ok,false);assert.match(failed.error,/incomplete/);assert.equal(failed.stems,undefined);
 });
+
+test('export-only delivery and repeated recipe save publish session-linked production edits atomically',async()=>{
+ const f=fixture();downloadHost(f.w);
+ assert.equal((await f.a.productionSessionSave('p','start','Export session')).ok,true);
+ assert.equal((await f.a.finalPreview('p',f.plan)).ok,true);
+ assert.equal((await f.a.finalDownload('p')).ok,true);
+ let p=await f.repo.get('p');
+ const sessionId=p.songVersions.sessions[0].id;
+ assert.equal(p.songVersions.edits.length,1);
+ assert.equal(p.songVersions.edits[0].source,'final-export');
+ assert.equal(p.songVersions.edits[0].sessionId,sessionId);
+ assert.deepEqual(plain(p.songVersions.edits[0].groups),['audio']);
+ assert.equal((await f.a.finalSave('p')).ok,true);
+ assert.equal((await f.a.finalSave('p')).ok,true);
+ p=await f.repo.get('p');
+ assert.equal(p.songVersions.edits.length,3,'same recipe with a new prepared history still records publication');
+ const baseline=JSON.stringify(p),put=f.repo.compareAndPut;
+ f.repo.compareAndPut=async()=>{throw Error('quota')};
+ const result=await f.a.finalDownload('p');
+ assert.equal(result.historySaved,false);
+ assert.equal(JSON.stringify(await f.repo.get('p')),baseline,'failed receipt save must not publish an edit');
+ f.repo.compareAndPut=put;
+ const d=fixture();d.a.setRepository(d.a.memoryRepository());
+ assert.equal((await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
+ assert.deepEqual(plain(d.a.state.projects[0].songVersions.edits),plain(p.songVersions.edits));
+});
