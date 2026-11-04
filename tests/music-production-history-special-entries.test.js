@@ -207,3 +207,31 @@ test('atomic backup restoration failure leaves active session, daily notes and r
  assert.equal((await repo.list()).length,1);
  repo.restoreMetadata=originalRestore;
 });
+
+test('checkpoint adoption and Undo/Redo record the acting session while preserving daily links',async()=>{
+ const {app,repo}=setup();
+ await app.productionSessionSave('history-song','start','Original session');
+ await app.productionDaySave('history-song','2026-11-05','Original daily entry');
+ await app.versionSave('history-song','Before notes');
+ const original=await repo.get('history-song'),checkpoint=original.songVersions.checkpoints[0];
+ await app.productionSessionSave('history-song','finish','Done');
+ await app.productionSessionSave('history-song','start','Acting session');
+ await app.productionDaySave('history-song','2026-11-05','Current daily entry');
+ await change(repo,app,p=>{p.productionNotes='edited notes'});
+ const before=await repo.get('history-song'),active=before.songVersions.sessions.find(s=>!s.endedAt),days=snapshot(before.songVersions.days);
+ assert.equal(app.versionPreview('history-song',checkpoint.id,['notes']).ok,true);
+ assert.equal((await app.versionApply('history-song')).ok,true);
+ for(const direction of [-1,1])assert.equal((await app.versionUndoRedo('history-song',direction)).ok,true);
+ const saved=await repo.get('history-song');
+ assert.equal(saved.songVersions.operations.at(-1).sessionId,active.id);
+ const edits=saved.songVersions.edits.filter(e=>e.source==='checkpoint-history');
+ assert.equal(edits.length,3);
+ assert.ok(edits.every(e=>e.sessionId===active.id));
+ assert.equal(snapshot(saved.songVersions.days),days);
+ assert.equal(saved.songVersions.checkpoints[0].sessionId,original.songVersions.sessions[0].id);
+ const bad=JSON.parse(snapshot(saved));bad.songVersions.operations[0].sessionId='missing-session';
+ assert.equal(app.validateProject(bad).valid,false);
+ const text=snapshot(saved),imported=await app.importText(text);
+ assert.equal(imported.ok,true,imported.message);
+ assert.equal(snapshot(imported.project.songVersions.edits),snapshot(saved.songVersions.edits));
+});

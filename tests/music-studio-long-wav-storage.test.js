@@ -722,3 +722,25 @@ for(const kind of ['Mix','Master'])test(`two named ${kind} versions survive reop
  for(let i=0;i<2;i++){const result=await fresh.a.longMixVersionRecall(p.projectId,assetId,versions[i].id);assert.equal(result.ok,true,result.error);assert.deepEqual(Buffer.from(await result.blob.arrayBuffer()),expected[i]);if(kind==='Master')assert.equal(result.mastering.targetLufs,i?-20:-16)}
  assert.deepEqual(await repo.get(p.projectId),saved);
 });
+
+test('atomic project delete refuses newer revisions and rolls back an in-transaction context change',async()=>{
+ const{repo,p}=await setup(),baseline=JSON.stringify(p);
+ await repo.put({...p,revision:p.revision+1,productionNotes:'newer work'});
+ await assert.rejects(repo.compareAndDelete(p.projectId,baseline),/project-delete-conflict/);
+ const current=await repo.get(p.projectId),bytes=JSON.stringify(current);let checks=0;
+ await assert.rejects(repo.compareAndDelete(p.projectId,bytes,()=>{if(++checks===2)throw Error('context-changed')}),/context-changed/);
+ assert.equal(JSON.stringify(await repo.get(p.projectId)),bytes);
+ await repo.compareAndDelete(p.projectId,bytes,()=>{});assert.equal(await repo.get(p.projectId),undefined);
+});
+test('journal deletion transaction guard preserves metadata and every chunk after reopen',async()=>{
+ const{repo,indexedDB}=await setup();
+ const m={id:'protected-journal',next:0,consumed:0,frames:0,rate:48000,closed:false,updatedAt:1};
+ await repo.createVocalJournal(m);await repo.appendVocalJournal(m.id,0,new Int16Array([14,-7,3]).buffer,{sentinel:'hash'});
+ const before=await repo.getVocalJournal(m.id);await repo.sealVocalJournal(m.id,before);const expected=await repo.getVocalJournal(m.id),chunk=await repo.getVocalJournalChunk(m.id+':0');
+ let checks=0;await assert.rejects(repo.deleteVocalJournal(m.id,expected,()=>{if(++checks===2)throw Error('repository-switched')}),/repository-switched/);
+ await repo.close();const fresh=fixture(indexedDB).a.indexedDbRepository();
+ assert.equal(JSON.stringify(await fresh.getVocalJournal(m.id)),JSON.stringify(expected));
+ assert.deepEqual(await fresh.getVocalJournalChunk(m.id+':0'),chunk);
+ await fresh.deleteVocalJournal(m.id,expected,()=>{});
+ assert.equal(await fresh.getVocalJournal(m.id),undefined);assert.equal(await fresh.getVocalJournalChunk(m.id+':0'),undefined);
+});

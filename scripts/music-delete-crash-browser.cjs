@@ -1,0 +1,22 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),{spawn}=require('node:child_process'),{once}=require('node:events'),{chromium}=require('playwright');
+test('journal and backup deletions roll back on SIGKILL and commit completely on retry',{timeout:120000},async()=>{
+ const source=fs.readFileSync('music-studio.js'),server=http.createServer((req,res)=>{res.end(req.url==='/app.js'?source:'<!doctype html><body>Delete recovery</body>')});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const origin='http://127.0.0.1:'+server.address().port,dir=fs.mkdtempSync('/tmp/nova-delete-crash-');let child,connection;
+ async function stop(){if(!child)return;if(child.exitCode!==null||child.signalCode!==null){child=null;return}const exit=once(child,'exit');process.kill(-child.pid,'SIGKILL');const result=await exit;assert.equal(result[1],'SIGKILL');child=null;connection=null}
+ async function open(){fs.rmSync(dir+'/DevToolsActivePort',{force:true});const executable=process.env.CHROME_EXECUTABLE||chromium.executablePath();assert.ok(fs.existsSync(executable),'Chromium executable missing');child=spawn(executable,['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});const deadline=Date.now()+15000;while(!fs.existsSync(dir+'/DevToolsActivePort')){if(Date.now()>deadline)throw Error('browser-start-timeout');await new Promise(r=>setTimeout(r,25))}connection=await chromium.connectOverCDP('http://127.0.0.1:'+fs.readFileSync(dir+'/DevToolsActivePort','utf8').split('\n')[0]);const page=await connection.contexts()[0].newPage();await page.goto(origin);await page.addScriptTag({url:origin+'/app.js'});await page.evaluate(()=>{window.app=MusicStudio;window.repo=app.indexedDbRepository();app.setRepository(repo)});return page}
+ try{
+  let page=await open();
+  await page.evaluate(async()=>{const meta={id:'journal',owner:'song',next:0,consumed:0,frames:0,rate:48000,updatedAt:1,closed:false};await repo.createVocalJournal(meta);await repo.appendVocalJournal('journal',0,new Int16Array([11,-22,33]).buffer,{test:'bytes'});const m=await repo.getVocalJournal('journal');await repo.sealVocalJournal('journal',m);await repo.putAutoBackup({backupId:'protected',createdAt:'2026-11-05T00:00:00Z',snapshot:{sentinel:'retained'}})});
+  const expected=await page.evaluate(async()=>({meta:await repo.getVocalJournal('journal'),bytes:Array.from(new Uint8Array((await repo.getVocalJournalChunk('journal:0')).bytes)),backups:await repo.listAutoBackups()}));
+  for(const kind of ['journal','backup']){
+   await page.evaluate(kind=>{const original=IDBObjectStore.prototype.delete;IDBObjectStore.prototype.delete=function(key){const request=original.call(this,key),store=this;if(!window.deleteHeld){window.deleteHeld=true;const loop=()=>{const q=store.get(key);q.onsuccess=loop};loop()}return request};window.pendingDelete=kind==='journal'?repo.getVocalJournal('journal').then(m=>repo.deleteVocalJournal('journal',m)):repo.deleteAutoBackup('protected');},kind);
+   await page.waitForFunction(()=>window.deleteHeld===true);await stop();page=await open();
+   const actual=await page.evaluate(async()=>({meta:await repo.getVocalJournal('journal'),bytes:Array.from(new Uint8Array((await repo.getVocalJournalChunk('journal:0')).bytes)),backups:await repo.listAutoBackups()}));assert.deepEqual(actual,expected,kind+' interrupted transaction must restore exact metadata, bytes and backup');
+  }
+  // An in-transaction guard must abort before any journal chunk is deleted.
+  assert.equal(await page.evaluate(async()=>{const m=await repo.getVocalJournal('journal');try{await repo.deleteVocalJournal('journal',m,()=>{throw Error('repository-switched')});return false}catch(e){return e.message==='repository-switched'&&!!await repo.getVocalJournalChunk('journal:0')}}),true);
+  await page.evaluate(async()=>{await repo.deleteVocalJournal('journal',await repo.getVocalJournal('journal'));await repo.deleteAutoBackup('protected')});await stop();page=await open();
+  assert.deepEqual(await page.evaluate(async()=>({meta:await repo.getVocalJournal('journal')||null,chunk:await repo.getVocalJournalChunk('journal:0')||null,backups:await repo.listAutoBackups()})),{meta:null,chunk:null,backups:[]});
+ }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
+});

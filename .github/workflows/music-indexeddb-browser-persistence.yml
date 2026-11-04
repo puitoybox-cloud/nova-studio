@@ -5,6 +5,7 @@ on:
       - 'music-studio.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
+      - 'scripts/music-delete-crash-browser.cjs'
       - 'tests/music-studio-final-export.test.js'
       - '.github/workflows/music-indexeddb-browser-persistence.yml'
   workflow_dispatch:
@@ -14,6 +15,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -28,6 +31,10 @@ jobs:
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
         run: node --test scripts/music-indexeddb-browser-persistence.cjs
+      - name: Verify interrupted journal and backup deletion
+        env:
+          NODE_PATH: /tmp/nova-browser-test/node_modules
+        run: node --test scripts/music-delete-crash-browser.cjs
       - name: Verify export-only production history and recovery contracts
         run: |
           node --test --test-name-pattern='export-only delivery' tests/music-studio-final-export.test.js
