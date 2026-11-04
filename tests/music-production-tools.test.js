@@ -19,3 +19,36 @@ test('cause-specific diagnosis measures render and layout separately without tou
 w.document={querySelectorAll:s=>s.includes('music-midi-note')?[{classList:{toggle(){time+=7}},dataset:{},getBoundingClientRect(){time+=4;return{width:100}}}]:[]};a.updateNoteLabelLayout();const d=await a.performanceDiagnose(p.projectId);assert.equal(d.ok,true);assert.equal(d.report.measurements.paintDispatch.lastMs,30);assert.ok(d.report.measurements.render.count>=1);assert.ok(d.report.measurements.noteLayout.lastMs>=25);assert.ok(d.report.causes.some(c=>c.id==='noteLayout-duration'));assert.equal(d.report.measurements.audio,null);assert.match(d.report.measurementNotes.join(' '),/合算不可|CPU/);assert.equal(JSON.stringify(await r.list()),before);assert.equal(JSON.stringify(a.state.projects),before);const fresh=await setup();assert.equal((await fresh.a.performanceDiagnose(fresh.p.projectId)).report.measurements.noteLayout,undefined);});
 test('performance observations stay bounded and preserve thrown render errors and stale rejection',async()=>{const {a,p,w}=await setup();let time=0;w.performance={now:()=>time};w.render=()=>{time+=2;throw Error('render-failed')};for(let i=0;i<70;i++){a.state.notice='x';assert.throws(()=>a.clearNotice(),/render-failed/);}let d=await a.performanceDiagnose(p.projectId);assert.equal(d.report.measurements.paintDispatch.count,64);assert.equal(d.report.measurements.paintDispatch.failed,64);w.navigator={storage:{estimate:async()=>{w.location.hash='#changed';return{usage:1}}}};assert.equal((await a.performanceDiagnose(p.projectId)).error,'performance-stale');});
 test('production playback timing is distinct from rendering and diagnosis does not create an audio context',async()=>{const {a,r,p,w}=await setup();for(const f of ['music-studio-meter-map.js','music-studio-measure-locks.js','music-studio-playback.js','music-studio-editor.js'])vm.runInNewContext(fs.readFileSync(f,'utf8'),w);let time=0,calls=0;w.performance={now:()=>time};w.MusicStudioAudio={createSynth(){throw Error('diagnosis-must-not-create-audio')},performanceSnapshot:()=>({count:0})};let d=await a.performanceDiagnose(p.projectId);assert.equal(d.report.audioContext,null);a.state.midiEditor=w.MusicStudioEditor.createCoordinatedSession(p);a.state.melodyAudio.synth={context:{currentTime:10,state:'running',sampleRate:48000,baseLatency:.01},supported:()=>true,unlock:async()=>true,stopPlayback(){},playTracks(tracks){calls++;time+=23;return{ok:true,noteCount:2,durationMs:1000,playbackStart:10,secondsPerTick:1/960}}};const before=JSON.stringify(await r.list());assert.equal((await a.editorPlayMelody()).ok,true);a.editorStopMelody(false);d=await a.performanceDiagnose(p.projectId);assert.equal(d.ok,true);assert.equal(calls,1);assert.equal(d.report.measurements.scheduling.lastMs,23);assert.ok(d.report.causes.some(c=>c.id==='scheduling-duration'&&c.threshold===10));assert.equal(d.report.audioContext.sampleRate,48000);assert.equal(JSON.stringify(await r.list()),before);assert.match(a.performanceView(p),/scheduling|23/);});
+
+test('material capture and import publish session-linked edits atomically and retain them in backup restore',async()=>{
+ const {a,r,p}=await setup();
+ assert.equal((await a.productionSessionSave(p.projectId,'start','Material work')).ok,true);
+ const session=(await r.get(p.projectId)).songVersions.sessions[0].id;
+ assert.equal((await a.materialCapture(p.projectId,{name:'Session material'})).ok,true);
+ const captured=await r.get(p.projectId);
+ const bundle=JSON.stringify({format:'nova-midi-library-v1',materials:captured.materialLibrary});
+ const file={size:bundle.length,text:async()=>bundle};
+ const cas=r.compareAndPut;
+ r.compareAndPut=async()=>{throw Error('quota')};
+ const before=JSON.stringify(await r.get(p.projectId));
+ assert.equal((await a.materialImport(p.projectId,file)).ok,false);
+ assert.equal((await a.materialCapture(p.projectId,{name:'Rejected'})).ok,false);
+ assert.equal(JSON.stringify(await r.get(p.projectId)),before);
+ assert.equal(JSON.stringify(a.state.projects[0]),before);
+ r.compareAndPut=cas;
+ assert.equal((await a.materialImport(p.projectId,file)).ok,true);
+ const saved=await r.get(p.projectId);
+ assert.equal(saved.materialLibrary.length,2);
+ assert.equal(saved.songVersions.edits.length,2);
+ for(const edit of saved.songVersions.edits){
+  assert.equal(edit.source,'material-library');assert.equal(edit.sessionId,session);
+  assert.equal(JSON.stringify(edit.groups),JSON.stringify(['music']));
+ }
+ const other=await setup();
+ assert.equal((await other.a.restoreBackup(a.backupObject(),{settings:false})).ok,true);
+ const restored=(await other.r.list()).find(x=>x.materialLibrary?.length===2);
+ assert.ok(restored);
+ assert.equal(JSON.stringify(restored.songVersions.edits),JSON.stringify(saved.songVersions.edits));
+ assert.equal(JSON.stringify(restored.songVersions.sessions),JSON.stringify(saved.songVersions.sessions));
+ assert.equal(JSON.stringify(restored.productionHistory),JSON.stringify(saved.productionHistory));
+});

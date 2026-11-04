@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-04 JST",
+  "passed": 1,
+  "failed": 0,
+  "entries": [
+    "productionDaySave",
+    "productionSessionSave",
+    "versionSave",
+    "materialCapture",
+    "materialImport",
+    "importText",
+    "finishedOpen",
+    "restoreBackup",
+    "pcmImportLongFile"
+  ],
+  "runtimeHashes": {
+    "music-studio.js": "06c15638fcf030e6a84d26f61ad3992fd1f63d071d8c4e39fb4cbdc27ff85e92"
+  },
+  "sourceHashes": {
+    "scripts/music-indexeddb-browser-persistence.cjs": "9c5a57f1ea5fe7f6ede8bc88b8c84a99c1eceda845b9b042b80612721d381493"
+  },
+  "logSha256": "9b24e902ed8ddadeb7a871ecc15b24c65abb08468e89ecf633bc5c0314958673",
+  "scope": "SIGKILL at held request, exact rollback, successful retry, exact committed restart; binary import verifies absent uncommitted blob and retained bytes. Not full MS22-A04 or MS30-A02."
+}
