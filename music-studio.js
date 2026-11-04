@@ -4284,8 +4284,9 @@
       const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
       try{archive=await createLongWavArchive({signal:{get aborted(){return token!==archiveTransfer.generation}}})}catch(error){return{ok:false,created:false,reason:error.message}}finally{archiveTransfer.busy=false;requestPaint()}
     }
-    let currentHistories;try{currentHistories=await readArchiveMidiHistories(target)}catch(error){return{ok:false,created:false,reason:error.message}}
-    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline||JSON.stringify(currentHistories)!==JSON.stringify(histories)||JSON.stringify(await target.listVocalJournals?.()||[])!==JSON.stringify(journals))return{ok:false,created:false,reason:'backup-state-conflict'};
+    let currentHistories,currentJournals;try{currentHistories=await readArchiveMidiHistories(target);currentJournals=await target.listVocalJournals?.()||[]}catch(error){return{ok:false,created:false,reason:error.message}}
+    // Recheck repository and snapshot only after every asynchronous read completes.
+    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline||JSON.stringify(currentHistories)!==JSON.stringify(histories)||JSON.stringify(currentJournals)!==JSON.stringify(journals))return{ok:false,created:false,reason:'backup-state-conflict'};
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
     const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};

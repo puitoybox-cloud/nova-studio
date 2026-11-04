@@ -7,13 +7,13 @@
     "scripts/music-indexeddb-browser-persistence.cjs": "07641542b51856f2fd2b01d1b62096a0d50032f9fba4976402e700591cf7847a"
   },
   "runtimeHashes": {
-    "music-studio.js": "e4ff1b0d5d1dc590d3aea8375b4336d5a488cfe56757ff5c5c3cc63ae572d5fa"
+    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "logSha256": "4d64435555a173b9b1ed6d9461a6203554db213aa5ccbd99f442bfd15a3750b6",
+  "logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "scope": "Real Chromium SIGKILL during automatic-backup publication preserves prior copies, project and session history; restart and retry publishes a complete snapshot before pruning. Existing dependency, material, create/fork and lyric scroll regressions pass. Physical power loss and hardware remain unverified.",
   "source": "Current-source automatic backup retention regression"
 }

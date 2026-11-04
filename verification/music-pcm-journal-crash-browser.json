@@ -1,11 +1,11 @@
 {
-  "date": "2026-11-04T12:30:35.234Z",
+  "date": "2026-11-04T12:38:30.406Z",
   "syntheticMicrophone": true,
   "physicalPowerLossTested": false,
   "processKill": "SIGKILL",
   "freshChromiumSameProfile": true,
   "captured": {
-    "id": "2513a365-46fd-4238-acc1-47fc76a5fdd2",
+    "id": "97b2ee00-dbf0-48f1-b850-b0d66f5ff281",
     "committedFrames": 49152,
     "rate": 48000,
     "phase": "recording",
@@ -13,9 +13,9 @@
   },
   "discovered": [
     {
-      "id": "2513a365-46fd-4238-acc1-47fc76a5fdd2",
+      "id": "97b2ee00-dbf0-48f1-b850-b0d66f5ff281",
       "frames": 49152,
-      "updatedAt": 1793795403842,
+      "updatedAt": 1793795878973,
       "closed": false
     }
   ],
@@ -28,5 +28,5 @@
     "repeatRejected": true,
     "remainingJournals": 0
   },
-  "sourceSHA256": "e4ff1b0d5d1dc590d3aea8375b4336d5a488cfe56757ff5c5c3cc63ae572d5fa"
+  "sourceSHA256": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913"
 }

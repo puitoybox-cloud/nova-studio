@@ -6,11 +6,13 @@ Baseline: Draft PR #585, HEAD `69d5c64f66f58d3878ebc0f64968b735f961e257`. GitHub
 
 Automatic backup captured its project/settings baseline before publication but read maxCopies after awaiting storage. Switching repositories or changing retention during the write could delete old copies under a different policy. Retention now uses the captured policy and checks the repository and exact project/settings baseline before cleanup and each deletion. A conflict retains old copies. Publication and cleanup outcomes are separate: failure to delete an old copy reports the newly committed backup as saved, with a cleanup warning.
 
+The final journal comparison previously awaited its read inside the conflict condition after checking the repository. A switch during that await could write a foreign snapshot into the old repository. A failing regression reproduced this; all reads now finish before the final synchronous repository/snapshot/journal comparison.
+
 A delayed backup list read from a previous repository could replace the current repository's restore choices; a delayed read failure could clear them. List results and errors now update state only while their captured repository remains current.
 
 ## Validation and boundaries
 
-- Final Node suite: 2,857 passed, 0 failed; includes seven new publication, retention-policy, repository-switch and stale-list regressions.
+- Final Node suite: 2,858 passed, 0 failed; includes eight new publication, retention-policy, repository-switch and stale-list regressions.
 - Real Chromium persistence/lyrics: 2 passed, 0 failed. Added actual SIGKILL while the automatic-backup put request succeeded inside an uncommitted real IndexedDB transaction. Reopening the same persistent profile retains the exact old backup, project, session, daily and material history. Retry saves the exact complete project collection and then prunes the old copy. Existing create/fork, material and missing-binary interruption scenarios also pass.
 - Checkpoint browser: completed=true, errors=[], external=[] on current sources. Acceptance hashes refreshed after successful current-source execution.
 - Synthetic-microphone PCM recording: actual SIGKILL during recording, fresh-process discovery, exact committed PCM equality, full Archive restore equality and duplicate recovery refusal passed. This is not physical power-loss or microphone hardware acceptance.
