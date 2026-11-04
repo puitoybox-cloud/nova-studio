@@ -206,7 +206,7 @@
     details:['projectName','songTitle','purpose','status']
   };
   const AUTOMATIC_EDIT_SOURCES={
-    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し'
+    'midi-editor':'MIDI編集','project-editor':'プロジェクト編集','lyrics-editor':'歌詞編集','audio-editor':'音声編集','vocal-editor':'歌声編集','instrument-editor':'楽器設定','final-export':'完成書き出し','material-library':'MIDI素材'
   };
   const versionPanel={open:false,busy:false,draft:null,preview:null,message:'',generation:0,abort:null};
   const versionProof=new WeakMap();
@@ -265,6 +265,9 @@
     // Keep these append-only records outside checkpoint adoption, but include
     // their publication in the session's automatic production timeline.
     if(source==='final-export'&&['finalExportHistory','finalExportDeliveries'].some(field=>comparable(previous,field)!==comparable(next,field))&&!groups.includes('audio'))groups.push('audio');
+    // Material publication belongs to the production timeline, while checkpoint
+    // adoption continues to leave the reusable library untouched.
+    if(source==='material-library'&&comparable(previous,'materialLibrary')!==comparable(next,'materialLibrary')&&!groups.includes('music'))groups.push('music');
     if(!groups.length)return next;
     const ledger=versionLedger(next),edits=ledger.edits||(ledger.edits=[]);if(edits.length>=512)edits.splice(0,edits.length-511);
     const active=ledger.sessions?.find(session=>session.endedAt===undefined);
@@ -5000,7 +5003,7 @@
       for(const f of ['tempoMap','timeSignatureMap','keySignatureMap'])if(midi[f])midi[f]=midi[f].filter(e=>e.tick===0||e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick===0?0:e.tick-start}));
       if(midi.markers)midi.markers=midi.markers.filter(e=>e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick-start}));
       const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:p.musicalSettings.bpm,key:p.musicalSettings.key,createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
-      next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id});if(!validateProject(next).valid)throw Error('material-project-invalid');
+      next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
       const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
@@ -5008,7 +5011,7 @@
   async function materialImport(owner,file){
     if(materialSaving||workspaceBusy())return{ok:false,error:'material-busy'};const target=repository,p=state.projects.find(p=>p.projectId===owner),baseline=JSON.stringify(p);materialSaving=true;
     try{if(!p||!file||!Number.isSafeInteger(file.size)||file.size>2097152)throw Error('material-file-invalid');const text=await file.text();if(text.length>2097152)throw Error('material-library-capacity');const bundle=JSON.parse(text);if(bundle.format!=='nova-midi-library-v1')throw Error('material-file-format');materialValidate(bundle.materials);if(!bundle.materials.length)throw Error('material-empty');
-      const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...bundle.materials.map(m=>({...clone(m),id:uuid()}))];materialValidate(next.materialLibrary);next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:bundle.materials.length});if(!validateProject(next).valid)throw Error('material-project-invalid');
+      const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...bundle.materials.map(m=>({...clone(m),id:uuid()}))];materialValidate(next.materialLibrary);next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:bundle.materials.length});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
       const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
