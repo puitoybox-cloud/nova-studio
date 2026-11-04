@@ -122,12 +122,15 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   // request succeeds but before its transaction can commit. Keep the transaction
   // active with real IDB requests; do not replace the repository with a mock.
   let interruptedPage=recoveredPage;
-  for(const entry of ['productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject']){
+  for(const entry of ['runAutoBackupCheck','productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject']){
    if(entry==='recoverMissingBinary')await interruptedPage.evaluate(async()=>{
     const repo=MusicStudio.indexedDbRepository(),p=await repo.get('chromium-restart-history');
     const blob=new Blob(['durable-original']),hashes=[Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('')];
     p.fileReferences=[{name:'source.wav',binary:{format:'nova-reference-binary-v1',id:'crash-recovery-binary',name:'source.wav',size:blob.size,type:'audio/wav',hashes}}];p.revision++;await repo.put(p);
    });
+   if(entry==='runAutoBackupCheck')await interruptedPage.evaluate(async()=>{await MusicStudio.indexedDbRepository().putAutoBackup({backupId:'last-good',createdAt:'2026-11-01T00:00:00Z',signature:'old',snapshot:{protected:true}})});
+   const beforeProjects=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().list());
+   const beforeBackups=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().listAutoBackups());
    const beforeIds=await interruptedPage.evaluate(async()=>(await MusicStudio.indexedDbRepository().list()).map(p=>p.projectId).sort());
    const before=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
    const armed=new Promise(resolve=>interruptedPage.on('console',m=>{if(m.text()==='NOVA_TRANSACTION_ACTIVE')resolve()}));
@@ -135,10 +138,10 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     for(const method of ['put','add']){const original=IDBObjectStore.prototype[method];
     IDBObjectStore.prototype[method]=function(value,...args){
      const request=original.call(this,value,...args);
-     if(value?.projectId&&(value.projectId==='chromium-restart-history'||['createAIProject','duplicateProject'].includes(entry))){
+     if((entry==='runAutoBackupCheck'&&value?.backupId)||value?.projectId&&(value.projectId==='chromium-restart-history'||['createAIProject','duplicateProject'].includes(entry))){
       request.addEventListener('success',()=>{
        const store=this;
-       const keepAlive=()=>{const next=store.get(value.projectId);next.onsuccess=keepAlive};
+       const keepAlive=()=>{const next=store.get(value.projectId||value.backupId);next.onsuccess=keepAlive};
        keepAlive();console.log('NOVA_TRANSACTION_ACTIVE');
       });
      }
@@ -147,6 +150,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     const app=MusicStudio;app.setRepository(app.indexedDbRepository());
     window.pendingSave=app.indexedDbRepository().get('chromium-restart-history').then(p=>{
      app.state.projects=[p];
+     if(entry==='runAutoBackupCheck'){app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});return app.runAutoBackupCheck('2026-11-04T00:00:00Z')}
      if(entry==='createAIProject')return app.createAIProject({projectInput:{projectId:'crash-new-ai',projectName:'Interrupted new song'},midiData:{ppq:480,tracks:[]}});
      if(entry==='duplicateProject')return app.duplicateProject(p.projectId);
      if(entry==='recoverMissingBinary')return app.recoverMissingBinary(p.projectId,'crash-recovery-binary',new Blob(['durable-original']));
@@ -162,8 +166,10 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    const resumed=await browser.newPage();await resumed.goto(origin);await resumed.addScriptTag({url:origin+'/music-studio.js'});
    assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history')),before,'interrupted transaction must preserve the complete prior project and history');
    assert.deepEqual(await resumed.evaluate(async()=>(await MusicStudio.indexedDbRepository().list()).map(p=>p.projectId).sort()),beforeIds,'interrupted create or fork must not publish a partial project');
+   assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().listAutoBackups()),beforeBackups,'interrupted publication must preserve previous backup copies');
    assert.equal(await resumed.evaluate(async entry=>{
     const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);app.state.projects=await repo.list();const id='chromium-restart-history';
+    if(entry==='runAutoBackupCheck'){app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});return (await app.runAutoBackupCheck('2026-11-04T00:00:00Z')).created}
     if(entry==='createAIProject')return Boolean((await app.createAIProject({projectInput:{projectId:'crash-new-ai',projectName:'Retried new song'},midiData:{ppq:480,tracks:[]}})).projectId);
     if(entry==='duplicateProject')return (await app.duplicateProject(id)).ok;
     if(entry==='recoverMissingBinary'){if(await repo.getLongWav('crash-recovery-binary'))throw Error('uncommitted binary survived');return (await app.recoverMissingBinary(id,'crash-recovery-binary',new Blob(['durable-original']))).ok}
@@ -172,7 +178,8 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     return (await app.productionDaySave(id,'2026-11-04','Retry after crash')).ok;
    },entry),true,entry+' retry must work after restart');
    const retried=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
-   if(['createAIProject','duplicateProject'].includes(entry)){assert.deepEqual(retried,before,'creation/fork must preserve source history');const saved=await resumed.evaluate(async entry=>(await MusicStudio.indexedDbRepository().list()).filter(p=>p.projectId==='crash-new-ai'||p.productionHistory?.at(-1)?.type==='project-duplicate'),entry);assert.equal(saved.length,entry==='duplicateProject'?2:1);assert.ok(saved.some(p=>p.productionHistory.at(-1)?.type===(entry==='createAIProject'?'project-create':'project-duplicate')))}
+   if(entry==='runAutoBackupCheck'){assert.deepEqual(retried,before);const copies=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().listAutoBackups());assert.equal(copies.length,1);assert.notEqual(copies[0].backupId,'last-good');assert.deepEqual(copies[0].snapshot.projects,beforeProjects)}
+   else if(['createAIProject','duplicateProject'].includes(entry)){assert.deepEqual(retried,before,'creation/fork must preserve source history');const saved=await resumed.evaluate(async entry=>(await MusicStudio.indexedDbRepository().list()).filter(p=>p.projectId==='crash-new-ai'||p.productionHistory?.at(-1)?.type==='project-duplicate'),entry);assert.equal(saved.length,entry==='duplicateProject'?2:1);assert.ok(saved.some(p=>p.productionHistory.at(-1)?.type===(entry==='createAIProject'?'project-create':'project-duplicate')))}
    else if(entry==='productionDaySave')assert.equal(retried.songVersions.days.find(d=>d.day==='2026-11-04')?.note,'Retry after crash');
    else if(entry==='recoverMissingBinary'){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'dependency-recovery');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.equal(await resumed.evaluate(async()=>await (await MusicStudio.indexedDbRepository().getLongWav('crash-recovery-binary')).blob.text()),'durable-original')}
    else{assert.equal(retried.materialLibrary.length,before.materialLibrary.length+(entry==='materialImport'?before.materialLibrary.length:1));assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'material-library')}

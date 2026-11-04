@@ -1,19 +1,19 @@
 {
   "date": "2026-11-04 JST",
-  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-save-browser/node_modules node --test scripts/music-indexeddb-browser-persistence.cjs",
+  "command": "CHROME_EXECUTABLE=/root/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell NODE_PATH=/tmp/nova-old-browser/node_modules node --test scripts/music-indexeddb-browser-persistence.cjs",
   "passed": 2,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-indexeddb-browser-persistence.cjs": "0c1bffb13a2c4ee0337733f33a0271f0fdef31eeecdea08182fa892f5bf1740a"
+    "scripts/music-indexeddb-browser-persistence.cjs": "07641542b51856f2fd2b01d1b62096a0d50032f9fba4976402e700591cf7847a"
   },
   "runtimeHashes": {
-    "music-studio.js": "c1e4cb551ea25e18a0c77e87bbff5d38a1efba6fd723b767471ccb8a55da0b0e"
+    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "logSha256": "3ef129bcc3eeaa48293ec797a18e5e48b207644438302694db95100f334fe188",
-  "scope": "Real Chromium process SIGKILL during missing-binary recovery, atomic project/history/binary rollback and retry; saved lyric follow DOM scroll and restart-safe timing. No hardware or power-loss claim.",
-  "source": "Successful current-source new-project and fork safety regression"
+  "logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+  "scope": "Real Chromium SIGKILL during automatic-backup publication preserves prior copies, project and session history; restart and retry publishes a complete snapshot before pruning. Existing dependency, material, create/fork and lyric scroll regressions pass. Physical power loss and hardware remain unverified.",
+  "source": "Current-source automatic backup retention regression"
 }

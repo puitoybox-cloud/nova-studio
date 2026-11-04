@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-04 JST",
+  "baselinePR": 585,
+  "baselineHead": "69d5c64f66f58d3878ebc0f64968b735f961e257",
+  "node": {
+    "passed": 2858,
+    "failed": 0,
+    "command": "node --test --test-concurrency=4 tests/*.test.js"
+  },
+  "indexedDbBrowser": {
+    "passed": 2,
+    "failed": 0,
+    "automaticBackupInterruptedBeforeCommit": true,
+    "previousCopiesIdentical": true,
+    "retrySnapshotIdentical": true
+  },
+  "checkpointBrowser": {
+    "completed": true,
+    "errors": [],
+    "external": []
+  },
+  "recordingCrash": {
+    "PCM": "passed",
+    "encoded": "passed",
+    "syntheticMicrophone": true,
+    "physicalPowerLossTested": false
+  },
+  "requirements": {
+    "newlyVerified": [],
+    "verified": 62,
+    "remaining": 73,
+    "total": 135,
+    "rate": 45.93
+  },
+  "sourceHashes": {
+    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913",
+    "tests/music-autobackup-retention-race.test.js": "2a145fd40de2eb14a1b2dbb194f774398443fd313d1c582e8dff56b3840818c2",
+    "scripts/music-indexeddb-browser-persistence.cjs": "07641542b51856f2fd2b01d1b62096a0d50032f9fba4976402e700591cf7847a",
+    "scripts/music-pcm-journal-crash-browser.js": "881a4cec8911ec3173bb19936b65a89f2c1aa54233516c878c73c8a7e1f0a582",
+    "scripts/music-encoded-journal-crash-browser.js": "d9d1b9e37a1287a3e4d149c152f3cbd02dfc8b06a801d6af6afdb62089cb6451"
+  },
+  "logHashes": {
+    "node": "df2f3f58f81f57865805a56d3319af534e29dbd93a714c9b718fc05b898e4d9a",
+    "browser": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+    "PCM": "2c64c66bd0d9d9188b8b65a1ebc6e91354e3ed4912ccdb52456b2a5f0eafc1c3",
+    "encoded": "5b5bf344a5449406ba6f1cde9ecc7667124d10bd4e3d5f0ab0f328b2dc5f4bfa"
+  },
+  "finalJournalReadRepositoryConflict": "reproduced before fix; rejected before publication after fix"
+}

@@ -1,11 +1,11 @@
 {
   "date": "2026-11-04 JST",
   "command": "node --test --test-concurrency=4 tests/*.test.js",
-  "passed": 2850,
+  "passed": 2858,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 145131.778982,
+  "durationMs": 130687.371071,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -13,6 +13,7 @@
     "tests/music-ai-form-preservation.test.js": "f27680430d899a1b1c940ff2fcb65996c9ba1d2134974312faf5630ef9dee02c",
     "tests/music-ai-landscape-focus.test.js": "18b6a533c7c4d503918fe1c04472a5380b44e5cb3083c12ce2f736b72f6c401f",
     "tests/music-ai-partial-note-review.test.js": "64d0d7d6d58a12e0fe44a452aa8e4a101f03833d8587885268372a255c84925d",
+    "tests/music-autobackup-retention-race.test.js": "2a145fd40de2eb14a1b2dbb194f774398443fd313d1c582e8dff56b3840818c2",
     "tests/music-candidate-audition-review-stability.test.js": "daf06239296eb7b3777a50117adc1c5acd38a7c5768b706d428c7d0a603ab40b",
     "tests/music-instrument-production.test.js": "9c7bf1e5666fbc9fb9f8cb4dc6a127a023fa39bced8208790589d68ebb097abc",
     "tests/music-local-singing-cancellation.test.js": "aa77d0ecea1747bef8507a47fd75b087795bc7a05262cbc71c394f67e19df6ee",
@@ -203,7 +204,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "c1e4cb551ea25e18a0c77e87bbff5d38a1efba6fd723b767471ccb8a55da0b0e",
+    "music-studio.js": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14"
