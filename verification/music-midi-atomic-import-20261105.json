@@ -1,26 +1,38 @@
 {
   "date": "2026-11-05 JST",
-  "head": "7f91021eb622380e1505f54b42a1e046daf3f804",
+  "head": "d9238f84738c03e1f311f7c88785492771f7464e",
   "runtimeHashes": {
-    "music-studio.js": "b4898d31f0cdd4176a374b5ec3575181ce3523b960a7d29cfea6da27042341c1"
+    "music-studio.js": "5793845c36d4e8ee5a01c27252b1db608d39f82a569f5607e3e84e224d8ede1e"
   },
   "sourceHashes": {
     "scripts/music-midi-import-atomic-browser.cjs": "f191e9200d3f3c9dfb5a4847ee9547241a3230e4812ee5f0bd343ed350b61f8b",
-    "tests/music-studio-logic-pro.test.js": "f34a3090b37a5f3c0d898b1cd1ab83ae7f350ba737b1b657ad8118061fed6d14"
+    "tests/music-studio-logic-pro.test.js": "2432acc115dc5fe7370ed8ca63e3aaa89a90ab361bc19481258a914546ebab0f"
   },
   "focusedNode": {
-    "passed": 193,
+    "passed": 195,
     "failed": 0
   },
   "browser": {
     "passed": 1,
     "failed": 0,
-    "runId": 42018097276,
-    "jobId": 127213602147,
+    "runId": 42019063443,
+    "jobId": 127216918661,
     "step": 7,
     "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42018097276/job/127213602147"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42019063443/job/127216918661"
   },
   "scope": "Atomic new/fork repository transaction, receipt collision rollback, request cancellation, stale source refusal, completed write followed by real Chromium SIGKILL/restart, collision-safe retry. Public entry crash before commit and uncertain-completion cases remain open.",
-  "newVerified": []
+  "newVerified": [],
+  "completeNode": {
+    "passed": 2881,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "baselineExportRegression": {
+    "baseline": "ecbec06e261fb7a0a6717d5131115a17c61ff1c0",
+    "tests": 2,
+    "failedOnBaseline": 2,
+    "passedOnFix": 2
+  }
 }
