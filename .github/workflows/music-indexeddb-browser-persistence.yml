@@ -6,6 +6,7 @@ on:
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
       - 'scripts/music-delete-crash-browser.cjs'
+      - 'scripts/music-midi-import-atomic-browser.cjs'
       - 'tests/music-studio-final-export.test.js'
       - '.github/workflows/music-indexeddb-browser-persistence.yml'
   workflow_dispatch:
@@ -35,6 +36,10 @@ jobs:
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
         run: node --test scripts/music-indexeddb-browser-persistence.cjs
+      - name: Verify atomic MIDI import rollback and process restart
+        env:
+          NODE_PATH: /tmp/nova-browser-test/node_modules
+        run: node --test scripts/music-midi-import-atomic-browser.cjs
       - name: Verify interrupted journal and backup deletion
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
