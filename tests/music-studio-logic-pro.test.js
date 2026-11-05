@@ -1629,3 +1629,19 @@ test('Logic instrument binding survives repository reopen and complete project b
  const backup=JSON.parse(JSON.stringify(app.backupObject())),fresh=app.memoryRepository();app.setRepository(fresh);const restored=await app.restoreBackup(backup,{settings:false,projects:true,safetyCopy:false});assert.equal(restored.ok,true,JSON.stringify(restored));const row=(await fresh.list()).find(p=>p.projectId==='logic-binding');assert.equal(JSON.stringify(row.logicInstruments),JSON.stringify(reopened.logicInstruments));assert.equal(n.undo(row,{approved:true}).midiData.tracks[0].notes[0].velocity,80);app.state.projects=[row];assert.match(app.renderRoute('music-studio/logic-pro'),/NOVA AI Instrument Assistant/);
  const controls=Object.fromEntries(Object.entries({novaLogicMachine:'mac',novaLogicTrack:'piano',novaLogicRequest:'ピアノをもっと温かい音にして',novaLogicVelocity:'0.8',novaLogicTiming:'0',novaLogicLength:'1'}).map(([id,value])=>['#'+id,{value}]));window.document={querySelector:s=>controls[s]||null,querySelectorAll:()=>[]};app.logicInstrumentRecommend();controls['#novaLogicVelocity'].value='1.1';const stale=await app.logicInstrumentApply(0);assert.equal(stale.ok,false);assert.match(stale.error,/form-changed/);assert.equal(app.state.projects[0].midiData.tracks[0].notes[0].velocity,64);controls['#novaLogicVelocity'].value='0.8';app.logicInstrumentRecommend();const approved=await app.logicInstrumentApply(0);assert.equal(approved.ok,true,JSON.stringify(approved));assert.equal(approved.project.midiData.tracks[0].notes[0].velocity,51);
 });
+
+for(const mode of ['new','duplicate'])for(const boundary of ['project','history'])test(`MIDI ${mode} import keeps committed result and history in original repository after ${boundary} switch`,async()=>{
+ const {app,window}=load(),original=app.memoryRepository(),other=app.memoryRepository(),source=app.makeProject({projectId:'source',projectName:'Original'}),sentinel=app.makeProject({projectId:'other',projectName:'Other repository'});
+ app.setRepository(original);await original.put(source);app.state.projects=[source];await other.put(sentinel);
+ const bytes=window.MusicStudioMidi.createMidiFile(window.MusicStudioMidi.createTestMidiData()).bytes;
+ await app.inspectMidiFile(file('switch.mid',bytes));
+ const switchView=()=>{app.setRepository(other);app.state.projects=[sentinel];app.state.midiImportPreview={replacement:true};window.location.hash='#music-studio/projects'};
+ if(boundary==='project'){const method=mode==='new'?'compareAndPut':'compareAndFork',write=original[method];original[method]=async(...args)=>{const result=await write(...args);switchView();return result}}
+ else{const write=original.putMidiImportHistory;original.putMidiImportHistory=async value=>{await write(value);switchView()}}
+ const before=JSON.stringify(await original.get('source')),result=await app.saveMidiImport(mode);
+ assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);
+ assert.ok(await original.get(result.project.projectId));assert.equal(JSON.stringify(await original.get('source')),before);
+ assert.equal((await original.listMidiImportHistory()).length,1);assert.equal((await other.listMidiImportHistory()).length,0);
+ assert.deepEqual(app.state.projects.map(p=>p.projectId),['other']);assert.equal(app.state.midiImportPreview.replacement,true);assert.equal(window.location.hash,'#music-studio/projects');
+ app.setRepository(original);await app.refresh();assert.ok(app.state.projects.some(p=>p.projectId===result.project.projectId));
+});

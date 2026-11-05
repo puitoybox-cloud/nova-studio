@@ -122,7 +122,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   // request succeeds but before its transaction can commit. Keep the transaction
   // active with real IDB requests; do not replace the repository with a mock.
   let interruptedPage=recoveredPage;
-  for(const entry of ['runAutoBackupCheck','productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject']){
+  for(const entry of ['runAutoBackupCheck','productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject','materialCreate','versionSave','productionSessionSave']){
    if(entry==='recoverMissingBinary')await interruptedPage.evaluate(async()=>{
     const repo=MusicStudio.indexedDbRepository(),p=await repo.get('chromium-restart-history');
     const blob=new Blob(['durable-original']),hashes=[Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('')];
@@ -138,7 +138,7 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     for(const method of ['put','add']){const original=IDBObjectStore.prototype[method];
     IDBObjectStore.prototype[method]=function(value,...args){
      const request=original.call(this,value,...args);
-     if((entry==='runAutoBackupCheck'&&value?.backupId)||value?.projectId&&(value.projectId==='chromium-restart-history'||['createAIProject','duplicateProject'].includes(entry))){
+     if((entry==='runAutoBackupCheck'&&value?.backupId)||value?.projectId&&(value.projectId==='chromium-restart-history'||['createAIProject','duplicateProject','materialCreate'].includes(entry))){
       request.addEventListener('success',()=>{
        const store=this;
        const keepAlive=()=>{const next=store.get(value.projectId||value.backupId);next.onsuccess=keepAlive};
@@ -153,6 +153,9 @@ test('real Chromium IndexedDB persists production history and backup restore acr
      if(entry==='runAutoBackupCheck'){app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});return app.runAutoBackupCheck('2026-11-04T00:00:00Z')}
      if(entry==='createAIProject')return app.createAIProject({projectInput:{projectId:'crash-new-ai',projectName:'Interrupted new song'},midiData:{ppq:480,tracks:[]}});
      if(entry==='duplicateProject')return app.duplicateProject(p.projectId);
+     if(entry==='materialCreate')return app.materialCreate(p.projectId,p.materialLibrary[0].id);
+     if(entry==='versionSave')return app.versionSave(p.projectId,'Interrupted checkpoint');
+     if(entry==='productionSessionSave')return app.productionSessionSave(p.projectId,'finish','Interrupted finish');
      if(entry==='recoverMissingBinary')return app.recoverMissingBinary(p.projectId,'crash-recovery-binary',new Blob(['durable-original']));
      if(entry==='materialCapture')return app.materialCapture(p.projectId,{name:'Interrupted material'});
      if(entry==='materialImport'){const text=app.materialExport(p.projectId).text;return app.materialImport(p.projectId,{size:text.length,text:async()=>text})}
@@ -172,6 +175,9 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     if(entry==='runAutoBackupCheck'){app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});return (await app.runAutoBackupCheck('2026-11-04T00:00:00Z')).created}
     if(entry==='createAIProject')return Boolean((await app.createAIProject({projectInput:{projectId:'crash-new-ai',projectName:'Retried new song'},midiData:{ppq:480,tracks:[]}})).projectId);
     if(entry==='duplicateProject')return (await app.duplicateProject(id)).ok;
+    if(entry==='materialCreate')return (await app.materialCreate(id,app.state.projects.find(p=>p.projectId===id).materialLibrary[0].id)).ok;
+    if(entry==='versionSave')return (await app.versionSave(id,'Retry checkpoint')).ok;
+    if(entry==='productionSessionSave')return (await app.productionSessionSave(id,'finish','Retried finish')).ok;
     if(entry==='recoverMissingBinary'){if(await repo.getLongWav('crash-recovery-binary'))throw Error('uncommitted binary survived');return (await app.recoverMissingBinary(id,'crash-recovery-binary',new Blob(['durable-original']))).ok}
     if(entry==='materialCapture')return (await app.materialCapture(id,{name:'Retry material'})).ok;
     if(entry==='materialImport'){const text=app.materialExport(id).text;return (await app.materialImport(id,{size:text.length,text:async()=>text})).ok}
@@ -179,7 +185,10 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    },entry),true,entry+' retry must work after restart');
    const retried=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
    if(entry==='runAutoBackupCheck'){assert.deepEqual(retried,before);const copies=await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().listAutoBackups());assert.equal(copies.length,1);assert.notEqual(copies[0].backupId,'last-good');assert.deepEqual(copies[0].snapshot.projects,beforeProjects)}
-   else if(['createAIProject','duplicateProject'].includes(entry)){assert.deepEqual(retried,before,'creation/fork must preserve source history');const saved=await resumed.evaluate(async entry=>(await MusicStudio.indexedDbRepository().list()).filter(p=>p.projectId==='crash-new-ai'||p.productionHistory?.at(-1)?.type==='project-duplicate'),entry);assert.equal(saved.length,entry==='duplicateProject'?2:1);assert.ok(saved.some(p=>p.productionHistory.at(-1)?.type===(entry==='createAIProject'?'project-create':'project-duplicate')))}
+   else if(['createAIProject','duplicateProject','materialCreate'].includes(entry)){assert.deepEqual(retried,before,'creation/fork must preserve source history');const saved=await resumed.evaluate(async entry=>(await MusicStudio.indexedDbRepository().list()).filter(p=>p.projectId==='crash-new-ai'||p.productionHistory?.at(-1)?.type==='project-duplicate'),entry);assert.equal(saved.length,entry==='duplicateProject'?2:1);assert.ok(saved.some(p=>p.productionHistory.at(-1)?.type===(entry==='createAIProject'?'project-create':'project-duplicate')))}
+   else if(entry==='materialCreate'){assert.deepEqual(retried,before);const copies=await resumed.evaluate(async()=>(await MusicStudio.indexedDbRepository().list()).filter(p=>p.productionHistory?.at(-1)?.type==='material-create'));assert.equal(copies.length,1);assert.equal(copies[0].productionHistory.at(-1).sourceProjectId,before.projectId);assert.deepEqual(copies[0].midiData.tracks.map(t=>t.notes.map(n=>n.pitch)),before.materialLibrary[0].midiData.tracks.map(t=>t.notes.map(n=>n.pitch)))}
+   else if(entry==='versionSave'){assert.equal(retried.songVersions.checkpoints.length,before.songVersions.checkpoints.length+1);assert.equal(retried.songVersions.checkpoints.at(-1).name,'Retry checkpoint');assert.equal(retried.songVersions.checkpoints.at(-1).sessionId,before.songVersions.sessions[0].id)}
+   else if(entry==='productionSessionSave'){assert.ok(retried.songVersions.sessions.at(-1).endedAt);assert.equal(retried.songVersions.sessions.at(-1).endNote,'Retried finish')}
    else if(entry==='productionDaySave')assert.equal(retried.songVersions.days.find(d=>d.day==='2026-11-04')?.note,'Retry after crash');
    else if(entry==='recoverMissingBinary'){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'dependency-recovery');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.equal(await resumed.evaluate(async()=>await (await MusicStudio.indexedDbRepository().getLongWav('crash-recovery-binary')).blob.text()),'durable-original')}
    else{assert.equal(retried.materialLibrary.length,before.materialLibrary.length+(entry==='materialImport'?before.materialLibrary.length:1));assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'material-library')}

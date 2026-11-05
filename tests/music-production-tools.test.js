@@ -40,3 +40,10 @@ test('material capture and import publish session-linked edits atomically and re
  assert.equal(JSON.stringify(await r.get(p.projectId)),baseline);
  assert.equal(JSON.stringify(a.state.projects.find(x=>x.projectId===p.projectId)),baseline);
 });
+
+test('committed material fork retains source and receipt without entering replacement repository',async()=>{
+ const{a,r,p}=await setup(),saved=await a.materialCapture(p.projectId,{name:'safe fork'});assert.equal(saved.ok,true);const before=JSON.stringify(await r.get(p.projectId)),other=a.memoryRepository(),sentinel=a.makeProject({projectId:'other',projectName:'Other'});await other.put(sentinel);
+ const fork=r.compareAndFork;r.compareAndFork=async(...args)=>{const result=await fork(...args);a.setRepository(other);a.state.projects=[sentinel];return result};
+ const result=await a.materialCreate(p.projectId,saved.material.id);assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.deepEqual(a.state.projects.map(p=>p.projectId),['other']);assert.equal(JSON.stringify(await r.get(p.projectId)),before);assert.equal((await other.list()).length,1);
+ a.setRepository(r);await a.refresh();const copy=a.state.projects.find(p=>p.projectId===result.project.projectId);assert.equal(copy.productionHistory.at(-1).type,'material-create');assert.equal(copy.productionHistory.at(-1).sourceProjectId,p.projectId);
+});
