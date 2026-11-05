@@ -21,10 +21,62 @@ Nine new regressions cover new/duplicate MIDI import at project and history boun
 | Session finish | Existing Node migration/recovery regressions | Added SIGKILL/restart/retry | All Session public boundaries |
 | Refresh | Repository switch and same-repository editor mutation reject stale list | Existing reopen coverage | Complete concurrent background-reader audit |
 
-Browser extensions are pending execution until a successful exact-source CI step is recorded. No local browser run is claimed: this runtime has no Chrome executable.
+Browser extensions passed on HEAD ce24a31d47f1b55448c7e333dbebee1ad33d79d1: run 41989093194 / job 127116774549, step 6 (both browser tests successful). Steps 7–8 also passed, covering interrupted journal/backup deletion, Archive rollback/retry, export-only history and production-history contracts. Checkpoint UI/restart passed on the same HEAD: run 41989093155 / job 127116774635, step 7. Both complete workflows succeeded. No local browser run is claimed: this runtime has no Chrome executable. Additional focused storage/recovery suite: 21 passed. Auto-Finish helper suite: 22 passed.
 
 ## Requirements
 
 MS22-A04 and MS30-A02 remain open; these additional entrance checks do not establish their complete acceptance. No new verified IDs. 62/135 verified, 73 open, 45.93%. The 73 consist of 10 existing-implementation acceptance gaps and 63 requirements awaiting specification/model/licensing decisions. B=30 and C=18 remain separately managed. MS12-A02 (all long-recording recovery paths), MS19-A03 (including discontinuous true-peak conformance), and MS30-A03 (all finished-version edit entrances) also lack complete evidence; no relaxed acceptance or model selection is made here.
 
 Next priority: MIDI project/import-history atomic publication; remaining binary/save/journal entrance crash cases; full finished-snapshot immutability coverage. Physical Mac, microphone, listening and actual power loss remain unverified.
+
+## Remaining entrance inventory
+
+Reconciled against the 51 lexical publication sites in RECOVERY_LYRICS_ACCEPTANCE_20261104.md. Repeated methods in a function are grouped below; delegated creation writes remain public entries. Lines refer to this production source. Every row still lacks complete entry-level interruption/uncertain-commit/session-history acceptance, even where focused Node/browser cases pass. This table does not count shared transaction tests as full public-entry acceptance.
+
+| Production function | Current source line | Whole entry accepted |
+| --- | ---: | --- |
+| `versionCommit` | 357 | No |
+| `loadSettings` | 648 | No |
+| `importScoreVocal` | 892 | No |
+| `saveLyricsAssignment` | 1059 | No |
+| `pcmCommit` | 1412 | No |
+| `retainReferenceFile` | 1440 | No |
+| `recoverMissingBinary` | 1568 | No |
+| `restoreLongWavArchive` | 1686 | No |
+| `pcmImportLongFile` | 1783 | No |
+| `vocalRecoverJournal` | 2000 | No |
+| `vocalRecoverEncodedJournal` | 2026 | No |
+| `vocalJournalAction` | 2047 | No |
+| `vocalImportRescue` | 2073 | No |
+| `vocalPCMRecorder` | 2108 | No |
+| `vocalStart` | 2128 | No |
+| `vocalSave` | 2182 | No |
+| `vocalEdit` | 2193 | No |
+| `vocalWorkspaceWrite` | 2210 | No |
+| `vocalReplacementApply` | 2420 | No |
+| `vocalCompEdit` | 2434 | No |
+| `vocalCompSave` | 2449 | No |
+| `vocalPublishForMix` | 2507 | No |
+| `saveWorkspace` | 3124 | No |
+| `createMidiTestProject` | 3256 | No |
+| `performMidiExport` | 3258 | No |
+| `saveMidiImport` | 3432 | No |
+| `importExternalSongFile` | 3443 | No |
+| `instrumentProjectCommit` | 3603 | No |
+| `saveMidiEditorSnapshot` | 4061 | No |
+| `createAIProject` | 4072 | No |
+| `submitCreate` | 4147 | No |
+| `duplicateProject` | 4164 | No |
+| `importText` | 4183 | No |
+| `persistSettings` | 4218 | No |
+| `restoreBackup` | 4241 | No |
+| `performAutoBackupCheck` | 4295 | No |
+| `saveCurrentProject` | 4334 | No |
+| `midiRenderForMix` | 4690 | No |
+| `finalSave` | 4905 | No |
+| `finalRecordDelivery` | 4922 | No |
+| `materialCapture` | 5049 | No |
+| `materialImport` | 5064 | No |
+| `materialCreate` | 5072 | No |
+
+The first expanded browser run failed because the material-create branch was accidentally included in the older AI/duplicate result aggregation. Its separate assertion branch was unreachable. Correcting that test-only dispatch preserved the original assertions and added exact material provenance/pitch checks; the full expanded browser step then passed. Production runtime is unchanged between these two CI heads.
