@@ -744,3 +744,26 @@ test('journal deletion transaction guard preserves metadata and every chunk afte
  await fresh.deleteVocalJournal(m.id,expected,()=>{});
  assert.equal(await fresh.getVocalJournal(m.id),undefined);assert.equal(await fresh.getVocalJournalChunk(m.id+':0'),undefined);
 });
+
+for(const mode of ['repository-switch','cancel'])test(`archive ${mode} after durable commit reports saved receipt and preserves the current view`,async()=>{
+ const src=await setup();
+ assert.equal((await src.a.productionSessionSave(src.p.projectId,'start','Archive session')).ok,true);
+ assert.equal((await src.a.productionDaySave(src.p.projectId,'2026-11-05','Archive daily note')).ok,true);
+ assert.equal((await src.a.pcmImportLongFile(wav(100),src.p.projectId)).ok,true);
+ const original=await src.repo.get(src.p.projectId),archive=await src.a.createLongWavArchive();
+ const dst=await setup(),native=dst.repo.restoreLongArchive,view=JSON.stringify(dst.a.state.projects);
+ const other=dst.a.memoryRepository([dst.a.makeProject({projectId:'other',projectName:'Other repository'})]);
+ dst.repo.restoreLongArchive=async(...args)=>{const result=await native(...args);if(mode==='repository-switch')dst.a.setRepository(other);else dst.a.cancelArchiveTransfer();return result};
+ const result=await dst.a.restoreLongWavArchive(archive);
+ assert.equal(result.ok,true,'a completed transaction must never be reported as failed');
+ assert.equal(result.committed,true);assert.equal(result.viewRefreshPending,true);
+ assert.equal(JSON.stringify(dst.a.state.projects),view,'stale completion must not append restored songs into another view');
+ assert.equal((await other.list()).length,1);
+ assert.equal((await dst.repo.list()).length,2,'one additive restore was committed');
+ await dst.repo.close();const fresh=fixture(dst.indexedDB),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);
+ const restored=await repo.get(result.projects[0].projectId);
+ assert.equal(JSON.stringify(restored.songVersions),JSON.stringify(original.songVersions),'session and daily links survive durable restore');
+ assert.equal(restored.songVersions.days[0].sessionId,restored.songVersions.sessions[0].id);
+ const binary=await fresh.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);
+ assert.equal(Buffer.compare(Buffer.from(await binary.arrayBuffer()),Buffer.from(await wav(100).arrayBuffer())),0);
+});
