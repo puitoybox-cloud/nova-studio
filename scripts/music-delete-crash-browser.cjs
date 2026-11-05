@@ -26,7 +26,7 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    for(const [method,args] of [['productionSessionSave',[p.projectId,'start','Archive session']],['productionDaySave',[p.projectId,'2026-11-05','Archive day']]]){const r=await app[method](...args);if(!r.ok)throw Error(r.error)}
    const b=new ArrayBuffer(244),v=new DataView(b),tag=(at,text)=>Array.from(text).forEach((c,i)=>v.setUint8(at+i,c.charCodeAt(0)));
    tag(0,'RIFF');v.setUint32(4,236,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,200,true);for(let i=0;i<100;i++)v.setInt16(44+i*2,i*31-1500,true);
-   const r=await app.pcmImportLongFile(new Blob([b],{type:'audio/wav'}),p.projectId);if(!r.ok)throw Error(r.error);
+   app.pcmOpen(p.projectId);const file=new Blob([b],{type:'audio/wav'});file.name='archive-source.wav';const r=await app.pcmImportLongFile(file,p.projectId);if(!r.ok)throw Error(r.error);
    const bytes=new Int16Array([11,-22,33]).buffer,hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
    await repo.createVocalJournal({id:'archive-journal',format:'nova-vocal-journal-v1',owner:p.projectId,rate:48000,startTick:0,latencyMs:0,next:0,frames:0,consumed:0,updatedAt:1,closed:false});
    await repo.appendVocalJournal('archive-journal',0,bytes,[hash]);await repo.sealVocalJournal('archive-journal',await repo.getVocalJournal('archive-journal'));
