@@ -1660,3 +1660,20 @@ for(const boundary of ['download','history'])test(`MIDI export receipt stays in 
  if(boundary==='history'){const write=repo.putMidiHistory;repo.putMidiHistory=async value=>{await write(value);switchView()}}
  const result=await app.performMidiExport('all',song.projectId);assert.equal(result.ok,true,result.error?.message);assert.equal(result.refreshPending,true);assert.equal((await repo.listMidiHistory()).length,1);assert.equal((await other.listMidiHistory()).length,0);assert.equal(app.state.lastMidiExport.sentinel,true);assert.equal(app.state.midiExportHistory[0].id,'other-history');assert.equal(JSON.stringify(await repo.get(song.projectId)),JSON.stringify(song));
 });
+
+for(const mode of ['new','duplicate'])for(const unreadable of [false,true])test(`MIDI ${mode} uncertain completion reconciles same project and receipt (read failure ${unreadable})`,async()=>{
+ const {app,window}=load(),repo=app.memoryRepository(),source=app.makeProject({projectId:'source',projectName:'Original'});app.setRepository(repo);await repo.put(source);app.state.projects=[source];
+ await app.inspectMidiFile(file('uncertain.mid',window.MusicStudioMidi.createMidiFile(window.MusicStudioMidi.createTestMidiData()).bytes));
+ const write=repo.commitMidiImport,read=repo.listMidiImportHistory;let writes=0,blocked=false;
+ repo.listMidiImportHistory=async()=>{if(blocked)throw Error('read unavailable');return read()};
+ repo.commitMidiImport=async(...args)=>{writes++;await write(...args);blocked=unreadable;throw Error('completion notification lost')};
+ let result=await app.saveMidiImport(mode);
+ if(unreadable){assert.equal(result.ok,false);assert.ok(app.state.midiImportPreview);blocked=false;result=await app.saveMidiImport(mode)}
+ assert.equal(result.ok,true,result.error?.message);assert.equal(writes,1);assert.equal((await repo.list()).length,2);const rows=await read();assert.equal(rows.length,1);assert.equal(rows[0].projectId,result.project.projectId);assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(source));assert.equal(result.project.productionHistory.filter(e=>e.id===rows[0].id).length,1);
+});
+
+test('uncertain MIDI retry rejects changed committed data without overwriting or duplicating',async()=>{
+ const {app,window}=load(),repo=app.memoryRepository();app.setRepository(repo);await app.inspectMidiFile(file('conflict.mid',window.MusicStudioMidi.createMidiFile(window.MusicStudioMidi.createTestMidiData()).bytes));
+ const write=repo.commitMidiImport;repo.commitMidiImport=async(...args)=>{await write(...args);const changed=await repo.get(args[0].projectId);changed.projectName='Protected later edit';await repo.put(changed);throw Error('lost completion')};
+ assert.equal((await app.saveMidiImport('new')).ok,false);assert.equal((await app.saveMidiImport('new')).ok,false);assert.equal((await repo.list()).length,1);assert.equal((await repo.list())[0].projectName,'Protected later edit');assert.equal((await repo.listMidiImportHistory()).length,1);
+});
