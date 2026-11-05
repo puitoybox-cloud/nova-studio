@@ -1652,3 +1652,11 @@ for(const mode of ['new','duplicate'])test(`atomic MIDI ${mode} receipt and prod
  assert.equal(rows.length,1);assert.equal(rows[0].projectId,stored.projectId);const event=stored.productionHistory.find(e=>e.id===rows[0].id);assert.equal(event.type,'midi-import');assert.equal(event.mode,mode);assert.equal(event.sourceProjectId,mode==='duplicate'?'source':null);
  await assert.rejects(()=>repo.commitMidiImport(stored,{...rows[0],id:'retry'}),/conflict/);assert.equal((await repo.listMidiImportHistory()).length,1);assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(source));
 });
+
+for(const boundary of ['download','history'])test(`MIDI export receipt stays in its original repository after ${boundary} switch`,async()=>{
+ const {app,window}=load(),repo=app.memoryRepository(),other=app.memoryRepository(),song=app.makeProject({projectId:'export-source',projectName:'Original',midiData:window.MusicStudioMidi.createTestMidiData()}),sentinel=app.makeProject({projectId:'other',projectName:'Other'});app.setRepository(repo);await repo.put(song);await other.put(sentinel);app.state.projects=[song];
+ const switchView=()=>{app.setRepository(other);app.state.projects=[sentinel];app.state.lastMidiExport={sentinel:true};app.state.midiExportHistory=[{id:'other-history'}]};
+ window.URL={createObjectURL:()=> 'blob:export',revokeObjectURL(){}};window.document={body:{dataset:{},appendChild(){}},createElement:()=>({click(){if(boundary==='download')switchView()},remove(){}})};
+ if(boundary==='history'){const write=repo.putMidiHistory;repo.putMidiHistory=async value=>{await write(value);switchView()}}
+ const result=await app.performMidiExport('all',song.projectId);assert.equal(result.ok,true,result.error?.message);assert.equal(result.refreshPending,true);assert.equal((await repo.listMidiHistory()).length,1);assert.equal((await other.listMidiHistory()).length,0);assert.equal(app.state.lastMidiExport.sentinel,true);assert.equal(app.state.midiExportHistory[0].id,'other-history');assert.equal(JSON.stringify(await repo.get(song.projectId)),JSON.stringify(song));
+});
