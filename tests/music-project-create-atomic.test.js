@@ -8,3 +8,20 @@ test('concurrent new song creation publishes exactly one project with its proven
 test('project duplication checks source revision in the same transaction and leaves racing changes intact',async()=>{const{app,repo}=setup(),p=app.makeProject({projectId:'source',projectName:'Original'});await repo.put(p);app.state.projects=[p];const fork=repo.compareAndFork;repo.compareAndFork=async(...args)=>{const changed=await repo.get('source');changed.revision++;changed.productionNotes='Concurrent edit';await repo.put(changed);return fork(...args)};const result=await app.duplicateProject('source');assert.equal(result.ok,false);assert.equal((await repo.list()).length,1);assert.equal((await repo.get('source')).productionNotes,'Concurrent edit')});
 test('successful duplicate preserves source and records exact source revision in saved copy',async()=>{const{app,repo}=setup(),p=app.makeProject({projectId:'source',projectName:'Original',productionHistory:[{type:'prior'}]});await repo.put(p);app.state.projects=[p];const result=await app.duplicateProject('source');assert.equal(result.ok,true,result.error);assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(p));const copy=await repo.get(result.project.projectId);assert.equal(copy.productionHistory[0].type,'prior');assert.equal(copy.productionHistory[1].type,'project-duplicate');assert.equal(copy.productionHistory[1].sourceRevision,p.revision);assert.equal(app.validateProject(copy).valid,true)});
 test('new project quota failure publishes neither project nor local provenance',async()=>{const{app,repo}=setup();repo.compareAndPut=async()=>{throw Error('QuotaExceededError')};await assert.rejects(app.createAIProject(input('quota')),/QuotaExceededError/);assert.equal((await repo.list()).length,0);assert.equal(app.state.projects.length,0)});
+
+test('committed AI project never enters a replacement repository view',async()=>{
+ const{app,repo}=setup(),other=app.memoryRepository(),sentinel=app.makeProject({projectId:'other',projectName:'Other'});await other.put(sentinel);
+ const write=repo.compareAndPut;repo.compareAndPut=async(...args)=>{const result=await write(...args);app.setRepository(other);app.state.projects=[sentinel];return result};
+ const p=await app.createAIProject(input('committed'));assert.ok(await repo.get(p.projectId));assert.equal((await other.list()).length,1);assert.deepEqual(app.state.projects.map(p=>p.projectId),['other']);
+ app.setRepository(repo);await app.refresh();assert.equal(app.state.projects[0].projectId,'committed');assert.equal(app.state.projects[0].productionHistory[0].source,'ai-new-song');
+});
+test('committed duplicate returns its receipt without changing replacement view',async()=>{
+ const{app,repo}=setup(),other=app.memoryRepository(),p=app.makeProject({projectId:'source',projectName:'Original'}),sentinel=app.makeProject({projectId:'other',projectName:'Other'});await repo.put(p);app.state.projects=[p];await other.put(sentinel);
+ const write=repo.compareAndFork;repo.compareAndFork=async(...args)=>{const result=await write(...args);app.setRepository(other);app.state.projects=[sentinel];return result};
+ const result=await app.duplicateProject('source');assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.deepEqual(app.state.projects.map(p=>p.projectId),['other']);assert.ok(await repo.get(result.project.projectId));assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(p));assert.equal((await other.list()).length,1);
+});
+for(const kind of ['repository','editor'])test(`delayed refresh cannot replace changed ${kind} state`,async()=>{
+ const{app,repo}=setup(),other=app.memoryRepository(),sentinel=app.makeProject({projectId:'current',projectName:'Current'});let resume;repo.list=()=>new Promise(resolve=>resume=resolve);
+ const pending=app.refresh();if(kind==='repository')app.setRepository(other);app.state.projects=[sentinel];resume([app.makeProject({projectId:'old',projectName:'Stale'})]);
+ const result=await pending;assert.equal(result.stale,true);assert.deepEqual(app.state.projects.map(p=>p.projectId),['current']);
+});

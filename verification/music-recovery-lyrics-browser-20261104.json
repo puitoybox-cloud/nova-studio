@@ -4,25 +4,25 @@
   "passed": 2,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-indexeddb-browser-persistence.cjs": "ead6aa1e42ebd806e39f5eae72ecdf2ae5a38243daefa4250032e9a3a51332e9"
+    "scripts/music-indexeddb-browser-persistence.cjs": "167c5743bd989417fe6d56cff1c68528ac44b36ad8cecbaf25bc34e44c594b85"
   },
   "runtimeHashes": {
-    "music-studio.js": "4daf385dc9ee98af49822661c1bbcbe0865d320644cea1c9267885de8ceb3ff4"
+    "music-studio.js": "92ec1c9dd86443dd486974247ab874567e87b373190651ce97cf109b2d055ba6"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "scope": "Real Chromium SIGKILL during automatic-backup publication preserves prior copies, project and session history; restart and retry publishes a complete snapshot before pruning. Existing dependency, material, create/fork and lyric scroll regressions pass. Physical power loss and hardware remain unverified.",
-  "source": "Current production runtime passed the identified CI step. Entire workflow status is separate; no local browser run claimed.",
+  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified.",
+  "source": "Current production runtime and browser script passed the identified exact-source CI step. Entire workflow also succeeded. No local browser run claimed.",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "d096bfb1fb0e72392d3fb6cd672769f83f95a8f3",
-    "runId": 41972234278,
-    "jobId": 127062910349,
+    "head": "ce24a31d47f1b55448c7e333dbebee1ad33d79d1",
+    "runId": 41989093194,
+    "jobId": 127116774549,
     "step": 6,
     "stepConclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41972234278/job/127062910349"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41989093194/job/127116774549"
   }
 }
