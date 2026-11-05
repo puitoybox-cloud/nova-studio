@@ -1687,6 +1687,7 @@
     if(archiveTransfer.busy)return{ok:false,error:'archive-transfer-busy'};
     const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),guard=archiveStateGuard(target,options.signal,token,baseline);
+    let committedResult;
     try{
       guard();if(target.kind!=='indexeddb'||!target.restoreLongArchive)throw Error('archive-durable-storage-required');
       const baselineSettings=JSON.stringify(await target.getSettings());guard();
@@ -1746,12 +1747,18 @@
       const preservedRecordings=sourceJournals.filter(j=>j.preservation==='observed-v1').length;
       if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,preservedRecordings,size:file.size,settingsIncluded:true,capacity};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
       guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings,histories,restoredJournals);
-      // Success is emitted only after the single transaction completes.
+      // A completed transaction cannot be rolled back by a later cancellation
+      // or repository switch. Keep its receipt, but never publish into a new UI.
+      committedResult={projects,preservedRecordings};guard(true);
       state.projects=[...state.projects,...projects];if(options.settings!==false){state.settings=preserveRestoreSettings(manifest.settings);state.settingsDraft=clone(state.settings)}archiveTransfer.preview=null;configureAutosave();
       await loadMidiHistory();await loadMidiImportHistory();await vocalDiscoverRecovery();
       notice('元ファイル・プロジェクト・設定の復元が完了しました。既存曲は保持しています。'+(preservedRecordings?'破損・欠落を保持した未完了録音 '+preservedRecordings+' 件は、音声修復できたものではありません。':''),'success');
-      return{ok:true,projects,preservedRecordings};
-    }catch(e){notice('復元できません：'+e.message,'error');return{ok:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
+      return{ok:true,committed:true,projects,preservedRecordings};
+    }catch(e){if(committedResult){
+      if(repository===target)archiveTransfer.preview=null;
+      notice('アーカイブは保存済みです。表示の更新が必要です：'+e.message,'warning');
+      return{ok:true,committed:true,...committedResult,viewRefreshPending:true,staleAfterCommit:true,message:e.message};
+    }notice('復元できません：'+e.message,'error');return{ok:false,committed:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
   }
   async function previewLongWavArchive(file){
     if(!file)return{ok:false,error:'archive-file-required'};

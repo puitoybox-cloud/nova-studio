@@ -18,5 +18,40 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   assert.equal(await page.evaluate(async()=>{const m=await repo.getVocalJournal('journal');try{await repo.deleteVocalJournal('journal',m,()=>{throw Error('repository-switched')});return false}catch(e){return e.message==='repository-switched'&&!!await repo.getVocalJournalChunk('journal:0')}}),true);
   await page.evaluate(async()=>{await repo.deleteVocalJournal('journal',await repo.getVocalJournal('journal'));await repo.deleteAutoBackup('protected')});await stop();page=await open();
   assert.deepEqual(await page.evaluate(async()=>({meta:await repo.getVocalJournal('journal')||null,chunk:await repo.getVocalJournalChunk('journal:0')||null,backups:await repo.listAutoBackups()})),{meta:null,chunk:null,backups:[]});
+
+  // Exercise the production Archive route against physical IndexedDB. Hold the
+  // real add transaction only after a request succeeds, then kill the process.
+  const archiveBytes=await page.evaluate(async()=>{
+   const p=app.makeProject({projectId:'archive-source',projectName:'Protected Archive'});await repo.put(p);app.state.projects=[p];
+   for(const [method,args] of [['productionSessionSave',[p.projectId,'start','Archive session']],['productionDaySave',[p.projectId,'2026-11-05','Archive day']]]){const r=await app[method](...args);if(!r.ok)throw Error(r.error)}
+   const b=new ArrayBuffer(244),v=new DataView(b),tag=(at,text)=>Array.from(text).forEach((c,i)=>v.setUint8(at+i,c.charCodeAt(0)));
+   tag(0,'RIFF');v.setUint32(4,236,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,200,true);for(let i=0;i<100;i++)v.setInt16(44+i*2,i*31-1500,true);
+   const r=await app.pcmImportLongFile(new Blob([b],{type:'audio/wav'}),p.projectId);if(!r.ok)throw Error(r.error);
+   const bytes=new Int16Array([11,-22,33]).buffer,hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');
+   await repo.createVocalJournal({id:'archive-journal',format:'nova-vocal-journal-v1',owner:p.projectId,rate:48000,startTick:0,latencyMs:0,next:0,frames:0,consumed:0,updatedAt:1,closed:false});
+   await repo.appendVocalJournal('archive-journal',0,bytes,[hash]);await repo.sealVocalJournal('archive-journal',await repo.getVocalJournal('archive-journal'));
+   return Array.from(new Uint8Array(await (await app.createLongWavArchive()).arrayBuffer()));
+  });
+  async function snapshot(page){return page.evaluate(async()=>{
+   const db=await new Promise((resolve,reject)=>{const r=indexedDB.open(app.DB_NAME);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+   async function encode(x){if(x instanceof Blob)return{blob:Array.from(new Uint8Array(await x.arrayBuffer())),type:x.type};if(x instanceof ArrayBuffer)return{bytes:Array.from(new Uint8Array(x))};if(ArrayBuffer.isView(x))return{bytes:Array.from(new Uint8Array(x.buffer,x.byteOffset,x.byteLength))};if(Array.isArray(x))return Promise.all(x.map(encode));if(x&&typeof x==='object')return Object.fromEntries(await Promise.all(Object.entries(x).map(async([k,v])=>[k,await encode(v)])));return x}
+   try{return Object.fromEntries(await Promise.all(Array.from(db.objectStoreNames).map(async name=>{const rows=await new Promise((resolve,reject)=>{const r=db.transaction(name).objectStore(name).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return[name,await encode(rows)]})))}finally{db.close()}
+  })}
+  const archiveBaseline=await snapshot(page);
+  await page.evaluate(bytes=>{
+   const original=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(value,...args){const request=original.call(this,value,...args),store=this;if(store.name==='projects')request.addEventListener('success',()=>{const loop=()=>{const q=store.get(value.projectId);q.onsuccess=loop};loop();window.archiveHeld=true});return request};
+   window.pendingArchive=app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]));
+  },archiveBytes);
+  await page.waitForFunction(()=>window.archiveHeld===true);await stop();page=await open();
+  assert.deepEqual(await snapshot(page),archiveBaseline,'Archive SIGKILL must roll back every store including WAV, journal, settings and history');
+  const receipt=await page.evaluate(async bytes=>{app.state.projects=await repo.list();return app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]))},archiveBytes);
+  assert.equal(receipt.ok,true,receipt.error);assert.equal(receipt.committed,true);assert.equal(receipt.projects.length,1);
+  const restoredId=receipt.projects[0].projectId,afterRestore=await snapshot(page);
+  assert.equal(afterRestore.projects.length,2);assert.equal(afterRestore.longWavBinaries.length,2);assert.equal(afterRestore.vocalJournals.length,2);assert.equal(afterRestore.vocalJournalChunks.length,2);
+  const src=afterRestore.projects.find(p=>p.projectId==='archive-source'),copy=afterRestore.projects.find(p=>p.projectId===restoredId);
+  assert.deepEqual(copy.songVersions,src.songVersions,'Archive must retain session, daily and automatic edit links');
+  assert.equal(copy.songVersions.days[0].sessionId,copy.songVersions.sessions[0].id);
+  assert.deepEqual(afterRestore.longWavBinaries[0].blob||afterRestore.longWavBinaries[0].parts,afterRestore.longWavBinaries[1].blob||afterRestore.longWavBinaries[1].parts);
+  await stop();page=await open();assert.deepEqual(await snapshot(page),afterRestore,'retried Archive must persist completely across SIGKILL');
  }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
 });
