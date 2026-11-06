@@ -1,11 +1,11 @@
 {
-  "date": "2026-11-06 JST",
-  "command": "node --test --test-concurrency=2 --test-reporter=tap tests/*.test.js",
-  "passed": 2911,
+  "date": "2026-11-07 JST",
+  "command": "node --test --test-concurrency=2 tests/*.test.js",
+  "passed": 2913,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 214460.00755,
+  "durationMs": 150876.723539,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -37,7 +37,7 @@
     "tests/music-production-tabs.test.js": "b1173047cf7789462fdcff79b712877ff739b25eaca74ede22eb990e97dca528",
     "tests/music-production-tools.test.js": "29e24b87db099fc9b4f0563022383f6598fda739bd950ee1e6e7dd37e61a0bfd",
     "tests/music-project-create-atomic.test.js": "9070563f09c99dac5e2e9ba93e1fe5c6473b5b4f6e25faa477c3476505626f02",
-    "tests/music-song-checkpoints.test.js": "e16135eba12e24f6d674f2fd2cd49698cea2b90980a59a111f74528feb688017",
+    "tests/music-song-checkpoints.test.js": "2595b23bfa75efd19bb29938f57af515db2158d25022c1c755d5db2e881dcdb7",
     "tests/music-standalone-menu.test.js": "774e282075ab4732549ff7444d83731ab2fc0fb34b95e237d29c6da6d652c249",
     "tests/music-studio-ai-arrangement-entry.test.js": "4f49129db5d63d207597771e3b8ccc1065abdf1510b935b06f97fe5b8a89bfeb",
     "tests/music-studio-ai-arrangement-reference.test.js": "080f363e6cf2cb02d20aa85eac57f3e287ef24587b25cf0fb546766a09a470e1",
@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "4c7369b2f80864fde2316698cdfa113e6ed97498958cb4e1376efd550cd845ab",
+    "music-studio.js": "16868ae084ae1e42d44a289a9a731278e9c4a688c79d03ddcdd4842ad954085e",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
@@ -3121,7 +3121,9 @@
     "image previews accept raster data only and reject event or script payloads",
     "navigation permits HTTPS and explicit loopback HTTP only",
     "file size, depth, collections, strings, and preview totals are bounded",
-    "validation failure occurs before import mutation path"
+    "validation failure occurs before import mutation path",
+    "committed checkpoint actions preserve replacement storage and newer views",
+    "committed checkpoint preserves edits started after durable publication"
   ],
   "supplementaryCiValidation": {
     "provider": "GitHub Actions",
@@ -3134,5 +3136,13 @@
     "failed": 0
   },
   "source": "Exact-source GitHub Actions Node step succeeded; ledger step correctly rejected stale browser/runtime proofs before refresh.",
-  "logSha256": "3531bbe9f458dc813d84ac5410bcbff12bab374a604eb471d03b2cefb2e6bd81"
+  "logSha256": "3531bbe9f458dc813d84ac5410bcbff12bab374a604eb471d03b2cefb2e6bd81",
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "17fcd1f73f6ab4e98587186e6ffb64fcea726900",
+    "runId": 42241473941,
+    "jobId": 127972559393,
+    "step": 5,
+    "stepConclusion": "success"
+  }
 }
