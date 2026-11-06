@@ -49,6 +49,8 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   page.on('pageerror',error=>errors.push(error.stack||error.message));
   await page.goto(origin);
   await page.addScriptTag({url:origin+'/music-studio.js'});
+  // The production material entry refuses work until initial IndexedDB refresh completes.
+  await page.waitForFunction(()=>window.MusicStudio?.state.loaded===true);
   assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object','MusicStudio failed to load: '+errors.join(' | '));
   const expected=await page.evaluate(async()=>{
    const app=window.MusicStudio;
@@ -76,6 +78,8 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   await stop();
   browser=await launch();
   page=await browser.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);await page.addScriptTag({url:origin+'/music-studio.js'});
+  // The production material entry refuses work until initial IndexedDB refresh completes.
+  await page.waitForFunction(()=>window.MusicStudio?.state.loaded===true);
   assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object','MusicStudio failed to reload: '+errors.join(' | '));
   const actual=await page.evaluate(async()=>{
    const app=window.MusicStudio;const repo=app.indexedDbRepository();
