@@ -1,10 +1,10 @@
 # PR #597 production acceptance audit
 
-Date: 2026-11-06 JST. Baseline PR #596: `24a926fa55a6b12479be89749ef8a96acae8eac6`, 14/14 GitHub Actions successful. Runtime under test: `f91a28261eaadeb55a2af4b5deee0af52507ca80`.
+Date: 2026-11-06 JST. Baseline PR #596: `24a926fa55a6b12479be89749ef8a96acae8eac6`, 14/14 GitHub Actions successful. Runtime under test: `fd393f19cf7d4c7fc709d178770ec55335ce7fde`.
 
 ## Production change
 
-Workspace mode, favorites and visibility writes called requestPaint even while an unadopted lyric candidate or checkpoint transaction was active. The shared busy predicate now rejects these writes, and production navigation saves, before storage or repaint. The new regressions fail on the immutable baseline and pass on the changed source. No audio algorithm, tolerance or acceptance requirement changed.
+Workspace mode, favorites and visibility writes called requestPaint even while an unadopted lyric candidate or checkpoint transaction was active. The shared busy predicate now rejects these writes, and production navigation saves, before storage or repaint. Completion also checks the current busy state, retaining lyrics, checkpoints and MIDI edits that arrive during a settings write. The new regressions fail on the immutable baseline and pass on the changed source. No audio algorithm, tolerance or acceptance requirement changed.
 
 ## Remaining validation requirements
 
@@ -27,3 +27,7 @@ The IndexedDB script currently terminates real Chromium before commit for runAut
 All 63 remaining decision-dependent A requirements still reference 18 open C contracts. Their acceptance includes unspecified quality thresholds, model/provider identity, distribution permission, Cloud Sync conflict policy or external integration contracts. Common storage, cancellation and navigation protections can improve without choosing a model; their presence does not fulfill the entire dependent requirement. No dependency was removed and no threshold was weakened.
 
 No new verified ID is claimed by this patch. The formal denominator remains 135, verified 65, open 70 (48.15%).
+
+## Final runtime validation
+
+Local full regression: 2,916 passed, zero failed/cancelled/skipped; focused navigation/workspace: 34 passed; helper: 22 passed. Five new regressions fail against PR #596. Exact-runtime IndexedDB (42224666984), audible A/B (42224667137), checkpoint/PCM/MediaRecorder recovery (42224667204) passed. Latest workspace browser (42224666953) remains behind font installation as of this registration; only the preceding runtime has a completed four-width matrix, and the added late-state cases have Node evidence until the latest browser step succeeds. Final-head CI is separate from this exact-runtime evidence.

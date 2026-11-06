@@ -1,11 +1,11 @@
 {
   "date": "2026-11-06 JST",
   "command": "node --test --test-concurrency=2 tests/*.test.js",
-  "passed": 2913,
+  "passed": 2916,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 244290.496192,
+  "durationMs": 255948.06497,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -144,7 +144,7 @@
     "tests/music-studio-vocal-recording.test.js": "e54c2ac704ed6c5b6dc8eee97ff80440c0af57ab77deb2db870b5e430ddf3941",
     "tests/music-studio-whole-song-transpose.test.js": "626dce829345c365b30c62d53f8108a55dee44ddcd67cf20935da34b354a673b",
     "tests/music-studio-whole-song.test.js": "5288e40a9c21801762a8fcbb92db72526d829ef29b889a1a3a707f56239d1c00",
-    "tests/music-studio-workspace.test.js": "c62b92a7fa357cc0d4a483875dc9575f595670363d570f619e23c692a202896c",
+    "tests/music-studio-workspace.test.js": "002753105d01f50a532f4668e5ef583009a236a7eedfb7ed756c076a4ffeeac3",
     "tests/music-vocal-cycle-natural-stop.test.js": "e39c6a4d2bcf2537f1b635ac78645070919f71be7a1a6b5b536d13c7ef5356ba",
     "tests/music-vocal-input-refresh-preserve.test.js": "c32de859f2f7835fc7525b29e1b738d814257dbe9b789ec013c21be4e72f2e9e",
     "tests/music-vocal-input-refresh-race.test.js": "002f0798997858feb0469778c4223f482f543ebd71c00da76a8bc888508abe92",
@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "69fe7e3903d0bc816bf49fff0e29e18e4c3ca3e56e3eb700a6b53a4bd783e852",
+    "music-studio.js": "0d9a026a727a4c9709a87e7290b1b1cd7a1896f8de5048a009042c02a8e16ead",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
@@ -3123,8 +3123,21 @@
     "file size, depth, collections, strings, and preview totals are bounded",
     "validation failure occurs before import mutation path",
     "workspace preferences preserve unadopted lyrics without storage or repaint",
-    "workspace preferences preserve checkpoint transaction without storage or repaint"
+    "workspace preferences preserve checkpoint transaction without storage or repaint",
+    "late lyrics candidate survives workspace save completion without repaint",
+    "late checkpoint operation survives workspace save completion without repaint",
+    "late MIDI edits survives workspace save completion without repaint"
   ],
-  "source": "Local full regression passed against byte-identical runtime committed as f91a28261eaadeb55a2af4b5deee0af52507ca80",
-  "logSha256": "9a1bcf715d974a8f87baf082d55085209b92de2bef0d293642f76cfbbcfd29bf"
+  "source": "Local and exact-source GitHub Actions full Node regression passed; the initial ledger step rejected stale runtime proofs, which are now refreshed using actual matching-source browser successes.",
+  "logSha256": "dff376a4043e539073c4b33f27cf4088ee216c13cf2ece5994a21b43ee190db8",
+  "supplementaryCiValidation": {
+    "provider": "GitHub Actions",
+    "head": "fd393f19cf7d4c7fc709d178770ec55335ce7fde",
+    "runId": 42224667039,
+    "jobId": 127915024613,
+    "step": 5,
+    "stepConclusion": "success",
+    "passed": 2916,
+    "failed": 0
+  }
 }

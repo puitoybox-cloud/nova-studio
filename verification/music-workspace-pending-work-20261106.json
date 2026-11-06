@@ -1,20 +1,24 @@
 {
   "date": "2026-11-06 JST",
-  "head": "f91a28261eaadeb55a2af4b5deee0af52507ca80",
+  "head": "fd393f19cf7d4c7fc709d178770ec55335ce7fde",
   "sourceHashes": {
-    "music-studio.js": "69fe7e3903d0bc816bf49fff0e29e18e4c3ca3e56e3eb700a6b53a4bd783e852",
-    "scripts/music-workspace-browser.js": "c0af151fa4ac3395dd893e25d0829b91a40cd720e307a708bec140d3cdf4d9dd",
-    "tests/music-studio-workspace.test.js": "c62b92a7fa357cc0d4a483875dc9575f595670363d570f619e23c692a202896c"
+    "music-studio.js": "0d9a026a727a4c9709a87e7290b1b1cd7a1896f8de5048a009042c02a8e16ead",
+    "scripts/music-workspace-browser.js": "70a700032a8ec2450674c0861c7f00ffe3cd53941c17535abd3f05ad0f063553",
+    "tests/music-studio-workspace.test.js": "002753105d01f50a532f4668e5ef583009a236a7eedfb7ed756c076a4ffeeac3"
   },
   "local": {
-    "focusedPassed": 31,
-    "fullPassed": 2913,
+    "focusedPassed": 34,
+    "fullPassed": 2916,
     "helperPassed": 22,
     "failed": 0,
-    "baselineNewRegressionsFailed": 2,
+    "baselineNewRegressionsFailed": 5,
     "browser": "Chromium launch failed: socket() Operation not permitted"
   },
-  "browser": {
+  "newVerified": [],
+  "verified": 65,
+  "remaining": 70,
+  "rate": 48.15,
+  "priorBrowser": {
     "provider": "GitHub Actions",
     "runId": 42223954841,
     "jobId": 127912594390,
@@ -31,10 +35,16 @@
       "checkpoint"
     ],
     "navigationStates": 15,
-    "actionsPerState": 10
+    "actionsPerState": 10,
+    "head": "f91a28261eaadeb55a2af4b5deee0af52507ca80"
   },
-  "newVerified": [],
-  "verified": 65,
-  "remaining": 70,
-  "rate": 48.15
+  "currentBrowser": {
+    "provider": "GitHub Actions",
+    "head": "fd393f19cf7d4c7fc709d178770ec55335ce7fde",
+    "runId": 42224666953,
+    "jobId": 127915023912,
+    "step": 8,
+    "conclusion": "pending",
+    "reason": "Japanese-font installation step is still running; no current late-state browser success claimed"
+  }
 }
