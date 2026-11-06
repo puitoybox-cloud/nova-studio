@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率 **45.93%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率 **46.67%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装10件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装8件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -26,7 +26,7 @@ A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 3 | 1 | 1 | 0 |
-| 13 | 4 | 3 | 1 | 1 | 0 |
+| 13 | 4 | 4 | 0 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
@@ -126,7 +126,7 @@ A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率
 | MS13-A01 | A | peak normalization previews measured PCM, adopts only on request and survives history/archive | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `peak normalization previews measured PCM, adopts only on request and survives history/archive` |
 | MS13-A02 | A | Vibrato補正とUndo | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery` |
 | MS13-A03 | A | Crossfade補正とUndo | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp blends real opposite-polarity samples, persists recipe Undo/Redo, saves editable WAV and fully restores`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `stereo Comp linear crossfade limits seam steps and retains both channels`; [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `Comp quota failures and concurrent metadata reject without modifying old audio` |
-| MS13-A04 | A | 波形歌詞音符同期の保存再開 | open | 未確認 |
+| MS13-A04 | A | 波形歌詞音符同期の保存再開 | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `waveform lyric note synchronization survives failed save fresh reopen and full archive restoration` |
 | MS13-B01 | B | 各音声補正の聴感品質 | open | 未確認 |
 | MS14-A01 | A | harmony produces actual diatonic pitches only in selected note range | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `harmony produces actual diatonic pitches only in selected note range` |
 | MS14-A02 | A | 歌声Harmonyレンダーと保存 | open | MS14-C01 |
@@ -235,8 +235,8 @@ A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 11 | 0 |
-| 実装済み・検証不足 | 24 | 10 |
+| 実装が必要 | 12 | 1 |
+| 実装済み・検証不足 | 23 | 8 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -289,7 +289,7 @@ A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率
 | MS12-A04 | 実装済み・検証不足 | verified |
 | MS13-A02 | 実装が必要 | verified |
 | MS13-A03 | 実装済み・検証不足 | verified |
-| MS13-A04 | 実装済み・検証不足 | open |
+| MS13-A04 | 実装済み・検証不足 | verified |
 | MS14-A02 | 仕様判断待ち | open |
 | MS14-A03 | 仕様判断待ち | open |
 | MS14-A04 | 仕様判断待ち | open |
@@ -312,7 +312,7 @@ A：総数 **135**、証拠付き完了 **62**、残数 **73**、受入確認率
 | MS21-A02 | 仕様判断待ち | open |
 | MS21-A03 | 仕様判断待ち | open |
 | MS21-A04 | 仕様判断待ち | open |
-| MS22-A02 | 実装済み・検証不足 | open |
+| MS22-A02 | 実装が必要 | open |
 | MS22-A03 | 実装済み・検証不足 | verified |
 | MS22-A04 | 実装済み・検証不足 | open |
 | MS23-A02 | 仕様判断待ち | open |
