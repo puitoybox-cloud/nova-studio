@@ -26,6 +26,17 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
         results.push(kind);
       }return results;
     });assert.deepEqual(guardedStates,['lyrics','checkpoint']);
+    const latePreferenceStates=await page.evaluate(async()=>{
+      const a=MusicStudio,repo=a.indexedDbRepository(),results=[];
+      for(const kind of ['lyrics','checkpoint','midi']){
+        let release;const delayed={...repo,putSettings:async value=>{await new Promise(r=>release=r);return repo.putSettings(value)}};a.setRepository(delayed);
+        const pending=a.setWorkMode('mix'),child=document.querySelector('#music-studio-app').firstChild;
+        if(kind==='lyrics')a.lyricsEditor.pending={text:'保存中の候補'};else if(kind==='checkpoint')a.versionPanel.busy=true;else a.state.midiEditor={dirty:true};
+        release();const result=await pending;if(!result.ok||document.querySelector('#music-studio-app').firstChild!==child)throw Error(kind+': late draft repainted');
+        if(kind==='lyrics'){if(a.lyricsEditor.pending.text!=='保存中の候補')throw Error('late lyric lost');a.lyricsEditor.pending=null}else if(kind==='checkpoint')a.versionPanel.busy=false;else a.state.midiEditor=null;
+        if((await repo.getSettings()).workspace.mode!=='mix')throw Error('committed workspace missing');a.setRepository(repo);results.push(kind);
+      }return results;
+    });assert.deepEqual(latePreferenceStates,['lyrics','checkpoint','midi']);
     const blockedNavigation=await page.evaluate(()=>{
       const a=MusicStudio,results=[];
       const states=[['dirty project',()=>a.state.dirty=true,()=>a.state.dirty=false],['dirty MIDI',()=>a.state.midiEditor={dirty:true},()=>a.state.midiEditor=null],['MIDI recording',()=>a.state.midiInput.recording=true,()=>a.state.midiInput.recording=false],['MIDI count-in',()=>a.state.midiInput.countingIn=true,()=>a.state.midiInput.countingIn=false],['MIDI stopping',()=>a.state.midiInput.stopping=true,()=>a.state.midiInput.stopping=false],['MIDI save',()=>a.state.midiEditorSaveInFlight=true,()=>a.state.midiEditorSaveInFlight=false],['project save',()=>a.state.saveStatus='saving',()=>a.state.saveStatus='idle'],['lyrics candidate',()=>a.lyricsEditor.pending={},()=>a.lyricsEditor.pending=null],['lyrics save',()=>a.lyricsEditor.busy=true,()=>a.lyricsEditor.busy=false],['PCM save',()=>a.pcmEditor.busy=true,()=>a.pcmEditor.busy=false],['archive',()=>a.archiveTransfer.busy=true,()=>a.archiveTransfer.busy=false],['checkpoint',()=>a.versionPanel.busy=true,()=>a.versionPanel.busy=false],['export',()=>a.finalExport.busy=true,()=>a.finalExport.busy=false],['vocal recording',()=>a.vocal.phase='recording',()=>a.vocal.phase='idle'],['vocal pending',()=>a.vocal.pending={},()=>a.vocal.pending=null]];
@@ -57,7 +68,7 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
       const menu=page.locator('.music-editor-topbar>details').nth(i),summary=menu.locator(':scope>summary');if(!await summary.isVisible()){hiddenMenus++;continue}await summary.click();await page.waitForTimeout(100);const m=await metrics();assert.equal(m.overflow,false);assert.deepEqual(m.small,[],`${width}: popup ${i}`);await page.screenshot({path:`verification/music-workspace-popup-${width}-${i}.png`,fullPage:true});if(await menu.getAttribute('open')!==null)await menu.locator(':scope>summary').click();opened++;
     }
     await page.evaluate(()=>MusicStudio.goHome());await page.waitForSelector('#musicHomeHelp',{state:'attached'});await page.evaluate(()=>MusicStudio.openHelp('musicHomeHelp'));await page.waitForFunction(()=>document.querySelector('#musicHomeHelp').open);await page.screenshot({path:`verification/music-workspace-help-${width}.png`,fullPage:true});await page.evaluate(()=>MusicStudio.closeHelp('musicHomeHelp'));
-    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.push({width,screens,menusOpened:opened,responsiveHiddenMenus:hiddenMenus,guardedStates,blockedNavigation,fullArchive:true,freshReopen:true,explicitExportNavigation:true,errors,external});await context.close();
+    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.push({width,screens,menusOpened:opened,responsiveHiddenMenus:hiddenMenus,guardedStates,latePreferenceStates,blockedNavigation,fullArchive:true,freshReopen:true,explicitExportNavigation:true,errors,external});await context.close();
   }
   fs.writeFileSync(path.join(root,'verification/music-workspace-browser.json'),JSON.stringify({head:require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),report},null,2));console.log(JSON.stringify(report));
 }finally{clearTimeout(deadline);await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});

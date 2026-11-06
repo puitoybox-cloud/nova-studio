@@ -3205,7 +3205,7 @@
       else if(state.settingsDraft)state.settingsDraft.workspace=clone(next.workspace);
       workspaceMessage='Saved（保存済み）';return {ok:true,workspace:clone(next.workspace)};
     }catch(error){workspaceMessage='保存できません：'+error.message;return {ok:false,error:error.message}}
-    finally{workspaceSaving=false;if(!state.dirty&&!workspaceHasDraftInput())requestPaint();else {const status=root.document?.querySelector('[data-work-status]');if(status)status.textContent=workspaceMessage}}
+    finally{workspaceSaving=false;if(!workspaceBusy())requestPaint();else {const status=root.document?.querySelector('[data-work-status]');if(status)status.textContent=workspaceMessage}}
   }
   function setWorkMode(mode){if(!Object.hasOwn(WORK_MODES,mode))return Promise.resolve({ok:false,error:'workspace-mode-invalid'});return saveWorkspace(w=>({...w,mode}))}
   function toggleFavorite(id){if(!WORK_ACTIONS.some(a=>a.id===id))return Promise.resolve({ok:false,error:'workspace-action-invalid'});return saveWorkspace(w=>({...w,favorites:w.favorites.includes(id)?w.favorites.filter(x=>x!==id):[...w.favorites,id]}))}
