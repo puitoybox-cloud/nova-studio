@@ -418,7 +418,9 @@
     for(const meta of finalSources(p)){
       const route=plan?.routes.find(r=>r.key===meta.key);if(plan&&(!route||route.muted))continue;
       if(!plan&&p.midiData?.tracks?.some(t=>!t.muted&&t.notes?.length)&&p.longWavAssets?.find(a=>a.id===meta.id)?.midiRender)continue;
-      guard();let blob,start=0;
+      guard();const sourceAsset=meta.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===meta.id):p.longWavAssets.find(a=>a.id===meta.id);
+      const estimate=(meta.kind==='pcm'?sourceAsset.original.channels[0].length:sourceAsset.vocalTake?Math.max(sourceAsset.frames,48000*125):sourceAsset.frames)+Math.ceil((route?.startSeconds||0)*48000);
+      finalCheckCapacity(Math.max(estimate,...sources.map(s=>s.start+s.frames)),sources.length+1,{mixMasterOnly:true});let blob,start=0;
       if(meta.kind==='pcm')blob=new Blob([pcmEncodeWav(pcmRenderAsset(p.pcmMix.assets.find(a=>a.id===meta.id)))],{type:'audio/wav'});
       else{
         const asset=p.longWavAssets.find(a=>a.id===meta.id);if(asset.sampleRate!==48000)throw Error('checkpoint-48khz-required');if(asset.frames>48000*3600||asset.frames*asset.channels*2>240*1048576)throw Error('checkpoint-audio-capacity');const record=await repository.getLongWav?.(asset.id);guard();
@@ -438,6 +440,7 @@
     if(!plan&&p.midiData?.tracks?.some(t=>!t.muted&&t.notes?.length)){
       const result=await root.MusicStudioAudio.renderMidiStream(clone(p.midiData),instrumentEntries(p),{guard});guard();
       if(result.sampleRate!==48000||result.channels!==2)throw Error('checkpoint-midi-render-format');
+      finalCheckCapacity(Math.max(result.frames,...sources.map(s=>s.start+s.frames)),sources.length+1,{mixMasterOnly:true});
       const blob=await finalWav(result.chunks,guard);if(blob.size!==44+result.frames*4)throw Error('checkpoint-midi-render-incomplete');
       sources.push({blob,start:0,frames:result.frames,gainDb:0});
     }
@@ -448,7 +451,8 @@
       const initial=masterGainPlan(before,plan.targetLufs,plan.ceilingDb);
       const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalMeasuredWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard,true),r=>r.metrics,{guard});return corrected.output.blob;
     }
-    return finalWav(finalChunks(sources,frames,guard),guard);
+    const meter=await masterMeasure(finalChunks(sources,frames,guard),{guard}),gainDb=meter.truePeakDb===null?0:Math.min(0,-1-meter.truePeakDb);
+    return finalWav(finalMasterChunks(sources,frames,guard,null,gainDb),guard);
   }
   function versionListenStop(){versionPanel.generation++;finalStop()}
   async function versionListen(id,side){
