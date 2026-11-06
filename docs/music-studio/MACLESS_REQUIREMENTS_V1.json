@@ -1486,14 +1486,20 @@
       "feature": 13,
       "category": "A",
       "requirement": "波形歌詞音符同期の保存再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-vocal-correction-comp.test.js",
+          "acceptance": "waveform lyric note synchronization survives failed save fresh reopen and full archive restoration",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "波形・歌詞位置・音符・テンポ変更・音声bytesについて保存失敗、再読込、Archive復元を照合。実機聴感はBで別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -2347,10 +2353,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
-        "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "classification": "実装が必要",
+        "note": "比較・部分採用と履歴復旧は実装済み。Checkpoint可聴A/Bを呼び出すproduction入口がなく、音声/MIDI再生の統合が必要。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
