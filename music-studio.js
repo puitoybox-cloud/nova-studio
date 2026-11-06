@@ -370,6 +370,8 @@
       const binaries=[...new Map(archiveBinaries(next).map(a=>[a.id,a])).values()];
       for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=(options.binaryRecords||[]).find(r=>r.id===a.id)||await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt: '+a.id)}
       await archiveCapacity(pcmJsonBytes(next),guard);guard();if(options.fork){if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(next,baseline,guard);
+      // The transaction is durable; a replacement view must keep its own state.
+      if(repository!==target||token!==versionPanel.generation||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:next};
       state.projects=options.fork?[...state.projects,next]:state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
       versionPanel.preview=null;finalInvalidate();versionPanel.message='Checkpoint（保存しました。元データと履歴は保持しています）';return{ok:true,project:next};
     }catch(e){versionPanel.message='Checkpoint：'+e.message;return{ok:false,error:e.message}}finally{options.signal?.removeEventListener?.('abort',cancel);versionPanel.busy=false;versionPanel.abort=null;requestPaint()}
@@ -384,7 +386,7 @@
     for(const e of next.songVersions.sessions||[])if(!e.endedAt){e.endedAt=new Date(Math.max(Date.now(),Date.parse(e.startedAt))).toISOString();e.endRevision=p.revision}
     versionRebind(next);versionTouch(next);versionValidate(next);return next;
   }
-  async function finishedOpen(id,checkpointId,options={}){const r=await versionCommit(id,p=>finishedFork(p,checkpointId),{...options,fork:true});if(r.ok){setLastProject(r.project.projectId);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(r.project.projectId)}`)}return r}
+  async function finishedOpen(id,checkpointId,options={}){const r=await versionCommit(id,p=>finishedFork(p,checkpointId),{...options,fork:true});if(r.ok&&!r.refreshPending){setLastProject(r.project.projectId);routeTo(`${EDIT_ROUTE}/${encodeURIComponent(r.project.projectId)}`)}return r}
   function finishedOpenSubmit(event,id){event.preventDefault();return finishedOpen(id,event.currentTarget.elements.finishedId.value)}
   function productionSessionChange(p,action,note=''){
     if(!['start','finish'].includes(action)||typeof note!=='string'||note.length>2000)throw Error('production-session-input-invalid');
@@ -399,9 +401,9 @@
     days.push({id:uuid(),day,note:note.trim(),createdAt:now(),revision:p.revision,...(active?{sessionId:active.id}:{})});next.songVersions=v;versionTouch(next);versionValidate(next);return next;
   }
   async function productionDaySave(id,day,note,options){return versionCommit(id,p=>productionDayChange(p,day,note),options)}
-  async function productionDaySubmit(event,id){event.preventDefault();productionDraftChange(event,id);const f=event.currentTarget,r=await productionDaySave(id,f.elements.productionDay.value,f.elements.productionDayNote.value);if(r.ok&&versionPanel.productionDraft?.projectId===id){delete versionPanel.productionDraft.day;delete versionPanel.productionDraft.note;requestPaint()}return r}
+  async function productionDaySubmit(event,id){event.preventDefault();productionDraftChange(event,id);const f=event.currentTarget,r=await productionDaySave(id,f.elements.productionDay.value,f.elements.productionDayNote.value);if(r.ok&&!r.refreshPending&&versionPanel.productionDraft?.projectId===id){delete versionPanel.productionDraft.day;delete versionPanel.productionDraft.note;requestPaint()}return r}
   async function productionSessionSave(id,action,note,options){return versionCommit(id,p=>productionSessionChange(p,action,note),options)}
-  async function productionSessionSubmit(event,id){event.preventDefault();productionDraftChange(event,id);const f=event.currentTarget,r=await productionSessionSave(id,f.elements.sessionAction.value,f.elements.sessionNote.value);if(r.ok&&versionPanel.productionDraft?.projectId===id){delete versionPanel.productionDraft.sessionNote;requestPaint()}return r}
+  async function productionSessionSubmit(event,id){event.preventDefault();productionDraftChange(event,id);const f=event.currentTarget,r=await productionSessionSave(id,f.elements.sessionAction.value,f.elements.sessionNote.value);if(r.ok&&!r.refreshPending&&versionPanel.productionDraft?.projectId===id){delete versionPanel.productionDraft.sessionNote;requestPaint()}return r}
   function productionDraftChange(event,id){const f=event.currentTarget,d=versionPanel.productionDraft?.projectId===id?versionPanel.productionDraft:{projectId:id};if(f.elements.sessionNote)d.sessionNote=f.elements.sessionNote.value;if(f.elements.productionDay)d.day=f.elements.productionDay.value;if(f.elements.productionDayNote)d.note=f.elements.productionDayNote.value;versionPanel.productionDraft=d}
   function finishedVersions(p,query=''){const q=String(query).normalize('NFKC').toLocaleLowerCase().trim();return versionLedger(p).checkpoints.filter(c=>c.kind==='finished'&&(!q||[c.name,c.snapshot.songTitle,c.snapshot.projectName,c.snapshot.purpose,c.createdAt].join(' ').normalize('NFKC').toLocaleLowerCase().includes(q)))}
   function productionHistoryView(p){
@@ -474,7 +476,7 @@
   async function versionApply(id,options){const preview=versionPanel.preview,proof=preview&&versionProof.get(preview);return versionCommit(id,p=>{if(!proof||preview.projectId!==id||proof.baseline!==JSON.stringify(p)||proof.proof!==JSON.stringify(preview))throw Error('checkpoint-preview-stale');return clone(proof.next)},options)}
   async function versionUndoRedo(id,direction,options){return versionCommit(id,p=>versionStep(p,direction),options)}
   function versionCaptureChanged(event,id){const f=event.currentTarget;return versionPanel.captureDraft={projectId:id,name:f.elements.checkpointName.value,kind:f.elements.checkpointKind?.value||'working'}}
-  async function versionSubmit(event,id){event.preventDefault();const draft=versionCaptureChanged(event,id),result=await versionSave(id,draft.name,{kind:draft.kind});if(result.ok&&versionPanel.captureDraft===draft){versionPanel.captureDraft=null;requestPaint()}return result}
+  async function versionSubmit(event,id){event.preventDefault();const draft=versionCaptureChanged(event,id),result=await versionSave(id,draft.name,{kind:draft.kind});if(result.ok&&!result.refreshPending&&versionPanel.captureDraft===draft){versionPanel.captureDraft=null;requestPaint()}return result}
   function versionScopeForm(f){return f.elements.checkpointTrack?.value?{trackId:f.elements.checkpointTrack.value,startMeasure:Number(f.elements.checkpointStart.value),endMeasure:Number(f.elements.checkpointEnd.value)}:null}
   function versionPreviewSubmit(event,id){event.preventDefault();const f=event.currentTarget;return versionPreview(id,f.elements.checkpointId.value,Array.from(f.querySelectorAll('[name=checkpointGroup]:checked'),x=>x.value),versionScopeForm(f))}
   function versionSelectionChanged(event,id){const f=event.currentTarget;versionPanel.draft={projectId:id,checkpointId:f.elements.checkpointId.value,groups:Array.from(f.querySelectorAll('[name=checkpointGroup]:checked'),x=>x.value),scope:versionScopeForm(f)};versionPanel.preview=null;versionPanel.message='Compare（選択を変更しました。もう一度比較してください）';requestPaint()}

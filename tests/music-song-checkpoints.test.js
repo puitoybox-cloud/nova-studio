@@ -115,3 +115,18 @@ test('checkpoint cancellation during render prevents playback and leaves saved p
  const {a,repo,w}=fixture();await a.versionSave('song','A');let p=await repo.get('song');p.productionNotes='Changed';p.revision++;await repo.put(p);a.state.projects=[p];a.versionPreview('song',p.songVersions.checkpoints[0].id,['notes']);const before=JSON.stringify(p);let plays=0;
  w.MusicStudioAudio={async renderMidiStream(){a.versionCancel();return{sampleRate:48000,channels:2,frames:1,chunks:[]}}};w.Audio=class{play(){plays++}};const r=await a.versionListen('song','B');assert.equal(r.ok,false);assert.equal(plays,0);assert.equal(JSON.stringify(await repo.get('song')),before);
 });
+test('committed checkpoint actions preserve replacement storage and newer views',async()=>{
+ for(const action of ['save','apply','undo','redo','fork','session','day'])for(const mode of ['repository','view','cancel']){
+  const f=fixture(),{a,repo}=f;
+  await a.versionSave('song','Original',{kind:'finished'});
+  let p=await edit(f,p=>{p.productionNotes='edited'}),checkpoint=p.songVersions.checkpoints[0].id;
+  if(['apply','undo','redo'].includes(action))a.versionPreview('song',checkpoint,['notes']);
+  if(['undo','redo'].includes(action))await a.versionApply('song');
+  if(action==='redo')await a.versionUndoRedo('song',-1);
+  const replacement=a.makeProject({projectId:'other',projectName:'Other'}),other=a.memoryRepository([replacement]);
+  const method=action==='fork'?'compareAndFork':'compareAndPut',original=repo[method].bind(repo);let expected;
+  repo[method]=async(...args)=>{await original(...args);if(mode==='repository')a.setRepository(other);if(mode==='cancel')a.versionCancel();a.state.projects=[replacement];a.versionPanel.message='new context';expected=JSON.stringify(a.state.projects)};
+  const result=await(action==='session'?a.productionSessionSave('song','start','Session'):action==='day'?a.productionDaySave('song','2026-11-07','Day'):action==='save'?a.versionSave('song','New'):action==='apply'?a.versionApply('song'):action==='fork'?a.finishedOpen('song',checkpoint):a.versionUndoRedo('song',action==='undo'?-1:1));
+  assert.equal(result.ok,true,action+'/'+mode);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.equal(JSON.stringify(a.state.projects),expected);assert.equal(a.versionPanel.message,'new context');assert.ok(await repo.get(result.project.projectId));assert.equal((await other.list()).length,1);assert.equal(f.w.location.hash,'#music-studio');
+ }
+});
