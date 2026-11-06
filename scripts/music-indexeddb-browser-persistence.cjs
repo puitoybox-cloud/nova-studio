@@ -242,11 +242,11 @@ test('lyric follow scrolls active saved assignments after rerender and clears st
  }finally{await browser?.close();await new Promise(r=>server.close(r))}
 });
 test('real IndexedDB committed checkpoint actions preserve replacement views',{timeout:60000},async()=>{
- const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript':'text/html'});res.end(req.url==='/app.js'?fs.readFileSync('music-studio.js'):'<!doctype html><body></body>')});
+ const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?fs.readFileSync('music-studio.js'):'<!doctype html><body></body>')});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||chromium.executablePath(),args:['--no-sandbox']});
-  const page=await browser.newPage();await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'/app.js'});
+  const page=await browser.newPage();await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/app.js'});
   const results=await page.evaluate(async()=>{
    const a=MusicStudio,results=[];
    for(const action of ['save','apply','undo','redo','fork','session','day'])for(const mode of ['repository','view','cancel']){
