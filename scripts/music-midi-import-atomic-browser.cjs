@@ -86,5 +86,14 @@ test('MIDI project and import history commit or roll back together across SIGKIL
    const repo=MusicStudio.indexedDbRepository(),p=await repo.get(expected.id),rows=await repo.listMidiImportHistory();
    if(JSON.stringify(p)!==expected.project||!rows.some(r=>JSON.stringify(r)===expected.receipt))throw Error('SIGKILL lost reconciled import');
   },imported);
+  await page.evaluate(async expected=>{
+   const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);await app.refresh();
+   const bytes=MusicStudioMidi.createMidiFile(MusicStudioMidi.createTestMidiData()).bytes;
+   await app.inspectMidiFile(new File([bytes],'reselected-after-restart.mid',{type:'audio/midi'}));
+   const before=JSON.stringify(await repo.list()),history=JSON.stringify(await repo.listMidiImportHistory());
+   const retry=await app.saveMidiImport('new');
+   if(!retry.ok||retry.project.projectId!==expected.id)throw Error('fresh process reselection duplicated import');
+   if(JSON.stringify(await repo.list())!==before||JSON.stringify(await repo.listMidiImportHistory())!==history)throw Error('reselection changed saved data');
+  },imported);
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });

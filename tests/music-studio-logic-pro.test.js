@@ -1677,3 +1677,31 @@ test('uncertain MIDI retry rejects changed committed data without overwriting or
  const write=repo.commitMidiImport;repo.commitMidiImport=async(...args)=>{await write(...args);const changed=await repo.get(args[0].projectId);changed.projectName='Protected later edit';await repo.put(changed);throw Error('lost completion')};
  assert.equal((await app.saveMidiImport('new')).ok,false);assert.equal((await app.saveMidiImport('new')).ok,false);assert.equal((await repo.list()).length,1);assert.equal((await repo.list())[0].projectName,'Protected later edit');assert.equal((await repo.listMidiImportHistory()).length,1);
 });
+
+for(const mode of ['new','duplicate'])test(`MIDI ${mode} fresh process file reselection reuses durable receipt and preserves later edits`,async()=>{
+ const first=load(),repo=first.app.memoryRepository(),source=first.app.makeProject({projectId:'source',projectName:'Original'});
+ first.window.crypto.subtle=require('node:crypto').webcrypto.subtle;first.app.setRepository(repo);await repo.put(source);first.app.state.projects=[source];
+ const bytes=first.window.MusicStudioMidi.createMidiFile(first.window.MusicStudioMidi.createTestMidiData()).bytes;
+ await first.app.inspectMidiFile(file('song.mid',bytes));const saved=await first.app.saveMidiImport(mode);assert.equal(saved.ok,true,saved.error?.message);
+ const changed=await repo.get(saved.project.projectId);changed.projectName='Later edit';changed.revision++;await repo.put(changed);
+ const fresh=load();fresh.window.crypto.subtle=require('node:crypto').webcrypto.subtle;fresh.app.setRepository(repo);fresh.app.state.projects=[source];
+ await fresh.app.inspectMidiFile(file('renamed.mid',bytes));const result=await fresh.app.saveMidiImport(mode);assert.equal(result.ok,true,result.error?.message);
+ assert.equal(result.project.projectId,saved.project.projectId);assert.equal(result.project.projectName,'Later edit');assert.equal((await repo.list()).length,2);assert.equal((await repo.listMidiImportHistory()).length,1);
+ assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(source));
+});
+
+test('MIDI reselection rejects orphan receipt and protects existing records',async()=>{
+ const {app,window}=load(),repo=app.memoryRepository();window.crypto.subtle=require('node:crypto').webcrypto.subtle;app.setRepository(repo);
+ const bytes=window.MusicStudioMidi.createMidiFile(window.MusicStudioMidi.createTestMidiData()).bytes;
+ await app.inspectMidiFile(file('orphan.mid',bytes));const first=await app.saveMidiImport('new');assert.equal(first.ok,true);
+ const original=await repo.get(first.project.projectId);original.productionHistory=[];await repo.put(original);
+ await app.inspectMidiFile(file('orphan.mid',bytes));const result=await app.saveMidiImport('new');assert.equal(result.ok,false);assert.match(result.error.message,/reselection-conflict/);assert.equal((await repo.list()).length,1);
+});
+
+test('MIDI different bytes with same name and size remain separate imports',async()=>{
+ const {app,window}=load(),repo=app.memoryRepository();window.crypto.subtle=require('node:crypto').webcrypto.subtle;app.setRepository(repo);
+ const data=window.MusicStudioMidi.createTestMidiData(),one=window.MusicStudioMidi.createMidiFile(data).bytes;
+ data.tracks[0].notes[0].pitch++;const two=window.MusicStudioMidi.createMidiFile(data).bytes;assert.equal(one.length,two.length);
+ for(const bytes of [one,two]){await app.inspectMidiFile(file('same.mid',bytes));const result=await app.saveMidiImport('new');assert.equal(result.ok,true,result.error?.message)}
+ assert.equal((await repo.list()).length,2);assert.equal((await repo.listMidiImportHistory()).length,2);
+});
