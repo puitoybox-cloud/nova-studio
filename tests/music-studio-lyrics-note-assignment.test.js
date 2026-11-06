@@ -45,3 +45,13 @@ test('Japanese engine reading normalization is isolated and rejects unresolved k
  saved.syllableAssignments.at(-1).assignments[0].token='今日';assert.throws(()=>app.japaneseVocalProject(saved,record.id),/かな/);
  assert.deepEqual(plain(app.kanaReadingTokens('ｷｬｯﾄｰﾝ')),['きゃ','っ','と','ー','ん']);
 });
+
+test('committed lyric assignment preserves replacement repository, editor preview and newer view',async()=>{
+ for(const mode of ['repository','preview','view']){
+  const f=await prepare(),cas=f.repo.compareAndPut, replacement={...plain(f.p),productionNotes:'replacement view'},nextPreview={future:'new preview'};
+  f.repo.compareAndPut=async(...args)=>{await cas(...args);if(mode==='repository')f.app.setRepository(f.app.memoryRepository([replacement]));if(mode==='preview')f.app.lyricsEditor.preview=nextPreview;f.app.state.projects=[replacement]};
+  const result=await f.app.saveLyricsAssignment('p');assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);
+  assert.equal(f.app.state.projects[0],replacement);if(mode==='preview')assert.equal(f.app.lyricsEditor.preview,nextPreview);
+  const saved=await f.repo.get('p');assert.equal(saved.syllableAssignments[1].assignments.length,3);assert.deepEqual(plain(saved.midiData),plain(f.p.midiData));
+ }
+});

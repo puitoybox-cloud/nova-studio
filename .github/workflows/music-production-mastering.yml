@@ -5,6 +5,8 @@ on:
       - 'music-studio.js'
       - 'scripts/music-eight-minute-stems-browser.js'
       - '.github/workflows/music-production-mastering.yml'
+      - 'scripts/music-production-comparison.js'
+      - 'tests/music-production-comparison.test.js'
 permissions:
   contents: read
 jobs:
@@ -43,23 +45,7 @@ jobs:
         run: node scripts/music-eight-minute-stems-browser.js
       - name: Compare unchanged audio and corrected peak-meter contracts
         run: |
-          node - <<'JS'
-          const fs=require('node:fs'),assert=require('node:assert/strict');
-          const before=JSON.parse(fs.readFileSync('verification/music-eight-minute-baseline.json'));
-          const after=JSON.parse(fs.readFileSync('verification/music-eight-minute-stems-browser.json'));
-          assert.equal(before.completed,true);assert.equal(after.completed,true);
-          assert.deepEqual(after.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})),before.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})));
-          assert.equal(after.result.masterHash,before.result.masterHash);
-          // Source and completed Master bytes remain an exact regression gate.
-          // Peak-estimator fields intentionally change in the onset correction;
-          // loudness, sample peak, clipping and audio format remain identical.
-          const stableMeter=({method,truePeak,truePeakDb,...stable})=>stable;
-          assert.deepEqual(stableMeter(after.result.mastering),stableMeter(before.result.mastering));
-          assert.equal(after.result.mastering.clippingSamples,0);
-          assert.ok(after.result.mastering.truePeakDb<=after.result.masterPlan.ceilingDb+.002);
-          assert.deepEqual(after.result.masterPlan,before.result.masterPlan);
-          fs.writeFileSync('verification/music-eight-minute-comparison.json',JSON.stringify({baselineHead:before.head,head:after.head,beforeSteps:before.result.steps,afterSteps:after.result.steps,beforeMemory:before.memory,afterMemory:after.memory,audioEqual:true},null,2));
-          JS
+          node scripts/music-production-comparison.js verification/music-eight-minute-baseline.json verification/music-eight-minute-stems-browser.json verification/music-eight-minute-comparison.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
