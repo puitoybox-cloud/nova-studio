@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto}=require('node:crypto');
 const plain=x=>JSON.parse(JSON.stringify(x));
-function fixture(){const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio,p=a.makeProject({projectId:'song',projectName:'Song',productionNotes:'before',midiData:{ppq:480,tracks:[{id:'piano',notes:[{id:'n',pitch:60,velocity:80,startTick:0,durationTicks:480}]}]}}),repo=a.memoryRepository([p]);a.setRepository(repo);a.state.projects=[p];a.state.settings=a.defaultSettings();return{a,p,repo,w}}
+function fixture(){const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio,p=a.makeProject({projectId:'song',projectName:'Song',productionNotes:'before',midiData:{ppq:480,tracks:[{id:'piano',notes:[{id:'n',pitch:60,velocity:80,startTick:0,durationTicks:480}]}]}}),repo=a.memoryRepository([p]);a.setRepository(repo);a.state.projects=[p];a.state.loaded=true;a.state.settings=a.defaultSettings();return{a,p,repo,w}}
 async function edit(f,change){const p=await f.repo.get('song');change(p);p.revision++;await f.repo.put(p);f.a.state.projects=[p];return p}
 test('explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation',async()=>{
  const f=fixture(),{a,repo}=f;assert.equal((await a.versionSave('song','First')).ok,true);const p=await edit(f,p=>{p.productionNotes='after';p.songTitle='Keep';p.midiData.tracks[0].notes[0].pitch=67});const before=JSON.stringify(p),c=p.songVersions.checkpoints[0];
@@ -98,4 +98,20 @@ test('interactive project search matches initial listing for finished names, unr
  const f=fixture();await f.a.versionSave('song','ＦＩＮＡＬ <mix>',{kind:'finished'});const p=await f.repo.get('song');p.songTitle='ＣＡＦＥ';await f.repo.put(p);f.a.state.projects=[p];f.a.state.loaded=true;let html='';f.w.document={querySelector:()=>({set innerHTML(value){html=value}})};
  for(const [query,count] of [['final',1],['cafe',1],['unrelated',0],['  ＦＩＮＡＬ  ',1],['',1]]){f.a.searchProjects(query);assert.equal(f.a.matchingProjects(query).length,count,query);assert.equal(html.includes('music-project-row'),count===1,query);assert.equal(f.a.listView().includes('music-project-row'),count===1,query)}
  assert.equal((await f.repo.get('song')).songVersions.checkpoints[0].name,'ＦＩＮＡＬ <mix>');
+});
+
+test('checkpoint audible A/B renders distinct selected PCM snapshots without saving and releases playback',async()=>{
+ const f=fixture(),{a,repo,w}=f;delete f.p.midiData;const imported=a.pcmImport(f.p,{sampleRate:48000,channels:[Array.from({length:2400},(_,i)=>.15*Math.sin(i*.1))]},'Original');await repo.put(imported);a.state.projects=[imported];await a.versionSave('song','Original');
+ let p=await repo.get('song');p.pcmMix.assets[0].original.channels[0]=p.pcmMix.assets[0].original.channels[0].map(x=>x*.5);p.revision++;await repo.put(p);a.state.projects=[p];const baseline=JSON.stringify(p);assert.equal(a.versionPreview('song',p.songVersions.checkpoints[0].id,['music','audio']).ok,true);
+ const blobs=[],revoked=[],players=[];w.URL={createObjectURL(blob){blobs.push(blob);return 'blob:'+blobs.length},revokeObjectURL(url){revoked.push(url)}};w.Audio=class{constructor(url){this.url=url;players.push(this)}async play(){}pause(){this.paused=true}removeAttribute(){}load(){}};
+ assert.match(a.versionView(p),/versionListen/);let r=await a.versionListen('song','A');assert.equal(r.ok,true,r.error);r=await a.versionListen('song','B');assert.equal(r.ok,true,r.error);
+ const pcm=await Promise.all(blobs.map(async b=>a.pcmDecodeWav(await b.arrayBuffer())));assert.ok(Math.abs(pcm[1].channels[0][100])>Math.abs(pcm[0].channels[0][100])*1.9);assert.equal(players[0].paused,true);a.versionCancel();assert.equal(players[1].paused,true);assert.equal(revoked.length,2);assert.equal(JSON.stringify(await repo.get('song')),baseline);
+});
+test('checkpoint audition refuses stale storage, invalid sides, changed selection and missing binary without writes',async()=>{
+ for(const mode of ['storage','selection','invalid','missing']){const {a,repo,w}=fixture();await a.versionSave('song','A');let p=await repo.get('song');p.productionNotes='Changed';p.revision++;await repo.put(p);a.state.projects=[p];a.versionPreview('song',p.songVersions.checkpoints[0].id,['notes']);
+ if(mode==='storage')await repo.put({...p,productionNotes:'Other tab'});if(mode==='selection')a.versionPanel.preview.groups=['details'];if(mode==='missing'){delete w.MusicStudioAudio}const before=JSON.stringify(await repo.get('song'));const r=await a.versionListen('song',mode==='invalid'?'bad':'B');assert.equal(r.ok,false,mode);assert.equal(JSON.stringify(await repo.get('song')),before);assert.equal(a.versionPanel.busy,false)}
+});
+test('checkpoint cancellation during render prevents playback and leaves saved project unchanged',async()=>{
+ const {a,repo,w}=fixture();await a.versionSave('song','A');let p=await repo.get('song');p.productionNotes='Changed';p.revision++;await repo.put(p);a.state.projects=[p];a.versionPreview('song',p.songVersions.checkpoints[0].id,['notes']);const before=JSON.stringify(p);let plays=0;
+ w.MusicStudioAudio={async renderMidiStream(){a.versionCancel();return{sampleRate:48000,channels:2,frames:1,chunks:[]}}};w.Audio=class{play(){plays++}};const r=await a.versionListen('song','B');assert.equal(r.ok,false);assert.equal(plays,0);assert.equal(JSON.stringify(await repo.get('song')),before);
 });

@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "date": "2026-10-31 JST",
+  "date": "2026-11-06 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 554,
-  "baselineHead": "459f13243d3c2754dc2f3b4b8b1020376ac55d5c",
-  "baselineTree": "57aadd4da7abfe6ab7e9e93a4697a5648a91d8d0",
+  "baselinePR": 593,
+  "baselineHead": "33b3bec5dbafc38c7035c561d9e35c9dc8d499bc",
+  "baselineTree": "78f471b9defdc902c4838e00d540a10b75f30df9",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -2349,14 +2349,45 @@
       "feature": 22,
       "category": "A",
       "requirement": "Checkpoint可聴A/Bの統合",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-checkpoint-audition-browser.js",
+          "acceptance": "real MIDI and PCM audible A/B preserves stored source and adopts selected candidate",
+          "run": "verification/music-checkpoint-audition-acceptance-20261106.json"
+        },
+        {
+          "path": "scripts/music-checkpoint-audition-browser.js",
+          "acceptance": "audible candidate adoption survives reload with exact MIDI Undo and Redo",
+          "run": "verification/music-checkpoint-audition-acceptance-20261106.json"
+        },
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "checkpoint audible A/B renders distinct selected PCM snapshots without saving and releases playback",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "checkpoint audition refuses stale storage, invalid sides, changed selection and missing binary without writes",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-song-checkpoints.test.js",
+          "acceptance": "checkpoint cancellation during render prevents playback and leaves saved project unchanged",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "scripts/music-checkpoint-audition-browser.js",
+          "acceptance": "saved export routing offset compressor and Master targets render read-only",
+          "run": "verification/music-checkpoint-audition-acceptance-20261106.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "比較・部分採用と履歴復旧は実装済み。Checkpoint可聴A/Bを呼び出すproduction入口がなく、音声/MIDI再生の統合が必要。",
+        "note": "Production A/B renders current saved snapshot and selected adoption candidate read-only. Node cancellation/stale/no-write checks and real Chromium MIDI/PCM playback, reload Undo/Redo passed. Hardware listening separate.",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3438,6 +3469,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS22-A03 range dependency composition accepted: 22 browser rejection cases, meter map positive selection, stale-edit guard, restart undo/redo, historical binary recovery, Node locked-measure and meter-map tests; immutable CI-and-hash evidence. 60/135 verified."
+    },
+    {
+      "date": "2026-11-06 JST",
+      "baselinePR": 593,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS22-A02 production audible A/B plus exact-runtime real Chromium playback and reload Undo/Redo passed. 64/135 verified, 71 open; remaining eight validation gaps and 63 C-dependent requirements remain open. No acceptance text or tolerance changed."
     }
   ]
 }

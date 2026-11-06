@@ -1,10 +1,10 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-10-31 JST。基準：[PR #554](https://github.com/puitoybox-cloud/nova-studio/pull/554)、HEAD `459f13243d3c2754dc2f3b4b8b1020376ac55d5c`。
+確認日：2026-11-06 JST。基準：[PR #593](https://github.com/puitoybox-cloud/nova-studio/pull/593)、HEAD `33b3bec5dbafc38c7035c561d9e35c9dc8d499bc`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率 **46.67%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率 **47.41%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -35,7 +35,7 @@ A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率
 | 19 | 4 | 3 | 1 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
 | 21 | 4 | 1 | 3 | 1 | 1 |
-| 22 | 4 | 2 | 2 | 1 | 0 |
+| 22 | 4 | 3 | 1 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
 | 24 | 4 | 4 | 0 | 1 | 0 |
 | 25 | 5 | 2 | 3 | 1 | 1 |
@@ -172,7 +172,7 @@ A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率
 | MS21-B01 | B | 完成パッケージの実再生 | open | 未確認 |
 | MS21-C01 | C | 音源と依存物の再配布条件 | open | 未確認 |
 | MS22-A01 | A | explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation` |
-| MS22-A02 | A | Checkpoint可聴A/Bの統合 | open | 未確認 |
+| MS22-A02 | A | Checkpoint可聴A/Bの統合 | verified | [scripts/music-checkpoint-audition-browser.js](../../scripts/music-checkpoint-audition-browser.js) — `real MIDI and PCM audible A/B preserves stored source and adopts selected candidate`; [scripts/music-checkpoint-audition-browser.js](../../scripts/music-checkpoint-audition-browser.js) — `audible candidate adoption survives reload with exact MIDI Undo and Redo`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `checkpoint audible A/B renders distinct selected PCM snapshots without saving and releases playback`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `checkpoint audition refuses stale storage, invalid sides, changed selection and missing binary without writes`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `checkpoint cancellation during render prevents playback and leaves saved project unchanged`; [scripts/music-checkpoint-audition-browser.js](../../scripts/music-checkpoint-audition-browser.js) — `saved export routing offset compressor and Master targets render read-only` |
 | MS22-A03 | A | 依存範囲合成の全条件受入 | verified | [scripts/music-song-checkpoints-browser.js](../../scripts/music-song-checkpoints-browser.js) — `report.meterRangeRestart=`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `range adoption rejects linked dependencies, boundary notes, locks, identities and tampered selection without writes`; [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `range uses exact mid-bar meter boundaries and keeps out-of-range notes` |
 | MS22-A04 | A | 全保存入口の強制終了再開検証 | open | 未確認 |
 | MS22-B01 | B | 完全終了・再起動・再編集 | open | 未確認 |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 12 | 1 |
+| 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 8 |
 | 仕様判断待ち | 63 | 63 |
 
@@ -312,7 +312,7 @@ A：総数 **135**、証拠付き完了 **63**、残数 **72**、受入確認率
 | MS21-A02 | 仕様判断待ち | open |
 | MS21-A03 | 仕様判断待ち | open |
 | MS21-A04 | 仕様判断待ち | open |
-| MS22-A02 | 実装が必要 | open |
+| MS22-A02 | 実装が必要 | verified |
 | MS22-A03 | 実装済み・検証不足 | verified |
 | MS22-A04 | 実装済み・検証不足 | open |
 | MS23-A02 | 仕様判断待ち | open |
