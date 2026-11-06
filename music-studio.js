@@ -1480,7 +1480,7 @@
   function pcmShowPreview(event,id){event?.preventDefault?.();if(pcmEditor.busy)return;try{pcmEditor.preview=pcmPreview(state.projects.find(p=>p.projectId===id),pcmEditor.assetId,pcmEditor.gainDb);pcmEditor.message='実音声の処理候補です。A/Bで確認してから保存してください。'}catch(e){pcmEditor.preview=null;pcmEditor.message=e.message}requestPaint()}
   async function pcmCommit(id,operation,token=pcmEditor.generation,extraGuard=()=>{}){
     if(pcmEditor.busy)return{ok:false,error:'pcm-save-busy'};const target=repository,baseline=JSON.stringify(state.projects.find(p=>p.projectId===id));pcmEditor.busy=true;pcmStop();requestPaint();
-    try{const guard=()=>{extraGuard();if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('pcm-unsaved-or-stale-state')};guard.registerAbort=extraGuard.registerAbort;guard.clearAbort=extraGuard.clearAbort;guard();if(typeof target.compareAndPut!=='function')throw Error('pcm-atomic-save-unavailable');const current=await target.get(id);guard();if(JSON.stringify(current)!==baseline)throw Error('pcm-storage-conflict');const updated=operation(current);automaticEditRecord(current,updated,'audio-editor');await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(p=>p.projectId===id?updated:p);pcmEditor.preview=null;pcmEditor.message='音声と処理設定を保存しました。';return{ok:true,project:updated};}catch(e){pcmEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}finally{pcmEditor.busy=false;requestPaint()}
+    try{const guard=()=>{extraGuard();if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('pcm-unsaved-or-stale-state')};guard.registerAbort=extraGuard.registerAbort;guard.clearAbort=extraGuard.clearAbort;guard();if(typeof target.compareAndPut!=='function')throw Error('pcm-atomic-save-unavailable');const current=await target.get(id);guard();if(JSON.stringify(current)!==baseline)throw Error('pcm-storage-conflict');const updated=operation(current);automaticEditRecord(current,updated,'audio-editor');await target.compareAndPut(updated,baseline,guard);if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:updated};state.projects=state.projects.map(p=>p.projectId===id?updated:p);pcmEditor.preview=null;pcmEditor.message='音声と処理設定を保存しました。';return{ok:true,project:updated};}catch(e){pcmEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}finally{pcmEditor.busy=false;requestPaint()}
   }
   async function longWavDigest(blob,guard=()=>{}){
     if(!root.crypto?.subtle)throw Error('long-wav-integrity-unavailable');
@@ -1868,6 +1868,7 @@
       updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(current,updated,'audio-editor');
       if(!validateProject(updated).valid)throw Error('invalid-pcm-project');
       await target.putLongWav(updated,record,baseline,guard);
+      if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:updated,assetId};
       state.projects=state.projects.map(p=>p.projectId===id?updated:p);pcmEditor.preview=null;
       pcmEditor.message='元WAV本体を保存しました。長時間音声のGain・EQ・Compressionの候補、保存履歴、加工済みWAV書出しに対応します。Full WAV Archiveはバックアップ画面で利用できます。';
       return{ok:true,project:updated,assetId};
@@ -4474,40 +4475,45 @@
   function mountStandalone(){const historyHandler=()=>handleHistoryRouteChange(()=>paintStandalone());root.addEventListener?.('popstate',()=>root.setTimeout?.(historyHandler,0));root.addEventListener?.('hashchange',historyHandler);paintStandalone()}
   async function initialize(){try{await loadSettings();configureAutosave();await refresh();await vocalDiscoverRecovery();await loadAutoBackups();await loadMidiHistory();await loadMidiImportHistory();requestPaint();const automatic=await runAutoBackupCheck();if(automatic.created){state.notice=automatic.message;state.noticeKind='success';requestPaint()}}catch(error){console.error('Music Studio storage could not be opened',error);repository=memoryRepository();state.persistenceUnavailable=true;state.settings=normalizeSettings({});state.settingsDraft=clone(state.settings);state.loaded=true;notice('専用保存領域を開けないため、このセッションでは一時保存になります。','error')}}
 
-  // Local mastering: ITU-R BS.1770-5 Annex 1/2, 48 kHz mono/stereo only.
+  // Local mastering: BS.1770 K-weighting and gating, 4x FIR peak estimate; 48 kHz mono/stereo only.
   // Other rates are rejected rather than applying 48 kHz coefficients incorrectly.
-  const MASTER_FIR=[
-    [.001708984375,-.0291748046875,-.0189208984375,-.00830078125],
-    [.010986328125,.029296875,.0330810546875,.014892578125],
-    [-.0196533203125,-.0517578125,-.0582275390625,-.026611328125],
-    [.033203125,.089111328125,.1015625,.047607421875],
-    [-.0594482421875,-.16650390625,-.2003173828125,-.102294921875],
-    [.1373291015625,.465087890625,.77978515625,.97216796875],
-    [.97216796875,.77978515625,.465087890625,.1373291015625],
-    [-.102294921875,-.2003173828125,-.16650390625,-.0594482421875],
-    [.047607421875,.1015625,.089111328125,.033203125],
-    [-.026611328125,-.0582275390625,-.0517578125,-.0196533203125],
-    [.014892578125,.0330810546875,.029296875,.010986328125],
-    [-.00830078125,-.0189208984375,-.0291748046875,.001708984375]
-  ];
+  // Four normalized phases of a 32-tap Hann-windowed sinc interpolator.
+  // The longer filter reduces high-frequency transient error versus the former
+  // 12-tap estimate. Independent FFmpeg references use the existing 0.2 dB bound.
+  const MASTER_PHASES=Array.from({length:4},(_,phase)=>{
+    const taps=Array.from({length:32},(_,j)=>{const d=15+phase/4-j;return(d===0?1:Math.sin(Math.PI*d)/(Math.PI*d))*(.5+.5*Math.cos(Math.PI*d/16))});
+    const sum=taps.reduce((a,b)=>a+b,0);return taps.map(x=>x/sum);
+  });
+  const MASTER_FIR=Array.from({length:32},(_,j)=>MASTER_PHASES.map(phase=>phase[j]));
   function masterMeter(){
     const filter=(b,a)=>{let z1=0,z2=0;return x=>{const y=b[0]*x+z1;z1=b[1]*x-a[0]*y+z2;z2=b[2]*x-a[1]*y;return y}};
-    const ring=new Float64Array(19200),blocks=[];let sum=0,frames=0,count=0,peak=0,tp=0,clipping=0,filters=[],history=[];
-    const trueSample=(c,x)=>{const state=history[c],h=state.samples;const head=state.head=(state.head+11)%12;h[head]=h[head+12]=x;
+    const ring=new Float64Array(19200),blocks=[];let sum=0,frames=0,count=0,peak=0,tp=0,clipping=0,filters=[],history=[],leading=[],finished=null;
+    const trueSample=(c,x)=>{const state=history[c],h=state.samples;const head=state.head=(state.head+31)%32;h[head]=h[head+32]=x;
       // Keep each FIR phase's summation order while sharing history/coefficient reads.
-      let a=0,b=0,d=0,e=0;for(let j=0;j<12;j++){const v=h[head+j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
-    const push=pcm=>{const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
-      if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>({samples:Array(24).fill(0),head:0}))}
+      let a=0,b=0,d=0,e=0;for(let j=0;j<32;j++){const v=h[head+j],k=MASTER_FIR[j];a+=v*k[0];b+=v*k[1];d+=v*k[2];e+=v*k[3]}tp=Math.max(tp,Math.abs(a),Math.abs(b),Math.abs(d),Math.abs(e))};
+    const push=pcm=>{if(finished)throw Error('master-already-finished');const n=pcmValidate(pcm);if(pcm.sampleRate!==48000)throw Error('master-48khz-required');
+      if(!count){count=pcm.channels.length;filters=Array.from({length:count},()=>[filter([1.53512485958697,-2.69169618940638,1.19839281085285],[-1.69065929318241,.73248077421585]),filter([1,-2,1],[-1.99004745483398,.99007225036621])]);history=Array.from({length:count},()=>({samples:Array(64).fill(0),head:0}));leading=Array.from({length:count},()=>[])}
       if(count!==pcm.channels.length)throw Error('master-format-changed');
-      for(let i=0;i<n;i++){let energy=0;for(let c=0;c<count;c++){const x=pcm.channels[c][i];peak=Math.max(peak,Math.abs(x));if(Math.abs(x)>=1)clipping++;trueSample(c,x);const y=filters[c][1](filters[c][0](x));energy+=y*y}const at=frames%19200;sum+=energy-ring[at];ring[at]=energy;frames++;if(frames>=19200&&(frames-19200)%4800===0)blocks.push(Math.max(0,sum/19200))}
+      for(let i=0;i<n;i++){let energy=0;for(let c=0;c<count;c++){const x=pcm.channels[c][i];if(leading[c].length<32)leading[c].push(x);peak=Math.max(peak,Math.abs(x));if(Math.abs(x)>=1)clipping++;trueSample(c,x);const y=filters[c][1](filters[c][0](x));energy+=y*y}const at=frames%19200;sum+=energy-ring[at];ring[at]=energy;frames++;if(frames>=19200&&(frames-19200)%4800===0)blocks.push(Math.max(0,sum/19200))}
       return frames;
     };
     // Each meter owns independent filter, gate and FIR history.
-    const finish=()=>{if(!frames)throw Error('master-empty');for(let i=0;i<11;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
+    // Mirror only before the first sample, as swr's initial buffer does.
+    // Retain the existing zero-extended end estimate. This bounded extra guard
+    // handles abrupt starts without inventing peaks beyond the file duration.
+    const startPeak=samples=>{
+      const get=index=>samples[Math.abs(index)]||0;
+      for(let at=0;at<Math.min(16,samples.length);at++)for(let phase=0;phase<4;phase++){
+        let value=0;for(let j=0;j<32;j++)value+=get(at+j-15)*MASTER_PHASES[phase][j];tp=Math.max(tp,Math.abs(value));
+      }
+    };
+    const finish=()=>{if(finished)return{...finished};if(!frames)throw Error('master-empty');
+      for(let c=0;c<count;c++)startPeak(leading[c]);
+      for(let i=0;i<31;i++)for(let c=0;c<count;c++)trueSample(c,0);tp=Math.max(tp,peak);
     const loud=x=>x>0?-.691+10*Math.log10(x):null,mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
     const absolute=blocks.filter(x=>loud(x)!==null&&loud(x)>-70),relative=absolute.length?loud(mean(absolute))-10:null;
     const gated=absolute.filter(x=>loud(x)>relative),lufs=gated.length?loud(mean(gated)):null;
-    return{method:'ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate',frames,channels:count,sampleRate:48000,lufs,peak,peakDb:peak?20*Math.log10(peak):null,truePeak:tp,truePeakDb:tp?20*Math.log10(tp):null,clippingSamples:clipping,blocks:blocks.length,gatedBlocks:gated.length};
+    finished={method:'ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; 4x 32-tap Hann-windowed sinc true-peak estimate with reflected-start guard',frames,channels:count,sampleRate:48000,lufs,peak,peakDb:peak?20*Math.log10(peak):null,truePeak:tp,truePeakDb:tp?20*Math.log10(tp):null,clippingSamples:clipping,blocks:blocks.length,gatedBlocks:gated.length};return{...finished};
     };
     return{push,finish};
   }

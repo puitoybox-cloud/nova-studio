@@ -41,7 +41,7 @@ jobs:
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
           NOVA_HQ: '1'
         run: node scripts/music-eight-minute-stems-browser.js
-      - name: Compare identical audio and processing conditions
+      - name: Compare unchanged audio and corrected peak-meter contracts
         run: |
           node - <<'JS'
           const fs=require('node:fs'),assert=require('node:assert/strict');
@@ -50,7 +50,14 @@ jobs:
           assert.equal(before.completed,true);assert.equal(after.completed,true);
           assert.deepEqual(after.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})),before.result.assets.map(x=>({bytes:x.bytes,frames:x.frames,peak:x.peak,hash:x.chunkSha256})));
           assert.equal(after.result.masterHash,before.result.masterHash);
-          assert.deepEqual(after.result.mastering,before.result.mastering);
+          // Source and completed Master bytes remain an exact regression gate.
+          // Peak-estimator fields intentionally change in the onset correction;
+          // loudness, sample peak, clipping and audio format remain identical.
+          const stableMeter=({method,truePeak,truePeakDb,...stable})=>stable;
+          assert.deepEqual(stableMeter(after.result.mastering),stableMeter(before.result.mastering));
+          assert.equal(after.result.mastering.clippingSamples,0);
+          assert.ok(after.result.mastering.truePeakDb<=after.result.masterPlan.ceilingDb+.002);
+          assert.deepEqual(after.result.masterPlan,before.result.masterPlan);
           fs.writeFileSync('verification/music-eight-minute-comparison.json',JSON.stringify({baselineHead:before.head,head:after.head,beforeSteps:before.result.steps,afterSteps:after.result.steps,beforeMemory:before.memory,afterMemory:after.memory,audioEqual:true},null,2));
           JS
       - uses: actions/upload-artifact@v4

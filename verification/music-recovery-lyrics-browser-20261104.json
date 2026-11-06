@@ -4,23 +4,23 @@
   "passed": 2,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-indexeddb-browser-persistence.cjs": "39954d37204e1a0d50e6d77e08e6499bb100f1c14a1703c044549b3edffc4365"
+    "scripts/music-indexeddb-browser-persistence.cjs": "280eadb13aeac31c46e37a2688307ad2c436f5f824e768ef4e316a8f9980af59"
   },
   "runtimeHashes": {
-    "music-studio.js": "b57645e0e1321498753f9c4aa49681b8f2e2a64a231a64a504a67a39c7fc3d92"
+    "music-studio.js": "77a63105544e6e25b1070d15b20e4aac86b712b9aa1e2f9e12426ba083f07450"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified. Extended exact-runtime public checkpoint adoption/Undo/Redo SIGKILL-before-commit, restart, prior-state equality and successful retry preserve Session and daily records.",
+  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified. Extended exact-runtime public checkpoint adoption/Undo/Redo SIGKILL-before-commit, restart, prior-state equality and successful retry preserve Session and daily records. Added PCM gain adoption and WAV binary import SIGKILL-before-commit/restart/retry preserve source bytes, exactly one edit history record, active Session and daily records.",
   "source": "Exact runtime and browser source passed the identified GitHub Actions step. Local Chrome was unavailable. Entire workflow status is separate.",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "a10f5d7ebf6a05ea26f67da1cc62389673b61bd1",
-    "runId": 42177805786,
-    "jobId": 127760226292,
+    "head": "9d1269ba4fc7458bb7fceb46da6d69e83bf54d3d",
+    "runId": 42180452486,
+    "jobId": 127768585678,
     "step": 6,
     "stepConclusion": "success"
   }

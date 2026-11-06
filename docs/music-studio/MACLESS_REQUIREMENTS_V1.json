@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-11-06 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 593,
-  "baselineHead": "33b3bec5dbafc38c7035c561d9e35c9dc8d499bc",
-  "baselineTree": "78f471b9defdc902c4838e00d540a10b75f30df9",
+  "baselinePR": 594,
+  "baselineHead": "aac729150426449b7b3156aa830fd18391dedf7a",
+  "baselineTree": "5e7020be6b00b92d6e549f261b929ca9e837bc54",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -2099,14 +2099,102 @@
       "feature": 19,
       "category": "A",
       "requirement": "true peakとclipping検査",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "hard onset true peak agrees with the unchanged independent reference tolerance",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge references bind exact PCM and retain the existing 0.2 dB tolerance",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "terminal impulse is never lost when the independent resampler would omit its buffered tail",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-50",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-997",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-10000",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-12000-zero",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-12000-quarter",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: abrupt-19000",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: first-impulse",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: last-impulse",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: clipped-12000",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent abrupt-edge true peak and clipping: asymmetric-19000",
+          "declaration": "test('independent abrupt-edge true peak and clipping: '+c.id",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: hard-onset-12000",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "test('independent FFmpeg loudness and clipping reference: '+c.id"
+        },
+        {
+          "path": "tests/music-studio-meter-independent.test.js",
+          "acceptance": "independent FFmpeg loudness and clipping reference: clipped-997",
+          "run": "verification/music-macless-node-summary.json",
+          "declaration": "test('independent FFmpeg loudness and clipping reference: '+c.id"
+        }
+      ],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "32-tap 4x streaming FIR and reflected-start guard pass all 23 independent FFmpeg reference signals within the unchanged 0.2 dB tolerance; clipping counts and chunk invariance match, and an unpadded terminal impulse is retained. Software reference acceptance, not hardware/listening certification.",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3476,6 +3564,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS22-A02 production audible A/B plus exact-runtime real Chromium playback and reload Undo/Redo passed. 64/135 verified, 71 open; remaining eight validation gaps and 63 C-dependent requirements remain open. No acceptance text or tolerance changed."
+    },
+    {
+      "date": "2026-11-06 JST",
+      "baselinePR": 594,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "MS19-A03: correct 12-tap/onset estimation error with 32-tap interpolation; unchanged original independent references/tolerance, 10 added hash-bound abrupt-edge fixtures, clipping and terminal impulse/chunk checks. Final full Node 2908 passed. 65/135 verified, 70 open (7 validation gaps, 63 C-dependent). PCM/WAV post-commit view isolation fixed; MS22-A04/MS30-A02 remain open."
     }
   ]
 }

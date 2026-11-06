@@ -767,3 +767,16 @@ for(const mode of ['repository-switch','cancel'])test(`archive ${mode} after dur
  const binary=await fresh.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);
  assert.equal(Buffer.compare(Buffer.from(await binary.arrayBuffer()),Buffer.from(await wav(100).arrayBuffer())),0);
 });
+
+test('PCM committed save cannot replace a switched repository editor or a newer in-memory project',async()=>{
+ for(const mode of ['repository','project','editor']){const {a,repo,p}=await setup();const source=a.pcmImport(p,{sampleRate:8000,channels:[[0,.5,-.5,0]]},'PCM');await repo.put(source);a.state.projects=[source];const asset=source.pcmMix.assets[0];a.pcmEditor.preview=a.pcmPreview(source,asset.id,-6);const put=repo.compareAndPut.bind(repo);let expected;
+ repo.compareAndPut=async(...args)=>{await put(...args);if(mode==='repository'){const next={...source,projectName:'Replacement view'};a.setRepository(a.memoryRepository([next]));a.state.projects=[next]}if(mode==='project')a.state.projects=[{...source,productionNotes:'New unsaved view'}];if(mode==='editor'){a.pcmEditor.generation++;a.pcmEditor.projectId='another-editor'}expected=JSON.stringify(a.state.projects)};
+ const result=await a.pcmApply(source.projectId);assert.equal(result.ok,true,result.error);assert.equal(JSON.stringify(a.state.projects),expected,mode);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);const saved=await repo.get(source.projectId);assert.equal(saved.revision,source.revision+1);assert.equal(saved.songVersions.edits.at(-1).source,'audio-editor');assert.equal(JSON.stringify(saved.pcmMix.assets[0].original),JSON.stringify(asset.original));assert.equal(saved.pcmMix.assets[0].cursor,1);
+ }
+});
+test('WAV committed import retains original bytes and cannot overwrite a replacement view after publication',async()=>{
+ for(const mode of ['repository','project','editor']){const {a,repo,p,indexedDB}=await setup(),file=wav(100),put=repo.putLongWav.bind(repo);let expected;
+ repo.putLongWav=async(...args)=>{await put(...args);if(mode==='repository'){const next={...p,projectName:'Replacement repository'};a.setRepository(a.memoryRepository([next]));a.state.projects=[next]}if(mode==='project')a.state.projects=[{...p,productionNotes:'New view'}];if(mode==='editor'){a.pcmEditor.generation++;a.pcmEditor.projectId='another-editor'}expected=JSON.stringify(a.state.projects)};
+ const result=await a.pcmImportLongFile(file,p.projectId);assert.equal(result.ok,true,result.error);assert.equal(JSON.stringify(a.state.projects),expected,mode);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);const saved=await repo.get(p.projectId);assert.equal(saved.longWavAssets.length,1);assert.equal(saved.longWavAssets[0].id,result.assetId);assert.equal(saved.songVersions.edits.at(-1).source,'audio-editor');const record=indexedDB.stores.get('longWavBinaries').get(result.assetId);assert.deepEqual(Buffer.from(await record.blob.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+ }
+});

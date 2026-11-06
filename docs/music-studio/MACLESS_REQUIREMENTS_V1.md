@@ -1,14 +1,14 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-11-06 JST。基準：[PR #593](https://github.com/puitoybox-cloud/nova-studio/pull/593)、HEAD `33b3bec5dbafc38c7035c561d9e35c9dc8d499bc`。
+確認日：2026-11-06 JST。基準：[PR #594](https://github.com/puitoybox-cloud/nova-studio/pull/594)、HEAD `aac729150426449b7b3156aa830fd18391dedf7a`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率 **47.41%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率 **48.15%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装8件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装7件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -32,7 +32,7 @@ A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率
 | 16 | 3 | 1 | 2 | 1 | 1 |
 | 17 | 4 | 1 | 3 | 1 | 1 |
 | 18 | 5 | 4 | 1 | 1 | 0 |
-| 19 | 4 | 3 | 1 | 1 | 0 |
+| 19 | 4 | 4 | 0 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
 | 21 | 4 | 1 | 3 | 1 | 1 |
 | 22 | 4 | 3 | 1 | 1 | 0 |
@@ -157,7 +157,7 @@ A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率
 | MS18-B01 | B | 実曲Mixの音質と全曲聴取 | open | 未確認 |
 | MS19-A01 | A | 997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1 | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `997 Hz reference loudness follows ITU expected -3.01 LKFS at full scale and -23.01 at 0.1` |
 | MS19-A02 | A | LUFS計測の規格参照fixture拡張 | verified | [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent loudness references bind exact generated PCM and source provenance`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: mono-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: stereo-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: low-50`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: high-10000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: intersample-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: high-19000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: absolute-gate`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: relative-gate`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: silence-tail`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: asymmetric-stereo`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: hard-onset-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: clipped-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: silence` |
-| MS19-A03 | A | true peakとclipping検査 | open | 未確認 |
+| MS19-A03 | A | true peakとclipping検査 | verified | [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `hard onset true peak agrees with the unchanged independent reference tolerance`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge references bind exact PCM and retain the existing 0.2 dB tolerance`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `terminal impulse is never lost when the independent resampler would omit its buffered tail`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-50`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-997`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-10000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-12000-zero`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-12000-quarter`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: abrupt-19000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: first-impulse`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: last-impulse`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: clipped-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent abrupt-edge true peak and clipping: asymmetric-19000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: hard-onset-12000`; [tests/music-studio-meter-independent.test.js](../../tests/music-studio-meter-independent.test.js) — `independent FFmpeg loudness and clipping reference: clipped-997` |
 | MS19-A04 | A | 複数Master版の保存再開 | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `two named Master versions survive reopen and independently rerender exact audio`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `named Long Master settings and original bytes survive complete Archive into fresh app then re-edit`; [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `long master compares distinct measured targets; explicit gain-only selection preserves EQ and saves chosen provenance` |
 | MS19-B01 | B | 実曲Masterの音質と最終音量 | open | 未確認 |
 | MS20-A01 | A | selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input | verified | [tests/music-studio-logic-pro.test.js](../../tests/music-studio-logic-pro.test.js) — `selected MIDI disconnect during count-in cancels scheduled recording without switching into a replacement input` |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
-| 実装済み・検証不足 | 23 | 8 |
+| 実装済み・検証不足 | 23 | 7 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -305,7 +305,7 @@ A：総数 **135**、証拠付き完了 **64**、残数 **71**、受入確認率
 | MS18-A02 | 実装済み・検証不足 | open |
 | MS18-A03 | 実装済み・検証不足 | verified |
 | MS19-A02 | 実装済み・検証不足 | verified |
-| MS19-A03 | 実装済み・検証不足 | open |
+| MS19-A03 | 実装済み・検証不足 | verified |
 | MS19-A04 | 実装済み・検証不足 | verified |
 | MS20-A02 | 仕様判断待ち | open |
 | MS20-A03 | 仕様判断待ち | open |
