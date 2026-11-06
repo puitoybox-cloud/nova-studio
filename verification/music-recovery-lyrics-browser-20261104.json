@@ -4,23 +4,23 @@
   "passed": 2,
   "failed": 0,
   "sourceHashes": {
-    "scripts/music-indexeddb-browser-persistence.cjs": "167c5743bd989417fe6d56cff1c68528ac44b36ad8cecbaf25bc34e44c594b85"
+    "scripts/music-indexeddb-browser-persistence.cjs": "39954d37204e1a0d50e6d77e08e6499bb100f1c14a1703c044549b3edffc4365"
   },
   "runtimeHashes": {
-    "music-studio.js": "c74cb3a29a74f390836b4542b7791564756d901a6874cf2eec14f6a39c76663c"
+    "music-studio.js": "b57645e0e1321498753f9c4aa49681b8f2e2a64a231a64a504a67a39c7fc3d92"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
     "lyric follow scrolls active saved assignments after rerender and clears stopped playback"
   ],
-  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified.",
+  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified. Extended exact-runtime public checkpoint adoption/Undo/Redo SIGKILL-before-commit, restart, prior-state equality and successful retry preserve Session and daily records.",
   "source": "Exact runtime and browser source passed the identified GitHub Actions step. Local Chrome was unavailable. Entire workflow status is separate.",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "2851aa616320a1821d87b469cd3e6c04ce8198e0",
-    "runId": 42142140345,
-    "jobId": 127644783240,
+    "head": "a10f5d7ebf6a05ea26f67da1cc62389673b61bd1",
+    "runId": 42177805786,
+    "jobId": 127760226292,
     "step": 6,
     "stepConclusion": "success"
   }

@@ -1,0 +1,31 @@
+{
+  "completed": true,
+  "cases": [
+    "real MIDI and PCM audible A/B preserves stored source and adopts selected candidate",
+    "saved export routing offset compressor and Master targets render read-only",
+    "audible candidate adoption survives reload with exact MIDI Undo and Redo"
+  ],
+  "result": {
+    "checkpoint": "3bb7a798-0f89-4be9-9605-50f40e6d6790",
+    "digests": [
+      "91b00d66e75edcb0eae5856a09d358ca893adf43ed67f728317c5c854c1844da",
+      "4c05573d029816a9f815674651a0de6998547dcac14471ab0b25af7d2bde2cc3"
+    ],
+    "planned": {
+      "frames": 60000,
+      "lufs": -18.000004222208176,
+      "truePeakDb": -16.989153967769408
+    },
+    "frames": [
+      86400,
+      86400
+    ],
+    "adoptedPitch": 60
+  },
+  "head": "a10f5d7ebf6a05ea26f67da1cc62389673b61bd1",
+  "sourceHashes": {
+    "music-studio.js": "b57645e0e1321498753f9c4aa49681b8f2e2a64a231a64a504a67a39c7fc3d92",
+    "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782",
+    "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
+  }
+}
