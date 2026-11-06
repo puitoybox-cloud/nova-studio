@@ -130,3 +130,9 @@ test('committed checkpoint actions preserve replacement storage and newer views'
   assert.equal(result.ok,true,action+'/'+mode);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.equal(JSON.stringify(a.state.projects),expected);assert.equal(a.versionPanel.message,'new context');assert.ok(await repo.get(result.project.projectId));assert.equal((await other.list()).length,1);assert.equal(f.w.location.hash,'#music-studio');
  }
 });
+
+test('committed checkpoint preserves edits started after durable publication',async()=>{
+ const {a,repo}=fixture(),cas=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{await cas(...args);a.state.dirty=true;a.state.midiEditor={projectId:'song',sentinel:'new edits'};a.versionPanel.message='editing'};
+ const result=await a.versionSave('song','Committed');assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.equal(a.state.dirty,true);assert.equal(a.state.midiEditor.sentinel,'new edits');assert.equal(a.versionPanel.message,'editing');assert.equal((await repo.get('song')).songVersions.checkpoints.length,1);
+});
