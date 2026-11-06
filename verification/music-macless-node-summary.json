@@ -1,11 +1,11 @@
 {
   "date": "2026-11-06 JST",
   "command": "node --test --test-concurrency=2 --test-reporter=tap tests/*.test.js",
-  "passed": 2908,
+  "passed": 2911,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 219107.919269,
+  "durationMs": 214460.00755,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -100,7 +100,7 @@
     "tests/music-studio-logic-pro.test.js": "57e68f17ed31ba0dc2a68f22efa918f2bd6bb962c3a64e85330dac916ef3638e",
     "tests/music-studio-long-song-continuity.test.js": "ac51bbb864810384bb1b89ec920889a9b22b177be1e08eb0d78489c0cca0bc4d",
     "tests/music-studio-long-wav-storage.test.js": "5ae7708c3ff3433906fdea7861f8e32a15f9153db32e25c3056a4ae17169e76e",
-    "tests/music-studio-lyrics-note-assignment.test.js": "4f772a6a22cc738611c9dd195877b232986ee076c5b688860eae4ae05907c6ea",
+    "tests/music-studio-lyrics-note-assignment.test.js": "759a3e9bb94e7581e2e9b778ef15b7e48e2c4107addbc132a2d8ec6b1da15a6d",
     "tests/music-studio-lyrics-score-export.test.js": "70ebe27c932fa9dd9034ed1e59393a3a898fd1e6909835cd432210955c45204b",
     "tests/music-studio-measure-locks.test.js": "bb2caaf57dd2d8d0802c9ddba91af612e9dd8bbd3123860d2d1c06be53c92ccb",
     "tests/music-studio-meter-independent.test.js": "bdea65b04e390706164c5f1f640d50d73f61cb5f8c2dffcb0aee00dffb54737a",
@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "feb41334ee4401e364278cff41bf2915a3b5532b5dc16cd0a1979fcbdd8586ed",
-    "music-studio.js": "77a63105544e6e25b1070d15b20e4aac86b712b9aa1e2f9e12426ba083f07450",
+    "music-studio.js": "4c7369b2f80864fde2316698cdfa113e6ed97498958cb4e1376efd550cd845ab",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
@@ -3124,11 +3124,15 @@
     "validation failure occurs before import mutation path"
   ],
   "supplementaryCiValidation": {
-    "date": "2026-10-31 JST",
-    "head": "d230cd82c6a23092109838e24c32ed148f4eeab4",
-    "workflowRun": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/41196444449",
-    "note": "Earlier PR #556 CI reran all 2822 Node tests and validated source hash at preceding commit; the new internal-route fix changes runtime source. Pending final HEAD CI must validate the new digest. Historical local test log remains tied to PR #555."
+    "provider": "GitHub Actions",
+    "head": "37b02976a32573e432f1fa3bdf21ab02a08ca794",
+    "runId": 42192386102,
+    "jobId": 127807295991,
+    "step": 5,
+    "stepConclusion": "success",
+    "passed": 2911,
+    "failed": 0
   },
-  "source": "Complete local Node regression executed against runtime tree 57fb6af71e0abebbc6f2c376ab7d43c2656ad10c; 2891 passed, zero failed/cancelled/skipped.",
-  "logSha256": "6e2fcf2aae54b68742590a13f5fa8725801c18d45ca77f3440e5c6f3e4c05215"
+  "source": "Exact-source GitHub Actions Node step succeeded; ledger step correctly rejected stale browser/runtime proofs before refresh.",
+  "logSha256": "3531bbe9f458dc813d84ac5410bcbff12bab374a604eb471d03b2cefb2e6bd81"
 }
