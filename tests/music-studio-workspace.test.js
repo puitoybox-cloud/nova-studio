@@ -93,3 +93,23 @@ test('screen discovery buttons reject a changed project selection',()=>{
  app.setWorkProject('second');assert.equal(app.openRequestedWorkAction('midi','first'),false);assert.equal(window.location.hash,'#music-studio');
  assert.equal(app.openRequestedWorkAction('midi','second'),true);assert.equal(window.location.hash,'music-studio/midi-editor/second');
 });
+
+for(const [name,setup] of Object.entries({
+ 'unadopted lyrics':a=>a.lyricsEditor.pending={text:'keep'},
+ 'checkpoint transaction':a=>a.versionPanel.busy=true
+}))test('workspace preferences preserve '+name+' without storage or repaint',async()=>{
+ const {app,repo,window}=load();let paints=0;window.render=()=>paints++;
+ setup(app);const before=JSON.stringify([app.state.settings,app.lyricsEditor.pending,app.versionPanel]);
+ for(const operation of [()=>app.setWorkMode('mix'),()=>app.toggleFavorite('midi'),()=>app.setWorkActionVisible('mix',false)])assert.equal((await operation()).error,'workspace-busy');
+ assert.equal(JSON.stringify([app.state.settings,app.lyricsEditor.pending,app.versionPanel]),before);assert.equal(await repo.getSettings(),null);assert.equal(paints,0);
+});
+
+for(const [name,setup]of Object.entries({
+ 'lyrics candidate':a=>a.lyricsEditor.pending={text:'typed while saving'},
+ 'checkpoint operation':a=>a.versionPanel.busy=true,
+ 'MIDI edits':a=>a.state.midiEditor={dirty:true}
+}))test('late '+name+' survives workspace save completion without repaint',async()=>{
+ const {app,window}=load();let release,paints=0;window.render=()=>paints++;
+ app.setRepository({putSettings:()=>new Promise(r=>release=r)});const pending=app.setWorkMode('mix');setup(app);const before=paints;
+ release();assert.equal((await pending).ok,true);assert.equal(paints,before);
+});

@@ -1307,10 +1307,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "長時間・中断・Punch/Cycle・歌詞同期を組み合わせた録音について、全保存入口のSIGKILL・再起動・復元の証拠が未完。PCM/MediaRecorder単独の成功で全条件を代替しない。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1926,10 +1926,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "MIDI/PCM/WAV/Takeの個別経路は存在。全対応形式を混在させた曲全体Mixの入力同一性・配置・出力・保存再開の通し照合が未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3156,10 +3156,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "PR #597で未採用歌詞・Checkpoint処理中の作業設定保存による再描画を防止。15状態×10作業画面×4幅のブラウザ遷移拒否を追加。AI候補・全保存入口・複合編集状態を含む完全なDOM遷移網羅は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3200,10 +3200,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "画面幅・既存focus検証は存在するが、全制作画面のTab/Shift+Tab/Enter/Escape・ダイアログfocus復帰・アクセシビリティ自動監査の網羅証拠は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3358,10 +3358,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-06 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "関連production経路は存在するが、この受入全体の照合は未了。現時点でverifiedにしない。",
+        "note": "完成Checkpointの固定・別曲forkの検証は存在するが、全変更入口から完成snapshotが保持される不変条件の網羅証拠は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

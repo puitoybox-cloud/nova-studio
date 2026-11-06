@@ -7,7 +7,7 @@
     "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
   },
   "runtimeHashes": {
-    "music-studio.js": "4c7369b2f80864fde2316698cdfa113e6ed97498958cb4e1376efd550cd845ab",
+    "music-studio.js": "0d9a026a727a4c9709a87e7290b1b1cd7a1896f8de5048a009042c02a8e16ead",
     "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782"
   },
   "acceptedCases": [
@@ -17,12 +17,12 @@
   ],
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "37b02976a32573e432f1fa3bdf21ab02a08ca794",
-    "runId": 42192386177,
-    "jobId": 127807296346,
+    "head": "fd393f19cf7d4c7fc709d178770ec55335ce7fde",
+    "runId": 42224667137,
+    "jobId": 127915025213,
     "step": 5,
-    "stepConclusion": "success",
-    "artifactId": 13489859702
+    "stepConclusion": "success"
   },
-  "scope": "Real Chromium HTMLAudioElement and OfflineAudioContext MIDI/PCM A/B, no audition writes, adoption and page reload Undo/Redo. Hardware listening remains separate."
+  "scope": "Real Chromium HTMLAudioElement and OfflineAudioContext MIDI/PCM A/B, no audition writes, adoption and page reload Undo/Redo. Hardware listening remains separate.",
+  "source": "Exact committed runtime and unchanged corresponding browser source passed the identified GitHub Actions step; complete final-head CI is tracked separately."
 }
