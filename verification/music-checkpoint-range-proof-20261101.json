@@ -7,7 +7,7 @@
     "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
   },
   "runtimeHashes": {
-    "music-studio.js": "4c7369b2f80864fde2316698cdfa113e6ed97498958cb4e1376efd550cd845ab",
+    "music-studio.js": "69fe7e3903d0bc816bf49fff0e29e18e4c3ca3e56e3eb700a6b53a4bd783e852",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [
@@ -20,15 +20,15 @@
     "report.meterRangeRestart="
   ],
   "scope": "Chromium browser success: 22 unsafe-range/selection/historical-source refusal cases, selective adoption across meter change, rejected stale preview and retry, undo/redo across full Chromium restart, unchanged unrelated notes and production notes, persisted binary recovery; unit test exercises locked measure, midbar map and historical dependencies. Intel Mac hardware and listening are separate.",
-  "source": "Exact runtime and browser source passed the identified GitHub Actions step. Local Chrome was unavailable. Entire workflow status is separate.",
+  "source": "Exact committed runtime and unchanged corresponding browser source passed the identified GitHub Actions step; complete final-head CI is tracked separately.",
   "previousRun_report": "verification/music-song-checkpoints-browser.json",
   "previousRun_reportSha256": "cb61fd95d4c055c317db24916b6d3a78e42de90f6ed9862789e041a668bfafb0",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "37b02976a32573e432f1fa3bdf21ab02a08ca794",
-    "runId": 42192386054,
-    "jobId": 127807296195,
+    "head": "f91a28261eaadeb55a2af4b5deee0af52507ca80",
+    "runId": 42223954745,
+    "jobId": 127912593781,
     "step": 7,
     "stepConclusion": "success"
   }

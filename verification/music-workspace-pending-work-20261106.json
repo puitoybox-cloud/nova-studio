@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-06 JST",
+  "head": "f91a28261eaadeb55a2af4b5deee0af52507ca80",
+  "sourceHashes": {
+    "music-studio.js": "69fe7e3903d0bc816bf49fff0e29e18e4c3ca3e56e3eb700a6b53a4bd783e852",
+    "scripts/music-workspace-browser.js": "c0af151fa4ac3395dd893e25d0829b91a40cd720e307a708bec140d3cdf4d9dd",
+    "tests/music-studio-workspace.test.js": "c62b92a7fa357cc0d4a483875dc9575f595670363d570f619e23c692a202896c"
+  },
+  "local": {
+    "focusedPassed": 31,
+    "fullPassed": 2913,
+    "helperPassed": 22,
+    "failed": 0,
+    "baselineNewRegressionsFailed": 2,
+    "browser": "Chromium launch failed: socket() Operation not permitted"
+  },
+  "browser": {
+    "provider": "GitHub Actions",
+    "runId": 42223954841,
+    "jobId": 127912594390,
+    "step": 8,
+    "conclusion": "success",
+    "viewportWidths": [
+      1440,
+      1180,
+      820,
+      390
+    ],
+    "guardedPreferenceStates": [
+      "lyrics",
+      "checkpoint"
+    ],
+    "navigationStates": 15,
+    "actionsPerState": 10
+  },
+  "newVerified": [],
+  "verified": 65,
+  "remaining": 70,
+  "rate": 48.15
+}
