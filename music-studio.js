@@ -1133,6 +1133,7 @@
       const project=await target.get(id);guard();const updated=adoptLyricsAssignment(project,preview);automaticEditRecord(project,updated,'lyrics-editor');
       if(typeof target.compareAndPut!=='function')throw Error('lyrics-atomic-save-unavailable');
       await target.compareAndPut(updated,preview.baseline,guard);
+      if(repository!==target||lyricsEditor.projectId!==id||lyricsEditor.preview!==preview||JSON.stringify(state.projects.find(p=>p.projectId===id))!==preview.baseline)return{ok:true,committed:true,refreshPending:true,project:updated};
       state.projects=state.projects.map(p=>p.projectId===id?updated:p);lyricsEditor.preview=null;lyricsEditor.pending=false;lyricsEditor.message='歌詞の音符割付を保存しました。';return{ok:true,project:updated};
     }catch(e){lyricsEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}
     finally{lyricsEditor.busy=false;requestPaint()}
