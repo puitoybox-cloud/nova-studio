@@ -6,7 +6,7 @@
     "audible candidate adoption survives reload with exact MIDI Undo and Redo"
   ],
   "result": {
-    "checkpoint": "3bb7a798-0f89-4be9-9605-50f40e6d6790",
+    "checkpoint": "f4fcb43a-f42f-41d0-b43d-b39e2cee46b6",
     "digests": [
       "91b00d66e75edcb0eae5856a09d358ca893adf43ed67f728317c5c854c1844da",
       "4c05573d029816a9f815674651a0de6998547dcac14471ab0b25af7d2bde2cc3"
@@ -14,7 +14,7 @@
     "planned": {
       "frames": 60000,
       "lufs": -18.000004222208176,
-      "truePeakDb": -16.989153967769408
+      "truePeakDb": -16.999255083538145
     },
     "frames": [
       86400,
@@ -22,9 +22,9 @@
     ],
     "adoptedPitch": 60
   },
-  "head": "a10f5d7ebf6a05ea26f67da1cc62389673b61bd1",
+  "head": "9d1269ba4fc7458bb7fceb46da6d69e83bf54d3d",
   "sourceHashes": {
-    "music-studio.js": "b57645e0e1321498753f9c4aa49681b8f2e2a64a231a64a504a67a39c7fc3d92",
+    "music-studio.js": "77a63105544e6e25b1070d15b20e4aac86b712b9aa1e2f9e12426ba083f07450",
     "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782",
     "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
   }
