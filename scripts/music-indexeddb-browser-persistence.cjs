@@ -241,3 +241,27 @@ test('lyric follow scrolls active saved assignments after rerender and clears st
   await page.evaluate(async()=>{await MusicStudio.indexedDbRepository().put(song);const p=await MusicStudio.indexedDbRepository().get(song.projectId);if(JSON.stringify(MusicStudio.vocalLyricRows(p,'lead'))!==JSON.stringify(MusicStudio.vocalLyricRows(song,'lead')))throw Error('saved lyric timing changed')});
  }finally{await browser?.close();await new Promise(r=>server.close(r))}
 });
+test('real IndexedDB committed checkpoint actions preserve replacement views',{timeout:60000},async()=>{
+ const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?fs.readFileSync('music-studio.js'):'<!doctype html><body></body>')});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||chromium.executablePath(),args:['--no-sandbox']});
+  const page=await browser.newPage();await page.goto('http://127.0.0.1:'+server.address().port);await page.addScriptTag({url:'http://127.0.0.1:'+server.address().port+'/app.js'});
+  const results=await page.evaluate(async()=>{
+   const a=MusicStudio,results=[];
+   for(const action of ['save','apply','undo','redo','fork','session','day'])for(const mode of ['repository','view','cancel']){
+    const repo=a.indexedDbRepository(),id='context-'+action+'-'+mode;let p=a.makeProject({projectId:id,projectName:id,productionNotes:'original'});await repo.put(p);a.setRepository(repo);a.state.projects=[p];a.state.settings=a.defaultSettings();
+    const requireOK=r=>{if(!r.ok)throw Error(r.error);return r};requireOK(await a.versionSave(id,'Finished',{kind:'finished'}));p=await repo.get(id);p.productionNotes='edited';p.revision++;await repo.put(p);a.state.projects=[p];const checkpoint=p.songVersions.checkpoints[0].id;
+    if(['apply','undo','redo'].includes(action))requireOK(a.versionPreview(id,checkpoint,['notes']));
+    if(['undo','redo'].includes(action))requireOK(await a.versionApply(id));if(action==='redo')requireOK(await a.versionUndoRedo(id,-1));
+    const before=JSON.stringify(await repo.get(id)),replacement=a.makeProject({projectId:'other',projectName:'Other'}),other=a.memoryRepository([replacement]),method=action==='fork'?'compareAndFork':'compareAndPut',original=repo[method].bind(repo);let expected;
+    repo[method]=async(...args)=>{await original(...args);if(mode==='repository')a.setRepository(other);if(mode==='cancel')a.versionCancel();a.state.projects=[replacement];a.versionPanel.message='new view';expected=JSON.stringify(a.state.projects)};
+    const result=requireOK(await(action==='save'?a.versionSave(id,'New'):action==='apply'?a.versionApply(id):action==='fork'?a.finishedOpen(id,checkpoint):action==='session'?a.productionSessionSave(id,'start','Session'):action==='day'?a.productionDaySave(id,'2026-11-07','Day'):a.versionUndoRedo(id,action==='undo'?-1:1)));
+    if(!result.committed||!result.refreshPending||JSON.stringify(a.state.projects)!==expected||a.versionPanel.message!=='new view')throw Error(action+'/'+mode+' replaced new view');
+    const saved=await a.indexedDbRepository().get(result.project.projectId);if(JSON.stringify(saved)!==JSON.stringify(result.project))throw Error('committed receipt mismatch');
+    if((await other.list()).length!==1)throw Error('replacement storage was written');if(action==='fork'&&JSON.stringify(await a.indexedDbRepository().get(id))!==before)throw Error('fork changed source');
+    results.push(action+'/'+mode);
+   }return results;
+  });assert.equal(results.length,21);
+ }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
+});
