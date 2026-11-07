@@ -6,6 +6,8 @@ on:
     paths:
       - 'assets/music-acoustic-v1/**'
       - 'tools/music-native-wrapper/**'
+      - 'scripts/music-instrument-browser.js'
+      - 'scripts/music-multisample-browser.js'
       - 'scripts/music-final-export-browser.js'
       - 'scripts/music-midi-candidate-import-browser.js'
       - 'scripts/music-lyrics-score-browser.js'
