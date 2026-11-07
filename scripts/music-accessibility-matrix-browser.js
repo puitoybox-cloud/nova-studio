@@ -31,7 +31,8 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    const menus=page.locator('.music-editor-topbar > .music-editor-menu');
    for(let i=0;i<await menus.count();i++){
     const menu=menus.nth(i),summary=menu.locator(':scope > summary');if(!await summary.isVisible())continue;
-    await summary.focus();await summary.press('Enter');assert.notEqual(await menu.getAttribute('open'),null);
+    if(await menu.getAttribute('open')!==null)await summary.press('Enter');
+    await summary.focus();await summary.press('Enter');assert.notEqual(await menu.getAttribute('open'),null,await summary.innerText());
     const input=menu.locator('input:not([type=hidden]),select,textarea').first();
     if(await input.count()&&await input.isVisible())await input.focus();
     await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
