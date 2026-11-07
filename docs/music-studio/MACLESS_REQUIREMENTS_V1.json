@@ -3200,10 +3200,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-11-07 JST",
+        "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "PR #603: 実Chromeで14主要画面・58フォーカス復帰・711回Tab移動・5可視ポップアップの開閉/Escape復帰を確認。折りたたみ/展開・個別ポップアップのaxe違反0。共通CSSクラスによる誤ったsummary復帰、表示名/読み上げ名、見出し階層、Mix/Export配色を修正。保存済み音源/マルチサンプル管理・Mix/Mastering候補など素材あり条件付きパネルの全状態網羅は未完。verification/music-accessibility-status-20261107.jsonを参照。",
+        "note": "PR #603: 実Chromeで14主要画面・58フォーカス復帰・711回Tab移動・5可視ポップアップの開閉/Escape復帰を確認。折りたたみ/展開・個別ポップアップのaxe違反0。共通CSSクラスによる誤ったsummary復帰、表示名/読み上げ名、見出し階層、Mix/Export配色を修正。保存済み音源/マルチサンプル管理・Mix/Mastering候補など素材あり条件付きパネルの全状態網羅は未完。verification/music-accessibility-status-20261107.jsonを参照。 PR #604: 保存音色ありの4画面幅でMIDIメニューのEscape閉鎖・summaryフォーカス復帰、音色の改名/複製、候補試聴/採用、Undo/Redo、保存/復元を実Chromeで追加確認。管理・Mix・Masteringの全条件付き状態×キーボード/a11yの網羅は引き続き未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

@@ -30,5 +30,21 @@
     "artifactId": 13561929379,
     "artifactDigest": "sha256:7a337c5677126052f1b5b126ccf2a09ff45f36bd95cd7320e1a91c9972fa5ed0",
     "reportSha256": "6fc742392dfc8a0134fdcb1be8346c693425bc8f25a2f04696e8fca8d4b72207"
+  },
+  "additionalMultisampleExecution": {
+    "date": "2026-11-08 JST",
+    "head": "859b1c02e3c6449077474331b08eed7a5fc10f41",
+    "runId": 42418285076,
+    "jobId": 128541007142,
+    "step": 5,
+    "conclusion": "success",
+    "widths": [
+      1440,
+      820,
+      390,
+      1180
+    ],
+    "scope": "Populated multisample preset rename/duplicate, live MIDI menu Escape closure and focus return, candidate audition/adoption, Undo/Redo, storage and backup restoration. Not complete MS28-A04 conditional keyboard or axe coverage.",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42418285076/job/128541007142"
   }
 }
