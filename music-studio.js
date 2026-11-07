@@ -763,7 +763,28 @@
     root.location.hash=route;lastRoute=route;root.render?.();
   }
   function currentRoute(){return (root.location?.hash||`#${HOME_ROUTE}`).slice(1)||HOME_ROUTE}
+  // Status repaints replace DOM nodes; keep keyboard focus on the same control
+  // only within this route and only when its replacement remains visible.
+  function paintFocusIdentity(element){
+    if(!element?.getAttribute)return null;
+    return JSON.stringify([element.tagName,...['id','name','type','aria-label','onclick','onchange','onsubmit'].map(k=>element.getAttribute(k)),/^(BUTTON|SUMMARY)$/.test(element.tagName)?element.textContent?.trim():null]);
+  }
+  function capturePaintFocus(){
+    const document=root.document,active=document?.activeElement,key=paintFocusIdentity(active);
+    if(!key||active===document.body)return null;
+    const controls=Array.from(document.querySelectorAll?.('input,select,textarea,button,summary,a[href],[tabindex]')||[]).filter(e=>paintFocusIdentity(e)===key);
+    const index=controls.indexOf(active);if(index<0)return null;
+    return{key,index,route:currentRoute(),start:active.selectionStart,end:active.selectionEnd,direction:active.selectionDirection};
+  }
+  function restorePaintFocus(saved){
+    if(!saved||saved.route!==currentRoute())return;
+    const controls=Array.from(root.document?.querySelectorAll?.('input,select,textarea,button,summary,a[href],[tabindex]')||[]).filter(e=>paintFocusIdentity(e)===saved.key),target=controls[saved.index];
+    if(!target||target.disabled||!target.getClientRects?.().length)return;
+    target.focus?.({preventScroll:true});
+    if(Number.isInteger(saved.start)&&Number.isInteger(saved.end))try{target.setSelectionRange?.(saved.start,saved.end,saved.direction)}catch(_){}
+  }
   function requestPaint(){
+    const focused=capturePaintFocus();
     const checkpointPanel=root.document?.querySelector?.('.music-song-versions');if(checkpointPanel)versionPanel.open=checkpointPanel.open;
     // Keep the user's score-return controls through status/download repaints.
     // Retain the actual file input node: a selected local file is never serialized.
@@ -779,6 +800,7 @@
       const editAfter=detail.querySelector('[name=editAfter]');if(editAfter&&typeof prior.editAfter==='boolean')editAfter.checked=prior.editAfter;
       for(const [key,value] of Object.entries(prior.options||{})){const input=detail.querySelector('[name='+key+']');if(input&&value!==undefined)input.value=value;}
     }
+    restorePaintFocus(focused);
   }
   function repaintWorkspace(){return performanceMeasure('paintDispatch',()=>repaintWorkspaceMeasured())}
   function repaintWorkspaceMeasured(){const workspace=root.document?.querySelector?.('[data-workspace]');if(workspace)workspaceExpanded=workspace.open;if(root.document?.body?.dataset.musicStudioStandalone==='true')paintStandalone();else{root.render?.();restoreEditorPitchScroll()}}

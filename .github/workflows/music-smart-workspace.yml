@@ -4,6 +4,7 @@ on:
     paths:
       - 'music-studio.js'
       - 'scripts/music-workspace-browser.js'
+      - 'scripts/music-accessibility-matrix-browser.js'
       - 'tests/music-studio-workspace.test.js'
       - '.github/workflows/music-smart-workspace.yml'
 permissions:
@@ -21,7 +22,7 @@ jobs:
           node-version: '22'
       - run: node --test tests/music-studio-workspace.test.js
       - run: node --check music-studio.js && node --check scripts/music-workspace-browser.js
-      - run: npm install --prefix "$RUNNER_TEMP/workspace-browser" playwright
+      - run: npm install --prefix "$RUNNER_TEMP/workspace-browser" playwright @axe-core/playwright
       - name: Japanese UI fonts
         timeout-minutes: 6
         run: |
@@ -39,10 +40,17 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome
         run: node scripts/music-workspace-browser.js
+      - name: Keyboard focus, Tab traversal and accessibility inventory
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/music-accessibility-matrix-browser.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-smart-workspace
           path: |
+            verification/music-accessibility-matrix-browser.json
             verification/music-workspace-browser.json
             verification/music-workspace-*.png

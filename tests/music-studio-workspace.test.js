@@ -93,3 +93,16 @@ test('screen discovery buttons reject a changed project selection',()=>{
  app.setWorkProject('second');assert.equal(app.openRequestedWorkAction('midi','first'),false);assert.equal(window.location.hash,'#music-studio');
  assert.equal(app.openRequestedWorkAction('midi','second'),true);assert.equal(window.location.hash,'music-studio/midi-editor/second');
 });
+
+test('status repaint restores keyboard focus and caret only to a visible enabled control in the same route',()=>{
+ for(const mode of ['same','disabled','hidden','route']){
+  const {app,window:w}=load();let controls=[],focused=null,caret=null;
+  const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+  function control(){return{tagName:'INPUT',selectionStart:2,selectionEnd:4,selectionDirection:'forward',getAttribute:key=>key==='name'?'projectName':null,getClientRects:()=>mode==='hidden'?[]:[{}],focus(){focused=this},setSelectionRange(...range){caret=range}}}
+  const old=control();controls=[old];focused=old;w.document=doc;
+  let replacement;w.render=()=>{replacement=control();replacement.disabled=mode==='disabled';controls=[replacement];focused=doc.body;if(mode==='route')w.location.hash='#music-studio/settings'};
+  app.repaint();
+  if(mode==='same'){assert.equal(focused,replacement);assert.deepEqual(caret,[2,4,'forward'])}
+  else{assert.equal(focused,doc.body);assert.equal(caret,null)}
+ }
+});
