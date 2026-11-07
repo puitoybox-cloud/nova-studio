@@ -35,7 +35,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
     await summary.focus();await summary.press('Enter');assert.notEqual(await menu.getAttribute('open'),null,await summary.innerText());
     const input=menu.locator('input:not([type=hidden]):enabled:visible,select:enabled:visible,textarea:enabled:visible').first();
     if(await input.count())await input.focus();else await summary.focus();
-    await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
+    await page.keyboard.press('Escape');await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await menu.getAttribute('open'),null);
     await page.waitForFunction(index=>document.activeElement===document.querySelectorAll('.music-editor-topbar > .music-editor-menu')[index]?.querySelector(':scope > summary'),i,{timeout:3000}).catch(async error=>{console.log('FOCUS DIAGNOSTIC',i,await summary.innerText(),await page.evaluate(()=>({active:document.activeElement.outerHTML,menus:[...document.querySelectorAll('.music-editor-topbar > .music-editor-menu')].map(e=>({class:e.className,open:e.open,summary:e.querySelector(':scope > summary').outerHTML}))})));throw error});assert.equal(await summary.evaluate(e=>document.activeElement===e),true,await summary.innerText());
     popupChecks.push(await summary.innerText());
    }
