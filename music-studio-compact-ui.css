@@ -348,3 +348,8 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 /* Expanded Mix actions and export route labels retain readable contrast. */
 .music-studio-shell.music-mix-focused .music-project-panel button { background:#081421; color:#ecf4ff; border-color:#526985; }
 .music-studio-shell .music-final-routes label { color:#ecf4ff !important; }
+
+/* Saved takes also appear inside Project settings, outside the focused Vocal dock. */
+.music-studio-shell [data-vocal-replacement] { background:#0d1725; color:#ecf4ff; }
+.music-studio-shell [data-vocal-replacement] :is(p,label,summary) { color:#ecf4ff !important; }
+.music-studio-shell :is([data-vocal-replacement],.music-vocal-take-step) button { background:#081421; color:#ecf4ff; border-color:#526985; }

@@ -56,8 +56,9 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
     });
     await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(()=>document.activeElement===window.__expectedTab),true,label+' Tab follows visible DOM order');
+    await page.keyboard.press('Shift+Tab');assert.equal(await summary.evaluate(e=>document.activeElement===e),true,label+' Shift+Tab returns to summary');
     // Focus a descendant when available; Escape must not collapse its parent.
-    await detail.evaluate(d=>{const e=[...d.querySelectorAll('input:not([type=hidden]),select,textarea,button,summary')].find(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&e.closest('details')===d);(e||d.querySelector(':scope > summary')).focus()});
+    await detail.evaluate(d=>{const e=[...d.querySelectorAll('input:not([type=hidden]),select,textarea,button,summary')].find(e=>e!==d.querySelector(':scope > summary')&&!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&e.closest('details')===d);(e||d.querySelector(':scope > summary')).focus()});
     await page.keyboard.press('Escape');await settle(page);
     assert.equal(await detail.evaluate(d=>d.open),false,label+' Escape closes');
     assert.equal(await summary.evaluate(e=>document.activeElement===e),true,label+' Escape returns focus');
