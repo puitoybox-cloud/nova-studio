@@ -1066,7 +1066,7 @@ test('Piano Roll keeps the keyboard fixed horizontally while only the timeline s
   assert.equal(app.state.midiEditor.view.pitchScrollTop,1215);
   assert.equal(app.state.midiEditor.view.pitchScrollLeft,5040);
   assert.match(html,/class="music-loop-ruler [^"]*"[^>]*data-total-ticks="/);
-  assert.match(html,/class="music-playhead" style="left:[^"]+%"/);
+  assert.match(html,/class="music-playhead"[^>]* style="left:[^"]+%"/);
 });
 test('iPad keeps primary editing transport and part controls at safe touch height',()=>{
   const css=fs.readFileSync(path.join(__dirname,'..','music-studio.css'),'utf8');
@@ -1103,7 +1103,7 @@ test('Piano Roll keeps Loop and Bar rulers fixed vertically while they follow ho
     assert.match(html,/class="music-measure has-label [^"]*" style="left:0%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>1<\/span><\/button>/);
     assert.match(html,/class="music-measure has-label [^"]*" style="left:25%;width:25%"[^>]*><span class="music-measure-prefix">Bar <\/span><span>2<\/span><\/button>/);
     assert.match(html,/class="music-loop-selection is-enabled" style="left:6\.25%;width:12\.5%"/);
-    assert.match(html,/class="music-playhead" style="left:0%"/);
+    assert.match(html,/class="music-playhead"[^>]* style="left:0%"/);
     assert.match(html,/class="music-selected-pitch-layer"[^>]*><span data-pitch="60"/);
     assert.match(html,/class="music-piano-key is-white is-selected-pitch" data-pitch="60"/);
   }
@@ -1171,7 +1171,7 @@ test('time ruler moves and drags the playhead without changing note insertion po
   html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
   assert.match(html,/class="music-time-ruler"[^>]*onpointerdown="MusicStudio\.editorStartPlayheadMove\(event\)"/);
   assert.match(html,/ルーラーや空き位置で移動/);
-  assert.match(html,/class="music-playhead" style="left:75%"/);
+  assert.match(html,/class="music-playhead"[^>]* style="left:75%"/);
   assert.match(html,/class="music-playhead-handle" style="left:75%"/);
 });
 test('adding empty measures persists song length without inventing MIDI notes',async()=>{

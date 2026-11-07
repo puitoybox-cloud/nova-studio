@@ -1,0 +1,3488 @@
+{
+  "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
+  "screens": [
+    {
+      "route": "music-studio",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 23
+      },
+      "tabOrder": [
+        {
+          "tag": "BUTTON",
+          "name": "＋ 新しい音楽プロジェクト"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "プロジェクト一覧"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Music Studio Homeのヘルプ"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ガイドを開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "最初の1曲ガイドを別ウィンドウで開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 5:26"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BODY",
+          "name": "MENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  ☰MENUMUSIC PRO"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/projects",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 19
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ 新規作成"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "JSONを読み込む"
+        },
+        {
+          "tag": "BODY",
+          "name": "MENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  ☰MENUMUSIC PRO"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/new",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 33
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ 新しい音楽プロジェクト"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "プロジェクト一覧"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 5:26"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "準備中ページを見る"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "開く"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "入口を見る"
+        },
+        {
+          "tag": "BODY",
+          "name": "MENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  ☰MENUMUSIC PRO"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/settings",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "TEXTAREA",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 78
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "A",
+          "name": "一般"
+        },
+        {
+          "tag": "A",
+          "name": "プロジェクト初期値"
+        },
+        {
+          "tag": "A",
+          "name": "自動保存"
+        },
+        {
+          "tag": "A",
+          "name": "MIDI"
+        },
+        {
+          "tag": "A",
+          "name": "Logic Pro X"
+        },
+        {
+          "tag": "A",
+          "name": "ファイル名"
+        },
+        {
+          "tag": "A",
+          "name": "バックアップ"
+        },
+        {
+          "tag": "A",
+          "name": "表示"
+        },
+        {
+          "tag": "A",
+          "name": "アクセシビリティ"
+        },
+        {
+          "tag": "A",
+          "name": "プライバシー"
+        },
+        {
+          "tag": "A",
+          "name": "アプリ情報"
+        },
+        {
+          "tag": "A",
+          "name": "詳細設定"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "SELECT",
+          "name": "general.language"
+        },
+        {
+          "tag": "SELECT",
+          "name": "general.dateFormat"
+        },
+        {
+          "tag": "INPUT",
+          "name": "general.confirmDialogs"
+        },
+        {
+          "tag": "INPUT",
+          "name": "general.notifications"
+        },
+        {
+          "tag": "INPUT",
+          "name": "general.confirmDangerousActions"
+        },
+        {
+          "tag": "INPUT",
+          "name": "projectDefaults.bpm"
+        },
+        {
+          "tag": "SELECT",
+          "name": "projectDefaults.timeSignature"
+        },
+        {
+          "tag": "SELECT",
+          "name": "projectDefaults.key"
+        },
+        {
+          "tag": "SELECT",
+          "name": "projectDefaults.status"
+        },
+        {
+          "tag": "INPUT",
+          "name": "projectDefaults.purpose"
+        },
+        {
+          "tag": "TEXTAREA",
+          "name": "projectDefaults.notes"
+        },
+        {
+          "tag": "INPUT",
+          "name": "autosave.enabled"
+        },
+        {
+          "tag": "INPUT",
+          "name": "autosave.intervalSeconds"
+        },
+        {
+          "tag": "INPUT",
+          "name": "autosave.idleDelaySeconds"
+        },
+        {
+          "tag": "SELECT",
+          "name": "midi.fileType"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.ppq"
+        },
+        {
+          "tag": "SELECT",
+          "name": "midi.quantize"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.velocity"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.channel"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.autoChannel"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.useTrackNames"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.includeTempo"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.includeTimeSignature"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi.omitEmptyTracks"
+        },
+        {
+          "tag": "SELECT",
+          "name": "logicPro.method"
+        },
+        {
+          "tag": "SELECT",
+          "name": "logicPro.audioReferences"
+        },
+        {
+          "tag": "INPUT",
+          "name": "logicPro.preferMidi"
+        },
+        {
+          "tag": "INPUT",
+          "name": "logicPro.showInstructions"
+        },
+        {
+          "tag": "INPUT",
+          "name": "fileNaming.template"
+        },
+        {
+          "tag": "INPUT",
+          "name": "fileNaming.maxLength"
+        },
+        {
+          "tag": "INPUT",
+          "name": "fileNaming.fallback"
+        },
+        {
+          "tag": "INPUT",
+          "name": "backup.automaticEnabled"
+        },
+        {
+          "tag": "INPUT",
+          "name": "backup.intervalHours"
+        },
+        {
+          "tag": "INPUT",
+          "name": "backup.maxCopies"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "バックアップ管理を開く"
+        },
+        {
+          "tag": "SELECT",
+          "name": "display.theme"
+        },
+        {
+          "tag": "SELECT",
+          "name": "display.fontSize"
+        },
+        {
+          "tag": "SELECT",
+          "name": "display.cardDensity"
+        },
+        {
+          "tag": "SELECT",
+          "name": "display.reducedMotion"
+        },
+        {
+          "tag": "INPUT",
+          "name": "accessibility.focusVisible"
+        },
+        {
+          "tag": "INPUT",
+          "name": "accessibility.keyboard"
+        },
+        {
+          "tag": "INPUT",
+          "name": "accessibility.textStatus"
+        },
+        {
+          "tag": "A",
+          "name": "ライセンス情報"
+        },
+        {
+          "tag": "A",
+          "name": "CHANGELOG"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "変更を保存"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "変更を破棄"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "初期値に戻す"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "設定を書き出す"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "設定を読み込む"
+        },
+        {
+          "tag": "BODY",
+          "name": "MENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  ☰MENUMUSIC PRO"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/backup",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 21
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Full WAV Archive（完全保存）"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Backup（曲に合わせて書き出す）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "バックアップJSONを選択"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "期限を確認"
+        },
+        {
+          "tag": "BODY",
+          "name": "MENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  ☰MENUMUSIC PRO"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/project/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 37
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Project画面のヘルプ"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Project settings（曲の設定）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Checkpoints（曲の比較・部分採用）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Help（録音の使い方）"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Record（録音操作を開く）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Recording settings（録音設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Record Vocal（録音開始）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Discard pending（未保存取消）"
+        },
+        {
+          "tag": "DIV",
+          "name": "歌詞・音符の時間表示"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Take Comp（テイクの組合せ）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Project tools（読み込み・バックアップ・管理）"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
+            ],
+            [
+              ".music-production-history > form:nth-child(2) > button"
+            ],
+            [
+              "form:nth-child(4) > button"
+            ],
+            [
+              "form:nth-child(7) > button"
+            ],
+            [
+              ".music-vocal-loopback > summary"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(2)"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(5)"
+            ],
+            [
+              ".music-vocal-loopback > label"
+            ],
+            [
+              "p[data-loopback-status=\"\"]"
+            ],
+            [
+              ".music-vocal-input-profiles > summary"
+            ],
+            [
+              ".music-vocal-input-profiles > p"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > button[type=\"button\"]"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(3)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(4)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > p:nth-child(5)"
+            ],
+            [
+              "p:nth-child(6)"
+            ],
+            [
+              "pre"
+            ],
+            [
+              "form:nth-child(8) > button"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > p:nth-child(9)"
+            ],
+            [
+              "form:nth-child(10) > button"
+            ],
+            [
+              "button[type=\"button\"]:nth-child(11)"
+            ],
+            [
+              "form:nth-child(12) > button"
+            ],
+            [
+              "#music-material-results > p"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/midi-editor/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "TEXTAREA",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 201
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Melody制作のヘルプ"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Project（プロジェクト情報）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Shortcuts（ショートカット）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Import / Export（読み込み／書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Melody Correction（メロディ補正）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "MIDI入力"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Melody"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Melody Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Melody Solo"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Drums"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Drums Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Drums Solo"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Bass"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Bass Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Bass Solo"
+        },
+        {
+          "tag": "DIV",
+          "name": "Piano Roll編集領域"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Bar 1"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Bar 2"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Bar 3"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Bar 4"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C9を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C8を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C7を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C6を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C5を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C4を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C3を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C2を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C0を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "シ／B-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ♯／A♯-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ラ／A-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ♯／G♯-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ソ／G-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ♯／F♯-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ファ／F-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ミ／E-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ♯／D♯-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "レ／D-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド♯／C♯-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "ド／C-1を試聴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C4 / Velocity 80 / Note 60 / 0 tick"
+        },
+        {
+          "tag": "DIV",
+          "name": "Piano Roll横スクロール"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "AI Assistant（AI制作パネルを開閉）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Assistant"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "New Song（新しい曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "A/B/C候補"
+        },
+        {
+          "tag": "TEXTAREA",
+          "name": ""
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Preview（確認）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Undo（元に戻す）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "変更理由・provenance・履歴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Select（選択）：単一"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Add Note（ノート追加）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Select All（全選択）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Snap ON（スナップON）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "1小節1/21/41/81/161/32"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Quantize OFF"
+        },
+        {
+          "tag": "SELECT",
+          "name": "1/41/81/161/32"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ Zoom（ズーム）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "↕ Fit Range（音域を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ Add Measure（小節を追加）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Remove Measure（1小節削除）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "編集対象の開始小節"
+        },
+        {
+          "tag": "INPUT",
+          "name": "編集対象の終了小節"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Start Edit（編集開始）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "▶ Play（再生）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Loop OFF（ループOFF）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Count-in ON"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Metronome ON"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/ai-editor/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "TEXTAREA",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 66
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Melody制作のヘルプ"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Project（プロジェクト情報）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Shortcuts（ショートカット）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Import / Export（読み込み／書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Melody Correction（メロディ補正）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "MIDI入力"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Melody"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Melody Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Melody Solo"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Drums"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Drums Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Drums Solo"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Current Track C Bass"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Bass Mute"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "C Bass Solo"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "AI Assistant（AI制作パネルを開閉）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Assistant"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "New Song（新しい曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "A/B/C候補"
+        },
+        {
+          "tag": "TEXTAREA",
+          "name": ""
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Preview（確認）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Undo（元に戻す）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "変更理由・provenance・履歴"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Select（選択）：単一"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Add Note（ノート追加）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Select All（全選択）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Snap ON（スナップON）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "1小節1/21/41/81/161/32"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Quantize OFF"
+        },
+        {
+          "tag": "SELECT",
+          "name": "1/41/81/161/32"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ Zoom（ズーム）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "↕ Fit Range（音域を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "＋ Add Measure（小節を追加）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Remove Measure（1小節削除）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "編集対象の開始小節"
+        },
+        {
+          "tag": "INPUT",
+          "name": "編集対象の終了小節"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Start Edit（編集開始）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "▶ Play（再生）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Loop OFF（ループOFF）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Count-in ON"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Metronome ON"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/lyrics-notes/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "TEXTAREA",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 35
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Guide（歌詞・読みの入力方法）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "trackId"
+        },
+        {
+          "tag": "INPUT",
+          "name": "fromNote"
+        },
+        {
+          "tag": "INPUT",
+          "name": "toNote"
+        },
+        {
+          "tag": "TEXTAREA",
+          "name": "text"
+        },
+        {
+          "tag": "TEXTAREA",
+          "name": "reading"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Split kana（かなの読みを分ける）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Notes（割付の確認方法）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Preview（割付を確認）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Cancel（取消）"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/vocal/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 36
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Project（曲の設定）"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Record（録音操作を開く）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Help（録音の使い方）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Recording settings（録音設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Record Vocal（録音開始）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Discard pending（未保存取消）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Lyrics（歌詞同期・設定）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Take Comp（テイクの組合せ）"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-vocal-loopback > summary"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(2)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-workspace/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 40
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "About Mix（ミックスの使い方）"
+        },
+        {
+          "tag": "INPUT",
+          "name": ""
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Production（AI提案・Mastering・書き出し・保存版）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "assetId"
+        },
+        {
+          "tag": "INPUT",
+          "name": "gainDb"
+        },
+        {
+          "tag": "INPUT",
+          "name": "frequency"
+        },
+        {
+          "tag": "INPUT",
+          "name": "eqGain"
+        },
+        {
+          "tag": "INPUT",
+          "name": "q"
+        },
+        {
+          "tag": "INPUT",
+          "name": "thresholdDb"
+        },
+        {
+          "tag": "INPUT",
+          "name": "ratio"
+        },
+        {
+          "tag": "INPUT",
+          "name": "attackMs"
+        },
+        {
+          "tag": "INPUT",
+          "name": "releaseMs"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "History（音量・EQ・圧縮のUndo / Redo）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Stop（停止）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Cancel（候補取消）"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              ".music-master-dynamics > p"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(3)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(5)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(6)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(7)"
+            ],
+            [
+              ".music-production-tools > form:nth-child(3) > button"
+            ],
+            [
+              ".music-master-focus-open"
+            ],
+            [
+              ".music-production-tools > form:nth-child(7) > button"
+            ],
+            [
+              "button[onclick=\"MusicStudio.productionCancel()\"]"
+            ],
+            [
+              ".music-production-tools > button[onclick=\"MusicStudio.pcmStop()\"]"
+            ],
+            [
+              "section:nth-child(3) > button:nth-child(4)"
+            ],
+            [
+              "section:nth-child(3) > button[onclick=\"MusicStudio.pcmCancel()\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-master/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 39
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックスへ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "SELECT",
+          "name": "assetId"
+        },
+        {
+          "tag": "INPUT",
+          "name": "target"
+        },
+        {
+          "tag": "INPUT",
+          "name": "ceiling"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Preview master（実音声候補）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Cancel（候補取消）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Stop（試聴停止）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Saved masters（保存済みMaster）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "assetId"
+        },
+        {
+          "tag": "INPUT",
+          "name": "target"
+        },
+        {
+          "tag": "INPUT",
+          "name": "ceiling"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Compare masters（複数候補を実処理・比較）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Recipes（名前付き候補設定・再作成）"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              "h3"
+            ],
+            [
+              ".music-master-history > p"
+            ],
+            [
+              ".music-master-recipes > p"
+            ],
+            [
+              ".music-master-recipes > form > label"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-long-master/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 28
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックスへ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "SELECT",
+          "name": ""
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-export/a11y-song",
+      "focus": {
+        "positive": [],
+        "restored": [
+          "INPUT",
+          "SELECT",
+          "BUTTON",
+          "SUMMARY"
+        ],
+        "failures": [],
+        "tabbable": 41
+      },
+      "tabOrder": [
+        {
+          "tag": "SELECT",
+          "name": "Compose（作曲）Record（録音）Mix（ミックス）Finish（仕上げ）"
+        },
+        {
+          "tag": "SELECT",
+          "name": "曲を選択Keyboard acceptance"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（演奏編集）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・音符割付）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI Assistant（作曲相談）のお気に入り追加"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Settings（設定）のお気に入り追加"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Visible actions（表示する操作）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "request"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Find（画面候補を表示）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MIDI（音符）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "AI（作曲）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Lyrics（歌詞・歌声）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Vocal（録音・編集）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mix（ミックス）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Mastering（仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Long WAV（長時間仕上げ）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Export（書き出し）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "画面案内・性能診断"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini連携"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "✨ Gemini"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Project（曲の設定）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Stem Auto-Finish（自動Mix・Mastering）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "MIDI Audio（演奏音をMixへ）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Help（書き出しの仕様）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Sources（音声の選択・配置・音量）"
+        },
+        {
+          "tag": "INPUT",
+          "name": "target"
+        },
+        {
+          "tag": "INPUT",
+          "name": "ceiling"
+        },
+        {
+          "tag": "INPUT",
+          "name": "midi"
+        },
+        {
+          "tag": "INPUT",
+          "name": "mixMasterOnly"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Master dynamics（仕上げの圧縮・任意）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Preview（ミックス候補を作成）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Stop（試聴停止）"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "Cancel（候補取消）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "History（作成履歴・直近100件）"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Delivery（書き出し履歴・直近100件）"
+        },
+        {
+          "tag": "BODY",
+          "name": "☰MENUMENU閉じる ×ホームプロジェクトMusic Studioバックアップ設定戻る閉じる\n  Workspace"
+        },
+        {
+          "tag": "BUTTON",
+          "name": "MENU メインメニューを開く"
+        },
+        {
+          "tag": "SUMMARY",
+          "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
+        }
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-auto-finish-audition > summary"
+            ],
+            [
+              ".music-master-dynamics > summary"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-auto-finish-audition > summary"
+            ],
+            [
+              "form:nth-child(5) > label:nth-child(3)"
+            ],
+            [
+              "form:nth-child(5) > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > summary"
+            ],
+            [
+              ".music-master-dynamics > p"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(3)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(5)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(6)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(7)"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "complete": true
+}

@@ -1,14 +1,14 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-11-07 JST。基準：[PR #598](https://github.com/puitoybox-cloud/nova-studio/pull/598)、HEAD `21778e70f60e1b2baac625500f10de65c1d77dcf`。
+確認日：2026-11-07 JST。基準：[PR #599](https://github.com/puitoybox-cloud/nova-studio/pull/599)、HEAD `34d620c5c8b1ff3fc9977fd4551d235ed2197093`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率 **48.15%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **66**、残数 **69**、受入確認率 **48.89%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装7件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装6件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -43,7 +43,7 @@ A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率
 | 27 | 5 | 1 | 4 | 1 | 1 |
 | 28 | 4 | 2 | 2 | 1 | 0 |
 | 29 | 4 | 1 | 3 | 1 | 1 |
-| 30 | 4 | 2 | 2 | 1 | 0 |
+| 30 | 4 | 3 | 1 | 1 | 0 |
 
 | ID | 分類 | 受入要件 | 状態 | 根拠/依存 |
 |---|---|---|---|---|
@@ -220,7 +220,7 @@ A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率
 | MS29-C01 | C | 文章意味検索モデルとライセンス | open | 未確認 |
 | MS30-A01 | A | finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `finished lifecycle: freeze MIDI/AI/export metadata, search, fork without overwriting, retain sessions through backup` |
 | MS30-A02 | A | 特殊保存入口の制作履歴網羅 | open | 未確認 |
-| MS30-A03 | A | 完成版の全変更入口での固定 | open | 未確認 |
+| MS30-A03 | A | 完成版の全変更入口での固定 | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `finished snapshots cannot be rewritten or removed through repository writes`; [scripts/music-finished-immutability-browser.js](../../scripts/music-finished-immutability-browser.js) — `finished snapshot immutability across every replacement sink, editable fork and failed-write preservation` |
 | MS30-A04 | A | Session日次時系列の移行受入 | verified | [tests/music-studio-repair-timeline-acceptance.test.js](../../tests/music-studio-repair-timeline-acceptance.test.js) — `session and daily timeline migration preserves links and immutable events across reopen JSON Backup and archive` |
 | MS30-B01 | B | 配布版の完成曲固定と移行受入 | open | 未確認 |
 | MS18-A04 | A | 開始と再開の前に保存Stemのhash・長さ・identityを再照合 | verified | [tools/nova-au/tests/test_auto_finish_server.py](../../tools/nova-au/tests/test_auto_finish_server.py) — `test_changed_same_size_stem_refuses_start_and_resume_without_spawn` |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
-| 実装済み・検証不足 | 23 | 7 |
+| 実装済み・検証不足 | 23 | 6 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -339,5 +339,5 @@ A：総数 **135**、証拠付き完了 **65**、残数 **70**、受入確認率
 | MS29-A03 | 仕様判断待ち | open |
 | MS29-A04 | 仕様判断待ち | open |
 | MS30-A02 | 実装済み・検証不足 | open |
-| MS30-A03 | 実装済み・検証不足 | open |
+| MS30-A03 | 実装済み・検証不足 | verified |
 | MS30-A04 | 実装済み・検証不足 | verified |

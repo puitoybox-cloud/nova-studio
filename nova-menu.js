@@ -46,7 +46,7 @@
     root.classList.add('is-open');
     scrim.hidden=false;
     toggle.setAttribute('aria-expanded','true');
-    toggle.setAttribute('aria-label','メインメニューを閉じる');
+    toggle.setAttribute('aria-label','MENU メインメニューを閉じる');
     toggle.setAttribute('aria-hidden','true');
     toggle.tabIndex=-1;
     panel.setAttribute('aria-hidden','false');
@@ -56,7 +56,7 @@
     root.classList.remove('is-open');
     scrim.hidden=true;
     toggle.setAttribute('aria-expanded','false');
-    toggle.setAttribute('aria-label','メインメニューを開く');
+    toggle.setAttribute('aria-label','MENU メインメニューを開く');
     toggle.removeAttribute('aria-hidden');
     toggle.tabIndex=0;
     panel.setAttribute('aria-hidden','true');

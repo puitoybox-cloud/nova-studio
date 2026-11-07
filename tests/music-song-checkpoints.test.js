@@ -64,7 +64,7 @@ test('finished lifecycle: freeze MIDI/AI/export metadata, search, fork without o
  assert.match(a.productionHistoryView(await repo.get('song')),/完成版 &lt;1&gt;/);
 });
 test('finished publication rejects missing dependency, cancellation, dirty state, quota, source races and destination collision',async()=>{
- for(const mode of ['quota','cancel','dirty','source','collision','dependency']){const f=fixture(),{a,repo}=f;assert.equal((await a.versionSave('song','Final',{kind:'finished'})).ok,true);const p=await repo.get('song'),id=p.songVersions.checkpoints[0].id,baseline=JSON.stringify(p);if(mode==='quota')repo.compareAndFork=async()=>{throw Error('QuotaExceededError')};if(mode==='dirty')a.state.dirty=true;if(mode==='source')await repo.put({...p,songTitle:'Other tab'});if(mode==='collision')repo.compareAndFork=async(next,source,baseline,guard)=>{await repo.put({...next,songTitle:'Existing destination'});throw Error('destination collision')};if(mode==='dependency'){p.songVersions.checkpoints[0].snapshot.fileReferences=[{name:'missing.wav'}];await repo.put(p);a.state.projects=[p]};const signal={aborted:mode==='cancel'};const r=await a.finishedOpen('song',id,{signal});assert.equal(r.ok,false,mode);if(!['source','dependency'].includes(mode))assert.equal(JSON.stringify(await repo.get('song')),baseline,mode)}
+ for(const mode of ['quota','cancel','dirty','source','collision','dependency']){const f=fixture(),a=f.a;let repo=f.repo;assert.equal((await a.versionSave('song','Final',{kind:'finished'})).ok,true);const p=await repo.get('song'),id=p.songVersions.checkpoints[0].id,baseline=JSON.stringify(p);if(mode==='quota')repo.compareAndFork=async()=>{throw Error('QuotaExceededError')};if(mode==='dirty')a.state.dirty=true;if(mode==='source')await repo.put({...p,songTitle:'Other tab'});if(mode==='collision')repo.compareAndFork=async(next,source,baseline,guard)=>{await repo.put({...next,songTitle:'Existing destination'});throw Error('destination collision')};if(mode==='dependency'){p.songVersions.checkpoints[0].snapshot.fileReferences=[{name:'missing.wav'}];repo=a.memoryRepository([p]);a.setRepository(repo);a.state.projects=[p]};const signal={aborted:mode==='cancel'};const r=await a.finishedOpen('song',id,{signal});assert.equal(r.ok,false,mode);if(!['source','dependency'].includes(mode))assert.equal(JSON.stringify(await repo.get('song')),baseline,mode)}
 });
 test('production sessions reject invalid chronology, duplicate/open sessions and oversized notes; resume after reload',async()=>{
  const f=fixture(),{a,repo}=f;assert.equal((await a.productionSessionSave('song','finish','')).ok,false);assert.equal((await a.productionSessionSave('song','start','日次記録')).ok,true);let p=await repo.get('song');assert.equal((await a.productionSessionSave('song','start','重複')).ok,false);assert.equal((await a.productionSessionSave('song','finish','x'.repeat(2001))).ok,false);
@@ -135,4 +135,21 @@ test('committed checkpoint preserves edits started after durable publication',as
  const {a,repo}=fixture(),cas=repo.compareAndPut.bind(repo);
  repo.compareAndPut=async(...args)=>{await cas(...args);a.state.dirty=true;a.state.midiEditor={projectId:'song',sentinel:'new edits'};a.versionPanel.message='editing'};
  const result=await a.versionSave('song','Committed');assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.equal(a.state.dirty,true);assert.equal(a.state.midiEditor.sentinel,'new edits');assert.equal(a.versionPanel.message,'editing');assert.equal((await repo.get('song')).songVersions.checkpoints.length,1);
+});
+
+test('finished snapshots cannot be rewritten or removed through repository writes',async()=>{
+ const f=fixture();assert.equal((await f.a.versionSave('song','Finished',{kind:'finished'})).ok,true);
+ const original=await f.repo.get('song'),baseline=JSON.stringify(original);
+ for(const mode of ['put','compareAndPut'])for(const change of ['content','remove','kind','name']){
+  const next=plain(original);const c=next.songVersions.checkpoints[0];
+  if(change==='content')c.snapshot.productionNotes='overwritten';
+  if(change==='remove')next.songVersions.checkpoints=[];
+  if(change==='kind')c.kind='working';
+  if(change==='name')c.name='overwritten';
+  await assert.rejects(()=>f.repo[mode](next,baseline),/finished-snapshot-immutable/,mode+':'+change);
+  assert.equal(JSON.stringify(await f.repo.get('song')),baseline);
+ }
+ const next=plain(original);next.productionNotes='normal working edit';next.revision++;
+ await f.repo.compareAndPut(next,baseline);assert.equal((await f.repo.get('song')).productionNotes,next.productionNotes);
+ assert.deepEqual(plain((await f.repo.get('song')).songVersions.checkpoints),plain(original.songVersions.checkpoints));
 });

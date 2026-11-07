@@ -93,3 +93,36 @@ test('screen discovery buttons reject a changed project selection',()=>{
  app.setWorkProject('second');assert.equal(app.openRequestedWorkAction('midi','first'),false);assert.equal(window.location.hash,'#music-studio');
  assert.equal(app.openRequestedWorkAction('midi','second'),true);assert.equal(window.location.hash,'music-studio/midi-editor/second');
 });
+
+test('status repaint restores keyboard focus and caret only to a visible enabled control in the same route',()=>{
+ for(const mode of ['same','disabled','hidden','route']){
+  const {app,window:w}=load();let controls=[],focused=null,caret=null;
+  const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+  function control(){return{tagName:'INPUT',selectionStart:2,selectionEnd:4,selectionDirection:'forward',getAttribute:key=>key==='name'?'projectName':null,getClientRects:()=>mode==='hidden'?[]:[{}],focus(){focused=this},setSelectionRange(...range){caret=range}}}
+  const old=control();controls=[old];focused=old;w.document=doc;
+  let replacement;w.render=()=>{replacement=control();replacement.disabled=mode==='disabled';controls=[replacement];focused=doc.body;if(mode==='route')w.location.hash='#music-studio/settings'};
+  app.repaint();
+  if(mode==='same'){assert.equal(focused,replacement);assert.deepEqual(caret,[2,4,'forward'])}
+  else{assert.equal(focused,doc.body);assert.equal(caret,null)}
+ }
+});
+
+test('status repaint reopens the focused disclosure before returning keyboard focus',()=>{
+ const {app,window:w}=load();let controls=[],focused,detail;
+ const summary={textContent:'Visible actions'},doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+ function build(open){detail={tagName:'DETAILS',open,querySelector:()=>summary};return{tagName:'INPUT',parentElement:detail,getAttribute:key=>key==='name'?'visibleAction':null,getClientRects:()=>detail.open?[{}]:[],focus(){focused=this}}}
+ const old=build(true);controls=[old];focused=old;w.document=doc;let replacement;
+ w.render=()=>{replacement=build(false);controls=[replacement];focused=doc.body};
+ app.repaint();assert.equal(detail.open,true);assert.equal(focused,replacement);
+});
+
+test('host menu focus returns after its mutation observer without stealing newer focus',()=>{
+ for(const moved of [false,true]){
+  const {app,window:w}=load(),queued=[];let controls=[],focused;
+  const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+  const menu={tagName:'BUTTON',textContent:'MENU',getAttribute:key=>key==='aria-label'?'Open menu':null,getClientRects:()=>[{}],focus(){focused=this}};
+  controls=[menu];focused=menu;w.document=doc;w.queueMicrotask=callback=>queued.push(callback);
+  w.render=()=>{controls=[];focused=doc.body;queued.push(()=>{controls=[menu]})};
+  app.repaint();const other={};if(moved)focused=other;for(const task of queued)task();assert.equal(focused,moved?other:menu);
+ }
+});
