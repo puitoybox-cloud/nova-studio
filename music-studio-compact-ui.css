@@ -357,3 +357,5 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 .music-studio-shell :is(.music-mix-versions,.music-long-versions) { background:#0d1725; color:#ecf4ff; }
 .music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(p,label,summary) { color:#ecf4ff !important; }
 .music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(button,input,select) { background:#081421; color:#ecf4ff; border-color:#526985; }
+/* Generated Export files reveal the save-destination label on the dark drawer. */
+.music-studio-shell .music-export-files label { color:#ecf4ff !important; }
