@@ -36,7 +36,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
     const input=menu.locator('input:not([type=hidden]):enabled:visible,select:enabled:visible,textarea:enabled:visible').first();
     if(await input.count())await input.focus();else await summary.focus();
     await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
-    await page.waitForFunction(e=>document.activeElement===e,await summary.elementHandle(),{timeout:3000});assert.equal(await summary.evaluate(e=>document.activeElement===e),true,await summary.innerText());
+    await page.waitForFunction(selector=>document.activeElement===document.querySelector(selector),'.music-editor-topbar > .music-editor-menu:nth-of-type('+(i+1)+') > summary',{timeout:3000});assert.equal(await summary.evaluate(e=>document.activeElement===e),true,await summary.innerText());
     popupChecks.push(await summary.innerText());
    }
    assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData)),before,'popup keyboard must preserve notes');
