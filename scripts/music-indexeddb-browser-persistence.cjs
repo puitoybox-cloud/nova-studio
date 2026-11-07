@@ -271,7 +271,7 @@ test('real IndexedDB durable duplication defers publication into changed context
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
  try{
   browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||chromium.executablePath(),args:['--no-sandbox']});
-  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port;await page.goto(origin);await page.addScriptTag({url:origin+'/app.js'});await page.waitForFunction(()=>MusicStudio.state.loaded);
+  const context=await browser.newContext(),page=await context.newPage(),origin='http://127.0.0.1:'+server.address().port;await page.goto(origin);await page.addScriptTag({url:origin+'/app.js'});await page.waitForFunction(()=>MusicStudio.state.loaded);
   const receipts=await page.evaluate(async()=>{
    const a=MusicStudio,receipts=[];
    for(const phase of ['commit','refresh'])for(const mode of ['repository','view','dirty','midi','route','read-failure']){
@@ -287,7 +287,7 @@ test('real IndexedDB durable duplication defers publication into changed context
    }
    a.state.dirty=false;a.state.midiEditor=null;return receipts;
   });assert.equal(receipts.length,12);
-  await page.close();const reopened=await browser.newPage();await reopened.goto(origin);await reopened.addScriptTag({url:origin+'/app.js'});await reopened.waitForFunction(()=>MusicStudio.state.loaded);
+  await page.close();const reopened=await context.newPage();await reopened.goto(origin);await reopened.addScriptTag({url:origin+'/app.js'});await reopened.waitForFunction(()=>MusicStudio.state.loaded);
   assert.equal(await reopened.evaluate(async receipts=>{const repo=MusicStudio.indexedDbRepository();for(const r of receipts){const source=await repo.get(r.source),copy=await repo.get(r.copy);if(!source||copy?.productionHistory?.at(-1)?.sourceProjectId!==r.source||copy.productionHistory.at(-1).sourceRevision!==source.revision)return false}return true},receipts),true);
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 });
