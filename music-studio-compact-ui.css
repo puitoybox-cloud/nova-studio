@@ -333,3 +333,9 @@ main.music-studio-shell.music-export-focused{position:static;min-height:0;margin
 .music-studio-shell .music-workspace > h2 { font-size: 1rem; }
 
 .music-studio-shell .music-workspace details { background: #0d1725; color: #ecf4ff; }
+/* Focused disclosure panels use one readable dark surface and control palette. */
+.music-studio-shell :is(.music-production-navigation details,[data-performance-panel] details,.music-vocal-loopback,.music-master-dynamics,.music-master-history,.music-long-master-history,.music-auto-finish-audition,.music-song-versions) { background: #0d1725; color: #ecf4ff; }
+.music-studio-shell :is(.music-production-navigation details,[data-performance-panel] details,.music-vocal-loopback,.music-master-dynamics,.music-master-history,.music-long-master-history,.music-auto-finish-audition,.music-song-versions) :is(p,label,summary,h2,h3) { color: #ecf4ff !important; }
+.music-studio-shell :is(.music-production-navigation details,.music-production-history,.music-song-versions,.music-vocal-loopback,.music-master-dynamics,.music-master-history,.music-long-master-history,.music-auto-finish-audition) :is(button,input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]) { background: #081421; color: #ecf4ff; border-color: #526985; }
+.music-studio-shell section[aria-labelledby="musicFeaturesTitle"] .music-kicker { background: #0d1725; color: #ecf4ff; }
+body[data-music-studio-standalone] button[data-gemini-bridge="header"] { background: #142235; color: #ecf4ff; }
