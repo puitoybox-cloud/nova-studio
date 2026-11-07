@@ -33,10 +33,10 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
     const menu=menus.nth(i),summary=menu.locator(':scope > summary');if(!await summary.isVisible())continue;
     if(await menu.getAttribute('open')!==null)await summary.press('Enter');
     await summary.focus();await summary.press('Enter');assert.notEqual(await menu.getAttribute('open'),null,await summary.innerText());
-    const input=menu.locator('input:not([type=hidden]),select,textarea').first();
-    if(await input.count()&&await input.isVisible())await input.focus();
+    const input=menu.locator('input:not([type=hidden]):enabled:visible,select:enabled:visible,textarea:enabled:visible').first();
+    if(await input.count())await input.focus();else await summary.focus();
     await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('open'),null);
-    assert.equal(await summary.evaluate(e=>document.activeElement===e),true);
+    await page.waitForFunction(e=>document.activeElement===e,await summary.elementHandle(),{timeout:3000});assert.equal(await summary.evaluate(e=>document.activeElement===e),true,await summary.innerText());
     popupChecks.push(await summary.innerText());
    }
    assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData)),before,'popup keyboard must preserve notes');
