@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07 JST",
+  "date": "2026-11-08 JST",
   "command": "CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-checkpoint-audition-browser.js",
   "passed": 3,
   "failed": 0,
@@ -7,7 +7,7 @@
     "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
   },
   "runtimeHashes": {
-    "music-studio.js": "f8aa2e32e2b0b0d36d24e46d89f414ff7147466f27b15c7991a506301a926440",
+    "music-studio.js": "5cdb9833ef8842f44bb837c9893c0efa85209321c4ff38b593c7478616e5363b",
     "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782"
   },
   "acceptedCases": [
@@ -17,22 +17,22 @@
   ],
   "currentExecution": {
     "provider": "GitHub Actions",
+    "head": "78b13a251b78383d38e6e5419a2b050aefa23224",
+    "runId": 42420982676,
+    "jobId": 128549137001,
+    "step": 5,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42420982676/job/128549137001"
+  },
+  "scope": "Real Chromium HTMLAudioElement and OfflineAudioContext MIDI/PCM A/B, no audition writes, adoption and page reload Undo/Redo. Hardware listening remains separate.",
+  "previousExecution": {
+    "provider": "GitHub Actions",
     "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
     "runId": 42381144842,
     "jobId": 128428824096,
     "step": 5,
     "conclusion": "success",
     "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42381144842/job/128428824096"
-  },
-  "scope": "Real Chromium HTMLAudioElement and OfflineAudioContext MIDI/PCM A/B, no audition writes, adoption and page reload Undo/Redo. Hardware listening remains separate.",
-  "previousExecution": {
-    "provider": "GitHub Actions",
-    "head": "85fefe743cd3682f8a33b95732388ec24e3b4972",
-    "runId": 42379695402,
-    "jobId": 128424505236,
-    "step": 5,
-    "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42379695402/job/128424505236"
   },
   "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately."
 }

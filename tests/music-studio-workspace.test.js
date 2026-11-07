@@ -150,3 +150,12 @@ test('Escape closes only the innermost conditional disclosure and returns its ow
  inner.open=true;assert.equal(app.vocalDisclosureKey({...event,isComposing:true},outer),false);assert.equal(inner.open,true);
  assert.equal(app.vocalDisclosureKey({...event,defaultPrevented:true},outer),false);assert.equal(inner.open,true);
 });
+
+test('repaint preserves open and closed disclosures separately across nested and repeated summary labels',()=>{
+ const {app,window:w}=load();let details=[];
+ const doc={body:{dataset:{}},activeElement:null,querySelector:()=>null,querySelectorAll:selector=>selector==='details'?details:[]};doc.activeElement=doc.body;w.document=doc;
+ const build=(label,open,parent)=>({tagName:'DETAILS',open,parentElement:parent,querySelector:()=>({textContent:label})});
+ const oldOuter=build('Workspace',true);details=[oldOuter,build('Settings',false,oldOuter),build('Settings',true,oldOuter),build('Settings',false,null)];
+ w.render=()=>{const outer=build('Workspace',false);details=[outer,build('Settings',true,outer),build('Settings',false,outer),build('Settings',true,null),build('New candidate',true,null)]};
+ app.repaint();assert.deepEqual(details.map(d=>d.open),[true,false,true,false,true]);
+});

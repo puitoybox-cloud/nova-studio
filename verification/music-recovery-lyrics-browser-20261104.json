@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07 JST",
+  "date": "2026-11-08 JST",
   "command": "node --test scripts/music-indexeddb-browser-persistence.cjs",
   "passed": 4,
   "failed": 0,
@@ -7,7 +7,7 @@
     "scripts/music-indexeddb-browser-persistence.cjs": "7a3d2d8c0146d531dbdbcb370b80dddb5fb24826ec82760413b2b6c7b05f8728"
   },
   "runtimeHashes": {
-    "music-studio.js": "f8aa2e32e2b0b0d36d24e46d89f414ff7147466f27b15c7991a506301a926440"
+    "music-studio.js": "5cdb9833ef8842f44bb837c9893c0efa85209321c4ff38b593c7478616e5363b"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
@@ -20,20 +20,20 @@
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
     "provider": "GitHub Actions",
+    "head": "78b13a251b78383d38e6e5419a2b050aefa23224",
+    "runId": 42420982638,
+    "jobId": 128549136713,
+    "step": 6,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42420982638/job/128549136713"
+  },
+  "previousExecution": {
+    "provider": "GitHub Actions",
     "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
     "runId": 42381144843,
     "jobId": 128428824135,
     "step": 6,
     "conclusion": "success",
     "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42381144843/job/128428824135"
-  },
-  "previousExecution": {
-    "provider": "GitHub Actions",
-    "head": "85fefe743cd3682f8a33b95732388ec24e3b4972",
-    "runId": 42379695407,
-    "jobId": 128424505093,
-    "step": 6,
-    "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42379695407/job/128424505093"
   }
 }
