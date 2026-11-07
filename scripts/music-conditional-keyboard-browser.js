@@ -2,7 +2,7 @@
 // Real native disclosure activation, nested Escape, repaint and Tab assertions.
 // Fixtures populate production state through the same validators and DSP APIs.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright'),AxeBuilder=require('@axe-core/playwright').default;
-const root=path.resolve(__dirname,'..'),report={head:process.env.NOVA_TESTED_HEAD,screens:[],axeFailures:[]};
+const root=path.resolve(__dirname,'..'),report={head:process.env.NOVA_TESTED_HEAD,screens:[],axeFailures:[],focusFailures:[]};
 const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(req.url,'http://localhost').pathname.slice(1)||'music-studio.html');if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');fs.createReadStream(file).pipe(res)});
 const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
 (async()=>{let browser;try{
@@ -64,9 +64,19 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
     assert.equal(await summary.evaluate(e=>document.activeElement===e),true,label+' Escape returns focus');
     assert.equal(await detail.evaluate(d=>{for(let p=d.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)return false;return true}),true,label+' ancestors remain open');
     // Force actual DOM replacement while a disclosure trigger owns focus.
+    const identity=await detail.evaluate(d=>{
+      const key=d=>{const names=[];for(let p=d;p;p=p.parentElement)if(p.tagName==='DETAILS')names.unshift(p.querySelector(':scope > summary')?.textContent?.trim());return JSON.stringify(names)};
+      const name=key(d);return{name,index:[...document.querySelectorAll('details')].filter(e=>key(e)===name).indexOf(d)};
+    });
     await page.evaluate(()=>MusicStudio.repaint());await settle(page);
-    assert.equal(await summary.evaluate(e=>document.activeElement===e),true,label+' repaint returns same live summary');
-    assert.equal(await detail.evaluate(d=>d.open),false,label+' repaint preserves Escape closure');
+    // Conditional content may change ordinal positions. Resolve the same
+    // semantic disclosure after DOM replacement, rather than a stale nth().
+    const restored=await page.evaluate(identity=>{
+      const key=d=>{const names=[];for(let p=d;p;p=p.parentElement)if(p.tagName==='DETAILS')names.unshift(p.querySelector(':scope > summary')?.textContent?.trim());return JSON.stringify(names)};
+      const d=[...document.querySelectorAll('details')].filter(e=>key(e)===identity.name)[identity.index];
+      return{focused:!!d&&document.activeElement===d.querySelector(':scope > summary'),closed:!!d&&!d.open,active:document.activeElement.outerHTML.slice(0,600),resolved:d?.querySelector(':scope > summary')?.outerHTML};
+    },identity);
+    if(!restored.focused||!restored.closed)report.focusFailures.push({width,route,label,identity,...restored});
     checks.push(label);
    }
    if(route.includes('/midi-editor/')){assert.ok(checks.some(s=>s.includes('Manage presets')),'preset management must be exercised');assert.ok(checks.some(s=>s.startsWith('Zone 1')),'multisample zones must be exercised');assert.ok(checks.includes('Keyboard Piano'),'saved preset must be exercised');}
@@ -75,6 +85,6 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
   }
   assert.deepEqual(errors,[]);await context.close();
  }
- assert.deepEqual(report.axeFailures,[],'all populated route and disclosure axe checks must pass');report.complete=true;
+ assert.deepEqual(report.focusFailures,[],'every live disclosure must preserve focus and closure after repaint');assert.deepEqual(report.axeFailures,[],'all populated route and disclosure axe checks must pass');report.complete=true;
  }finally{fs.writeFileSync(path.join(root,'verification/music-conditional-keyboard-browser.json'),JSON.stringify(report,null,2)+'\n');await browser?.close();server.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

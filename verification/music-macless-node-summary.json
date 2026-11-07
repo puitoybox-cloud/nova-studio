@@ -5,7 +5,7 @@
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 189348.188026,
+  "durationMs": 190259.871385,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -3133,12 +3133,12 @@
     "validation failure occurs before import mutation path"
   ],
   "source": "Full local regression on the current production runtime; GitHub status is tracked separately.",
-  "logSha256": "5a75253d74578235aa9e372753987c91c0c981991fac8d75343b8850c8f47276",
+  "logSha256": "6c10b45ea3d381bde18d68974fc692e92b693a3af55ca89c32a99e0373ae1284",
   "currentExecution": {
     "date": "2026-11-08 JST",
     "scope": "Final production runtime and updated Node test sources; hashes bind the tested content. Browser script is verified separately in GitHub Actions."
   },
-  "testedRuntimeHead": "78b13a251b78383d38e6e5419a2b050aefa23224",
+  "testedRuntimeHead": "c565ba214480ede996291e05bb9cc86fb50e2123",
   "previousGitHubExecution": {
     "provider": "GitHub Actions Node 22",
     "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
