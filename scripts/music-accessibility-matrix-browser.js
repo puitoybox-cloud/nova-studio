@@ -9,15 +9,16 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
  await page.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=a.makeProject({projectId:'a11y-song',projectName:'Keyboard acceptance',midiData:{ppq:480,tempo:120,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,velocity:80,startTick:0,durationTicks:480}]}]}});await r.put(p);await a.refresh()});
  for(const route of ['music-studio','music-studio/projects','music-studio/new','music-studio/settings','music-studio/backup',...['project','midi-editor','ai-editor','lyrics-notes','vocal','mixing-workspace','mixing-master','mixing-long-master','mixing-export'].map(s=>'music-studio/'+s+'/a11y-song')]){
   await page.goto(base+'/music-studio.html#'+route);await page.waitForFunction(()=>MusicStudio.state.loaded);await page.waitForTimeout(100);
+  console.log('Checking accessibility route',route);
   const focus=await page.evaluate(()=>{
    const selector='input:not([type=hidden]),select,textarea,button,summary,a[href],[tabindex]';
-   const visible=e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length;
+   const visible=e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&getComputedStyle(e).visibility==='visible'&&!e.closest('[inert]');
    const describe=e=>[e.tagName,e.id,e.name,e.getAttribute('aria-label'),e.getAttribute('onclick'),e.textContent?.trim().slice(0,160)].join('|');
    const all=[...document.querySelectorAll(selector)].filter(visible),positive=all.filter(e=>e.tabIndex>0).map(describe),samples=[];
    for(const tag of ['INPUT','SELECT','TEXTAREA','BUTTON','SUMMARY']){
     const element=[...document.querySelectorAll(selector)].find(e=>e.tagName===tag&&visible(e));if(!element)continue;
-    element.focus();const before=describe(element);MusicStudio.repaint();const after=describe(document.activeElement);
-    if(before!==after)throw Error('focus lost '+tag+': '+before+' -> '+after);samples.push(tag);
+    element.focus();if(document.activeElement!==element)throw Error('control not focusable '+element.outerHTML);const before=describe(element);MusicStudio.repaint();const after=describe(document.activeElement);
+    if(before!==after)throw Error('focus lost '+tag+': '+before+' -> '+after+'; old='+element.outerHTML+'; matching='+[...document.querySelectorAll(selector)].filter(e=>e.tagName===tag).map(e=>e.outerHTML.slice(0,200)).join(' / '));samples.push(tag);
    }
    return{positive,restored:samples,tabbable:all.length};
   });assert.deepEqual(focus.positive,[],route+' positive tab order');
