@@ -140,3 +140,13 @@ test('popup Close resolves the replaced summary among shared classes without ste
   for(const frame of frames)frame();assert.equal(focused,mode==='replace'?replacement:mode==='new-focus'?other:doc.body);
  }
 });
+
+test('Escape closes only the innermost conditional disclosure and returns its own summary focus',()=>{
+ const {app}=load();let focused=null,prevented=0,stopped=0;
+ const inner={open:true,querySelector:selector=>{assert.equal(selector,':scope > summary');return{focus:()=>focused='inner'}}};
+ const outer={open:true,contains:e=>e===inner,querySelector:()=>({focus:()=>focused='outer'})};
+ const event={key:'Escape',target:{closest:()=>inner},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
+ assert.equal(app.vocalDisclosureKey(event,outer),true);assert.equal(inner.open,false);assert.equal(outer.open,true);assert.equal(focused,'inner');assert.equal(prevented,1);assert.equal(stopped,1);
+ inner.open=true;assert.equal(app.vocalDisclosureKey({...event,isComposing:true},outer),false);assert.equal(inner.open,true);
+ assert.equal(app.vocalDisclosureKey({...event,defaultPrevented:true},outer),false);assert.equal(inner.open,true);
+});
