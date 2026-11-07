@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-07 JST",
+  "passed": 114,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-finished-immutability-browser.js": "c510664d4daf917b8accf9edb5f325fbd7e9537e25fb7a15b54d2dd654e27db2"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+  },
+  "acceptedCases": [
+    "finished snapshot immutability across every replacement sink, editable fork and failed-write preservation"
+  ],
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
+    "runId": 42342656636,
+    "jobId": 128313531880,
+    "step": 8,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42342656636/job/128313531880",
+    "runtimeSha256": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+  },
+  "coverage": [
+    "114 attempted receipt/snapshot mutations, through put / compareAndPut / putLongWav",
+    "strict transaction rollback including binary writes",
+    "working source edits through all three replacement sinks",
+    "finished copy opened and edited without changing source",
+    "fresh page reopens source and editable copy",
+    "Node 36 checkpoint tests cover cancellation, quota, missing dependency, source race, destination collision and archive restoration"
+  ],
+  "boundaryAudit": "verification/music-finished-boundary-audit-20261107.json",
+  "scope": "Application editing and save boundaries. Explicit project deletion, arbitrary DevTools database tampering and physical hardware are separate."
+}

@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-07 JST",
+  "completedExecution": {
+    "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
+    "runId": 42342656766,
+    "jobId": 128313532252,
+    "artifactId": 13561929379,
+    "artifactDigest": "sha256:7a337c5677126052f1b5b126ccf2a09ff45f36bd95cd7320e1a91c9972fa5ed0",
+    "reportSha256": "6fc742392dfc8a0134fdcb1be8346c693425bc8f25a2f04696e8fca8d4b72207"
+  },
+  "screens": 14,
+  "focusSamples": 58,
+  "focusFailures": 0,
+  "remainingRuleIDs": [
+    "color-contrast"
+  ],
+  "latestCssVerification": {
+    "head": "c2ee6127d01e42b2b78d81cca1967763802ef399",
+    "runId": 42342944951,
+    "jobId": 128314449388,
+    "status": "queued",
+    "conclusion": "確認できません"
+  },
+  "formalStatus": "MS28-A04 remains open: populated conditional panels and complete keyboard activation/escape/return acceptance are not covered by the 14-route inventory."
+}

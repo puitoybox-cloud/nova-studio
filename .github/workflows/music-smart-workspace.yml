@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'music-studio.js'
+      - 'music-studio.html'
+      - 'music-studio.css'
+      - 'music-studio-compact-ui.css'
+      - 'nova-menu.js'
+      - 'nova-menu.css'
       - 'scripts/music-workspace-browser.js'
       - 'scripts/music-accessibility-matrix-browser.js'
       - 'tests/music-studio-workspace.test.js'
