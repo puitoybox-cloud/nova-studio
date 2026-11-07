@@ -1705,3 +1705,21 @@ test('MIDI different bytes with same name and size remain separate imports',asyn
  for(const bytes of [one,two]){await app.inspectMidiFile(file('same.mid',bytes));const result=await app.saveMidiImport('new');assert.equal(result.ok,true,result.error?.message)}
  assert.equal((await repo.list()).length,2);assert.equal((await repo.listMidiImportHistory()).length,2);
 });
+
+test('popup Close and Escape return focus to their own summary without changing editor data',()=>{
+  const {app}=load();let focused=0,prevented=0,stopped=0;
+  const summary={focus(){focused++}},menu={open:true,isConnected:true,matches:()=>false,querySelector:()=>summary};
+  const input={closest:selector=>selector.includes('.music-editor-menu')?menu:null};
+  const before=JSON.stringify(app.state.projects);
+  assert.equal(app.editorClosePopup(input),true);assert.equal(menu.open,false);assert.equal(focused,1);
+  menu.open=true;
+  assert.equal(app.editorHandleShortcut({key:'Escape',target:input,preventDefault(){prevented++},stopPropagation(){stopped++}}),true);
+  assert.equal(menu.open,false);assert.equal(focused,2);assert.equal(prevented,1);assert.equal(stopped,1);
+  assert.equal(JSON.stringify(app.state.projects),before);
+  menu.open=true;assert.equal(app.editorHandleShortcut({key:'Escape',isComposing:true,target:input}),false);assert.equal(menu.open,true);
+});
+
+test('native summary and button activation is not consumed by transport shortcuts',()=>{
+ const {app,window}=load(),p=app.makeProject({projectId:'native-key',projectName:'Native key'});app.state.projects=[p];window.location.hash='#music-studio/midi-editor/native-key';app.renderRoute('music-studio/midi-editor/native-key');
+ for(const key of ['Enter',' ']){let prevented=false;assert.equal(app.editorHandleShortcut({key,target:{closest:s=>s==='button,summary,a[href]'?{}:null},preventDefault(){prevented=true}}),false);assert.equal(prevented,false)}
+});

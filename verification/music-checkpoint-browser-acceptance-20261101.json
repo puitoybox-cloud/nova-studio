@@ -1,6 +1,6 @@
 {
   "date": "2026-11-07 JST",
-  "source": "Exact runtime and browser source passed the identified GitHub Actions step. Local Chrome was unavailable. Entire workflow status is separate.",
+  "source": "Exact production runtime and relevant browser source passed the identified GitHub Actions step. Later instrument/multisample test-only edits do not change this runtime or these browser tests. Full workflow conclusions are separate.",
   "command": "CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-song-checkpoints-browser.js",
   "passed": 1,
   "failed": 0,
@@ -8,7 +8,7 @@
     "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
   },
   "runtimeHashes": {
-    "music-studio.js": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac",
+    "music-studio.js": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [
@@ -22,6 +22,16 @@
   "previousRun_reportSha256": "cb61fd95d4c055c317db24916b6d3a78e42de90f6ed9862789e041a668bfafb0",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "40e90cf1f532389ca3f8f001933f3b75a978b507",
+    "runId": 42361193948,
+    "jobId": 128369756380,
+    "step": 7,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42361193948/job/128369756380",
+    "runtimeSha256": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57"
+  },
+  "previousExecution": {
     "provider": "GitHub Actions",
     "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
     "runId": 42342656636,

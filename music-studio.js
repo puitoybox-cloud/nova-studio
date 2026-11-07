@@ -3917,7 +3917,7 @@
     if(view){view.correctionMenuOpen=false;view.correctionPopoverScrollTop=0}
     return true;
   }
-  function editorClosePopup(button){const menu=button?.closest?.('.music-editor-menu');if(menu){menu.open=false;editorHandlePopupToggle(menu)}return Boolean(menu)}
+  function editorClosePopup(button){const menu=button?.closest?.('.music-editor-menu');if(menu){menu.open=false;editorHandlePopupToggle(menu);menu.querySelector?.(':scope > summary')?.focus?.({preventScroll:true})}return Boolean(menu)}
   function midiEditorHasPendingChanges(){return Boolean(state.midiEditor&&(state.midiEditor.dirty||root.MusicStudioEditor?.projectSectionsPending?.(state.midiEditor)||root.MusicStudioAIAssistantPanel?.hasPending?.(state.midiEditor.projectId)))}
   function scheduleMidiEditorSave(delay=0){if(state.midiEditorSaveTimer)root.clearTimeout?.(state.midiEditorSaveTimer);state.midiEditorSaveTimer=null;if(!midiEditorHasPendingChanges()){state.midiEditorSaveRequested=false;return Promise.resolve({ok:true,skipped:true})}state.midiEditorSaveRequested=true;if(delay>0){state.midiEditorSaveTimer=root.setTimeout?.(()=>{state.midiEditorSaveTimer=null;return runMidiEditorAutosave()},delay)||null;return Promise.resolve({ok:true,scheduled:true})}return runMidiEditorAutosave()}
   function flushMidiEditorAutosave(){if(state.midiEditorSaveTimer)root.clearTimeout?.(state.midiEditorSaveTimer);state.midiEditorSaveTimer=null;return runMidiEditorAutosave()}
@@ -3993,7 +3993,9 @@
   function editorFitPitchRange(){const notes=root.MusicStudioEditor.currentTrack(state.midiEditor)?.notes||[],view=state.midiEditor.view||(state.midiEditor.view={zoom:1});view.pitchMin=notes.length?Math.max(0,Math.min(...notes.map(note=>note.pitch))-3):48;view.pitchMax=notes.length?Math.min(127,Math.max(...notes.map(note=>note.pitch))+3):72;view.pitchScrollTop=null;persistEditorView();requestPaint()}
   function editorRememberPitchScroll(element,axis='both'){if(state.midiEditor?.coordinatedTimeline&&state.editorViewRestoring)return;if(state.midiEditor?.view&&element){const horizontal=axis==='horizontal'||element.classList?.contains?.('music-piano-scroll'),vertical=axis==='vertical'||element.classList?.contains?.('music-piano-viewport');if(horizontal||!vertical&&axis==='both')state.midiEditor.view.pitchScrollLeft=element.scrollLeft;if(vertical||!horizontal&&axis==='both')state.midiEditor.view.pitchScrollTop=element.scrollTop;persistEditorView(300)}}
   function editorHandleShortcut(event){
+    if(event?.key==='Escape'&&!event.isComposing){const menu=event.target?.closest?.('.music-editor-menu[open]');if(menu){event.preventDefault?.();event.stopPropagation?.();return editorClosePopup(event.target)}}
     const session=state.midiEditor,rawTarget=event?.target,target=rawTarget?.nodeType===3?rawTarget.parentElement:rawTarget,inputFocused=target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');if(!session||!isMidiEditorRoute(currentRoute())||event?.isComposing||event?.repeat||inputFocused)return false;
+    if(['Enter','Return',' ','Spacebar'].includes(event.key)&&target?.closest?.('button,summary,a[href]'))return false;
     const key=String(event.key||''),code=String(event.code||''),lower=key.toLowerCase(),meta=Boolean(event.metaKey),control=Boolean(event.ctrlKey),shift=Boolean(event.shiftKey),option=Boolean(event.altKey),selected=root.MusicStudioEditor.selectedIds(session).length,step=editorSnapTicks(session),space=code==='Space'||key===' '||key==='Spacebar',recordKey=code==='KeyR'||lower==='r',enterKey=code==='Enter'||code==='NumpadEnter'||key==='Enter'||key==='Return';let action=null;
     if(meta&&lower==='z')action=()=>shift?editorRedo():editorUndo();
     else if(meta&&lower==='c'&&selected)action=editorCopy;
