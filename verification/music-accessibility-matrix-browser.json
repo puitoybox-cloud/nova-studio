@@ -1,5 +1,5 @@
 {
-  "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
+  "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
   "screens": [
     {
       "route": "music-studio",
@@ -12,6 +12,8 @@
         "failures": [],
         "tabbable": 23
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "BUTTON",
@@ -39,7 +41,7 @@
         },
         {
           "tag": "BUTTON",
-          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 5:26"
+          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 14:25"
         },
         {
           "tag": "BUTTON",
@@ -110,28 +112,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/projects",
@@ -146,6 +128,8 @@
         "failures": [],
         "tabbable": 19
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -244,6 +228,8 @@
         "failures": [],
         "tabbable": 33
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -311,7 +297,7 @@
         },
         {
           "tag": "BUTTON",
-          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 5:26"
+          "name": "Keyboard acceptance曲名未設定 · 2026/11/07 14:25"
         },
         {
           "tag": "BUTTON",
@@ -382,28 +368,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/settings",
@@ -419,6 +385,8 @@
         "failures": [],
         "tabbable": 78
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -737,28 +705,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/backup",
@@ -773,6 +721,8 @@
         "failures": [],
         "tabbable": 21
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -863,28 +813,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/project/a11y-song",
@@ -899,6 +829,8 @@
         "failures": [],
         "tabbable": 37
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -1054,92 +986,7 @@
         }
       ],
       "collapsed": [],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
-            ],
-            [
-              ".music-production-history > form:nth-child(2) > button"
-            ],
-            [
-              "form:nth-child(4) > button"
-            ],
-            [
-              "form:nth-child(7) > button"
-            ],
-            [
-              ".music-vocal-loopback > summary"
-            ],
-            [
-              ".music-vocal-loopback > p:nth-child(2)"
-            ],
-            [
-              ".music-vocal-loopback > p:nth-child(5)"
-            ],
-            [
-              ".music-vocal-loopback > label"
-            ],
-            [
-              "p[data-loopback-status=\"\"]"
-            ],
-            [
-              ".music-vocal-input-profiles > summary"
-            ],
-            [
-              ".music-vocal-input-profiles > p"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > button[type=\"button\"]"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(3)"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(4)"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > p:nth-child(5)"
-            ],
-            [
-              "p:nth-child(6)"
-            ],
-            [
-              "pre"
-            ],
-            [
-              "form:nth-child(8) > button"
-            ],
-            [
-              ".music-project-details:nth-child(7) > details > p:nth-child(9)"
-            ],
-            [
-              "form:nth-child(10) > button"
-            ],
-            [
-              "button[type=\"button\"]:nth-child(11)"
-            ],
-            [
-              "form:nth-child(12) > button"
-            ],
-            [
-              "#music-material-results > p"
-            ]
-          ]
-        }
-      ]
+      "expanded": []
     },
     {
       "route": "music-studio/midi-editor/a11y-song",
@@ -1155,6 +1002,14 @@
         "failures": [],
         "tabbable": 201
       },
+      "popupChecks": [
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力"
+      ],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -1838,7 +1693,7 @@
         },
         {
           "tag": "BUTTON",
-          "name": "C4 / Velocity 80 / Note 60 / 0 tick"
+          "name": "C4 / ド　V80 / C4 / Velocity 80 / Note 60 / 0 tick"
         },
         {
           "tag": "DIV",
@@ -1846,7 +1701,7 @@
         },
         {
           "tag": "SUMMARY",
-          "name": "AI Assistant（AI制作パネルを開閉）"
+          "name": "AI Assistant（AI制作）Local only（端末内）"
         },
         {
           "tag": "BUTTON",
@@ -1982,6 +1837,8 @@
         "failures": [],
         "tabbable": 66
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -2133,7 +1990,7 @@
         },
         {
           "tag": "SUMMARY",
-          "name": "AI Assistant（AI制作パネルを開閉）"
+          "name": "AI Assistant（AI制作）Local only（端末内）"
         },
         {
           "tag": "BUTTON",
@@ -2269,6 +2126,8 @@
         "failures": [],
         "tabbable": 35
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -2431,6 +2290,8 @@
         "failures": [],
         "tabbable": 36
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -2581,40 +2442,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "p[data-performance-status=\"\"]"
-            ],
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ],
-            [
-              ".music-vocal-loopback > summary"
-            ],
-            [
-              ".music-vocal-loopback > p:nth-child(2)"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/mixing-workspace/a11y-song",
@@ -2629,6 +2458,8 @@
         "failures": [],
         "tabbable": 40
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -2796,62 +2627,7 @@
         }
       ],
       "collapsed": [],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "nav > details > form > label"
-            ],
-            [
-              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "p[data-performance-status=\"\"]"
-            ],
-            [
-              ".music-master-dynamics > p"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(3)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(4)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(5)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(6)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(7)"
-            ],
-            [
-              ".music-production-tools > form:nth-child(3) > button"
-            ],
-            [
-              ".music-master-focus-open"
-            ],
-            [
-              ".music-production-tools > form:nth-child(7) > button"
-            ],
-            [
-              "button[onclick=\"MusicStudio.productionCancel()\"]"
-            ],
-            [
-              ".music-production-tools > button[onclick=\"MusicStudio.pcmStop()\"]"
-            ],
-            [
-              "section:nth-child(3) > button:nth-child(4)"
-            ],
-            [
-              "section:nth-child(3) > button[onclick=\"MusicStudio.pcmCancel()\"]"
-            ]
-          ]
-        }
-      ]
+      "expanded": []
     },
     {
       "route": "music-studio/mixing-master/a11y-song",
@@ -2866,6 +2642,8 @@
         "failures": [],
         "tabbable": 39
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -3028,49 +2806,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "nav > details > form > label"
-            ],
-            [
-              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "p[data-performance-status=\"\"]"
-            ],
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ],
-            [
-              "h3"
-            ],
-            [
-              ".music-master-history > p"
-            ],
-            [
-              ".music-master-recipes > p"
-            ],
-            [
-              ".music-master-recipes > form > label"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/mixing-long-master/a11y-song",
@@ -3085,6 +2822,8 @@
         "failures": [],
         "tabbable": 28
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -3203,37 +2942,8 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "nav > details > form > label"
-            ],
-            [
-              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "p[data-performance-status=\"\"]"
-            ],
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     },
     {
       "route": "music-studio/mixing-export/a11y-song",
@@ -3248,6 +2958,8 @@
         "failures": [],
         "tabbable": 41
       },
+      "popupChecks": [],
+      "popupViolations": [],
       "tabOrder": [
         {
           "tag": "SELECT",
@@ -3418,71 +3130,11 @@
           "name": "Workspace（制作モード・お気に入り） · Compose（作曲）"
         }
       ],
-      "collapsed": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ],
-            [
-              ".music-auto-finish-audition > summary"
-            ],
-            [
-              ".music-master-dynamics > summary"
-            ]
-          ]
-        }
-      ],
-      "expanded": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "nodes": [
-            [
-              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
-            ],
-            [
-              "p[data-performance-status=\"\"]"
-            ],
-            [
-              "button[data-gemini-bridge=\"header\"]"
-            ],
-            [
-              ".music-auto-finish-audition > summary"
-            ],
-            [
-              "form:nth-child(5) > label:nth-child(3)"
-            ],
-            [
-              "form:nth-child(5) > label:nth-child(4)"
-            ],
-            [
-              ".music-master-dynamics > summary"
-            ],
-            [
-              ".music-master-dynamics > p"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(3)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(4)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(5)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(6)"
-            ],
-            [
-              ".music-master-dynamics > label:nth-child(7)"
-            ]
-          ]
-        }
-      ]
+      "collapsed": [],
+      "expanded": []
     }
   ],
+  "popupViolations": [],
+  "remainingViolations": [],
   "complete": true
 }

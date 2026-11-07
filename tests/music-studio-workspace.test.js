@@ -126,3 +126,17 @@ test('host menu focus returns after its mutation observer without stealing newer
   app.repaint();const other={};if(moved)focused=other;for(const task of queued)task();assert.equal(focused,moved?other:menu);
  }
 });
+
+test('popup Close resolves the replaced summary among shared classes without stealing newer focus',()=>{
+ for(const mode of ['replace','new-focus','new-route']){
+  const {app,window:w}=load(),frames=[];let controls=[],focused;
+  const doc={body:{},querySelector:()=>controls[0],querySelectorAll:()=>controls,get activeElement(){return focused}};
+  const make=text=>({tagName:'SUMMARY',textContent:text,getAttribute:()=>null,getClientRects:()=>[{}],focus(){focused=this}});
+  const project=make('Project'),shortcuts=make('Shortcuts');controls=[project,shortcuts];w.document=doc;w.requestAnimationFrame=fn=>frames.push(fn);
+  const menu={open:true,className:'music-editor-menu',querySelector:()=>shortcuts};
+  assert.equal(app.editorClosePopup({closest:()=>menu}),true);assert.equal(menu.open,false);assert.equal(focused,shortcuts);
+  const replacement=make('Shortcuts');controls=[make('Project'),replacement];focused=doc.body;
+  const other={};if(mode==='new-focus')focused=other;if(mode==='new-route')w.location.hash='#music-studio/settings';
+  for(const frame of frames)frame();assert.equal(focused,mode==='replace'?replacement:mode==='new-focus'?other:doc.body);
+ }
+});

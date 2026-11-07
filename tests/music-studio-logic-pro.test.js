@@ -79,7 +79,7 @@ test('Editor BPM sync saves the Project value and drives next playback and MIDI 
 test('history buttons use Japanese rounded arrows at the right of the part tabs without changing actions',()=>{
   const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="元に戻す"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="やり直す"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
+  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="戻る（元に戻す）"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="進む（やり直す）"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
   assert.equal((html.match(/editorUndo\(\)/g)||[]).length,1);assert.equal((html.match(/editorRedo\(\)/g)||[]).length,1);
   for(const part of ['Melody','Drums','Bass'])assert.match(html,new RegExp(`class="music-part-tab-group"[^>]*>[\\s\\S]*?class="music-part-tab [^"]+"[^>]*>${part}<\\/button>[\\s\\S]*?aria-label="${part} Mute">M<\\/button>[\\s\\S]*?aria-label="${part} Solo">S<\\/button>`));
   assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Mute"/g)||[]).length,3);assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Solo"/g)||[]).length,3);assert.doesNotMatch(html,/music-track-runtime-controls/);
@@ -1722,4 +1722,16 @@ test('popup Close and Escape return focus to their own summary without changing 
 test('native summary and button activation is not consumed by transport shortcuts',()=>{
  const {app,window}=load(),p=app.makeProject({projectId:'native-key',projectName:'Native key'});app.state.projects=[p];window.location.hash='#music-studio/midi-editor/native-key';app.renderRoute('music-studio/midi-editor/native-key');
  for(const key of ['Enter',' ']){let prevented=false;assert.equal(app.editorHandleShortcut({key,target:{closest:s=>s==='button,summary,a[href]'?{}:null},preventDefault(){prevented=true}}),false);assert.equal(prevented,false)}
+});
+
+
+test('localized popup Close names include the final visible text for Melody Drums and Bass',()=>{
+ const {app}=load(),project=app.makeProject({projectId:'localized-popup-name'});app.state.projects=[project];
+ app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+ for(const part of ['melody','drums','bass']){
+  app.editorSelectPart(part);const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const buttons=[...html.matchAll(/<button[^>]*class="[^"]*(?:music-correction-panel-close|music-popup-close)[^>]*>[\s\S]*?<\/button>/g)].map(m=>m[0]);
+  assert.ok(buttons.length,part+' popup Close exists');
+  for(const button of buttons){const name=button.match(/aria-label="([^"]*)"/)[1],visible=button.replace(/<[^>]*>/g,'').trim();assert.ok(name.includes(visible),part+': '+name+' must include '+visible)}
+ }
 });

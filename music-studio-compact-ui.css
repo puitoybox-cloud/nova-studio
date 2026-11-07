@@ -344,3 +344,7 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 .music-studio-shell :is(.music-project-details details,.music-vocal-input-profiles,.music-master-recipes) { background:#0d1725; color:#ecf4ff; }
 .music-studio-shell :is(.music-project-details details,.music-vocal-input-profiles,.music-master-recipes) :is(p,label,summary,pre) { color:#ecf4ff; }
 .music-studio-shell :is(.music-project-details details,.music-production-tools) :is(button,input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]) { background:#081421; color:#ecf4ff; border-color:#526985; }
+
+/* Expanded Mix actions and export route labels retain readable contrast. */
+.music-studio-shell.music-mix-focused .music-project-panel button { background:#081421; color:#ecf4ff; border-color:#526985; }
+.music-studio-shell .music-final-routes label { color:#ecf4ff !important; }

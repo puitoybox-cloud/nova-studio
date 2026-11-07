@@ -1,11 +1,11 @@
 {
   "date": "2026-11-07 JST",
-  "command": "node --test",
-  "passed": 2931,
+  "command": "node --test tests/*.test.js",
+  "passed": 2933,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 133349.527918,
+  "durationMs": 108809.100273,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -97,7 +97,7 @@
     "tests/music-studio-ipad-touch.test.js": "43c1e7e0c35d5379c1980739a0ef0a791d0b71cbf17ee05b6d00ac89df69d065",
     "tests/music-studio-ipad-width.test.js": "a0634685fc6e67f3745cf4880f3061ed04dd30655c9c9b06594bb0261fe49172",
     "tests/music-studio-local-model.test.js": "ca90030dd4fa023505e5250bbf2fe37864acc325a2156472bc81cb567aafa7b9",
-    "tests/music-studio-logic-pro.test.js": "82ce4ed6f01535ed9aa2d71eaa6b6ec278f462d1adfee9997f1624d9105b15f8",
+    "tests/music-studio-logic-pro.test.js": "a53ac4542809236a923fcbf6af516f09621aef4dac6445a2f2aca5e1e0d7cda9",
     "tests/music-studio-long-song-continuity.test.js": "ac51bbb864810384bb1b89ec920889a9b22b177be1e08eb0d78489c0cca0bc4d",
     "tests/music-studio-long-wav-storage.test.js": "5ae7708c3ff3433906fdea7861f8e32a15f9153db32e25c3056a4ae17169e76e",
     "tests/music-studio-lyrics-note-assignment.test.js": "759a3e9bb94e7581e2e9b778ef15b7e48e2c4107addbc132a2d8ec6b1da15a6d",
@@ -144,7 +144,7 @@
     "tests/music-studio-vocal-recording.test.js": "e54c2ac704ed6c5b6dc8eee97ff80440c0af57ab77deb2db870b5e430ddf3941",
     "tests/music-studio-whole-song-transpose.test.js": "626dce829345c365b30c62d53f8108a55dee44ddcd67cf20935da34b354a673b",
     "tests/music-studio-whole-song.test.js": "5288e40a9c21801762a8fcbb92db72526d829ef29b889a1a3a707f56239d1c00",
-    "tests/music-studio-workspace.test.js": "a0f6130ac83c74230a3de7793c177b3a7bed09bb16d29f1533c03189cbe22443",
+    "tests/music-studio-workspace.test.js": "28690307c665ae044c26ae8f60aa4161534669be59af609bdace194665e3f59d",
     "tests/music-vocal-cycle-natural-stop.test.js": "e39c6a4d2bcf2537f1b635ac78645070919f71be7a1a6b5b536d13c7ef5356ba",
     "tests/music-vocal-input-refresh-preserve.test.js": "c32de859f2f7835fc7525b29e1b738d814257dbe9b789ec013c21be4e72f2e9e",
     "tests/music-vocal-input-refresh-race.test.js": "002f0798997858feb0469778c4223f482f543ebd71c00da76a8bc888508abe92",
@@ -159,7 +159,7 @@
     "app.js": "8a8f167f46f816da679bbb8a6be027768a9507d0284940d576c3c56af0c9f074",
     "index.html": "3e1b6e89ca62e4468530a0ed740605d17f10a76bda35964147ed03900eb2b9f3",
     "music-studio-acoustic.js": "bef6973d3a0a556135e27c4151196b6e0ffad41bfaf7d34152cb08cfaadb9f65",
-    "music-studio-ai-assistant-panel.js": "6822d4d8401cf59af18639977e0204d02c5e999b9e8cca6d3b1ad70bd31df6da",
+    "music-studio-ai-assistant-panel.js": "7e49eed050ae15ae5fc756f5dac25576b030d1a0cc5e62dff82dd4d7f763636b",
     "music-studio-ai-assistant-ui.js": "66a675f287512c2fa0d7938bb392f6c847fffb89b45698a176d2501eea4f1394",
     "music-studio-ai-candidate-preview.js": "fccb354ba8d109b67cca712998c50a231588bda8686b1010a359a4a8deb55f2a",
     "music-studio-ai-composition.js": "17b06bba344c8bc52f4d68e590877664e28b1739fa5d9ea0d97cc5a66af9b08b",
@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "8a6d9def30444e4958f213d322ebaf0fccf197d3d503a929ea2829ae6c721b21",
-    "music-studio.js": "fea60023c30d82bc7db87884f39a93466f8628e3be70ff5f5a5abb02eacd6cea",
+    "music-studio.js": "f8aa2e32e2b0b0d36d24e46d89f414ff7147466f27b15c7991a506301a926440",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
@@ -3143,12 +3143,30 @@
     "host menu focus returns after its mutation observer without stealing newer focus"
   ],
   "source": "Full local regression on the current production runtime; GitHub status is tracked separately.",
-  "logSha256": "b1759e590612dd5be5e3002cf94379333f003979f088a0d65a1f5db35e8146d2",
+  "logSha256": "4d7c559d748df9426eae351173138aade8ee6fa02fc332df4561bd6d16730c3b",
   "currentExecution": {
-    "provider": "local Node",
-    "command": "node --test --test-concurrency=2 tests/*.test.js",
+    "provider": "local Node 24.22.1",
+    "command": "node --test tests/*.test.js",
     "date": "2026-11-07 JST",
-    "runtimeHash": "d7dc8284b5d006d11e56073d4f93ec81a5cd249d74d0070fab9818c282b6754b"
+    "runtimeHash": "f8aa2e32e2b0b0d36d24e46d89f414ff7147466f27b15c7991a506301a926440"
   },
-  "testedRuntimeHead": "bb5355218cc125a83b6894720cc5a0ec43b7d348"
+  "testedRuntimeHead": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
+  "previousGitHubExecution": {
+    "provider": "GitHub Actions Node 22",
+    "head": "85fefe743cd3682f8a33b95732388ec24e3b4972",
+    "runId": 42379695409,
+    "jobId": 128424505078,
+    "step": 5,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42379695409/job/128424505078"
+  },
+  "githubExecution": {
+    "provider": "GitHub Actions Node 22",
+    "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
+    "runId": 42381144974,
+    "jobId": 128428824532,
+    "step": 5,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42381144974/job/128428824532"
+  }
 }
