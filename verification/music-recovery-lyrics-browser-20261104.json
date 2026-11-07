@@ -7,7 +7,7 @@
     "scripts/music-indexeddb-browser-persistence.cjs": "7a3d2d8c0146d531dbdbcb370b80dddb5fb24826ec82760413b2b6c7b05f8728"
   },
   "runtimeHashes": {
-    "music-studio.js": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+    "music-studio.js": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",
@@ -16,9 +16,19 @@
     "real IndexedDB durable duplication defers publication into changed contexts"
   ],
   "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified. Extended exact-runtime public checkpoint adoption/Undo/Redo SIGKILL-before-commit, restart, prior-state equality and successful retry preserve Session and daily records. Added PCM gain adoption and WAV binary import SIGKILL-before-commit/restart/retry preserve source bytes, exactly one edit history record, active Session and daily records. Added lyric assignment Apply SIGKILL-before-commit/restart/retry preserves exact original MIDI, exactly one lyric edit history addition, active Session and daily records. Seven checkpoint actions across repository replacement, newer view and cancellation after durable commit (21 combinations) preserve replacement state and match exact persisted receipts; finished forks preserve source. Project duplication: twelve commit/refresh context combinations and fresh-page recovery in the same browser context preserve durable receipts and source provenance.",
-  "source": "Exact runtime and browser source passed the identified GitHub Actions step. Local Chrome was unavailable. Entire workflow status is separate.",
+  "source": "Exact production runtime and relevant browser source passed the identified GitHub Actions step. Later instrument/multisample test-only edits do not change this runtime or these browser tests. Full workflow conclusions are separate.",
   "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
   "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "40e90cf1f532389ca3f8f001933f3b75a978b507",
+    "runId": 42361193931,
+    "jobId": 128369756531,
+    "step": 6,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42361193931/job/128369756531",
+    "runtimeSha256": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57"
+  },
+  "previousExecution": {
     "provider": "GitHub Actions",
     "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
     "runId": 42342656645,

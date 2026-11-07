@@ -6,20 +6,20 @@
     "scripts/music-finished-immutability-browser.js": "c510664d4daf917b8accf9edb5f325fbd7e9537e25fb7a15b54d2dd654e27db2"
   },
   "runtimeHashes": {
-    "music-studio.js": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+    "music-studio.js": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57"
   },
   "acceptedCases": [
     "finished snapshot immutability across every replacement sink, editable fork and failed-write preservation"
   ],
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
-    "runId": 42342656636,
-    "jobId": 128313531880,
+    "head": "40e90cf1f532389ca3f8f001933f3b75a978b507",
+    "runId": 42361193948,
+    "jobId": 128369756380,
     "step": 8,
     "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42342656636/job/128313531880",
-    "runtimeSha256": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42361193948/job/128369756380",
+    "runtimeSha256": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57"
   },
   "coverage": [
     "114 attempted receipt/snapshot mutations, through put / compareAndPut / putLongWav",
@@ -30,5 +30,16 @@
     "Node 36 checkpoint tests cover cancellation, quota, missing dependency, source race, destination collision and archive restoration"
   ],
   "boundaryAudit": "verification/music-finished-boundary-audit-20261107.json",
-  "scope": "Application editing and save boundaries. Explicit project deletion, arbitrary DevTools database tampering and physical hardware are separate."
+  "scope": "Application editing and save boundaries. Explicit project deletion, arbitrary DevTools database tampering and physical hardware are separate.",
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
+    "runId": 42342656636,
+    "jobId": 128313531880,
+    "step": 8,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42342656636/job/128313531880",
+    "runtimeSha256": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+  },
+  "source": "Exact production runtime and relevant browser source passed the identified GitHub Actions step. Later instrument/multisample test-only edits do not change this runtime or these browser tests. Full workflow conclusions are separate."
 }
