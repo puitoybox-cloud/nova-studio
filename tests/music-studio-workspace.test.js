@@ -140,3 +140,29 @@ test('popup Close resolves the replaced summary among shared classes without ste
   for(const frame of frames)frame();assert.equal(focused,mode==='replace'?replacement:mode==='new-focus'?other:doc.body);
  }
 });
+
+test('Escape closes only the innermost conditional disclosure and returns its own summary focus',()=>{
+ const {app}=load();let focused=null,prevented=0,stopped=0;
+ const inner={open:true,querySelector:selector=>{assert.equal(selector,':scope > summary');return{focus:()=>focused='inner'}}};
+ const outer={open:true,contains:e=>e===inner,querySelector:()=>({focus:()=>focused='outer'})};
+ const event={key:'Escape',target:{closest:()=>inner},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
+ assert.equal(app.vocalDisclosureKey(event,outer),true);assert.equal(inner.open,false);assert.equal(outer.open,true);assert.equal(focused,'inner');assert.equal(prevented,1);assert.equal(stopped,1);
+ inner.open=true;assert.equal(app.vocalDisclosureKey({...event,isComposing:true},outer),false);assert.equal(inner.open,true);
+ assert.equal(app.vocalDisclosureKey({...event,defaultPrevented:true},outer),false);assert.equal(inner.open,true);
+});
+
+test('repaint preserves open and closed disclosures separately across nested and repeated summary labels',()=>{
+ const {app,window:w}=load();let details=[];
+ const doc={body:{dataset:{}},activeElement:null,querySelector:()=>null,querySelectorAll:selector=>selector==='details'?details:[]};doc.activeElement=doc.body;w.document=doc;
+ const build=(label,open,parent)=>({tagName:'DETAILS',open,parentElement:parent,querySelector:()=>({textContent:label})});
+ const oldOuter=build('Workspace',true);details=[oldOuter,build('Settings',false,oldOuter),build('Settings',true,oldOuter),build('Settings',false,null)];
+ w.render=()=>{const outer=build('Workspace',false);details=[outer,build('Settings',true,outer),build('Settings',false,outer),build('Settings',true,null),build('New candidate',true,null)]};
+ app.repaint();assert.deepEqual(details.map(d=>d.open),[true,false,true,false,true]);
+});
+
+test('renamed saved preset keeps its open disclosure through stable preset identity',()=>{
+ const {app,window:w}=load();let detail;
+ const build=(label,open)=>({tagName:'DETAILS',open,getAttribute:name=>name==='data-music-disclosure-key'?'preset:piano':null,querySelector:()=>({textContent:label})});
+ const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:s=>s==='details'?[detail]:[]};doc.activeElement=doc.body;w.document=doc;detail=build('Old Piano',true);
+ w.render=()=>{detail=build('Renamed Piano',false)};app.repaint();assert.equal(detail.open,true);
+});

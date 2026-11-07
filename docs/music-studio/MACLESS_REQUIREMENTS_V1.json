@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "date": "2026-11-07 JST",
+  "date": "2026-11-08 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 599,
-  "baselineHead": "34d620c5c8b1ff3fc9977fd4551d235ed2197093",
-  "baselineTree": "0e5ace2bda4675f1e3e7f6662f1b815b18fb481c",
+  "baselinePR": 605,
+  "baselineHead": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+  "baselineTree": "8134cdda67619f13aac301f1e3265395e67dd2ea",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -3196,14 +3196,42 @@
       "feature": 28,
       "category": "A",
       "requirement": "キーボード操作とa11y自動検証",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-conditional-keyboard-browser.js",
+          "declaration": "report.complete=true",
+          "acceptance": "14 routes x 4 viewport widths: populated disclosure keyboard and axe matrix",
+          "run": "verification/music-conditional-keyboard-acceptance-20261108.json"
+        },
+        {
+          "path": "scripts/music-accessibility-matrix-browser.js",
+          "declaration": "report.complete=true",
+          "acceptance": "14 baseline routes: focus restoration, Tab traversal and collapsed/expanded axe checks",
+          "run": "verification/music-conditional-keyboard-acceptance-20261108.json"
+        },
+        {
+          "path": "tests/music-studio-workspace.test.js",
+          "acceptance": "Escape closes only the innermost conditional disclosure and returns its own summary focus",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-workspace.test.js",
+          "acceptance": "repaint preserves open and closed disclosures separately across nested and repeated summary labels",
+          "run": "verification/music-macless-node-summary.json"
+        },
+        {
+          "path": "tests/music-studio-workspace.test.js",
+          "acceptance": "renamed saved preset keeps its open disclosure through stable preset identity",
+          "run": "verification/music-macless-node-summary.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "PR #603: 実Chromeで14主要画面・58フォーカス復帰・711回Tab移動・5可視ポップアップの開閉/Escape復帰を確認。折りたたみ/展開・個別ポップアップのaxe違反0。共通CSSクラスによる誤ったsummary復帰、表示名/読み上げ名、見出し階層、Mix/Export配色を修正。保存済み音源/マルチサンプル管理・Mix/Mastering候補など素材あり条件付きパネルの全状態網羅は未完。verification/music-accessibility-status-20261107.jsonを参照。 PR #604: 保存音色ありの4画面幅でMIDIメニューのEscape閉鎖・summaryフォーカス復帰、音色の改名/複製、候補試聴/採用、Undo/Redo、保存/復元を実Chromeで追加確認。管理・Mix・Masteringの全条件付き状態×キーボード/a11yの網羅は引き続き未完。",
+        "note": "PR #605: 14ルート×4画面幅、56条件付きケースと14基本ルートを実Chromeで完了。素材ありの保存音色/Zone/改名、AI候補、録音Take、PCM/長尺WAV、Mix/Master候補、Export生成ファイルを検証。Enter/Tab/Shift+Tab/Escape/再描画後の同一見出し復帰・開閉保持、axe違反0。保存音色IDで改名時の開閉・入力フォーカスを保持。具体的な対象・実行HEAD・source/runtime hashはverification/music-conditional-keyboard-acceptance-20261108.json。実機/touch/支援機器はMS28-B01で別管理。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

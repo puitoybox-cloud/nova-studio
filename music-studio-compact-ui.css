@@ -348,3 +348,19 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 /* Expanded Mix actions and export route labels retain readable contrast. */
 .music-studio-shell.music-mix-focused .music-project-panel button { background:#081421; color:#ecf4ff; border-color:#526985; }
 .music-studio-shell .music-final-routes label { color:#ecf4ff !important; }
+
+/* Saved takes also appear inside Project settings, outside the focused Vocal dock. */
+.music-studio-shell [data-vocal-replacement] { background:#0d1725; color:#ecf4ff; }
+.music-studio-shell [data-vocal-replacement] :is(p,label,summary) { color:#ecf4ff !important; }
+.music-studio-shell :is([data-vocal-replacement],.music-vocal-take-step) button { background:#081421; color:#ecf4ff; border-color:#526985; }
+/* Populated short/long Mix version forms share the same dark control surface. */
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) { background:#0d1725; color:#ecf4ff; }
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(p,label,summary) { color:#ecf4ff !important; }
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(button,input,select) { background:#081421; color:#ecf4ff; border-color:#526985; }
+/* Generated Export files reveal the save-destination label on the dark drawer. */
+.music-studio-shell .music-export-files label { color:#ecf4ff !important; }
+/* Small screens retain the dark surface when generated/help drawers expand. */
+.music-studio-shell .music-lyrics-help,
+.music-studio-shell .music-lyrics-help :is(p,summary) { background:#0d1725 !important; color:#ecf4ff !important; }
+.music-studio-shell .music-export-files,
+.music-studio-shell .music-export-files > summary { background:#112031 !important; color:#eef6ff !important; }
