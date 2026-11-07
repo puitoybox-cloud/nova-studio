@@ -4267,7 +4267,29 @@
     if(repository!==target)return{ok:false,reason:'repository-changed'};
     return{ok:true};
   }
-  async function duplicateProject(id){const ready=await flushProjectForTransfer(id);if(!ready.ok){notice('変更を保存してから複製してください。','error');return ready}try{const target=repository,source=await target.get(id);if(!source)throw Error('duplicate-source-missing');const baseline=JSON.stringify(source),guard=()=>{if(repository!==target||state.dirty||midiEditorHasPendingChanges())throw Error('duplicate-source-changed')};guard();const timestamp=now(),projectId=uuid();const duplicate={...clone(source),projectId,projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp,...(source.aiWorkspace?{aiWorkspace:rebindAIWorkspace(source.aiWorkspace,projectId,1)}:{})};versionRebind(duplicate,'（コピー）');duplicate.productionHistory.push({id:uuid(),type:'project-duplicate',createdAt:timestamp,sourceProjectId:id,sourceRevision:source.revision});if(!validateProject(duplicate).valid)throw Error('duplicate-checkpoint-invalid');if(typeof target.compareAndFork!=='function')throw Error('atomic-project-duplicate-required');await target.compareAndFork(duplicate,id,baseline,guard);if(repository!==target)return{ok:true,committed:true,refreshPending:true,project:duplicate};setLastProject(duplicate.projectId);await refresh();if(repository!==target)return{ok:true,committed:true,refreshPending:true,project:duplicate};notice('元のプロジェクトを変更せず複製しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(duplicate.projectId)}`);return{ok:true,project:duplicate}}catch(error){console.error(error);notice('複製できませんでした。','error');return{ok:false,error:error.message}}}
+  async function duplicateProject(id){
+    const ready=await flushProjectForTransfer(id);if(!ready.ok){notice('変更を保存してから複製してください。','error');return ready}
+    const target=repository,view=JSON.stringify(state.projects),route=currentRoute(),editor=state.midiEditor;
+    const contextCurrent=()=>repository===target&&JSON.stringify(state.projects)===view&&currentRoute()===route&&state.midiEditor===editor&&!state.dirty&&!midiEditorHasPendingChanges()&&!state.midiInput.recording&&!state.midiInput.starting&&!state.midiInput.stopping&&!state.midiInput.countingIn&&!vocalBusy()&&!pcmEditor.busy&&!archiveTransfer.busy&&!finalExport.busy&&!shutdownPromise;
+    let committed;
+    try{
+      const source=await target.get(id);if(!source)throw Error('duplicate-source-missing');
+      const baseline=JSON.stringify(source),guard=()=>{if(!contextCurrent())throw Error('duplicate-source-changed')};guard();
+      const timestamp=now(),projectId=uuid(),duplicate={...clone(source),projectId,projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp,...(source.aiWorkspace?{aiWorkspace:rebindAIWorkspace(source.aiWorkspace,projectId,1)}:{})};
+      versionRebind(duplicate,'（コピー）');duplicate.productionHistory.push({id:uuid(),type:'project-duplicate',createdAt:timestamp,sourceProjectId:id,sourceRevision:source.revision});
+      if(!validateProject(duplicate).valid)throw Error('duplicate-checkpoint-invalid');if(typeof target.compareAndFork!=='function')throw Error('atomic-project-duplicate-required');
+      await target.compareAndFork(duplicate,id,baseline,guard);committed=duplicate;
+      const deferred=()=>({ok:true,committed:true,refreshPending:true,project:duplicate});
+      if(!contextCurrent())return deferred();
+      const projects=await target.list();if(!contextCurrent())return deferred();
+      state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;
+      setLastProject(duplicate.projectId);notice('元のプロジェクトを変更せず複製しました。','success');routeTo(`${EDIT_ROUTE}/${encodeURIComponent(duplicate.projectId)}`);return{ok:true,committed:true,project:duplicate};
+    }catch(error){
+      // A failed read or repaint cannot turn a durable fork into a failed write.
+      if(committed)return{ok:true,committed:true,refreshPending:true,project:committed};
+      console.error(error);notice('複製できませんでした。','error');return{ok:false,error:error.message};
+    }
+  }
   async function askDelete(id){
     const target=repository;try{
       const project=await target.get(id);if(!project)return{ok:false,error:'project-delete-missing'};
