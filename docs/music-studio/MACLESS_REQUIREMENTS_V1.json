@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-11-07 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 596,
-  "baselineHead": "37b02976a32573e432f1fa3bdf21ab02a08ca794",
-  "baselineTree": "5e7020be6b00b92d6e549f261b929ca9e837bc54",
+  "baselinePR": 598,
+  "baselineHead": "21778e70f60e1b2baac625500f10de65c1d77dcf",
+  "baselineTree": "5babdd2140ae6c65910e8a29980cd2cbeef4ed51",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -2529,7 +2529,7 @@
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "Checkpoint/採用/Undo/Redo/完成版複製/Session/日次記録のcommit後競合を修正。全保存入口のcommit通知喪失・再試行・保存先切替・Archive/録音/バックアップを含む中断条件の照合は未完。",
+        "note": "Checkpoint/採用/Undo/Redo/完成版複製/Session/日次記録のcommit後競合を修正。全保存入口のcommit通知喪失・再試行・保存先切替・Archive/録音/バックアップを含む中断条件の照合は未完。 PR #599: 通常Project複製のcommit後と一覧再読込中の画面/編集/保存先変更、再読込失敗時の確定receipt保持を追加検証。全入口の網羅証明は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3342,7 +3342,7 @@
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "Checkpoint/Undo/Redo等のcommit後に別画面の履歴を上書きしない修正を追加。特殊保存入口の全一覧とSession/日次/編集/復元履歴の正常・中断・不確定commit・再試行の一対一照合は未完。",
+        "note": "Checkpoint/Undo/Redo等のcommit後に別画面の履歴を上書きしない修正を追加。特殊保存入口の全一覧とSession/日次/編集/復元履歴の正常・中断・不確定commit・再試行の一対一照合は未完。 PR #599: 通常Project複製のcommit後と一覧再読込中の画面/編集/保存先変更、再読込失敗時の確定receipt保持を追加検証。全入口の網羅証明は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
