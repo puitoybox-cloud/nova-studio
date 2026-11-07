@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-08 JST",
+  "passed": 70,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-conditional-keyboard-browser.js": "577e45b3ce0de7d0184e1ed26f4cfcfdcb99efa6de4eb34d01ad5e315e36435b",
+    "scripts/music-accessibility-matrix-browser.js": "bc7f9a8b065486ab8907511b2ac6cc58e11d823c28eda561cfb7d17cd6f946a1"
+  },
+  "runtimeHashes": {
+    "gemini-bridge-enhancement.css": "fda00064deb33bda083b6237d18b2c9d168bb1be4e50cb3cc31866ac8e42ffce",
+    "gemini-bridge-enhancement.js": "495bb3621377a4cc47ce43260e4be97ddbe338211e114b6ecf7c7f77fd37b140",
+    "gemini-bridge.css": "9806b69b7094487a9b39fd207e725b7b8707332bdbfc24398a64223057cd9054",
+    "gemini-bridge.js": "91f59fce8382bae32c90b34013f847bad1d25743ecb5f95a1e7bc512fffebbe7",
+    "music-studio-acoustic.js": "bef6973d3a0a556135e27c4151196b6e0ffad41bfaf7d34152cb08cfaadb9f65",
+    "music-studio-ai-assistant-panel.css": "939f598c2fa43287a81352b254084592886be1e9be6caf694e4f2954e48fe407",
+    "music-studio-ai-assistant-panel.js": "7e49eed050ae15ae5fc756f5dac25576b030d1a0cc5e62dff82dd4d7f763636b",
+    "music-studio-ai-assistant-ui.js": "66a675f287512c2fa0d7938bb392f6c847fffb89b45698a176d2501eea4f1394",
+    "music-studio-ai-candidate-preview.js": "fccb354ba8d109b67cca712998c50a231588bda8686b1010a359a4a8deb55f2a",
+    "music-studio-ai-composition.js": "17b06bba344c8bc52f4d68e590877664e28b1739fa5d9ea0d97cc5a66af9b08b",
+    "music-studio-ai-family-apply.js": "0c76e3815275552a91e36f4a3e54670390e17755dc038364da4c935289e13a4f",
+    "music-studio-ai-family-preview.js": "3d906e1408c733a070839d509f7a1cbadf7da87b06e049336096969016584db3",
+    "music-studio-ai-workflow.js": "bdbacc12c0d1d819b4a56b2d2d053cdce3a493f4d6ecefea5837817d46abe6e6",
+    "music-studio-audio-pipeline.js": "891adf5e586052874fa6a53c78597b68e1b04fd85746c377312c5b70530e293a",
+    "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782",
+    "music-studio-auto-finish.js": "d97a69a90d42067605791156dfc878a8c40e5c633bd1c0a15404fe7946b3d58a",
+    "music-studio-binary-boundary.js": "58fd95fb95084d236782ff700a9d7b249ccc4e82554230c9410fdb556f1069d3",
+    "music-studio-compact-ui.css": "dc5f7eb4a08552884bd75dd3edfc22761b615788dac9eae81b3edbc2d0fb56f2",
+    "music-studio-distribution-identity.js": "2a8f3af353085e0c0799725d62817405f1ebd9e4d71c81c1700a44f31624c5c8",
+    "music-studio-dynamic-track-playback.js": "ae0a69728f6bcfd4a22dea39adb274a336290ea97a3ac56b56e7faeaeac19434",
+    "music-studio-dynamic-track-recording.js": "411708b19ee281b41e2a1d25a9aa5ea5e42fcf6377f3834b31fb4d13ea88a957",
+    "music-studio-dynamic-track-selection.css": "d9316d2803471d108fa4f33523aab67f036774b3eee129ba67802f47e06860f7",
+    "music-studio-dynamic-track-selection.js": "6de79076d4d13e1b57e3b6c66f0c32486c5ab1cf6aa07c3877c5a1badb276332",
+    "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371",
+    "music-studio-external-review-popover.js": "ffc6267727731d31be16de33f2fbe2df32e3b848cf1ebd02022858c1c67c2a33",
+    "music-studio-external-song-import.js": "8edf354165cdd9df3d9e12644c91e20dc481dde7e04ea465baaf6f026d727b25",
+    "music-studio-ingress.js": "8297ceeb5a280ed778c77a0b4bcd06f144967ff6c1e044c3cf8eef3357499c4e",
+    "music-studio-instruments.js": "e195ec01eb44bb5cc3de809b864a3c0187c1836d39ac2f3472ee77a0fc4460b4",
+    "music-studio-ipad-pr250-layout.css": "0f5f961964903da8cebc54cd425071a121a3517fb70a2cf4a41119c25dcdcd93",
+    "music-studio-ipad-touch.js": "a512245986e655102846ffda97908f4edcf1bf26940c58268624c5b23914e05c",
+    "music-studio-ipad.css": "1f2d5875a778ab6b1704b17b3215fe9fe7a404f3c2294547df0116661b3b8729",
+    "music-studio-logic-instruments.js": "d16c55aa725f436f38c6b719bfec382c2424655f20eb5fabbdd5d1c784906521",
+    "music-studio-loopback.js": "bb609a19b3dcff9dfe73cfacdc8586cb54a9b2d47ee0b428f46121f53019708e",
+    "music-studio-measure-locks.js": "dcf6f40ee6466bf4555d58d3f22bd0e96152b7d847e09ea2deff967c2c19de28",
+    "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55",
+    "music-studio-midi-input.js": "5f45ae058e601e67637047685296da9f1d7f8c123c6753000ff1f60201836127",
+    "music-studio-midi-parser.js": "e4c7977b49ebeff790f2f291a7d792451d1b3b104772b123dc42795561f91349",
+    "music-studio-midi.js": "752ba37518bb2893ffd0b5bc85f9774e8743618c2c7738f8ac7c92df90a2301c",
+    "music-studio-playback.js": "7ef1384cc5a79b475922d75b916f59d6bcd7154b9eb4d336deff6abe24df4d7c",
+    "music-studio-scoped-midi-repair.js": "9b5315aa09af59f310931985f1436022bd30080443bb530a395b306dc6af2761",
+    "music-studio.css": "e8a8268c140fa1455c34e54b8f1b7cf6cdc1e9a3c42132a1b30281e036df1d83",
+    "music-studio.html": "8a6d9def30444e4958f213d322ebaf0fccf197d3d503a929ea2829ae6c721b21",
+    "music-studio.js": "453eb85bf8f0f90727c37ce4e2ef4e0e326be6dcf6ab5a5fb493dd63a9022b28",
+    "nova-menu.css": "e2efc6de5efc490946b5c136ffde13bef0829cfe0d8e5fdd8050e81b8fdc2f8a",
+    "nova-menu.js": "35623505265d615c068322923fc8909a9a49ac0a9a1742ffb4243cb5f96476c1",
+    "nova-unified-ui.css": "4d4c4218964a7c4d191045841309c80711d655e822930ff67198590ece7beae8",
+    "security.js": "29a46716d8f7efb17455c2b526a30073fce5432e30c4f6f5d959c7af21f4b6a4",
+    "style.css": "8416287397f54955e91b507bbce7b1784e7c90c809169bbdec81dca00036c750"
+  },
+  "acceptedCases": [
+    "14 routes x 4 viewport widths: populated disclosure keyboard and axe matrix",
+    "14 baseline routes: focus restoration, Tab traversal and collapsed/expanded axe checks"
+  ],
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+    "runId": 42423714810,
+    "jobId": 128557398181,
+    "steps": [
+      9,
+      10
+    ],
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714810/job/128557398181"
+  },
+  "reports": {
+    "verification/music-conditional-keyboard-browser.json": "4a69a9f0f485631f96ee9a55d1e70cfe27848d63e1211a06af80c5a07e1e7d38",
+    "verification/music-accessibility-matrix-browser.json": "ca9d9ae072657fb89073230320563a0e3b20a825ccc0597edf2c90d1659278ea"
+  },
+  "coverage": {
+    "routes": 14,
+    "widths": [
+      1440,
+      1180,
+      820,
+      390
+    ],
+    "conditionalCases": 56,
+    "disclosureChecks": 640,
+    "baselineCases": 14,
+    "baselineFocusSamples": 58,
+    "baselineTabPresses": 711
+  },
+  "scope": "Automatic browser acceptance for the 14 enumerated routes, empty/populated disclosures, saved instrument and multisample management, saved AI candidates, two recorded Takes, durable WAV, Mix preview, short Master A/B/C, long Master preview and generated Export files. Each visible disclosure exercises Enter, forward/reverse Tab, Escape from a child control and live summary/closed-state restoration after DOM replacement. Preset rename retains open state and input focus. Physical touch/assistive-device and listening acceptance remains in B.",
+  "artifact": {
+    "id": 13594952936,
+    "digest": "sha256:ca2636b2ee9ff89bbae8580de9c4dddfca8d1a59dd1d0cf485aa9b54d00eb165",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714810/artifacts/13594952936"
+  }
+}
