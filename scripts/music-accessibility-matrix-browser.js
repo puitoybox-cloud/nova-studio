@@ -14,13 +14,13 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    const selector='input:not([type=hidden]),select,textarea,button,summary,a[href],[tabindex]';
    const visible=e=>{if(e.disabled||e.tabIndex<0||!e.getClientRects().length||getComputedStyle(e).visibility!=='visible'||e.closest('[inert]'))return false;for(let p=e.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open&&!p.querySelector(':scope > summary')?.contains(e))return false;return true};
    const describe=e=>[e.tagName,e.id,e.name,e.getAttribute('aria-label'),e.getAttribute('onclick'),e.textContent?.trim().slice(0,160)].join('|');
-   const all=[...document.querySelectorAll(selector)].filter(visible),positive=all.filter(e=>e.tabIndex>0).map(describe),samples=[];
+   const all=[...document.querySelectorAll(selector)].filter(visible),positive=all.filter(e=>e.tabIndex>0).map(describe),samples=[],failures=[];
    for(const tag of ['INPUT','SELECT','TEXTAREA','BUTTON','SUMMARY']){
     const element=[...document.querySelectorAll(selector)].find(e=>e.tagName===tag&&visible(e));if(!element)continue;
-    element.focus();if(document.activeElement!==element)throw Error('control not focusable '+element.outerHTML);const before=describe(element);MusicStudio.repaint();await Promise.resolve();const after=describe(document.activeElement);
-    if(before!==after)throw Error('focus lost '+tag+': '+before+' -> '+after+'; old='+element.outerHTML+'; matching='+[...document.querySelectorAll(selector)].filter(e=>e.tagName===tag).map(e=>e.outerHTML.slice(0,200)).join(' / '));samples.push(tag);
+    try{element.focus();if(document.activeElement!==element)throw Error('control not focusable '+element.outerHTML);const before=describe(element);MusicStudio.repaint();await Promise.resolve();const after=describe(document.activeElement);
+    if(before!==after)throw Error('focus lost '+tag+': '+before+' -> '+after+'; old='+element.outerHTML+'; matching='+[...document.querySelectorAll(selector)].filter(e=>e.tagName===tag).map(e=>e.outerHTML.slice(0,200)).join(' / '));samples.push(tag)}catch(error){failures.push({tag,error:error.message})}
    }
-   return{positive,restored:samples,tabbable:all.length};
+   return{positive,restored:samples,failures,tabbable:all.length};
   });assert.deepEqual(focus.positive,[],route+' positive tab order');
   // Record an actual keyboard traversal, including native summary toggling.
   await page.evaluate(()=>{document.activeElement?.blur()});const visited=[];
@@ -31,5 +31,5 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   report.screens.push({route,focus,tabOrder:visited,collapsed:collapsed.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)})),expanded:expanded.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)}))});
   console.log(route,'focus samples',focus.restored.join(','),'axe violations',collapsed.violations.length,expanded.violations.length);
  }
- report.complete=true;await context.close();
+ report.complete=true;await context.close();assert.deepEqual(report.screens.flatMap(s=>s.focus.failures.map(f=>({route:s.route,...f}))),[],'keyboard focus failures');
  }finally{fs.writeFileSync('verification/music-accessibility-matrix-browser.json',JSON.stringify(report,null,2)+'\n');await browser?.close();server.close()}})().catch(e=>{console.error(e);process.exitCode=1});
