@@ -3995,6 +3995,7 @@
   function editorHandleShortcut(event){
     if(event?.key==='Escape'&&!event.isComposing){const menu=event.target?.closest?.('.music-editor-menu[open]');if(menu){event.preventDefault?.();event.stopPropagation?.();return editorClosePopup(event.target)}}
     const session=state.midiEditor,rawTarget=event?.target,target=rawTarget?.nodeType===3?rawTarget.parentElement:rawTarget,inputFocused=target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');if(!session||!isMidiEditorRoute(currentRoute())||event?.isComposing||event?.repeat||inputFocused)return false;
+    if(['Enter','Return',' ','Spacebar'].includes(event.key)&&target?.closest?.('button,summary,a[href]'))return false;
     const key=String(event.key||''),code=String(event.code||''),lower=key.toLowerCase(),meta=Boolean(event.metaKey),control=Boolean(event.ctrlKey),shift=Boolean(event.shiftKey),option=Boolean(event.altKey),selected=root.MusicStudioEditor.selectedIds(session).length,step=editorSnapTicks(session),space=code==='Space'||key===' '||key==='Spacebar',recordKey=code==='KeyR'||lower==='r',enterKey=code==='Enter'||code==='NumpadEnter'||key==='Enter'||key==='Return';let action=null;
     if(meta&&lower==='z')action=()=>shift?editorRedo():editorUndo();
     else if(meta&&lower==='c'&&selected)action=editorCopy;
