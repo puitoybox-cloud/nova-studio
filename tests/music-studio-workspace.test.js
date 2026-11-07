@@ -115,3 +115,14 @@ test('status repaint reopens the focused disclosure before returning keyboard fo
  w.render=()=>{replacement=build(false);controls=[replacement];focused=doc.body};
  app.repaint();assert.equal(detail.open,true);assert.equal(focused,replacement);
 });
+
+test('host menu focus returns after its mutation observer without stealing newer focus',()=>{
+ for(const moved of [false,true]){
+  const {app,window:w}=load(),queued=[];let controls=[],focused;
+  const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+  const menu={tagName:'BUTTON',textContent:'MENU',getAttribute:key=>key==='aria-label'?'Open menu':null,getClientRects:()=>[{}],focus(){focused=this}};
+  controls=[menu];focused=menu;w.document=doc;w.queueMicrotask=callback=>queued.push(callback);
+  w.render=()=>{controls=[];focused=doc.body;queued.push(()=>{controls=[menu]})};
+  app.repaint();const other={};if(moved)focused=other;for(const task of queued)task();assert.equal(focused,moved?other:menu);
+ }
+});

@@ -804,6 +804,9 @@
       for(const [key,value] of Object.entries(prior.options||{})){const input=detail.querySelector('[name='+key+']');if(input&&value!==undefined)input.value=value;}
     }
     restorePaintFocus(focused);
+    // Host chrome can move its existing menu toggle back after a DOM mutation.
+    // Retry after that observer, without stealing focus from another control.
+    root.queueMicrotask?.(()=>{if(root.document?.activeElement===root.document?.body)restorePaintFocus(focused)});
   }
   function repaintWorkspace(){return performanceMeasure('paintDispatch',()=>repaintWorkspaceMeasured())}
   function repaintWorkspaceMeasured(){const workspace=root.document?.querySelector?.('[data-workspace]');if(workspace)workspaceExpanded=workspace.open;if(root.document?.body?.dataset.musicStudioStandalone==='true')paintStandalone();else{root.render?.();restoreEditorPitchScroll()}}
