@@ -69,6 +69,7 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
     checks.push(label);
    }
    if(route.includes('/midi-editor/')){assert.ok(checks.some(s=>s.includes('Manage presets')),'preset management must be exercised');assert.ok(checks.some(s=>s.startsWith('Zone 1')),'multisample zones must be exercised');assert.ok(checks.includes('Keyboard Piano'),'saved preset must be exercised');}
+   if(route.includes('/midi-editor/')){const saved=await page.evaluate(()=>MusicStudio.saveMidiEditor());assert.equal(saved.ok,true,'persist generated candidates before navigation');}
    report.screens.push({width,route,candidate,disclosures:checks,axeViolations:violations.length});console.log(width,route,candidate,checks.length,'disclosures passed');
   }
   assert.deepEqual(errors,[]);await context.close();
