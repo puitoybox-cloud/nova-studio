@@ -106,3 +106,12 @@ test('status repaint restores keyboard focus and caret only to a visible enabled
   else{assert.equal(focused,doc.body);assert.equal(caret,null)}
  }
 });
+
+test('status repaint reopens the focused disclosure before returning keyboard focus',()=>{
+ const {app,window:w}=load();let controls=[],focused,detail;
+ const summary={textContent:'Visible actions'},doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:selector=>selector.startsWith('input,')?controls:[],get activeElement(){return focused}};
+ function build(open){detail={tagName:'DETAILS',open,querySelector:()=>summary};return{tagName:'INPUT',parentElement:detail,getAttribute:key=>key==='name'?'visibleAction':null,getClientRects:()=>detail.open?[{}]:[],focus(){focused=this}}}
+ const old=build(true);controls=[old];focused=old;w.document=doc;let replacement;
+ w.render=()=>{replacement=build(false);controls=[replacement];focused=doc.body};
+ app.repaint();assert.equal(detail.open,true);assert.equal(focused,replacement);
+});

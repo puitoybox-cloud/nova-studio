@@ -12,7 +12,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   console.log('Checking accessibility route',route);
   const focus=await page.evaluate(()=>{
    const selector='input:not([type=hidden]),select,textarea,button,summary,a[href],[tabindex]';
-   const visible=e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&getComputedStyle(e).visibility==='visible'&&!e.closest('[inert]');
+   const visible=e=>{if(e.disabled||e.tabIndex<0||!e.getClientRects().length||getComputedStyle(e).visibility!=='visible'||e.closest('[inert]'))return false;for(let p=e.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open&&!p.querySelector(':scope > summary')?.contains(e))return false;return true};
    const describe=e=>[e.tagName,e.id,e.name,e.getAttribute('aria-label'),e.getAttribute('onclick'),e.textContent?.trim().slice(0,160)].join('|');
    const all=[...document.querySelectorAll(selector)].filter(visible),positive=all.filter(e=>e.tabIndex>0).map(describe),samples=[];
    for(const tag of ['INPUT','SELECT','TEXTAREA','BUTTON','SUMMARY']){

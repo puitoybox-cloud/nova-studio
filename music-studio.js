@@ -774,12 +774,15 @@
     if(!key||active===document.body)return null;
     const controls=Array.from(document.querySelectorAll?.('input,select,textarea,button,summary,a[href],[tabindex]')||[]).filter(e=>paintFocusIdentity(e)===key);
     const index=controls.indexOf(active);if(index<0)return null;
-    return{key,index,route:currentRoute(),start:active.selectionStart,end:active.selectionEnd,direction:active.selectionDirection};
+    const disclosures=[];for(let parent=active.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS'&&parent.open)disclosures.push(parent.querySelector?.(':scope > summary')?.textContent?.trim());
+    return{key,index,disclosures,route:currentRoute(),start:active.selectionStart,end:active.selectionEnd,direction:active.selectionDirection};
   }
   function restorePaintFocus(saved){
     if(!saved||saved.route!==currentRoute())return;
     const controls=Array.from(root.document?.querySelectorAll?.('input,select,textarea,button,summary,a[href],[tabindex]')||[]).filter(e=>paintFocusIdentity(e)===saved.key),target=controls[saved.index];
-    if(!target||target.disabled||!target.getClientRects?.().length)return;
+    if(!target||target.disabled)return;
+    for(let parent=target.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS'&&saved.disclosures.includes(parent.querySelector?.(':scope > summary')?.textContent?.trim()))parent.open=true;
+    if(!target.getClientRects?.().length)return;
     target.focus?.({preventScroll:true});
     if(Number.isInteger(saved.start)&&Number.isInteger(saved.end))try{target.setSelectionRange?.(saved.start,saved.end,saved.direction)}catch(_){}
   }
