@@ -25,7 +25,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   // Record an actual keyboard traversal, including native summary toggling.
   await page.evaluate(()=>{document.activeElement?.blur()});const visited=[];
   for(let i=0;i<Math.min(focus.tabbable+1,400);i++){await page.keyboard.press('Tab');visited.push(await page.evaluate(()=>({tag:document.activeElement.tagName,name:document.activeElement.getAttribute('aria-label')||document.activeElement.name||document.activeElement.textContent?.trim().slice(0,60)})))}
-  const popupChecks=[];
+  const popupChecks=[],popupViolations=[];
   if(route.includes('/midi-editor/')){
    const before=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData));
    const menus=page.locator('.music-editor-topbar > .music-editor-menu');
@@ -33,6 +33,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
     const menu=menus.nth(i),summary=menu.locator(':scope > summary');if(!await summary.isVisible())continue;
     if(await menu.getAttribute('open')!==null)await summary.press('Enter');
     await summary.focus();await summary.press('Enter');assert.notEqual(await menu.getAttribute('open'),null,await summary.innerText());
+    const opened=await new AxeBuilder({page}).analyze();popupViolations.push(...opened.violations.map(v=>({menu:i,id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})));
     const input=menu.locator('input:not([type=hidden]):enabled:visible,select:enabled:visible,textarea:enabled:visible').first();
     if(await input.count())await input.focus();else await summary.focus();
     await page.keyboard.press('Escape');await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await menu.getAttribute('open'),null);
@@ -44,8 +45,9 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   const collapsed=await new AxeBuilder({page}).analyze();
   await page.locator('details').evaluateAll(nodes=>nodes.forEach(n=>n.open=true));
   const expanded=await new AxeBuilder({page}).analyze();
-  report.screens.push({route,focus,popupChecks,tabOrder:visited,collapsed:collapsed.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})),expanded:expanded.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
+  report.screens.push({route,focus,popupChecks,popupViolations,tabOrder:visited,collapsed:collapsed.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})),expanded:expanded.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
   console.log(route,'focus samples',focus.restored.join(','),'axe violations',collapsed.violations.length,expanded.violations.length);
  }
+ report.popupViolations=report.screens.flatMap(s=>s.popupViolations.map(v=>({route:s.route,...v})));assert.deepEqual(report.popupViolations,[],'opened popup accessibility violations');
  report.remainingViolations=report.screens.flatMap(s=>['collapsed','expanded'].flatMap(state=>s[state].map(v=>({route:s.route,state,...v}))));report.complete=true;await context.close();assert.deepEqual(report.remainingViolations,[],'accessibility violations');assert.deepEqual(report.screens.flatMap(s=>s.focus.failures.map(f=>({route:s.route,...f}))),[],'keyboard focus failures');
  }finally{fs.writeFileSync('verification/music-accessibility-matrix-browser.json',JSON.stringify(report,null,2)+'\n');await browser?.close();server.close()}})().catch(e=>{console.error(e);process.exitCode=1});
