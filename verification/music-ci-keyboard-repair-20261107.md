@@ -15,12 +15,13 @@ Expand the 14-route inventory with a PCM asset and explicit topbar keyboard open
 
 ## Executed validation
 
-- Full final production Node suite: 2,930 passed, 0 failed/cancelled/skipped; 99,220.563512 ms. Stored summary contains current source/runtime hashes and the log hash.
+- Full final production Node suite: 2,931 passed, 0 failed/cancelled/skipped; 100,986.544256 ms. Stored summary contains current source/runtime hashes and the log hash.
 - Logic/editor keyboard suite: 169 passed, including native activation and popup dismissal/data preservation. External-track suite: 35 passed. Combined prior focused run: 203 passed before the additional native activation case.
+- Recording adapter plus Logic/editor focused tests: 183 passed.
 - Auto-Finish server: 22 passed.
 - JavaScript syntax, whitespace and formal source-hashed ledger validation pass locally.
 - Local Chromium launch is blocked by OS `socket() ... Operation not permitted`; browser execution uses GitHub-hosted Chrome.
-- Identical final production JavaScript runtime at `40e90cf1f532389ca3f8f001933f3b75a978b507`: checkpoint/range, finished immutability and PCM/encoded crash recovery passed run 42361193948, job 128369756380; IndexedDB/restart/MIDI/deletion/history passed run 42361193931, job 128369756531; audible A/B passed run 42361193937, job 128369756528. Relevant browser sources were unchanged by later instrument/multisample test edits. Evidence JSON files identify these exact executions.
+- Core `music-studio.js` byte-identical to final at `40e90cf1f532389ca3f8f001933f3b75a978b507`: checkpoint/range, finished immutability and PCM/encoded crash recovery passed run 42361193948, job 128369756380; IndexedDB/restart/MIDI/deletion/history passed run 42361193931, job 128369756531; audible A/B passed run 42361193937, job 128369756528. Relevant browser sources were unchanged by later instrument/multisample test edits. The outer recording adapter was subsequently corrected; final browser execution after that adapter change is pending. Evidence JSON files identify these exact executions.
 - Latest complete UI/keyboard execution and final-head all-green status are pending at report creation. See the PR checks for current results. Do not treat old-head failures as final-head results.
 
 ## Formal acceptance remains 66/135 (48.89%), 69 open
@@ -37,3 +38,5 @@ New verified IDs: none. Six verification gaps remain; 63 requirements still depe
 | MS30-A02 | Special save entrances still need one-to-one session/day/edit/restore event-ID and no-duplication checks for normal, interrupted, uncertain and retried commits. |
 
 No decision-dependent acceptance conditions were weakened. No model/license/provider/Cloud Sync policy was selected implicitly. Intel Mac, physical power loss and actual-song listening remain unverified.
+
+Final local source tree and GitHub tree were compared by git object hashes. Large test/evidence transfers were repaired before final storage; the complete files match locally and remotely. The final-head Actions jobs were all queued at the last observation; final all-green, updated full 14-screen keyboard completion and zero-violation results cannot yet be confirmed.

@@ -1,11 +1,11 @@
 {
   "date": "2026-11-07 JST",
   "command": "node --test",
-  "passed": 2930,
+  "passed": 2931,
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 99220.563512,
+  "durationMs": 100986.544256,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -78,7 +78,7 @@
     "tests/music-studio-disposable-durable-recovery.test.js": "62c9ef630f62f23fbe0f2fcb504a6f45e3ff4fee2b5eda7b0b1d441eaca330ba",
     "tests/music-studio-distribution-identity.test.js": "729ff4960e622b379ab6c1f79f3bccb0a79c0a1b7b93670d31f31937b266f247",
     "tests/music-studio-dynamic-track-playback.test.js": "3d9aedb2eecc872613b2af2370c70c8dcfc4fcfe9bc5b91e8f07d0db9e5b5ef3",
-    "tests/music-studio-dynamic-track-recording.test.js": "a6c324e1165dd0aaaf294d9c0d15dd020f5fec8384adba22e98a3c9bb6ddb9c9",
+    "tests/music-studio-dynamic-track-recording.test.js": "17ce178fe9e859e1ed29d8ab6f877919d8e2fb931a748c2eb487dafdd791a653",
     "tests/music-studio-dynamic-track-selection.test.js": "d6ffde2d2ee9f467ca740938eb9250cba7093e337d16ef8094be0242906f003d",
     "tests/music-studio-editor-commit-locks.test.js": "66707244e7939168161a02f53b9d8e94ff96571741164c2fc277e60dd37c17d8",
     "tests/music-studio-editor.test.js": "6906b26212b54d13da0f776178965256bc8f626236ac08772f6f83dce5bbbf1e",
@@ -176,7 +176,7 @@
     "music-studio-distribution-capabilities.js": "5881e9881e4ca06563f52121ac840d475de1c5b72da76494474b9d0153b55442",
     "music-studio-distribution-identity.js": "2a8f3af353085e0c0799725d62817405f1ebd9e4d71c81c1700a44f31624c5c8",
     "music-studio-dynamic-track-playback.js": "ae0a69728f6bcfd4a22dea39adb274a336290ea97a3ac56b56e7faeaeac19434",
-    "music-studio-dynamic-track-recording.js": "71502b93f6d2c0d2d97e9b971bff3c6c9e933de85ab0380a79d89952e66bf565",
+    "music-studio-dynamic-track-recording.js": "411708b19ee281b41e2a1d25a9aa5ea5e42fcf6377f3834b31fb4d13ea88a957",
     "music-studio-dynamic-track-selection.js": "6de79076d4d13e1b57e3b6c66f0c32486c5ab1cf6aa07c3877c5a1badb276332",
     "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371",
     "music-studio-external-review-popover.js": "ffc6267727731d31be16de33f2fbe2df32e3b848cf1ebd02022858c1c67c2a33",
@@ -3143,12 +3143,12 @@
     "host menu focus returns after its mutation observer without stealing newer focus"
   ],
   "source": "Full local regression on the current production runtime; GitHub status is tracked separately.",
-  "logSha256": "9081996a4f48f676d93a3a6f24876c82f6c86ea3b6dcfc70e285409ff2be189e",
+  "logSha256": "85e16329c570112b75e934d769bf4aabdfcf913d3e2b19d4e3f93145f08fde47",
   "currentExecution": {
     "provider": "local Node",
     "command": "node --test --test-concurrency=2 tests/*.test.js",
     "date": "2026-11-07 JST",
     "runtimeHash": "d7dc8284b5d006d11e56073d4f93ec81a5cd249d74d0070fab9818c282b6754b"
   },
-  "testedRuntimeHead": "31653b416b452934cf8c07ca299bc71a3939bf22"
+  "testedRuntimeHead": "ed7a7643eb48c0b5011f2c1b246b8fca0612abea"
 }
