@@ -79,7 +79,7 @@ test('Editor BPM sync saves the Project value and drives next playback and MIDI 
 test('history buttons use Japanese rounded arrows at the right of the part tabs without changing actions',()=>{
   const{app}=load(),project=app.makeProject({projectId:'button-guidance',projectName:'Button guidance'});
   app.state.projects=[project];let html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
-  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="元に戻す"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="やり直す"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
+  assert.match(html,/class="music-part-tabs"[^>]*>[\s\S]*class="music-history-controls"[^>]*>[\s\S]*editorUndo\(\)" disabled title="元に戻す" aria-label="戻る（元に戻す）"><svg class="music-history-icon"[\s\S]*<span>戻る<\/span>[\s\S]*editorRedo\(\)" disabled title="やり直す" aria-label="進む（やり直す）"><svg class="music-history-icon"[\s\S]*<span>進む<\/span>/);
   assert.equal((html.match(/editorUndo\(\)/g)||[]).length,1);assert.equal((html.match(/editorRedo\(\)/g)||[]).length,1);
   for(const part of ['Melody','Drums','Bass'])assert.match(html,new RegExp(`class="music-part-tab-group"[^>]*>[\\s\\S]*?class="music-part-tab [^"]+"[^>]*>${part}<\\/button>[\\s\\S]*?aria-label="${part} Mute">M<\\/button>[\\s\\S]*?aria-label="${part} Solo">S<\\/button>`));
   assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Mute"/g)||[]).length,3);assert.equal((html.match(/aria-label="(?:Melody|Drums|Bass) Solo"/g)||[]).length,3);assert.doesNotMatch(html,/music-track-runtime-controls/);
