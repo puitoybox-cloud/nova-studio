@@ -159,3 +159,10 @@ test('repaint preserves open and closed disclosures separately across nested and
  w.render=()=>{const outer=build('Workspace',false);details=[outer,build('Settings',true,outer),build('Settings',false,outer),build('Settings',true,null),build('New candidate',true,null)]};
  app.repaint();assert.deepEqual(details.map(d=>d.open),[true,false,true,false,true]);
 });
+
+test('renamed saved preset keeps its open disclosure through stable preset identity',()=>{
+ const {app,window:w}=load();let detail;
+ const build=(label,open)=>({tagName:'DETAILS',open,getAttribute:name=>name==='data-music-disclosure-key'?'preset:piano':null,querySelector:()=>({textContent:label})});
+ const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:s=>s==='details'?[detail]:[]};doc.activeElement=doc.body;w.document=doc;detail=build('Old Piano',true);
+ w.render=()=>{detail=build('Renamed Piano',false)};app.repaint();assert.equal(detail.open,true);
+});
