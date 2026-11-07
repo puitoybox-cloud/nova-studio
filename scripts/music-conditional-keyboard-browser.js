@@ -2,7 +2,7 @@
 // Real native disclosure activation, nested Escape, repaint and Tab assertions.
 // Fixtures populate production state through the same validators and DSP APIs.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright'),AxeBuilder=require('@axe-core/playwright').default;
-const root=path.resolve(__dirname,'..'),report={head:process.env.NOVA_TESTED_HEAD,screens:[]};
+const root=path.resolve(__dirname,'..'),report={head:process.env.NOVA_TESTED_HEAD,screens:[],axeFailures:[]};
 const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(req.url,'http://localhost').pathname.slice(1)||'music-studio.html');if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');fs.createReadStream(file).pipe(res)});
 const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
 (async()=>{let browser;try{
@@ -37,7 +37,7 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
    },route);await settle(page);
    // Expand every ancestor to expose conditional management and nested zones.
    await page.locator('details').evaluateAll(ds=>ds.forEach(d=>d.open=true));await settle(page);
-   const violations=(await new AxeBuilder({page}).analyze()).violations;assert.deepEqual(violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[],`${width} ${route} populated axe`);
+   const violations=(await new AxeBuilder({page}).analyze()).violations;if(violations.length)report.axeFailures.push({width,route,state:'expanded',violations:violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
    const count=await page.locator('details').count(),checks=[];
    for(let i=0;i<count;i++){
     const detail=page.locator('details').nth(i),summary=detail.locator(':scope > summary');
@@ -45,7 +45,7 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
     if(!await summary.isVisible())continue;
     const label=await summary.innerText();
     if(!await detail.evaluate(d=>d.open)){await summary.press('Enter');await settle(page);}assert.equal(await detail.evaluate(d=>d.open),true,label+' opens before closure check');
-    if(/Manage presets|^Zone |^Keyboard Piano$|^Second Piano$|Multi sample|Files（/.test(label)){const result=(await new AxeBuilder({page}).analyze()).violations;assert.deepEqual(result.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[],`${width} ${route} ${label} axe`);}
+    if(/Manage presets|^Zone |^Keyboard Piano$|^Second Piano$|Multi sample|Files（/.test(label)){const result=(await new AxeBuilder({page}).analyze()).violations;if(result.length)report.axeFailures.push({width,route,state:label,violations:result.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});}
     await summary.focus();await summary.press('Enter');await settle(page);assert.equal(await detail.evaluate(d=>d.open),false,label+' Enter closes');
     await summary.press('Enter');await settle(page);assert.equal(await detail.evaluate(d=>d.open),true,label+' Enter opens');
     await summary.evaluate(summary=>{
@@ -75,6 +75,6 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
   }
   assert.deepEqual(errors,[]);await context.close();
  }
- report.complete=true;
+ assert.deepEqual(report.axeFailures,[],'all populated route and disclosure axe checks must pass');report.complete=true;
  }finally{fs.writeFileSync(path.join(root,'verification/music-conditional-keyboard-browser.json'),JSON.stringify(report,null,2)+'\n');await browser?.close();server.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

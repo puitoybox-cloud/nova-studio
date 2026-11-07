@@ -353,3 +353,7 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 .music-studio-shell [data-vocal-replacement] { background:#0d1725; color:#ecf4ff; }
 .music-studio-shell [data-vocal-replacement] :is(p,label,summary) { color:#ecf4ff !important; }
 .music-studio-shell :is([data-vocal-replacement],.music-vocal-take-step) button { background:#081421; color:#ecf4ff; border-color:#526985; }
+/* Populated short/long Mix version forms share the same dark control surface. */
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) { background:#0d1725; color:#ecf4ff; }
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(p,label,summary) { color:#ecf4ff !important; }
+.music-studio-shell :is(.music-mix-versions,.music-long-versions) :is(button,input,select) { background:#081421; color:#ecf4ff; border-color:#526985; }
