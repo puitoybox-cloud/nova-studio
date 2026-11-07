@@ -265,3 +265,29 @@ test('real IndexedDB committed checkpoint actions preserve replacement views',{t
   });assert.equal(results.length,21);
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 });
+
+test('real IndexedDB durable duplication defers publication into changed contexts',{timeout:60000},async()=>{
+ const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?fs.readFileSync('music-studio.js'):'<!doctype html><body></body>')});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||chromium.executablePath(),args:['--no-sandbox']});
+  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port;await page.goto(origin);await page.addScriptTag({url:origin+'/app.js'});await page.waitForFunction(()=>MusicStudio.state.loaded);
+  const receipts=await page.evaluate(async()=>{
+   const a=MusicStudio,receipts=[];
+   for(const phase of ['commit','refresh'])for(const mode of ['repository','view','dirty','midi','route','read-failure']){
+    location.hash='#music-studio';a.state.dirty=false;a.state.midiEditor=null;
+    const repo=a.indexedDbRepository(),id='duplicate-'+phase+'-'+mode,p=a.makeProject({projectId:id,projectName:id});await repo.put(p);a.setRepository(repo);a.state.projects=[p];
+    const other=a.memoryRepository(),replacement=a.makeProject({projectId:'other',projectName:'Other'});await other.put(replacement);
+    const list=repo.list.bind(repo),fork=repo.compareAndFork.bind(repo);let expected;
+    const change=()=>{if(mode==='read-failure')throw Error('read-failed');if(mode==='repository')a.setRepository(other);if(['repository','view'].includes(mode))a.state.projects=[replacement];if(mode==='dirty')a.state.dirty=true;if(mode==='midi')a.state.midiEditor={projectId:'other',sentinel:'new editor'};if(mode==='route')location.hash='#music-studio/current';expected=JSON.stringify(a.state.projects)};
+    if(phase==='commit')repo.compareAndFork=async(...args)=>{await fork(...args);if(mode==='read-failure')repo.list=async()=>{throw Error('read-failed')};else change()};else repo.list=async()=>{change();return list()};
+    const r=await a.duplicateProject(id);if(!r.ok||!r.committed||!r.refreshPending)throw Error(phase+'/'+mode+': '+JSON.stringify(r));
+    if(expected&&JSON.stringify(a.state.projects)!==expected)throw Error('view replaced');if(location.hash!==(mode==='route'?'#music-studio/current':'#music-studio'))throw Error('route replaced');if(mode==='dirty'&&!a.state.dirty)throw Error('dirty cleared');if(mode==='midi'&&a.state.midiEditor?.sentinel!=='new editor')throw Error('editor replaced');
+    if(JSON.stringify(await repo.get(id))!==JSON.stringify(p))throw Error('source changed');if(JSON.stringify(await repo.get(r.project.projectId))!==JSON.stringify(r.project))throw Error('receipt mismatch');if((await other.list()).length!==1)throw Error('replacement repository changed');receipts.push({source:id,copy:r.project.projectId});
+   }
+   a.state.dirty=false;a.state.midiEditor=null;return receipts;
+  });assert.equal(receipts.length,12);
+  await page.close();const reopened=await browser.newPage();await reopened.goto(origin);await reopened.addScriptTag({url:origin+'/app.js'});await reopened.waitForFunction(()=>MusicStudio.state.loaded);
+  assert.equal(await reopened.evaluate(async receipts=>{const repo=MusicStudio.indexedDbRepository();for(const r of receipts){const source=await repo.get(r.source),copy=await repo.get(r.copy);if(!source||copy?.productionHistory?.at(-1)?.sourceProjectId!==r.source||copy.productionHistory.at(-1).sourceRevision!==source.revision)return false}return true},receipts),true);
+ }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
+});
