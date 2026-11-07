@@ -5,7 +5,7 @@
   "failed": 0,
   "cancelled": 0,
   "skipped": 0,
-  "durationMs": 100986.544256,
+  "durationMs": 133349.527918,
   "sourceHashes": {
     "tests/dream-architect-studio-shell.test.js": "bc696394b33ab19aab4eedf7a84fe1ad93966e7022601b0a4c629201fae5e5d2",
     "tests/dream-architect-transfer.test.js": "b81404b6c4e939a78ba360b4326714444bff456368a511c2b3a78443c4708f52",
@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "8a6d9def30444e4958f213d322ebaf0fccf197d3d503a929ea2829ae6c721b21",
-    "music-studio.js": "f226ede8ab04a05f14ade2bc5c43eb225b53ac96f60a28cfabe22aeb6283ec57",
+    "music-studio.js": "fea60023c30d82bc7db87884f39a93466f8628e3be70ff5f5a5abb02eacd6cea",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
@@ -3143,12 +3143,12 @@
     "host menu focus returns after its mutation observer without stealing newer focus"
   ],
   "source": "Full local regression on the current production runtime; GitHub status is tracked separately.",
-  "logSha256": "85e16329c570112b75e934d769bf4aabdfcf913d3e2b19d4e3f93145f08fde47",
+  "logSha256": "b1759e590612dd5be5e3002cf94379333f003979f088a0d65a1f5db35e8146d2",
   "currentExecution": {
     "provider": "local Node",
     "command": "node --test --test-concurrency=2 tests/*.test.js",
     "date": "2026-11-07 JST",
     "runtimeHash": "d7dc8284b5d006d11e56073d4f93ec81a5cd249d74d0070fab9818c282b6754b"
   },
-  "testedRuntimeHead": "ed7a7643eb48c0b5011f2c1b246b8fca0612abea"
+  "testedRuntimeHead": "bb5355218cc125a83b6894720cc5a0ec43b7d348"
 }
