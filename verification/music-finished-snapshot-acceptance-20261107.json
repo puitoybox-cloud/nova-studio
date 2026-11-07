@@ -6,19 +6,19 @@
     "scripts/music-finished-immutability-browser.js": "c510664d4daf917b8accf9edb5f325fbd7e9537e25fb7a15b54d2dd654e27db2"
   },
   "runtimeHashes": {
-    "music-studio.js": "fea60023c30d82bc7db87884f39a93466f8628e3be70ff5f5a5abb02eacd6cea"
+    "music-studio.js": "f8aa2e32e2b0b0d36d24e46d89f414ff7147466f27b15c7991a506301a926440"
   },
   "acceptedCases": [
     "finished snapshot immutability across every replacement sink, editable fork and failed-write preservation"
   ],
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "bb5355218cc125a83b6894720cc5a0ec43b7d348",
-    "runId": 42371461352,
-    "jobId": 128400282868,
+    "head": "d17caf71148e4bdcf0276959da77fa66b8c2aa83",
+    "runId": 42381145162,
+    "jobId": 128428825326,
     "step": 8,
     "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42371461352/job/128400282868"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42381145162/job/128428825326"
   },
   "coverage": [
     "114 attempted receipt/snapshot mutations, through put / compareAndPut / putLongWav",
@@ -32,13 +32,12 @@
   "scope": "Application editing and save boundaries. Explicit project deletion, arbitrary DevTools database tampering and physical hardware are separate.",
   "previousExecution": {
     "provider": "GitHub Actions",
-    "head": "545b5945d40f9130888cdbcefa8c5936e1ce8b27",
-    "runId": 42342656636,
-    "jobId": 128313531880,
+    "head": "85fefe743cd3682f8a33b95732388ec24e3b4972",
+    "runId": 42379695404,
+    "jobId": 128424505244,
     "step": 8,
     "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42342656636/job/128313531880",
-    "runtimeSha256": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42379695404/job/128424505244"
   },
-  "source": "Exact production runtime and relevant browser source passed the identified GitHub Actions step. Later instrument/multisample test-only edits do not change this runtime or these browser tests. Full workflow conclusions are separate."
+  "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately."
 }

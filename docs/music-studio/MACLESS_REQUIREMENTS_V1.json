@@ -3203,7 +3203,7 @@
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "14主要画面でTab移動記録、58フォーカス復帰、折りたたみ/展開のaxe検査を実Chromiumで実施。MENU/見出し/landmark/ARIA/展開パネル配色を修正。直前の完了検査はcolor-contrastのみ残存し、追加CSS修正後の実行は待機中。全ての素材あり条件付きパネルとキー起動/Escape/復帰の完全対応は未完。verification/music-accessibility-status-20261107.jsonを参照。",
+        "note": "PR #603: 実Chromeで14主要画面・58フォーカス復帰・711回Tab移動・5可視ポップアップの開閉/Escape復帰を確認。折りたたみ/展開・個別ポップアップのaxe違反0。共通CSSクラスによる誤ったsummary復帰、表示名/読み上げ名、見出し階層、Mix/Export配色を修正。保存済み音源/マルチサンプル管理・Mix/Mastering候補など素材あり条件付きパネルの全状態網羅は未完。verification/music-accessibility-status-20261107.jsonを参照。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
