@@ -1723,3 +1723,15 @@ test('native summary and button activation is not consumed by transport shortcut
  const {app,window}=load(),p=app.makeProject({projectId:'native-key',projectName:'Native key'});app.state.projects=[p];window.location.hash='#music-studio/midi-editor/native-key';app.renderRoute('music-studio/midi-editor/native-key');
  for(const key of ['Enter',' ']){let prevented=false;assert.equal(app.editorHandleShortcut({key,target:{closest:s=>s==='button,summary,a[href]'?{}:null},preventDefault(){prevented=true}}),false);assert.equal(prevented,false)}
 });
+
+
+test('localized popup Close names include the final visible text for Melody Drums and Bass',()=>{
+ const {app}=load(),project=app.makeProject({projectId:'localized-popup-name'});app.state.projects=[project];
+ app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+ for(const part of ['melody','drums','bass']){
+  app.editorSelectPart(part);const html=app.renderRoute(`music-studio/midi-editor/${project.projectId}`);
+  const buttons=[...html.matchAll(/<button[^>]*class="[^"]*(?:music-correction-panel-close|music-popup-close)[^>]*>[\s\S]*?<\/button>/g)].map(m=>m[0]);
+  assert.ok(buttons.length,part+' popup Close exists');
+  for(const button of buttons){const name=button.match(/aria-label="([^"]*)"/)[1],visible=button.replace(/<[^>]*>/g,'').trim();assert.ok(name.includes(visible),part+': '+name+' must include '+visible)}
+ }
+});
