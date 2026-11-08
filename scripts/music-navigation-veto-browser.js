@@ -16,8 +16,8 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   for(const pending of ['starting','countingIn'])for(const veto of ['midi','project'])for(const action of actions)for(const entry of ['workspace','hash','menu']){
    const before=await page.evaluate(({pending,veto})=>{const a=MusicStudio;a.state.midiEditor.dirty=veto==='midi';a.state.dirty=veto==='project';Object.assign(a.state.midiInput,{starting:true,countingIn:pending==='countingIn',recordingPart:'melody',recordingTrackId:'lead',countInBeat:2});return JSON.stringify(a.state.midiInput)},{pending,veto});
    if(entry==='hash'){
-    await page.evaluate(action=>{window.__vetoObserved=false;addEventListener('hashchange',()=>{window.__vetoObserved=true},{once:true});location.hash=MusicStudio.workActionTarget(action,'veto-song').route},action);
-    await page.waitForFunction(()=>window.__vetoObserved&&location.hash==='#music-studio/midi-editor/veto-song');
+    const changed=await page.evaluate(action=>{const route=MusicStudio.workActionTarget(action,'veto-song').route;if(location.hash==='#'+route)return false;window.__vetoObserved=false;addEventListener('hashchange',()=>{window.__vetoObserved=true},{once:true});location.hash=route;return true},action);
+    if(changed)await page.waitForFunction(()=>window.__vetoObserved&&location.hash==='#music-studio/midi-editor/veto-song');
    }else await page.evaluate(({action,entry})=>{if(entry==='workspace'){if(MusicStudio.openWorkAction(action,'veto-song')!==false)throw Error('navigation accepted')}else MusicStudio.goProjects()},{action,entry});
    assert.equal(await page.evaluate(()=>location.hash),'#music-studio/midi-editor/veto-song');
    assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiInput)),before,`${width}/${pending}/${veto}/${action}/${entry}`);
