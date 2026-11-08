@@ -2,6 +2,7 @@ name: Music song checkpoints and complete recovery
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
       - 'music-studio.html'
       - 'tests/music-song-checkpoints.test.js'

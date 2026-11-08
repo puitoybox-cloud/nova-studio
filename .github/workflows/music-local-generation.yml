@@ -2,6 +2,7 @@ name: Music local real generation
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
       - 'scripts/music-native-edited-song.js'
@@ -39,6 +40,7 @@ jobs:
           node-version: '22'
       - name: Full JavaScript regression on fixed CI Node
         run: node --test
+      - run: python tools/music-local-generation/test_prepare_download.py
       - run: python tools/music-local-generation/test_audible_sampling.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py
@@ -117,6 +119,7 @@ jobs:
           node-version: '22'
       - name: Require Intel runtime
         run: python -c "import platform; assert platform.system() == 'Darwin' and platform.machine() == 'x86_64'"
+      - run: python tools/music-local-generation/test_prepare_download.py
       - run: python tools/music-local-generation/test_audible_sampling.py
       - run: python tools/music-local-generation/test_model_runtime.py
       - run: python tools/music-local-generation/test_constraints.py

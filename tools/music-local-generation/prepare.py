@@ -3,6 +3,8 @@ Run in a fresh destination. No download happens from serve.py or compose.py.
 """
 import argparse
 import hashlib
+import http.client
+import sys
 import json
 import shutil
 import subprocess
@@ -18,7 +20,7 @@ def download(url, path, expected):
     path = Path(path)
     partial = path.with_name(path.name + '.partial')
     if path.exists(): raise FileExistsError(path)
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             with urllib.request.urlopen(url, timeout=45) as response, partial.open('wb') as target:
                 shutil.copyfileobj(response, target)
@@ -27,9 +29,13 @@ def download(url, path, expected):
             if actual != expected: raise ValueError('download identity mismatch: ' + path.name)
             partial.replace(path)
             return
-        except (urllib.error.URLError, TimeoutError, ConnectionError):
-            if attempt == 2: raise
-            time.sleep(2 ** attempt)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead) as error:
+            if isinstance(error, urllib.error.HTTPError) and error.code not in (408, 429, 500, 502, 503, 504):
+                raise
+            if attempt == 4: raise
+            delay = 2 ** (attempt + 1)
+            print(f'Download {path.name}: transient {type(error).__name__}; retry {attempt + 2}/5 in {delay}s', file=sys.stderr)
+            time.sleep(delay)
         finally:
             partial.unlink(missing_ok=True)
 

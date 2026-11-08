@@ -2,6 +2,7 @@ name: Music Macless requirements and Auto-Finish recovery
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio-editor.js'
       - 'music-studio.js'
       - 'music-studio-auto-finish.js'

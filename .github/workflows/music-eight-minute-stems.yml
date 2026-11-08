@@ -2,6 +2,7 @@ name: Eight minute durable MIDI stems
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
       - 'music-studio-audio.js'
       - 'scripts/music-eight-minute-stems-browser.js'

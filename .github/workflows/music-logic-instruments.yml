@@ -2,6 +2,7 @@ name: NOVA Logic instrument plans
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio*.js'
       - 'music-studio.html'
       - 'app.js'
