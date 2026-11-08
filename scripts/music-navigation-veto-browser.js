@@ -27,7 +27,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   }
   // A real form draft survives a rejected browser hash navigation too.
   await page.evaluate(()=>MusicStudio.openProject('veto-song'));
-  const name=page.locator('[name="projectName"]');await name.fill('未保存の曲名を保持');
+  const name=page.locator('[name="projectName"]');if(!await name.isVisible())await page.locator('details.music-project-details:has(#musicProjectForm)>summary').click();await name.fill('未保存の曲名を保持');
   await page.evaluate(()=>{window.__vetoObserved=false;addEventListener('hashchange',()=>window.__vetoObserved=true,{once:true});location.hash=MusicStudio.workActionTarget('settings','veto-song').route});
   await page.waitForFunction(()=>window.__vetoObserved&&location.hash.includes('/project/'));
   assert.equal(await name.inputValue(),'未保存の曲名を保持');assert.equal(await page.evaluate(()=>MusicStudio.state.dirty),true);
