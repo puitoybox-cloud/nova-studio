@@ -11,6 +11,7 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.dismiss());
   await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
   const baseline=await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'veto-song',projectName:'保持する曲',midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}});await a.indexedDbRepository().put(p);a.state.projects=[p];a.openMidiEditor('veto-song');a.state.settings.autosave.enabled=false;return JSON.stringify(p)});
+  await page.waitForFunction(()=>MusicStudio.state.midiInput.initialized);
   const actions=['midi','assistant','lyrics','vocal','mix','harmony','master','long-master','export','settings','backup'];
   for(const pending of ['starting','countingIn'])for(const veto of ['midi','project'])for(const action of actions)for(const entry of ['workspace','hash','menu']){
    const before=await page.evaluate(({pending,veto})=>{const a=MusicStudio;a.state.midiEditor.dirty=veto==='midi';a.state.dirty=veto==='project';Object.assign(a.state.midiInput,{starting:true,countingIn:pending==='countingIn',recordingPart:'melody',recordingTrackId:'lead',countInBeat:2});return JSON.stringify(a.state.midiInput)},{pending,veto});
