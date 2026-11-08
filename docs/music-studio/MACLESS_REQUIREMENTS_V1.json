@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-11-08 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 605,
-  "baselineHead": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
-  "baselineTree": "8134cdda67619f13aac301f1e3265395e67dd2ea",
+  "baselinePR": 607,
+  "baselineHead": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
+  "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -3611,6 +3611,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS19-A03: correct 12-tap/onset estimation error with 32-tap interpolation; unchanged original independent references/tolerance, 10 added hash-bound abrupt-edge fixtures, clipping and terminal impulse/chunk checks. Final full Node 2908 passed. 65/135 verified, 70 open (7 validation gaps, 63 C-dependent). PCM/WAV post-commit view isolation fixed; MS22-A04/MS30-A02 remain open."
+    },
+    {
+      "date": "2026-11-08 JST",
+      "baselinePR": 607,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Fix MIDI start/count-in cancellation before rejected navigation. Four baseline counterexamples; full local Node 2942 pass and Chrome veto fixtures/form retention passed. Preserve open status for all five priority requirements; no new verified requirements. Rebind prior acceptance evidence only after successful current-runtime executions."
     }
   ]
 }

@@ -49,7 +49,7 @@
     "music-studio-scoped-midi-repair.js": "9b5315aa09af59f310931985f1436022bd30080443bb530a395b306dc6af2761",
     "music-studio.css": "e8a8268c140fa1455c34e54b8f1b7cf6cdc1e9a3c42132a1b30281e036df1d83",
     "music-studio.html": "8a6d9def30444e4958f213d322ebaf0fccf197d3d503a929ea2829ae6c721b21",
-    "music-studio.js": "453eb85bf8f0f90727c37ce4e2ef4e0e326be6dcf6ab5a5fb493dd63a9022b28",
+    "music-studio.js": "30eb46645af49d69b6cae4d9cb65760d6cd392321d68d592171b78632518a614",
     "nova-menu.css": "e2efc6de5efc490946b5c136ffde13bef0829cfe0d8e5fdd8050e81b8fdc2f8a",
     "nova-menu.js": "35623505265d615c068322923fc8909a9a49ac0a9a1742ffb4243cb5f96476c1",
     "nova-unified-ui.css": "4d4c4218964a7c4d191045841309c80711d655e822930ff67198590ece7beae8",
@@ -62,15 +62,16 @@
   ],
   "currentExecution": {
     "provider": "GitHub Actions",
-    "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
-    "runId": 42423714810,
-    "jobId": 128557398181,
+    "head": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
+    "runId": 42468646465,
+    "jobId": 128693962157,
+    "step": 11,
     "steps": [
-      9,
-      10
+      10,
+      11
     ],
     "conclusion": "success",
-    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714810/job/128557398181"
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42468646465/job/128693962157"
   },
   "reports": {
     "verification/music-conditional-keyboard-browser.json": "4a69a9f0f485631f96ee9a55d1e70cfe27848d63e1211a06af80c5a07e1e7d38",
@@ -91,7 +92,19 @@
     "baselineTabPresses": 711
   },
   "scope": "Automatic browser acceptance for the 14 enumerated routes, empty/populated disclosures, saved instrument and multisample management, saved AI candidates, two recorded Takes, durable WAV, Mix preview, short Master A/B/C, long Master preview and generated Export files. Each visible disclosure exercises Enter, forward/reverse Tab, Escape from a child control and live summary/closed-state restoration after DOM replacement. Preset rename retains open state and input focus. Physical touch/assistive-device and listening acceptance remains in B.",
-  "artifact": {
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+    "runId": 42423714810,
+    "jobId": 128557398181,
+    "steps": [
+      9,
+      10
+    ],
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714810/job/128557398181"
+  },
+  "previousArtifact": {
     "id": 13594952936,
     "digest": "sha256:ca2636b2ee9ff89bbae8580de9c4dddfca8d1a59dd1d0cf485aa9b54d00eb165",
     "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714810/artifacts/13594952936"
