@@ -2,6 +2,7 @@ name: Music checkpoint audible comparison
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio*.js'
       - 'scripts/music-checkpoint-audition-browser.js'
       - '.github/workflows/music-checkpoint-audition.yml'

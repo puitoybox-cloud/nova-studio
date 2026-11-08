@@ -2,6 +2,7 @@ name: Music IndexedDB browser persistence
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'

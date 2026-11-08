@@ -40,4 +40,37 @@ class DownloadTests(unittest.TestCase):
             self.assertFalse(target.exists())
             self.assertFalse(target.with_name('archive.partial').exists())
 
+    def test_three_gateway_errors_then_verified_success(self):
+        data = b'fixed Python archive'
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / 'python.tar.gz'
+            errors = [urllib.error.HTTPError('https://example.invalid/fixed', 504, 'Gateway', {}, None) for _ in range(3)]
+            with patch.object(prepare.urllib.request, 'urlopen', side_effect=errors+[io.BytesIO(data)]) as request, patch.object(prepare.time, 'sleep') as sleep:
+                prepare.download('https://example.invalid/fixed', target, hashlib.sha256(data).hexdigest())
+            self.assertEqual(request.call_count, 4)
+            self.assertEqual([c.args[0] for c in sleep.call_args_list], [2,4,8])
+            self.assertEqual(target.read_bytes(), data)
+
+    def test_permanent_http_error_is_not_retried(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / 'archive'
+            error = urllib.error.HTTPError('https://example.invalid/fixed', 404, 'Missing', {}, None)
+            with patch.object(prepare.urllib.request, 'urlopen', side_effect=error) as request, patch.object(prepare.time, 'sleep') as sleep:
+                with self.assertRaises(urllib.error.HTTPError): prepare.download('https://example.invalid/fixed', target, '0'*64)
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+            self.assertFalse(target.exists())
+
+    def test_partial_body_is_removed_before_retry(self):
+        class Cut(io.BytesIO):
+            def read(self, size=-1):
+                raise prepare.http.client.IncompleteRead(b'partial', 99)
+        data = b'complete archive'
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / 'archive'
+            with patch.object(prepare.urllib.request, 'urlopen', side_effect=[Cut(), io.BytesIO(data)]), patch.object(prepare.time, 'sleep'):
+                prepare.download('https://example.invalid/fixed', target, hashlib.sha256(data).hexdigest())
+            self.assertEqual(target.read_bytes(), data)
+            self.assertFalse(target.with_name('archive.partial').exists())
+
 if __name__ == '__main__': unittest.main()

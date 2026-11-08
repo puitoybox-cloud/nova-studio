@@ -2,6 +2,7 @@ name: Music smart workspace acceptance
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
       - 'music-studio.html'
       - 'music-studio.css'

@@ -2,6 +2,7 @@ name: Music production master loudness
 on:
   pull_request:
     paths:
+      - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
       - 'scripts/music-eight-minute-stems-browser.js'
       - '.github/workflows/music-production-mastering.yml'
