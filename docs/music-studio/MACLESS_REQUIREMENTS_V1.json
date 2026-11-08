@@ -3156,10 +3156,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-11-07 JST",
+        "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。",
+        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

@@ -14,3 +14,25 @@ for(const [name,setup]of Object.entries(modes))test('all navigation entry guards
 test('hash navigation requires explicit dirty discard, restores safely and does not reuse rejection for next navigation',()=>{const {a,w,handlers}=fixture();a.state.dirty=true;w.confirm=()=>false;w.location.hash='#music-studio/projects';handlers.hashchange();assert.equal(w.location.hash,'#music-studio');assert.equal(a.state.dirty,true);handlers.hashchange();w.confirm=()=>true;w.location.hash='#music-studio/settings';handlers.hashchange();assert.equal(w.location.hash,'#music-studio/settings');assert.equal(a.state.dirty,false)});
 test('guarded internal navigation updates origin used for later history rejection',()=>{const {a,w,handlers}=fixture();a.goProjects();const origin='#'+w.location.hash.replace(/^#/,'');w.location.hash='#'+w.location.hash.replace(/^#/,'');handlers.hashchange();a.state.midiInput.recording=true;w.location.hash='#music-studio/settings';handlers.hashchange();assert.equal(w.location.hash,origin)});
 test('host setView direct menu calls obey guards while internal guarded actions still work',()=>{const {a,w}=fixture(),calls=[];w.managementViewForRoute=()=>'';w.setView=route=>{calls.push(route);w.location.hash='#'+route};assert.equal(a.installHostRoutes(),true);a.state.midiInput.recording=true;assert.equal(w.setView('projects'),false);assert.deepEqual(calls,[]);a.state.midiInput.recording=false;a.goProjects();assert.deepEqual(calls,[a.PROJECTS_ROUTE]);a.state.dirty=true;w.confirm=()=>false;assert.equal(w.setView('settings'),false);assert.deepEqual(calls,[a.PROJECTS_ROUTE])});
+
+for(const pending of ['starting','countingIn'])for(const veto of ['dirty MIDI','project discard rejected'])test(`rejected ${veto} navigation preserves MIDI ${pending}`,()=>{
+ for(const entry of ['menu','project','history','host']){
+  const {a,w,handlers}=fixture();let confirmations=0;
+  w.confirm=()=>{confirmations++;return false};
+  if(veto==='dirty MIDI')a.state.midiEditor={dirty:true};else a.state.dirty=true;
+  Object.assign(a.state.midiInput,{starting:true,[pending]:true,recordingPart:'melody',recordingTrackId:'lead',countInBeat:2});
+  const before=JSON.stringify(a.state.midiInput);
+  if(entry==='host'){w.managementViewForRoute=()=>'';w.setView=route=>{w.location.hash='#'+route};a.installHostRoutes();assert.equal(w.setView('music-studio/settings'),false)}
+  else if(entry==='history'){w.location.hash='#music-studio/settings';handlers.hashchange()}
+  else if(entry==='project')assert.equal(a.openProject('song'),false);
+  else a.goProjects();
+  assert.equal(w.location.hash,'#music-studio',entry);assert.equal(JSON.stringify(a.state.midiInput),before,entry);
+  assert.equal(confirmations,veto==='dirty MIDI'?0:1);
+ }
+});
+for(const pending of ['starting','countingIn'])test(`accepted discard settles MIDI ${pending} exactly once`,()=>{
+ const {a,w,handlers}=fixture();let settled=0;w.confirm=()=>true;a.state.dirty=true;
+ Object.assign(a.state.midiInput,{starting:true,[pending]:true,countInResolve:()=>settled++});
+ a.goProjects();assert.equal(a.state.dirty,false);assert.equal(a.state.midiInput.starting,false);assert.equal(Boolean(a.state.midiInput.countingIn),false);
+ assert.equal(settled,pending==='countingIn'?1:0);handlers.hashchange();assert.equal(settled,pending==='countingIn'?1:0);
+});
