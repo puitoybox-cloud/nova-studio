@@ -10,18 +10,18 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.dismiss());
   await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
-  const baseline=await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'veto-song',projectName:'保持する曲',midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}});await a.indexedDbRepository().put(p);a.state.projects=[p];a.goHome();return JSON.stringify(p)});
+  const baseline=await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'veto-song',projectName:'保持する曲',midiData:{ppq:480,tracks:[{id:'lead',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:480,velocity:80}]}]}});await a.indexedDbRepository().put(p);a.state.projects=[p];a.openMidiEditor('veto-song');a.state.settings.autosave.enabled=false;return JSON.stringify(p)});
   const actions=['midi','assistant','lyrics','vocal','mix','harmony','master','long-master','export','settings','backup'];
   for(const pending of ['starting','countingIn'])for(const veto of ['midi','project'])for(const action of actions)for(const entry of ['workspace','hash','menu']){
-   const before=await page.evaluate(({pending,veto})=>{const a=MusicStudio;a.state.midiEditor=veto==='midi'?{dirty:true}:null;a.state.dirty=veto==='project';Object.assign(a.state.midiInput,{starting:true,countingIn:pending==='countingIn',recordingPart:'melody',recordingTrackId:'lead',countInBeat:2});return JSON.stringify(a.state.midiInput)},{pending,veto});
+   const before=await page.evaluate(({pending,veto})=>{const a=MusicStudio;a.state.midiEditor.dirty=veto==='midi';a.state.dirty=veto==='project';Object.assign(a.state.midiInput,{starting:true,countingIn:pending==='countingIn',recordingPart:'melody',recordingTrackId:'lead',countInBeat:2});return JSON.stringify(a.state.midiInput)},{pending,veto});
    if(entry==='hash'){
     await page.evaluate(action=>{window.__vetoObserved=false;addEventListener('hashchange',()=>{window.__vetoObserved=true},{once:true});location.hash=MusicStudio.workActionTarget(action,'veto-song').route},action);
-    await page.waitForFunction(()=>window.__vetoObserved&&location.hash==='#music-studio');
+    await page.waitForFunction(()=>window.__vetoObserved&&location.hash==='#music-studio/midi-editor/veto-song');
    }else await page.evaluate(({action,entry})=>{if(entry==='workspace'){if(MusicStudio.openWorkAction(action,'veto-song')!==false)throw Error('navigation accepted')}else MusicStudio.goProjects()},{action,entry});
-   assert.equal(await page.evaluate(()=>location.hash),'#music-studio');
+   assert.equal(await page.evaluate(()=>location.hash),'#music-studio/midi-editor/veto-song');
    assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiInput)),before,`${width}/${pending}/${veto}/${action}/${entry}`);
    assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
-   await page.evaluate(()=>{MusicStudio.state.dirty=false;MusicStudio.state.midiEditor=null;Object.assign(MusicStudio.state.midiInput,{starting:false,countingIn:false})});
+   await page.evaluate(()=>{MusicStudio.state.dirty=false;MusicStudio.state.midiEditor.dirty=false;Object.assign(MusicStudio.state.midiInput,{starting:false,countingIn:false})});
    cases.push({width,pending,veto,action,entry,retained:true});
   }
   // A real form draft survives a rejected browser hash navigation too.
