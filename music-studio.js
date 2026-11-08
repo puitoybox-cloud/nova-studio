@@ -4541,11 +4541,14 @@
     if(vocalBusy())return blocked('ボーカル録音・保存を完了してください。');
     if(finalExport.busy||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||workspaceSaving||productionNavigationSaving||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.stopping||shutdownPromise)return blocked('処理を完了し、保存してから移動してください。');
     if(workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId)))return blocked('AIの入力・候補を保存または取消してから移動してください。');
-    if(state.midiInput.starting&&!state.midiInput.countingIn)cancelPendingMidiStart();
-    if(state.midiInput.countingIn)cancelCountIn();
     if(state.midiInput.recording)return blocked('録音を停止してから移動してください。');
     if(midiEditorHasPendingChanges())return blocked('MIDI編集に未保存の変更があります。保存してから移動してください。');
-    return !state.dirty||(root.confirm?.('未保存の変更を破棄して移動しますか？')??false);
+    // Rejecting navigation must not cancel a pending MIDI permission request or
+    // count-in. Settle those only after every veto and discard confirmation.
+    if(state.dirty&&!(root.confirm?.('未保存の変更を破棄して移動しますか？')??false))return false;
+    if(state.midiInput.starting&&!state.midiInput.countingIn)cancelPendingMidiStart();
+    if(state.midiInput.countingIn)cancelCountIn();
+    return true;
   }
   function go(route){if(guardLeave()){cancelScheduledSave();state.dirty=false;state.notice='';routeTo(route)}}
   function goDreamArchitect(standalone=false){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;if(standalone)root.location.href='./index.html#dream-architect';else if(typeof root.setView==='function')root.setView('dream-architect');else root.location.hash='dream-architect';return true}

@@ -1,6 +1,6 @@
 # Macなし開発・受入台帳 v1
 
-確認日：2026-11-08 JST。基準：[PR #605](https://github.com/puitoybox-cloud/nova-studio/pull/605)、HEAD `f64db4d1b9924a9e4198afdafdcb48d31fa2be5d`。
+確認日：2026-11-08 JST。基準：[PR #607](https://github.com/puitoybox-cloud/nova-studio/pull/607)、HEAD `376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9`。
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 

@@ -9,6 +9,8 @@ on:
       - 'nova-menu.js'
       - 'nova-menu.css'
       - 'scripts/music-workspace-browser.js'
+      - 'scripts/music-navigation-veto-browser.js'
+      - 'tests/music-studio-navigation-guards.test.js'
       - 'scripts/music-accessibility-matrix-browser.js'
       - 'scripts/music-conditional-keyboard-browser.js'
       - 'tests/music-studio-workspace.test.js'
@@ -26,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/music-studio-workspace.test.js
+      - run: node --test tests/music-studio-workspace.test.js tests/music-studio-navigation-guards.test.js
       - run: node --check music-studio.js && node --check scripts/music-workspace-browser.js
       - run: npm install --prefix "$RUNNER_TEMP/workspace-browser" playwright @axe-core/playwright
       - name: Japanese UI fonts
@@ -46,6 +48,12 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome
         run: node scripts/music-workspace-browser.js
+      - name: Rejected navigation retains MIDI preparation and form drafts
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/music-navigation-veto-browser.js
       - name: Keyboard focus, Tab traversal and accessibility inventory
         env:
           NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
@@ -66,4 +74,5 @@ jobs:
             verification/music-accessibility-matrix-browser.json
             verification/music-conditional-keyboard-browser.json
             verification/music-workspace-browser.json
+            verification/music-navigation-veto-browser.json
             verification/music-workspace-*.png

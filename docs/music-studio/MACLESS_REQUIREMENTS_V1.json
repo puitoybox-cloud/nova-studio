@@ -2,9 +2,9 @@
   "version": 1,
   "date": "2026-11-08 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
-  "baselinePR": 605,
-  "baselineHead": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
-  "baselineTree": "8134cdda67619f13aac301f1e3265395e67dd2ea",
+  "baselinePR": 607,
+  "baselineHead": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
+  "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "requirements": [
     {
@@ -3156,10 +3156,10 @@
       "evidence": [],
       "dependsOn": [],
       "triage": {
-        "date": "2026-11-07 JST",
+        "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。",
+        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -3611,6 +3611,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "MS19-A03: correct 12-tap/onset estimation error with 32-tap interpolation; unchanged original independent references/tolerance, 10 added hash-bound abrupt-edge fixtures, clipping and terminal impulse/chunk checks. Final full Node 2908 passed. 65/135 verified, 70 open (7 validation gaps, 63 C-dependent). PCM/WAV post-commit view isolation fixed; MS22-A04/MS30-A02 remain open."
+    },
+    {
+      "date": "2026-11-08 JST",
+      "baselinePR": 607,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "Fix MIDI start/count-in cancellation before rejected navigation. Four baseline counterexamples; full local Node 2942 pass and Chrome veto fixtures/form retention passed. Preserve open status for all five priority requirements; no new verified requirements. Rebind prior acceptance evidence only after successful current-runtime executions."
     }
   ]
 }
