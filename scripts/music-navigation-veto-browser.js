@@ -25,6 +25,25 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
    await page.evaluate(()=>{MusicStudio.state.dirty=false;MusicStudio.state.midiEditor.dirty=false;Object.assign(MusicStudio.state.midiInput,{starting:false,countingIn:false})});
    cases.push({width,pending,veto,action,entry,retained:true});
   }
+  // A separate busy-state matrix exercises production navigation guards, not
+  // simulated long-running audio or archive transactions.
+  for(const busy of ['recording','stopping','saving','midiEditorSaveInFlight'])for(const action of actions){
+   const before=await page.evaluate(busy=>{
+    const a=MusicStudio;a.state.dirty=false;a.state.midiEditor.dirty=false;
+    Object.assign(a.state.midiInput,{starting:false,countingIn:false,recording:false,stopping:false});
+    a.state.saveStatus='saved';a.state.midiEditorSaveInFlight=false;
+    if(busy==='recording'||busy==='stopping')a.state.midiInput[busy]=true;
+    else if(busy==='saving')a.state.saveStatus='saving';
+    else a.state.midiEditorSaveInFlight=true;
+    return {route:location.hash,input:JSON.stringify(a.state.midiInput),saveStatus:a.state.saveStatus,saveInFlight:a.state.midiEditorSaveInFlight};
+   },busy);
+   const accepted=await page.evaluate(action=>MusicStudio.openWorkAction(action,'veto-song'),action);
+   assert.equal(accepted,false,`${width}/${busy}/${action}: navigation must be rejected`);
+   assert.deepEqual(await page.evaluate(()=>({route:location.hash,input:JSON.stringify(MusicStudio.state.midiInput),saveStatus:MusicStudio.state.saveStatus,saveInFlight:MusicStudio.state.midiEditorSaveInFlight})),before,`${width}/${busy}/${action}: busy state must be retained`);
+   assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
+   await page.evaluate(()=>{Object.assign(MusicStudio.state.midiInput,{recording:false,stopping:false});MusicStudio.state.saveStatus='saved';MusicStudio.state.midiEditorSaveInFlight=false});
+   cases.push({width,busy,action,entry:'workspace',retained:true});
+  }
   // A real form draft survives a rejected browser hash navigation too.
   await page.evaluate(()=>MusicStudio.openProject('veto-song'));
   const name=page.locator('[name="projectName"]');if(!await name.isVisible())await page.locator('details.music-project-details:has(#musicProjectForm)>summary').click();await name.fill('未保存の曲名を保持');
@@ -34,6 +53,6 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
   assert.deepEqual(errors,[]);await context.close();
  }
- const report={head:process.env.NOVA_TESTED_HEAD||require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),complete:true,scope:'MIDI start/count-in veto fixtures plus real project form; not exhaustive MS28-A02 acceptance',cases,formDraftWidths:4};
+ const report={head:process.env.NOVA_TESTED_HEAD||require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),complete:true,scope:'MIDI start/count-in and recording/save busy-state veto fixtures plus real project form; not exhaustive MS28-A02 acceptance',cases,formDraftWidths:4};
  fs.writeFileSync(path.join(root,'verification/music-navigation-veto-browser.json'),JSON.stringify(report,null,2));console.log(`Navigation veto: ${cases.length} fixture cases, four real form drafts`);
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});
