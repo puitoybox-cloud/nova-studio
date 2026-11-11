@@ -7,10 +7,11 @@ const modes={
  'dirty MIDI':a=>a.state.midiEditor={dirty:true},'MIDI save':a=>a.state.midiEditorSaveInFlight=true,
  'project save':a=>a.state.saveStatus='saving','lyric save':a=>a.lyricsEditor.busy=true,
  'lyric candidate':a=>a.lyricsEditor.pending={},'PCM operation':a=>a.pcmEditor.busy=true,
+ 'PCM candidate':a=>a.pcmEditor.preview={},'Archive preview':a=>{a.goBackup();a.archiveTransfer.preview={}},
  'archive operation':a=>a.archiveTransfer.busy=true,'checkpoint operation':a=>a.versionPanel.busy=true,
  'final export':a=>a.finalExport.busy=true
 };
-for(const [name,setup]of Object.entries(modes))test('all navigation entry guards retain '+name,()=>{for(const path of ['menu','project','lyrics','pcm','history','repeated-history']){const {a,w,handlers}=fixture();setup(a);const before=JSON.stringify([a.state.midiEditor,a.vocal.pending,a.state.projects]);if(path==='menu')a.goProjects();else if(path==='project')assert.equal(a.openProject('song'),false);else if(path==='lyrics')assert.equal(a.openLyricsAssignment('song'),false);else if(path==='pcm')assert.equal(a.pcmOpen('song'),false);else{w.location.hash='#music-studio/projects';handlers.hashchange();if(path==='repeated-history'){w.location.hash='#music-studio/settings';handlers.hashchange()}}assert.equal(w.location.hash,'#music-studio',name+':'+path);assert.equal(JSON.stringify([a.state.midiEditor,a.vocal.pending,a.state.projects]),before)}});
+for(const [name,setup]of Object.entries(modes))test('all navigation entry guards retain '+name,()=>{for(const path of ['menu','project','lyrics','pcm','history','repeated-history']){const {a,w,handlers}=fixture();setup(a);const origin=w.location.hash;const before=JSON.stringify([a.state.midiEditor,a.vocal.pending,a.pcmEditor.preview,a.archiveTransfer.preview,a.state.projects]);if(path==='menu')a.goProjects();else if(path==='project')assert.equal(a.openProject('song'),false);else if(path==='lyrics')assert.equal(a.openLyricsAssignment('song'),false);else if(path==='pcm')assert.equal(a.pcmOpen('song'),false);else{w.location.hash='#music-studio/projects';handlers.hashchange();if(path==='repeated-history'){w.location.hash='#music-studio/settings';handlers.hashchange()}}assert.equal(w.location.hash.replace(/^#/,''),origin.replace(/^#/,''),name+':'+path);assert.equal(JSON.stringify([a.state.midiEditor,a.vocal.pending,a.pcmEditor.preview,a.archiveTransfer.preview,a.state.projects]),before)}});
 test('hash navigation requires explicit dirty discard, restores safely and does not reuse rejection for next navigation',()=>{const {a,w,handlers}=fixture();a.state.dirty=true;w.confirm=()=>false;w.location.hash='#music-studio/projects';handlers.hashchange();assert.equal(w.location.hash,'#music-studio');assert.equal(a.state.dirty,true);handlers.hashchange();w.confirm=()=>true;w.location.hash='#music-studio/settings';handlers.hashchange();assert.equal(w.location.hash,'#music-studio/settings');assert.equal(a.state.dirty,false)});
 test('guarded internal navigation updates origin used for later history rejection',()=>{const {a,w,handlers}=fixture();a.goProjects();const origin='#'+w.location.hash.replace(/^#/,'');w.location.hash='#'+w.location.hash.replace(/^#/,'');handlers.hashchange();a.state.midiInput.recording=true;w.location.hash='#music-studio/settings';handlers.hashchange();assert.equal(w.location.hash,origin)});
 test('host setView direct menu calls obey guards while internal guarded actions still work',()=>{const {a,w}=fixture(),calls=[];w.managementViewForRoute=()=>'';w.setView=route=>{calls.push(route);w.location.hash='#'+route};assert.equal(a.installHostRoutes(),true);a.state.midiInput.recording=true;assert.equal(w.setView('projects'),false);assert.deepEqual(calls,[]);a.state.midiInput.recording=false;a.goProjects();assert.deepEqual(calls,[a.PROJECTS_ROUTE]);a.state.dirty=true;w.confirm=()=>false;assert.equal(w.setView('settings'),false);assert.deepEqual(calls,[a.PROJECTS_ROUTE])});
@@ -58,4 +59,31 @@ test('expired navigation notice removes only its own DOM and keeps an active dis
   assert.equal(removed,noticeOwnsFocus?0:1);
   assert.equal(Boolean(a.state.notice),noticeOwnsFocus);
  }
+});
+
+const productionVetoes={...modes,
+ 'MIDI import':a=>a.state.midiImporting=true,
+ 'external import':a=>a.state.externalSongImporting=true,
+};
+delete productionVetoes['dirty MIDI'];
+for(const [name, setup] of Object.entries(productionVetoes))test('production navigation veto preserves dirty MIDI during '+name,async()=>{
+ const {a,w}=fixture();
+ setup(a);
+ const origin=w.location.hash,session=a.state.midiEditor={projectId:'song',dirty:true};
+ assert.equal(await a.productionOpenAction('vocal','song'),false);
+ assert.equal(a.state.midiEditor,session);
+ assert.equal(session.dirty,true);
+ assert.equal(w.location.hash,origin);
+});
+
+test('a prepared Archive preview can be opened from another screen',()=>{
+ const {a,w}=fixture(),preview=a.archiveTransfer.preview={};
+ a.goBackup();
+ assert.equal(w.location.hash.replace(/^#/,''),a.BACKUP_ROUTE);
+ assert.equal(a.archiveTransfer.preview,preview);
+ a.goProjects();
+ assert.equal(w.location.hash.replace(/^#/,''),a.BACKUP_ROUTE);
+ a.cancelArchiveTransfer();
+ a.goProjects();
+ assert.equal(w.location.hash.replace(/^#/,''),a.PROJECTS_ROUTE);
 });
