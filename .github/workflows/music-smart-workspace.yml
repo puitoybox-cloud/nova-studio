@@ -11,6 +11,7 @@ on:
       - 'nova-menu.css'
       - 'scripts/music-workspace-browser.js'
       - 'scripts/music-navigation-veto-browser.js'
+      - 'scripts/music-live-navigation-browser.js'
       - 'tests/music-studio-navigation-guards.test.js'
       - 'scripts/music-accessibility-matrix-browser.js'
       - 'scripts/music-conditional-keyboard-browser.js'
@@ -55,6 +56,11 @@ jobs:
           CHROME_EXECUTABLE: /usr/bin/google-chrome
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: node scripts/music-navigation-veto-browser.js
+      - name: Navigation during live operations with IndexedDB
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-live-navigation-browser.js
       - name: Keyboard focus, Tab traversal and accessibility inventory
         env:
           NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules

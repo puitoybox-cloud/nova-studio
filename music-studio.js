@@ -1208,7 +1208,7 @@
     }catch(e){lyricsEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}
     finally{lyricsEditor.busy=false;requestPaint()}
   }
-  function openLyricsAssignment(id){if(state.dirty||midiEditorHasPendingChanges()){notice('編集中の変更を保存してから歌詞割付を開いてください。','info');return false}lyricsEditor.projectId=null;routeTo(`${HOME_ROUTE}/lyrics-notes/${encodeURIComponent(id)}`);return true}
+  function openLyricsAssignment(id){if(state.dirty||midiEditorHasPendingChanges()){notice('編集中の変更を保存してから歌詞割付を開いてください。','info');return false}if(!guardLeave())return false;lyricsEditor.projectId=null;routeTo(`${HOME_ROUTE}/lyrics-notes/${encodeURIComponent(id)}`);return true}
 
   // Local bounded PCM editing. Originals live in project JSON; rendered candidates never overwrite them.
   const PCM_FORMAT='music-studio-pcm-mix',PCM_LIMIT=2000000,PCM_JSON_LIMIT=64*1024*1024;
@@ -1528,7 +1528,7 @@
   function pcmHistory(project,id,direction){if(![-1,1].includes(direction))throw Error('invalid-pcm-history-direction');const updated=clone(project),asset=pcmAsset(updated,id),cursor=asset.cursor+direction;if(cursor<0||cursor>=asset.gains.length)throw Error('pcm-history-boundary');asset.cursor=cursor;return pcmUpdated(updated);}
   function pcmStop(){finalStop();if(pcmPlayback){try{pcmPlayback.source.stop()}catch(_){}pcmPlayback.context.close()?.catch?.(()=>{});pcmPlayback=null}}
   function pcmCancel(){pcmEditor.generation++;productionCancel();pcmStop();pcmEditor.preview=null;pcmEditor.message='候補を取り消しました。元音声は保持しています。';requestPaint()}
-  function pcmOpen(id){if(vocalBusy()||state.dirty||midiEditorHasPendingChanges())return false;longMixCancel();pcmCancel();pcmEditor.projectId=id;pcmEditor.assetId='';routeTo(`${HOME_ROUTE}/mixing/${encodeURIComponent(id)}`);return true;}
+  function pcmOpen(id){if(state.dirty||!guardLeave())return false;longMixCancel();pcmCancel();pcmEditor.projectId=id;pcmEditor.assetId='';routeTo(`${HOME_ROUTE}/mixing/${encodeURIComponent(id)}`);return true;}
   function pcmChange(){if(pcmEditor.busy)return;pcmStop();const f=root.document?.querySelector('#musicPcmForm');if(!f)return;pcmEditor.assetId=f.elements.assetId.value;pcmEditor.gainDb=Number(f.elements.gainDb.value);pcmEditor.preview=null;pcmEditor.generation++;requestPaint()}
   function pcmShowCompressorPreview(event,id){
     event?.preventDefault?.();if(pcmEditor.busy)return;
