@@ -3354,7 +3354,7 @@
   }
   let productionNavigationSaving=false;
   async function productionOpenAction(action,id){
-    if(productionNavigationSaving||!workActionTarget(action,id)||workspaceSaving||workspaceHasDraftInput()||lyricsEditor.busy||pcmEditor.busy||archiveTransfer.busy||finalExport.busy||shutdownPromise||vocalBusy()||state.dirty||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping)return false;
+    if(productionNavigationSaving||!workActionTarget(action,id)||workspaceSaving||workspaceHasDraftInput()||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||finalExport.busy||shutdownPromise||vocalBusy()||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.dirty||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping)return false;
     const session=state.midiEditor,target=repository,origin=currentRoute();
     if(midiEditorHasPendingChanges()){
       if(!session||session.projectId!==id)return false;

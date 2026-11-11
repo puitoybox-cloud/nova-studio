@@ -59,3 +59,20 @@ test('expired navigation notice removes only its own DOM and keeps an active dis
   assert.equal(Boolean(a.state.notice),noticeOwnsFocus);
  }
 });
+
+for(const [name,setup] of Object.entries({
+ 'project save in progress':a=>a.state.saveStatus='saving',
+ 'MIDI save in progress':a=>a.state.midiEditorSaveInFlight=true,
+ 'MIDI import in progress':a=>a.state.midiImporting=true,
+ 'external song import in progress':a=>a.state.externalSongImporting=true,
+ 'checkpoint in progress':a=>a.versionPanel.busy=true,
+ 'lyrics candidate pending':a=>a.lyricsEditor.pending={}
+}))test('production navigation does not initiate dirty MIDI save during '+name,async()=>{
+ const {a,w}=fixture();
+ a.state.midiEditor={dirty:true,projectId:'song'};
+ setup(a);
+ const before=JSON.stringify([a.state.midiEditor,a.state.projects]);
+ assert.equal(await a.productionOpenAction('mix','song'),false);
+ assert.equal(w.location.hash,'#music-studio');
+ assert.equal(JSON.stringify([a.state.midiEditor,a.state.projects]),before);
+});
