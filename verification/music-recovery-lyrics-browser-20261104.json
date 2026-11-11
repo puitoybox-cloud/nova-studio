@@ -7,7 +7,7 @@
     "scripts/music-indexeddb-browser-persistence.cjs": "7a3d2d8c0146d531dbdbcb370b80dddb5fb24826ec82760413b2b6c7b05f8728"
   },
   "runtimeHashes": {
-    "music-studio.js": "30eb46645af49d69b6cae4d9cb65760d6cd392321d68d592171b78632518a614"
+    "music-studio.js": "9ce15f6a77ec655d61af722d985861b43cc9319d8d4248cb3bfca795889a5975"
   },
   "acceptedCases": [
     "real Chromium IndexedDB persists production history and backup restore across browser restart",

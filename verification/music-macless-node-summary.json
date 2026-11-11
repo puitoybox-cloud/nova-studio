@@ -205,7 +205,7 @@
     "music-studio-structure-info.js": "af677009a909fc21e366ec0e8bd1a36463e864893d46b16fd2fbf613fa4e0b9a",
     "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
     "music-studio.html": "8a6d9def30444e4958f213d322ebaf0fccf197d3d503a929ea2829ae6c721b21",
-    "music-studio.js": "30eb46645af49d69b6cae4d9cb65760d6cd392321d68d592171b78632518a614",
+    "music-studio.js": "9ce15f6a77ec655d61af722d985861b43cc9319d8d4248cb3bfca795889a5975",
     "scripts/music-meter-independent-reference.js": "335dd205305a83f411e009d2a199453d9b16649e44824e52549a9e01b0cd6aff",
     "tests/fixtures/music-meter-ffmpeg-reference.json": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
     "tests/fixtures/music-meter-signals.js": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
