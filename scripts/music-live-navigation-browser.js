@@ -100,6 +100,15 @@ async function scenario(browser, base, width) {
       app.pcmEditor.preview = app.pcmPreview(p, p.pcmMix.assets[0].id, -6);
       window.navigationOperation = app.pcmApply('source');
     });
+    // A real uncommitted PCM processing candidate must survive every rejected route.
+    const candidate = await page.evaluate(() => {
+      const app = MusicStudio, p = app.state.projects.find(project => project.projectId === 'source');
+      app.pcmEditor.preview = app.pcmPreview(p, p.pcmMix.assets[0].id, -3);
+      return JSON.stringify(app.pcmEditor.preview);
+    });
+    await checkNavigation(page, 'uncommitted PCM preview');
+    assert.equal(await page.evaluate(() => JSON.stringify(MusicStudio.pcmEditor.preview)), candidate);
+    await page.evaluate(() => MusicStudio.pcmCancel());
     await verifyOperation(page, 'final render', 'get', () => {
       const app = MusicStudio, p = app.state.projects.find(p => p.projectId === 'source');
       const routes = app.finalSources(p).map(s => ({ key: s.key, role: 'instrument', startSeconds: 0, gainDb: 0, muted: false }));
@@ -223,7 +232,7 @@ async function scenario(browser, base, width) {
     assert.equal(saved.externalCreationEvents, 1);
     assert.ok(saved.midiTracks && saved.externalTracks);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ width, phases: 13, navigationAttempts: 195, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
+    console.log(JSON.stringify({ width, phases: 14, navigationAttempts: 210, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
   } finally {
     await context.close();
   }
