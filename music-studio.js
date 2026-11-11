@@ -795,6 +795,8 @@
   }
   function requestPaint(){
     const focused=capturePaintFocus(),disclosureRoute=currentRoute(),disclosures=new Map(paintDisclosures().map(({key,detail})=>[key,detail.open]));
+    const draft=state.dirty?root.document?.querySelector?.('#musicProjectForm'):null;
+    const draftValues=Array.from(draft?.elements||[]).filter(field=>field.name).map(field=>[field.name,field.value]);
     const checkpointPanel=root.document?.querySelector?.('.music-song-versions');if(checkpointPanel)versionPanel.open=checkpointPanel.open;
     // Keep the user's score-return controls through status/download repaints.
     // Retain the actual file input node: a selected local file is never serialized.
@@ -811,6 +813,14 @@
       for(const [key,value] of Object.entries(prior.options||{})){const input=detail.querySelector('[name='+key+']');if(input&&value!==undefined)input.value=value;}
     }
     if(disclosureRoute===currentRoute())for(const {key,detail} of paintDisclosures())if(disclosures.has(key)&&detail.open!==disclosures.get(key))detail.open=disclosures.get(key);
+    if(disclosureRoute===currentRoute()&&draftValues.length){
+      const form=root.document?.querySelector?.('#musicProjectForm');
+      for(const [name,value] of draftValues){
+        const field=form?.elements.namedItem(name);
+        if(field)field.value=value;
+      }
+      if(state.saveStatus==='error')updateSaveIndicator('保存に失敗しました');
+    }
     restorePaintFocus(focused);
     // Host chrome can move its existing menu toggle back after a DOM mutation.
     // Retry after that observer, without stealing focus from another control.
@@ -2581,7 +2591,12 @@
     const nearest=event.target?.closest?.('details[open]');
     const disclosure=nearest&&(!element||element===nearest||element.contains?.(nearest))?nearest:element;
     if(!disclosure?.open)return false;
-    event.preventDefault();event.stopPropagation();disclosure.open=false;disclosure.querySelector(':scope > summary')?.focus();return true;
+    event.preventDefault();
+    event.stopPropagation();
+    // Move focus before hiding the active descendant and triggering browser blur.
+    disclosure.querySelector(':scope > summary')?.focus({preventScroll:true});
+    disclosure.open=false;
+    return true;
   }
   function vocalAdvancedToggle(assetId,open){if(open)vocalCorrection.openAssets.add(assetId);else vocalCorrection.openAssets.delete(assetId)}
   function vocalAdvancedView(p,a){const id=escapeHtml(p.projectId),key=escapeHtml(a.id),h=vocalHistory(a),s=h.edits[h.cursor],busy=vocalBusy()?'disabled':'',range=vocalCorrection.range?.assetId===a.id?vocalCorrection.range:{first:s.first,end:s.end},preview=vocalCorrection.preview?.assetId===a.id&&vocalCorrection.preview.baseline===JSON.stringify(p)?vocalCorrection.preview:null,sync=vocalCorrection.sync?.assetId===a.id?vocalCorrection.sync:null;let rows=[];if(sync?.trackId)try{rows=vocalTimeline(p,a,sync.trackId)}catch(e){}
@@ -3324,7 +3339,7 @@
       const panel=root.document?.querySelector(target.selector);if(panel){panel.setAttribute('tabindex','-1');panel.focus({preventScroll:true});panel.scrollIntoView({block:'start',behavior:'auto'})}
     }));return true;
   }
-  function openVocalSettings(id){if(!state.projects.some(p=>p.projectId===id)||!guardLeave())return false;api.openProject(id);return true}
+  function openVocalSettings(id){return state.projects.some(p=>p.projectId===id)&&api.openProject(id)}
   function vocalFocusedView(id){
     const p=state.projects.find(x=>x.projectId===id);if(!p)return `<main class="music-studio-shell"><p>曲を確認できません。</p><button onclick="MusicStudio.goProjects()">Projects（曲を選ぶ）</button></main>`;
     return `<main class="music-studio-shell music-vocal-focused" aria-label="Vocal（録音・編集）"><header class="music-vocal-focus-heading"><h1>${escapeHtml(p.songTitle||p.projectName)}</h1><button class="music-secondary" onclick="${escapeHtml(`MusicStudio.openVocalSettings(${JSON.stringify(id)})`)}">Project（曲の設定）</button></header>${noticeView()}${vocalView(p,true)}</main>`;
@@ -4541,7 +4556,7 @@
   function formatDate(value){try{return new Intl.DateTimeFormat('ja-JP',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value))}catch(_){return String(value||'')}}
   function cancelScheduledSave(){if(state.autosaveTimer)root.clearTimeout?.(state.autosaveTimer);state.autosaveTimer=null}
   function markDirty(){state.editGeneration++;state.dirty=true;state.saveStatus='dirty';updateSaveIndicator('未保存の変更があります');cancelScheduledSave();const id=parseEditId(currentRoute());if(id&&state.settings?.autosave.enabled&&root.setTimeout)state.autosaveTimer=root.setTimeout(()=>{state.autosaveTimer=null;if(parseEditId(currentRoute())===id)saveCurrentProject(id)},state.settings.autosave.idleDelaySeconds*1000)}
-  function cancelEdit(id=''){if(state.dirty&&(root.confirm?.('未保存の変更を破棄しますか？')??false)===false)return;state.dirty=false;routeTo(id?`${EDIT_ROUTE}/${encodeURIComponent(id)}`:HOME_ROUTE);requestPaint()}
+  function cancelEdit(id=''){if(!guardLeave())return false;cancelScheduledSave();state.dirty=false;routeTo(id?`${EDIT_ROUTE}/${encodeURIComponent(id)}`:HOME_ROUTE);requestPaint()}
   function guardLeave(quiet=false){
     const blocked=message=>{if(!quiet)notice(message,'error');return false};
     if(vocalBusy())return blocked('ボーカル録音・保存を完了してください。');

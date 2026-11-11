@@ -28,4 +28,12 @@ jobs:
           node-version: '22'
       - run: python3 -m unittest discover -s tools/nova-au/tests -p test_auto_finish_server.py -v
       - run: node --test --test-concurrency=2 tests/*.test.js
+      - name: Fetch runtime snapshots referenced by acceptance evidence
+        run: |
+          python3 -c 'import json; print(*json.load(open("docs/music-studio/MACLESS_REQUIREMENTS_V1.json")).get("historicalRuntimeSnapshots", {}).values(), sep=chr(10))' |
+            while IFS= read -r sha; do
+              if [[ -z "$sha" ]]; then continue; fi
+              [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+              git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch --depth=1 origin "$sha" || exit 1
+            done
       - run: python3 scripts/music-macless-ledger.py
