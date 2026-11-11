@@ -748,7 +748,15 @@
   function notice(message,kind='info'){
     if(noticeTimer&&root.clearTimeout)root.clearTimeout(noticeTimer);
     state.notice=message;state.noticeKind=kind;requestPaint();
-    noticeTimer=root.setTimeout?.(()=>{noticeTimer=null;if(state.notice===message){state.notice='';requestPaint()}},2600)||null;
+    noticeTimer=root.setTimeout?.(()=>{
+      noticeTimer=null;
+      if(state.notice!==message)return;
+      const notices=Array.from(root.document?.querySelectorAll?.('.music-studio-shell .music-notice')||[]);
+      // A status timeout must not replace the controls being used by the keyboard.
+      if(notices.some(element=>element.contains(root.document.activeElement)))return;
+      state.notice='';
+      for(const element of notices)element.remove();
+    },2600)||null;
   }
   function routeTo(route){
     if(root.document?.body?.dataset.musicStudioStandalone==='true'){

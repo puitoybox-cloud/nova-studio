@@ -36,3 +36,26 @@ for(const pending of ['starting','countingIn'])test(`accepted discard settles MI
  a.goProjects();assert.equal(a.state.dirty,false);assert.equal(a.state.midiInput.starting,false);assert.equal(Boolean(a.state.midiInput.countingIn),false);
  assert.equal(settled,pending==='countingIn'?1:0);handlers.hashchange();assert.equal(settled,pending==='countingIn'?1:0);
 });
+
+test('expired navigation notice removes only its own DOM and keeps an active dismiss button',()=>{
+ for(const noticeOwnsFocus of [false,true]){
+  const {a,w}=fixture();
+  let callback,paints=0,removed=0;
+  const activeElement={};
+  const notice={
+   contains:element=>noticeOwnsFocus&&element===activeElement,
+   remove:()=>removed++
+  };
+  w.document={activeElement,querySelectorAll:selector=>selector==='.music-studio-shell .music-notice'?[notice]:[]};
+  w.render=()=>paints++;
+  w.setTimeout=fn=>{callback=fn;return 1};
+  a.state.saveStatus='saving';
+  a.goProjects();
+  assert.equal(paints,1);
+  assert.ok(a.state.notice);
+  callback();
+  assert.equal(paints,1);
+  assert.equal(removed,noticeOwnsFocus?0:1);
+  assert.equal(Boolean(a.state.notice),noticeOwnsFocus);
+ }
+});
