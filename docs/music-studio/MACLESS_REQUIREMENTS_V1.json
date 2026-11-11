@@ -3155,14 +3155,45 @@
       "feature": 28,
       "category": "A",
       "requirement": "全編集状態での作業別UI遷移",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-navigation-veto-browser.js",
+          "declaration": "four real form drafts",
+          "acceptance": "1,056 navigation fixtures plus real project form drafts at four viewport widths",
+          "run": "verification/music-live-navigation-acceptance-20261112.json"
+        },
+        {
+          "path": "scripts/music-live-navigation-browser.js",
+          "declaration": "unsaved PCM candidate",
+          "acceptance": "Unsaved PCM candidate survives navigation, applies once and reopens",
+          "run": "verification/music-live-navigation-acceptance-20261112.json"
+        },
+        {
+          "path": "scripts/music-live-navigation-browser.js",
+          "declaration": "live MIDI recording",
+          "acceptance": "Live MIDI recording retains held note, saves once and reopens with one edit",
+          "run": "verification/music-live-navigation-acceptance-20261112.json"
+        },
+        {
+          "path": "scripts/music-live-navigation-browser.js",
+          "declaration": "Archive restore preview",
+          "acceptance": "Archive preview retains restore settings and restores once without replacing projects",
+          "run": "verification/music-live-navigation-acceptance-20261112.json"
+        },
+        {
+          "path": "scripts/music-live-navigation-browser.js",
+          "declaration": "final WAV destination picker",
+          "acceptance": "Pending WAV destination retains candidate, writes verified bytes and records delivery once",
+          "run": "verification/music-live-navigation-acceptance-20261112.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。 PR #607最終HEADのsmart-workspace実Chrome成功を再確認。録音開始待ち/カウントイン拒否528ケースと実フォーム4幅の証拠は保持。全編集状態の網羅未了につきopen。 PR #617後: 保存中の遷移拒否と保存失敗時の同一画面再描画でプロジェクト入力を保持する修正を追加。実処理を用いる4幅の回帰ケースを追加。録音・PCM・Archive・完成WAVを含む全実処理の確認は未完。",
+        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。 PR #607最終HEADのsmart-workspace実Chrome成功を再確認。録音開始待ち/カウントイン拒否528ケースと実フォーム4幅の証拠は保持。全編集状態の網羅未了につきopen。 PR #617後: 保存中の遷移拒否と保存失敗時の同一画面再描画でプロジェクト入力を保持する修正を追加。実処理を用いる4幅の回帰ケースを追加。録音・PCM・Archive・完成WAVを含む全実処理の確認は未完。 2026-11-12 JST / PR #622: 既存1,056ケースと4幅のフォーム検証を維持。未保存PCM候補、MIDI録音中、Archive復元確認、完成WAV保存先選択の4条件を含む実Chromeの1,020遷移試行が成功。IndexedDB再読込、MIDI制作履歴、WAVバイト照合と保存履歴を確認。機器とOSピッカーの境界はテスト用入力を使用。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
