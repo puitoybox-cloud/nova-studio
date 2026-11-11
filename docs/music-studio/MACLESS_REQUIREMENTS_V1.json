@@ -6,6 +6,9 @@
   "baselineHead": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
   "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
+  "historicalRuntimeSnapshots": {
+    "music-studio.js": "6abb49fe63d310a2e1f13fdff5a3717b1221352c"
+  },
   "requirements": [
     {
       "id": "MS01-A01",
@@ -3159,7 +3162,7 @@
         "date": "2026-11-08 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。 PR #607最終HEADのsmart-workspace実Chrome成功を再確認。録音開始待ち/カウントイン拒否528ケースと実フォーム4幅の証拠は保持。全編集状態の網羅未了につきopen。",
+        "note": "未保存MIDI・録音開始/停止・PCM編集・Archive転送・完成出力を含む編集状態×UI遷移の全組合せを実ブラウザで確認していない。 録音開始待ち・カウントインと未保存MIDI/破棄拒否が重なると遷移拒否でも録音準備を取消す不具合を修正。Nodeの4入口検証を追加。scripts/music-navigation-veto-browser.jsは4幅の拒否状態fixtureと実フォーム保持を検証するが、長時間録音・全保存処理のライフサイクル網羅証明ではないためopenを維持。 PR #607最終HEADのsmart-workspace実Chrome成功を再確認。録音開始待ち/カウントイン拒否528ケースと実フォーム4幅の証拠は保持。全編集状態の網羅未了につきopen。 PR #617後: 保存中の遷移拒否と保存失敗時の同一画面再描画でプロジェクト入力を保持する修正を追加。実処理を用いる4幅の回帰ケースを追加。録音・PCM・Archive・完成WAVを含む全実処理の確認は未完。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

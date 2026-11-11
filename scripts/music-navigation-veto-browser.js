@@ -52,8 +52,34 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   await page.waitForFunction(()=>window.__vetoObserved&&location.hash.includes('/project/'));
   assert.equal(await name.inputValue(),'未保存の曲名を保持');assert.equal(await page.evaluate(()=>MusicStudio.state.dirty),true);
   assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
+  // Drive a real project save through a delayed, failing repository write.
+  await page.evaluate(()=>{
+    const a=MusicStudio,repo=a.indexedDbRepository();
+    const compareAndPut=repo.compareAndPut;
+    repo.compareAndPut=async(...args)=>{
+      await new Promise(resolve=>{window.__finishVetoSave=resolve});
+      if(window.__failVetoSave)throw Error('test-project-save-rejected');
+      return compareAndPut(...args);
+    };
+    a.setRepository(repo);
+    window.__failVetoSave=true;
+    window.__vetoSave=a.saveCurrentProject('veto-song');
+  });
+  await page.waitForFunction(()=>typeof window.__finishVetoSave==='function');
+  await page.evaluate(()=>MusicStudio.goProjects());
+  assert.match(await page.evaluate(()=>location.hash),/\/project\/veto-song$/);
+  assert.equal(await name.inputValue(),'未保存の曲名を保持');
+  assert.equal(await page.evaluate(()=>MusicStudio.state.saveStatus),'saving');
+  await page.evaluate(()=>window.__finishVetoSave());
+  assert.equal((await page.evaluate(()=>window.__vetoSave)).ok,false);
+  assert.equal(await name.inputValue(),'未保存の曲名を保持');
+  assert.equal(await page.evaluate(()=>MusicStudio.state.saveStatus),'error');
+  await page.evaluate(()=>MusicStudio.goProjects());
+  assert.match(await page.evaluate(()=>location.hash),/\/project\/veto-song$/);
+  assert.equal(await name.inputValue(),'未保存の曲名を保持');
+  assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
   assert.deepEqual(errors,[]);await context.close();
  }
- const report={head:process.env.NOVA_TESTED_HEAD||require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),complete:true,scope:'MIDI start/count-in and recording/save busy-state veto fixtures across workspace/menu plus real project form; not exhaustive MS28-A02 acceptance',cases,formDraftWidths:4};
+ const report={head:process.env.NOVA_TESTED_HEAD||require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),complete:true,scope:'MIDI start/count-in and recording/save busy-state veto fixtures across workspace/menu plus real project form; not exhaustive MS28-A02 acceptance',cases,formDraftWidths:4,failedSaveDraftWidths:4};
  fs.writeFileSync(path.join(root,'verification/music-navigation-veto-browser.json'),JSON.stringify(report,null,2));console.log(`Navigation veto: ${cases.length} fixture cases, four real form drafts`);
 }finally{await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});
