@@ -33,7 +33,9 @@ async function gateRepository(page, method) {
 async function checkNavigation(page, phase) {
   const route = new URL(page.url()).hash;
   await page.evaluate(() => {
-    if (MusicStudio.openWorkAction('settings', 'source') !== false) throw Error('workspace navigation accepted');
+    for (const action of ['midi', 'assistant', 'lyrics', 'vocal', 'mix', 'harmony', 'master', 'long-master', 'export', 'settings', 'backup']) {
+      if (MusicStudio.openWorkAction(action, 'source') !== false) throw Error('workspace navigation accepted: ' + action);
+    }
     if (MusicStudio.openLyricsAssignment('source') !== false) throw Error('lyrics navigation accepted');
     if (MusicStudio.pcmOpen('source') !== false) throw Error('PCM navigation accepted');
   });
@@ -57,15 +59,19 @@ async function verifyOperation(page, phase, method, start) {
   await page.evaluate(start);
   await page.waitForFunction(() => typeof window.releaseNavigationOperation === 'function');
   await checkNavigation(page, phase);
-  const result = await page.evaluate(async () => {
+  const result = await finishOperation(page);
+  assert.equal(result.ok, true, phase + ': ' + result.error);
+  return result;
+}
+
+async function finishOperation(page) {
+  return page.evaluate(async () => {
     const release = window.releaseNavigationOperation;
     delete window.releaseNavigationOperation;
     release();
     const result = await window.navigationOperation;
     return { ok: result.ok, error: result.error?.message || result.error, projectId: result.project?.projectId };
   });
-  assert.equal(result.ok, true, phase + ': ' + result.error);
-  return result;
 }
 
 async function scenario(browser, base, width) {
@@ -127,9 +133,23 @@ async function scenario(browser, base, width) {
     await page.waitForFunction(() => MusicStudio.vocal.phase === 'recording' && MusicStudio.vocal.level?.peak > 0);
     await checkNavigation(page, 'recording');
     assert.equal(await page.evaluate(() => MusicStudio.vocal.phase), 'recording');
-    await verifyOperation(page, 'recording save after stop', 'putLongWav', () => {
+    await gateRepository(page, 'putLongWav');
+    await page.evaluate(() => {
+      const recorder = MusicStudio.vocal.recorder;
+      const onstop = recorder.onstop;
+      recorder.onstop = async (...args) => {
+        await new Promise(resolve => { window.releaseRecorderStop = resolve; });
+        return onstop.apply(recorder, args);
+      };
       window.navigationOperation = MusicStudio.vocalStop();
     });
+    await page.waitForFunction(() => MusicStudio.vocal.phase === 'stopping' && window.releaseRecorderStop);
+    await checkNavigation(page, 'recording stop');
+    await page.evaluate(() => window.releaseRecorderStop());
+    await page.waitForFunction(() => MusicStudio.vocal.phase === 'saving' && window.releaseNavigationOperation);
+    await checkNavigation(page, 'recording save after stop');
+    const recorded = await finishOperation(page);
+    assert.equal(recorded.ok, true, recorded.error);
 
     await page.evaluate(() => MusicStudio.openWorkAction('backup', 'source'));
     const archiveDownload = page.waitForEvent('download');
@@ -144,11 +164,21 @@ async function scenario(browser, base, width) {
       window.navigationOperation = MusicStudio.restoreLongWavArchive(window.navigationArchive, { settings: false });
     });
 
-    await page.evaluate(async () => {
+    await page.evaluate(() => {
       MusicStudio.goProjects();
-      const result = await MusicStudio.inspectMidiFile(window.navigationMidi);
-      if (!result.ok) throw Error(result.message);
+      const file = window.navigationMidi;
+      const arrayBuffer = file.arrayBuffer.bind(file);
+      file.arrayBuffer = async () => {
+        await new Promise(resolve => { window.releaseNavigationOperation = resolve; });
+        return arrayBuffer();
+      };
+      window.navigationOperation = MusicStudio.inspectMidiFile(file);
     });
+    await page.waitForFunction(() => typeof window.releaseNavigationOperation === 'function');
+    await checkNavigation(page, 'MIDI file analysis');
+    const inspected = await finishOperation(page);
+    assert.equal(inspected.ok, true, inspected.error);
+    await page.evaluate(() => { delete window.navigationMidi.arrayBuffer; });
     const midi = await verifyOperation(page, 'MIDI import', 'commitMidiImport', () => {
       window.navigationOperation = MusicStudio.importMidiAsNew();
     });
@@ -193,7 +223,7 @@ async function scenario(browser, base, width) {
     assert.equal(saved.externalCreationEvents, 1);
     assert.ok(saved.midiTracks && saved.externalTracks);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ width, phases: 11, navigationAttempts: 55, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
+    console.log(JSON.stringify({ width, phases: 13, navigationAttempts: 195, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
   } finally {
     await context.close();
   }
