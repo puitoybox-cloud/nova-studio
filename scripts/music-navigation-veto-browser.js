@@ -27,21 +27,22 @@ const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(
   }
   // A separate busy-state matrix exercises production navigation guards, not
   // simulated long-running audio or archive transactions.
-  for(const busy of ['recording','stopping','saving','midiEditorSaveInFlight'])for(const action of actions)for(const entry of ['workspace','menu']){
+  for(const busy of ['recording','stopping','saving','midiEditorSaveInFlight','midiImporting','externalSongImporting'])for(const action of actions)for(const entry of ['workspace','menu']){
    const before=await page.evaluate(busy=>{
     const a=MusicStudio;a.state.dirty=false;a.state.midiEditor.dirty=false;
     Object.assign(a.state.midiInput,{starting:false,countingIn:false,recording:false,stopping:false});
-    a.state.saveStatus='saved';a.state.midiEditorSaveInFlight=false;
+    a.state.saveStatus='saved';a.state.midiEditorSaveInFlight=false;a.state.midiImporting=false;a.state.externalSongImporting=false;
     if(busy==='recording'||busy==='stopping')a.state.midiInput[busy]=true;
     else if(busy==='saving')a.state.saveStatus='saving';
+    else if(busy==='midiImporting'||busy==='externalSongImporting')a.state[busy]=true;
     else a.state.midiEditorSaveInFlight=true;
-    return {route:location.hash,input:JSON.stringify(a.state.midiInput),saveStatus:a.state.saveStatus,saveInFlight:a.state.midiEditorSaveInFlight};
+    return {route:location.hash,input:JSON.stringify(a.state.midiInput),saveStatus:a.state.saveStatus,saveInFlight:a.state.midiEditorSaveInFlight,midiImporting:a.state.midiImporting,externalSongImporting:a.state.externalSongImporting};
    },busy);
    const accepted=await page.evaluate(({action,entry})=>entry==='workspace'?MusicStudio.openWorkAction(action,'veto-song'):MusicStudio.goProjects(),{action,entry});
    if(entry==='workspace')assert.equal(accepted,false,`${width}/${busy}/${action}/${entry}: navigation must be rejected`);
-   assert.deepEqual(await page.evaluate(()=>({route:location.hash,input:JSON.stringify(MusicStudio.state.midiInput),saveStatus:MusicStudio.state.saveStatus,saveInFlight:MusicStudio.state.midiEditorSaveInFlight})),before,`${width}/${busy}/${action}: busy state must be retained`);
+   assert.deepEqual(await page.evaluate(()=>({route:location.hash,input:JSON.stringify(MusicStudio.state.midiInput),saveStatus:MusicStudio.state.saveStatus,saveInFlight:MusicStudio.state.midiEditorSaveInFlight,midiImporting:MusicStudio.state.midiImporting,externalSongImporting:MusicStudio.state.externalSongImporting})),before,`${width}/${busy}/${action}: busy state must be retained`);
    assert.equal(await page.evaluate(async()=>JSON.stringify(await MusicStudio.indexedDbRepository().get('veto-song'))),baseline);
-   await page.evaluate(()=>{Object.assign(MusicStudio.state.midiInput,{recording:false,stopping:false});MusicStudio.state.saveStatus='saved';MusicStudio.state.midiEditorSaveInFlight=false});
+   await page.evaluate(()=>{Object.assign(MusicStudio.state.midiInput,{recording:false,stopping:false});MusicStudio.state.saveStatus='saved';MusicStudio.state.midiEditorSaveInFlight=false;MusicStudio.state.midiImporting=false;MusicStudio.state.externalSongImporting=false});
    cases.push({width,busy,action,entry,retained:true});
   }
   // A real form draft survives a rejected browser hash navigation too.

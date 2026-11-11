@@ -4545,7 +4545,7 @@
   function guardLeave(quiet=false){
     const blocked=message=>{if(!quiet)notice(message,'error');return false};
     if(vocalBusy())return blocked('ボーカル録音・保存を完了してください。');
-    if(finalExport.busy||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||workspaceSaving||productionNavigationSaving||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiInput.stopping||shutdownPromise)return blocked('処理を完了し、保存してから移動してください。');
+    if(finalExport.busy||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||workspaceSaving||productionNavigationSaving||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.midiInput.stopping||shutdownPromise)return blocked('処理を完了し、保存してから移動してください。');
     if(workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId)))return blocked('AIの入力・候補を保存または取消してから移動してください。');
     if(state.midiInput.recording)return blocked('録音を停止してから移動してください。');
     if(midiEditorHasPendingChanges())return blocked('MIDI編集に未保存の変更があります。保存してから移動してください。');
