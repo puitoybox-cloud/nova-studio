@@ -3354,7 +3354,7 @@
   }
   let productionNavigationSaving=false;
   async function productionOpenAction(action,id){
-    if(productionNavigationSaving||!workActionTarget(action,id)||workspaceSaving||workspaceHasDraftInput()||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||finalExport.busy||shutdownPromise||vocalBusy()||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.dirty||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping)return false;
+    if(productionNavigationSaving||!workActionTarget(action,id)||workspaceSaving||workspaceHasDraftInput()||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||pcmEditor.preview||archiveTransfer.busy||versionPanel.busy||finalExport.busy||shutdownPromise||vocalBusy()||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.dirty||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping)return false;
     const session=state.midiEditor,target=repository,origin=currentRoute();
     if(midiEditorHasPendingChanges()){
       if(!session||session.projectId!==id)return false;
@@ -4568,6 +4568,7 @@
   function guardLeave(quiet=false){
     const blocked=message=>{if(!quiet)notice(message,'error');return false};
     if(vocalBusy())return blocked('ボーカル録音・保存を完了してください。');
+    if(pcmEditor.preview)return blocked('PCM編集候補を保存または取り消してから移動してください。');
     if(finalExport.busy||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||workspaceSaving||productionNavigationSaving||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.midiInput.stopping||shutdownPromise)return blocked('処理を完了し、保存してから移動してください。');
     if(workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId)))return blocked('AIの入力・候補を保存または取消してから移動してください。');
     if(state.midiInput.recording)return blocked('録音を停止してから移動してください。');
