@@ -55,7 +55,8 @@ const settle=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>re
       window.__expectedTab=controls[controls.indexOf(summary)+1]||document.body;
     });
     await page.keyboard.press('Tab');
-    assert.equal(await page.evaluate(()=>document.activeElement===window.__expectedTab),true,label+' Tab follows visible DOM order');
+    const tabResult=await page.evaluate(()=>({matched:document.activeElement===window.__expectedTab,actual:document.activeElement?.outerHTML?.slice(0,500),expected:window.__expectedTab?.outerHTML?.slice(0,500),activeIndex:[...document.querySelectorAll('input:not([type=hidden]),select,textarea,button,summary,a[href],[tabindex]')].indexOf(document.activeElement),expectedIndex:[...document.querySelectorAll('input:not([type=hidden]),select,textarea,button,summary,a[href],[tabindex]')].indexOf(window.__expectedTab)}));
+    assert.equal(tabResult.matched,true,`${width} ${route} ${label} Tab follows visible DOM order: ${JSON.stringify(tabResult)}`);
     await page.keyboard.press('Shift+Tab');assert.equal(await summary.evaluate(e=>document.activeElement===e),true,label+' Shift+Tab returns to summary');
     // Focus a descendant when available; Escape must not collapse its parent.
     await detail.evaluate(d=>{const e=[...d.querySelectorAll('input:not([type=hidden]),select,textarea,button,summary')].find(e=>e!==d.querySelector(':scope > summary')&&!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&e.closest('details')===d);(e||d.querySelector(':scope > summary')).focus()});
