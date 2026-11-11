@@ -6,7 +6,7 @@ const modes={
  'MIDI recording':a=>a.state.midiInput.recording=true,'MIDI stopping':a=>a.state.midiInput.stopping=true,
  'dirty MIDI':a=>a.state.midiEditor={dirty:true},'MIDI save':a=>a.state.midiEditorSaveInFlight=true,
  'project save':a=>a.state.saveStatus='saving','lyric save':a=>a.lyricsEditor.busy=true,
- 'lyric candidate':a=>a.lyricsEditor.pending={},'PCM operation':a=>a.pcmEditor.busy=true,
+ 'lyric candidate':a=>a.lyricsEditor.pending={},'PCM operation':a=>a.pcmEditor.busy=true,'uncommitted PCM preview':a=>a.pcmEditor.preview={kind:'gain-preview',assetId:'asset-1',gainDb:-3},
  'archive operation':a=>a.archiveTransfer.busy=true,'checkpoint operation':a=>a.versionPanel.busy=true,
  'final export':a=>a.finalExport.busy=true
 };
@@ -66,7 +66,8 @@ for(const [name,setup] of Object.entries({
  'MIDI import in progress':a=>a.state.midiImporting=true,
  'external song import in progress':a=>a.state.externalSongImporting=true,
  'checkpoint in progress':a=>a.versionPanel.busy=true,
- 'lyrics candidate pending':a=>a.lyricsEditor.pending={}
+ 'lyrics candidate pending':a=>a.lyricsEditor.pending={},
+ 'uncommitted PCM preview':a=>a.pcmEditor.preview={kind:'gain-preview',assetId:'asset-1',gainDb:-3}
 }))test('production navigation does not initiate dirty MIDI save during '+name,async()=>{
  const {a,w}=fixture();
  a.state.midiEditor={dirty:true,projectId:'song'};
