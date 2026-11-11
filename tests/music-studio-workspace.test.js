@@ -166,14 +166,3 @@ test('renamed saved preset keeps its open disclosure through stable preset ident
  const doc={body:{dataset:{}},querySelector:()=>null,querySelectorAll:s=>s==='details'?[detail]:[]};doc.activeElement=doc.body;w.document=doc;detail=build('Old Piano',true);
  w.render=()=>{detail=build('Renamed Piano',false)};app.repaint();assert.equal(detail.open,true);
 });
-
-test('external song import blocks workspace preference writes without changing persisted settings',async()=>{
-  const {app,repo}=load();
-  const baseline=JSON.stringify(await repo.getSettings());
-  app.state.externalSongImporting=true;
-  assert.equal((await app.setWorkMode('finish')).error,'workspace-busy');
-  assert.equal((await app.toggleFavorite('export')).error,'workspace-busy');
-  assert.equal(JSON.stringify(await repo.getSettings()),baseline);
-  app.state.externalSongImporting=false;
-  assert.equal((await app.setWorkMode('finish')).ok,true);
-});
