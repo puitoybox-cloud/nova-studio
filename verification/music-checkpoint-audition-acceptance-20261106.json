@@ -7,7 +7,7 @@
     "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
   },
   "runtimeHashes": {
-    "music-studio.js": "9ce15f6a77ec655d61af722d985861b43cc9319d8d4248cb3bfca795889a5975",
+    "music-studio.js": "914b3c49240e0049ba148232b7665bc15f43b3a48ddccf7a085db2863904aa36",
     "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782"
   },
   "acceptedCases": [
