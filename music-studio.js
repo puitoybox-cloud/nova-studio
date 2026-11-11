@@ -3257,7 +3257,13 @@
     next.workspace=normalizeWorkspace(change(clone(next.workspace)));next.updatedAt=now();workspaceSaving=true;workspaceMessage='Saving（保存中）';requestPaint();
     try{
       if(typeof target.putSettings!=='function')throw Error('workspace-storage-unavailable');
-      await target.putSettings(next);
+      try{await target.putSettings(next)}catch(writeError){
+        // A lost completion acknowledgement may follow a durable settings write.
+        // Confirm the exact committed value before reporting failure or retrying.
+        let committed=false;
+        try{committed=typeof target.getSettings==='function'&&JSON.stringify(await target.getSettings())===JSON.stringify(next)}catch(_readError){}
+        if(!committed)throw writeError;
+      }
       if(target!==repository||JSON.stringify(state.settings)!==baseline)throw Error('workspace-storage-changed');
       state.settings=next;
       if(!state.dirty)state.settingsDraft=clone(next);
