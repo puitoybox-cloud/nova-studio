@@ -94,11 +94,19 @@ async function scenario(browser, base, width) {
       window.navigationMidi = new File([MusicStudioMidi.createMidiFile(MusicStudioMidi.createTestMidiData()).bytes], 'navigation.mid', { type: 'audio/midi' });
       app.pcmOpen('source');
     });
+    const storedSource = () => page.evaluate(async () => JSON.stringify(await navigationRepository.get('source')));
     const before = await page.evaluate(async () => JSON.stringify(await navigationRepository.get('other')));
-    await verifyOperation(page, 'PCM apply', 'compareAndPut', () => {
+    const pcmBaseline = await storedSource();
+    const pcmCandidate = await page.evaluate(() => {
       const app = MusicStudio, p = app.state.projects.find(p => p.projectId === 'source');
       app.pcmEditor.preview = app.pcmPreview(p, p.pcmMix.assets[0].id, -6);
-      window.navigationOperation = app.pcmApply('source');
+      return JSON.stringify(app.pcmEditor.preview);
+    });
+    await checkNavigation(page, 'unsaved PCM candidate');
+    assert.equal(await page.evaluate(() => JSON.stringify(MusicStudio.pcmEditor.preview)), pcmCandidate);
+    assert.equal(await storedSource(), pcmBaseline);
+    await verifyOperation(page, 'PCM apply', 'compareAndPut', () => {
+      window.navigationOperation = MusicStudio.pcmApply('source');
     });
     await verifyOperation(page, 'final render', 'get', () => {
       const app = MusicStudio, p = app.state.projects.find(p => p.projectId === 'source');
@@ -116,6 +124,29 @@ async function scenario(browser, base, width) {
     const wav = fs.readFileSync(await download.path());
     assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
     assert.equal(wav.toString('ascii', 8, 12), 'WAVE');
+
+    const beforePicker = await storedSource();
+    await page.evaluate(async () => {
+      const directory = await navigator.storage.getDirectory();
+      window.navigationOutput = await directory.getFileHandle('Navigation Master.wav', { create: true });
+      // Hold the platform picker boundary open while the real file write uses OPFS.
+      window.showSaveFilePicker = () => new Promise(resolve => {
+        window.releaseNavigationOperation = () => resolve(window.navigationOutput);
+      });
+      window.navigationOperation = MusicStudio.finalDownload('source', 'Master.wav', true);
+    });
+    await page.waitForFunction(() => window.releaseNavigationOperation);
+    await checkNavigation(page, 'final WAV destination picker');
+    assert.equal(await storedSource(), beforePicker);
+    const pickerDelivery = await page.evaluate(async () => {
+      window.releaseNavigationOperation();
+      delete window.releaseNavigationOperation;
+      return window.navigationOperation;
+    });
+    assert.equal(pickerDelivery.historySaved, true, JSON.stringify(pickerDelivery));
+    assert.equal(pickerDelivery.completion, 'file-written-verified');
+    const pickerBytes = await page.evaluate(async () => Array.from(new Uint8Array(await (await navigationOutput.getFile()).arrayBuffer())));
+    assert.deepEqual(Buffer.from(pickerBytes), wav);
 
     await page.evaluate(() => MusicStudio.openWorkAction('vocal', 'source'));
     await page.evaluate(() => {
@@ -160,9 +191,21 @@ async function scenario(browser, base, width) {
     await page.evaluate(bytes => {
       window.navigationArchive = new File([new Uint8Array(bytes)], 'navigation.nova');
     }, Array.from(archiveBytes));
-    await verifyOperation(page, 'Archive restore', 'restoreLongArchive', () => {
-      window.navigationOperation = MusicStudio.restoreLongWavArchive(window.navigationArchive, { settings: false });
+    const beforeArchive = await page.evaluate(async () => JSON.stringify(await navigationRepository.list()));
+    const archivePreview = await page.evaluate(async () => {
+      const result = await MusicStudio.previewLongWavArchive(navigationArchive);
+      return { ok: result.ok, error: result.error, projectCount: result.preview?.projectCount };
     });
+    assert.equal(archivePreview.ok, true, archivePreview.error);
+    await page.locator('#archiveRestoreSettings').uncheck();
+    await checkNavigation(page, 'Archive restore preview');
+    assert.equal(await page.locator('#archiveRestoreSettings').isChecked(), false);
+    assert.equal(await page.evaluate(async () => JSON.stringify(await navigationRepository.list())), beforeArchive);
+    await verifyOperation(page, 'Archive restore', 'restoreLongArchive', () => {
+      window.navigationOperation = MusicStudio.restorePreviewedArchive();
+    });
+    assert.equal(await page.evaluate(() => MusicStudio.archiveTransfer.preview), null);
+    assert.equal(await page.evaluate(async () => (await navigationRepository.list()).length), 2 + archivePreview.projectCount);
 
     await page.evaluate(() => {
       MusicStudio.goProjects();
@@ -186,6 +229,39 @@ async function scenario(browser, base, width) {
       window.navigationOperation = MusicStudio.importExternalSongFile(window.navigationMidi);
     });
 
+    const midiBaseline = await page.evaluate(async id => {
+      MusicStudio.openMidiEditor(id);
+      return JSON.stringify(await navigationRepository.get(id));
+    }, midi.projectId);
+    const midiStart = await page.evaluate(async () => {
+      const app = MusicStudio;
+      const input = window.navigationInput = { id: 'navigation-keyboard', name: 'Navigation test keyboard', state: 'connected' };
+      Object.defineProperty(navigator, 'requestMIDIAccess', {
+        configurable: true,
+        value: async () => ({ inputs: new Map([[input.id, input]]) }),
+      });
+      await app.editorInitializeMidi({ forceRefresh: true });
+      await app.editorSelectMidiInput(input.id);
+      const started = await app.editorStartMidiRecording({ skipCountIn: true });
+      if (started?.ok) input.onmidimessage({ data: new Uint8Array([0x90, 87, 91]), timeStamp: performance.now() });
+      return started?.ok;
+    });
+    assert.equal(midiStart, true);
+    await checkNavigation(page, 'live MIDI recording');
+    const midiStopped = await page.evaluate(async id => {
+      const app = MusicStudio;
+      if (!app.state.midiInput.recording || !app.state.midiInput.liveNotes.some(note => note.pitch === 87 && note.active)) {
+        throw Error('MIDI capture or held note was lost during navigation');
+      }
+      const beforeStop = JSON.stringify(await navigationRepository.get(id));
+      navigationInput.onmidimessage({ data: new Uint8Array([0x80, 87, 0]), timeStamp: performance.now() });
+      const result = await app.editorStopMidiRecording();
+      return { beforeStop, ok: result?.ok };
+    }, midi.projectId);
+    assert.equal(midiStopped.beforeStop, midiBaseline);
+    assert.equal(midiStopped.ok, true);
+    assert.equal(await page.evaluate(() => MusicStudio.openWorkAction('backup', 'source')), true);
+
     const snapshot = await page.evaluate(async () => {
       const repo = window.navigationRepository;
       return JSON.stringify([await repo.list(), await repo.listMidiImportHistory()]);
@@ -206,6 +282,7 @@ async function scenario(browser, base, width) {
         midiReceipts: (await repo.listMidiImportHistory()).filter(receipt => receipt.projectId === midi).length,
         externalCreationEvents: (await repo.get(external)).productionHistory.filter(event => event.source === 'external-song-import').length,
         vocalBytes: (await repo.getLongWav(source.longWavAssets[0].id)).blob.size,
+        recordedMidiNotes: (await repo.get(midi)).midiData.tracks.flatMap(track => track.notes).filter(note => note.pitch === 87 && note.velocity === 91).length,
         midiTracks: (await repo.get(midi)).midiData.tracks.length,
         externalTracks: (await repo.get(external)).midiData.tracks.length,
       };
@@ -214,7 +291,8 @@ async function scenario(browser, base, width) {
     assert.equal(saved.other, before);
     assert.equal(saved.gain, -6);
     assert.equal(saved.exports, 1);
-    assert.equal(saved.deliveries, 1);
+    assert.equal(saved.deliveries, 2);
+    assert.equal(saved.recordedMidiNotes, 1);
     assert.ok(saved.vocalBytes > 44);
     assert.ok(saved.editSources.includes('audio-editor'));
     assert.ok(saved.editSources.includes('final-export'));
@@ -223,7 +301,7 @@ async function scenario(browser, base, width) {
     assert.equal(saved.externalCreationEvents, 1);
     assert.ok(saved.midiTracks && saved.externalTracks);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ width, phases: 13, navigationAttempts: 195, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
+    console.log(JSON.stringify({ width, phases: 17, navigationAttempts: 255, wavBytes: wav.length, archiveBytes: archiveBytes.length, indexedDbReopened: true }));
   } finally {
     await context.close();
   }
