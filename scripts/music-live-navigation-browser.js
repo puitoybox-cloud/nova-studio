@@ -97,11 +97,12 @@ async function scenario(browser, base, width) {
     const storedSource = () => page.evaluate(async () => JSON.stringify(await navigationRepository.get('source')));
     const before = await page.evaluate(async () => JSON.stringify(await navigationRepository.get('other')));
     const pcmBaseline = await storedSource();
-    const pcmCandidate = await page.evaluate(() => {
-      const app = MusicStudio, p = app.state.projects.find(p => p.projectId === 'source');
-      app.pcmEditor.preview = app.pcmPreview(p, p.pcmMix.assets[0].id, -6);
-      return JSON.stringify(app.pcmEditor.preview);
-    });
+    const pcmForm = page.locator('#musicPcmForm');
+    await pcmForm.locator('[name=assetId]').selectOption({ label: 'Source PCM' });
+    await pcmForm.locator('[name=gainDb]').fill('-6');
+    await pcmForm.locator('button[type=submit]').click();
+    const pcmCandidate = await page.evaluate(() => JSON.stringify(MusicStudio.pcmEditor.preview));
+    assert.equal(JSON.parse(pcmCandidate)?.gainDb, -6);
     await checkNavigation(page, 'unsaved PCM candidate');
     assert.equal(await page.evaluate(() => JSON.stringify(MusicStudio.pcmEditor.preview)), pcmCandidate);
     assert.equal(await storedSource(), pcmBaseline);
@@ -282,6 +283,7 @@ async function scenario(browser, base, width) {
         midiReceipts: (await repo.listMidiImportHistory()).filter(receipt => receipt.projectId === midi).length,
         externalCreationEvents: (await repo.get(external)).productionHistory.filter(event => event.source === 'external-song-import').length,
         vocalBytes: (await repo.getLongWav(source.longWavAssets[0].id)).blob.size,
+        midiEdits: (await repo.get(midi)).songVersions?.edits?.filter(edit => edit.source === 'midi-editor').length || 0,
         recordedMidiNotes: (await repo.get(midi)).midiData.tracks.flatMap(track => track.notes).filter(note => note.pitch === 87 && note.velocity === 91).length,
         midiTracks: (await repo.get(midi)).midiData.tracks.length,
         externalTracks: (await repo.get(external)).midiData.tracks.length,
@@ -293,6 +295,7 @@ async function scenario(browser, base, width) {
     assert.equal(saved.exports, 1);
     assert.equal(saved.deliveries, 2);
     assert.equal(saved.recordedMidiNotes, 1);
+    assert.equal(saved.midiEdits, (JSON.parse(midiBaseline).songVersions?.edits || []).filter(edit => edit.source === 'midi-editor').length + 1);
     assert.ok(saved.vocalBytes > 44);
     assert.ok(saved.editSources.includes('audio-editor'));
     assert.ok(saved.editSources.includes('final-export'));

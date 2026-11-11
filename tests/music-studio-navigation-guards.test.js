@@ -60,3 +60,18 @@ test('expired navigation notice removes only its own DOM and keeps an active dis
   assert.equal(Boolean(a.state.notice),noticeOwnsFocus);
  }
 });
+
+const productionVetoes={...modes,
+ 'MIDI import':a=>a.state.midiImporting=true,
+ 'external import':a=>a.state.externalSongImporting=true,
+};
+delete productionVetoes['dirty MIDI'];
+for(const [name, setup] of Object.entries(productionVetoes))test('production navigation veto preserves dirty MIDI during '+name,async()=>{
+ const {a,w}=fixture();
+ const session=a.state.midiEditor={projectId:'song',dirty:true};
+ setup(a);
+ assert.equal(await a.productionOpenAction('vocal','song'),false);
+ assert.equal(a.state.midiEditor,session);
+ assert.equal(session.dirty,true);
+ assert.equal(w.location.hash,'#music-studio');
+});
