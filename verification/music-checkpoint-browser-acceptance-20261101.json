@@ -8,7 +8,7 @@
     "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
   },
   "runtimeHashes": {
-    "music-studio.js": "914b3c49240e0049ba148232b7665bc15f43b3a48ddccf7a085db2863904aa36",
+    "music-studio.js": "1d4e8577fc4b3013cc8c98479ab78c0af3345d19cbd7ba588a1c654b1a0679ca",
     "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
   },
   "acceptedCases": [
