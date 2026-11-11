@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **68**、残数 **67**、受入確認率 **50.37%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **67**、残数 **68**、受入確認率 **49.63%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装4件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装5件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -41,7 +41,7 @@ A：総数 **135**、証拠付き完了 **68**、残数 **67**、受入確認率
 | 25 | 5 | 2 | 3 | 1 | 1 |
 | 26 | 5 | 1 | 4 | 1 | 1 |
 | 27 | 5 | 1 | 4 | 1 | 1 |
-| 28 | 4 | 4 | 0 | 1 | 0 |
+| 28 | 4 | 3 | 1 | 1 | 0 |
 | 29 | 4 | 1 | 3 | 1 | 1 |
 | 30 | 4 | 3 | 1 | 1 | 0 |
 
@@ -208,7 +208,7 @@ A：総数 **135**、証拠付き完了 **68**、残数 **67**、受入確認率
 | MS27-B01 | B | 実モデル速度品質と互換受入 | open | 未確認 |
 | MS27-C01 | C | Provider交換と旧モデルの互換方針 | open | 未確認 |
 | MS28-A01 | A | mode and favorites save, reopen and full JSON restore without changing songs | verified | [tests/music-studio-workspace.test.js](../../tests/music-studio-workspace.test.js) — `mode and favorites save, reopen and full JSON restore without changing songs` |
-| MS28-A02 | A | 全編集状態での作業別UI遷移 | verified | [scripts/music-navigation-veto-browser.js](../../scripts/music-navigation-veto-browser.js) — `1,056 navigation fixtures plus real project form drafts at four viewport widths`; [scripts/music-live-navigation-browser.js](../../scripts/music-live-navigation-browser.js) — `Unsaved PCM candidate survives navigation, applies once and reopens`; [scripts/music-live-navigation-browser.js](../../scripts/music-live-navigation-browser.js) — `Live MIDI recording retains held note, saves once and reopens with one edit`; [scripts/music-live-navigation-browser.js](../../scripts/music-live-navigation-browser.js) — `Archive preview retains restore settings and restores once without replacing projects`; [scripts/music-live-navigation-browser.js](../../scripts/music-live-navigation-browser.js) — `Pending WAV destination retains candidate, writes verified bytes and records delivery once` |
+| MS28-A02 | A | 全編集状態での作業別UI遷移 | open | 未確認 |
 | MS28-A03 | A | 自然言語画面案内の統合 | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `Japanese production guidance routes composition and final WAV with explicit project and no generation` |
 | MS28-A04 | A | キーボード操作とa11y自動検証 | verified | [scripts/music-conditional-keyboard-browser.js](../../scripts/music-conditional-keyboard-browser.js) — `14 routes x 4 viewport widths: populated disclosure keyboard and axe matrix`; [scripts/music-accessibility-matrix-browser.js](../../scripts/music-accessibility-matrix-browser.js) — `14 baseline routes: focus restoration, Tab traversal and collapsed/expanded axe checks`; [tests/music-studio-workspace.test.js](../../tests/music-studio-workspace.test.js) — `Escape closes only the innermost conditional disclosure and returns its own summary focus`; [tests/music-studio-workspace.test.js](../../tests/music-studio-workspace.test.js) — `repaint preserves open and closed disclosures separately across nested and repeated summary labels`; [tests/music-studio-workspace.test.js](../../tests/music-studio-workspace.test.js) — `renamed saved preset keeps its open disclosure through stable preset identity` |
 | MS28-B01 | B | 日本語glyph・touch・Pencil・a11y | open | 未確認 |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **68**、残数 **67**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
-| 実装済み・検証不足 | 23 | 4 |
+| 実装済み・検証不足 | 23 | 5 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -332,7 +332,7 @@ A：総数 **135**、証拠付き完了 **68**、残数 **67**、受入確認率
 | MS27-A03 | 仕様判断待ち | open |
 | MS27-A04 | 仕様判断待ち | open |
 | MS27-A05 | 仕様判断待ち | open |
-| MS28-A02 | 実装済み・検証不足 | verified |
+| MS28-A02 | 実装済み・検証不足 | open |
 | MS28-A03 | 実装が必要 | verified |
 | MS28-A04 | 実装済み・検証不足 | verified |
 | MS29-A02 | 仕様判断待ち | open |

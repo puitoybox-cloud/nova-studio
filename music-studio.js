@@ -1561,6 +1561,7 @@
     return hashes;
   }
   const archiveTransfer={busy:false,preview:null,generation:0};
+  function archivePreviewBlocksNavigation(){return lastRoute===BACKUP_ROUTE&&Boolean(archiveTransfer.preview)}
   function setArchiveRestoreSettings(checked){
     if(archiveTransfer.preview&&!archiveTransfer.busy)archiveTransfer.preview.restoreSettings=checked;
   }
@@ -3358,7 +3359,7 @@
   let productionNavigationSaving=false;
   async function productionOpenAction(action,id){
     if(productionNavigationSaving||!workActionTarget(action,id)||workspaceSaving||workspaceHasDraftInput()
-      ||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||pcmEditor.preview||archiveTransfer.busy||archiveTransfer.preview
+      ||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||pcmEditor.preview||archiveTransfer.busy||archivePreviewBlocksNavigation()
       ||versionPanel.busy||finalExport.busy||shutdownPromise||vocalBusy()||state.dirty||state.saveStatus==='saving'
       ||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.midiInput.recording
       ||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping)return false;
@@ -4578,7 +4579,7 @@
     if(finalExport.busy||lyricsEditor.busy||lyricsEditor.pending||pcmEditor.busy||archiveTransfer.busy||versionPanel.busy||workspaceSaving||productionNavigationSaving||state.saveStatus==='saving'||state.midiEditorSaveInFlight||state.midiImporting||state.externalSongImporting||state.midiInput.stopping||shutdownPromise)return blocked('処理を完了し、保存してから移動してください。');
     if(workspaceHasDraftInput()||state.projects.some(p=>root.MusicStudioAIAssistantPanel?.hasPending?.(p.projectId)))return blocked('AIの入力・候補を保存または取消してから移動してください。');
     if(pcmEditor.preview)return blocked('音声編集の候補を保存または取消してから移動してください。');
-    if(archiveTransfer.preview)return blocked('アーカイブの復元を確定または取消してから移動してください。');
+    if(archivePreviewBlocksNavigation())return blocked('アーカイブの復元を確定または取消してから移動してください。');
     if(state.midiInput.recording)return blocked('録音を停止してから移動してください。');
     if(midiEditorHasPendingChanges())return blocked('MIDI編集に未保存の変更があります。保存してから移動してください。');
     // Rejecting navigation must not cancel a pending MIDI permission request or
