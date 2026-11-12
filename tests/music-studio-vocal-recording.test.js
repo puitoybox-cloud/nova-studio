@@ -525,3 +525,19 @@ test('Vibrato cancellation and storage failure preserve original audio and edit 
  // Exercise the same atomic publisher with a selected oscillation correction.
  const pcm=await a.vocalReadPCM(id,asset.id);a.vocalCorrection.preview={id,assetId:asset.id,baseline,analysis:[],candidates:[{first:0,end:400,semitones:.1,ratio:1,count:1}],selected:[0],setting:a.vocalHistory(asset).edits[0],pcm};f.indexedDB.fail();assert.equal((await a.vocalCorrectionApply()).ok,false);assert.equal(JSON.stringify(await f.repo.get(id)),baseline);
 });
+
+test('lost journal recovery acknowledgement retains one saved Take and consumes the journal',async()=>{
+ const f=await interruptedJournal();
+ ageJournal(f);
+ const repo=f.b.indexedDbRepository();
+ f.b.setRepository(repo);
+ await f.b.refresh();
+ const put=repo.putLongWav;
+ repo.putLongWav=async(...args)=>{await put(...args);throw Error('lost acknowledgement')};
+ const result=await f.b.vocalRecoverJournal(f.m.id);
+ assert.equal(result.ok,true,result.error);
+ assert.equal((await repo.get(f.m.owner)).longWavAssets.length,1);
+ assert.equal(await repo.getVocalJournal(f.m.id),undefined);
+ assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,false);
+ assert.equal((await repo.get(f.m.owner)).songVersions.edits.filter(e=>e.source==='vocal-editor').length,1);
+});

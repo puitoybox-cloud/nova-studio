@@ -378,7 +378,12 @@
       editorStopMelody(false);pcmStop();longMixStop();vocalPlaybackStop();
       const binaries=[...new Map(archiveBinaries(next).map(a=>[a.id,a])).values()];
       for(const a of binaries){if(!target.getLongWav)throw Error('checkpoint-dependency-storage-required');const r=(options.binaryRecords||[]).find(r=>r.id===a.id)||await target.getLongWav(a.id);guard();if(!r?.blob||r.blob.size!==a.size||JSON.stringify(r.hashes)!==JSON.stringify(a.hashes)||JSON.stringify(await longWavDigest(r.blob,guard))!==JSON.stringify(a.hashes))throw Error('checkpoint-dependency-missing-or-corrupt: '+a.id)}
-      await archiveCapacity(pcmJsonBytes(next),guard);guard();if(options.fork){if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(next,baseline,guard);
+      await archiveCapacity(pcmJsonBytes(next),guard);guard();
+      await confirmProjectWrite(target,next,()=>{
+        if(!options.fork)return target.compareAndPut(next,baseline,guard);
+        if(!target.compareAndFork||next.projectId===id)throw Error('finished-fork-atomic-storage-required');
+        return target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[]);
+      });
       // The transaction is durable; a replacement view must keep its own state.
       if(repository!==target||token!==versionPanel.generation||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:next};
       state.projects=options.fork?[...state.projects,next]:state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
@@ -557,20 +562,20 @@
   function memoryRepository(initial=[]){
     const records=new Map(initial.map(item=>[item.projectId,clone(item)]));
     const automaticBackups=new Map();let settings=null;
-    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()]),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);preserveFinishedSnapshots(records.get(item.projectId),value);records.set(item.projectId,value);return clone(value)},async put(item){const value=clone(item);preserveFinishedSnapshots(records.get(value.projectId),value);records.set(value.projectId,value);return clone(value)},async compareAndDelete(id,baseline,guard){guard?.();if(JSON.stringify(records.get(id))!==baseline)throw Error('project-delete-conflict');records.delete(id)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async putAutoBackup(value){automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id){automaticBackups.delete(id)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async commitMidiImport(item,history,sourceId,baseline,guard){const value=clone(item),entry=clone(history);guard?.();if(entry.projectId!==value.projectId||records.has(value.projectId)||(sourceId&&JSON.stringify(records.get(sourceId))!==baseline)||midiImportHistory.has(entry.id))throw Error('midi-import-storage-conflict');records.set(value.projectId,value);midiImportHistory.set(entry.id,entry);return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
+    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()]),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);preserveFinishedSnapshots(records.get(item.projectId),value);records.set(item.projectId,value);return clone(value)},async put(item){const value=clone(item);preserveFinishedSnapshots(records.get(value.projectId),value);records.set(value.projectId,value);return clone(value)},async compareAndDelete(id,baseline,guard){guard?.();if(JSON.stringify(records.get(id))!==baseline)throw Error('project-delete-conflict');records.delete(id)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async getAutoBackup(id){const value=automaticBackups.get(id);return value&&clone(value)},async putAutoBackup(value,guard){guard?.();automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id){automaticBackups.delete(id)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async commitMidiImport(item,history,sourceId,baseline,guard){const value=clone(item),entry=clone(history);guard?.();if(entry.projectId!==value.projectId||records.has(value.projectId)||(sourceId&&JSON.stringify(records.get(sourceId))!==baseline)||midiImportHistory.has(entry.id))throw Error('midi-import-storage-conflict');records.set(value.projectId,value);midiImportHistory.set(entry.id,entry);return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
   }
   function indexedDbRepository(){
     if(!root.indexedDB)return memoryRepository();
     const database=new Promise((resolve,reject)=>{let settled=false;const finish=(error,db)=>{if(settled){db?.close();return}settled=true;root.clearTimeout?.(timer);error?reject(error):resolve(db)};const timer=root.setTimeout?.(()=>finish(Error('IndexedDB open timed out.')),15000);const request=root.indexedDB.open(DB_NAME,7);request.onupgradeneeded=()=>{for(const n of ['vocalJournals','vocalJournalChunks'])if(!request.result.objectStoreNames.contains(n))request.result.createObjectStore(n,{keyPath:"id"});if(!request.result.objectStoreNames.contains("longWavBinaries"))request.result.createObjectStore("longWavBinaries",{keyPath:"id"});if(!request.result.objectStoreNames.contains(STORE_NAME)){const store=request.result.createObjectStore(STORE_NAME,{keyPath:'projectId'});store.createIndex('updatedAt','updatedAt')}if(!request.result.objectStoreNames.contains(SETTINGS_STORE_NAME))request.result.createObjectStore(SETTINGS_STORE_NAME,{keyPath:'id'});if(!request.result.objectStoreNames.contains(AUTO_BACKUP_STORE_NAME)){const store=request.result.createObjectStore(AUTO_BACKUP_STORE_NAME,{keyPath:'backupId'});store.createIndex('createdAt','createdAt')}if(!request.result.objectStoreNames.contains(MIDI_HISTORY_STORE_NAME)){const store=request.result.createObjectStore(MIDI_HISTORY_STORE_NAME,{keyPath:'id'});store.createIndex('createdAt','createdAt')}if(!request.result.objectStoreNames.contains(MIDI_IMPORT_HISTORY_STORE_NAME)){const store=request.result.createObjectStore(MIDI_IMPORT_HISTORY_STORE_NAME,{keyPath:'id'});store.createIndex('createdAt','createdAt')}};request.onsuccess=()=>{request.result.onversionchange=()=>request.result.close();finish(null,request.result)};request.onerror=()=>finish(request.error);request.onblocked=()=>finish(Error('データベース更新がほかのタブでブロックされています。'))});
     const openTransaction=(db,stores,mode)=>db.transaction(stores,mode,mode==='readwrite'?{durability:'strict'}:undefined);
-    const request=(storeName,mode,operation)=>database.then(db=>new Promise((resolve,reject)=>{
+    const request=(storeName,mode,operation,guard)=>database.then(db=>new Promise((resolve,reject)=>{
       // A resolved write means the browser completed a strict durability commit,
       // not only that the request reached the in-memory IndexedDB transaction.
       const tx=openTransaction(db,storeName,mode);let value,requestSucceeded=false;
       tx.oncomplete=()=>requestSucceeded?resolve(value):reject(Error('IndexedDB request did not complete.'));
       tx.onabort=()=>reject(tx.error||Error('IndexedDB transaction aborted.'));
       tx.onerror=()=>{reject(tx.error||Error('IndexedDB transaction failed.'));try{tx.abort()}catch(_){} };
-      try{const result=operation(tx.objectStore(storeName));result.onsuccess=()=>{value=result.result;requestSucceeded=true};result.onerror=()=>{reject(result.error||Error('IndexedDB request failed.'));try{tx.abort()}catch(_){} }}catch(error){try{tx.abort()}catch(_){}reject(error)}
+      try{guard?.();const result=operation(tx.objectStore(storeName));result.onsuccess=()=>{try{guard?.();value=result.result;requestSucceeded=true}catch(error){try{tx.abort()}catch(_){}reject(error)}};result.onerror=()=>{reject(result.error||Error('IndexedDB request failed.'));try{tx.abort()}catch(_){} }}catch(error){try{tx.abort()}catch(_){}reject(error)}
     }));
     function commitMidiImport(item,history,sourceId,baseline,guard){const value=clone(item),entry=clone(history);return database.then(db=>new Promise((resolve,reject)=>{
       let tx,failure;const abort=e=>{failure=failure||e;try{tx.abort()}catch(_){reject(failure)}};
@@ -726,10 +731,20 @@
         const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
         tx.onabort=()=>reject(failure||tx.error||Error('project-save-aborted'));tx.onerror=()=>abort(tx.error||Error('project-save-failed'));tx.oncomplete=()=>resolve(clone(value));
         const get=store.get(value.projectId);get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{preserveFinishedSnapshots(get.result,value);const put=store.put(value);put.onerror=()=>abort(put.error)}catch(e){abort(e)}};
-      }))},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async putAutoBackup(value){const record=clone({...value,archive:undefined});if(value.archive){if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');const encoded=await encodeLongBinary({id:value.backupId,blob:value.archive},()=>{});record.archive=encoded.blob||new Blob(encoded.parts,{type:encoded.type})}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
+      }))},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.getAll())},async getAutoBackup(id){return request(AUTO_BACKUP_STORE_NAME,'readonly',store=>store.get(id))},
+      async putAutoBackup(value,guard=()=>{}){
+        const record=clone({...value,archive:undefined});
+        if(value.archive){
+          if(typeof value.archive.slice!=='function')throw Error('backup-archive-blob-required');
+          const encoded=await encodeLongBinary({id:value.backupId,blob:value.archive},guard);
+          record.archive=encoded.blob||new Blob(encoded.parts,{type:encoded.type});
+        }
+        await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record),guard);
+        return record;
+      },async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
-  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();repository=next}
+  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next)cancelArchiveTransfer();repository=next}
   async function loadSettings(){let stored=null;try{stored=await repository.getSettings?.()}catch(error){console.warn('Music Studio settings could not be read',error)}const normalized=preserveRestoreSettings(stored||{});state.settings=normalized;state.settingsDraft=clone(normalized);if(!stored)try{await repository.putSettings?.(normalized)}catch(error){console.warn('Music Studio default settings could not be saved',error)}return normalized}
   async function refresh(){const target=repository,baseline=JSON.stringify(state.projects),projects=await target.list();if(repository!==target||JSON.stringify(state.projects)!==baseline)return{ok:false,stale:true};state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint();return{ok:true}}
   let noticeTimer=null;
@@ -1890,7 +1905,22 @@
       const histories={exports:sourceHistories.exports.map(remapHistory),imports:sourceHistories.imports.map(remapHistory)};
       const preservedRecordings=sourceJournals.filter(j=>j.preservation==='observed-v1').length;
       if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,preservedRecordings,size:file.size,settingsIncluded:true,capacity};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
-      guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.settings),guard,baselineSettings,histories,restoredJournals);
+      const settings=options.settings===false?null:preserveRestoreSettings(manifest.settings);
+      guard(true);
+      try{
+        await target.restoreLongArchive(projects,records,settings,guard,baselineSettings,histories,restoredJournals);
+      }catch(error){
+        // All Archive stores commit together. A restored project or history
+        // has a fresh ID unique to this attempt, including when read via the old repository.
+        const matches=await (async()=>{
+          if(projects.length)return JSON.stringify(await target.get(projects[0].projectId))===JSON.stringify(projects[0]);
+          for(const [entries,list] of [[histories.exports,()=>target.listMidiHistory()],[histories.imports,()=>target.listMidiImportHistory()]]){
+            if(entries.length)return (await list()).some(row=>JSON.stringify(row)===JSON.stringify(entries[0]));
+          }
+          return settings!==null&&JSON.stringify(await target.getSettings())===JSON.stringify(settings);
+        })().catch(()=>false);
+        if(!matches)throw error;
+      }
       // A completed transaction cannot be rolled back by a later cancellation
       // or repository switch. Keep its receipt, but never publish into a new UI.
       committedResult={projects,preservedRecordings};guard(true);
@@ -1917,8 +1947,9 @@
   }
   async function exportLongWavArchive(){
     if(archiveTransfer.busy)return{ok:false,error:'archive-transfer-busy'};
-    const token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
+    const target=repository,token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
     try{const blob=await createLongWavArchive({preserveDamagedJournals:true,signal:{get aborted(){return token!==archiveTransfer.generation}}});
+      archiveGuard(target,{aborted:token!==archiveTransfer.generation});
       if(!root.document||!root.URL?.createObjectURL)return{ok:true,blob};
       const url=root.URL.createObjectURL(blob),link=root.document.createElement('a');link.href=url;link.download=`music-studio-full-wav_${now().slice(0,10)}.nova`;root.document.body.appendChild(link);link.click();link.remove();root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000);
       notice('元ファイル・プロジェクト・設定を含むアーカイブを書き出しました。未完了録音の破損・欠落はそのまま保持され、音声修復を保証しません。','success');return{ok:true};
@@ -2331,7 +2362,19 @@
     vocal.phase='saving';requestPaint();try{guard();const hashes=await longWavDigest(take.blob,guard),p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('vocal-storage-conflict');
       const assetId=uuid(),asset={id:assetId,name:take.name,size:take.blob.size,frames:take.frames,sampleRate:take.sampleRate,channels:take.channels,hashes,vocalTake:{format:'nova-vocal-take-v1',recordedAt:now(),...(take.cycle?{cycle:clone(take.cycle)}:{}),...(take.recordingPlan?{recordingPlan:clone(take.recordingPlan)}:{}),captureMime:take.captureMime,clippedSamples:take.clipped,waveform:take.waveform,cursor:0,edits:[{first:0,end:take.frames,gainDb:0,startTick:take.startTick,latencyMs:take.latencyMs}]}};
       vocalHistory(asset);const updated=clone(p);updated.longWavAssets=[...(updated.longWavAssets||[]),asset];updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'vocal-editor');if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
-      await target.putLongWav(updated,{id:assetId,blob:take.blob,hashes,...(vocal.journalId?{journalId:vocal.journalId,journalConsumed:vocal.journalConsumed||0,journalFrames:take.frames,journalExpectedNext:vocal.journalExpectedNext,journalComplete:!vocal.pendingQueue?.length&&!vocal.journalRetain}: {})},baseline,guard);if(vocal.journalId){vocal.journalConsumed=(vocal.journalConsumed||0)+take.frames;if(!vocal.pendingQueue?.length)vocal.journalId=null;}
+      await confirmProjectWrite(target,updated,()=>target.putLongWav(updated,{id:assetId,blob:take.blob,hashes,...(vocal.journalId?{journalId:vocal.journalId,journalConsumed:vocal.journalConsumed||0,journalFrames:take.frames,journalExpectedNext:vocal.journalExpectedNext,journalComplete:!vocal.pendingQueue?.length&&!vocal.journalRetain}: {})},baseline,guard));
+      try{guard()}catch(error){
+        if(vocal.generation===token&&vocal.pending===take){
+          vocal.baseline=JSON.stringify(updated);
+          vocal.journalConsumed=(vocal.journalConsumed||0)+take.frames;
+          vocal.pending=vocal.pendingQueue?.shift()||null;
+          if(!vocal.pending)vocal.journalId=null;
+          vocal.phase=vocal.pending?'pending':'saved';
+          vocal.message='録音を保存しました。表示の更新が必要です。';
+        }
+        return{ok:true,committed:true,refreshPending:true,assetId,project:updated};
+      }
+      if(vocal.journalId){vocal.journalConsumed=(vocal.journalConsumed||0)+take.frames;if(!vocal.pendingQueue?.length)vocal.journalId=null;}
       state.projects=state.projects.map(x=>x.projectId===id?updated:x);vocal.pending=null;vocal.baseline=JSON.stringify(updated);if(vocal.pendingQueue?.length){vocal.pending=vocal.pendingQueue.shift();vocal.phase='pending';return await vocalSave()}vocal.phase='saved';vocal.message='保存完了。再Open・Full WAV Archiveで音声本体を復元できます。';return{ok:true,assetId,project:updated};
     }catch(e){vocal.phase='pending';vocal.message='保存未完了（テイク保持）：'+e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
@@ -4545,7 +4588,9 @@
     if(!state.settings?.backup.automaticEnabled)return{ok:true,created:false,reason:'disabled'};
     if(hasUnsavedChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,created:false,reason:'backup-unsaved-or-busy'};
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),keep=state.settings.backup.maxCopies;
-    const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp),intervalMs=state.settings.backup.intervalHours*3600000;
+    const intervalMs=state.settings.backup.intervalHours*3600000;
+    const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp);
+    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline)return{ok:false,created:false,reason:'backup-state-conflict'};
     if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return{ok:true,created:false,reason:'not-due'};
     // The persisted histories can change without a project revision or a refreshed UI list.
     let histories;try{histories=await readArchiveMidiHistories(target)}catch(error){return{ok:false,created:false,reason:error.message}}
@@ -4564,10 +4609,16 @@
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
     const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
-    try{if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record)}catch(error){console.warn('Music Studio automatic backup failed',error);return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'}}
-    // Publication has committed. Cleanup failure must not report that it did not.
-    // A changed repository or retention policy leaves every older copy intact.
     const current=()=>repository===target&&JSON.stringify([state.projects,state.settings])===baseline;
+    const guard=()=>{if(!current()||hasUnsavedChanges()||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)throw Error('backup-state-conflict')};
+    try{guard();if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record,guard)}catch(error){
+      const saved=await Promise.resolve().then(()=>target.getAutoBackup?.(record.backupId)).catch(()=>null);
+      if(!saved||saved.archive?.size!==archive?.size||JSON.stringify({...saved,archive:undefined})!==JSON.stringify({...record,archive:undefined})){
+        console.warn('Music Studio automatic backup failed',error);
+        return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'};
+      }
+    }
+    // Cleanup follows confirmed publication and uses the original retention policy.
     let cleanupWarning;
     try{
       if(!current())throw Error('backup-state-conflict');
@@ -5316,7 +5367,9 @@
       if(midi.markers)midi.markers=midi.markers.filter(e=>e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick-start}));
       const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:p.musicalSettings.bpm,key:p.musicalSettings.key,createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
       next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
+      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,material:item}}
+      state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
   function materialExport(owner){const p=state.projects.find(p=>p.projectId===owner);materialValidate(p?.materialLibrary);return downloadJson('nova-midi-materials.json',{format:'nova-midi-library-v1',materials:clone(p.materialLibrary)});}
@@ -5324,7 +5377,9 @@
     if(materialSaving||workspaceBusy())return{ok:false,error:'material-busy'};const target=repository,p=state.projects.find(p=>p.projectId===owner),baseline=JSON.stringify(p);materialSaving=true;
     try{if(!p||!file||!Number.isSafeInteger(file.size)||file.size>2097152)throw Error('material-file-invalid');const text=await file.text();if(text.length>2097152)throw Error('material-library-capacity');const bundle=JSON.parse(text);if(bundle.format!=='nova-midi-library-v1')throw Error('material-file-format');materialValidate(bundle.materials);if(!bundle.materials.length)throw Error('material-empty');
       const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...bundle.materials.map(m=>({...clone(m),id:uuid()}))];materialValidate(next.materialLibrary);next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:bundle.materials.length});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
+      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length}}
+      state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
   async function materialImportSubmit(event,owner){const r=await materialImport(owner,event.target.elements.materialFile.files[0]);notice(r.ok?'MIDI素材を読み込みました。':r.error,r.ok?'success':'error');return r;}
@@ -5335,7 +5390,9 @@
       // Transposed key signatures require spelling policy; omit old key declarations rather than retain false ones.
       if(shift)delete midi.keySignatureMap;
       const out=makeProject({projectName:m.name+' — 素材から作成',bpm,key:shift?null:m.key,timeSignature:`${midi.timeSignature?.numerator||4}/${midi.timeSignature?.denominator||4}`,midiData:midi});out.productionHistory.push({id:uuid(),type:'material-create',createdAt:now(),sourceProjectId:owner,materialId,sourceRevision:m.sourceRevision,semitones:shift,bpm});if(!validateProject(out).valid||validateRestoredMidi(out).errors.length)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await target.compareAndFork(out,owner,baseline,guard);if(repository!==target)return{ok:true,committed:true,refreshPending:true,project:out};state.projects.push(out);return{ok:true,committed:true,project:out};
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,out,()=>target.compareAndFork(out,owner,baseline,guard));
+      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,project:out}}
+      state.projects.push(out);return{ok:true,committed:true,project:out};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
   let performanceDisplayReduced=false;

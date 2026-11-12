@@ -108,7 +108,29 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    if(conflict.ok||!app.state.dirty||form.elements.productionNotes.value!=='Local draft that must survive conflict')
     throw Error('Conflict was incorrectly acknowledged or lost the local draft');
    if(JSON.stringify(await repo.get(id))!==JSON.stringify(competing))throw Error('Competing write was overwritten');
-   return {before,formProject,saved,competing};
+   app.state.dirty=false;
+   app.state.projects=await repo.list();
+   repo.compareAndPut=loseReceipt;
+   const checkpoint=await app.versionSave(id,'Finished once',{kind:'finished'});
+   if(!checkpoint.ok)throw Error(checkpoint.error);
+   const day=await app.productionDaySave(id,'2026-11-12','Durable daily record');
+   if(!day.ok)throw Error(day.error);
+
+   const archive=await app.createLongWavArchive();
+   const restore=repo.restoreLongArchive;
+   repo.restoreLongArchive=async(...args)=>{
+    await restore(...args);
+    throw Error('Injected loss of Archive notification after IndexedDB commit');
+   };
+   const preview=await app.previewLongWavArchive(archive);
+   if(!preview.ok)throw Error(preview.error);
+   app.setArchiveRestoreSettings(false);
+   const restored=await app.restorePreviewedArchive();
+   if(!restored.ok||!restored.committed||restored.projects.length!==1)
+    throw Error(restored.error||'Archive receipt lost');
+   if((await app.restorePreviewedArchive()).error!=='archive-preview-required')
+    throw Error('Committed Archive still offered a retry');
+   return {before,formProject,saved,source:day.project,restored:restored.projects[0]};
   });
   assert.equal(receipts.formProject.revision,receipts.before.revision+1);
   assert.equal(receipts.saved.revision,receipts.formProject.revision+1);
@@ -124,6 +146,18 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   await reopened.goto(origin);
   await reopened.addScriptTag({url:origin+'/music-studio.js'});
   await reopened.waitForFunction(()=>MusicStudio.state.loaded===true);
-  assert.deepEqual(await reopened.evaluate(()=>MusicStudio.indexedDbRepository().get('chromium-restart-history')),receipts.competing);
+  const projects=await reopened.evaluate(()=>MusicStudio.indexedDbRepository().list());
+  assert.equal(projects.length,2);
+  assert.deepEqual(projects.find(project=>project.projectId===receipts.source.projectId),receipts.source);
+  assert.deepEqual(projects.find(project=>project.projectId===receipts.restored.projectId),receipts.restored);
+  for(const project of projects){
+   const ledger=project.songVersions;
+   assert.equal(ledger.checkpoints.length,1);
+   assert.equal(ledger.checkpoints[0].id,receipts.source.songVersions.checkpoints[0].id);
+   assert.equal(ledger.days.length,1);
+   assert.equal(ledger.days[0].id,receipts.source.songVersions.days[0].id);
+   assert.equal(ledger.days[0].sessionId,sessionId);
+   assert.deepEqual(ledger.edits.map(edit=>edit.id),receipts.source.songVersions.edits.map(edit=>edit.id));
+  }
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });
