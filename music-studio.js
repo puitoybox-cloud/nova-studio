@@ -744,7 +744,7 @@
       },async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id))},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
-  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next)cancelArchiveTransfer();repository=next}
+  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next)invalidateArchiveTransfer();repository=next}
   async function loadSettings(){let stored=null;try{stored=await repository.getSettings?.()}catch(error){console.warn('Music Studio settings could not be read',error)}const normalized=preserveRestoreSettings(stored||{});state.settings=normalized;state.settingsDraft=clone(normalized);if(!stored)try{await repository.putSettings?.(normalized)}catch(error){console.warn('Music Studio default settings could not be saved',error)}return normalized}
   async function refresh(){const target=repository,baseline=JSON.stringify(state.projects),projects=await target.list();if(repository!==target||JSON.stringify(state.projects)!==baseline)return{ok:false,stale:true};state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint();return{ok:true}}
   let noticeTimer=null;
@@ -1580,7 +1580,8 @@
   function setArchiveRestoreSettings(checked){
     if(archiveTransfer.preview&&!archiveTransfer.busy)archiveTransfer.preview.restoreSettings=checked;
   }
-  function cancelArchiveTransfer(){archiveTransfer.generation++;archiveTransfer.preview=null;requestPaint();return{cancelled:true}}
+  function invalidateArchiveTransfer(){archiveTransfer.generation++;archiveTransfer.preview=null}
+  function cancelArchiveTransfer(){invalidateArchiveTransfer();requestPaint();return{cancelled:true}}
   const LONG_ARCHIVE_FORMAT='nova-long-wav-archive-v1';
   const REFERENCE_FIELDS=['midiAssets','audioAssets','fileReferences'];
   function referenceBinaries(project){
