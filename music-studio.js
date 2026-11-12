@@ -269,8 +269,8 @@
   function versionContent(p){
     const s=versionSnapshot(p);
     for(const field of ['revision','updatedAt','createdAt','projectId',...VERSION_PRESERVED_FIELDS])delete s[field];
-    // Publishing reusable MIDI is independent of the checkpoint's musical changes.
-    if(Array.isArray(s.productionHistory))s.productionHistory=s.productionHistory.filter(e=>!['material-capture','material-import'].includes(e?.type));
+    // Reusable MIDI publication and Archive receipts do not change checkpoint content.
+    if(Array.isArray(s.productionHistory))s.productionHistory=s.productionHistory.filter(e=>!['material-capture','material-import','archive-restore'].includes(e?.type));
     if(s.aiWorkspace){delete s.aiWorkspace.baseRevision;delete s.aiWorkspace.updatedAt}
     return JSON.stringify(s);
   }
