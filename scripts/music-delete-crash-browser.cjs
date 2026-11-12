@@ -99,6 +99,67 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   assert.deepEqual(afterRestore.longWavBinaries[0].blob||afterRestore.longWavBinaries[0].parts,afterRestore.longWavBinaries[1].blob||afterRestore.longWavBinaries[1].parts);
   await stop();page=await open();assert.deepEqual(await snapshot(page),afterRestore,'retried Archive must persist completely across SIGKILL');
 
+  const retained=await page.evaluate(async()=>{
+   await app.refresh();
+   app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
+   const prior={backupId:'previous-generation',createdAt:'2026-11-01T00:00:00Z',signature:'old',snapshot:{protected:true}};
+   await repo.putAutoBackup(prior);
+   const remove=IDBObjectStore.prototype.delete;
+   IDBObjectStore.prototype.delete=function(key){
+    const request=remove.call(this,key);
+    if(key===prior.backupId)request.addEventListener('success',()=>{app.state.settings.backup.maxCopies=2});
+    return request;
+   };
+   const receipt=await app.runAutoBackupCheck('2026-11-12T00:00:00Z');
+   if(!receipt.created||receipt.cleanupWarning!=='backup-state-conflict')throw Error(JSON.stringify(receipt));
+   const stored=await repo.getAutoBackup(receipt.backup.backupId);
+   if(JSON.stringify(await repo.getAutoBackup(prior.backupId))!==JSON.stringify(prior))throw Error('retention change did not abort deletion');
+   const bytes=async blob=>Array.from(new Uint8Array(await blob.arrayBuffer()));
+   const expected=await bytes(receipt.backup.archive);
+   if(JSON.stringify(await bytes(stored.archive))!==JSON.stringify(expected))throw Error('published backup differs from receipt');
+   return {prior,created:stored.backupId,bytes:expected};
+  });
+  await stop();page=await open();
+  const persisted=await page.evaluate(async ({prior,created})=>{
+   const copy=await repo.getAutoBackup(created);
+   return {prior:await repo.getAutoBackup(prior.backupId),created:copy.backupId,bytes:Array.from(new Uint8Array(await copy.archive.arrayBuffer()))};
+  },retained);
+  assert.deepEqual(persisted,retained,'both backup generations must survive restart after the retention conflict');
+  async function configurePruning(page){
+   await page.evaluate(async()=>{
+    await app.refresh();
+    app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
+   });
+  }
+  await configurePruning(page);
+  await page.evaluate(async()=>{
+   await repo.putAutoBackup({backupId:'older-generation',createdAt:'2026-10-31T00:00:00Z',snapshot:{older:true}});
+   const remove=IDBObjectStore.prototype.delete;
+   IDBObjectStore.prototype.delete=function(key){
+    const request=remove.call(this,key);
+    if(key==='older-generation')request.addEventListener('success',()=>{
+     const hold=()=>{this.get(key).onsuccess=hold};
+     hold();
+     window.pruningHeld=true;
+    });
+    return request;
+   };
+   void app.runAutoBackupCheck('2026-11-12T00:01:00Z');
+  });
+  await page.waitForFunction(()=>window.pruningHeld===true);
+  await stop();page=await open();
+  const ids=()=>page.evaluate(async()=>(await repo.listAutoBackups()).map(copy=>copy.backupId).sort());
+  assert.deepEqual(await ids(),[retained.created,'older-generation'].sort(),'earlier deletion committed, active deletion rolled back');
+  await configurePruning(page);
+  const cleanup=await page.evaluate(()=>app.runAutoBackupCheck('2026-11-12T00:02:00Z'));
+  assert.equal(cleanup.reason,'not-due');
+  assert.equal(cleanup.created,false);
+  assert.equal(cleanup.cleanupWarning,undefined);
+  await stop();page=await open();
+  assert.deepEqual(await ids(),[retained.created]);
+  const remaining=await page.evaluate(async id=>Array.from(new Uint8Array(await (await repo.getAutoBackup(id)).archive.arrayBuffer())),retained.created);
+  assert.deepEqual(remaining,retained.bytes);
+
   const generations=await page.evaluate(async bytes=>{
    await app.refresh();
    window.confirm=()=>true;
@@ -161,75 +222,10 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    }
    return (await repo.listAutoBackups()).map(record=>record.backupId).sort();
   },Array.from(downloaded));
-  assert.deepEqual(generations,['archive-generation','json-generation']);
+  assert.deepEqual(generations,[retained.created,'archive-generation','json-generation'].sort());
   const generationState=await snapshot(page);
   await stop();page=await open();
   assert.deepEqual(await snapshot(page),generationState,'restored generations and histories must survive restart');
-  await page.evaluate(async()=>{
-   await repo.deleteAutoBackup('archive-generation');
-   await repo.deleteAutoBackup('json-generation');
-  });
-
-  const retained=await page.evaluate(async()=>{
-   await app.refresh();
-   app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
-   const prior={backupId:'previous-generation',createdAt:'2026-11-01T00:00:00Z',signature:'old',snapshot:{protected:true}};
-   await repo.putAutoBackup(prior);
-   const remove=IDBObjectStore.prototype.delete;
-   IDBObjectStore.prototype.delete=function(key){
-    const request=remove.call(this,key);
-    if(key===prior.backupId)request.addEventListener('success',()=>{app.state.settings.backup.maxCopies=2});
-    return request;
-   };
-   const receipt=await app.runAutoBackupCheck('2026-11-12T00:00:00Z');
-   if(!receipt.created||receipt.cleanupWarning!=='backup-state-conflict')throw Error(JSON.stringify(receipt));
-   const stored=await repo.getAutoBackup(receipt.backup.backupId);
-   if(JSON.stringify(await repo.getAutoBackup(prior.backupId))!==JSON.stringify(prior))throw Error('retention change did not abort deletion');
-   const bytes=async blob=>Array.from(new Uint8Array(await blob.arrayBuffer()));
-   const expected=await bytes(receipt.backup.archive);
-   if(JSON.stringify(await bytes(stored.archive))!==JSON.stringify(expected))throw Error('published backup differs from receipt');
-   return {prior,created:stored.backupId,bytes:expected};
-  });
-  await stop();page=await open();
-  const persisted=await page.evaluate(async ({prior,created})=>{
-   const copy=await repo.getAutoBackup(created);
-   return {prior:await repo.getAutoBackup(prior.backupId),created:copy.backupId,bytes:Array.from(new Uint8Array(await copy.archive.arrayBuffer()))};
-  },retained);
-  assert.deepEqual(persisted,retained,'both backup generations must survive restart after the retention conflict');
-  async function configurePruning(page){
-   await page.evaluate(async()=>{
-    await app.refresh();
-    app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
-   });
-  }
-  await configurePruning(page);
-  await page.evaluate(async()=>{
-   await repo.putAutoBackup({backupId:'older-generation',createdAt:'2026-10-31T00:00:00Z',snapshot:{older:true}});
-   const remove=IDBObjectStore.prototype.delete;
-   IDBObjectStore.prototype.delete=function(key){
-    const request=remove.call(this,key);
-    if(key==='older-generation')request.addEventListener('success',()=>{
-     const hold=()=>{this.get(key).onsuccess=hold};
-     hold();
-     window.pruningHeld=true;
-    });
-    return request;
-   };
-   void app.runAutoBackupCheck('2026-11-12T00:01:00Z');
-  });
-  await page.waitForFunction(()=>window.pruningHeld===true);
-  await stop();page=await open();
-  const ids=()=>page.evaluate(async()=>(await repo.listAutoBackups()).map(copy=>copy.backupId).sort());
-  assert.deepEqual(await ids(),[retained.created,'older-generation'].sort(),'earlier deletion committed, active deletion rolled back');
-  await configurePruning(page);
-  const cleanup=await page.evaluate(()=>app.runAutoBackupCheck('2026-11-12T00:02:00Z'));
-  assert.equal(cleanup.reason,'not-due');
-  assert.equal(cleanup.created,false);
-  assert.equal(cleanup.cleanupWarning,undefined);
-  await stop();page=await open();
-  assert.deepEqual(await ids(),[retained.created]);
-  const remaining=await page.evaluate(async id=>Array.from(new Uint8Array(await (await repo.getAutoBackup(id)).archive.arrayBuffer())),retained.created);
-  assert.deepEqual(remaining,retained.bytes);
 
  }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
 });
