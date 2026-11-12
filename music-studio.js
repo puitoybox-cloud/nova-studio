@@ -1917,7 +1917,15 @@
       const histories={exports:sourceHistories.exports.map(remapHistory),imports:sourceHistories.imports.map(remapHistory)};
       const preservedRecordings=sourceJournals.filter(j=>j.preservation==='observed-v1').length;
       if(options.previewOnly){guard(true);archiveTransfer.preview={file,projectCount:manifest.projects.length,assetCount:expected.length,preservedRecordings,size:file.size,settingsIncluded:true,capacity};requestPaint();return{ok:true,preview:archiveTransfer.preview}}
+      const archiveHashes=projects.length?await longWavDigest(file,guard):[];
+      for(const [index,project] of projects.entries()){
+        const source=manifest.projects[index];
+        (project.productionHistory??=[]).push({id:uuid(),type:'archive-restore',createdAt:project.updatedAt,
+          archiveSize:file.size,archiveHashes,sourceProjectId:source.projectId,
+          sourceRevision:source.revision,projectId:project.projectId});
+      }
       const settings=options.settings===false?null:preserveRestoreSettings(manifest.settings);
+      let changedAfterCommit=false;
       guard(true);
       try{
         await target.restoreLongArchive(projects,records,settings,guard,baselineSettings,histories,restoredJournals);
@@ -1925,7 +1933,13 @@
         // All Archive stores commit together. A restored project or history
         // has a fresh ID unique to this attempt, including when read via the old repository.
         const matches=await (async()=>{
-          if(projects.length)return JSON.stringify(await target.get(projects[0].projectId))===JSON.stringify(projects[0]);
+          if(projects.length){
+            const saved=await target.get(projects[0].projectId);
+            const receipt=projects[0].productionHistory.at(-1);
+            const found=saved?.productionHistory?.some(event=>JSON.stringify(event)===JSON.stringify(receipt));
+            changedAfterCommit=Boolean(found)&&JSON.stringify(saved)!==JSON.stringify(projects[0]);
+            return found;
+          }
           for(const [entries,list] of [[histories.exports,()=>target.listMidiHistory()],[histories.imports,()=>target.listMidiImportHistory()]]){
             if(entries.length)return (await list()).some(row=>JSON.stringify(row)===JSON.stringify(entries[0]));
           }
@@ -1936,6 +1950,7 @@
       // A completed transaction cannot be rolled back by a later cancellation
       // or repository switch. Keep its receipt, but never publish into a new UI.
       committedResult={projects,preservedRecordings};guard(true);
+      if(changedAfterCommit)throw Error('archive-project-changed-after-commit');
       state.projects=[...state.projects,...projects];if(options.settings!==false){state.settings=preserveRestoreSettings(manifest.settings);state.settingsDraft=clone(state.settings)}archiveTransfer.preview=null;configureAutosave();
       await loadMidiHistory();await loadMidiImportHistory();await vocalDiscoverRecovery();
       notice('元ファイル・プロジェクト・設定の復元が完了しました。既存曲は保持しています。'+(preservedRecordings?'破損・欠落を保持した未完了録音 '+preservedRecordings+' 件は、音声修復できたものではありません。':''),'success');
@@ -2203,7 +2218,7 @@
       if(frames<=m.consumed)throw Error('vocal-journal-no-valid-unsaved-audio');
       const remaining=frames-m.consumed,header=pcmEncodeWav({sampleRate:m.rate,channels:[[0]]}).slice(0,44),v=new DataView(header);v.setUint32(4,36+remaining*2,true);v.setUint32(40,remaining*2,true);
       const wav=await vocalCapturedWav(new Blob([header,...pieces],{type:'audio/wav'}),guard);guard();
-      const template={...wav,name:'Recovered-'+m.id+'.wav',captureMime:'audio/wav',startTick:m.startTick,latencyMs:m.latencyMs,...(m.recordingPlan?{recordingPlan:clone(m.recordingPlan)}:{}),...(m.cycle?{cycle:clone(m.cycle)}:{})};
+      const template={...wav,name:'Recovered-'+m.id+'.wav',recovered:true,captureMime:'audio/wav',startTick:m.startTick,latencyMs:m.latencyMs,...(m.recordingPlan?{recordingPlan:clone(m.recordingPlan)}:{}),...(m.cycle?{cycle:clone(m.cycle)}:{})};
       const pending=m.takeFrames?await vocalCapturedTakes(wav,m.takeFrames,m.recordingPlan.cycles,template,guard):[template];
       if(m.takeFrames)for(let i=0;i<pending.length;i++)pending[i].cycle.index=1+m.consumed/m.takeFrames+i;
       Object.assign(vocal,{projectId:p.projectId,target,baseline,journalId:m.id,journalConsumed:m.consumed,journalExpectedNext:m.next,journalRetain:Boolean(damage||frames!==m.frames),pendingQueue:pending.slice(1),pending:pending[0],phase:'pending'});
@@ -2228,7 +2243,7 @@
         }
         if(!buffer)throw Error('vocal-encoded-tail-salvage-unavailable-source-retained');
       }guard();const wav=vocalDecodedWav(buffer);
-      Object.assign(vocal,{projectId:p.projectId,target,baseline,journalId:m.id,journalConsumed:0,journalExpectedNext:m.next,journalRetain:true,pendingQueue:[],pending:{...wav,name:(dropped?'Recovered-prefix-':'Recovered-')+m.id+'.wav',captureMime:m.encoding,startTick:m.startTick,latencyMs:m.latencyMs,recordingPlan:m.recordingPlan,...(m.cycle?{cycle:clone(m.cycle)}:{})},phase:'pending'});
+      Object.assign(vocal,{projectId:p.projectId,target,baseline,journalId:m.id,journalConsumed:0,journalExpectedNext:m.next,journalRetain:true,pendingQueue:[],pending:{...wav,name:(dropped?'Recovered-prefix-':'Recovered-')+m.id+'.wav',recovered:true,captureMime:m.encoding,startTick:m.startTick,latencyMs:m.latencyMs,recordingPlan:m.recordingPlan,...(m.cycle?{cycle:clone(m.cycle)}:{})},phase:'pending'});
       const result=await vocalSave();if(result.ok){result.warning=dropped?'vocal-encoded-prefix-only-source-retained':'vocal-encoded-completeness-unverified-source-retained';result.excludedTailChunks=dropped;vocal.message='デコードできた音声を保存しました。圧縮音声全体の完全性は確認できないため、元データを保持しました。必要なら退避できます。'+(dropped?'末尾 '+dropped+' チャンクを除いた部分復旧です。':'')}await vocalDiscoverRecovery();return result;
     }catch(e){vocal.phase='error';vocal.message='互換録音を復旧できません（元データは保持）：'+e.message;return{ok:false,error:e.message}}finally{await context?.close?.().catch(()=>{});requestPaint()}
   }
@@ -2373,9 +2388,18 @@
     const guard=()=>{if(repository!==target||token!==vocal.generation||vocal.pending!==take||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-save-conflict')};
     vocal.phase='saving';requestPaint();try{guard();const hashes=await longWavDigest(take.blob,guard),p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('vocal-storage-conflict');
       const assetId=uuid(),asset={id:assetId,name:take.name,size:take.blob.size,frames:take.frames,sampleRate:take.sampleRate,channels:take.channels,hashes,vocalTake:{format:'nova-vocal-take-v1',recordedAt:now(),...(take.cycle?{cycle:clone(take.cycle)}:{}),...(take.recordingPlan?{recordingPlan:clone(take.recordingPlan)}:{}),captureMime:take.captureMime,clippedSamples:take.clipped,waveform:take.waveform,cursor:0,edits:[{first:0,end:take.frames,gainDb:0,startTick:take.startTick,latencyMs:take.latencyMs}]}};
-      vocalHistory(asset);const updated=clone(p);updated.longWavAssets=[...(updated.longWavAssets||[]),asset];updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'vocal-editor');if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
-      await confirmProjectWrite(target,updated,()=>target.putLongWav(updated,{id:assetId,blob:take.blob,hashes,...(vocal.journalId?{journalId:vocal.journalId,journalConsumed:vocal.journalConsumed||0,journalFrames:take.frames,journalExpectedNext:vocal.journalExpectedNext,journalComplete:!vocal.pendingQueue?.length&&!vocal.journalRetain}: {})},baseline,guard));
-      try{guard()}catch(error){
+      vocalHistory(asset);const updated=clone(p);updated.longWavAssets=[...(updated.longWavAssets||[]),asset];updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'vocal-editor');
+      const recovery=take.recovered?{id:uuid(),type:'recording-recovery',createdAt:updated.updatedAt,
+        projectId:id,journalId:vocal.journalId,journalConsumed:vocal.journalConsumed||0,
+        journalNext:vocal.journalExpectedNext,assetId,frames:take.frames,wavHashes:hashes,
+        editId:updated.songVersions.edits.at(-1).id}:null;
+      if(recovery)(updated.productionHistory??=[]).push(recovery);
+      if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
+      const saved=await confirmProjectWrite(target,updated,()=>target.putLongWav(updated,{id:assetId,blob:take.blob,hashes,...(vocal.journalId?{journalId:vocal.journalId,journalConsumed:vocal.journalConsumed||0,journalFrames:take.frames,journalExpectedNext:vocal.journalExpectedNext,journalComplete:!vocal.pendingQueue?.length&&!vocal.journalRetain}: {})},baseline,guard),recovery);
+      try{
+        guard();
+        if(saved!==updated)throw Error('vocal-project-changed-after-commit');
+      }catch(error){
         if(vocal.generation===token&&vocal.pending===take){
           vocal.baseline=JSON.stringify(updated);
           vocal.journalConsumed=(vocal.journalConsumed||0)+take.frames;
@@ -4327,14 +4351,18 @@
     midiSaveQueue=result.catch(()=>{});
     return result;
   }
-  async function confirmProjectWrite(target, project, write) {
+  async function confirmProjectWrite(target, project, write, receipt) {
     try {
       await write();
     } catch (error) {
-      // Only the exact attempted revision, including its history, confirms a commit.
       const saved = await target.get(project.projectId).catch(() => null);
-      if (JSON.stringify(saved) !== JSON.stringify(project)) throw error;
+      if (JSON.stringify(saved) === JSON.stringify(project)) return project;
+      // A unique receipt written atomically with the change also proves commit
+      // when another writer has already advanced the saved revision.
+      if (receipt && saved?.productionHistory?.some(event=>JSON.stringify(event)===JSON.stringify(receipt))) return saved;
+      throw error;
     }
+    return project;
   }
   async function saveMidiEditorSnapshot(session,target,options={}){const aiPending=root.MusicStudioAIAssistantPanel?.hasPending?.(session?.projectId)===true;if(!session?.dirty&&!aiPending&&!root.MusicStudioEditor?.projectSectionsPending?.(session))return{ok:true,skipped:true};try{const project=await target.get(session.projectId);if(repository!==target)throw Error('midi-repository-changed');if(!project)throw Error('保存対象のプロジェクトが見つかりません。');const sectionSnapshot=root.MusicStudioEditor.projectSectionsSnapshot?.(session),sectionSaved=root.MusicStudioEditor.projectSectionsSavedSnapshot?.(session);if(sectionSaved&&JSON.stringify(sectionSaved)!==JSON.stringify({present:Object.hasOwn(project,'sections'),items:Object.hasOwn(project,'sections')?project.sections:[]}))throw Error('project-sections-changed-before-save');const harmony=clone(session.songHarmony),harmonyChanged=root.MusicStudioEditor.songHarmonyPending?.(session);if(harmonyChanged&&JSON.stringify(session.savedSongHarmony)!==JSON.stringify({key:project.musicalSettings?.key??null,chordProgressions:project.chordProgressions||[]}))throw Error('project-harmony-changed-before-save');const bpm=Number(session.midiData.tempo),revision=(project.revision||1)+1,aiWorkspace=root.MusicStudioAIAssistantPanel?.workspaceForSave?.(project,revision),updated={...project,musicalSettings:{...project.musicalSettings,bpm,...(harmonyChanged?{key:harmony.key}:{})},...(harmonyChanged?{chordProgressions:clone(harmony.chordProgressions)}:{}),midiData:root.MusicStudioEditor.clone(session.midiData),revision,updatedAt:now(),...(aiWorkspace?{aiWorkspace}:{})};if(sectionSnapshot){if(sectionSnapshot.present)updated.sections=clone(sectionSnapshot.items);else delete updated.sections;}automaticEditRecord(project,updated);const checked=validateProject(updated);if(!checked.valid)throw Error(checked.errors.join(' '));const guard=()=>{if(repository!==target)throw Error('midi-repository-changed')};
     await confirmProjectWrite(target, updated, async () => {

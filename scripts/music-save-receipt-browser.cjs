@@ -48,7 +48,7 @@ async function saveEditorEntry(entry, project) {
 
 const editorEntries=['manualSave','timerAutosave','midiEditorSave','periodicAutosave'];
 
-test('real IndexedDB reconciles lost save notifications and preserves competing writes across SIGKILL',{timeout:180000},async()=>{
+test('real IndexedDB reconciles lost save notifications and preserves competing writes across SIGKILL',{timeout:240000},async()=>{
  const script=fs.readFileSync('music-studio.js');
  const server=http.createServer((req,res)=>{if(req.url==='/music-studio.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});res.end(script)}else{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body></body></html>')}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -199,9 +199,13 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const special={live,competingCheckpoint,adopted:adopted.project,withMaterial,undone:undone.project,redone:redone.project,material:material.material};
 
    const archive=await app.createLongWavArchive();
+   const archiveHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await archive.arrayBuffer())),
+    byte=>byte.toString(16).padStart(2,'0')).join('');
    const restore=repo.restoreLongArchive;
    repo.restoreLongArchive=async(...args)=>{
     await restore(...args);
+    const [project]=args[0];
+    await repo.put({...project,revision:project.revision+1,productionNotes:'Competing Archive edit'});
     throw Error('Injected loss of Archive notification after IndexedDB commit');
    };
    const preview=await app.previewLongWavArchive(archive);
@@ -213,8 +217,8 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    if((await app.restorePreviewedArchive()).error!=='archive-preview-required')
     throw Error('Committed Archive still offered a retry');
    const restoredProject=await repo.get(restored.projects[0].projectId);
-   if(JSON.stringify(restoredProject)!==JSON.stringify(restored.projects[0]))
-    throw Error('Archive result differs from the committed project');
+   if(!restored.viewRefreshPending||restoredProject.productionNotes!=='Competing Archive edit')
+    throw Error('Archive recovery hid a competing edit');
    const fork=repo.compareAndFork.bind(repo);
    let forkWrites=0;
    repo.compareAndFork=async(...args)=>{
@@ -228,7 +232,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const duplicate=await app.duplicateProject(id);
    if(!duplicate.ok||!duplicate.committed||forkWrites!==2)
     throw Error(duplicate.error||'Lost fork notification triggered another write');
-   return {before,formProject,saved,special,source,restored:restoredProject,finished:finished.project,duplicate:duplicate.project};
+   return {before,formProject,saved,special,source,archiveHash,archiveSize:archive.size,restored:restoredProject,finished:finished.project,duplicate:duplicate.project};
   });
   assert.equal(receipts.formProject.revision,receipts.before.revision+1);
   assert.equal(receipts.saved.revision,receipts.formProject.revision+1);
@@ -279,6 +283,16 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   assert.deepEqual(projects.find(project=>project.projectId===receipts.source.projectId),receipts.source);
   assert.deepEqual(projects.find(project=>project.projectId===receipts.restored.projectId),receipts.restored);
   assert.deepEqual(projects.find(project=>project.projectId===receipts.finished.projectId),receipts.finished);
+  const restoreEvent=receipts.restored.productionHistory.at(-1);
+  assert.equal(restoreEvent.type,'archive-restore');
+  assert.equal(restoreEvent.projectId,receipts.restored.projectId);
+  assert.equal(restoreEvent.sourceProjectId,receipts.source.projectId);
+  assert.equal(restoreEvent.sourceRevision,receipts.source.revision);
+  assert.equal(restoreEvent.archiveSize,receipts.archiveSize);
+  assert.deepEqual(restoreEvent.archiveHashes,[receipts.archiveHash]);
+  assert.equal(receipts.restored.productionHistory.filter(event=>event.id===restoreEvent.id).length,1);
+  assert.ok(projects.filter(project=>project.projectId!==restoreEvent.projectId)
+   .every(project=>!project.productionHistory.some(event=>event.id===restoreEvent.id)));
   const duplicate=projects.find(project=>project.projectId===receipts.duplicate.projectId);
   assert.deepEqual(duplicate,receipts.duplicate);
   assert.deepEqual(duplicate.productionHistory.slice(0,-1),receipts.source.productionHistory);
@@ -381,5 +395,63 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    if(entry==='midiEditorSave')assert.ok(saved.midiData.tracks.some(track=>track.notes.some(note=>note.pitch===72)));
    else assert.equal(saved.productionNotes,'Retried '+entry);
   }
+  const journalId='recovery-receipt-pcm';
+  const recording=await editorPage.evaluate(async({id,journalId})=>{
+   const app=MusicStudio,repo=app.indexedDbRepository();
+   app.setRepository(repo);
+   await app.refresh();
+   const before=await repo.get(id);
+   await repo.createVocalJournal({id:journalId,format:'nova-vocal-journal-v1',owner:id,rate:48000,
+    next:0,frames:0,consumed:0,startTick:0,latencyMs:0,closed:false,updatedAt:Date.now()});
+   const samples=new Uint8Array([1,0,2,0,3,0,4,0]);
+   const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),
+    byte=>byte.toString(16).padStart(2,'0')).join('');
+   await repo.appendVocalJournal(journalId,0,samples.buffer,[await hash(samples)]);
+   await repo.sealVocalJournal(journalId,await repo.getVocalJournal(journalId));
+   const put=repo.putLongWav;
+   repo.putLongWav=async(...args)=>{
+    await put(...args);
+    const [project]=args;
+    await repo.put({...project,revision:project.revision+1,productionNotes:'Competing recording edit'});
+    throw Error('Injected loss of recording recovery notification');
+   };
+   const result=await app.vocalRecoverJournal(journalId);
+   if(!result.ok||!result.committed||!result.refreshPending)throw Error(result.error||'Recording receipt lost');
+   const wav=await repo.getLongWav(result.assetId);
+   return {before,assetId:result.assetId,bytes:[...new Uint8Array(await wav.blob.slice(44).arrayBuffer())],
+    wavHash:await hash(await wav.blob.arrayBuffer())};
+  },{id:receipts.source.projectId,journalId});
+  assert.deepEqual(recording.bytes,[1,0,2,0,3,0,4,0]);
+  await stop('SIGKILL');
+  browser=await launch();
+  const recordingPage=await browser.newPage();
+  await recordingPage.goto(origin);
+  await recordingPage.addScriptTag({url:origin+'/music-studio.js'});
+  await recordingPage.waitForFunction(()=>MusicStudio.state.loaded===true);
+  const recovery=await recordingPage.evaluate(async({id,journalId})=>{
+   const app=MusicStudio,repo=app.indexedDbRepository();
+   const retry=await app.vocalRecoverJournal(journalId);
+   return {retry,project:await repo.get(id),projects:await repo.list(),journal:await repo.getVocalJournal(journalId)};
+  },{id:receipts.source.projectId,journalId});
+  assert.equal(recovery.retry.ok,false);
+  assert.equal(recovery.journal,undefined);
+  assert.equal(recovery.project.productionNotes,'Competing recording edit');
+  const events=recovery.project.productionHistory.filter(event=>event.type==='recording-recovery');
+  assert.equal(events.length,1);
+  const [event]=events;
+  assert.equal(event.projectId,recovery.project.projectId);
+  assert.equal(event.journalId,journalId);
+  assert.equal(event.journalConsumed,0);
+  assert.equal(event.journalNext,1);
+  assert.equal(event.assetId,recording.assetId);
+  assert.equal(event.frames,4);
+  assert.deepEqual(event.wavHashes,[recording.wavHash]);
+  const {edits:recoveryEdits,sessions,days}=recovery.project.songVersions;
+  assert.equal(recoveryEdits.at(-1).id,event.editId);
+  assert.equal(recoveryEdits.at(-1).sessionId,sessionId);
+  assert.deepEqual(sessions,recording.before.songVersions.sessions);
+  assert.deepEqual(days,recording.before.songVersions.days);
+  assert.ok(recovery.projects.filter(project=>project.projectId!==event.projectId)
+   .every(project=>!project.productionHistory.some(row=>row.id===event.id)));
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });

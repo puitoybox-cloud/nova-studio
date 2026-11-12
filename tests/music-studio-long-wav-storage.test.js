@@ -1,4 +1,4 @@
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto}=require('node:crypto');
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{webcrypto,createHash}=require('node:crypto');
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
 function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{delete:k=>req(()=>map.delete(k)),get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set((n==='projects'?v.projectId:v.id||v.backupId||v.projectId),structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=(n==='projects'?v.projectId:v.id||v.backupId||v.projectId);if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
@@ -745,7 +745,7 @@ test('journal deletion transaction guard preserves metadata and every chunk afte
  assert.equal(await fresh.getVocalJournal(m.id),undefined);assert.equal(await fresh.getVocalJournalChunk(m.id+':0'),undefined);
 });
 
-for(const mode of ['repository-switch','cancel','lost-notification','switch-and-lose-notification'])test(`archive ${mode} after durable commit reports saved receipt and preserves the current view`,async()=>{
+for(const mode of ['repository-switch','cancel','lost-notification','switch-and-lose-notification','competing-edit-and-lost-notification'])test(`archive ${mode} after durable commit reports saved receipt and preserves the current view`,async()=>{
  const src=await setup();
  assert.equal((await src.a.productionSessionSave(src.p.projectId,'start','Archive session')).ok,true);
  assert.equal((await src.a.productionDaySave(src.p.projectId,'2026-11-05','Archive daily note')).ok,true);
@@ -753,7 +753,7 @@ for(const mode of ['repository-switch','cancel','lost-notification','switch-and-
  const original=await src.repo.get(src.p.projectId),archive=await src.a.createLongWavArchive();
  const dst=await setup(),native=dst.repo.restoreLongArchive,view=JSON.stringify(dst.a.state.projects);
  const other=dst.a.memoryRepository([dst.a.makeProject({projectId:'other',projectName:'Other repository'})]);
- dst.repo.restoreLongArchive=async(...args)=>{const result=await native(...args);if(mode.includes('switch'))dst.a.setRepository(other);else if(mode==='cancel')dst.a.cancelArchiveTransfer();if(mode.includes('notification'))throw Error('lost-notification');return result};
+ dst.repo.restoreLongArchive=async(...args)=>{const result=await native(...args);if(mode.includes('switch'))dst.a.setRepository(other);else if(mode==='cancel')dst.a.cancelArchiveTransfer();if(mode.startsWith('competing')){const [project]=args[0];await dst.repo.put({...project,revision:project.revision+1,productionNotes:'Concurrent restore edit'})}if(mode.includes('notification'))throw Error('lost-notification');return result};
  assert.equal((await dst.a.previewLongWavArchive(archive)).ok,true);
  const result=await dst.a.restorePreviewedArchive();
  assert.equal(result.ok,true,'a completed transaction must never be reported as failed');
@@ -770,6 +770,15 @@ for(const mode of ['repository-switch','cancel','lost-notification','switch-and-
  const restored=await repo.get(result.projects[0].projectId);
  assert.equal(JSON.stringify(restored.songVersions),JSON.stringify(original.songVersions),'session and daily links survive durable restore');
  assert.equal(restored.songVersions.days[0].sessionId,restored.songVersions.sessions[0].id);
+ const receipt=restored.productionHistory.at(-1);
+ assert.equal(receipt.type,'archive-restore');
+ assert.equal(receipt.sourceProjectId,original.projectId);
+ assert.equal(receipt.sourceRevision,original.revision);
+ assert.equal(receipt.projectId,restored.projectId);
+ assert.equal(receipt.archiveSize,archive.size);
+ assert.deepEqual(receipt.archiveHashes,[createHash('sha256').update(Buffer.from(await archive.arrayBuffer())).digest('hex')]);
+ assert.equal(restored.productionHistory.filter(event=>event.id===receipt.id).length,1);
+ if(mode.startsWith('competing'))assert.equal(restored.productionNotes,'Concurrent restore edit');
  const binary=await fresh.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);
  assert.equal(Buffer.compare(Buffer.from(await binary.arrayBuffer()),Buffer.from(await wav(100).arrayBuffer())),0);
 });
