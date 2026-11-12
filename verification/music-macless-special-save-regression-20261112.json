@@ -31,7 +31,7 @@
     "tests/music-studio-vocal-recording.test.js": "fd3bfc5e2eebb96050df3204c9a607925ae9e1acad6a7702db97a56b6af2511c"
   },
   "runtimeHashes": {
-    "music-studio.js": "a6f9114ecc0f4f53c44cb8d5c7cded043c95cdc21f6875c2a07bf265d45f60eb"
+    "music-studio.js": "b97ff4ec5847179d0ac384fce251ecd005bcc5d1f6a2d84e30b8930999232658"
   },
-  "testedRuntimeHead": "11768cd3a4a08d47258033d4320c8dc78b45e449"
+  "testedRuntimeHead": "e1dfcb5f242450a698f6fc361d5ca8c5cf6333e5"
 }
