@@ -1,5 +1,5 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),{spawn}=require('node:child_process'),{once}=require('node:events'),{chromium}=require('playwright');
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),{spawn}=require('node:child_process'),{once}=require('node:events'),{createHash}=require('node:crypto'),{chromium}=require('playwright');
 test('journal and backup deletions roll back on SIGKILL and commit completely on retry',{timeout:120000},async()=>{
  const source=fs.readFileSync('music-studio.js'),server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?source:'<!doctype html><body>Delete recovery</body>')});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const origin='http://127.0.0.1:'+server.address().port,dir=fs.mkdtempSync('/tmp/nova-delete-crash-');let child,connection;
@@ -89,11 +89,29 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   },Array.from(downloaded));
   await page.waitForFunction(()=>window.archiveHeld===true);await stop();page=await open();
   assert.deepEqual(await snapshot(page),archiveBaseline,'Archive SIGKILL must roll back every store including WAV, journal, settings and history');
-  const receipt=await page.evaluate(async bytes=>{app.state.projects=await repo.list();return app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]))},Array.from(downloaded));
-  assert.equal(receipt.ok,true,receipt.error);assert.equal(receipt.committed,true);assert.equal(receipt.projects.length,1);
-  const restoredId=receipt.projects[0].projectId,afterRestore=await snapshot(page);
+  await page.evaluate(async bytes=>{
+   await app.refresh();
+   const write=repo.restoreLongArchive;
+   repo.restoreLongArchive=async(...args)=>{
+    await write(...args);
+    window.archiveCommittedId=args[0][0].projectId;
+    await new Promise(()=>{});
+   };
+   void app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]));
+  },Array.from(downloaded));
+  await page.waitForFunction(()=>Boolean(window.archiveCommittedId));
+  const restoredId=await page.evaluate(()=>window.archiveCommittedId);
+  await stop();page=await open();
+  const afterRestore=await snapshot(page);
   assert.equal(afterRestore.projects.length,2);assert.equal(afterRestore.longWavBinaries.length,2);assert.equal(afterRestore.vocalJournals.length,2);assert.equal(afterRestore.vocalJournalChunks.length,2);
   const src=afterRestore.projects.find(p=>p.projectId==='archive-source'),copy=afterRestore.projects.find(p=>p.projectId===restoredId);
+  const restoreEvent=copy.productionHistory.at(-1);
+  assert.equal(restoreEvent.type,'archive-restore');
+  assert.equal(restoreEvent.projectId,restoredId);
+  assert.equal(restoreEvent.sourceProjectId,src.projectId);
+  assert.equal(restoreEvent.sourceRevision,src.revision);
+  assert.deepEqual(restoreEvent.archiveHashes,[createHash('sha256').update(downloaded).digest('hex')]);
+  assert.equal(afterRestore.projects.flatMap(p=>p.productionHistory||[]).filter(e=>e.id===restoreEvent.id).length,1);
   assert.deepEqual(copy.songVersions,src.songVersions,'Archive must retain session, daily and automatic edit links');
   assert.equal(copy.songVersions.days[0].sessionId,copy.songVersions.sessions[0].id);
   assert.deepEqual(afterRestore.longWavBinaries[0].blob||afterRestore.longWavBinaries[0].parts,afterRestore.longWavBinaries[1].blob||afterRestore.longWavBinaries[1].parts);
@@ -184,8 +202,47 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    repo.getAutoBackup=read;
    app.setRepository(repo);
    await app.loadAutoBackups();
+   const beforeJson=await repo.list(), settingsBeforeJson=await repo.getSettings();
+   const add=IDBObjectStore.prototype.add;
+   let switchedDuringWrite=false;
+   IDBObjectStore.prototype.add=function(value,...args){
+    const request=add.call(this,value,...args);
+    if(value.projectId===jsonSong.projectId)request.addEventListener('success',()=>{
+     switchedDuringWrite=true;
+     app.setRepository(other);
+    });
+    return request;
+   };
+   try{
+    const aborted=await app.restoreAutoBackup('json-generation');
+    if(!switchedDuringWrite||aborted?.committed||JSON.stringify(await repo.list())!==JSON.stringify(beforeJson)||
+      JSON.stringify(await repo.getSettings())!==JSON.stringify(settingsBeforeJson))throw Error('JSON switch did not roll back atomically');
+   }finally{IDBObjectStore.prototype.add=add}
+   app.setRepository(repo);
+   await app.loadAutoBackups();
+   const writeJson=repo.restoreMetadata;
+   let jsonWrites=0;
+   repo.restoreMetadata=async(...args)=>{
+    jsonWrites++;
+    await writeJson(...args);
+    app.setRepository(other);
+    throw Error('JSON notification lost after commit and destination switch');
+   };
    const json=await app.restoreAutoBackup('json-generation');
-   if(!json||json.failed||!(await repo.list()).some(project=>project.projectName==='JSON generation'))throw Error('JSON generation restore failed');
+   repo.restoreMetadata=writeJson;
+   if(!json?.committed||!json.staleAfterCommit||jsonWrites!==1||json.added!==1||
+     (await other.list()).length||await other.getSettings())throw Error('JSON retry lost its commit or wrote to the new destination');
+   const jsonProject=await repo.get(jsonSong.projectId);
+   const event=jsonProject.productionHistory.at(-1);
+   const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(snapshot)))),
+     byte=>byte.toString(16).padStart(2,'0')).join('');
+   if(event.type!=='json-restore'||event.sourceProjectId!==jsonSong.projectId||event.projectId!==jsonProject.projectId||
+     event.sourceRevision!==jsonSong.revision||event.jsonHashes.length!==1||event.jsonHashes[0]!==hash||
+     JSON.stringify(jsonProject.songVersions)!==JSON.stringify(jsonSong.songVersions)||
+     (await repo.list()).flatMap(project=>project.productionHistory||[]).filter(row=>row.id===event.id).length!==1)
+    throw Error('JSON generation provenance mismatch');
+   app.setRepository(repo);
+   await app.loadAutoBackups();
    for(const restoreSettings of [false,true]){
     const destinationSettings={...app.defaultSettings(),acceptanceMarker:'destination'};
     await repo.putSettings(destinationSettings);
@@ -226,6 +283,68 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   const generationState=await snapshot(page);
   await stop();page=await open();
   assert.deepEqual(await snapshot(page),generationState,'restored generations and histories must survive restart');
+
+  // Interrupt split-take recovery after take 1 is durable, before the
+  // application starts take 2. Restart must resume at the stored PCM offset.
+  await page.evaluate(async()=>{
+   const song=app.makeProject({projectId:'split-recovery',projectName:'Split recovery'});
+   await repo.put(song);
+   await app.refresh();
+   const id='split-journal',takeFrames=800;
+   const recordingPlan={format:'nova-vocal-recording-plan-v1',startTick:0,endTick:96,transportTick:0,
+    latencyMs:0,countInBeats:0,cycles:3,gapless:true,accompaniment:false};
+   const cycle={format:'nova-vocal-cycle-v1',groupId:'split-group',index:1,total:3,startTick:0,endTick:96,countInBeats:0};
+   await repo.createVocalJournal({id,owner:song.projectId,format:'nova-vocal-journal-v1',rate:8000,
+    startTick:0,latencyMs:0,next:0,frames:0,consumed:0,updatedAt:1,closed:false,takeFrames,recordingPlan,cycle});
+   const samples=Int16Array.from({length:2000},(_,i)=>i-1000);
+   const digest=await crypto.subtle.digest('SHA-256',samples);
+   const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+   await repo.appendVocalJournal(id,0,samples.buffer,[hash]);
+   await repo.sealVocalJournal(id,await repo.getVocalJournal(id));
+   const write=repo.putLongWav;
+   repo.putLongWav=async(...args)=>{
+    await write(...args);
+    window.firstSplitCommitted=true;
+    await new Promise(()=>{});
+   };
+   void app.vocalRecoverJournal(id);
+  });
+  await page.waitForFunction(()=>window.firstSplitCommitted===true);
+  await stop();page=await open();
+  const split=await page.evaluate(async()=>{
+   await app.refresh();
+   const id='split-journal',songId='split-recovery';
+   const consumed=(await repo.getVocalJournal(id)).consumed;
+   const retried=await app.vocalRecoverJournal(id);
+   if(!retried.ok)throw Error(retried.error);
+   const song=await repo.get(songId);
+   const events=song.productionHistory.filter(event=>event.type==='recording-recovery');
+   const takes=await Promise.all(song.longWavAssets.map(async asset=>{
+    const wav=await app.pcmLoadLongWav(songId,asset.id);
+    const pcm=Array.from(new Int16Array(await wav.slice(44).arrayBuffer()));
+    const digest=await crypto.subtle.digest('SHA-256',await wav.arrayBuffer());
+    const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+    return {assetId:asset.id,index:asset.vocalTake.cycle.index,pcm,hash};
+   }));
+   return {consumed,events,takes,editIds:song.songVersions.edits.map(edit=>edit.id),
+    journalRemoved:!(await repo.getVocalJournal(id)),repeatRejected:!(await app.vocalRecoverJournal(id)).ok};
+  });
+  assert.equal(split.consumed,800);
+  assert.equal(split.journalRemoved,true);
+  assert.equal(split.repeatRejected,true);
+  assert.deepEqual(split.takes.map(take=>take.index),[1,2,3]);
+  assert.deepEqual(split.events.map(event=>event.journalConsumed),[0,800,1600]);
+  assert.equal(new Set(split.events.map(event=>event.id)).size,3);
+  assert.deepEqual(split.takes.flatMap(take=>take.pcm),Array.from({length:2000},(_,i)=>i-1000));
+  for(const [index,event] of split.events.entries()){
+   assert.equal(event.journalId,'split-journal');
+   assert.equal(event.journalNext,1);
+   assert.equal(event.projectId,'split-recovery');
+   assert.equal(event.assetId,split.takes[index].assetId);
+   assert.equal(event.frames,split.takes[index].pcm.length);
+   assert.deepEqual(event.wavHashes,[split.takes[index].hash]);
+   assert.ok(split.editIds.includes(event.editId));
+  }
 
  }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
 });

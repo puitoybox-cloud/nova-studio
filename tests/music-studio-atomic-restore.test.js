@@ -38,3 +38,31 @@ test('legacy external tracks with null channel survive metadata restore without 
  const result=await app.restoreBackup(backup(app,[p]),{settings:false});assert.equal(result.ok,true,result.message);assert.equal((await repo.get(p.projectId)).midiData.tracks[0].channel,null);
  const bad=plain(p);bad.projectId='bad-channel';bad.midiData.tracks[0].channel=0;assert.equal((await app.restoreBackup(backup(app,[bad]),{settings:false})).ok,false);assert.equal(await repo.has('bad-channel'),false);
 });
+
+test('lost JSON restore notification after destination switch confirms the original commit',async()=>{
+ const {app,repo}=load();
+ const original=project(app,'source');
+ await repo.put(original);
+ const other=app.memoryRepository(),write=repo.restoreMetadata;
+ repo.restoreMetadata=async(...args)=>{
+  await write(...args);
+  app.setRepository(other);
+  throw Error('lost-restore-notification');
+ };
+ const result=await app.restoreBackup(backup(app,[original]));
+ assert.equal(result.committed,true);
+ assert.equal(result.staleAfterCommit,true);
+ assert.equal(result.added,1);
+ assert.equal((await other.list()).length,0);
+ assert.equal(await other.getSettings(),null);
+ const saved=await repo.list();
+ assert.equal(saved.length,2);
+ assert.deepEqual(plain(await repo.get(original.projectId)),plain(original));
+ const restored=saved.find(item=>item.projectId!==original.projectId);
+ const receipt=restored.productionHistory.at(-1);
+ assert.equal(receipt.type,'json-restore');
+ assert.equal(receipt.sourceProjectId,original.projectId);
+ assert.equal(receipt.sourceRevision,original.revision);
+ assert.equal(receipt.projectId,restored.projectId);
+ assert.equal(restored.productionHistory.filter(event=>event.id===receipt.id).length,1);
+});
