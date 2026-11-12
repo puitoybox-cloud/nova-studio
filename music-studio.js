@@ -269,9 +269,9 @@
   function versionContent(p){
     const s=versionSnapshot(p);
     for(const field of ['revision','updatedAt','createdAt','projectId',...VERSION_PRESERVED_FIELDS])delete s[field];
-    // Reusable MIDI publication and Archive receipts do not change checkpoint content.
+    // Reusable MIDI publication and restore receipts do not change checkpoint content.
     if(Array.isArray(s.productionHistory)){
-      s.productionHistory=s.productionHistory.filter(e=>!['material-capture','material-import','archive-restore'].includes(e?.type));
+      s.productionHistory=s.productionHistory.filter(e=>!['material-capture','material-import','archive-restore','json-restore'].includes(e?.type));
       if(!s.productionHistory.length)delete s.productionHistory;
     }
     if(s.aiWorkspace){delete s.aiWorkspace.baseRevision;delete s.aiWorkspace.updatedAt}
@@ -562,12 +562,15 @@
     function overlay(raw,safe){const result=raw&&typeof raw==='object'&&!Array.isArray(raw)?clone(raw):{};for(const key of Object.keys(safe))Object.defineProperty(result,key,{value:safe[key]&&typeof safe[key]==='object'&&!Array.isArray(safe[key])?overlay(raw?.[key],safe[key]):clone(safe[key]),enumerable:true,writable:true,configurable:true});return result}
     return overlay(input,normalizeSettings(input));
   }
-  function prepareRestoreProjects(sources,existing){
+  function prepareRestoreProjects(sources,existing,control){
     const used=new Set(existing.map(p=>p.projectId)),items=[];
     for(const source of sources){const incoming=clone(source);if(used.has(incoming.projectId)){
       let candidate;for(let attempt=0;attempt<100;attempt++){candidate=uuid();if(!used.has(candidate))break;candidate=null}if(!candidate)throw Error('restore-id-collision');
       incoming.projectId=candidate;incoming.projectName=`${incoming.projectName}（復元）`;incoming.createdAt=now();if(incoming.aiWorkspace)incoming.aiWorkspace=rebindAIWorkspace(incoming.aiWorkspace,incoming.projectId,incoming.revision);
-    }versionRebind(incoming,incoming.projectId!==source.projectId?'（復元）':'');used.add(incoming.projectId);incoming.updatedAt=now();items.push(incoming)}return items;
+    }versionRebind(incoming,incoming.projectId!==source.projectId?'（復元）':'');used.add(incoming.projectId);incoming.updatedAt=now();
+      control?.recordProject?.(source,incoming);
+      items.push(incoming)
+    }return items;
   }
   function assertRestoreCurrent(control){const reason=control?.reason?.();if(reason)throw Error(reason)}
   let restoreOperation=null;
@@ -576,7 +579,7 @@
   function memoryRepository(initial=[]){
     const records=new Map(initial.map(item=>[item.projectId,clone(item)]));
     const automaticBackups=new Map();let settings=null;
-    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()]),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);preserveFinishedSnapshots(records.get(item.projectId),value);records.set(item.projectId,value);return clone(value)},async put(item){const value=clone(item);preserveFinishedSnapshots(records.get(value.projectId),value);records.set(value.projectId,value);return clone(value)},async compareAndDelete(id,baseline,guard){guard?.();if(JSON.stringify(records.get(id))!==baseline)throw Error('project-delete-conflict');records.delete(id)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async getAutoBackup(id){const value=automaticBackups.get(id);return value&&clone(value)},async putAutoBackup(value,guard){guard?.();automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id,guard){guard?.();automaticBackups.delete(id)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async commitMidiImport(item,history,sourceId,baseline,guard){const value=clone(item),entry=clone(history);guard?.();if(entry.projectId!==value.projectId||records.has(value.projectId)||(sourceId&&JSON.stringify(records.get(sourceId))!==baseline)||midiImportHistory.has(entry.id))throw Error('midi-import-storage-conflict');records.set(value.projectId,value);midiImportHistory.set(entry.id,entry);return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
+    const midiHistory=new Map(),midiImportHistory=new Map();return{kind:'memory',async restoreMetadata(sources,incomingSettings,control){assertRestoreCurrent(control);const items=prepareRestoreProjects(sources,[...records.values()],control),staged=new Map(records),nextSettings=incomingSettings?clone(incomingSettings):settings;for(const item of items)staged.set(item.projectId,clone(item));assertRestoreCurrent(control);records.clear();for(const [id,item] of staged)records.set(id,item);settings=nextSettings;return{projects:items,settings:incomingSettings}},async list(){return [...records.values()].map(clone)},async get(id){return records.has(id)?clone(records.get(id)):null},async compareAndFork(item,sourceId,baseline,guard){guard?.();if(records.has(item.projectId)||JSON.stringify(records.get(sourceId))!==baseline)throw Error('finished-fork-storage-conflict');records.set(item.projectId,clone(item));return clone(item)},async compareAndPut(item,baseline,guard){guard?.();if(JSON.stringify(records.get(item.projectId))!==baseline)throw Error('stale-lyrics-assignment-storage');const value=clone(item);preserveFinishedSnapshots(records.get(item.projectId),value);records.set(item.projectId,value);return clone(value)},async put(item){const value=clone(item);preserveFinishedSnapshots(records.get(value.projectId),value);records.set(value.projectId,value);return clone(value)},async compareAndDelete(id,baseline,guard){guard?.();if(JSON.stringify(records.get(id))!==baseline)throw Error('project-delete-conflict');records.delete(id)},async delete(id){records.delete(id)},async has(id){return records.has(id)},async getSettings(){return settings?clone(settings):null},async putSettings(value){settings=clone(value);return clone(settings)},async listAutoBackups(){return [...automaticBackups.values()].map(clone)},async getAutoBackup(id){const value=automaticBackups.get(id);return value&&clone(value)},async putAutoBackup(value,guard){guard?.();automaticBackups.set(value.backupId,clone(value));return clone(value)},async deleteAutoBackup(id,guard){guard?.();automaticBackups.delete(id)},async listMidiHistory(){return [...midiHistory.values()].map(clone)},async putMidiHistory(value){midiHistory.set(value.id,clone(value));return clone(value)},async commitMidiImport(item,history,sourceId,baseline,guard){const value=clone(item),entry=clone(history);guard?.();if(entry.projectId!==value.projectId||records.has(value.projectId)||(sourceId&&JSON.stringify(records.get(sourceId))!==baseline)||midiImportHistory.has(entry.id))throw Error('midi-import-storage-conflict');records.set(value.projectId,value);midiImportHistory.set(entry.id,entry);return clone(value)},async listMidiImportHistory(){return [...midiImportHistory.values()].map(clone)},async putMidiImportHistory(value){midiImportHistory.set(value.id,clone(value));return clone(value)}};
   }
   function indexedDbRepository(){
     if(!root.indexedDB)return memoryRepository();
@@ -615,7 +618,7 @@
         const watch=request=>{request.onerror=()=>abort(request.error||Error('restore-request-error'));request.onsuccess=()=>{try{assertRestoreCurrent(control)}catch(error){abort(error)}};return request};
         const existing=watch(transaction.objectStore(STORE_NAME).getAll());
         existing.onsuccess=()=>{try{
-          assertRestoreCurrent(control);items=prepareRestoreProjects(sources,existing.result);
+          assertRestoreCurrent(control);items=prepareRestoreProjects(sources,existing.result,control);
           for(const item of items)watch(transaction.objectStore(STORE_NAME).add(item));
           if(settings)watch(transaction.objectStore(SETTINGS_STORE_NAME).put(clone(settings)));
         }catch(error){abort(error)}};
@@ -758,7 +761,7 @@
       },async deleteAutoBackup(id,guard){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id),guard)},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
-  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next){invalidateArchiveTransfer();state.autoBackups=[]}repository=next}
+  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next){invalidateArchiveTransfer();state.backupPreview=null;state.autoBackups=[]}repository=next}
   async function loadSettings(){let stored=null;try{stored=await repository.getSettings?.()}catch(error){console.warn('Music Studio settings could not be read',error)}const normalized=preserveRestoreSettings(stored||{});state.settings=normalized;state.settingsDraft=clone(normalized);if(!stored)try{await repository.putSettings?.(normalized)}catch(error){console.warn('Music Studio default settings could not be saved',error)}return normalized}
   async function refresh(){const target=repository,baseline=JSON.stringify(state.projects),projects=await target.list();if(repository!==target||JSON.stringify(state.projects)!==baseline)return{ok:false,stale:true};state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint();return{ok:true}}
   let noticeTimer=null;
@@ -4577,11 +4580,20 @@
   async function restoreBackup(value,{settings=true,projects=true,safetyCopy=false,signal,binaryMode='metadata-only',binaryResolver,generationAdapter}={}){
     cancelBackupRestore();
     const op={active:true,abort:null},target=repository;restoreOperation=op;
-    let baseline,snapshot,committedResult,binaryPreflight;
+    let baseline,snapshot,committedResult,binaryPreflight,jsonHashes;
+    const receipts=[];
     try{baseline=JSON.stringify(value);snapshot=clone(value)}catch(error){return{ok:false,added:0,skipped:0,failed:1,message:'Invalid Backup JSON.'}}
     const preflight=restorePreflight(snapshot,{settings,projects});
     const reason=()=>!op.active||signal?.aborted?'restore-cancelled':repository!==target?'restore-stale-repository':JSON.stringify(value)!==baseline?'restore-stale-input':null;
-    const control={reason,get abort(){return op.abort},set abort(value){op.abort=value}};
+    const control={reason,get abort(){return op.abort},set abort(value){op.abort=value},
+      recordProject(source,project){
+        const receipt={id:uuid(),type:'json-restore',createdAt:project.updatedAt,
+          sourceProjectId:source.projectId,sourceRevision:source.revision,projectId:project.projectId,
+          ...(jsonHashes?{jsonHashes}:{})};
+        (project.productionHistory??=[]).push(receipt);
+        receipts.push({project,receipt});
+      }
+    };
     const cancel=()=>{op.active=false;op.abort?.()};signal?.addEventListener?.('abort',cancel,{once:true});
     try{
       if(!preflight.ok)return{ok:false,added:0,skipped:0,failed:new Set(preflight.errors.map(e=>e.match(/^Project \d+/)?.[0]||'Backup')).size,preflight,message:preflight.errors.join(' ')};
@@ -4606,7 +4618,25 @@
         if(safety?.ok===false)throw Error('restore-safety-copy-failed: '+(safety.error||'backup-unavailable'));
       }
       const incomingSettings=settings&&snapshot.settings?preserveRestoreSettings({...snapshot.settings,id:SETTINGS_ID,createdAt:state.settings?.createdAt||snapshot.settings.createdAt,updatedAt:now()}):null;
-      const committed=binaryPreflight?.dependencies.length?await root.MusicStudioBinaryBoundary.commit(binaryPreflight,{adapter:generationAdapter,settings:incomingSettings,control}):await target.restoreMetadata(projects?snapshot.projects:[],incomingSettings,control);committedResult=committed;
+      if(projects&&snapshot.projects.length&&root.crypto?.subtle){
+        jsonHashes=await longWavDigest(new Blob([baseline]),()=>assertRestoreCurrent(control));
+      }
+      const usesGenerationAdapter=Boolean(binaryPreflight?.dependencies.length);
+      let committed;
+      try{
+        committed=usesGenerationAdapter
+          ?await root.MusicStudioBinaryBoundary.commit(binaryPreflight,{adapter:generationAdapter,settings:incomingSettings,control})
+          :await target.restoreMetadata(projects?snapshot.projects:[],incomingSettings,control);
+      }catch(error){
+        // Read from the original destination even if the UI has already switched.
+        // These fresh receipts were written in the same transaction as the settings.
+        if(usesGenerationAdapter||!receipts.length)throw error;
+        const saved=await Promise.all(receipts.map(({project})=>target.get(project.projectId))).catch(()=>null);
+        if(!saved?.every((project,index)=>project?.productionHistory?.some(event=>
+          JSON.stringify(event)===JSON.stringify(receipts[index].receipt))))throw error;
+        committed={projects:saved,settings:incomingSettings};
+      }
+      committedResult=committed;
       // A completed transaction cannot be undone by a later Cancel. Report its commit honestly.
       const staleAfterCommit=Boolean(reason());
       if(!staleAfterCommit){
@@ -4617,7 +4647,7 @@
     }catch(error){if(committedResult)return{ok:true,committed:true,atomicMetadata:true,outcome:binaryMode==='complete'?'complete':'metadata-only',binaryPreflight,viewRefreshPending:true,added:committedResult.projects.length,skipped:0,failed:0,settingsRestored:Boolean(committedResult.settings),preflight,message:'Metadata Restore committed; refresh pending: '+error.message};return{ok:false,committed:false,outcome:'blocked',binaryPreflight,added:0,skipped:0,failed:1,cancelled:!op.active||signal?.aborted===true,preflight,message:error.message}}
     finally{signal?.removeEventListener?.('abort',cancel);op.abort=null;if(restoreOperation===op)restoreOperation=null}
   }
-  async function restorePreviewedBackup(){const value=state.backupPreview;if(!value)return;if((root.confirm?.('表示中のバックアップを安全に追加・統合しますか？\n既存データは削除しません。')??false)===false)return;const settings=root.document?.querySelector('#restoreSettings')?.checked!==false,projects=root.document?.querySelector('#restoreProjects')?.checked!==false;const result=await restoreBackup(value,{settings,projects,safetyCopy:true});if(state.backupPreview===value)state.backupPreview=null;notice(result.message,result.cancelled?'info':result.failed?'error':'success')}
+  async function restorePreviewedBackup(){const value=state.backupPreview;if(!value)return;if((root.confirm?.('表示中のバックアップを安全に追加・統合しますか？\n既存データは削除しません。')??false)===false)return;const settings=root.document?.querySelector('#restoreSettings')?.checked!==false,projects=root.document?.querySelector('#restoreProjects')?.checked!==false;const result=await restoreBackup(value,{settings,projects,safetyCopy:true});if(result.committed&&state.backupPreview===value)state.backupPreview=null;notice(result.message,result.cancelled?'info':result.failed?'error':'success')}
   function clearBackupPreview(){cancelBackupRestore();state.backupPreview=null;requestPaint()}
   function backupSignature(histories,journals=[]){return JSON.stringify({journals,settings:state.settings?.updatedAt||'',projects:state.projects.map(project=>[project.projectId,project.revision,project.updatedAt]),midiHistories:histories})}
   function byteLabel(bytes){if(bytes<1024)return`${bytes} B`;if(bytes<1024*1024)return`${(bytes/1024).toFixed(1)} KB`;return`${(bytes/1024/1024).toFixed(1)} MB`}
