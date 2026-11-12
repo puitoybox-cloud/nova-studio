@@ -20,3 +20,16 @@
 | 設定・制作モード・Session／日次記録・完成 WAV | 設定読込／保存／復元、制作モード保存、Session 開始／終了、日次保存、完成版保存／配布の各入口。既存の Session 終了と日次書き込みの中断ケース | 設定・制作モード・完成 WAV の全境界と、Session／日次／編集／復元履歴 ID の突き合わせ |
 
 入口の関数別基準は [SAVE_ENTRANCE_CONTEXT_20261105.md](SAVE_ENTRANCE_CONTEXT_20261105.md) および [RECOVERY_LYRICS_ACCEPTANCE_20261104.md](RECOVERY_LYRICS_ACCEPTANCE_20261104.md)。Chromium シナリオは `scripts/music-save-receipt-browser.cjs`、`scripts/music-delete-crash-browser.cjs`、`scripts/music-indexeddb-browser-persistence.cjs`、`scripts/music-pcm-journal-crash-browser.js`、`scripts/music-encoded-journal-crash-browser.js` にある。両要件は open、正式受入は 68/135（50.37%）。
+
+## PR #626 の後続検証
+
+| 入口 | 後続 Chromium シナリオ | 完了判定に残る証拠 |
+| --- | --- | --- |
+| 定期タイマー自動保存 | 入力待ちタイマーを解除し、15秒間隔の定期タイマーで保存。コミット前の強制終了、同一プロファイルで再起動して再試行し、改訂番号と編集 ID・Session・日次履歴を照合する。 | 定期タイマーのコミット後通知喪失と保存先切替・競合の組合せ。 |
+| Archive 書き出し・復元 | WAV 読み出し直後の強制終了、保存先切替での拒否、実ダウンロードの全バイト比較、出力後の再起動、同じ実ファイルからの復元を連続実行する。 | ダウンロード通知直後でファイル保存前の強制終了と、復元設定の有無・保存先切替・確定済み復元の再試行。 |
+| 録音ジャーナル | 既存の PCM／エンコード録音中断シナリオと Archive 内のバイト照合。 | 追記・シール・復旧の通知喪失、切替・競合、復旧 WAV と復元イベント ID の対応。 |
+| バックアップ世代整理 | 最初の削除コミット後、次の削除トランザクションを強制終了。再起動後の期限前の再試行で、バックアップを新規作成せず、残った古い世代だけを整理し、新しい世代の Archive バイトを照合する。 | 世代からの JSON／Archive 復元と複数世代削除中の保存先切替。 |
+| Checkpoint・採用・Undo/Redo | 基準までの中断・再起動・再試行および履歴照合を使用する。 | 通知喪失と競合が重なる場合の再試行、同一チェックポイント／カーソルの照合。 |
+| 完成版複製・MIDI 素材 | 基準までの完成版複製の中断・再試行、MIDI 素材の保存・読込・曲作成の中断を使用する。 | 複製元変更と保存先切替の組合せ、MIDI 素材 ID と制作イベント ID の一対一対応を含む通知喪失・再試行。 |
+
+後続シナリオは GitHub Actions の Music IndexedDB browser persistence で実行する。正式受入の更新には、上表と基準表に残る条件の証拠が必要。

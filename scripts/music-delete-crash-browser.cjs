@@ -22,6 +22,7 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   // Exercise the production Archive route against physical IndexedDB. Hold the
   // real add transaction only after a request succeeds, then kill the process.
   const archiveBytes=await page.evaluate(async()=>{
+   await repo.putSettings(app.defaultSettings('2026-11-12T00:00:00.000Z'));
    const p=app.makeProject({projectId:'archive-source',projectName:'Protected Archive'});await repo.put(p);app.state.projects=[p];
    for(const [method,args] of [['productionSessionSave',[p.projectId,'start','Archive session']],['productionDaySave',[p.projectId,'2026-11-05','Archive day']]]){const r=await app[method](...args);if(!r.ok)throw Error(r.error)}
    const b=new ArrayBuffer(244),v=new DataView(b),tag=(at,text)=>Array.from(text).forEach((c,i)=>v.setUint8(at+i,c.charCodeAt(0)));
@@ -38,13 +39,51 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    try{return Object.fromEntries(await Promise.all(Array.from(db.objectStoreNames).map(async name=>{const rows=await new Promise((resolve,reject)=>{const r=db.transaction(name).objectStore(name).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return[name,await encode(rows)]})))}finally{db.close()}
   })}
   const archiveBaseline=await snapshot(page);
+  await page.evaluate(()=>{
+   const read=repo.getLongWav.bind(repo);
+   repo.getLongWav=async(...args)=>{
+    const record=await read(...args);
+    window.archiveExportRead=true;
+    await new Promise(()=>{});
+    return record;
+   };
+   void app.exportLongWavArchive();
+  });
+  await page.waitForFunction(()=>window.archiveExportRead===true);
+  await stop();page=await open();
+  await page.evaluate(()=>app.refresh());
+  assert.deepEqual(await snapshot(page),archiveBaseline,'interrupted export must leave IndexedDB untouched');
+  const switched=await page.evaluate(async()=>{
+   const read=repo.getLongWav.bind(repo);
+   const other=app.memoryRepository();
+   repo.getLongWav=async(...args)=>{
+    const record=await read(...args);
+    app.setRepository(other);
+    return record;
+   };
+   try{return await app.exportLongWavArchive()}
+   finally{repo.getLongWav=read;app.setRepository(repo)}
+  });
+  assert.equal(switched.ok,false,'stale Archive must not reach the download');
+  await page.evaluate(()=>app.refresh());
+  const downloadReady=page.waitForEvent('download',{timeout:10000});
+  const exported=await page.evaluate(()=>app.exportLongWavArchive());
+  assert.equal(exported.ok,true,exported.error);
+  const download=await downloadReady;
+  const file=dir+'/retried.nova';
+  await download.saveAs(file);
+  const downloaded=fs.readFileSync(file);
+  assert.deepEqual(downloaded,Buffer.from(archiveBytes),'retried real Archive must match the original manifest and binary bytes');
+  await stop();page=await open();
+  assert.deepEqual(await snapshot(page),archiveBaseline,'successful export must leave IndexedDB untouched across restart');
+
   await page.evaluate(bytes=>{
    const original=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(value,...args){const request=original.call(this,value,...args),store=this;if(store.name==='projects')request.addEventListener('success',()=>{const loop=()=>{const q=store.get(value.projectId);q.onsuccess=loop};loop();window.archiveHeld=true});return request};
    window.pendingArchive=app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]));
-  },archiveBytes);
+  },Array.from(downloaded));
   await page.waitForFunction(()=>window.archiveHeld===true);await stop();page=await open();
   assert.deepEqual(await snapshot(page),archiveBaseline,'Archive SIGKILL must roll back every store including WAV, journal, settings and history');
-  const receipt=await page.evaluate(async bytes=>{app.state.projects=await repo.list();return app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]))},archiveBytes);
+  const receipt=await page.evaluate(async bytes=>{app.state.projects=await repo.list();return app.restoreLongWavArchive(new Blob([new Uint8Array(bytes)]))},Array.from(downloaded));
   assert.equal(receipt.ok,true,receipt.error);assert.equal(receipt.committed,true);assert.equal(receipt.projects.length,1);
   const restoredId=receipt.projects[0].projectId,afterRestore=await snapshot(page);
   assert.equal(afterRestore.projects.length,2);assert.equal(afterRestore.longWavBinaries.length,2);assert.equal(afterRestore.vocalJournals.length,2);assert.equal(afterRestore.vocalJournalChunks.length,2);
@@ -80,5 +119,40 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    return {prior:await repo.getAutoBackup(prior.backupId),created:copy.backupId,bytes:Array.from(new Uint8Array(await copy.archive.arrayBuffer()))};
   },retained);
   assert.deepEqual(persisted,retained,'both backup generations must survive restart after the retention conflict');
+  async function configurePruning(page){
+   await page.evaluate(async()=>{
+    await app.refresh();
+    app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
+   });
+  }
+  await configurePruning(page);
+  await page.evaluate(async()=>{
+   await repo.putAutoBackup({backupId:'older-generation',createdAt:'2026-10-31T00:00:00Z',snapshot:{older:true}});
+   const remove=IDBObjectStore.prototype.delete;
+   IDBObjectStore.prototype.delete=function(key){
+    const request=remove.call(this,key);
+    if(key==='older-generation')request.addEventListener('success',()=>{
+     const hold=()=>{this.get(key).onsuccess=hold};
+     hold();
+     window.pruningHeld=true;
+    });
+    return request;
+   };
+   void app.runAutoBackupCheck('2026-11-12T00:01:00Z');
+  });
+  await page.waitForFunction(()=>window.pruningHeld===true);
+  await stop();page=await open();
+  const ids=()=>page.evaluate(async()=>(await repo.listAutoBackups()).map(copy=>copy.backupId).sort());
+  assert.deepEqual(await ids(),[retained.created,'older-generation'].sort(),'earlier deletion committed, active deletion rolled back');
+  await configurePruning(page);
+  const cleanup=await page.evaluate(()=>app.runAutoBackupCheck('2026-11-12T00:02:00Z'));
+  assert.equal(cleanup.reason,'not-due');
+  assert.equal(cleanup.created,false);
+  assert.equal(cleanup.cleanupWarning,undefined);
+  await stop();page=await open();
+  assert.deepEqual(await ids(),[retained.created]);
+  const remaining=await page.evaluate(async id=>Array.from(new Uint8Array(await (await repo.getAutoBackup(id)).archive.arrayBuffer())),retained.created);
+  assert.deepEqual(remaining,retained.bytes);
+
  }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
 });

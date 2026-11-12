@@ -4592,12 +4592,26 @@
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),keep=state.settings.backup.maxCopies;
     const intervalMs=state.settings.backup.intervalHours*3600000;
     const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp);
-    if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline)return{ok:false,created:false,reason:'backup-state-conflict'};
-    if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return{ok:true,created:false,reason:'not-due'};
+    const current=()=>repository===target&&JSON.stringify([state.projects,state.settings])===baseline;
+    const guard=()=>{if(!current()||hasUnsavedChanges()||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)throw Error('backup-state-conflict')};
+    async function prune(generations,{published=false}={}){
+      if(!published&&generations.length<=keep)return;
+      try{
+        guard();
+        for(const old of generations.slice(keep)){guard();await target.deleteAutoBackup?.(old.backupId,guard)}
+        if(current())await loadAutoBackups();else throw Error('backup-state-conflict');
+      }catch(error){console.warn('Music Studio automatic backup cleanup deferred',error);return error.message}
+    }
+    async function skipCreation(reason){
+      const cleanupWarning=await prune(backups);
+      return{ok:true,created:false,reason,...(cleanupWarning?{cleanupWarning,message:'古いバックアップの整理は完了していません。'}:{})};
+    }
+    if(!current())return{ok:false,created:false,reason:'backup-state-conflict'};
+    if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return skipCreation('not-due');
     // The persisted histories can change without a project revision or a refreshed UI list.
     let histories;try{histories=await readArchiveMidiHistories(target)}catch(error){return{ok:false,created:false,reason:error.message}}
     let journals;try{journals=await target.listVocalJournals?.()||[]}catch(error){return{ok:false,created:false,reason:error.message}}
-    const signature=backupSignature(histories,journals);if(latest?.signature===signature)return{ok:true,created:false,reason:'unchanged'};
+    const signature=backupSignature(histories,journals);if(latest?.signature===signature)return skipCreation('unchanged');
     const needsArchive=state.projects.some(hasArchiveFiles)||histories.exports.length>0||histories.imports.length>0||journals.length>0;
     let archive;
     if(needsArchive){
@@ -4611,8 +4625,6 @@
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
     const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
-    const current=()=>repository===target&&JSON.stringify([state.projects,state.settings])===baseline;
-    const guard=()=>{if(!current()||hasUnsavedChanges()||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)throw Error('backup-state-conflict')};
     try{guard();if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record,guard)}catch(error){
       const saved=await Promise.resolve().then(()=>target.getAutoBackup?.(record.backupId)).catch(()=>null);
       if(!saved||saved.archive?.size!==archive?.size||JSON.stringify({...saved,archive:undefined})!==JSON.stringify({...record,archive:undefined})){
@@ -4620,14 +4632,7 @@
         return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'};
       }
     }
-    // Cleanup follows confirmed publication and uses the original retention policy.
-    let cleanupWarning;
-    try{
-      if(!current())throw Error('backup-state-conflict');
-      const all=[record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-      for(const old of all.slice(keep)){guard();await target.deleteAutoBackup?.(old.backupId,guard)}
-      if(current())await loadAutoBackups();else throw Error('backup-state-conflict');
-    }catch(error){cleanupWarning=error.message;console.warn('Music Studio automatic backup cleanup deferred',error)}
+    const cleanupWarning=await prune([record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')),{published:true});
     return{ok:true,created:true,backup:record,...(cleanupWarning?{cleanupWarning}:{}),message:cleanupWarning?'自動バックアップを保存しました。古いコピーの整理は完了していません。':'期限を迎えたため、端末内に自動バックアップを作成しました。'};
   }
   async function checkAutoBackupNow(){const result=await runAutoBackupCheck();notice(result.message||(result.reason==='disabled'?'自動バックアップは無効です。':result.reason==='not-due'?'次の作成期限にはまだ達していません。':'内容に変更がないため重複作成しませんでした。'),result.ok?'info':'error')}
