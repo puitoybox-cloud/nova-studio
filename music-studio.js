@@ -4443,7 +4443,7 @@
       const timestamp=now(),projectId=uuid(),duplicate={...clone(source),projectId,projectName:`${source.projectName}（コピー）`,revision:1,createdAt:timestamp,updatedAt:timestamp,...(source.aiWorkspace?{aiWorkspace:rebindAIWorkspace(source.aiWorkspace,projectId,1)}:{})};
       versionRebind(duplicate,'（コピー）');duplicate.productionHistory.push({id:uuid(),type:'project-duplicate',createdAt:timestamp,sourceProjectId:id,sourceRevision:source.revision});
       if(!validateProject(duplicate).valid)throw Error('duplicate-checkpoint-invalid');if(typeof target.compareAndFork!=='function')throw Error('atomic-project-duplicate-required');
-      await target.compareAndFork(duplicate,id,baseline,guard);committed=duplicate;
+      await confirmProjectWrite(target,duplicate,()=>target.compareAndFork(duplicate,id,baseline,guard));committed=duplicate;
       const deferred=()=>({ok:true,committed:true,refreshPending:true,project:duplicate});
       if(!contextCurrent())return deferred();
       const projects=await target.list();if(!contextCurrent())return deferred();

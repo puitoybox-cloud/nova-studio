@@ -35,3 +35,24 @@ for(const phase of ['commit','refresh'])for(const mode of ['view','dirty','midi'
  else repo.list=async()=>{change();return list()};
  const result=await app.duplicateProject('source');assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.ok(await repo.get(result.project.projectId));assert.equal(JSON.stringify(await repo.get('source')),JSON.stringify(p));if(expected)assert.equal(JSON.stringify(app.state.projects),expected);assert.equal(appRoot.location.hash,mode==='route'?'#music-studio/current':'#music-studio');if(mode==='dirty')assert.equal(app.state.dirty,true);if(mode==='midi')assert.equal(app.state.midiEditor.sentinel,'new editor');
 });
+
+test('duplicate reconciles its exact stored event after losing the commit notification',async()=>{
+ const {app,repo}=setup(),source=app.makeProject({projectId:'source',projectName:'Original'});
+ await repo.put(source);
+ app.state.projects=[source];
+ const fork=repo.compareAndFork.bind(repo);
+ repo.compareAndFork=async(...args)=>{
+  await fork(...args);
+  throw Error('lost commit notification');
+ };
+ const receipt=await app.duplicateProject(source.projectId);
+ assert.equal(receipt.ok,true,receipt.error);
+ assert.equal(receipt.committed,true);
+ assert.equal((await repo.list()).length,2);
+ const copy=await repo.get(receipt.project.projectId);
+ assert.equal(JSON.stringify(copy),JSON.stringify(receipt.project));
+ assert.equal(copy.productionHistory.length,1);
+ assert.equal(copy.productionHistory[0].sourceProjectId,source.projectId);
+ assert.equal(copy.productionHistory[0].sourceRevision,source.revision);
+ assert.equal(JSON.stringify(await repo.get(source.projectId)),JSON.stringify(source));
+});

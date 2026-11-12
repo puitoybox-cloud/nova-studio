@@ -133,7 +133,20 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const restoredProject=await repo.get(restored.projects[0].projectId);
    if(JSON.stringify(restoredProject)!==JSON.stringify(restored.projects[0]))
     throw Error('Archive result differs from the committed project');
-   return {before,formProject,saved,source:await repo.get(id),restored:restoredProject};
+   const fork=repo.compareAndFork.bind(repo);
+   let forkWrites=0;
+   repo.compareAndFork=async(...args)=>{
+    forkWrites++;
+    await fork(...args);
+    throw Error('Injected loss of fork notification after IndexedDB commit');
+   };
+   const source=await repo.get(id);
+   const finished=await app.finishedOpen(id,checkpoint.project.songVersions.checkpoints.at(-1).id);
+   if(!finished.ok)throw Error(finished.error);
+   const duplicate=await app.duplicateProject(id);
+   if(!duplicate.ok||!duplicate.committed||forkWrites!==2)
+    throw Error(duplicate.error||'Lost fork notification triggered another write');
+   return {before,formProject,saved,source,restored:restoredProject,finished:finished.project,duplicate:duplicate.project};
   });
   assert.equal(receipts.formProject.revision,receipts.before.revision+1);
   assert.equal(receipts.saved.revision,receipts.formProject.revision+1);
@@ -150,9 +163,20 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   await reopened.addScriptTag({url:origin+'/music-studio.js'});
   await reopened.waitForFunction(()=>MusicStudio.state.loaded===true);
   const projects=await reopened.evaluate(()=>MusicStudio.indexedDbRepository().list());
-  assert.equal(projects.length,2);
+  assert.equal(projects.length,4);
   assert.deepEqual(projects.find(project=>project.projectId===receipts.source.projectId),receipts.source);
   assert.deepEqual(projects.find(project=>project.projectId===receipts.restored.projectId),receipts.restored);
+  assert.deepEqual(projects.find(project=>project.projectId===receipts.finished.projectId),receipts.finished);
+  const duplicate=projects.find(project=>project.projectId===receipts.duplicate.projectId);
+  assert.deepEqual(duplicate,receipts.duplicate);
+  assert.deepEqual(duplicate.productionHistory.slice(0,-1),receipts.source.productionHistory);
+  const duplicateEvent=duplicate.productionHistory.at(-1);
+  assert.equal(duplicateEvent.type,'project-duplicate');
+  assert.equal(duplicateEvent.sourceProjectId,receipts.source.projectId);
+  assert.equal(duplicateEvent.sourceRevision,receipts.source.revision);
+  assert.equal(duplicate.productionHistory.filter(event=>event.id===duplicateEvent.id).length,1);
+  assert.equal(receipts.finished.songVersions.fork.sourceProjectId,receipts.source.projectId);
+  assert.equal(receipts.finished.songVersions.fork.checkpointId,receipts.source.songVersions.checkpoints[0].id);
   for(const project of projects){
    const ledger=project.songVersions;
    assert.equal(ledger.checkpoints.length,1);
@@ -162,5 +186,41 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    assert.equal(ledger.days[0].sessionId,sessionId);
    assert.deepEqual(ledger.edits.map(edit=>edit.id),receipts.source.songVersions.edits.map(edit=>edit.id));
   }
+  await reopened.evaluate(({id,checkpointId})=>{
+   const app=MusicStudio;
+   const add=IDBObjectStore.prototype.add;
+   IDBObjectStore.prototype.add=function(value,...args){
+    const request=add.call(this,value,...args);
+    if(value?.songVersions?.fork?.checkpointId===checkpointId)request.addEventListener('success',()=>{
+     const keepAlive=()=>{this.get(value.projectId).onsuccess=keepAlive};
+     keepAlive();
+     window.finishedForkPending=true;
+    });
+    return request;
+   };
+   void app.finishedOpen(id,checkpointId);
+  },{id:receipts.source.projectId,checkpointId:receipts.finished.songVersions.fork.checkpointId});
+  await reopened.waitForFunction(()=>window.finishedForkPending===true,{},{timeout:10000});
+  await stop('SIGKILL');
+  browser=await launch();
+  const retriedPage=await browser.newPage();
+  await retriedPage.goto(origin);
+  await retriedPage.addScriptTag({url:origin+'/music-studio.js'});
+  await retriedPage.waitForFunction(()=>MusicStudio.state.loaded===true);
+  const afterCrash=await retriedPage.evaluate(()=>MusicStudio.indexedDbRepository().list());
+  assert.deepEqual(afterCrash,projects,'interrupted fork must preserve every saved project and history');
+  const retry=await retriedPage.evaluate(({id,checkpointId})=>MusicStudio.finishedOpen(id,checkpointId),{
+   id:receipts.source.projectId,checkpointId:receipts.finished.songVersions.fork.checkpointId
+  });
+  assert.equal(retry.ok,true,retry.error);
+  const afterRetry=await retriedPage.evaluate(()=>MusicStudio.indexedDbRepository().list());
+  assert.deepEqual(afterRetry.filter(project=>project.projectId!==retry.project.projectId),projects);
+  assert.equal(afterRetry.length,projects.length+1);
+  const savedFork=afterRetry.find(project=>project.projectId===retry.project.projectId);
+  assert.deepEqual(savedFork,retry.project);
+  assert.equal(savedFork.songVersions.fork.sourceProjectId,receipts.source.projectId);
+  assert.equal(savedFork.songVersions.fork.checkpointId,receipts.finished.songVersions.fork.checkpointId);
+  assert.deepEqual(savedFork.songVersions.sessions.map(session=>session.id),receipts.source.songVersions.sessions.map(session=>session.id));
+  assert.ok(savedFork.songVersions.sessions.at(-1).endedAt);
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });
