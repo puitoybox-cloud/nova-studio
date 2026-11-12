@@ -130,7 +130,10 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
     throw Error(restored.error||'Archive receipt lost');
    if((await app.restorePreviewedArchive()).error!=='archive-preview-required')
     throw Error('Committed Archive still offered a retry');
-   return {before,formProject,saved,source:day.project,restored:restored.projects[0]};
+   const restoredProject=await repo.get(restored.projects[0].projectId);
+   if(JSON.stringify(restoredProject)!==JSON.stringify(restored.projects[0]))
+    throw Error('Archive result differs from the committed project');
+   return {before,formProject,saved,source:await repo.get(id),restored:restoredProject};
   });
   assert.equal(receipts.formProject.revision,receipts.before.revision+1);
   assert.equal(receipts.saved.revision,receipts.formProject.revision+1);
