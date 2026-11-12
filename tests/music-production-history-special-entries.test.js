@@ -235,3 +235,34 @@ test('checkpoint adoption and Undo/Redo record the acting session while preservi
  assert.equal(imported.ok,true,imported.message);
  assert.equal(snapshot(imported.project.songVersions.edits),snapshot(saved.songVersions.edits));
 });
+
+
+test('checkpoint Undo/Redo preserves MIDI materials and their linked production events',async()=>{
+ const {app:a,repo}=setup();
+ a.state.loaded=true;
+ assert.equal((await a.productionSessionSave('history-song','start','Session')).ok,true);
+ assert.equal((await a.productionDaySave('history-song','2026-11-12','Daily record')).ok,true);
+ const checkpoint=await a.versionSave('history-song','Original notes');
+ assert.equal(checkpoint.ok,true,checkpoint.error);
+ await change(repo,a,p=>p.productionNotes='Updated notes');
+ assert.equal(a.versionPreview('history-song',checkpoint.project.songVersions.checkpoints[0].id,['notes']).ok,true);
+ assert.equal((await a.versionApply('history-song')).ok,true);
+ const capture=await a.materialCapture('history-song',{name:'Reusable MIDI'});
+ assert.equal(capture.ok,true,capture.error);
+ const bundle=JSON.stringify({format:'nova-midi-library-v1',materials:[capture.material]});
+ const imported=await a.materialImport('history-song',{size:bundle.length,text:async()=>bundle});
+ assert.equal(imported.ok,true,imported.error);
+ const before=await repo.get('history-song');
+ for(const [direction,notes] of [[-1,'Updated notes'],[1,'before']]){
+  const step=await a.versionUndoRedo('history-song',direction);
+  assert.equal(step.ok,true,step.error);
+  const saved=await repo.get('history-song');
+  assert.equal(saved.productionNotes,notes);
+  for(const field of ['materialLibrary','productionHistory'])assert.deepEqual(snapshot(saved[field]),snapshot(before[field]));
+  for(const field of ['days','sessions'])assert.deepEqual(snapshot(saved.songVersions[field]),snapshot(before.songVersions[field]));
+ }
+ const [captured,loaded]=before.productionHistory.slice(-2);
+ assert.equal(captured.materialId,before.materialLibrary[0].id);
+ assert.equal(snapshot(loaded.materialIds),snapshot([before.materialLibrary[1].id]));
+ assert.deepEqual([captured.editId,loaded.editId],Array.from(before.songVersions.edits.slice(-2),e=>e.id));
+});

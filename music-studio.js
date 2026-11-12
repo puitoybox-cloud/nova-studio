@@ -265,7 +265,15 @@
   }
   function versionLedger(p){versionValidate(p);return clone(p.songVersions||{format:VERSION_FORMAT,checkpoints:[],operations:[],path:[],cursor:0})}
   function versionRebind(p,suffix=''){for(const s of versionSnapshots(p)){s.projectId=p.projectId;if(suffix)s.projectName+=suffix;if(s.aiWorkspace)s.aiWorkspace=rebindAIWorkspace(s.aiWorkspace,s.projectId,s.revision)}return p}
-  function versionContent(p){const s=versionSnapshot(p);delete s.revision;delete s.updatedAt;delete s.createdAt;delete s.projectId;delete s.finalExportHistory;delete s.finalExportDeliveries;if(s.aiWorkspace){delete s.aiWorkspace.baseRevision;delete s.aiWorkspace.updatedAt}return JSON.stringify(s)}
+  const VERSION_PRESERVED_FIELDS=['finalExportHistory','finalExportDeliveries','materialLibrary'];
+  function versionContent(p){
+    const s=versionSnapshot(p);
+    for(const field of ['revision','updatedAt','createdAt','projectId',...VERSION_PRESERVED_FIELDS])delete s[field];
+    // Publishing reusable MIDI is independent of the checkpoint's musical changes.
+    if(Array.isArray(s.productionHistory))s.productionHistory=s.productionHistory.filter(e=>!['material-capture','material-import'].includes(e?.type));
+    if(s.aiWorkspace){delete s.aiWorkspace.baseRevision;delete s.aiWorkspace.updatedAt}
+    return JSON.stringify(s);
+  }
   function versionTouch(p){p.revision++;p.updatedAt=now();if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,p.projectId,p.revision);return p}
   function automaticEditRecord(previous,next,source='midi-editor'){
     if(!Object.hasOwn(AUTOMATIC_EDIT_SOURCES,source)||!previous||!next||previous.projectId!==next.projectId||!Number.isSafeInteger(next.revision)||next.revision<=previous.revision)throw Error('production-edit-input-invalid');
@@ -360,7 +368,10 @@
     const v=versionLedger(p),index=direction<0?v.cursor-1:v.cursor;if(index<0||index>=v.path.length)throw Error('checkpoint-history-boundary');
     const op=v.operations.find(o=>o.id===v.path[index]),expected=direction<0?op.after:op.before;
     if(versionContent(p)!==versionContent(expected))throw Error('checkpoint-history-conflict');
-    const s=direction<0?op.before:op.after,next={...clone(s),revision:p.revision,createdAt:p.createdAt,songVersions:v};for(const field of ['finalExportHistory','finalExportDeliveries']){if(p[field]!==undefined)next[field]=clone(p[field]);else delete next[field]}v.cursor+=direction;versionTouch(next);automaticEditRecord(p,next,'checkpoint-history');versionValidate(next);return next;
+    const s=direction<0?op.before:op.after,next={...clone(s),revision:p.revision,createdAt:p.createdAt,songVersions:v};for(const field of [...VERSION_PRESERVED_FIELDS,'productionHistory']){
+      if(p[field]!==undefined)next[field]=clone(p[field]);else delete next[field];
+    }
+    v.cursor+=direction;versionTouch(next);automaticEditRecord(p,next,'checkpoint-history');versionValidate(next);return next;
   }
   function versionCancel(){finalStop();versionPanel.generation++;versionPanel.abort?.(Error('checkpoint-cancelled'));versionPanel.preview=null;versionPanel.draft=null;versionPanel.message='Checkpoint（操作を取り消しました）';requestPaint()}
   async function versionCommit(id,change,options={}){
@@ -5373,7 +5384,8 @@
       for(const f of ['tempoMap','timeSignatureMap','keySignatureMap'])if(midi[f])midi[f]=midi[f].filter(e=>e.tick===0||e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick===0?0:e.tick-start}));
       if(midi.markers)midi.markers=midi.markers.filter(e=>e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick-start}));
       const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:p.musicalSettings.bpm,key:p.musicalSettings.key,createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
-      next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
+      automaticEditRecord(p,next,'material-library');
+      next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id,editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
       const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
       try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,material:item}}
       state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
@@ -5383,7 +5395,10 @@
   async function materialImport(owner,file){
     if(materialSaving||workspaceBusy())return{ok:false,error:'material-busy'};const target=repository,p=state.projects.find(p=>p.projectId===owner),baseline=JSON.stringify(p);materialSaving=true;
     try{if(!p||!file||!Number.isSafeInteger(file.size)||file.size>2097152)throw Error('material-file-invalid');const text=await file.text();if(text.length>2097152)throw Error('material-library-capacity');const bundle=JSON.parse(text);if(bundle.format!=='nova-midi-library-v1')throw Error('material-file-format');materialValidate(bundle.materials);if(!bundle.materials.length)throw Error('material-empty');
-      const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...bundle.materials.map(m=>({...clone(m),id:uuid()}))];materialValidate(next.materialLibrary);next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:bundle.materials.length});automaticEditRecord(p,next,'material-library');if(!validateProject(next).valid)throw Error('material-project-invalid');
+      const imported=bundle.materials.map(m=>({...clone(m),id:uuid()}));
+      const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...imported];materialValidate(next.materialLibrary);
+      automaticEditRecord(p,next,'material-library');
+      next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:imported.length,materialIds:imported.map(m=>m.id),editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
       const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
       try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length}}
       state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
