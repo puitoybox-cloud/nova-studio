@@ -47,3 +47,18 @@ test('committed material fork retains source and receipt without entering replac
  const result=await a.materialCreate(p.projectId,saved.material.id);assert.equal(result.ok,true);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);assert.deepEqual(a.state.projects.map(p=>p.projectId),['other']);assert.equal(JSON.stringify(await r.get(p.projectId)),before);assert.equal((await other.list()).length,1);
  a.setRepository(r);await a.refresh();const copy=a.state.projects.find(p=>p.projectId===result.project.projectId);assert.equal(copy.productionHistory.at(-1).type,'material-create');assert.equal(copy.productionHistory.at(-1).sourceProjectId,p.projectId);
 });
+
+test('lost MIDI material acknowledgement confirms one material and its session-linked edit',async()=>{
+ const {a,r,p}=await setup();
+ const started=await a.productionSessionSave(p.projectId,'start','Material session');
+ assert.equal(started.ok,true,started.error);
+ const put=r.compareAndPut;
+ r.compareAndPut=async(...args)=>{await put(...args);throw Error('lost acknowledgement')};
+ const result=await a.materialCapture(p.projectId,{name:'Material committed once'});
+ assert.equal(result.ok,true,result.error);
+ const stored=await r.get(p.projectId);
+ assert.equal(stored.materialLibrary.length,1);
+ assert.equal(stored.productionHistory.at(-1).materialId,result.material.id);
+ assert.equal(stored.songVersions.edits.length,1);
+ assert.equal(stored.songVersions.edits[0].sessionId,started.project.songVersions.sessions[0].id);
+});

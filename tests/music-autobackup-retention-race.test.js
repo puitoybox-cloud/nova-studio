@@ -11,3 +11,21 @@ test('unchanged policy prunes only after successful publication',async()=>{const
 test('late backup list from a previous repository cannot replace the current restore choices',async()=>{const{app,repo}=setup();let release;repo.listAutoBackups=()=>new Promise(r=>{release=r});const pending=app.loadAutoBackups();const other=app.memoryRepository();app.setRepository(other);await other.putAutoBackup({backupId:'current',createdAt:'2026-11-04T00:00:00Z'});await app.loadAutoBackups();release([{backupId:'foreign',createdAt:'2026-11-01T00:00:00Z'}]);await pending;assert.equal(app.state.autoBackups[0].backupId,'current')});
 test('late read failure cannot clear current repository backup choices',async()=>{const{app,repo}=setup();let reject;repo.listAutoBackups=()=>new Promise((_,r)=>{reject=r});const pending=app.loadAutoBackups();const other=app.memoryRepository();app.setRepository(other);await other.putAutoBackup({backupId:'current',createdAt:'2026-11-04T00:00:00Z'});await app.loadAutoBackups();reject(Error('old database closed'));await pending;assert.equal(app.state.autoBackups[0].backupId,'current')});
 test('repository switch during final journal read cannot publish a foreign snapshot',async()=>{const{app,repo}=setup();await seed(repo);let reads=0;repo.listVocalJournals=async()=>{if(++reads===2){const other=app.memoryRepository();app.setRepository(other);app.state.projects=[app.makeProject({projectId:'foreign',projectName:'Another repository'})]}return[]};const r=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');assert.equal(r.created,false);assert.equal(r.reason,'backup-state-conflict');assert.equal((await repo.listAutoBackups()).length,1);assert.equal((await repo.listAutoBackups())[0].backupId,'old')});
+
+test('lost backup acknowledgement after destination switch keeps both copies and skips a duplicate on retry',async()=>{
+ const {app,repo}=setup();
+ await seed(repo);
+ const other=app.memoryRepository(),put=repo.putAutoBackup;
+ repo.putAutoBackup=async(...args)=>{
+  await put(...args);
+  app.setRepository(other);
+  throw Error('lost acknowledgement');
+ };
+ const first=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');
+ assert.equal(first.created,true);
+ assert.equal(first.cleanupWarning,'backup-state-conflict');
+ assert.equal((await other.listAutoBackups()).length,0);
+ app.setRepository(repo);
+ assert.equal((await app.runAutoBackupCheck('2026-11-04T00:01:00Z')).reason,'not-due');
+ assert.equal((await repo.listAutoBackups()).length,2);
+});
