@@ -6,6 +6,7 @@ on:
       - 'music-studio.js'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
+      - 'scripts/music-save-receipt-browser.cjs'
       - 'scripts/music-delete-crash-browser.cjs'
       - 'scripts/music-midi-import-atomic-browser.cjs'
       - 'tests/music-studio-final-export.test.js'
@@ -36,7 +37,7 @@ jobs:
       - name: Verify persistent IndexedDB across Chromium restart
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules
-        run: node --test scripts/music-indexeddb-browser-persistence.cjs
+        run: node --test scripts/music-indexeddb-browser-persistence.cjs scripts/music-save-receipt-browser.cjs
       - name: Verify atomic MIDI import rollback and process restart
         env:
           NODE_PATH: /tmp/nova-browser-test/node_modules

@@ -30,7 +30,7 @@ jobs:
       - run: node --test --test-concurrency=2 tests/*.test.js
       - name: Fetch runtime snapshots referenced by acceptance evidence
         run: |
-          python3 -c 'import json; print(*json.load(open("docs/music-studio/MACLESS_REQUIREMENTS_V1.json")).get("historicalRuntimeSnapshots", {}).values(), sep=chr(10))' |
+          python3 -c 'import json; snapshots=json.load(open("docs/music-studio/MACLESS_REQUIREMENTS_V1.json")).get("historicalRuntimeSnapshots", {}); print(*(sha for value in snapshots.values() for sha in ([value] if isinstance(value, str) else value)), sep=chr(10))' |
             while IFS= read -r sha; do
               if [[ -z "$sha" ]]; then continue; fi
               [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1

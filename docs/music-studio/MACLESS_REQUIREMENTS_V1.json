@@ -7,7 +7,10 @@
   "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "historicalRuntimeSnapshots": {
-    "music-studio.js": "6abb49fe63d310a2e1f13fdff5a3717b1221352c"
+    "music-studio.js": [
+      "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
+      "70d536537a71957d68a1e79aeeb3f072b4de9554"
+    ]
   },
   "requirements": [
     {

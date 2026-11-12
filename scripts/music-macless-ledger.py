@@ -10,10 +10,12 @@ def main():
  # Historical runtime digests bind to the reviewed snapshot. Test source
  # digests still bind to this checkout, and CI runs against the PR head.
  historical_runtime={}
- for path,commit in ledger.get('historicalRuntimeSnapshots',{}).items():
-  assert re.fullmatch(r'[0-9a-f]{40}',commit), path
-  blob=subprocess.check_output(['git','show',f'{commit}:{path}'],cwd=ROOT)
-  historical_runtime[path]=hashlib.sha256(blob).hexdigest()
+ for path,commits in ledger.get('historicalRuntimeSnapshots',{}).items():
+  historical_runtime[path]=set()
+  for commit in [commits] if isinstance(commits,str) else commits:
+   assert re.fullmatch(r'[0-9a-f]{40}',commit), path
+   blob=subprocess.check_output(['git','show',f'{commit}:{path}'],cwd=ROOT)
+   historical_runtime[path].add(hashlib.sha256(blob).hexdigest())
  assert len({r['requirement'] for r in rows})==len(rows),'duplicate requirement counted twice'
  assert len(ids)==len(rows) and {r['feature'] for r in rows}==set(range(1,31))
  for row in rows:
@@ -32,7 +34,7 @@ def main():
     assert e['acceptance'] in proof['acceptedCases'],row['id']
     for path,digest in proof['runtimeHashes'].items():
      current=hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
-     assert digest==current or historical_runtime.get(path)==digest, path
+     assert digest==current or digest in historical_runtime.get(path,()), path
  a=[r for r in rows if r['category']=='A']; done=sum(r['status']=='verified' for r in a); counts=Counter(r['category'] for r in rows)
  output=['# Macなし開発・受入台帳 v1','',f"確認日：{ledger['date']}。基準：[PR #{ledger['baselinePR']}](https://github.com/puitoybox-cloud/nova-studio/pull/{ledger['baselinePR']})、HEAD `{ledger['baselineHead']}`。",'',ledger['scope'],'',f"A：総数 **{len(a)}**、証拠付き完了 **{done}**、残数 **{len(a)-done}**、受入確認率 **{100*done/len(a):.2f}%**。B：{counts['B']}。C：{counts['C']}。",'',
  'この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。', '',
