@@ -604,7 +604,13 @@ test('automatic full archive restores project, production history, settings, MID
  await src.repo.putMidiHistory({id:'export',projectId:p.projectId,filename:'export.mid'});await src.repo.putMidiImportHistory({id:'import',projectId:p.projectId,fileName:'import.mid'});
  const result=await src.a.runAutoBackupCheck(backupDay(1));assert.equal(result.created,true,result.reason);
  const dst=fixture(),repo=dst.a.indexedDbRepository();dst.a.setRepository(repo);const r=await dst.a.restoreLongWavArchive(result.backup.archive);assert.equal(r.ok,true,r.error);
- const restored=(await repo.list())[0];for(const key of ['midiData','productionHistory','legacy'])assert.equal(JSON.stringify(restored[key]),JSON.stringify(p[key]),key);
+ const restored=(await repo.list())[0];for(const key of ['midiData','legacy'])assert.equal(JSON.stringify(restored[key]),JSON.stringify(p[key]),key);
+ assert.deepEqual(restored.productionHistory.slice(0,-1),p.productionHistory);
+ const receipt=restored.productionHistory.at(-1);
+ assert.equal(receipt.type,'archive-restore');
+ assert.equal(receipt.sourceProjectId,p.projectId);
+ assert.equal(receipt.projectId,restored.projectId);
+ assert.equal(receipt.archiveSize,result.backup.archive.size);
  assert.equal(JSON.stringify(restored.longWavAssets.map(({id,...rest})=>rest)),JSON.stringify(p.longWavAssets.map(({id,...rest})=>rest)));assert.equal((await repo.getSettings()).backup.intervalHours,1);assert.equal((await repo.listMidiHistory())[0].filename,'export.mid');assert.equal((await repo.listMidiImportHistory())[0].fileName,'import.mid');
  const original=await src.a.pcmLoadLongWav(p.projectId,p.longWavAssets[0].id),copy=await dst.a.pcmLoadLongWav(restored.projectId,restored.longWavAssets[0].id);assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await copy.arrayBuffer())),0);
 });
