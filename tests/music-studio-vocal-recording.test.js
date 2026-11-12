@@ -526,17 +526,37 @@ test('Vibrato cancellation and storage failure preserve original audio and edit 
  const pcm=await a.vocalReadPCM(id,asset.id);a.vocalCorrection.preview={id,assetId:asset.id,baseline,analysis:[],candidates:[{first:0,end:400,semitones:.1,ratio:1,count:1}],selected:[0],setting:a.vocalHistory(asset).edits[0],pcm};f.indexedDB.fail();assert.equal((await a.vocalCorrectionApply()).ok,false);assert.equal(JSON.stringify(await f.repo.get(id)),baseline);
 });
 
-test('lost journal recovery acknowledgement retains one saved Take and consumes the journal',async()=>{
+for(const competing of [false,true])test('lost journal recovery acknowledgement retains one saved Take and consumes the journal, competing='+competing,async()=>{
  const f=await interruptedJournal();
  ageJournal(f);
  const repo=f.b.indexedDbRepository();
  f.b.setRepository(repo);
  await f.b.refresh();
  const put=repo.putLongWav;
- repo.putLongWav=async(...args)=>{await put(...args);throw Error('lost acknowledgement')};
+ repo.putLongWav=async(...args)=>{
+  await put(...args);
+  if(competing){
+   const [project]=args;
+   await repo.put({...project,revision:project.revision+1,productionNotes:'Concurrent recording edit'});
+  }
+  throw Error('lost acknowledgement');
+ };
  const result=await f.b.vocalRecoverJournal(f.m.id);
  assert.equal(result.ok,true,result.error);
- assert.equal((await repo.get(f.m.owner)).longWavAssets.length,1);
+ const saved=await repo.get(f.m.owner);
+ assert.equal(saved.longWavAssets.length,1);
+ const [asset]=saved.longWavAssets;
+ const [event]=saved.productionHistory.filter(row=>row.type==='recording-recovery');
+ assert.equal(event.journalId,f.m.id);
+ assert.equal(event.projectId,f.m.owner);
+ assert.equal(event.assetId,asset.id);
+ assert.equal(event.frames,asset.frames);
+ assert.deepEqual(event.wavHashes,asset.hashes);
+ assert.equal(event.editId,saved.songVersions.edits.at(-1).id);
+ if(competing){
+  assert.equal(result.refreshPending,true);
+  assert.equal(saved.productionNotes,'Concurrent recording edit');
+ }
  assert.equal(await repo.getVocalJournal(f.m.id),undefined);
  assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,false);
  assert.equal((await repo.get(f.m.owner)).songVersions.edits.filter(e=>e.source==='vocal-editor').length,1);

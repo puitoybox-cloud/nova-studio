@@ -27,11 +27,11 @@
   ],
   "sourceHashes": {
     "tests/music-production-tools.test.js": "785254b1b2049cb5898b97fc439e7ef572efbd6f7cfd8d9cc3f7fd1194303b18",
-    "tests/music-studio-long-wav-storage.test.js": "9ec3f8d5f460a7e77a4aa7e775198dab422de0c5acd1c1a623fddb83d30b705b",
-    "tests/music-studio-vocal-recording.test.js": "225355c2834df761a97f3f36941626e87a07c1962fe4fe3131804aba0601ff14"
+    "tests/music-studio-long-wav-storage.test.js": "53370471a5f2562892fcd940fa9682f7c794d2c1865b7489b522caa8cbe452cb",
+    "tests/music-studio-vocal-recording.test.js": "fd3bfc5e2eebb96050df3204c9a607925ae9e1acad6a7702db97a56b6af2511c"
   },
   "runtimeHashes": {
-    "music-studio.js": "14e0b5276e948e3321d7cda1e32b217391da1668024aa61bec22ef22d8712090"
+    "music-studio.js": "3ee615e821091beb87bbb2e5d59f1a71fee40f42823204d5de5e75886c3f293d"
   },
-  "testedRuntimeHead": "bae6cb418e2299944094c021bb18c2ee2f8ff191"
+  "testedRuntimeHead": "a8aa81269ca65e723709fe0d2a0dc5f686d8a695"
 }
