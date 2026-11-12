@@ -37,13 +37,18 @@ async function saveEditorEntry(entry, project) {
   return app.submitEdit(null,id);
  }
  history.replaceState(null,'','#music-studio/project/'+encodeURIComponent(id));
- app.state.settings=app.normalizeSettings({autosave:{enabled:true,idleDelaySeconds:1,intervalSeconds:60}});
+ const periodic=entry==='periodicAutosave';
+ app.state.settings=app.normalizeSettings({autosave:{enabled:true,idleDelaySeconds:periodic?30:1,intervalSeconds:15}});
  app.markDirty();
+ if(periodic){
+  app.cancelScheduledSave();
+  app.configureAutosave();
+ }
 }
 
-const editorEntries=['manualSave','timerAutosave','midiEditorSave'];
+const editorEntries=['manualSave','timerAutosave','midiEditorSave','periodicAutosave'];
 
-test('real IndexedDB reconciles lost save notifications and preserves competing writes across SIGKILL',{timeout:120000},async()=>{
+test('real IndexedDB reconciles lost save notifications and preserves competing writes across SIGKILL',{timeout:180000},async()=>{
  const script=fs.readFileSync('music-studio.js');
  const server=http.createServer((req,res)=>{if(req.url==='/music-studio.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});res.end(script)}else{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body></body></html>')}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -279,7 +284,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
     };
     void saveEditorEntry(entry,before);
    },{entry,id,before});
-   await editorPage.waitForFunction(()=>window.editorWritePending===true,{},{timeout:10000});
+   await editorPage.waitForFunction(()=>window.editorWritePending===true,{},{timeout:25000});
    await stop('SIGKILL');
    browser=await launch();
    editorPage=await browser.newPage();
@@ -291,7 +296,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    if(entry==='midiEditorSave')await editorPage.addScriptTag({content:fs.readFileSync('music-studio-editor.js','utf8')});
    await editorPage.evaluate(({entry,before})=>saveEditorEntry(entry,before),{entry,before});
    await editorPage.waitForFunction(({id,revision})=>MusicStudio.state.projects.some(project=>project.projectId===id&&project.revision===revision),
-    {id,revision:before.revision+1},{timeout:10000});
+    {id,revision:before.revision+1},{timeout:25000});
    const after=await editorPage.evaluate(()=>MusicStudio.indexedDbRepository().list());
    assert.deepEqual(after.filter(project=>project.projectId!==id),baseline.filter(project=>project.projectId!==id));
    const saved=after.find(project=>project.projectId===id);
