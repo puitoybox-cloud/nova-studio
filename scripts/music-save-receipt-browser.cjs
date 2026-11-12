@@ -158,6 +158,46 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const day=await app.productionDaySave(id,'2026-11-12','Durable daily record');
    if(!day.ok)throw Error(day.error);
 
+   // Change the live notes so the finished checkpoint offers an adoption.
+   const live=await repo.get(id);
+   app.state.projects=await repo.list();
+   form.elements.productionNotes.value='Notes after checkpoint';
+   app.state.dirty=true;
+   if(!(await app.saveCurrentProject(id)).ok)throw Error('Post-checkpoint notes were not saved');
+   const checkpointId=checkpoint.project.songVersions.checkpoints.at(-1).id;
+   const adoptionBase=await repo.get(id);
+   const previewAdoption=()=>app.versionPreview(id,checkpointId,['notes']);
+   if(!previewAdoption().ok)throw Error('Checkpoint preview failed');
+
+   // Simulate a storage conflict without advancing the visible preview.
+   let competingCheckpoint;
+   repo.compareAndPut=async(...args)=>{
+    competingCheckpoint={...adoptionBase,revision:adoptionBase.revision+1,productionNotes:'Competing checkpoint notes'};
+    await originalWrite(competingCheckpoint,JSON.stringify(adoptionBase));
+    return originalWrite(...args);
+   };
+   const rejected=await app.versionApply(id);
+   if(rejected.ok||JSON.stringify(await repo.get(id))!==JSON.stringify(competingCheckpoint))
+    throw Error('Adoption overwrote the competing write');
+   app.state.projects=await repo.list();
+   repo.compareAndPut=loseReceipt;
+   if(!previewAdoption().ok)throw Error('Checkpoint retry preview failed');
+   const writesBeforeHistory=writes;
+   const adopted=await app.versionApply(id);
+   if(!adopted.ok)throw Error(adopted.error);
+   const material=await app.materialCapture(id,{name:'Captured after adoption'});
+   if(!material.ok)throw Error(material.error);
+   const materialFile=app.materialExport(id).text;
+   const imported=await app.materialImport(id,{size:materialFile.length,text:async()=>materialFile});
+   if(!imported.ok)throw Error(imported.error);
+   const withMaterial=await repo.get(id);
+   const undone=await app.versionUndoRedo(id,-1);
+   if(!undone.ok)throw Error(undone.error);
+   const redone=await app.versionUndoRedo(id,1);
+   if(!redone.ok)throw Error(redone.error);
+   if(writes-writesBeforeHistory!==5)throw Error('Special saves repeated a committed write');
+   const special={live,competingCheckpoint,adopted:adopted.project,withMaterial,undone:undone.project,redone:redone.project,material:material.material};
+
    const archive=await app.createLongWavArchive();
    const restore=repo.restoreLongArchive;
    repo.restoreLongArchive=async(...args)=>{
@@ -188,7 +228,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const duplicate=await app.duplicateProject(id);
    if(!duplicate.ok||!duplicate.committed||forkWrites!==2)
     throw Error(duplicate.error||'Lost fork notification triggered another write');
-   return {before,formProject,saved,source,restored:restoredProject,finished:finished.project,duplicate:duplicate.project};
+   return {before,formProject,saved,special,source,restored:restoredProject,finished:finished.project,duplicate:duplicate.project};
   });
   assert.equal(receipts.formProject.revision,receipts.before.revision+1);
   assert.equal(receipts.saved.revision,receipts.formProject.revision+1);
@@ -198,6 +238,36 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   assert.deepEqual(receipts.saved.songVersions.edits.slice(-2).map(edit=>edit.sessionId),[sessionId,sessionId]);
   assert.deepEqual(receipts.saved.songVersions.sessions,receipts.before.songVersions.sessions);
   assert.deepEqual(receipts.saved.songVersions.days,receipts.before.songVersions.days);
+  const {special}=receipts;
+  const {adopted,withMaterial,undone,redone}=special;
+  const operation=adopted.songVersions.operations.at(-1);
+  assert.equal(operation.checkpointId,special.live.songVersions.checkpoints[0].id);
+  assert.equal(operation.sessionId,sessionId);
+  assert.equal(adopted.songVersions.operations.length,1);
+  assert.deepEqual([adopted,undone,redone].map(p=>p.songVersions.cursor),[1,0,1]);
+  assert.deepEqual([adopted,undone,redone].map(p=>p.productionNotes),[
+   special.live.productionNotes,special.competingCheckpoint.productionNotes,special.live.productionNotes
+  ]);
+  const capture=withMaterial.productionHistory.at(-2);
+  const imported=withMaterial.productionHistory.at(-1);
+  assert.equal(capture.type,'material-capture');
+  assert.equal(capture.materialId,special.material.id);
+  assert.equal(imported.type,'material-import');
+  assert.deepEqual(imported.materialIds,[withMaterial.materialLibrary.at(-1).id]);
+  const edits=[adopted.songVersions.edits.at(-1),...withMaterial.songVersions.edits.slice(-2),
+   undone.songVersions.edits.at(-1),redone.songVersions.edits.at(-1)];
+  assert.deepEqual(edits.map(e=>e.source),['checkpoint-history','material-library','material-library','checkpoint-history','checkpoint-history']);
+  assert.equal(new Set(edits.map(e=>e.id)).size,edits.length);
+  assert.deepEqual([capture.editId,imported.editId],edits.slice(1,3).map(e=>e.id));
+  assert.deepEqual(redone.songVersions.edits.slice(-5),edits);
+  for(const edit of edits)assert.equal(edit.sessionId,sessionId);
+  for(const project of [withMaterial,undone,redone]){
+   assert.deepEqual(project.songVersions.days,special.live.songVersions.days);
+   assert.deepEqual(project.songVersions.sessions,special.live.songVersions.sessions);
+   assert.deepEqual(project.materialLibrary,withMaterial.materialLibrary);
+   assert.deepEqual(project.productionHistory,withMaterial.productionHistory);
+   for(const event of [capture,imported])assert.equal(project.productionHistory.filter(e=>e.id===event.id).length,1);
+  }
   await stop('SIGKILL');
   browser=await launch();
   const reopened=await browser.newPage();
