@@ -29,3 +29,17 @@ test('lost backup acknowledgement after destination switch keeps both copies and
  assert.equal((await app.runAutoBackupCheck('2026-11-04T00:01:00Z')).reason,'not-due');
  assert.equal((await repo.listAutoBackups()).length,2);
 });
+
+test('a policy change while pruning is queued protects the old generation',async()=>{
+ const {app,repo}=setup();
+ await seed(repo);
+ const remove=repo.deleteAutoBackup.bind(repo);
+ repo.deleteAutoBackup=async(id,guard)=>{
+  app.state.settings.backup.maxCopies=10;
+  return remove(id,guard);
+ };
+ const result=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');
+ assert.equal(result.created,true);
+ assert.equal(result.cleanupWarning,'backup-state-conflict');
+ assert.deepEqual(Array.from(await repo.listAutoBackups(),copy=>copy.backupId).sort(),[result.backup.backupId,'old'].sort());
+});

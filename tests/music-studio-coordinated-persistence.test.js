@@ -56,3 +56,41 @@ for (const entry of ['project', 'midi']) {
     assert.equal(saved.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);
   });
 }
+
+for (const entry of ['project', 'midi']) {
+  test(`${entry} save keeps the committed receipt after a destination switch`, async () => {
+    const {app, core, window}=load();
+    const project=app.makeProject({projectId:'shared-id',projectName:'Source'});
+    const replacement=app.makeProject({projectId:project.projectId,projectName:'Replacement'});
+    const source=app.memoryRepository([project]), destination=app.memoryRepository([replacement]);
+    app.setRepository(source);
+    app.state.projects=[project];
+    let save;
+    if(entry==='midi'){
+      const session=core.createCoordinatedSession(project);
+      app.state.midiEditor=session;
+      core.addNote(session,{pitch:61,startTick:0,durationTicks:120});
+      save=()=>app.saveMidiEditor({silent:true});
+    }else{
+      const fields={projectName:'Saved source',bpm:'120',timeSignature:'4/4',status:project.status};
+      const form={elements:Object.fromEntries(Object.entries(fields).map(([key,value])=>[key,{value}]))};
+      window.document={querySelector:selector=>selector==='#musicProjectForm'?form:null};
+      app.state.dirty=true;
+      save=()=>app.saveCurrentProject(project.projectId);
+    }
+    const compareAndPut=source.compareAndPut.bind(source);
+    source.compareAndPut=async(...args)=>{
+      await compareAndPut(...args);
+      app.setRepository(destination);
+      app.state.projects=[replacement];
+      throw Error('lost notification after destination switch');
+    };
+    const receipt=await save();
+    assert.equal(receipt.ok,true);
+    assert.equal(receipt.committed,true);
+    assert.equal(receipt.refreshPending,true);
+    assert.deepEqual(plain(await source.get(project.projectId)),plain(receipt.project));
+    assert.deepEqual(plain(await destination.get(project.projectId)),plain(replacement));
+    assert.deepEqual(plain(app.state.projects),[plain(replacement)]);
+  });
+}
