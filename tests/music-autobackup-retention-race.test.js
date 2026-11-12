@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {webcrypto}=require('node:crypto');
-function setup(){const c={console:{...console,warn(){}},Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};c.window=c;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),c);const app=c.MusicStudio,repo=app.memoryRepository();app.setRepository(repo);app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});app.state.projects=[app.makeProject({projectId:'song',projectName:'Protected song'})];return{app,repo}}
+function setup(){const c={console:{...console,warn(){}},Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};c.window=c;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),c);const app=c.MusicStudio,repo=app.memoryRepository();app.setRepository(repo);app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});app.state.projects=[app.makeProject({projectId:'song',projectName:'Protected song'})];return{app,repo,window:c}}
 async function seed(repo){await repo.putAutoBackup({backupId:'old',createdAt:'2026-11-01T00:00:00Z',signature:'old',snapshot:{protected:true}})}
 test('repository switch during backup publication preserves old copies and does not refresh another repository',async()=>{const{app,repo}=setup();await seed(repo);const other=app.memoryRepository();let reads=0;other.listAutoBackups=async()=>{reads++;return[]};const put=repo.putAutoBackup;repo.putAutoBackup=async record=>{const result=await put(record);app.setRepository(other);return result};const r=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');assert.equal(r.created,true);assert.equal(r.ok,true);assert.equal(r.cleanupWarning,'backup-state-conflict');assert.equal((await repo.listAutoBackups()).length,2);assert.equal(reads,0)});
 test('retention change while backup commits cannot prune copies under a different policy',async()=>{const{app,repo}=setup();await seed(repo);const put=repo.putAutoBackup;repo.putAutoBackup=async record=>{const result=await put(record);app.state.settings.backup.maxCopies=10;return result};const r=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');assert.equal(r.created,true);assert.equal(r.cleanupWarning,'backup-state-conflict');assert.ok((await repo.listAutoBackups()).some(x=>x.backupId==='old'))});
@@ -45,4 +45,22 @@ test('a policy change while pruning is queued protects the old generation',async
  assert.equal(result.created,true);
  assert.equal(result.cleanupWarning,'backup-state-conflict');
  assert.deepEqual(Array.from(await repo.listAutoBackups(),copy=>copy.backupId).sort(),[result.backup.backupId,'old'].sort());
+});
+
+test('generation lookup cannot restore a previous repository snapshot after a switch',async()=>{
+ const {app,repo,window}=setup();
+ window.confirm=()=>true;
+ const result=await app.runAutoBackupCheck('2026-11-04T00:00:00Z');
+ assert.equal(result.created,true);
+ const other=app.memoryRepository(),read=repo.getAutoBackup;
+ repo.getAutoBackup=async id=>{
+  const record=await read(id);
+  app.setRepository(other);
+  return record;
+ };
+ await app.loadAutoBackups();
+ await app.restoreAutoBackup(result.backup.backupId);
+ assert.equal(app.state.autoBackups.length,0);
+ assert.equal((await other.list()).length,0);
+ assert.equal(app.archiveTransfer.preview,null);
 });

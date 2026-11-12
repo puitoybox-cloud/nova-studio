@@ -66,6 +66,12 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   });
   assert.equal(switched.ok,false,'stale Archive must not reach the download');
   await page.evaluate(()=>app.refresh());
+  const interruptedDownload=page.waitForEvent('download',{timeout:10000});
+  await page.evaluate(()=>{void app.exportLongWavArchive()});
+  await interruptedDownload;
+  await stop();page=await open();
+  assert.deepEqual(await snapshot(page),archiveBaseline,'killing Chromium at download notification must leave IndexedDB untouched');
+  await page.evaluate(()=>app.refresh());
   const downloadReady=page.waitForEvent('download',{timeout:10000});
   const exported=await page.evaluate(()=>app.exportLongWavArchive());
   assert.equal(exported.ok,true,exported.error);
@@ -92,6 +98,77 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   assert.equal(copy.songVersions.days[0].sessionId,copy.songVersions.sessions[0].id);
   assert.deepEqual(afterRestore.longWavBinaries[0].blob||afterRestore.longWavBinaries[0].parts,afterRestore.longWavBinaries[1].blob||afterRestore.longWavBinaries[1].parts);
   await stop();page=await open();assert.deepEqual(await snapshot(page),afterRestore,'retried Archive must persist completely across SIGKILL');
+
+  const generations=await page.evaluate(async bytes=>{
+   await app.refresh();
+   window.confirm=()=>true;
+   const source=app.state.projects.find(project=>project.projectId==='archive-source');
+   await app.loadSettings();
+   const jsonSong=app.makeProject({projectId:'json-generation-song',projectName:'JSON generation'});
+   app.state.projects=[jsonSong];
+   const snapshot=app.backupObject();
+   await app.refresh();
+   await repo.putAutoBackup({backupId:'json-generation',createdAt:'2026-11-10T00:00:00Z',snapshot});
+   await repo.putAutoBackup({backupId:'archive-generation',createdAt:'2026-11-11T00:00:00Z',snapshot,archive:new Blob([new Uint8Array(bytes)])});
+   await app.loadAutoBackups();
+   const read=repo.getAutoBackup;
+   const other=app.memoryRepository();
+   repo.getAutoBackup=async id=>{
+    const record=await read(id);
+    app.setRepository(other);
+    return record;
+   };
+   await app.restoreAutoBackup('json-generation');
+   if((await other.list()).length||app.archiveTransfer.preview)throw Error('backup crossed storage switch');
+   repo.getAutoBackup=read;
+   app.setRepository(repo);
+   await app.loadAutoBackups();
+   const json=await app.restoreAutoBackup('json-generation');
+   if(!json||json.failed||!(await repo.list()).some(project=>project.projectName==='JSON generation'))throw Error('JSON generation restore failed');
+   for(const restoreSettings of [false,true]){
+    const destinationSettings={...app.defaultSettings(),acceptanceMarker:'destination'};
+    await repo.putSettings(destinationSettings);
+    await app.loadSettings();
+    const preview=await app.restoreAutoBackup('archive-generation');
+    if(!preview?.ok)throw Error('generation preview failed');
+    app.setArchiveRestoreSettings(restoreSettings);
+    const write=repo.restoreLongArchive;
+    const before=await repo.list();
+    repo.restoreLongArchive=async(...args)=>{
+     app.setRepository(other);
+     return write(...args);
+    };
+    const aborted=await app.restorePreviewedArchive();
+    if(aborted.ok||JSON.stringify(await repo.list())!==JSON.stringify(before))throw Error('stale Archive generation committed');
+    repo.restoreLongArchive=write;
+    app.setRepository(repo);
+    await app.loadAutoBackups();
+    if(!(await app.restoreAutoBackup('archive-generation'))?.ok)throw Error('generation retry preview failed');
+    app.setArchiveRestoreSettings(restoreSettings);
+    const restored=await app.restorePreviewedArchive();
+    if(!restored.ok||!restored.committed||restored.projects.length!==1)throw Error('Archive generation retry failed');
+    const persistedSettings=await repo.getSettings();
+    if((persistedSettings.acceptanceMarker==='destination')===restoreSettings)throw Error('Archive settings choice was ignored');
+    const project=await repo.get(restored.projects[0].projectId);
+    const wav=await app.pcmLoadLongWav(project.projectId,project.longWavAssets[0].id);
+    const sourceWav=await app.pcmLoadLongWav(source.projectId,source.longWavAssets[0].id);
+    if(JSON.stringify(Array.from(new Uint8Array(await wav.arrayBuffer())))!==JSON.stringify(Array.from(new Uint8Array(await sourceWav.arrayBuffer()))))throw Error('Archive generation WAV mismatch');
+    const event=project.productionHistory.at(-1);
+    const digest=await crypto.subtle.digest('SHA-256',new Uint8Array(bytes));
+    const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+    if(event.sourceProjectId!==source.projectId||event.projectId!==project.projectId||event.archiveHashes[0]!==hash||
+      JSON.stringify(project.songVersions)!==JSON.stringify(source.songVersions))throw Error('Archive generation provenance mismatch');
+   }
+   return (await repo.listAutoBackups()).map(record=>record.backupId).sort();
+  },Array.from(downloaded));
+  assert.deepEqual(generations,['archive-generation','json-generation']);
+  const generationState=await snapshot(page);
+  await stop();page=await open();
+  assert.deepEqual(await snapshot(page),generationState,'restored generations and histories must survive restart');
+  await page.evaluate(async()=>{
+   await repo.deleteAutoBackup('archive-generation');
+   await repo.deleteAutoBackup('json-generation');
+  });
 
   const retained=await page.evaluate(async()=>{
    await app.refresh();

@@ -758,7 +758,7 @@
       },async deleteAutoBackup(id,guard){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id),guard)},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
   let repository=indexedDbRepository();
-  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next)invalidateArchiveTransfer();repository=next}
+  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next){invalidateArchiveTransfer();state.autoBackups=[]}repository=next}
   async function loadSettings(){let stored=null;try{stored=await repository.getSettings?.()}catch(error){console.warn('Music Studio settings could not be read',error)}const normalized=preserveRestoreSettings(stored||{});state.settings=normalized;state.settingsDraft=clone(normalized);if(!stored)try{await repository.putSettings?.(normalized)}catch(error){console.warn('Music Studio default settings could not be saved',error)}return normalized}
   async function refresh(){const target=repository,baseline=JSON.stringify(state.projects),projects=await target.list();if(repository!==target||JSON.stringify(state.projects)!==baseline)return{ok:false,stale:true};state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint();return{ok:true}}
   let noticeTimer=null;
@@ -4678,7 +4678,26 @@
     return{ok:true,created:true,backup:record,...(cleanupWarning?{cleanupWarning}:{}),message:cleanupWarning?'自動バックアップを保存しました。古いコピーの整理は完了していません。':'期限を迎えたため、端末内に自動バックアップを作成しました。'};
   }
   async function checkAutoBackupNow(){const result=await runAutoBackupCheck();notice(result.message||(result.reason==='disabled'?'自動バックアップは無効です。':result.reason==='not-due'?'次の作成期限にはまだ達していません。':'内容に変更がないため重複作成しませんでした。'),result.ok?'info':'error')}
-  async function restoreAutoBackup(id){const record=state.autoBackups.find(item=>item.backupId===id);if(!record)return notice('自動バックアップが見つかりません。','error');if((root.confirm?.(`${formatDate(record.createdAt)} の自動バックアップを追加・統合しますか？\n既存データは削除しません。`)??false)===false)return;if(record.archive){const preview=await previewLongWavArchive(record.archive);notice(preview.ok?'WAVを含む自動バックアップを検証しました。内容を確認して復元してください。':'検証できません：'+preview.error,preview.ok?'info':'error');return preview}const result=await restoreBackup(record.snapshot,{settings:true,projects:true,safetyCopy:true});notice(result.message,result.failed?'error':'success')}
+  async function restoreAutoBackup(id){
+    const target=repository;
+    const selected=state.autoBackups.find(item=>item.backupId===id);
+    if(!selected)return notice('自動バックアップが見つかりません。','error');
+    if(!(root.confirm?.(`${formatDate(selected.createdAt)} の自動バックアップを追加・統合しますか？\n既存データは削除しません。`)??false))return;
+    let record;
+    try{if(repository===target)record=await target.getAutoBackup(id)}catch(error){
+      return notice('自動バックアップを読み込めません：'+error.message,'error');
+    }
+    if(repository!==target||!state.autoBackups.includes(selected))return notice('保存先またはバックアップ一覧が変更されました。選び直してください。','error');
+    if(!record||record.createdAt!==selected.createdAt||record.signature!==selected.signature)return notice('自動バックアップが変更または削除されました。','error');
+    if(record.archive){
+      const preview=await previewLongWavArchive(record.archive);
+      notice(preview.ok?'WAVを含む自動バックアップを検証しました。内容を確認して復元してください。':'検証できません：'+preview.error,preview.ok?'info':'error');
+      return preview;
+    }
+    const result=await restoreBackup(record.snapshot,{settings:true,projects:true,safetyCopy:true});
+    notice(result.message,result.failed?'error':'success');
+    return result;
+  }
   function configureAutosave(){if(state.intervalTimer)root.clearInterval?.(state.intervalTimer);state.intervalTimer=null;if(state.settings?.autosave.enabled&&root.setInterval)state.intervalTimer=root.setInterval(()=>{const id=parseEditId(currentRoute());if(id&&state.dirty)saveCurrentProject(id)},state.settings.autosave.intervalSeconds*1000)}
   async function saveCurrentProject(id,force=false){if(!id||(!state.dirty&&!force))return{ok:true,skipped:true};let input;try{input=formValue()}catch(error){return{ok:false,message:error.message}}const target=repository,sequence=++state.saveSequence,generation=state.editGeneration;state.saveStatus='saving';updateSaveIndicator('保存中');try{const current=await target.get(id);if(repository!==target)throw Error('project-repository-changed');if(!current){state.saveStatus='error';updateSaveIndicator('保存に失敗しました');return{ok:false,message:'保存対象が見つかりません。入力内容は維持しています。'}}const bpm=Number(input.bpm),revision=(current.revision||1)+1,updated={...current,...input,revision,musicalSettings:{...current.musicalSettings,bpm,timeSignature:(()=>{const [numerator,denominator]=input.timeSignature.split('/').map(Number);return{numerator,denominator}})(),key:input.key||null},...(current.midiData?{midiData:{...clone(current.midiData),tempo:bpm,tempoMap:normalizeProjectTempoMap(current.midiData.tempoMap,bpm)}}:{}),...(current.aiWorkspace?{aiWorkspace:rebindAIWorkspace(current.aiWorkspace,current.projectId,revision)}:{}),updatedAt:now()};delete updated.bpm;delete updated.timeSignature;delete updated.key;automaticEditRecord(current,updated,'project-editor');const validation=validateProject(updated);if(!validation.valid){state.saveStatus='error';updateSaveIndicator('保存に失敗しました');return{ok:false,message:validation.errors.join(' ')}}const guard=()=>{if(repository!==target)throw Error('project-repository-changed')};if(typeof target.compareAndPut!=='function')throw Error('project-atomic-save-unavailable');await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,JSON.stringify(current),guard));if(repository!==target)return{ok:true,committed:true,stale:true,refreshPending:true,project:updated};if(sequence<state.saveSequence||generation!==state.editGeneration){state.dirty=true;state.saveStatus='dirty';updateSaveIndicator('未保存の変更があります');return{ok:true,stale:true,project:updated}}state.savedSequence=sequence;state.dirty=false;state.saveStatus='saved';setLastProject(id);state.projects=state.projects.map(project=>project.projectId===id?updated:project);updateSaveIndicator('保存しました');return{ok:true,project:updated}}catch(error){console.error('Music Studio autosave failed',error);state.saveStatus='error';state.dirty=true;updateSaveIndicator('保存に失敗しました');notice('自動保存に失敗しました。入力内容は画面に維持されています。手動保存をお試しください。','error');return{ok:false,message:'保存に失敗しました。'}}}
   function updateSaveIndicator(text){const indicator=root.document?.querySelector('.music-save-state');if(indicator){indicator.dataset.status=state.saveStatus;indicator.dataset.dirty=String(state.dirty);indicator.textContent=text}}
