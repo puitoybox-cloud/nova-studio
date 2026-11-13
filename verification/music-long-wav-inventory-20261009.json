@@ -1,0 +1,3722 @@
+{
+  "date": "2026-10-09",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "pullRequests": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 360,
+        "head": "e60c44209fbed9c3ce710db1b505a01908101b36",
+        "base": "feature/music-wav-stream-read-chat-v1",
+        "base_sha": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "3 files changed, 139 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 359,
+        "head": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+        "base": "feature/music-pcm-continuous-chunks-chat-v1",
+        "base_sha": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 143 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 358,
+        "head": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+        "base": "feature/music-pcm-compression-integrated-chat-v1",
+        "base_sha": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 139 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 357,
+        "head": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+        "base": "feature/music-pcm-compression-chat-v1",
+        "base_sha": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 138 insertions(+), 7 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 356,
+        "head": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+        "base": "feature/music-pcm-eq-persist-verify-chat-v1",
+        "base_sha": "0835135cea49977697e260b34dcd1ce753e9372d",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 105 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 355,
+        "head": "0835135cea49977697e260b34dcd1ce753e9372d",
+        "base": "feature/music-pcm-eq-persist-chat-v1",
+        "base_sha": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "1 file changed, 11 insertions(+), 6 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 354,
+        "head": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+        "base": "feature/music-pcm-eq-preview-chat-v1",
+        "base_sha": "73009702854ab77049174e27f5ab2848896fbd2f",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "3 files changed, 126 insertions(+), 14 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 353,
+        "head": "73009702854ab77049174e27f5ab2848896fbd2f",
+        "base": "feature/music-pcm-peaking-eq-chat-v1",
+        "base_sha": "3c40354e65d6945df14676efe317771e3a715947",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "2 files changed, 32 insertions(+), 4 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 352,
+        "head": "3c40354e65d6945df14676efe317771e3a715947",
+        "base": "feature/music-pcm-mix-v1",
+        "base_sha": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "2 files changed, 34 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 351,
+        "head": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+        "base": "feature/music-lyrics-note-assignment-v1",
+        "base_sha": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "12 files changed, 1714 insertions(+), 19 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 350,
+        "head": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+        "base": "feature/music-native-format-closure-v1",
+        "base_sha": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "11 files changed, 277 insertions(+), 17 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 349,
+        "head": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+        "base": "feature/music-package-native-graph-v1",
+        "base_sha": "6ef95994a939817b5d579ff452997598da356673",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "4 files changed, 272 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 348,
+        "head": "6ef95994a939817b5d579ff452997598da356673",
+        "base": "feature/music-package-macho-loader-v1",
+        "base_sha": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "9 files changed, 644 insertions(+), 7 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 347,
+        "head": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+        "base": "feature/music-wrapper-build-inventory-v1",
+        "base_sha": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "8 files changed, 269 insertions(+), 5 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 346,
+        "head": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+        "base": "feature/music-unsigned-app-layout-v1",
+        "base_sha": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "4 files changed, 363 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 345,
+        "head": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+        "base": "feature/music-unsigned-generation-assembly-v1",
+        "base_sha": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 408 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 344,
+        "head": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+        "base": "feature/music-validated-publication-snapshot-v1",
+        "base_sha": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 300 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 343,
+        "head": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+        "base": "feature/music-sealed-summary-immutability-v1",
+        "base_sha": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "4 files changed, 57 insertions(+), 3 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 342,
+        "head": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+        "base": "feature/music-native-observation-snapshot-v1",
+        "base_sha": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "11 files changed, 159 insertions(+), 7 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 341,
+        "head": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+        "base": "feature/music-terminal-transport-callback-v1",
+        "base_sha": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "2 files changed, 20 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 340,
+        "head": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+        "base": "feature/music-terminal-shutdown-failure-v1",
+        "base_sha": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "4 files changed, 139 insertions(+), 4 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 339,
+        "head": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+        "base": "feature/music-request-authority-isolation-v1",
+        "base_sha": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "7 files changed, 85 insertions(+), 9 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 338,
+        "head": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+        "base": "feature/music-authorized-result-generation-v1",
+        "base_sha": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "9 files changed, 176 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 337,
+        "head": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+        "base": "feature/music-final-response-output-recheck-v1",
+        "base_sha": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "6 files changed, 376 insertions(+), 90 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 336,
+        "head": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+        "base": "feature/music-stem-output-continuity-v1",
+        "base_sha": "4517279de9f227972ca0681b399ce2868ba10b9a",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "3 files changed, 80 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 335,
+        "head": "4517279de9f227972ca0681b399ce2868ba10b9a",
+        "base": "feature/music-processing-publication-continuity-v1",
+        "base_sha": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "10 files changed, 291 insertions(+), 24 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 334,
+        "head": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+        "base": "feature/music-owned-health-continuity-v1",
+        "base_sha": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "10 files changed, 270 insertions(+), 17 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 333,
+        "head": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+        "base": "feature/music-parent-owned-origin-binding-v1",
+        "base_sha": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 75 insertions(+), 4 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 332,
+        "head": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+        "base": "feature/music-owned-process-origin-v1",
+        "base_sha": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "14 files changed, 281 insertions(+), 6 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 331,
+        "head": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+        "base": "feature/music-packaged-native-runtime-origin-v1",
+        "base_sha": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "7 files changed, 190 insertions(+), 5 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 330,
+        "head": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+        "base": "feature/music-private-runtime-unified-checkpoint-v1",
+        "base_sha": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "4 files changed, 33 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 329,
+        "head": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+        "base": "feature/music-private-runtime-production-slots-v1",
+        "base_sha": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "8 files changed, 253 insertions(+), 22 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 328,
+        "head": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+        "base": "feature/music-swift-private-summary-ack-v1",
+        "base_sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "13 files changed, 370 insertions(+), 27 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 327,
+        "head": "96c7d8698847a22afd53dc991c61b0110d5d3902",
+        "base": "feature/music-swift-private-summary-ack-v1",
+        "base_sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "10 files changed, 226 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 326,
+        "head": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+        "base": "feature/music-owned-descendant-final-delivery-v1",
+        "base_sha": "95287bd846009004e705f267e965510cce56a455",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "7 files changed, 476 insertions(+), 7 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 325,
+        "head": "95287bd846009004e705f267e965510cce56a455",
+        "base": "feature/music-owned-exit-delivery-v1",
+        "base_sha": "f909543081adcb7bef0254b0230ce825a319caf0",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "5 files changed, 227 insertions(+), 9 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 324,
+        "head": "f909543081adcb7bef0254b0230ce825a319caf0",
+        "base": "feature/music-record-manifest-production-assembly-v1",
+        "base_sha": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "6 files changed, 612 insertions(+), 24 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 323,
+        "head": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+        "base": "feature/music-private-runtime-assembly-v1",
+        "base_sha": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "8 files changed, 492 insertions(+), 39 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 322,
+        "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+        "base": "feature/music-installed-dependency-assembly-v1",
+        "base_sha": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "9 files changed, 784 insertions(+), 8 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 321,
+        "head": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+        "base": "feature/music-exact-backend-candidates-v1",
+        "base_sha": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "4 files changed, 2021 insertions(+), 4 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 320,
+        "head": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+        "base": "feature/music-backend-bundle-evidence-v1",
+        "base_sha": "17525108dc6939e2a10f3dab630f78a3e7270479",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "4 files changed, 7019 insertions(+), 3 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 319,
+        "head": "17525108dc6939e2a10f3dab630f78a3e7270479",
+        "base": "feature/music-production-source-preflight-v1",
+        "base_sha": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "6 files changed, 808 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 318,
+        "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+        "base": "feature/music-browser-stream-audit-v1",
+        "base_sha": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "7 files changed, 725 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 317,
+        "head": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+        "base": "feature/music-authorized-shutdown-v1",
+        "base_sha": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "11 files changed, 797 insertions(+), 26 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 316,
+        "head": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+        "base": "feature/music-owned-result-lifecycle-v1",
+        "base_sha": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "15 files changed, 689 insertions(+), 67 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 315,
+        "head": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+        "base": "feature/music-dispatch-evidence-v1",
+        "base_sha": "24730636102cdec68b952bc5834be50a94b00a5b",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "13 files changed, 1098 insertions(+), 29 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 314,
+        "head": "24730636102cdec68b952bc5834be50a94b00a5b",
+        "base": "feature/music-native-runtime-events-v1",
+        "base_sha": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "5 files changed, 187 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 313,
+        "head": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+        "base": "feature/music-native-image-routing-v2",
+        "base_sha": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "4 files changed, 324 insertions(+), 3 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 312,
+        "head": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+        "base": "feature/music-native-routing-closure-v1",
+        "base_sha": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+        "mergeable": true,
+        "draft": true,
+        "commits": 6,
+        "diff_stat": "7 files changed, 737 insertions(+), 56 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 311,
+        "head": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+        "base": "feature/music-processing-closure-v1",
+        "base_sha": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "3 files changed, 172 insertions(+), 32 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 310,
+        "head": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+        "base": "feature/music-production-lifecycle-v1",
+        "base_sha": "d268830e9b84ae39d5791499f6a99f05ba773561",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "16 files changed, 3219 insertions(+), 37 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 309,
+        "head": "d268830e9b84ae39d5791499f6a99f05ba773561",
+        "base": "feature/music-scoped-loaded-library-receipts-v1",
+        "base_sha": "79741ef371ea513032d78a0834f7ac041c84036b",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "16 files changed, 880 insertions(+), 28 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 308,
+        "head": "79741ef371ea513032d78a0834f7ac041c84036b",
+        "base": "feature/music-native-runtime-verification-v1",
+        "base_sha": "8317535ffe327f8437f39827f836d3c893ce98d9",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "8 files changed, 544 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 307,
+        "head": "8317535ffe327f8437f39827f836d3c893ce98d9",
+        "base": "feature/music-demucs-receipt-closure-v1",
+        "base_sha": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "23 files changed, 5330 insertions(+), 27 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 306,
+        "head": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+        "base": "feature/music-runtime-inventory-v2",
+        "base_sha": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "21 files changed, 3869 insertions(+), 34 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 305,
+        "head": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+        "base": "feature/music-distribution-identity-v1",
+        "base_sha": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "17 files changed, 2948 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 304,
+        "head": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+        "base": "feature/music-runtime-ingress-identity-v1",
+        "base_sha": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+        "mergeable": true,
+        "draft": true,
+        "commits": 6,
+        "diff_stat": "18 files changed, 417 insertions(+), 10 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 303,
+        "head": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+        "base": "feature/music-resource-runtime-contract-v1",
+        "base_sha": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "28 files changed, 1578 insertions(+), 54 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 302,
+        "head": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+        "base": "feature/music-durable-package-generation-v1",
+        "base_sha": "16db7aecd30313618837beaefa235bb8a3032a28",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "10 files changed, 349 insertions(+), 14 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 301,
+        "head": "16db7aecd30313618837beaefa235bb8a3032a28",
+        "base": "feature/music-binary-resolver-boundary-v1",
+        "base_sha": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "7 files changed, 280 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 300,
+        "head": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+        "base": "feature/music-restore-atomic-safety-v1",
+        "base_sha": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "14 files changed, 2231 insertions(+), 18 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 299,
+        "head": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+        "base": "feature/music-transaction-completion-safety-v1",
+        "base_sha": "031def44c194787f4e8e17552961d62e93b10df2",
+        "mergeable": true,
+        "draft": true,
+        "commits": 6,
+        "diff_stat": "14 files changed, 1683 insertions(+), 41 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 298,
+        "head": "031def44c194787f4e8e17552961d62e93b10df2",
+        "base": "feature/music-production-verification-contract-v1",
+        "base_sha": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "7 files changed, 52 insertions(+), 8 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 297,
+        "head": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+        "base": "feature/music-disposable-durable-recovery-v1",
+        "base_sha": "89570b292efc2417b5a927cf94037e4fe878063a",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "5 files changed, 244 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 296,
+        "head": "89570b292efc2417b5a927cf94037e4fe878063a",
+        "base": "feature/music-observed-byte-fault-evidence-v1",
+        "base_sha": "120b4527780bbfe00b164875c57f852c4055cc9a",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "5 files changed, 1540 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 295,
+        "head": "120b4527780bbfe00b164875c57f852c4055cc9a",
+        "base": "feature/music-package-restore-review-v1",
+        "base_sha": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "6 files changed, 1227 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 294,
+        "head": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+        "base": "feature/music-dependency-closure-boundaries-v1",
+        "base_sha": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "6 files changed, 1522 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 293,
+        "head": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+        "base": "feature/music-storage-contract-inspection-v1",
+        "base_sha": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "6 files changed, 1335 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 292,
+        "head": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+        "base": "feature/music-asset-dependency-inspection-v1",
+        "base_sha": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "6 files changed, 920 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 291,
+        "head": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+        "base": "feature/music-completion-foundation-v1",
+        "base_sha": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+        "mergeable": true,
+        "draft": true,
+        "commits": 10,
+        "diff_stat": "9 files changed, 1475 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 290,
+        "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+        "base": "feature/music-ai-arrangement-destination-inspection-v1",
+        "base_sha": "418dc57429f91ffcef6b578a7edfda36012576fd",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "8 files changed, 1265 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 289,
+        "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+        "base": "feature/music-ai-arrangement-track-inspection-v1",
+        "base_sha": "c041822d9715622302478f40d3f74ada8f830ee2",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "8 files changed, 96 insertions(+), 10 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 288,
+        "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+        "base": "feature/music-ai-arrangement-reference-inspection-v1",
+        "base_sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "8 files changed, 83 insertions(+), 20 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 287,
+        "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+        "base": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+        "base_sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "8 files changed, 137 insertions(+), 18 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 286,
+        "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+        "base": "feature/music-ai-lyrics-melody-reference-preview-v1",
+        "base_sha": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "10 files changed, 1079 insertions(+), 35 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 285,
+        "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+        "base": "feature/music-ai-continuation-source-preview-v1",
+        "base_sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "7 files changed, 860 insertions(+), 14 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 284,
+        "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+        "base": "feature/music-ai-arrangement-entry-preview-v1",
+        "base_sha": "2cef9c22c99cceb231263fa75f0091470309a103",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "9 files changed, 968 insertions(+), 3 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 283,
+        "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+        "base": "feature/music-ai-lyrics-exact-preview-v1",
+        "base_sha": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "10 files changed, 994 insertions(+), 8 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 282,
+        "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+        "base": "feature/music-ai-project-section-apply-v1",
+        "base_sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "14 files changed, 1171 insertions(+), 19 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 281,
+        "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+        "base": "feature/music-ai-section-exact-preview-v1",
+        "base_sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "15 files changed, 1170 insertions(+), 43 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 280,
+        "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+        "base": "feature/music-ai-family-metadata-range-v1",
+        "base_sha": "c6a73c24706e31a95120201f1b552dbca43f6312",
+        "mergeable": true,
+        "draft": true,
+        "commits": 2,
+        "diff_stat": "13 files changed, 860 insertions(+), 17 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 279,
+        "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+        "base": "feature/music-ai-partial-family-history-v1",
+        "base_sha": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "8 files changed, 582 insertions(+), 13 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 278,
+        "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+        "base": "feature/music-ai-family-apply-transaction-v1",
+        "base_sha": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "15 files changed, 214 insertions(+), 61 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 277,
+        "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+        "base": "feature/music-ai-family-preview-v1",
+        "base_sha": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+        "mergeable": true,
+        "draft": true,
+        "commits": 14,
+        "diff_stat": "9 files changed, 276 insertions(+), 12 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 276,
+        "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+        "base": "feature/music-ai-exact-partial-adoption-v1",
+        "base_sha": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+        "mergeable": true,
+        "draft": true,
+        "commits": 11,
+        "diff_stat": "8 files changed, 111 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 275,
+        "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+        "base": "feature/music-ai-candidate-family-v1",
+        "base_sha": "cde821afe4a7f115c670b5b7f822520771d57eac",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "10 files changed, 195 insertions(+), 15 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 274,
+        "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+        "base": "feature/music-ai-candidate-preview-v1",
+        "base_sha": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+        "mergeable": true,
+        "draft": true,
+        "commits": 6,
+        "diff_stat": "6 files changed, 75 insertions(+), 33 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 273,
+        "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+        "base": "feature/music-ai-composition-workflow-v1",
+        "base_sha": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+        "mergeable": true,
+        "draft": true,
+        "commits": 11,
+        "diff_stat": "8 files changed, 187 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 272,
+        "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+        "base": "feature/music-ai-assistant-ui-v1",
+        "base_sha": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+        "mergeable": true,
+        "draft": true,
+        "commits": 9,
+        "diff_stat": "8 files changed, 169 insertions(+), 6 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 271,
+        "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+        "base": "feature/music-ai-workflow-foundation-v1",
+        "base_sha": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+        "mergeable": true,
+        "draft": true,
+        "commits": 3,
+        "diff_stat": "10 files changed, 203 insertions(+), 7 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 270,
+        "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+        "base": "feature/music-coordinated-a-browser-v1",
+        "base_sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "4 files changed, 90 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 269,
+        "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 75,
+        "diff_stat": "66 files changed, 2732 insertions(+), 148 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 268,
+        "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "5 files changed, 171 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 267,
+        "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 5,
+        "diff_stat": "5 files changed, 426 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 266,
+        "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 108 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 265,
+        "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 117 insertions(+)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 264,
+        "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 1,
+        "diff_stat": "3 files changed, 118 insertions(+), 3 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 263,
+        "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 6,
+        "diff_stat": "3 files changed, 84 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 262,
+        "head": "a857c27674d6949488ff8884948499966f9bca40",
+        "base": "main",
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "mergeable": true,
+        "draft": true,
+        "commits": 50,
+        "diff_stat": "33 files changed, 1391 insertions(+), 67 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 261,
+        "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+        "base": "agent/music-studio-cache-version-consistency",
+        "base_sha": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+        "mergeable": true,
+        "draft": true,
+        "commits": 4,
+        "diff_stat": "4 files changed, 24 insertions(+), 4 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 256,
+        "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+        "base": "main",
+        "mergeable": true,
+        "draft": true,
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "commits": 2,
+        "diff_stat": "2 files changed, 18 insertions(+), 12 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 257,
+        "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+        "base": "main",
+        "mergeable": true,
+        "draft": true,
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "commits": 18,
+        "diff_stat": "4 files changed, 234 insertions(+), 14 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 258,
+        "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+        "base": "main",
+        "mergeable": true,
+        "draft": true,
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "commits": 34,
+        "diff_stat": "4 files changed, 447 insertions(+), 11 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 259,
+        "head": "8da76987e8c0a46df703d34643f432ab57730768",
+        "base": "main",
+        "mergeable": true,
+        "draft": true,
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "commits": 3,
+        "diff_stat": "3 files changed, 27 insertions(+), 2 deletions(-)"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 260,
+        "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+        "base": "main",
+        "mergeable": true,
+        "draft": true,
+        "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+        "commits": 8,
+        "diff_stat": "5 files changed, 45 insertions(+), 15 deletions(-)"
+      }
+    }
+  ],
+  "pullRequestTriggeredRuns": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 360,
+        "head": "e60c44209fbed9c3ce710db1b505a01908101b36",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 359,
+        "head": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 358,
+        "head": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 357,
+        "head": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 356,
+        "head": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 355,
+        "head": "0835135cea49977697e260b34dcd1ce753e9372d",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 354,
+        "head": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 353,
+        "head": "73009702854ab77049174e27f5ab2848896fbd2f",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 352,
+        "head": "3c40354e65d6945df14676efe317771e3a715947",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 351,
+        "head": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 350,
+        "head": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 349,
+        "head": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+        "runs": [],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 348,
+        "head": "6ef95994a939817b5d579ff452997598da356673",
+        "runs": [
+          {
+            "id": 37904831891,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37904831712,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37904831871,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37904831890,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 347,
+        "head": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+        "runs": [
+          {
+            "id": 37901747065,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37901747045,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37901747027,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37901747032,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 346,
+        "head": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+        "runs": [
+          {
+            "id": 37899498505,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37899498458,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37899498457,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37899498432,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 345,
+        "head": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+        "runs": [
+          {
+            "id": 37896308251,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37896308241,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37896308276,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37896308225,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 344,
+        "head": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+        "runs": [
+          {
+            "id": 37880524345,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37880524355,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37880524389,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37880524357,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 343,
+        "head": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+        "runs": [
+          {
+            "id": 37878132813,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37878132708,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37878132693,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37878132692,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 342,
+        "head": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+        "runs": [
+          {
+            "id": 37876951687,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37876951702,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37876951725,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37876951686,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 341,
+        "head": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+        "runs": [
+          {
+            "id": 37874173575,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37874173586,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37874173609,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37874173607,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 340,
+        "head": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+        "runs": [
+          {
+            "id": 37868897739,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37868897789,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37868897721,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37868897773,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 339,
+        "head": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+        "runs": [
+          {
+            "id": 37866175224,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37866175154,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37866175119,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37866175113,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 338,
+        "head": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+        "runs": [
+          {
+            "id": 37831618959,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37831618656,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37831618570,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37831618601,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 337,
+        "head": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+        "runs": [
+          {
+            "id": 37783531688,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37783531398,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37783531539,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37783531425,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 336,
+        "head": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+        "runs": [
+          {
+            "id": 37778205688,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37778205646,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37778205682,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37778205658,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 335,
+        "head": "4517279de9f227972ca0681b399ce2868ba10b9a",
+        "runs": [
+          {
+            "id": 37772778259,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37772778327,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37772778326,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37772778237,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 334,
+        "head": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+        "runs": [
+          {
+            "id": 37763208554,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37763208539,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37763208591,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37763208579,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 333,
+        "head": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+        "runs": [
+          {
+            "id": 37759009780,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37759009816,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37759009730,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37759009812,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 332,
+        "head": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+        "runs": [
+          {
+            "id": 37699490838,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37699490811,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37699490745,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 331,
+        "head": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+        "runs": [
+          {
+            "id": 37649177327,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37649177456,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37649177537,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 330,
+        "head": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+        "runs": [
+          {
+            "id": 37630065832,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37630065909,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37630065841,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 329,
+        "head": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+        "runs": [
+          {
+            "id": 37624095816,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37624095797,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37624095854,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 328,
+        "head": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+        "runs": [
+          {
+            "id": 37621551843,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37621551929,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37621551997,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 327,
+        "head": "96c7d8698847a22afd53dc991c61b0110d5d3902",
+        "runs": [
+          {
+            "id": 37620267280,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37620267478,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37620267448,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 326,
+        "head": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+        "runs": [
+          {
+            "id": 37616962110,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37616962150,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37616962092,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 325,
+        "head": "95287bd846009004e705f267e965510cce56a455",
+        "runs": [
+          {
+            "id": 37601566207,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37601566184,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37601566165,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 324,
+        "head": "f909543081adcb7bef0254b0230ce825a319caf0",
+        "runs": [
+          {
+            "id": 37493009134,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37493009029,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37493009033,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 323,
+        "head": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+        "runs": [
+          {
+            "id": 37485221957,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37485221944,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37485222080,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 322,
+        "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+        "runs": [
+          {
+            "id": 37479863633,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37479863610,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37479863608,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 321,
+        "head": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+        "runs": [
+          {
+            "id": 37468620751,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37468620673,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37468621086,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 320,
+        "head": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+        "runs": [
+          {
+            "id": 37460438514,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37460438641,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37460438485,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 319,
+        "head": "17525108dc6939e2a10f3dab630f78a3e7270479",
+        "runs": [
+          {
+            "id": 37447909428,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37447909567,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37447909381,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 318,
+        "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+        "runs": [
+          {
+            "id": 37441261631,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37441260657,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37441260594,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 317,
+        "head": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+        "runs": [
+          {
+            "id": 37436996022,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37436996018,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37436996009,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37436996160,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 316,
+        "head": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+        "runs": [
+          {
+            "id": 37430887475,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37430887564,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37430887492,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37430887490,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 315,
+        "head": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+        "runs": [
+          {
+            "id": 37424946909,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37424947067,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37424946910,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 314,
+        "head": "24730636102cdec68b952bc5834be50a94b00a5b",
+        "runs": [
+          {
+            "id": 37412882452,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37412882501,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37412882533,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 313,
+        "head": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+        "runs": [
+          {
+            "id": 37411197617,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37411197683,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37411197629,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 312,
+        "head": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+        "runs": [
+          {
+            "id": 37409377416,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37409377414,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37409377422,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 311,
+        "head": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+        "runs": [
+          {
+            "id": 37396393271,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37396392435,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37396392607,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 310,
+        "head": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+        "runs": [
+          {
+            "id": 37330981231,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37330981031,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37330981051,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37330981030,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 309,
+        "head": "d268830e9b84ae39d5791499f6a99f05ba773561",
+        "runs": [
+          {
+            "id": 37318909805,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37318909748,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37318909870,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37318909777,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 308,
+        "head": "79741ef371ea513032d78a0834f7ac041c84036b",
+        "runs": [
+          {
+            "id": 37291760163,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37291760218,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37291760193,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 307,
+        "head": "8317535ffe327f8437f39827f836d3c893ce98d9",
+        "runs": [
+          {
+            "id": 37285920817,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37285920635,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37285920708,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 306,
+        "head": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+        "runs": [
+          {
+            "id": 37272818264,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37272818376,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37272818216,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37272818205,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37272818209,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37272818263,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 305,
+        "head": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+        "runs": [
+          {
+            "id": 37268889454,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37268889470,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37268889502,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37268889479,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37268889477,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37268889441,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 304,
+        "head": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+        "runs": [
+          {
+            "id": 37260870654,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37260870636,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37260870593,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37260870644,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37260870865,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37260870564,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 303,
+        "head": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+        "runs": [
+          {
+            "id": 37258906118,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37258906189,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37258906161,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37258906163,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37258906136,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37258906143,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 302,
+        "head": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+        "runs": [
+          {
+            "id": 37250302261,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 301,
+        "head": "16db7aecd30313618837beaefa235bb8a3032a28",
+        "runs": [
+          {
+            "id": 37248459080,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 300,
+        "head": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+        "runs": [
+          {
+            "id": 37246037408,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37246037360,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37246037381,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37246037300,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 299,
+        "head": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+        "runs": [
+          {
+            "id": 37212581558,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37212581514,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37212581590,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37212581518,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 298,
+        "head": "031def44c194787f4e8e17552961d62e93b10df2",
+        "runs": [
+          {
+            "id": 37207106392,
+            "status": "completed",
+            "conclusion": "cancelled"
+          },
+          {
+            "id": 37207106337,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37207106378,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37207106372,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 297,
+        "head": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+        "runs": [
+          {
+            "id": 37205738795,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 296,
+        "head": "89570b292efc2417b5a927cf94037e4fe878063a",
+        "runs": [
+          {
+            "id": 37204315362,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 295,
+        "head": "120b4527780bbfe00b164875c57f852c4055cc9a",
+        "runs": [
+          {
+            "id": 37203123331,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 294,
+        "head": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+        "runs": [
+          {
+            "id": 37195944430,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 293,
+        "head": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+        "runs": [
+          {
+            "id": 37194251785,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 292,
+        "head": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+        "runs": [
+          {
+            "id": 37192313039,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 291,
+        "head": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+        "runs": [
+          {
+            "id": 37186432977,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 290,
+        "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+        "runs": [
+          {
+            "id": 37179982952,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37179982912,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 289,
+        "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+        "runs": [
+          {
+            "id": 37178379044,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37178379047,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 288,
+        "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+        "runs": [
+          {
+            "id": 37129607156,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37129607180,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 287,
+        "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+        "runs": [
+          {
+            "id": 37128009522,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37128009527,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 286,
+        "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+        "runs": [
+          {
+            "id": 37125944258,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37125944260,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 285,
+        "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+        "runs": [
+          {
+            "id": 37114273041,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 284,
+        "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+        "runs": [
+          {
+            "id": 37110146001,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 283,
+        "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+        "runs": [
+          {
+            "id": 37109206174,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 282,
+        "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+        "runs": [
+          {
+            "id": 37102960642,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37102960643,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 281,
+        "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+        "runs": [
+          {
+            "id": 37101738235,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37101738234,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37101738269,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 280,
+        "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+        "runs": [
+          {
+            "id": 37099461793,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37099461794,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 279,
+        "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+        "runs": [
+          {
+            "id": 37091731710,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37091731706,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 278,
+        "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+        "runs": [
+          {
+            "id": 37037679365,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37037679319,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37037679357,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 277,
+        "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+        "runs": [
+          {
+            "id": 37025404027,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37025403269,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 276,
+        "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+        "runs": [
+          {
+            "id": 37021075209,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37021074841,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 275,
+        "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+        "runs": [
+          {
+            "id": 37019221774,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37019221478,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 274,
+        "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+        "runs": [
+          {
+            "id": 37002368391,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 273,
+        "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+        "runs": [
+          {
+            "id": 37000339200,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 37000339178,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 272,
+        "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+        "runs": [
+          {
+            "id": 36999235875,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36999235787,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 271,
+        "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+        "runs": [
+          {
+            "id": 36996087448,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36996087511,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 270,
+        "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+        "runs": [
+          {
+            "id": 36975608931,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 269,
+        "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+        "runs": [
+          {
+            "id": 36973666391,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666351,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666458,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666537,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666482,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666347,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666652,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666369,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666427,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666419,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36973666467,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 268,
+        "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+        "runs": [
+          {
+            "id": 36966130488,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36966130519,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 267,
+        "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+        "runs": [
+          {
+            "id": 36880714212,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 266,
+        "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+        "runs": [
+          {
+            "id": 36857393673,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 265,
+        "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+        "runs": [
+          {
+            "id": 36856792517,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 264,
+        "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+        "runs": [
+          {
+            "id": 36854131822,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 263,
+        "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+        "runs": [
+          {
+            "id": 36857193454,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 262,
+        "head": "a857c27674d6949488ff8884948499966f9bca40",
+        "runs": [
+          {
+            "id": 36851340615,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36851340507,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36851340535,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36851340641,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 36851340513,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 261,
+        "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+        "runs": [
+          {
+            "id": 35857916359,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 35857916467,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 256,
+        "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+        "runs": [
+          {
+            "id": 35726291578,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 35726291819,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 257,
+        "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+        "runs": [
+          {
+            "id": 35859941419,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 258,
+        "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+        "runs": [
+          {
+            "id": 35932676423,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 259,
+        "head": "8da76987e8c0a46df703d34643f432ab57730768",
+        "runs": [
+          {
+            "id": 35845980410,
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "id": 35845980281,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "n": 260,
+        "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+        "runs": [
+          {
+            "id": 35853060620,
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ],
+        "error": false
+      }
+    }
+  ],
+  "caveat": "Connector workflow getter filters pull_request events; create runs independently checked via REST. Full job/log audit of all historical PRs not performed."
+}

@@ -1,0 +1,4403 @@
+{
+  "date": "2026-10-11 JST",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "prs": [
+    {
+      "number": 396,
+      "head": "0f36624de7cfde69e35180ecc128584fb06fcad2",
+      "branch": "feature/music-production-session-completion-v1",
+      "base": "feature/music-midi-open-after-explicit-close-v1",
+      "base_sha": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 18,
+      "commits": 4
+    },
+    {
+      "number": 395,
+      "head": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "branch": "feature/music-midi-open-after-explicit-close-v1",
+      "base": "feature/music-midi-closed-port-release-regressions-v1",
+      "base_sha": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 1,
+      "commits": 1
+    },
+    {
+      "number": 394,
+      "head": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "branch": "feature/music-midi-closed-port-release-regressions-v1",
+      "base": "fix/music-midi-overlap-test-contract-v1",
+      "base_sha": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 1,
+      "commits": 1
+    },
+    {
+      "number": 393,
+      "head": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "branch": "fix/music-midi-overlap-test-contract-v1",
+      "base": "feature/music-midi-reentrant-note-release-safety-v1",
+      "base_sha": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 1,
+      "commits": 1
+    },
+    {
+      "number": 392,
+      "head": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "branch": "feature/music-midi-reentrant-note-release-safety-v1",
+      "base": "fix/music-midi-release-count-bounds-v1",
+      "base_sha": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 391,
+      "head": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "branch": "fix/music-midi-release-count-bounds-v1",
+      "base": "fix/music-midi-overlap-release-bound-v1",
+      "base_sha": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 390,
+      "head": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "branch": "fix/music-midi-overlap-release-bound-v1",
+      "base": "feature/music-midi-note-count-release-v1",
+      "base_sha": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 389,
+      "head": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "branch": "feature/music-midi-note-count-release-v1",
+      "base": "feature/music-midi-multi-press-held-count-v1",
+      "base_sha": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 388,
+      "head": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "branch": "feature/music-midi-multi-press-held-count-v1",
+      "base": "fix/music-midi-release-reentrant-notify-v1",
+      "base_sha": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 387,
+      "head": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "branch": "fix/music-midi-release-reentrant-notify-v1",
+      "base": "fix/music-midi-reconnect-notification-consistency-v1",
+      "base_sha": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 3
+    },
+    {
+      "number": 386,
+      "head": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "branch": "fix/music-midi-reconnect-notification-consistency-v1",
+      "base": "fix/music-midi-reconnect-release-ci-v1",
+      "base_sha": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 385,
+      "head": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "branch": "fix/music-midi-reconnect-release-ci-v1",
+      "base": "feature/music-midi-atomic-reconnect-state-v1",
+      "base_sha": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 1,
+      "commits": 2
+    },
+    {
+      "number": 384,
+      "head": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "branch": "feature/music-midi-atomic-reconnect-state-v1",
+      "base": "feature/music-midi-close-reopen-atomic-v1",
+      "base_sha": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 383,
+      "head": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "branch": "feature/music-midi-close-reopen-atomic-v1",
+      "base": "feature/music-midi-state-event-snapshots-v1",
+      "base_sha": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 382,
+      "head": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "branch": "feature/music-midi-state-event-snapshots-v1",
+      "base": "feature/music-midi-strict-event-payload-v1",
+      "base_sha": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 3
+    },
+    {
+      "number": 381,
+      "head": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "branch": "feature/music-midi-strict-event-payload-v1",
+      "base": "feature/music-midi-delivery-fault-containment-v1",
+      "base_sha": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 3
+    },
+    {
+      "number": 380,
+      "head": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "branch": "feature/music-midi-delivery-fault-containment-v1",
+      "base": "feature/music-midi-reentrant-source-state-v1",
+      "base_sha": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 3
+    },
+    {
+      "number": 379,
+      "head": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "branch": "feature/music-midi-reentrant-source-state-v1",
+      "base": "feature/music-midi-source-notification-lock-v1",
+      "base_sha": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 378,
+      "head": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "branch": "feature/music-midi-source-notification-lock-v1",
+      "base": "feature/music-midi-listener-fault-isolation-v1",
+      "base_sha": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 377,
+      "head": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "branch": "feature/music-midi-listener-fault-isolation-v1",
+      "base": "feature/music-midi-production-edge-closure-v1",
+      "base_sha": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 376,
+      "head": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "branch": "feature/music-midi-production-edge-closure-v1",
+      "base": "feature/music-midi-close-before-release-v1",
+      "base_sha": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 4
+    },
+    {
+      "number": 375,
+      "head": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "branch": "feature/music-midi-close-before-release-v1",
+      "base": "feature/music-midi-source-state-tests-v1",
+      "base_sha": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 6
+    },
+    {
+      "number": 374,
+      "head": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "branch": "feature/music-midi-source-state-tests-v1",
+      "base": "feature/music-midi-source-state-v1",
+      "base_sha": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 12
+    },
+    {
+      "number": 373,
+      "head": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "branch": "feature/music-midi-source-state-v1",
+      "base": "feature/music-native-file-import-v1",
+      "base_sha": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 372,
+      "head": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "branch": "feature/music-native-file-import-v1",
+      "base": "feature/music-spm-assets-migration-v1",
+      "base_sha": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 5
+    },
+    {
+      "number": 371,
+      "head": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "branch": "feature/music-spm-assets-migration-v1",
+      "base": "feature/music-bundled-midi-production-v1",
+      "base_sha": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 15,
+      "commits": 3
+    },
+    {
+      "number": 370,
+      "head": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "branch": "feature/music-bundled-midi-production-v1",
+      "base": "feature/music-midi-session-cancellation-v1",
+      "base_sha": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 3
+    },
+    {
+      "number": 369,
+      "head": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "branch": "feature/music-midi-session-cancellation-v1",
+      "base": "feature/music-midi-disconnect-countin-v1",
+      "base_sha": "1587ed74025970282810f43f50295931dd7e0f79",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 13,
+      "commits": 3
+    },
+    {
+      "number": 368,
+      "head": "1587ed74025970282810f43f50295931dd7e0f79",
+      "branch": "feature/music-midi-disconnect-countin-v1",
+      "base": "feature/music-aligned-candidates-spatial-history-v1",
+      "base_sha": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 1
+    },
+    {
+      "number": 367,
+      "head": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "branch": "feature/music-aligned-candidates-spatial-history-v1",
+      "base": "feature/music-aligned-spatial-v1",
+      "base_sha": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 2
+    },
+    {
+      "number": 366,
+      "head": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "branch": "feature/music-aligned-spatial-v1",
+      "base": "feature/music-pcm-collision-proposals-v1",
+      "base_sha": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 12,
+      "commits": 1
+    },
+    {
+      "number": 365,
+      "head": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "branch": "feature/music-pcm-collision-proposals-v1",
+      "base": "feature/music-measured-mix-proposals-v1",
+      "base_sha": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 12,
+      "commits": 1
+    },
+    {
+      "number": 364,
+      "head": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "branch": "feature/music-measured-mix-proposals-v1",
+      "base": "feature/music-long-wav-mix-ui-v1",
+      "base_sha": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 2
+    },
+    {
+      "number": 363,
+      "head": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "branch": "feature/music-long-wav-mix-ui-v1",
+      "base": "feature/music-long-wav-archive-v1",
+      "base_sha": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 3
+    },
+    {
+      "number": 362,
+      "head": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "branch": "feature/music-long-wav-archive-v1",
+      "base": "feature/music-long-wav-durable-v1",
+      "base_sha": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 1
+    },
+    {
+      "number": 361,
+      "head": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "branch": "feature/music-long-wav-durable-v1",
+      "base": "feature/music-wav-async-render-chat-v1",
+      "base_sha": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 1
+    },
+    {
+      "number": 360,
+      "head": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "branch": "feature/music-wav-async-render-chat-v1",
+      "base": "feature/music-wav-stream-read-chat-v1",
+      "base_sha": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 2
+    },
+    {
+      "number": 359,
+      "head": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "branch": "feature/music-wav-stream-read-chat-v1",
+      "base": "feature/music-pcm-continuous-chunks-chat-v1",
+      "base_sha": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 358,
+      "head": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "branch": "feature/music-pcm-continuous-chunks-chat-v1",
+      "base": "feature/music-pcm-compression-integrated-chat-v1",
+      "base_sha": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 357,
+      "head": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "branch": "feature/music-pcm-compression-integrated-chat-v1",
+      "base": "feature/music-pcm-compression-chat-v1",
+      "base_sha": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 356,
+      "head": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "branch": "feature/music-pcm-compression-chat-v1",
+      "base": "feature/music-pcm-eq-persist-verify-chat-v1",
+      "base_sha": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 355,
+      "head": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "branch": "feature/music-pcm-eq-persist-verify-chat-v1",
+      "base": "feature/music-pcm-eq-persist-chat-v1",
+      "base_sha": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 1,
+      "commits": 1
+    },
+    {
+      "number": 354,
+      "head": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "branch": "feature/music-pcm-eq-persist-chat-v1",
+      "base": "feature/music-pcm-eq-preview-chat-v1",
+      "base_sha": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 2
+    },
+    {
+      "number": 353,
+      "head": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "branch": "feature/music-pcm-eq-preview-chat-v1",
+      "base": "feature/music-pcm-peaking-eq-chat-v1",
+      "base_sha": "3c40354e65d6945df14676efe317771e3a715947",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 1
+    },
+    {
+      "number": 352,
+      "head": "3c40354e65d6945df14676efe317771e3a715947",
+      "branch": "feature/music-pcm-peaking-eq-chat-v1",
+      "base": "feature/music-pcm-mix-v1",
+      "base_sha": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 1
+    },
+    {
+      "number": 351,
+      "head": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "branch": "feature/music-pcm-mix-v1",
+      "base": "feature/music-lyrics-note-assignment-v1",
+      "base_sha": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 12,
+      "commits": 1
+    },
+    {
+      "number": 350,
+      "head": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "branch": "feature/music-lyrics-note-assignment-v1",
+      "base": "feature/music-native-format-closure-v1",
+      "base_sha": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 1
+    },
+    {
+      "number": 349,
+      "head": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "branch": "feature/music-native-format-closure-v1",
+      "base": "feature/music-package-native-graph-v1",
+      "base_sha": "6ef95994a939817b5d579ff452997598da356673",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 348,
+      "head": "6ef95994a939817b5d579ff452997598da356673",
+      "branch": "feature/music-package-native-graph-v1",
+      "base": "feature/music-package-macho-loader-v1",
+      "base_sha": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 2
+    },
+    {
+      "number": 347,
+      "head": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "branch": "feature/music-package-macho-loader-v1",
+      "base": "feature/music-wrapper-build-inventory-v1",
+      "base_sha": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 1
+    },
+    {
+      "number": 346,
+      "head": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "branch": "feature/music-wrapper-build-inventory-v1",
+      "base": "feature/music-unsigned-app-layout-v1",
+      "base_sha": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 2
+    },
+    {
+      "number": 345,
+      "head": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "branch": "feature/music-unsigned-app-layout-v1",
+      "base": "feature/music-unsigned-generation-assembly-v1",
+      "base_sha": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 344,
+      "head": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "branch": "feature/music-unsigned-generation-assembly-v1",
+      "base": "feature/music-validated-publication-snapshot-v1",
+      "base_sha": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 343,
+      "head": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "branch": "feature/music-validated-publication-snapshot-v1",
+      "base": "feature/music-sealed-summary-immutability-v1",
+      "base_sha": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 342,
+      "head": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "branch": "feature/music-sealed-summary-immutability-v1",
+      "base": "feature/music-native-observation-snapshot-v1",
+      "base_sha": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 2
+    },
+    {
+      "number": 341,
+      "head": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "branch": "feature/music-native-observation-snapshot-v1",
+      "base": "feature/music-terminal-transport-callback-v1",
+      "base_sha": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 1
+    },
+    {
+      "number": 340,
+      "head": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "branch": "feature/music-terminal-transport-callback-v1",
+      "base": "feature/music-terminal-shutdown-failure-v1",
+      "base_sha": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 3
+    },
+    {
+      "number": 339,
+      "head": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "branch": "feature/music-terminal-shutdown-failure-v1",
+      "base": "feature/music-request-authority-isolation-v1",
+      "base_sha": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 2
+    },
+    {
+      "number": 338,
+      "head": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "branch": "feature/music-request-authority-isolation-v1",
+      "base": "feature/music-authorized-result-generation-v1",
+      "base_sha": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 4
+    },
+    {
+      "number": 337,
+      "head": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "branch": "feature/music-authorized-result-generation-v1",
+      "base": "feature/music-final-response-output-recheck-v1",
+      "base_sha": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 3
+    },
+    {
+      "number": 336,
+      "head": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "branch": "feature/music-final-response-output-recheck-v1",
+      "base": "feature/music-stem-output-continuity-v1",
+      "base_sha": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 4
+    },
+    {
+      "number": 335,
+      "head": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "branch": "feature/music-stem-output-continuity-v1",
+      "base": "feature/music-processing-publication-continuity-v1",
+      "base_sha": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 3
+    },
+    {
+      "number": 334,
+      "head": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "branch": "feature/music-processing-publication-continuity-v1",
+      "base": "feature/music-owned-health-continuity-v1",
+      "base_sha": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 2
+    },
+    {
+      "number": 333,
+      "head": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "branch": "feature/music-owned-health-continuity-v1",
+      "base": "feature/music-parent-owned-origin-binding-v1",
+      "base_sha": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 332,
+      "head": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "branch": "feature/music-parent-owned-origin-binding-v1",
+      "base": "feature/music-owned-process-origin-v1",
+      "base_sha": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 14,
+      "commits": 1
+    },
+    {
+      "number": 331,
+      "head": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "branch": "feature/music-owned-process-origin-v1",
+      "base": "feature/music-packaged-native-runtime-origin-v1",
+      "base_sha": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 2
+    },
+    {
+      "number": 330,
+      "head": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "branch": "feature/music-packaged-native-runtime-origin-v1",
+      "base": "feature/music-private-runtime-unified-checkpoint-v1",
+      "base_sha": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 4
+    },
+    {
+      "number": 329,
+      "head": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "branch": "feature/music-private-runtime-unified-checkpoint-v1",
+      "base": "feature/music-private-runtime-production-slots-v1",
+      "base_sha": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 3
+    },
+    {
+      "number": 328,
+      "head": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "branch": "feature/music-private-runtime-production-slots-v1",
+      "base": "feature/music-swift-private-summary-ack-v1",
+      "base_sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 13,
+      "commits": 3
+    },
+    {
+      "number": 327,
+      "head": "96c7d8698847a22afd53dc991c61b0110d5d3902",
+      "branch": "feature/music-private-python-anchored-routing-v1",
+      "base": "feature/music-swift-private-summary-ack-v1",
+      "base_sha": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 2
+    },
+    {
+      "number": 326,
+      "head": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "branch": "feature/music-swift-private-summary-ack-v1",
+      "base": "feature/music-owned-descendant-final-delivery-v1",
+      "base_sha": "95287bd846009004e705f267e965510cce56a455",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 2
+    },
+    {
+      "number": 325,
+      "head": "95287bd846009004e705f267e965510cce56a455",
+      "branch": "feature/music-owned-descendant-final-delivery-v1",
+      "base": "feature/music-owned-exit-delivery-v1",
+      "base_sha": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 1
+    },
+    {
+      "number": 324,
+      "head": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "branch": "feature/music-owned-exit-delivery-v1",
+      "base": "feature/music-record-manifest-production-assembly-v1",
+      "base_sha": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 2
+    },
+    {
+      "number": 323,
+      "head": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "branch": "feature/music-record-manifest-production-assembly-v1",
+      "base": "feature/music-private-runtime-assembly-v1",
+      "base_sha": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 1
+    },
+    {
+      "number": 322,
+      "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "branch": "feature/music-private-runtime-assembly-v1",
+      "base": "feature/music-installed-dependency-assembly-v1",
+      "base_sha": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 1
+    },
+    {
+      "number": 321,
+      "head": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "branch": "feature/music-installed-dependency-assembly-v1",
+      "base": "feature/music-exact-backend-candidates-v1",
+      "base_sha": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 320,
+      "head": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "branch": "feature/music-exact-backend-candidates-v1",
+      "base": "feature/music-backend-bundle-evidence-v1",
+      "base_sha": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 319,
+      "head": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "branch": "feature/music-backend-bundle-evidence-v1",
+      "base": "feature/music-production-source-preflight-v1",
+      "base_sha": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 2
+    },
+    {
+      "number": 318,
+      "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "branch": "feature/music-production-source-preflight-v1",
+      "base": "feature/music-browser-stream-audit-v1",
+      "base_sha": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 1
+    },
+    {
+      "number": 317,
+      "head": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "branch": "feature/music-browser-stream-audit-v1",
+      "base": "feature/music-authorized-shutdown-v1",
+      "base_sha": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 11,
+      "commits": 3
+    },
+    {
+      "number": 316,
+      "head": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "branch": "feature/music-authorized-shutdown-v1",
+      "base": "feature/music-owned-result-lifecycle-v1",
+      "base_sha": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 15,
+      "commits": 2
+    },
+    {
+      "number": 315,
+      "head": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "branch": "feature/music-owned-result-lifecycle-v1",
+      "base": "feature/music-dispatch-evidence-v1",
+      "base_sha": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 13,
+      "commits": 3
+    },
+    {
+      "number": 314,
+      "head": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "branch": "feature/music-dispatch-evidence-v1",
+      "base": "feature/music-native-runtime-events-v1",
+      "base_sha": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 2
+    },
+    {
+      "number": 313,
+      "head": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "branch": "feature/music-native-runtime-events-v1",
+      "base": "feature/music-native-image-routing-v2",
+      "base_sha": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 2
+    },
+    {
+      "number": 312,
+      "head": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "branch": "feature/music-native-image-routing-v2",
+      "base": "feature/music-native-routing-closure-v1",
+      "base_sha": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 6
+    },
+    {
+      "number": 311,
+      "head": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "branch": "feature/music-native-routing-closure-v1",
+      "base": "feature/music-processing-closure-v1",
+      "base_sha": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 4
+    },
+    {
+      "number": 310,
+      "head": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "branch": "feature/music-processing-closure-v1",
+      "base": "feature/music-production-lifecycle-v1",
+      "base_sha": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 16,
+      "commits": 2
+    },
+    {
+      "number": 309,
+      "head": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "branch": "feature/music-production-lifecycle-v1",
+      "base": "feature/music-scoped-loaded-library-receipts-v1",
+      "base_sha": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 16,
+      "commits": 2
+    },
+    {
+      "number": 308,
+      "head": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "branch": "feature/music-scoped-loaded-library-receipts-v1",
+      "base": "feature/music-native-runtime-verification-v1",
+      "base_sha": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 4
+    },
+    {
+      "number": 307,
+      "head": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "branch": "feature/music-native-runtime-verification-v1",
+      "base": "feature/music-demucs-receipt-closure-v1",
+      "base_sha": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 23,
+      "commits": 2
+    },
+    {
+      "number": 306,
+      "head": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "branch": "feature/music-demucs-receipt-closure-v1",
+      "base": "feature/music-runtime-inventory-v2",
+      "base_sha": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 21,
+      "commits": 4
+    },
+    {
+      "number": 305,
+      "head": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "branch": "feature/music-runtime-inventory-v2",
+      "base": "feature/music-distribution-identity-v1",
+      "base_sha": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 17,
+      "commits": 3
+    },
+    {
+      "number": 304,
+      "head": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "branch": "feature/music-distribution-identity-v1",
+      "base": "feature/music-runtime-ingress-identity-v1",
+      "base_sha": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 18,
+      "commits": 6
+    },
+    {
+      "number": 303,
+      "head": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "branch": "feature/music-runtime-ingress-identity-v1",
+      "base": "feature/music-resource-runtime-contract-v1",
+      "base_sha": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 28,
+      "commits": 2
+    },
+    {
+      "number": 302,
+      "head": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "branch": "feature/music-resource-runtime-contract-v1",
+      "base": "feature/music-durable-package-generation-v1",
+      "base_sha": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 2
+    },
+    {
+      "number": 301,
+      "head": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "branch": "feature/music-durable-package-generation-v1",
+      "base": "feature/music-binary-resolver-boundary-v1",
+      "base_sha": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 3
+    },
+    {
+      "number": 300,
+      "head": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "branch": "feature/music-binary-resolver-boundary-v1",
+      "base": "feature/music-restore-atomic-safety-v1",
+      "base_sha": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 14,
+      "commits": 2
+    },
+    {
+      "number": 299,
+      "head": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "branch": "feature/music-restore-atomic-safety-v1",
+      "base": "feature/music-transaction-completion-safety-v1",
+      "base_sha": "031def44c194787f4e8e17552961d62e93b10df2",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 14,
+      "commits": 6
+    },
+    {
+      "number": 298,
+      "head": "031def44c194787f4e8e17552961d62e93b10df2",
+      "branch": "feature/music-transaction-completion-safety-v1",
+      "base": "feature/music-production-verification-contract-v1",
+      "base_sha": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 1
+    },
+    {
+      "number": 297,
+      "head": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "branch": "feature/music-production-verification-contract-v1",
+      "base": "feature/music-disposable-durable-recovery-v1",
+      "base_sha": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 2
+    },
+    {
+      "number": 296,
+      "head": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "branch": "feature/music-disposable-durable-recovery-v1",
+      "base": "feature/music-observed-byte-fault-evidence-v1",
+      "base_sha": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 1
+    },
+    {
+      "number": 295,
+      "head": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "branch": "feature/music-observed-byte-fault-evidence-v1",
+      "base": "feature/music-package-restore-review-v1",
+      "base_sha": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 2
+    },
+    {
+      "number": 294,
+      "head": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "branch": "feature/music-package-restore-review-v1",
+      "base": "feature/music-dependency-closure-boundaries-v1",
+      "base_sha": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 1
+    },
+    {
+      "number": 293,
+      "head": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "branch": "feature/music-dependency-closure-boundaries-v1",
+      "base": "feature/music-storage-contract-inspection-v1",
+      "base_sha": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 2
+    },
+    {
+      "number": 292,
+      "head": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "branch": "feature/music-storage-contract-inspection-v1",
+      "base": "feature/music-asset-dependency-inspection-v1",
+      "base_sha": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 1
+    },
+    {
+      "number": 291,
+      "head": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "branch": "feature/music-asset-dependency-inspection-v1",
+      "base": "feature/music-completion-foundation-v1",
+      "base_sha": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 10
+    },
+    {
+      "number": 290,
+      "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "branch": "feature/music-completion-foundation-v1",
+      "base": "feature/music-ai-arrangement-destination-inspection-v1",
+      "base_sha": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 1
+    },
+    {
+      "number": 289,
+      "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "branch": "feature/music-ai-arrangement-destination-inspection-v1",
+      "base": "feature/music-ai-arrangement-track-inspection-v1",
+      "base_sha": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 2
+    },
+    {
+      "number": 288,
+      "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "branch": "feature/music-ai-arrangement-track-inspection-v1",
+      "base": "feature/music-ai-arrangement-reference-inspection-v1",
+      "base_sha": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 4
+    },
+    {
+      "number": 287,
+      "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "branch": "feature/music-ai-arrangement-reference-inspection-v1",
+      "base": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "base_sha": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 1
+    },
+    {
+      "number": 286,
+      "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "branch": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "base": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "base_sha": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 2
+    },
+    {
+      "number": 285,
+      "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "branch": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "base": "feature/music-ai-continuation-source-preview-v1",
+      "base_sha": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 7,
+      "commits": 2
+    },
+    {
+      "number": 284,
+      "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "branch": "feature/music-ai-continuation-source-preview-v1",
+      "base": "feature/music-ai-arrangement-entry-preview-v1",
+      "base_sha": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 1
+    },
+    {
+      "number": 283,
+      "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "branch": "feature/music-ai-arrangement-entry-preview-v1",
+      "base": "feature/music-ai-lyrics-exact-preview-v1",
+      "base_sha": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 2
+    },
+    {
+      "number": 282,
+      "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "branch": "feature/music-ai-lyrics-exact-preview-v1",
+      "base": "feature/music-ai-project-section-apply-v1",
+      "base_sha": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 14,
+      "commits": 2
+    },
+    {
+      "number": 281,
+      "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "branch": "feature/music-ai-project-section-apply-v1",
+      "base": "feature/music-ai-section-exact-preview-v1",
+      "base_sha": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 15,
+      "commits": 2
+    },
+    {
+      "number": 280,
+      "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "branch": "feature/music-ai-section-exact-preview-v1",
+      "base": "feature/music-ai-family-metadata-range-v1",
+      "base_sha": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 13,
+      "commits": 2
+    },
+    {
+      "number": 279,
+      "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "branch": "feature/music-ai-family-metadata-range-v1",
+      "base": "feature/music-ai-partial-family-history-v1",
+      "base_sha": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 3
+    },
+    {
+      "number": 278,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "branch": "feature/music-ai-partial-family-history-v1",
+      "base": "feature/music-ai-family-apply-transaction-v1",
+      "base_sha": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 15,
+      "commits": 4
+    },
+    {
+      "number": 277,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "branch": "feature/music-ai-family-apply-transaction-v1",
+      "base": "feature/music-ai-family-preview-v1",
+      "base_sha": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 9,
+      "commits": 14
+    },
+    {
+      "number": 276,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "branch": "feature/music-ai-family-preview-v1",
+      "base": "feature/music-ai-exact-partial-adoption-v1",
+      "base_sha": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 11
+    },
+    {
+      "number": 275,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "branch": "feature/music-ai-exact-partial-adoption-v1",
+      "base": "feature/music-ai-candidate-family-v1",
+      "base_sha": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 3
+    },
+    {
+      "number": 274,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "branch": "feature/music-ai-candidate-family-v1",
+      "base": "feature/music-ai-candidate-preview-v1",
+      "base_sha": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 6,
+      "commits": 6
+    },
+    {
+      "number": 273,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "branch": "feature/music-ai-candidate-preview-v1",
+      "base": "feature/music-ai-composition-workflow-v1",
+      "base_sha": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 11
+    },
+    {
+      "number": 272,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "branch": "feature/music-ai-composition-workflow-v1",
+      "base": "feature/music-ai-assistant-ui-v1",
+      "base_sha": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 8,
+      "commits": 9
+    },
+    {
+      "number": 271,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "branch": "feature/music-ai-assistant-ui-v1",
+      "base": "feature/music-ai-workflow-foundation-v1",
+      "base_sha": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 10,
+      "commits": 3
+    },
+    {
+      "number": 270,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "branch": "feature/music-ai-workflow-foundation-v1",
+      "base": "feature/music-coordinated-a-browser-v1",
+      "base_sha": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 269,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "branch": "feature/music-coordinated-a-browser-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 66,
+      "commits": 75
+    },
+    {
+      "number": 268,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "branch": "feature/music-editor-commit-lock-guard-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 1
+    },
+    {
+      "number": 267,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "branch": "feature/music-measure-lock-compat-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 5
+    },
+    {
+      "number": 266,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "branch": "feature/music-structure-descriptors-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 265,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "branch": "feature/music-meter-boundaries-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 264,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "branch": "feature/music-midi-metadata-export-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 1
+    },
+    {
+      "number": 263,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "branch": "feature/music-structure-metadata-maps-v1",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 6
+    },
+    {
+      "number": 262,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "branch": "verification/music-studio-all-drafts-255",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 33,
+      "commits": 50
+    },
+    {
+      "number": 261,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "branch": "verification/music-studio-baseline-combined",
+      "base": "agent/music-studio-cache-version-consistency",
+      "base_sha": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 4
+    },
+    {
+      "number": 260,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "branch": "agent/music-studio-cache-version-consistency",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 5,
+      "commits": 8
+    },
+    {
+      "number": 259,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "branch": "agent/music-selected-track-invalid-id-guard",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 3,
+      "commits": 3
+    },
+    {
+      "number": 258,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "branch": "agent/music-audio-bridge-midi-guard",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 34
+    },
+    {
+      "number": 257,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "branch": "agent/music-audio-helper-boundary-tests",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 4,
+      "commits": 18
+    },
+    {
+      "number": 256,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "branch": "agent/music-studio-current-main-build-verification",
+      "base": "main",
+      "base_sha": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "draft": true,
+      "mergeable": true,
+      "changed_files": 2,
+      "commits": 2
+    },
+    {
+      "number": 35,
+      "head": "0066ce391b5f5dd54f04612edd1111d59ed5d763",
+      "branch": "codex/add-url-registration-for-story-archive",
+      "base": "main",
+      "base_sha": "091fd97890712b98e0934511be64c6408b81821a",
+      "draft": false,
+      "mergeable": false,
+      "changed_files": 4,
+      "commits": 1
+    },
+    {
+      "number": 10,
+      "head": "060bf78b8cadf773209c441a332d420043c356f5",
+      "branch": "codex/scene",
+      "base": "main",
+      "base_sha": "38e14b57ddfa5e0d340724a5dc1e17278d8365c6",
+      "draft": false,
+      "mergeable": false,
+      "changed_files": 3,
+      "commits": 1
+    }
+  ],
+  "ci": [
+    {
+      "number": 396,
+      "runs": [
+        {
+          "id": 38115132092,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132085,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132107,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132091,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132082,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132128,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 395,
+      "runs": [
+        {
+          "id": 38114148214,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114148239,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114148221,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 394,
+      "runs": [
+        {
+          "id": 38114002936,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114002944,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114002961,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 393,
+      "runs": [
+        {
+          "id": 38113965006,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38113965025,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38113965003,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 392,
+      "runs": [
+        {
+          "id": 38112452516,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112452489,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112452498,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "number": 391,
+      "runs": [
+        {
+          "id": 38112383424,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112383365,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112383370,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "number": 390,
+      "runs": [
+        {
+          "id": 38112307597,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112307477,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112307487,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "number": 389,
+      "runs": [
+        {
+          "id": 38112203524,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112203587,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112203514,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 388,
+      "runs": [
+        {
+          "id": 38112167150,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112167165,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112167143,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 387,
+      "runs": [
+        {
+          "id": 38112112933,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112112985,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112112964,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 386,
+      "runs": [
+        {
+          "id": 38112031491,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112031493,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112031556,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 385,
+      "runs": [
+        {
+          "id": 38111992768,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38111992722,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38111992807,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 384,
+      "runs": [
+        {
+          "id": 38099795914,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38099795978,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38099795964,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 383,
+      "runs": [
+        {
+          "id": 38052078738,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38052078794,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38052078677,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 382,
+      "runs": [
+        {
+          "id": 38051976406,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051976513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051976447,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 381,
+      "runs": [
+        {
+          "id": 38051887493,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051887509,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051887495,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 380,
+      "runs": [
+        {
+          "id": 38051769434,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051769482,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051769427,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 379,
+      "runs": [
+        {
+          "id": 38051440558,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051440596,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051440591,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 378,
+      "runs": [
+        {
+          "id": 38050488451,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38050488374,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38050488376,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 377,
+      "runs": [
+        {
+          "id": 38049910097,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049910128,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049910188,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 376,
+      "runs": [
+        {
+          "id": 38049746904,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049746921,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049746917,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 375,
+      "runs": [
+        {
+          "id": 38049530123,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049530095,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049530098,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 374,
+      "runs": [
+        {
+          "id": 38049212749,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049212730,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049212871,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 373,
+      "runs": [
+        {
+          "id": 38041257027,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38041257049,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38041257011,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 372,
+      "runs": [
+        {
+          "id": 38039200043,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38039200041,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38039200021,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 371,
+      "runs": [
+        {
+          "id": 38037818530,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818565,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818621,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818593,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 370,
+      "runs": [
+        {
+          "id": 38035997288,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38035997294,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 369,
+      "runs": [
+        {
+          "id": 38027496117,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496101,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496216,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496099,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496080,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496104,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 368,
+      "runs": [
+        {
+          "id": 38026208128,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38026207540,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38026207529,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38026207547,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 367,
+      "runs": []
+    },
+    {
+      "number": 366,
+      "runs": []
+    },
+    {
+      "number": 365,
+      "runs": []
+    },
+    {
+      "number": 364,
+      "runs": []
+    },
+    {
+      "number": 363,
+      "runs": []
+    },
+    {
+      "number": 362,
+      "runs": []
+    },
+    {
+      "number": 361,
+      "runs": []
+    },
+    {
+      "number": 360,
+      "runs": []
+    },
+    {
+      "number": 359,
+      "runs": []
+    },
+    {
+      "number": 358,
+      "runs": []
+    },
+    {
+      "number": 357,
+      "runs": []
+    },
+    {
+      "number": 356,
+      "runs": []
+    },
+    {
+      "number": 355,
+      "runs": []
+    },
+    {
+      "number": 354,
+      "runs": []
+    },
+    {
+      "number": 353,
+      "runs": []
+    },
+    {
+      "number": 352,
+      "runs": []
+    },
+    {
+      "number": 351,
+      "runs": []
+    },
+    {
+      "number": 350,
+      "runs": []
+    },
+    {
+      "number": 349,
+      "runs": []
+    },
+    {
+      "number": 348,
+      "runs": [
+        {
+          "id": 37904831891,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831712,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831871,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831890,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 347,
+      "runs": [
+        {
+          "id": 37901747065,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747045,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747027,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747032,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 346,
+      "runs": [
+        {
+          "id": 37899498505,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498458,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498457,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498432,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 345,
+      "runs": [
+        {
+          "id": 37896308251,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308241,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308276,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308225,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 344,
+      "runs": [
+        {
+          "id": 37880524345,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524355,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524389,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524357,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 343,
+      "runs": [
+        {
+          "id": 37878132813,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132708,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132693,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132692,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 342,
+      "runs": [
+        {
+          "id": 37876951687,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951702,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951725,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951686,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 341,
+      "runs": [
+        {
+          "id": 37874173575,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173586,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173609,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173607,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 340,
+      "runs": [
+        {
+          "id": 37868897739,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897789,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897721,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897773,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 339,
+      "runs": [
+        {
+          "id": 37866175224,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175154,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175119,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175113,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 338,
+      "runs": [
+        {
+          "id": 37831618959,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618656,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618570,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618601,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 337,
+      "runs": [
+        {
+          "id": 37783531688,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531398,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531539,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531425,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 336,
+      "runs": [
+        {
+          "id": 37778205688,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205646,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205682,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205658,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 335,
+      "runs": [
+        {
+          "id": 37772778259,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778327,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778326,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778237,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 334,
+      "runs": [
+        {
+          "id": 37763208554,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208539,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208591,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208579,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 333,
+      "runs": [
+        {
+          "id": 37759009780,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009816,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009730,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009812,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 332,
+      "runs": [
+        {
+          "id": 37699490838,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37699490811,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37699490745,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 331,
+      "runs": [
+        {
+          "id": 37649177327,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37649177456,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37649177537,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 330,
+      "runs": [
+        {
+          "id": 37630065832,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37630065909,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37630065841,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 329,
+      "runs": [
+        {
+          "id": 37624095816,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37624095797,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37624095854,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 328,
+      "runs": [
+        {
+          "id": 37621551843,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37621551929,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37621551997,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 327,
+      "runs": [
+        {
+          "id": 37620267280,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37620267478,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37620267448,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 326,
+      "runs": [
+        {
+          "id": 37616962110,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37616962150,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37616962092,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 325,
+      "runs": [
+        {
+          "id": 37601566207,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37601566184,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37601566165,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 324,
+      "runs": [
+        {
+          "id": 37493009134,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37493009029,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37493009033,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 323,
+      "runs": [
+        {
+          "id": 37485221957,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37485221944,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37485222080,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 322,
+      "runs": [
+        {
+          "id": 37479863633,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37479863610,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37479863608,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 321,
+      "runs": [
+        {
+          "id": 37468620751,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37468620673,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37468621086,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 320,
+      "runs": [
+        {
+          "id": 37460438514,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37460438641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37460438485,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 319,
+      "runs": [
+        {
+          "id": 37447909428,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37447909567,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37447909381,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 318,
+      "runs": [
+        {
+          "id": 37441261631,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37441260657,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37441260594,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 317,
+      "runs": [
+        {
+          "id": 37436996022,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996018,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996009,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996160,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 316,
+      "runs": [
+        {
+          "id": 37430887475,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887564,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887492,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887490,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 315,
+      "runs": [
+        {
+          "id": 37424946909,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37424947067,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37424946910,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 314,
+      "runs": [
+        {
+          "id": 37412882452,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37412882501,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37412882533,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 313,
+      "runs": [
+        {
+          "id": 37411197617,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37411197683,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37411197629,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 312,
+      "runs": [
+        {
+          "id": 37409377416,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37409377414,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37409377422,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 311,
+      "runs": [
+        {
+          "id": 37396393271,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37396392435,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37396392607,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 310,
+      "runs": [
+        {
+          "id": 37330981231,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981031,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981051,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981030,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 309,
+      "runs": [
+        {
+          "id": 37318909805,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909748,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909870,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909777,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 308,
+      "runs": [
+        {
+          "id": 37291760163,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37291760218,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37291760193,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 307,
+      "runs": [
+        {
+          "id": 37285920817,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37285920635,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37285920708,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 306,
+      "runs": [
+        {
+          "id": 37272818264,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818376,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818216,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818205,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818209,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818263,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 305,
+      "runs": [
+        {
+          "id": 37268889454,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889470,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889502,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889479,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889477,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889441,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 304,
+      "runs": [
+        {
+          "id": 37260870654,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870636,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870593,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870644,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870865,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870564,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 303,
+      "runs": [
+        {
+          "id": 37258906118,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906189,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906161,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906163,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906136,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906143,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 302,
+      "runs": [
+        {
+          "id": 37250302261,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 301,
+      "runs": [
+        {
+          "id": 37248459080,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 300,
+      "runs": [
+        {
+          "id": 37246037408,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037360,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037381,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037300,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 299,
+      "runs": [
+        {
+          "id": 37212581558,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581514,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581590,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581518,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 298,
+      "runs": [
+        {
+          "id": 37207106392,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "cancelled"
+        },
+        {
+          "id": 37207106337,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37207106378,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37207106372,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 297,
+      "runs": [
+        {
+          "id": 37205738795,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 296,
+      "runs": [
+        {
+          "id": 37204315362,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 295,
+      "runs": [
+        {
+          "id": 37203123331,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 294,
+      "runs": [
+        {
+          "id": 37195944430,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 293,
+      "runs": [
+        {
+          "id": 37194251785,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 292,
+      "runs": [
+        {
+          "id": 37192313039,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 291,
+      "runs": [
+        {
+          "id": 37186432977,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 290,
+      "runs": [
+        {
+          "id": 37179982952,
+          "name": "Music Studio offline audio acceptance",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37179982912,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 289,
+      "runs": [
+        {
+          "id": 37178379044,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37178379047,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 288,
+      "runs": [
+        {
+          "id": 37129607156,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37129607180,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 287,
+      "runs": [
+        {
+          "id": 37128009522,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37128009527,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 286,
+      "runs": [
+        {
+          "id": 37125944258,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37125944260,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 285,
+      "runs": [
+        {
+          "id": 37114273041,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 284,
+      "runs": [
+        {
+          "id": 37110146001,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 283,
+      "runs": [
+        {
+          "id": 37109206174,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 282,
+      "runs": [
+        {
+          "id": 37102960642,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37102960643,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 281,
+      "runs": [
+        {
+          "id": 37101738235,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37101738234,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37101738269,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 280,
+      "runs": [
+        {
+          "id": 37099461793,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37099461794,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 279,
+      "runs": [
+        {
+          "id": 37091731710,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37091731706,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 278,
+      "runs": [
+        {
+          "id": 37037679365,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679319,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679357,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 277,
+      "runs": [
+        {
+          "id": 37025404027,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37025403269,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 276,
+      "runs": [
+        {
+          "id": 37021075209,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37021074841,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 275,
+      "runs": [
+        {
+          "id": 37019221774,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37019221478,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 274,
+      "runs": [
+        {
+          "id": 37002368391,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 273,
+      "runs": [
+        {
+          "id": 37000339200,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37000339178,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 272,
+      "runs": [
+        {
+          "id": 36999235875,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36999235787,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 271,
+      "runs": [
+        {
+          "id": 36996087448,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36996087511,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 270,
+      "runs": [
+        {
+          "id": 36975608931,
+          "name": "Music Studio AI workflow foundation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 269,
+      "runs": [
+        {
+          "id": 36973666391,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666351,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666458,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666537,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666482,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666347,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666652,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666369,
+          "name": "Coordinated Music Studio checkpoint verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666427,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666467,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 268,
+      "runs": [
+        {
+          "id": 36966130488,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36966130519,
+          "name": "Music Studio Editor commit lock guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 267,
+      "runs": [
+        {
+          "id": 36880714212,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 266,
+      "runs": [
+        {
+          "id": 36857393673,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 265,
+      "runs": [
+        {
+          "id": 36856792517,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 264,
+      "runs": [
+        {
+          "id": 36854131822,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 263,
+      "runs": [
+        {
+          "id": 36857193454,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 262,
+      "runs": [
+        {
+          "id": 36851340615,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340507,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340535,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 261,
+      "runs": [
+        {
+          "id": 35857916359,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35857916467,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 260,
+      "runs": [
+        {
+          "id": 35853060620,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 259,
+      "runs": [
+        {
+          "id": 35845980410,
+          "name": "Music Selected Track ID Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35845980281,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 258,
+      "runs": [
+        {
+          "id": 35932676423,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 257,
+      "runs": [
+        {
+          "id": 35859941419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 256,
+      "runs": [
+        {
+          "id": 35726291578,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35726291819,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

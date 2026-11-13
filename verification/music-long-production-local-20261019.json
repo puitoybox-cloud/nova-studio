@@ -1,0 +1,169 @@
+{
+  "testedCommit": null,
+  "realModelFixture": false,
+  "completed": true,
+  "messages": [],
+  "external": [],
+  "measurements": [],
+  "steps": [
+    {
+      "operation": "midi-to-wav",
+      "milliseconds": 5235.899999999441,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "inspect-rendered-wav",
+      "milliseconds": 1833.6000000005588,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "selected-bass-stem",
+      "milliseconds": 4971.0999999996275,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "mix-eq-compression-gain",
+      "milliseconds": 16751,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "save-mix",
+      "milliseconds": 120.30000000074506,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "long-master",
+      "milliseconds": 158425.40000000037,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "save-master",
+      "milliseconds": 11.700000000186265,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "final-export-package",
+      "milliseconds": 81247.10000000056,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "save-export",
+      "milliseconds": 110.70000000018626,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "full-backup",
+      "milliseconds": 1132.2000000001863,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "restore-backup",
+      "milliseconds": 3610,
+      "jsHeapBytes": 103000000
+    },
+    {
+      "operation": "restored-final-export",
+      "milliseconds": 83018.10000000056,
+      "jsHeapBytes": 103000000
+    }
+  ],
+  "wav": {
+    "bytes": 92313644,
+    "frames": 23078400,
+    "seconds": 480.8,
+    "peak": 0.06329345703125
+  },
+  "stemInfo": {
+    "bytes": 92313644,
+    "frames": 23078400,
+    "seconds": 480.8,
+    "peak": 0.025146484375
+  },
+  "mastering": {
+    "format": "nova-long-master-result-v1",
+    "sourceAssetId": "8b50648f-cd01-470d-8640-96a6de2027b3",
+    "targetLufs": -18,
+    "ceilingDb": -1,
+    "gainDb": 20.946785748690054,
+    "before": {
+      "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate",
+      "frames": 23078400,
+      "channels": 2,
+      "sampleRate": 48000,
+      "lufs": -38.946785748690054,
+      "peak": 0.04999605043472421,
+      "peakDb": -26.02128605014148,
+      "truePeak": 0.050074214872107954,
+      "truePeakDb": -26.007717028160204,
+      "clippingSamples": 0,
+      "blocks": 4805,
+      "gatedBlocks": 1341
+    },
+    "after": {
+      "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate",
+      "frames": 23078400,
+      "channels": 2,
+      "sampleRate": 48000,
+      "lufs": -20.40120387278849,
+      "peak": 0.498931884765625,
+      "peakDb": -6.039174822587676,
+      "truePeak": 0.4997442960739136,
+      "truePeakDb": -6.025043081676103,
+      "clippingSamples": 0,
+      "blocks": 4805,
+      "gatedBlocks": 1437
+    },
+    "peakLimited": true
+  },
+  "files": [
+    {
+      "name": "Master.wav",
+      "bytes": 92313644,
+      "frames": 23078400,
+      "seconds": 480.8,
+      "peak": 0.657806396484375
+    },
+    {
+      "name": "Mix.wav",
+      "bytes": 92313644,
+      "frames": 23078400,
+      "seconds": 480.8,
+      "peak": 0.498931884765625
+    },
+    {
+      "name": "Instrumental.wav",
+      "bytes": 92313644,
+      "frames": 23078400,
+      "seconds": 480.8,
+      "peak": 0.498931884765625
+    },
+    {
+      "name": "Instrument-1.wav",
+      "bytes": 92313644,
+      "frames": 23078400,
+      "seconds": 480.8,
+      "peak": 0.498931884765625
+    },
+    {
+      "name": "Song.mid",
+      "bytes": 4453
+    },
+    {
+      "name": "Manifest.json",
+      "bytes": 1894
+    }
+  ],
+  "zipBytes": 369261541,
+  "archiveBytes": 184680875,
+  "projectBytes": 51910,
+  "midiPreserved": true,
+  "restoredMasterEqual": true,
+  "memory": {
+    "sampledAggregateRssPeakBytes": null,
+    "sampleIntervalMs": 250,
+    "scope": "Node runner and descendant browser processes; sampled RSS sum includes shared pages",
+    "unavailableReason": "Process-tree RSS unavailable in this isolated runtime; raw zero is not a memory measurement"
+  },
+  "measuredProductTree": "65012b92e0e6e33a832bad9d91a6a0830dc9f7ba",
+  "scope": "Constructed MIDI, not real ONNX; final synthesis/master DSP product tree, preceding subsequent Stem dropdown-only UI adjustment."
+}

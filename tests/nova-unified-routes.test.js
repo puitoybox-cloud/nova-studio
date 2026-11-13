@@ -36,7 +36,7 @@ test('home and Universe keep their dedicated render paths',()=>{
 });
 
 test('Music Studio MIDI editor bypasses the shared Hero and content wrapper',()=>{
-  assert.match(finalLayout,/function isMusicEditorStudioRoute\(route\)\{\s*return route==='music-studio\/midi-composer'\|\|String\(route\|\|''\)\.startsWith\('music-studio\/midi-editor\/'\);\s*\}/);
+  const match=finalLayout.match(/function isMusicEditorStudioRoute\(route\)\{[\s\S]*?\n\}/);assert.ok(match);const w={};require('node:vm').runInNewContext(match[0]+';window.routeCheck=isMusicEditorStudioRoute',{window:w});assert.equal(w.routeCheck('music-studio/midi-composer'),true);assert.equal(w.routeCheck('music-studio/midi-editor/song'),true);assert.equal(w.routeCheck('music-studio'),false);
   assert.match(finalLayout,/if\(isMusicEditorStudioRoute\(route\)\)\{[\s\S]*?delete document\.body\.dataset\.homeBackground;[\s\S]*?style\.removeProperty\('--home-background-image'\);[\s\S]*?innerHTML=`\$\{mainContent\}<div id="toast"><\/div>`;[\s\S]*?return true;/);
   assert.match(musicCss,/body\.is-studio-route\.is-music-studio-route:has\(\.music-midi-editor-page\)\{background:#08111d!important\}/);
 });

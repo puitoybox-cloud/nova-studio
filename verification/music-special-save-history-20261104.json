@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-04 JST",
+  "baselineHead": "a75fbbe72c3dfe614cc3b03134044c067dbbdd91",
+  "ledger": {
+    "verified": 60,
+    "total": 135,
+    "open": 75
+  },
+  "runs": [
+    {
+      "command": "node --test tests/music-production-tools.test.js tests/music-production-history-special-entries.test.js tests/music-studio-vocal-recording.test.js",
+      "passed": 130,
+      "failed": 0,
+      "logSha256": "74e233958e9254d611566e7a0ba1e1baee860ed2484017b78a2db11edc6a50e4"
+    },
+    {
+      "command": "node --test --test-name-pattern='MIDI materials survive real repository' tests/music-studio-vocal-recording.test.js",
+      "passed": 1,
+      "failed": 0,
+      "logSha256": "45ccdc9650e24ee4f96b1d313ec9bb86857127707241ac61d7e920d5c883a71d"
+    },
+    {
+      "command": "NODE_PATH=/tmp/nova-browser-test/node_modules node --test scripts/music-indexeddb-browser-persistence.cjs",
+      "passed": 1,
+      "failed": 0,
+      "logSha256": "5162384de20a75cfa3d69f3ce57560cb449e953cf86ade592d99c5ce1bf5dbae"
+    },
+    {
+      "command": "node --test --test-concurrency=2 tests/*.test.js",
+      "passed": 2843,
+      "failed": 0,
+      "durationMs": 252868.406099,
+      "logSha256": "d38601ad12eadfbaa676a52ddfefc6a42e9e0487226894b410287665074c14e1"
+    }
+  ],
+  "sourceHashes": {
+    "music-studio.js": "468c6b6efcc108927c4fa7a98aa63293e8607b3e8354829a8276da85940cc9a2",
+    "scripts/music-indexeddb-browser-persistence.cjs": "628a350b57d585401c58cfa6b425e8b5f18b6b9668d1de6297dc67cc472929e9",
+    "tests/music-production-tools.test.js": "f0fe0b5e1bcf512d6ebe77602d54a7723e0c87a4bb74f069cc5e8e315f143e6e",
+    "tests/music-studio-vocal-recording.test.js": "e54c2ac704ed6c5b6dc8eee97ff80440c0af57ab77deb2db870b5e430ddf3941"
+  },
+  "limitations": [
+    "Full save-entry acceptance MS22-A04 and MS30-A02 remains open",
+    "Targeted 130-case run preceded added archive-session assertion; changed assertion passed separately",
+    "No Intel Mac, power-loss or listening acceptance"
+  ]
+}

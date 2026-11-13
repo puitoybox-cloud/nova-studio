@@ -1,0 +1,225 @@
+{
+  "checkedAt": "2026-10-06 JST",
+  "baselinePR": 321,
+  "baselineHead": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+  "purpose": "PRIMARY_LICENSE_TEXT_AND_ACTUAL_ASSEMBLY_EVIDENCE",
+  "approved": false,
+  "publicationEligible": false,
+  "modelDownloads": 0,
+  "remoteBinaryDownloads": 0,
+  "userDecisionsReady": 0,
+  "sourceTexts": {
+    "bp-LICENSE": {
+      "url": "https://raw.githubusercontent.com/spotify/basic-pitch/v0.4.0/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "929c910bae2152fa87199a5d0660e09263419b7eee6d4b301d05ee2aaf211c37",
+      "byteLength": 11384,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "demucs-LICENSE": {
+      "url": "https://raw.githubusercontent.com/facebookresearch/demucs/v4.0.1/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "cf9b17822d1fcd4ff32ccbe14183386fb3adf6f2ff92dc184130823f7fc28173",
+      "byteLength": 1087,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "python-current-license": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.11.17/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf",
+      "byteLength": 13936,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "soundfile-license": {
+      "url": "https://raw.githubusercontent.com/bastibe/python-soundfile/0.12.1/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "0dd2e411fed553ba891845077e5a32c5b726d1bbc46ff31a2118ae1ccf816752",
+      "byteLength": 1512,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "libsndfile-license": {
+      "url": "https://raw.githubusercontent.com/libsndfile/libsndfile/1.2.0/COPYING",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "ad01ea5cd2755f6048383c8d54c88459cd6fcb17757c5c8892f8c5ea060f6140",
+      "byteLength": 26518,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "audio-license": {
+      "url": "https://raw.githubusercontent.com/pytorch/audio/v2.2.2/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6",
+      "byteLength": 1338,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "librosa-license": {
+      "url": "https://raw.githubusercontent.com/librosa/librosa/0.10.2.post1/LICENSE.md",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "1746ca32b53fa31941c38b63a986e4126ab998e81a2f73a566000847a588e2a3",
+      "byteLength": 766,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "julius-license": {
+      "url": "https://raw.githubusercontent.com/adefossez/julius/486c0329158ad6c137d18bcddc5461d493005c65/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "60f83da40026e37e259b69158852384ff2ee20615d9103a3f86b6cff48784661",
+      "byteLength": 1059,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "pretty-midi-license": {
+      "url": "https://raw.githubusercontent.com/craffel/pretty-midi/0.2.10/LICENSE.txt",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "220f461a41157a81832520a84d95bfa5c4616f553dbf3ef8ac1fb9562244c069",
+      "byteLength": 1079,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "mido-license": {
+      "url": "https://raw.githubusercontent.com/mido/mido/1.3.3/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "bd038e5ad24b8d703970b51c070669e8ab0d06f4efb008665261b0183af7eb1c",
+      "byteLength": 1078,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "soxr-license": {
+      "url": "https://raw.githubusercontent.com/dofuuz/python-soxr/v0.3.7/LICENSE.txt",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "bbc7ebffc7ecaad0a926b6d2d55d1f8da2607aecdaa8132b81f8550d95a9dda9",
+      "byteLength": 3778,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "scipy-license": {
+      "url": "https://raw.githubusercontent.com/scipy/scipy/v1.12.0/LICENSE.txt",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "c29fb8e5936f33237a8b15256b4c6e93037f05bbf58c3d7b5755aede4c200173",
+      "byteLength": 1536,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "numpy-license": {
+      "url": "https://raw.githubusercontent.com/numpy/numpy/v1.26.4/LICENSE.txt",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "263223390c43a9d4a0841e0209265fd927a198f8e89c8eee809b7437d7e5e8c2",
+      "byteLength": 1543,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "numpy-bundled-license": {
+      "url": "https://raw.githubusercontent.com/numpy/numpy/v1.26.4/LICENSES_bundled.txt",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "37ce73ee1f411de26fecc349fccba81480de4e6ee8213fa56895fa37c193cd84",
+      "byteLength": 952,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "onnx-license": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.17.3/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "byteLength": 1073,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "numba-license": {
+      "url": "https://raw.githubusercontent.com/numba/numba/0.59.1/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "3a70e0a21cad03147246f6363d07bf76fae216c72779707f4ae5db06bcacf067",
+      "byteLength": 1286,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "llvmlite-license": {
+      "url": "https://raw.githubusercontent.com/numba/llvmlite/v0.42.0/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "4b9a7264b0113a7b326ee84fc244b73991b535b4833e4a56d58750f2a72250dc",
+      "byteLength": 1298,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "torch-license": {
+      "url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.2.2/LICENSE",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "d63aaf3622186b2a761832a5704edeef1f25d08f5b9c50ac4e435befc8e348a8",
+      "byteLength": 3293,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "python-mac-readme": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.11.17/Mac/README.rst",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "f818438c490ecca36fec5723c3e31bbb531e84efbd550944e422338f38d36f52",
+      "byteLength": 18594,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "python-build-makefile": {
+      "url": "https://raw.githubusercontent.com/python/cpython/v3.11.17/Makefile.pre.in",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "85b9a05ef35257c33d1898888a365916c2ffe4e92f44927f907703888628e9fc",
+      "byteLength": 100315,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "soxr-native-license": {
+      "url": "https://raw.githubusercontent.com/chirlu/soxr/0.1.3/COPYING.LGPL",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "f2f118b9029ec1871b953639ecc46651b2fc7b62e295e6cf3ef2ac4c9a058b33",
+      "byteLength": 26432,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    },
+    "demucs-author-comments": {
+      "url": "https://api.github.com/repos/facebookresearch/demucs/issues/327/comments",
+      "checkedAt": "2026-10-06 JST",
+      "sha256": "1dd90ab41008ec97e51a1501b860fd21952e71ef044901a6c4a75e6f07f45792",
+      "byteLength": 6568,
+      "status": "PRIMARY_TEXT_RETRIEVED",
+      "scope": "SOURCE_TEXT_NOT_INSTALLED_BINARY"
+    }
+  },
+  "modelWeights": {
+    "basicPitch": "LICENSE_UNCONFIRMED",
+    "demucsHtdemucs6s": "EXTERNAL_LICENSE_VERIFICATION_REQUIRED",
+    "demucsAuthorStatementDate": "2022-05-23",
+    "exactCheckpointPermissionVerified": false
+  },
+  "runtime": {
+    "version": "3.11.17",
+    "releaseDate": "2026-10-01",
+    "candidateOnly": true,
+    "sourceOnly": true,
+    "actualMacBuildPerformed": false,
+    "architectures": [
+      "x86_64",
+      "arm64"
+    ],
+    "generationManifests": "SEPARATE_EXTERNALLY_ANCHORED_INVENTORIES",
+    "resolver": "EXISTING_CURRENT_CPU_BINDING_PLUS_BOUNDED_ACTUAL_IMAGE_HEADER",
+    "rosettaAcceptance": "UNVERIFIED_NOT_ASSUMED"
+  },
+  "implementation": {
+    "declaredLicenseFiles": "BOUND_TO_AUTHENTICATED_INSTALLED_FILES",
+    "noticeMaterialInventory": "DEPENDENCY_ID_VERSION_ARTIFACT_DIGEST_AND_EXACT_INCLUDED_BYTES",
+    "approvalInferredFromMetadata": false,
+    "runtimeArchitecture": "ACTUAL_IMAGE_PARSER_AT_RESOLVE_BOUNDARY",
+    "ownedExit": "CREATOR_POPEN_OBJECT_PLUS_ONE_SHOT_KQUEUE_NOTE_EXIT_WHERE_SUPPORTED",
+    "privateTransport": "EXISTING_OWNED_CHANNEL_ONLY",
+    "hardInterruption": "UNVERIFIED",
+    "ownedDescendantsComplete": false
+  },
+  "stage2": {
+    "repositoryOnlyReviewedBlockers": 0,
+    "formalA": "0/30",
+    "stage2": "OPEN",
+    "stage3": "NOT_PASSED"
+  }
+}

@@ -230,3 +230,66 @@ test('missing Web Audio API is non-fatal',async()=>{
   assert.equal(synth.playNotes([{pitch:60,startTick:0,durationTicks:480}],{ppq:480,tempo:120}).ok,false);
 });
 test('shared three-track scheduler integrates tempo changes across note boundaries',async()=>{const synth=load().createSynth({AudioContext:Context});await synth.unlock();const origin=synth.context.currentTime,result=synth.playTracks([{id:'melody',part:'melody',channel:1,program:0,notes:[{id:'m',pitch:60,startTick:0,durationTicks:960,velocity:90}]},{id:'drums',part:'drums',channel:10,program:null,notes:[{id:'d',pitch:36,startTick:480,durationTicks:480,velocity:100}]},{id:'bass',part:'bass',channel:2,program:32,notes:[{id:'b',pitch:36,startTick:0,durationTicks:960,velocity:80}]}],{ppq:480,tempo:120,tempoMap:[{tick:0,bpm:120},{tick:480,bpm:60}],startTick:0,endTick:960,leadSeconds:0});assert.equal(result.noteCount,3);assert.ok(Math.abs(result.timelineDurationSeconds-1.5)<1e-9);const drum=result.scheduledNotes.find(note=>note.part==='drums');assert.ok(Math.abs(drum.startTime-(origin+.5))<1e-9);assert.ok(Math.abs(drum.stopTime-(origin+1.5))<1e-9)});
+
+test('shared recording context schedules MIDI on the same clock and disposal keeps caller-owned context open',async()=>{const audio=load(),context=new Context();let closes=0;context.close=()=>{closes++};const synth=audio.createSynth({context});assert.equal(await synth.unlock(),true);assert.equal(synth.context,context);const result=synth.playTracks([{id:'lead',part:'melody',notes:[{pitch:60,startTick:480,durationTicks:480,velocity:80}]}],{ppq:480,tempo:120,startTick:0,startTime:11,endTick:960});assert.equal(result.scheduledNotes[0].startTime,11.5);synth.dispose();assert.equal(closes,0);assert.equal(synth.context,null)});
+
+test('appended cycle accompaniment retains all previously scheduled voices until explicit Stop',async()=>{
+ const synth=load().createSynth({AudioContext:Context});await synth.unlock();const tracks=[{id:'melody',part:'melody',notes:[{id:'n',pitch:60,startTick:0,durationTicks:240,velocity:90}]}];
+ synth.playTracks(tracks,{startTime:11,startTick:0,endTick:480});const first=synth.context.oscillators[0],initialStops=[...first.stopped];
+ synth.playTracks(tracks,{append:true,startTime:11.5,startTick:0,endTick:480});synth.playTracks(tracks,{append:true,startTime:12,startTick:0,endTick:480});
+ assert.equal(synth.playingVoices,3);assert.deepEqual(first.stopped,initialStops);assert.deepEqual(synth.context.oscillators.map(n=>n.started[0]),[11,11.5,12]);
+ synth.stopPlayback();assert.equal(synth.playingVoices,0);assert.ok(synth.context.oscillators.every(n=>n.stopped.at(-1)<10.01));
+ synth.playTracks(tracks,{startTime:13});synth.playTracks(tracks,{startTime:14});assert.equal(synth.playingVoices,1);
+});
+
+test('project PCM sample reaches actual BufferSource with transposition velocity and cancellation',()=>{
+  const audio=load(),ctx=new Context(),create=ctx.createBufferSource.bind(ctx);ctx.createBufferSource=()=>{const s=create();s.playbackRate=new Param();return s};
+  const synth=audio.createSynth({context:ctx}),pcm={sampleRate:8000,channels:[Array(8000).fill(.25)]};
+  synth.setSampleBank([{id:'piano',pcm}]);pcm.channels[0][0]=1;
+  const result=synth.playTracks([{id:'m',part:'melody',sampleInstrument:{assetId:'piano',rootPitch:60},notes:[{pitch:72,startTick:0,durationTicks:480,velocity:64}]}]);
+  assert.equal(result.noteCount,1);assert.equal(result.oscillatorCount,0);assert.equal(result.scheduledNotes[0].soundPath,'sample');assert.equal(ctx.bufferSources[0].playbackRate.value,2);assert.equal(ctx.bufferSources[0].buffer.getChannelData(0)[0],.25);assert.equal(synth.playingVoices,1);synth.stopPlayback();assert.equal(synth.playingVoices,0);
+  assert.equal(synth.noteOn(48,90,2,{assetId:'piano',rootPitch:60}),true);assert.equal(ctx.bufferSources.at(-1).playbackRate.value,.5);assert.equal(synth.noteOff(48,2),true);synth.dispose();
+});
+test('missing bound sample stays silent and reports missing instead of an oscillator fallback',()=>{const synth=load().createSynth({context:new Context()}),r=synth.playTracks([{sampleInstrument:{assetId:'missing',rootPitch:60},notes:[{pitch:60,startTick:0,durationTicks:480}]}]);assert.equal(r.noteCount,0);assert.equal(r.scheduledNotes[0].audible,false);assert.equal(r.scheduledNotes[0].soundPath,'missing-sample');assert.equal(r.oscillatorCount,0)});
+test('sample bank rejects clipped malformed oversized and duplicate input atomically',()=>{const synth=load().createSynth({context:new Context()}),good={id:'s',pcm:{sampleRate:8000,channels:[[.1,.2]]}};synth.setSampleBank([good]);for(const entries of [[good,good],[{id:'bad',pcm:{sampleRate:8000,channels:[[NaN]]}}],[{id:'bad',pcm:{sampleRate:8000,channels:[[1.1]]}}],[{id:'bad',pcm:{sampleRate:8000,channels:[Array(80001).fill(0)]}}]])assert.throws(()=>synth.setSampleBank(entries),/invalid-instrument/);});
+test('seeking past a one-shot sample end is silent without a missing-material warning or unused source',()=>{const ctx=new Context(),synth=load().createSynth({context:ctx});synth.setSampleBank([{id:'short',pcm:{sampleRate:8000,channels:[Array(800).fill(.1)]}}]);const r=synth.playTracks([{sampleInstrument:{assetId:'short',rootPitch:60},notes:[{pitch:60,startTick:0,durationTicks:1920}]}],{startTick:480});assert.equal(r.noteCount,0);assert.equal(r.missingSampleCount,0);assert.equal(r.scheduledNotes[0].soundPath,'sample-ended');assert.equal(ctx.bufferSources.length,0)});
+function renderFixture(){const w={};w.window=w;for(const f of ['music-studio-playback.js','music-studio-instruments.js','music-studio-audio.js'])vm.runInNewContext(fs.readFileSync(f,'utf8'),w);class Offline extends Context{constructor(ch,length,rate){super();this.currentTime=0;this.state='suspended';this.sampleRate=rate;this.length=length;this.numberOfChannels=ch;Offline.last=this}async startRendering(){this.rendered=true;return{length:this.length,sampleRate:this.sampleRate,numberOfChannels:this.numberOfChannels,getChannelData:()=>new Float32Array(this.length)}}}const midi={ppq:480,tempo:120,tempoMap:[{tick:480,bpm:60}],tracks:[{id:'melody',part:'melody',notes:[{id:'n',pitch:60,startTick:480,durationTicks:480,velocity:90}]}]};return{w,Offline,midi}}
+test('offline MIDI render reuses actual scheduler at zero, tempo changes, 48kHz and release tail',async()=>{const {w,Offline,midi}=renderFixture(),r=await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline});assert.equal(r.seconds,1.5);assert.equal(r.frames,Math.ceil(2.3*48000));assert.equal(r.noteCount,1);assert.equal(Offline.last.oscillators[0].started[0],.5);assert.equal(Offline.last.oscillators[0].stopped[0],1.63);assert.equal(Offline.last.rendered,true)});
+test('offline MIDI render rejects capacity, invalid notes, muted-only data, missing samples and cancellation',async()=>{for(const kind of ['long','invalid','muted','missing','cancel']){const {w,Offline,midi}=renderFixture();if(kind==='long')midi.tracks[0].notes[0].durationTicks=480*121;if(kind==='invalid')midi.tracks[0].notes[0].velocity=128;if(kind==='muted')midi.tracks[0].muted=true;if(kind==='missing')midi.tracks[0].sampleInstrument={assetId:'absent',rootPitch:60};let count=0;await assert.rejects(w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline,guard(){if(kind==='cancel'&&++count===3)throw Error('cancelled')}}),/limit|invalid|capacity|missing|cancelled/)}});
+
+test('streaming MIDI preserves leading and interior silence frames with bounded windows',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];midi.tracks[0].notes=[{pitch:60,velocity:90,startTick:480*61,durationTicks:480}];
+ const progress=[],r=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline,onProgress:p=>progress.push(p.ratio)});let frames=0;
+ for await(const chunk of r.chunks){assert.equal(chunk.sampleRate,48000);assert.equal(chunk.channels.length,2);assert.ok(chunk.channels[0].length<=16384);assert.equal(chunk.channels[0].length,chunk.channels[1].length);frames+=chunk.channels[0].length}
+ assert.equal(frames,r.frames);assert.equal(r.seconds,31);assert.deepEqual(progress,[0,1440000/r.frames,1]);assert.ok(Offline.last.length<=150*48000+128);
+});
+test('streaming MIDI preflight accepts eight minute timeline but refuses excessive voices or duration',()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];midi.tracks[0].notes=[{pitch:60,velocity:90,startTick:480*959,durationTicks:480}];
+ assert.equal(w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}).seconds,480);
+ midi.tracks[0].notes[0].startTick+=480;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/480-seconds-limit/);
+ midi.tracks[0].notes[0]={pitch:60,velocity:90,startTick:0,durationTicks:480*241};assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/voice-span-limit/);
+});
+test('microsecond tempo events are normalized for both offline MIDI render paths',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[{tick:480,microsecondsPerQuarter:1000000}];
+ const short=await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Offline}),stream=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline});
+ assert.equal(short.seconds,1.5);assert.equal(stream.seconds,short.seconds);let frames=0;for await(const chunk of stream.chunks)frames+=chunk.channels[0].length;assert.equal(frames,short.frames);
+});
+
+ test('stems preserve full song rests and tempo changes without scheduling another instrument',async()=>{
+ const {w,Offline,midi}=renderFixture();midi.totalTick=4800;midi.tracks.push({id:'bass',part:'bass',notes:[{pitch:36,velocity:80,startTick:2400,durationTicks:480}]});
+ const original=JSON.stringify(midi),options={OfflineAudioContext:Offline,trackIds:['melody']},stem=w.MusicStudioAudio.renderMidiStream(midi,[],options),full=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline});
+ assert.equal(stem.seconds,9.5);assert.equal(stem.frames,full.frames);assert.deepEqual(Array.from(stem.trackIds),['melody']);assert.equal(stem.noteCount,1);
+ let frames=0;for await(const chunk of stem.chunks)frames+=chunk.channels[0].length;assert.equal(frames,full.frames);assert.equal(JSON.stringify(midi),original);
+ for(const trackIds of [[],['missing'],['melody','melody'],'melody'])assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{...options,trackIds}),/track-selection/);
+ midi.tracks[0].muted=true;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],options),/track-selection/);
+ midi.totalTick=-1;assert.throws(()=>w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Offline}),/total-tick/);
+ });
+test('every stem includes another instruments longer one-shot tail on the same frame grid',()=>{
+ const {w,Offline,midi}=renderFixture();midi.tempoMap=[];
+ midi.tracks.push({id:'sample',part:'bass',sampleInstrument:{assetId:'s',rootPitch:60,oneShot:true},notes:[{pitch:60,velocity:80,startTick:480,durationTicks:480}]});
+ const entries=[{id:'s',pcm:{sampleRate:8000,channels:[Array(32000).fill(.1)]}}],original=JSON.stringify(midi);
+ const full=w.MusicStudioAudio.renderMidiStream(midi,entries,{OfflineAudioContext:Offline});
+ for(const id of ['sample','melody']){const stem=w.MusicStudioAudio.renderMidiStream(midi,entries,{OfflineAudioContext:Offline,trackIds:[id]});assert.equal(stem.frames,full.frames);assert.equal(stem.frames,216000);assert.deepEqual(Array.from(stem.trackIds),[id])}
+ assert.equal(JSON.stringify(midi),original);
+});
+test('audio processing diagnostic measures actual offline rendering and failures with bounded detached snapshots',async()=>{const {w,Offline,midi}=renderFixture();let time=0;w.performance={now:()=>time};class Timed extends Offline{async startRendering(){time+=40;return super.startRendering()}}const before=JSON.stringify(midi);assert.equal(w.MusicStudioAudio.performanceSnapshot().count,0);await w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Timed});const stream=w.MusicStudioAudio.renderMidiStream(midi,[],{OfflineAudioContext:Timed});for await(const chunk of stream.chunks)assert.equal(chunk.sampleRate,48000);let m=w.MusicStudioAudio.performanceSnapshot();assert.equal(m.count,2);assert.equal(m.lastMs,40);assert.equal(m.failed,0);assert.match(m.scope,/CPU/);m.last.ms=100;assert.equal(w.MusicStudioAudio.performanceSnapshot().last.ms,40);class Broken extends Offline{async startRendering(){time+=5;throw Error('audio-render-failed')}}for(let i=0;i<65;i++)await assert.rejects(w.MusicStudioAudio.renderMidi(midi,[],{OfflineAudioContext:Broken}),/audio-render-failed/);m=w.MusicStudioAudio.performanceSnapshot();assert.equal(m.count,64);assert.equal(m.failed,64);assert.equal(m.lastMs,5);assert.equal(JSON.stringify(midi),before);});

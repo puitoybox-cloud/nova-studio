@@ -1,0 +1,45 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const {webcrypto}=require('node:crypto');
+const source=fs.readFileSync('music-studio.js','utf8');
+function boot(repo){
+ const context={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Uint8Array,Float32Array,crypto:webcrypto,location:{hash:'#music-studio'}};
+ context.window=context;
+ vm.runInNewContext(source,context);
+ const app=context.MusicStudio;
+ if(repo)app.setRepository(repo);
+ app.state.settings=app.defaultSettings();
+ return app;
+}
+const snapshot=value=>JSON.stringify(value);
+test('successful metadata backup restore survives a fresh application runtime without losing production history',async()=>{
+ const app=boot();
+ const song=app.makeProject({projectId:'restore-reopen-source',projectName:'Production history',midiData:{ppq:480,tracks:[{id:'lead',notes:[{id:'note',pitch:60,velocity:80,startTick:0,durationTicks:480}]}]}});
+ const repo=app.memoryRepository([song]);
+ app.setRepository(repo);app.state.projects=[song];
+ assert.equal((await app.productionSessionSave('restore-reopen-source','start','Original session')).ok,true);
+ assert.equal((await app.productionDaySave('restore-reopen-source','2026-11-03','Original daily note')).ok,true);
+ assert.equal((await app.versionSave('restore-reopen-source','Original checkpoint')).ok,true);
+ const original=await repo.get('restore-reopen-source');
+ const backup=app.backupObject();
+ const restored=await app.restoreBackup(backup,{settings:false});
+ assert.equal(restored.ok,true,restored.message);
+ assert.equal(restored.committed,true);
+ const all=await repo.list();
+ const imported=all.filter(p=>p.projectId!=='restore-reopen-source');
+ assert.ok(imported.length>0,'backup restore should persist a separate imported project');
+ const expected=original.songVersions;
+ const reopened=boot(repo);
+ const persisted=await repo.get(imported[0].projectId);
+ assert.ok(persisted,'restored project must exist after new application runtime');
+ assert.equal(snapshot(persisted.songVersions.sessions),snapshot(expected.sessions),'sessions must survive runtime restart');
+ assert.equal(snapshot(persisted.songVersions.days),snapshot(expected.days),'daily notes must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints.length,expected.checkpoints.length,'checkpoint count must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints[0].id,expected.checkpoints[0].id,'checkpoint identity must survive runtime restart');
+ assert.equal(persisted.songVersions.checkpoints[0].snapshot.projectId,persisted.projectId,'restored checkpoint must reference the imported project');
+ assert.equal(snapshot(await repo.get('restore-reopen-source')),snapshot(original),'original must remain unchanged');
+ assert.equal(reopened.validateProject(persisted).valid,true);
+});

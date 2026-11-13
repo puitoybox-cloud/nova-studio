@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "pipelineRevision": 2,
+  "localOnly": true,
+  "sourceSha256": "15643318c092f9046ec054e6c84d9f75d95e6fccd65bbe18b4564b5b5331b329",
+  "model": "htdemucs_6s",
+  "modelVersion": "4.1.0",
+  "strictRuntime": false,
+  "audioStems": [
+    {
+      "name": "vocals",
+      "fileName": "vocals.wav",
+      "byteLength": 529244,
+      "sha256": "457010255328a6bbfd992ea44ce1dd79ef357b257ff3dfea1906d615e8086ac8",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "name": "drums",
+      "fileName": "drums.wav",
+      "byteLength": 529244,
+      "sha256": "4a99781f7ed1d105da79caa06128dbcd0433211fc246f3229c01b49d46e05544",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "name": "bass",
+      "fileName": "bass.wav",
+      "byteLength": 529244,
+      "sha256": "11956a3d0e0a06cc976d167a86608847cce329b1430dea908e7f416c1407de63",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "name": "guitar",
+      "fileName": "guitar.wav",
+      "byteLength": 529244,
+      "sha256": "108000a236f15c39fc8438c98ac46672074f2203d52111c4d2ecaa6a2504fa3a",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "name": "piano",
+      "fileName": "piano.wav",
+      "byteLength": 529244,
+      "sha256": "c60518ed20a9499699ea64aaa6ae59cc42836049bcff5cee4b7f32b9d1b91692",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    },
+    {
+      "name": "other",
+      "fileName": "other.wav",
+      "byteLength": 529244,
+      "sha256": "af6524a911a6c58516bfd5255c9e2e7109e94ade860dc9f1f9dbafaf755533a6",
+      "frames": 132300,
+      "sampleRate": 44100,
+      "channels": 2
+    }
+  ],
+  "date": "2026-10-24 JST",
+  "qualityAccepted": false,
+  "recombinationRms": 0.005260616136461476,
+  "sourceRms": 0.0082012607873075,
+  "stemRms": {
+    "vocals": 8.22962886833134e-06,
+    "drums": 1.5375522660293057e-05,
+    "bass": 2.07137523346948e-05,
+    "guitar": 0.0007600799511785715,
+    "piano": 0.0003088637587185707,
+    "other": 0.0037979390863305458
+  },
+  "httpAdoption": "Real /process-stems -> JS bridge -> 6 durable WAVs + original -> independent archive restore -> 48kHz Mix/Master/Export PASS",
+  "exportFiles": 10,
+  "physicalAcceptance": false,
+  "modelFiles": [
+    {
+      "name": "5c90dfd2-34c22ccb.th",
+      "sha256": "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd",
+      "bytes": 54996327
+    }
+  ]
+}

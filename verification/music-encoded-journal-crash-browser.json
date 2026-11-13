@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-04T12:38:24.834Z",
+  "syntheticMicrophone": true,
+  "physicalPowerLossTested": false,
+  "processKill": "SIGKILL",
+  "freshChromiumSameProfile": true,
+  "captured": {
+    "id": "68c6771a-307a-4f41-9d0d-d8115c3598bc",
+    "committedBytes": 46187,
+    "rate": 48000,
+    "phase": "recording",
+    "assets": 0
+  },
+  "discovered": [
+    {
+      "id": "68c6771a-307a-4f41-9d0d-d8115c3598bc",
+      "encodedBytes": 46187,
+      "updatedAt": 1793795872698,
+      "closed": false
+    }
+  ],
+  "result": {
+    "frames": 124361,
+    "sampleRate": 44100,
+    "hash": "df85e7889ca279b16c77cb20933ea7ce7a4ef64b20e65d4d7d413c2f4e2c5559",
+    "decodedCommittedContainerIdentical": true,
+    "unfinishedArchiveMigrationIdentical": true,
+    "automaticUnfinishedBackup": true,
+    "archiveIdentical": true,
+    "repeatRejected": true,
+    "retainedContainersIdentical": true,
+    "recoveryMarkersAtomic": true,
+    "remainingJournals": 4
+  },
+  "sourceSHA256": "764757f806760623d176c4d594ae21efb4ede229077907d726d504e5eb9fc913"
+}

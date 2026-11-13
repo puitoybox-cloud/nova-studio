@@ -1,0 +1,85 @@
+name: Music smart workspace acceptance
+on:
+  pull_request:
+    paths:
+      - 'tools/music-local-generation/prepare.py'
+      - 'music-studio.js'
+      - 'music-studio.html'
+      - 'music-studio.css'
+      - 'music-studio-compact-ui.css'
+      - 'nova-menu.js'
+      - 'nova-menu.css'
+      - 'scripts/music-workspace-browser.js'
+      - 'scripts/music-navigation-veto-browser.js'
+      - 'scripts/music-live-navigation-browser.js'
+      - 'tests/music-studio-navigation-guards.test.js'
+      - 'scripts/music-accessibility-matrix-browser.js'
+      - 'scripts/music-conditional-keyboard-browser.js'
+      - 'tests/music-studio-workspace.test.js'
+      - '.github/workflows/music-smart-workspace.yml'
+permissions:
+  contents: read
+jobs:
+  smart-workspace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/music-studio-workspace.test.js tests/music-studio-navigation-guards.test.js
+      - run: node --check music-studio.js && node --check scripts/music-workspace-browser.js
+      - run: npm install --prefix "$RUNNER_TEMP/workspace-browser" playwright @axe-core/playwright
+      - name: Japanese UI fonts
+        timeout-minutes: 6
+        run: |
+          # Two exact-head attempts stalled downloading the 61 MB CJK package
+          # from the Azure HTTP mirror. Keep signed Ubuntu packages and the
+          # real Japanese-font UI assertions; use the official HTTPS archive.
+          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo timeout 240s apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --download-only fonts-noto-cjk
+          sudo apt-get --no-download install -y fonts-noto-cjk
+          checkpoint_font_family="$(fc-match -f '%{family}' 'Noto Sans CJK JP')"
+          [[ "$checkpoint_font_family" == *"Noto Sans CJK JP"* ]]
+      - name: Chrome UI, IndexedDB restart and full backup recovery
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-workspace-browser.js
+      - name: Rejected navigation retains MIDI preparation and form drafts
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/music-navigation-veto-browser.js
+      - name: Navigation during live operations with IndexedDB
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: node scripts/music-live-navigation-browser.js
+      - name: Keyboard focus, Tab traversal and accessibility inventory
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/music-accessibility-matrix-browser.js
+      - name: Populated conditional disclosures at four viewport widths
+        env:
+          NODE_PATH: ${{ runner.temp }}/workspace-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/music-conditional-keyboard-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-smart-workspace
+          path: |
+            verification/music-accessibility-matrix-browser.json
+            verification/music-conditional-keyboard-browser.json
+            verification/music-workspace-browser.json
+            verification/music-navigation-veto-browser.json
+            verification/music-workspace-*.png

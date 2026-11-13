@@ -1,0 +1,35 @@
+# Music Studio native save integration — 2026-10-22 JST
+
+PR #493 is based on PR #490 and retains PR #491 (81a0dc281eb0f97b01f21410c9fc01efdb3956af) and PR #492 (8f00dcf3f492b76172256024719e406deea54b2e) as the two parents of its integration commit. GitHub integration commit bfc36638b041cdbc7a5bf204d71b0e3f3014d447 has local tree d7fd79796804b0ca7eda51f153eb763e56150040. Two textual conflicts were resolved: shutdownBusy retains all guards, including atomic form saves; shutdown regressions retain both PRs' assertions. Atomic metadata/tempo saves, unadopted lyric/prompt protection, native close retry admission and final Export/lyrics/workspace guards are retained.
+
+## Production fixes
+
+Startup probes no longer send unconditional SIGKILL to a group after its leader has already been reaped. They inspect owned live group members, exclude OS zombies, send TERM then KILL only when needed, wait for the direct child, and verify no live member survives. EPERM is accepted only after a fresh OS snapshot proves there is no live group member. Process-table failures, foreign ownership, surviving descendants and direct-child wait failures remain failures. Signal handlers are restored even if cleanup fails. Sinsy synthesis now reuses the same verified cleanup helper instead of its own unconditional group SIGKILL path. The reported macOS 15.7.9 Intel failure is confirmed in job 119829833670 at HEAD 81a0dc2; a zombie-only group race is the repair hypothesis, not an observed process table from that failed run.
+
+Native shutdown additionally refuses Checkpoint/version transactions and MIDI Stem batches, preventing a close from interrupting those production writers.
+
+## Actual app acceptance added
+
+An explicit --native-acceptance build flag compiles an isolated CI harness into the Intel candidate; normal builds contain no script execution hook. The inventory marks instrumented candidates, and the launcher forwards exactly three acceptance keys only to such a native UI, never the engine. This artifact remains unsigned and publication-ineligible.
+
+The driver launches the actual app entry four times, imports the existing observed_six_notes_stems.mid fixture, edits notes/tempo, creates real ONNX candidates and Sinsy WAV, saves a checkpoint, closes through the native save gate, verifies owned engine shutdown, reopens/compares complete project and audio bytes, edits/resaves, restarts again, and creates the complete archive. A second persistent WebKit store (same fixed origin) starts empty, restores the archive, checks restored content/audio, edits, runs AI and renders a final Master/Stem/MIDI ZIP. Each phase checkpoints a small JSON report; failed/missing phases are not success. This is CI acceptance using a disposable edited MIDI project, not the user's physical Mac or personal song.
+
+## Verification and limits
+
+Local integrated shutdown tests: 27/27 PASS after the added Checkpoint guard. Cleanup ownership/race unit cases: 4/4 PASS. Intel assembly tests: 4/4 PASS. Package entry tests: 4/4 PASS. Model-runtime: 7/7 PASS; constraints: 8/8 PASS. Python compilation and changed-file JavaScript syntax PASS. All 257 tracked JavaScript files passed node --check. Local full node --test completed: 2,565 tests, 2,563 PASS / 2 FAIL (expired-local-session in runtime bootstrap and a transient undefined fixture in whole-song). Targeted rerun of both files completed 51/51 PASS. The full run is not reported as passing. Native-launch process regressions also passed 4/4 locally.
+
+Local real startup-process suite FAILED (2 failures/2 errors after the first OS-table implementation): this virtual environment reports a reaped child as still live, and Python-spawned ps failed. This is not treated as a passing Linux OS cleanup test. Ancestor 5de9c825e168b05e5b6314fb014be2d09950977e CI completed the real startup-process suite on Intel macOS and Linux successfully; latest-head results are tracked separately.
+
+At ancestor 3e57b9a7e47f5271559428639db2c2456a6f959f, Intel job 119849284594 assembled the 1,312,948,995-byte app (9,342 inventory entries) and passed actual native launch/save-gated exit. The new edited-song workflow FAILED in its write phase with `real ONNX candidates missing`; later restart and isolated restoration phases did not execute. The diagnostic run at 9e3ffeb3c91f04c979cae436d136acba3f3e294d, Intel job 119857378201, confirmed `model produced no audible notes; generation incomplete`. Production composition now retries only that empty-real-model outcome (and empty source-conditioned continuation), at most three samples per variant, using distinct deterministic seeds. The actual seed, requested seed and sampling-attempt count are returned. Other invalid-output errors and cancellation propagate immediately. No synthetic notes or previous candidate are substituted. Four retry/empty/cancellation/provenance unit tests pass; the actual model/native rerun remains required. No native edited-song success or full recovery is claimed.
+
+The local host is Linux x86_64 with no Swift or Chrome executable; native/UI/generation acceptance requires CI. No physical acceptance claimed. No new production No.20 Logic long-WAV/Stem import implementation is claimed; No.21 full delivery certification is open. GCC/LGPL source/redistribution closure and Developer ID/Hardened Runtime/notarization remain open. No credentials used. Live Provider calls were not made by this Work; CI zero-network/console assertions must finish before being certified.
+
+The original Music_Studio_最終機能仕様書_v1.pdf (2026-09-30), Library ID libfile_fea4127fde5c81919fee8296d5c7647d, was read fully (5 pages, 166 lines). Formal No.24 is diagnostics/safe repair, not Japanese vocals. All 30 formal names and C judgments are retained in music-native-integration-30-features-20261022.json: A0/B0/C30, no feature promoted on tests alone.
+
+Main and prior PR refs remain unchanged. No force push, Ready/Merge, new sound/model acquisition, new demo song or original-data deletion.
+
+## Explicit persistence acceptance conditions
+
+The full Intel run at 7ea0929fc6ccee6f1993361427fffb2ae1ea1b5d (job 119865844879) still failed its initial default model generation after bounded retries. The imported project's default selected range is one bar (1,920 ticks); local request-contract inspection confirms seed 72 / balanced / C / no style text. This short-range generation-quality residual is NOT resolved or certified.
+
+To exercise the independent save/restart/recovery contract, the same native test now explicitly selects four bars and the existing gentle/ballad controls with C F G C, seed 72, pitch range 57–77. The source MIDI file and all original notes remain intact. The report includes these exact generation settings. No generation, failure assertion, save, restart, backup or recovery step is removed. A successful run under these settings must not be described as fixing the default one-bar generation residual.

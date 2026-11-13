@@ -29,3 +29,9 @@ test('recording adapter is capability-gated',async()=>{const h=harness([track('a
 test('selection bridge allows capability-gated recording Correction and Local Partial Edit but still blocks Provider Partial Edit',()=>{const blocked=selectionSource.match(/const BLOCKED_EXTERNAL_ACTIONS=\[([\s\S]*?)\];/)?.[1]||'';assert.doesNotMatch(blocked,/editorToggleMidiRecording|editorStartMidiRecording|editorApplyCorrection|editorStartPartialEdit|editorApplyPartialEdit/);assert.match(blocked,/editorRunPartialEditProvider/)});
 test('existing recording engine commits Stop notes through recordingTrackId',()=>{assert.match(musicStudioSource,/targetTrackId=midi\.recordingTrackId/);assert.match(musicStudioSource,/editor\.addNotesToTrack\(state\.midiEditor,trackId,notes\)/)});
 test('routing does not widen Correction Partial Edit roles schema or app version',()=>{assert.doesNotMatch(source,/editorApplyCorrection|editorRunPartialEdit|roleAssignment\s*=/);assert.match(musicStudioSource,/APP_VERSION='1\.4\.0'/);assert.match(musicStudioSource,/SCHEMA_VERSION='1\.0'/)});
+
+test('native summary and button Enter Space activation bypasses the outer recording transport adapter',()=>{
+ const h=harness([track('external',{trackType:'midi-melodic'})],'external');
+ for(const key of ['Enter',' ']){const e=event(key,{target:{closest:s=>s==='button,summary,a[href]'?{}:null}});assert.equal(h.api.editorHandleShortcut(e),false);assert.equal(e.prevented,false)}
+ assert.equal(h.state.midiEditor.playheadTick,240);assert.equal(h.counts().playbackCalls,0);
+});

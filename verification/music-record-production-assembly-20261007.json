@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-07 JST",
+  "baseCheckpoint": {
+    "pr": 322,
+    "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+    "tree": "96a6cce691d16958bf8088df88d29ff57d8a21df"
+  },
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "changes": [
+    "authenticated installed RECORD CSV hash/size/footprint binding",
+    "shared anchored manifest-to-assembly gate",
+    "entire assembly recheck at actual Popen preflight"
+  ],
+  "validation": {
+    "node": {
+      "total": 1831,
+      "pass": 1831,
+      "skip": 0
+    },
+    "pythonLocal": {
+      "total": 310,
+      "pass": 305,
+      "unchangedDependencySkips": 5
+    },
+    "addedTests": 13,
+    "originalSourceRegression": {
+      "acceptedBefore": true,
+      "acceptedAfter": false,
+      "scope": "DISPOSABLE_SYNTHETIC_FILES_ONLY"
+    }
+  },
+  "primarySource": {
+    "url": "https://packaging.python.org/en/latest/specifications/recording-installed-packages/",
+    "checkedDate": "2026-10-07 JST"
+  },
+  "productionRuntimeBytes": "MISSING",
+  "models": {
+    "basicPitch": "MISSING_LICENSE_UNCONFIRMED",
+    "demucs": "MISSING_EXTERNAL_LICENSE_VERIFICATION_REQUIRED"
+  },
+  "privateNativeDelivery": "SOURCE_ONLY_PARTIAL",
+  "interruptionHandle": "UNVERIFIED",
+  "hardInterruptionAllowed": false,
+  "publicationEligible": false,
+  "formalA": {
+    "completed": 0,
+    "total": 30
+  },
+  "stage2": "OPEN",
+  "stage3": "NOT_PASSED",
+  "reviewedSoftwareGaps": {
+    "foundAndRepaired": 2,
+    "remainingInReviewedScope": 0,
+    "exhaustiveProductClosure": false
+  },
+  "userActionsNow": 0
+}
