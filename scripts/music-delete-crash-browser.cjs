@@ -1,7 +1,14 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),{spawn}=require('node:child_process'),{once}=require('node:events'),{createHash}=require('node:crypto'),{chromium}=require('playwright');
 test('journal and backup deletions roll back on SIGKILL and commit completely on retry',{timeout:120000},async()=>{
- const source=fs.readFileSync('music-studio.js'),server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?source:'<!doctype html><body>Delete recovery</body>')});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ let archivePrefix,archiveLength;
+ const source=fs.readFileSync('music-studio.js'),server=http.createServer((req,res)=>{
+  if(req.url==='/interrupted-archive.nova'){
+   res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Disposition':'attachment; filename=interrupted-archive.nova','Content-Length':archiveLength});
+   res.write(archivePrefix);
+   return; // Hold the remaining bytes until Chromium is killed.
+  }
+  res.writeHead(200,{'Content-Type':req.url==='/app.js'?'text/javascript; charset=utf-8':'text/html; charset=utf-8'});res.end(req.url==='/app.js'?source:'<!doctype html><body>Delete recovery</body>')});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const origin='http://127.0.0.1:'+server.address().port,dir=fs.mkdtempSync('/tmp/nova-delete-crash-');let child,connection;
  async function stop(){if(!child)return;if(child.exitCode!==null||child.signalCode!==null){child=null;return}const exit=once(child,'exit');process.kill(-child.pid,'SIGKILL');const result=await exit;assert.equal(result[1],'SIGKILL');child=null;connection=null}
  async function open(){fs.rmSync(dir+'/DevToolsActivePort',{force:true});const executable=process.env.CHROME_EXECUTABLE||chromium.executablePath();assert.ok(fs.existsSync(executable),'Chromium executable missing');child=spawn(executable,['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});const deadline=Date.now()+15000;while(!fs.existsSync(dir+'/DevToolsActivePort')){if(Date.now()>deadline)throw Error('browser-start-timeout');await new Promise(r=>setTimeout(r,25))}connection=await chromium.connectOverCDP('http://127.0.0.1:'+fs.readFileSync(dir+'/DevToolsActivePort','utf8').split('\n')[0]);const page=await connection.contexts()[0].newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin);await page.addScriptTag({url:origin+'/app.js'});assert.equal(await page.evaluate(()=>typeof window.MusicStudio),'object',errors.join(' | '));await page.evaluate(()=>{window.app=window.MusicStudio;window.repo=app.indexedDbRepository();app.setRepository(repo)});return page}
@@ -66,11 +73,30 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   });
   assert.equal(switched.ok,false,'stale Archive must not reach the download');
   await page.evaluate(()=>app.refresh());
-  const interruptedDownload=page.waitForEvent('download',{timeout:10000});
-  await page.evaluate(()=>{void app.exportLongWavArchive()});
-  await interruptedDownload;
+  const downloadDir=fs.mkdtempSync(dir+'/downloads-');
+  const cdp=await connection.newBrowserCDPSession();
+  await cdp.send('Browser.setDownloadBehavior',{behavior:'allowAndName',downloadPath:downloadDir,eventsEnabled:true});
+  archiveLength=archiveBytes.length;
+  archivePrefix=Buffer.from(archiveBytes.slice(0,Math.floor(archiveLength/2)));
+  // Blob URLs complete too quickly to hold at a known byte boundary. Route
+  // this export's link through a gated response with the exact Archive prefix.
+  await page.evaluate(()=>{
+   URL.createObjectURL=()=>location.origin+'/interrupted-archive.nova';
+   void app.exportLongWavArchive();
+  });
+  let partial;
+  const deadline=Date.now()+10000;
+  while(!partial&&Date.now()<deadline){
+   for(const name of fs.readdirSync(downloadDir)){
+    const bytes=fs.readFileSync(downloadDir+'/'+name);
+    if(bytes.length===archivePrefix.length)partial=bytes;
+   }
+   if(!partial)await new Promise(resolve=>setTimeout(resolve,25));
+  }
+  assert.deepEqual(partial,archivePrefix,'Chromium must write the exact prefix before SIGKILL');
+  assert.ok(partial.length<archiveLength);
   await stop();page=await open();
-  assert.deepEqual(await snapshot(page),archiveBaseline,'killing Chromium at download notification must leave IndexedDB untouched');
+  assert.deepEqual(await snapshot(page),archiveBaseline,'killing Chromium during partial Archive file write must leave IndexedDB untouched');
   await page.evaluate(()=>app.refresh());
   const downloadReady=page.waitForEvent('download',{timeout:10000});
   const exported=await page.evaluate(()=>app.exportLongWavArchive());
@@ -116,6 +142,25 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
   assert.equal(copy.songVersions.days[0].sessionId,copy.songVersions.sessions[0].id);
   assert.deepEqual(afterRestore.longWavBinaries[0].blob||afterRestore.longWavBinaries[0].parts,afterRestore.longWavBinaries[1].blob||afterRestore.longWavBinaries[1].parts);
   await stop();page=await open();assert.deepEqual(await snapshot(page),afterRestore,'retried Archive must persist completely across SIGKILL');
+
+  const repeated=await page.evaluate(async bytes=>{
+   await app.refresh();
+   const file=new File([new Uint8Array(bytes)],'same-archive.nova');
+   const preview=await app.previewLongWavArchive(file);
+   if(!preview.ok)throw Error(preview.error);
+   const retry=await app.restorePreviewedArchive();
+   return {priorRestores:preview.preview.priorRestores,retry};
+  },Array.from(downloaded));
+  assert.deepEqual(repeated.priorRestores,[{projectId:restoredId,projectName:copy.projectName}]);
+  assert.equal(repeated.retry.error,'archive-already-restored');
+  assert.deepEqual(await snapshot(page),afterRestore,'reselecting after a lost completion must not duplicate the restored song');
+  const another=await page.evaluate(()=>app.restorePreviewedArchive(true));
+  assert.equal(another.ok,true,another.error);
+  assert.notEqual(another.projects[0].projectId,restoredId);
+  const afterExplicitCopy=await snapshot(page);
+  const explicitCopy=afterExplicitCopy.projects.find(p=>p.projectId===another.projects[0].projectId);
+  assert.deepEqual(explicitCopy.productionHistory.at(-1).archiveHashes,restoreEvent.archiveHashes);
+  assert.notEqual(explicitCopy.productionHistory.at(-1).id,restoreEvent.id);
 
   const retained=await page.evaluate(async()=>{
    await app.refresh();
@@ -346,5 +391,5 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    assert.ok(split.editIds.includes(event.editId));
   }
 
- }finally{await stop();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true})}
+ }finally{await stop();await new Promise(r=>{server.close(r);server.closeAllConnections()});fs.rmSync(dir,{recursive:true,force:true})}
 });
