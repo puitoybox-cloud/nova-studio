@@ -3,14 +3,57 @@
  const ENDPOINT='http://127.0.0.1:8767',ROLES=['vocal','piano','strings','bass','drums'];
  const state={audioVersion:null,discovered:[],saving:false,projectId:null,importedAssetId:null,session:null,token:null,busy:false,message:'2〜16本の整列済みWAVを選択してください。',progress:null,manifest:null};
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let preparation=null;
+ let preparation=null,transfer=null,pollGeneration=0;
  function repaint(){root.MusicStudio?.repaint?.()}
  function fail(message){state.busy=false;state.message=String(message||'auto-finish-failed');repaint();return{ok:false,error:state.message}}
  async function json(path,options={}){const response=await root.fetch(ENDPOINT+path,{cache:'no-store',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(state.token?{'X-Nova-Auto-Finish':state.token}:{}),...(options.headers||{})}});const payload=await response.json().catch(()=>({}));if(!response.ok)throw Error(payload.error||`auto-finish-http-${response.status}`);return payload}
  async function connect(){const health=await json('/health'),handoff=root.__NOVA_AUTO_FINISH_HANDOFF;if(health.localOnly!==true||health.host!=='127.0.0.1'||health.port!==8767||health.protocol!==1)throw Error('auto-finish-helper-identity');if(handoff){if(handoff.version!==1||typeof handoff.token!=='string'||handoff.token.length<32||typeof handoff.lifecycleSession!=='string'||health.lifecycleSession!==handoff.lifecycleSession||Object.prototype.hasOwnProperty.call(health,'token'))throw Error('auto-finish-helper-identity');state.token=handoff.token}else{if(typeof health.token!=='string'||health.token.length<32)throw Error('auto-finish-helper-not-owned-by-app');state.token=health.token}return health}
  function rows(form){return[...form.querySelectorAll('[data-auto-finish-stem]')].map((row,index)=>({file:row.querySelector('[name=stem]').files?.[0],role:row.querySelector('[name=role]').value,id:`stem-${index+1}`})).filter(x=>x.file)}
- async function start(event,projectId,prepared=null){event.preventDefault();if(state.busy)return{ok:false,error:'auto-finish-busy'};const form=event.target,stems=prepared?.stems||rows(form),project=()=>root.MusicStudio?.state?.projects?.find(p=>p.projectId===projectId),baseline=JSON.stringify(project());const sourceGuard=()=>{if(prepared&&(prepared.audioVersion!==`project-revision-${project()?.revision}`||JSON.stringify(project())!==baseline||root.MusicStudio?.hasUnsavedChanges?.()||root.MusicStudio?.state?.dirty))throw Error('auto-finish-source-changed')};if(stems.length<2||stems.length>16)return fail('2〜16本のWAVが必要です。');if(!prepared&&!form.elements.aligned.checked)return fail('開始位置・長さ・sample rateの一致確認が必要です。');state.busy=true;state.message='ローカルヘルパーを確認しています。';repaint();try{sourceGuard();await connect();sourceGuard();const created=await json('/sessions',{method:'POST',body:JSON.stringify({projectId,audioVersion:`project-revision-${root.MusicStudio?.state?.projects?.find(p=>p.projectId===projectId)?.revision??0}`,sourceKind:prepared?'project-render':form.elements.sourceKind.value,alignmentConfirmed:true,instruction:'この曲を自然に仕上げて',stems:stems.map(({id,role,file})=>({id,role,name:file.name,size:file.size,type:file.type||'audio/wav'}))})});state.projectId=projectId;state.audioVersion=`project-revision-${project()?.revision}`;state.importedAssetId=null;state.manifest=null;state.progress=null;state.session=created.session;for(let i=0;i<stems.length;i++){state.message=`Stemを安全な作業領域へ転送中（${i+1}/${stems.length}）`;repaint();sourceGuard();const stem=stems[i],response=await root.fetch(`${ENDPOINT}/sessions/${encodeURIComponent(state.session)}/stems/${encodeURIComponent(stem.id)}`,{method:'PUT',headers:{'Content-Type':'audio/wav','X-Nova-Auto-Finish':state.token,'X-Nova-Stem-Role':stem.role,'X-Nova-File-Name':encodeURIComponent(stem.file.name)},body:stem.file});if(!response.ok)throw Error((await response.json().catch(()=>({}))).error||'stem-upload-failed')}
- sourceGuard();await json(`/sessions/${encodeURIComponent(state.session)}/start`,{method:'POST',body:'{}'});state.message='Mix / Masteringを開始しました。';poll();return{ok:true,session:state.session}}catch(error){return fail(error.message)}}
+ async function start(event,projectId,prepared=null){
+  event.preventDefault();
+  if(state.busy)return{ok:false,error:'auto-finish-busy'};
+  const form=event.target,stems=prepared?.stems||rows(form);
+  const project=()=>root.MusicStudio?.state?.projects?.find(p=>p.projectId===projectId);
+  const baseline=JSON.stringify(project()),audioVersion=`project-revision-${project()?.revision??0}`;
+  if(stems.length<2||stems.length>16)return fail('2〜16本のWAVが必要です。');
+  if(!prepared&&!form.elements.aligned.checked)return fail('開始位置・長さ・sample rateの一致確認が必要です。');
+  const operation={cancelled:false,session:null};
+  const guard=()=>{
+   if(operation.cancelled)throw Error('auto-finish-transfer-cancelled');
+   if(prepared&&(prepared.audioVersion!==audioVersion||JSON.stringify(project())!==baseline||
+     root.MusicStudio?.hasUnsavedChanges?.()||root.MusicStudio?.state?.dirty))throw Error('auto-finish-source-changed');
+  };
+  transfer=operation;pollGeneration++;state.busy=true;state.message='ローカルヘルパーを確認しています。';repaint();
+  try{
+   guard();await connect();guard();
+   const created=await json('/sessions',{method:'POST',body:JSON.stringify({
+    projectId,audioVersion,sourceKind:prepared?'project-render':form.elements.sourceKind.value,
+    alignmentConfirmed:true,instruction:'この曲を自然に仕上げて',
+    stems:stems.map(({id,role,file})=>({id,role,name:file.name,size:file.size,type:file.type||'audio/wav'}))
+   })});
+   operation.session=created.session;
+   for(const [i,stem] of stems.entries()){
+    guard();
+    state.message=`Stemを安全な作業領域へ転送中（${i+1}/${stems.length}）`;repaint();
+    const response=await root.fetch(`${ENDPOINT}/sessions/${encodeURIComponent(operation.session)}/stems/${encodeURIComponent(stem.id)}`,{
+     method:'PUT',headers:{'Content-Type':'audio/wav','X-Nova-Auto-Finish':state.token,
+     'X-Nova-Stem-Role':stem.role,'X-Nova-File-Name':encodeURIComponent(stem.file.name)},body:stem.file
+    });
+    if(!response.ok)throw Error((await response.json().catch(()=>({}))).error||'stem-upload-failed');
+   }
+   guard();
+   await json(`/sessions/${encodeURIComponent(operation.session)}/start`,{method:'POST',body:'{}'});
+   guard();
+   Object.assign(state,{projectId,audioVersion,importedAssetId:null,manifest:null,progress:null,session:operation.session});
+   state.message='Mix / Masteringを開始しました。';poll();return{ok:true,session:operation.session};
+  }catch(error){
+   if(operation.session){
+    try{await json(`/sessions/${encodeURIComponent(operation.session)}/cancel`,{method:'POST',body:'{}'})}
+    catch(cancelError){return fail(`${error.message}: ${cancelError.message}`)}
+   }
+   return fail(error.message);
+  }finally{transfer=null}
+ }
  async function startProject(event,projectId){
   event.preventDefault();if(state.busy)return{ok:false,error:'auto-finish-busy'};
   const routes=[...event.target.querySelectorAll('[data-project-stem]')].filter(row=>row.querySelector('[name=enabled]').checked).map(row=>({key:row.dataset.projectStem,role:row.querySelector('[name=role]').value,startSeconds:Number(row.querySelector('[name=start]').value)}));
@@ -31,10 +74,21 @@
  }
  function projectForm(project,disabled){
   const sources=[...(project.midiData?.tracks||[]).filter(t=>!t.muted&&t.notes?.length).map(t=>({key:'midi:'+t.id,name:'MIDI: '+(t.name||t.id)})),...(project.pcmMix?.assets||[]).map(a=>({key:'pcm:'+a.id,name:a.name})),...(project.longWavAssets||[]).map(a=>({key:'wav:'+a.id,name:a.name}))];
-  return `<form onsubmit="MusicStudio.autoFinish.startProject(event,${esc(JSON.stringify(project.projectId))})"><p>使う素材を2〜16本選び、各Roleと追加開始秒を指定してください。録音の保存済み開始位置・編集、音声のMix設定を反映し、48 kHz・stereoで末尾まで揃えます。MIDIは設定された音源で音声化します。</p>${sources.map(s=>`<div data-project-stem="${esc(s.key)}" class="music-form-grid"><label><input name="enabled" type="checkbox"${disabled}>${esc(s.name)}</label><label>Role<select name="role"${disabled}>${ROLES.map(r=>`<option>${r}</option>`).join('')}</select></label><label>追加開始秒<input name="start" type="number" min="0" max="3600" step="0.001" value="0" required${disabled}></label></div>`).join('')}<button class="music-primary"${disabled}>曲内素材からStem作成・Mix / Mastering</button></form><button type="button" class="music-secondary" onclick="MusicStudio.autoFinish.discover(${esc(JSON.stringify(project.projectId))})"${disabled}>保存済みセッションを再検出</button>${state.discovered.filter(s=>s.projectId===project.projectId).map(s=>`<button type="button" class="music-secondary" onclick="MusicStudio.autoFinish.reconnect(${esc(JSON.stringify(project.projectId))},${esc(JSON.stringify(s.session))})"${disabled}>再接続 ${esc(s.session.slice(0,8))} / ${esc(s.state)}</button>`).join('')}`;
+  return `<form data-auto-finish-project="${esc(project.projectId)}" onsubmit="MusicStudio.autoFinish.startProject(event,${esc(JSON.stringify(project.projectId))})"><p>使う素材を2〜16本選び、各Roleと追加開始秒を指定してください。録音の保存済み開始位置・編集、音声のMix設定を反映し、48 kHz・stereoで末尾まで揃えます。MIDIは設定された音源で音声化します。</p>${sources.map(s=>`<div data-project-stem="${esc(s.key)}" class="music-form-grid"><label><input name="enabled" type="checkbox"${disabled}>${esc(s.name)}</label><label>Role<select name="role"${disabled}>${ROLES.map(r=>`<option>${r}</option>`).join('')}</select></label><label>追加開始秒<input name="start" type="number" min="0" max="3600" step="0.001" value="0" required${disabled}></label></div>`).join('')}<button class="music-primary"${disabled}>曲内素材からStem作成・Mix / Mastering</button></form><button type="button" class="music-secondary" onclick="MusicStudio.autoFinish.discover(${esc(JSON.stringify(project.projectId))})"${disabled}>保存済みセッションを再検出</button>${state.discovered.filter(s=>s.projectId===project.projectId).map(s=>`<button type="button" class="music-secondary" onclick="MusicStudio.autoFinish.reconnect(${esc(JSON.stringify(project.projectId))},${esc(JSON.stringify(s.session))})"${disabled}>再接続 ${esc(s.session.slice(0,8))} / ${esc(s.state)}</button>`).join('')}`;
  }
- async function poll(){if(!state.session)return;try{const result=await json(`/sessions/${encodeURIComponent(state.session)}`);state.progress=result.progress||null;state.manifest=result.complete?result:null;state.busy=!result.complete&&!result.failed&&!result.cancelled;state.message=result.message||(result.complete?'A/B/Cを試聴して承認してください。':result.failed?'処理に失敗しました。':'処理中…');repaint();if(state.busy)root.setTimeout(()=>poll(),750)}catch(error){fail(error.message)}}
- async function cancel(){if(preparation){preparation.cancelled=true;state.message='Stem作成を停止しています。';repaint();return{ok:true}}if(state.saving)return{ok:false,error:'auto-finish-busy'};if(!state.session)return fail('auto-finish-session-missing');try{await json(`/sessions/${encodeURIComponent(state.session)}/cancel`,{method:'POST',body:'{}'});state.busy=false;state.message='停止を要求しました。再開できます。';repaint();return{ok:true}}catch(error){return fail(error.message)}}
+ async function poll(session=state.session,generation=++pollGeneration){
+  const current=()=>session===state.session&&generation===pollGeneration;
+  if(!session||!current())return;
+  try{
+   const result=await json(`/sessions/${encodeURIComponent(session)}`);
+   if(!current())return;
+   state.progress=result.progress||null;state.manifest=result.complete?result:null;
+   state.busy=!result.complete&&!result.failed&&!result.cancelled;
+   state.message=result.message||(result.complete?'A/B/Cを試聴して承認してください。':result.failed?'処理に失敗しました。':'処理中…');
+   repaint();if(state.busy)root.setTimeout(()=>poll(session,generation),750);
+  }catch(error){if(current())fail(error.message)}
+ }
+ async function cancel(){const pending=preparation||transfer;if(pending){pending.cancelled=true;state.message='Stem作成・転送を停止しています。';repaint();return{ok:true}}if(state.saving)return{ok:false,error:'auto-finish-busy'};if(!state.session)return fail('auto-finish-session-missing');try{await json(`/sessions/${encodeURIComponent(state.session)}/cancel`,{method:'POST',body:'{}'});pollGeneration++;state.busy=false;state.message='停止を要求しました。再開できます。';repaint();return{ok:true}}catch(error){return fail(error.message)}}
  async function resume(){if(state.busy)return{ok:false,error:'auto-finish-busy'};if(!state.session)return fail('auto-finish-session-missing');state.busy=true;try{await json(`/sessions/${encodeURIComponent(state.session)}/resume`,{method:'POST',body:'{}'});poll();return{ok:true}}catch(error){return fail(error.message)}}
  async function adopt(choice){if(state.busy)return{ok:false,error:'auto-finish-busy'};if(!state.session||!['A','B','C','undo'].includes(choice))return fail('auto-finish-choice-invalid');state.busy=true;repaint();try{const result=await json(`/sessions/${encodeURIComponent(state.session)}/adopt`,{method:'POST',body:JSON.stringify({choice,approve:true})});state.message=choice==='undo'?'承認を取り消しました。候補と元Stemは保持されています。':`候補${choice}を承認しました。完成WAVを保存できます。`;state.manifest={...(state.manifest||{}),adopted:result.adopted};state.importedAssetId=null;repaint();return result}catch(error){return fail(error.message)}finally{state.busy=false;repaint()}}
  function artifact(label,matched=true){if(!state.session)return'';const name=matched?`${label}-lufs-matched.wav`:`${label}.wav`;return`${ENDPOINT}/sessions/${encodeURIComponent(state.session)}/artifacts/${encodeURIComponent(name)}?token=${encodeURIComponent(state.token||'')}`}

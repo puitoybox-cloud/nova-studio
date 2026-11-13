@@ -39,7 +39,7 @@ test('reconnection rejects server identity mismatch without replacing the retain
 test('project-generated transfer refuses revision changes before processing and retains old output',async()=>{
  const f=fixture(),a=f.w.MusicStudio,prepared={audioVersion:'project-revision-3',stems:[{id:'stem-1',role:'vocal',file:{name:'voice.wav',size:64,type:'audio/wav'}},{id:'stem-2',role:'piano',file:{name:'piano.wav',size:64,type:'audio/wav'}}]},fetch=f.w.fetch;
  f.w.fetch=async(url,options)=>{const r=await fetch(url,options);if(options?.method==='PUT')a.state.projects[0].revision++;return r};
- const r=await a.autoFinish.start({preventDefault(){},target:f.form},'p',prepared);assert.equal(r.ok,false);assert.match(r.error,/source-changed/);assert.equal(f.calls.some(x=>x.url.endsWith('/start')),false);assert.equal(a.autoFinish.state.session,'a'.repeat(32));
+ const r=await a.autoFinish.start({preventDefault(){},target:f.form},'p',prepared);assert.equal(r.ok,false);assert.match(r.error,/source-changed/);assert.equal(f.calls.some(x=>x.url.endsWith('/start')),false);assert.equal(a.autoFinish.state.session,null);assert.ok(f.calls.some(x=>x.url.endsWith('/cancel')));
 });
 test('approved WAV digest mismatch never imports and keeps completed candidates retryable',async()=>{
  const f=approvedFixture(),a=f.w.MusicStudio;let imports=0;a.pcmImportLongFile=async()=>{imports++;return{ok:true}};f.w.fetch=async()=>({ok:true,blob:async()=>new Blob(['damaged'])});const r=await a.autoFinish.saveToProject('p');assert.equal(r.error,'auto-finish-wav-hash-mismatch');assert.equal(imports,0);assert.equal(a.autoFinish.state.importedAssetId,null);assert.ok(a.autoFinish.state.manifest.adopted);assert.equal(a.autoFinish.state.busy,false);

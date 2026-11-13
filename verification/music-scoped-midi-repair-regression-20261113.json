@@ -1,15 +1,15 @@
 {
-  "date": "2026-11-13 JST",
+  "date": "2026-11-14 JST",
   "command": "node --test tests/music-studio-scoped-midi-repair.test.js",
   "passed": 25,
   "failed": 0,
   "sourceHashes": {
-    "tests/music-studio-scoped-midi-repair.test.js": "11d16b6e4c3b22df93918e9ad8c873f880c245eabd716e1934b3d298b23dde2c"
+    "tests/music-studio-scoped-midi-repair.test.js": "f63f99532a95c3f5d3ec8f971786375a3f083ec16dde36683de9cd6b53773f67"
   },
   "runtimeHashes": {
-    "app.js": "63a0735fdd091714293d08d7dbfe864f49fc9b29727aea847c53bc9833726da4",
-    "music-studio.html": "5c3a36342877949ef10a9c8f38edb18d8f5476698ea9b7fb7d857dd64db860cc",
-    "music-studio.js": "757841c974177d6b6b9f6d42d32bfb95cddebbcdd972453bd92b9e7c48dcacd3",
+    "app.js": "607b8968077ba704c7e405d54d7f01777571e2396357bbba5c6051933e5bcb4a",
+    "music-studio.html": "3e48cde4d2daff302bb2f03d52068a20eb2d10800fe0fb91e8fcb7765bb557c4",
+    "music-studio.js": "5162c2be4fd8ef9cf49d2af984e61b6646659d8d97dd7abea2b2f3c290e1d1d5",
     "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371"
   },
   "acceptedCases": [

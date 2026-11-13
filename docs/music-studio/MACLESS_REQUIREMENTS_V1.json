@@ -1933,14 +1933,21 @@
       "feature": 18,
       "category": "A",
       "requirement": "全素材形式の曲全体Mix統合",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-final-export-browser.js",
+          "acceptance": "全素材形式の曲全体Mix統合",
+          "declaration": "Drive the browser client through the local helper protocol with a held upload.",
+          "run": "verification/music-macless-whole-mix-20261114.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "曲全体MixとAuto-Finishの容量判定を編集後のテイク長・同期位置に統一し、デコード後の実フレーム数を照合。Node回帰でPCM・WAV・編集Takeの混在、全サンプル比較と破損拒否を検証。実MIDI音声化を含む混在Mixの実ブラウザ再開・全入力形式と依存条件の照合が残る。",
+        "note": "実ChromiumでMIDI・PCM・長尺WAV・編集Takeを同時にMixし、全サンプルと永続IndexedDB再起動後のWAVを照合。Auto-Finishの素材準備・転送取消、セッション分離・再試行、欠落／破損の拒否を確認。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
