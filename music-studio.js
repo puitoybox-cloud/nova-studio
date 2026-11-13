@@ -2485,7 +2485,7 @@
   }
   async function vocalReadPCM(id,assetId,guard=()=>{}){
     const p=state.projects.find(x=>x.projectId===id),asset=p?.longWavAssets?.find(x=>x.id===assetId);vocalHistory(asset);
-    if(asset.frames>asset.sampleRate*125||asset.frames*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');const file=await pcmLoadLongWav(id,assetId);guard();
+    if(asset.frames>asset.sampleRate*125||asset.frames*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');const file=await pcmLoadLongWav(id,assetId,guard);guard();
     const channels=Array.from({length:asset.channels},()=>new Float32Array(asset.frames));let offset=0;
     for await(const chunk of pcmDecodeWavStream(file)){guard();if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||offset+chunk.channels[0].length>asset.frames)throw Error('vocal-pcm-metadata-mismatch');for(let c=0;c<channels.length;c++)channels[c].set(chunk.channels[c],offset);offset+=chunk.channels[0].length}
     guard();if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');return{channels,sampleRate:asset.sampleRate,asset};
@@ -2515,9 +2515,18 @@
     for(let center=-hop;center<frames+size/2;center+=hop){const nominal=center/ratio,row=analysis.find(r=>nominal>=r.first&&nominal<r.end),period=row?rate/row.frequency:0,expected=previousSource===null?nominal:previousSource+(center-previousCenter)*pitch,source=period?expected+Math.round((nominal-expected)/period)*period:nominal;previousSource=source;previousCenter=center;for(let j=Math.max(0,Math.ceil(center-size/2));j<Math.min(frames,center+size/2);j++){const d=j-center,x=source+d*pitch;if(x<0||x>=samples.length-1)continue;const k=Math.floor(x),w=.5+.5*Math.cos(2*Math.PI*d/size);out[j]+=(samples[k]+(samples[k+1]-samples[k])*(x-k))*w;weights[j]+=w}}
     for(let i=0;i<frames;i++)out[i]=weights[i]>1e-6?out[i]/weights[i]:samples[Math.min(samples.length-1,Math.round(i/ratio))];return out;
   }
+  function vocalEditedFrames(setting,regions=setting.regions||[]){
+    let frames=setting.end-setting.first;
+    for(const region of regions){
+      if(region.first<setting.first||region.end>setting.end)throw Error('vocal-region-outside-trim');
+      const length=region.end-region.first;
+      frames+=Math.round(length*region.ratio)-length;
+    }
+    return frames;
+  }
   function vocalProcessPCM(pcm,setting){
-    const asset={frames:pcm.channels[0].length},regions=vocalRegions(asset,setting.regions||[]);let outputFrames=setting.end-setting.first;
-    for(const r of regions){if(r.first<setting.first||r.end>setting.end)throw Error('vocal-region-outside-trim');outputFrames+=Math.round((r.end-r.first)*r.ratio)-(r.end-r.first)}
+    const regions=vocalRegions({frames:pcm.channels[0].length},setting.regions||[]);
+    const outputFrames=vocalEditedFrames(setting,regions);
     if(outputFrames<1||outputFrames>pcm.sampleRate*125||outputFrames*pcm.channels.length>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-render-capacity');
     const channels=pcm.channels.map(input=>{const output=new Float32Array(outputFrames);let first=setting.first,offset=0;for(const r of [...regions,{first:setting.end,end:setting.end,semitones:0,ratio:1}]){const dry=input.subarray(first,r.first);output.set(dry,offset);offset+=dry.length;if(r.end>r.first){const processed=vocalGrain(input.subarray(r.first,r.end),pcm.sampleRate,r.semitones,r.ratio),fade=Math.min(Math.round(pcm.sampleRate*.005),Math.floor(processed.length/4));const regionGain=10**((r.gainDb||0)/20);for(let i=0;i<processed.length;i++)processed[i]*=regionGain;for(let i=0;i<fade;i++){const w=i/fade;processed[i]=processed[i]*w+input[r.first+i]*(1-w);const n=processed.length-1-i;processed[n]=processed[n]*w+input[r.end-1-i]*(1-w)}output.set(processed,offset);offset+=processed.length}first=r.end}const gain=10**(setting.gainDb/20);for(let i=0;i<output.length;i++)output[i]*=gain;return output});return{channels,sampleRate:pcm.sampleRate,frames:outputFrames};
   }
@@ -2740,15 +2749,26 @@
   async function vocalTimelineExport(id,assetId){
     try{const r=await vocalTimelineRender(id,assetId);if(root.document&&root.URL?.createObjectURL){const url=root.URL.createObjectURL(r.blob);try{const a=root.document.createElement('a');a.href=url;a.download=r.filename;root.document.body.appendChild(a);a.click();a.remove()}finally{root.setTimeout(()=>root.URL.revokeObjectURL(url),1000)}}vocal.message='曲先頭から同期するWAVを書き出しました。冒頭の無音を保持して配置してください。';return{ok:true,...r}}catch(e){vocal.message='同期WAVを書き出せません：'+e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
-  async function vocalRender(id,assetId,override){
+  function vocalEditedStart(project,asset,setting){
+    return Math.max(0,vocalSourceOrigin(project,asset,setting)+setting.first/asset.sampleRate);
+  }
+  async function vocalRender(id,assetId,override,checkCurrent){
     const p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),asset=p?.longWavAssets?.find(x=>x.id===assetId),h=vocalHistory(asset),setting=override||h.edits[h.cursor];
-    if(setting.regions?.length){const pcm=await vocalReadPCM(id,assetId,()=>{if(JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error("vocal-render-stale")}),processed=vocalProcessPCM(pcm,setting),wav=vocalWav(processed.channels,processed.sampleRate);return{blob:wav.blob,frames:wav.frames,setting,startSeconds:Math.max(0,vocalSourceOrigin(p,asset,setting)+setting.first/asset.sampleRate),project:p}}
-    const file=await pcmLoadLongWav(id,assetId);
-    const blob=await vocalStreamPreview(file,asset,setting,()=>{if(JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-render-stale')});
-    return{blob,frames:setting.end-setting.first,setting,startSeconds:Math.max(0,vocalSourceOrigin(p,asset,setting)+setting.first/asset.sampleRate),project:p};
+    const guard=checkCurrent||(()=>{
+      if(JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-render-stale');
+    });
+    const startSeconds=vocalEditedStart(p,asset,setting);
+    if(setting.regions?.length){
+      const pcm=await vocalReadPCM(id,assetId,guard),processed=vocalProcessPCM(pcm,setting),wav=vocalWav(processed.channels,processed.sampleRate);
+      return{blob:wav.blob,frames:wav.frames,setting,startSeconds,project:p};
+    }
+    const file=await pcmLoadLongWav(id,assetId,guard);
+    const blob=await vocalStreamPreview(file,asset,setting,guard);
+    return{blob,frames:setting.end-setting.first,setting,startSeconds,project:p};
   }
   async function vocalStreamPreview(file,asset,setting,guard){
-    const pieces=[];let offset=0;for await(const chunk of pcmDecodeWavStream(file)){guard();const first=Math.max(0,setting.first-offset),end=Math.min(chunk.channels[0].length,setting.end-offset);if(end>first){const pcm={sampleRate:chunk.sampleRate,channels:chunk.channels.map(c=>c.slice(first,end).map(x=>x*Math.pow(10,setting.gainDb/20)))};pieces.push(pcmEncodeWav(pcm).slice(44))}offset+=chunk.channels[0].length}
+    const pieces=[];let offset=0;for await(const chunk of pcmDecodeWavStream(file)){guard();if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||offset+chunk.channels[0].length>asset.frames)throw Error('vocal-pcm-metadata-mismatch');const first=Math.max(0,setting.first-offset),end=Math.min(chunk.channels[0].length,setting.end-offset);if(end>first){const pcm={sampleRate:chunk.sampleRate,channels:chunk.channels.map(c=>c.slice(first,end).map(x=>x*Math.pow(10,setting.gainDb/20)))};pieces.push(pcmEncodeWav(pcm).slice(44))}offset+=chunk.channels[0].length}
+    if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');
     const header=pcmEncodeWav({sampleRate:asset.sampleRate,channels:Array.from({length:asset.channels},()=>[0])}).slice(0,44),v=new DataView(header),size=(setting.end-setting.first)*asset.channels*2;v.setUint32(4,36+size,true);v.setUint32(40,size,true);
     guard();return new Blob([header,...pieces],{type:'audio/wav'});
   }
@@ -5183,10 +5203,10 @@
           if(blob.size!==44+result.frames*4)throw Error('auto-finish-render-incomplete');
           sources.push({...r,blob,frames:result.frames,start:Math.round(r.startSeconds*48000),gainDb:0});
         }else{
-          const metadata=finalSources(p).find(s=>s.key===r.key);if(!metadata)throw Error('auto-finish-source-missing');
-          const asset=metadata.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===metadata.id):p.longWavAssets.find(a=>a.id===metadata.id),estimate=metadata.kind==='pcm'?asset.original.channels[0].length:asset.frames;
-          if((estimate+Math.round(r.startSeconds*48000))*4*routes.length>480*1048576)throw Error('auto-finish-stem-capacity');
-          sources.push(await finalSource(p,{...r,gainDb:0,muted:false},guard));
+          if(!finalSources(p).some(s=>s.key===r.key))throw Error('auto-finish-source-missing');
+          const timing=finalSourceTiming(p,r);
+          if((timing.frames+timing.start)*4*routes.length>480*1048576)throw Error('auto-finish-stem-capacity');
+          sources.push(await finalSource(p,{...r,gainDb:0,muted:false},guard,timing));
         }
       }
       const frames=Math.max(...sources.map(s=>s.start+s.frames));
@@ -5201,21 +5221,41 @@
       return{ok:true,stems,frames,sampleRate:48000,channels:2,audioVersion:`project-revision-${p.revision}`};
     }catch(error){return{ok:false,error:error.message}}finally{pcmEditor.busy=false;requestPaint()}
   }
-  async function finalSource(p,r,guard){
-    guard();const s=finalSources(p).find(s=>s.key===r.key);let blob,startSeconds=r.startSeconds;
-    if(s.kind!=='pcm'){const a=p.longWavAssets.find(a=>a.id===s.id);if(a.sampleRate!==48000)throw Error('final-48khz-required');if(a.frames+r.startSeconds*48000>48000*3600)throw Error('final-one-hour-limit')}
-    if(s.kind==='pcm'&&p.pcmMix.assets.find(a=>a.id===s.id).original.sampleRate!==48000)throw Error('final-48khz-required');
-    if(s.kind==='pcm'){blob=new Blob([pcmEncodeWav(pcmRenderAsset(p.pcmMix.assets.find(a=>a.id===s.id)))],{type:'audio/wav'})}
-    else if(s.kind==='vocal'){const result=await vocalRender(p.projectId,s.id);blob=result.blob;startSeconds+=result.startSeconds}
-    else{const a=p.longWavAssets.find(a=>a.id===s.id),h=longMixHistory(a),settings=h.settings[h.cursor],source=await pcmLoadLongWav(p.projectId,s.id,guard);
-      // Reuse authenticated durable bytes for a bypassed channel strip. Four
-      // eight-minute stems otherwise allocate four redundant 92 MB WAVs before
-      // the mixer even starts. Decoding below still validates every frame.
-      const bypass=!settings.postGainDb&&settings.gainDb===0&&settings.eq.gainDb===0&&settings.compressor.ratio===1&&(!settings.spatial||(settings.spatial.balance===0&&settings.spatial.width===1));
-      blob=bypass?source:(await pcmRenderLongWavBlob(source,settings,16384,{guard})).blob;
+  function finalSourceTiming(p,r){
+    const source=finalSources(p).find(s=>s.key===r.key);
+    if(!source)throw Error('final-source-missing');
+    const asset=source.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===source.id):p.longWavAssets.find(a=>a.id===source.id);
+    const sampleRate=source.kind==='pcm'?asset.original.sampleRate:asset.sampleRate;
+    let frames=source.kind==='pcm'?asset.original.channels[0].length:asset.frames;
+    let startSeconds=r.startSeconds;
+    if(sampleRate!==48000)throw Error('final-48khz-required');
+    if(source.kind==='vocal'){
+      const history=vocalHistory(asset),setting=history.edits[history.cursor];
+      frames=vocalEditedFrames(setting);
+      startSeconds+=vocalEditedStart(p,asset,setting);
     }
-    guard();let frames=0;for await(const chunk of pcmDecodeWavStream(blob)){guard();if(chunk.sampleRate!==48000)throw Error('final-48khz-required');frames+=chunk.channels[0].length}
-    const start=Math.round(startSeconds*48000);if(start+frames>48000*3600)throw Error('final-one-hour-limit');return{...r,start,frames,blob,name:s.name};
+    const start=Math.round(startSeconds*48000);
+    if(!Number.isSafeInteger(frames)||frames<1)throw Error('final-source-metadata');
+    if(start+frames>48000*3600)throw Error('final-one-hour-limit');
+    return{source,asset,start,frames};
+  }
+  async function finalSource(p,r,guard,timing=finalSourceTiming(p,r)){
+    guard();const {source,asset,start,frames}=timing;let blob;
+    if(source.kind==='pcm')blob=new Blob([pcmEncodeWav(pcmRenderAsset(asset))],{type:'audio/wav'});
+    else if(source.kind==='vocal')blob=(await vocalRender(p.projectId,source.id,undefined,guard)).blob;
+    else{
+      const history=longMixHistory(asset),settings=history.settings[history.cursor],original=await pcmLoadLongWav(p.projectId,source.id,guard);
+      // Reuse authenticated durable bytes when the channel strip is bypassed.
+      const bypass=!settings.postGainDb&&settings.gainDb===0&&settings.eq.gainDb===0&&settings.compressor.ratio===1&&(!settings.spatial||(settings.spatial.balance===0&&settings.spatial.width===1));
+      blob=bypass?original:(await pcmRenderLongWavBlob(original,settings,16384,{guard})).blob;
+    }
+    guard();let decodedFrames=0;
+    for await(const chunk of pcmDecodeWavStream(blob)){
+      guard();if(chunk.sampleRate!==48000)throw Error('final-48khz-required');
+      decodedFrames+=chunk.channels[0].length;
+    }
+    if(decodedFrames!==frames)throw Error('final-source-frame-mismatch');
+    return{...r,start,frames,blob,name:source.name};
   }
   async function* finalChunks(sources,frames,guard){
     const readers=sources.map(s=>({s,it:pcmDecodeWavStream(s.blob)[Symbol.asyncIterator](),chunk:null,index:0,read:0}));
@@ -5305,10 +5345,10 @@
     const started=root.performance?.now?.()??Date.now(),phaseMs={};let phase=null,phaseStart=started;
     const clock=()=>root.performance?.now?.()??Date.now(),finishPhase=()=>{const t=clock();if(phase)phaseMs[phase]=(phaseMs[phase]||0)+Math.max(0,t-phaseStart);phaseStart=t};
     try{guard();const stage=message=>{guard();finishPhase();phase=message.replace(/（.*$/,'');finalExport.message=message;requestPaint()};stage('Preparing sources（音声素材を準備中）');if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');const plan=finalPlan(p,input),sources=[],selected=plan.routes.filter(r=>!r.muted);
-      const estimatedFrames=Math.max(...selected.map(r=>{const s=finalSources(p).find(s=>s.key===r.key),a=s.kind==='pcm'?p.pcmMix.assets.find(a=>a.id===s.id):p.longWavAssets.find(a=>a.id===s.id),frames=s.kind==='pcm'?a.original.channels[0].length:a.frames;if(!Number.isSafeInteger(frames)||frames<1)throw Error('final-source-metadata');return frames+Math.ceil(r.startSeconds*48000)}));
-      finalCheckCapacity(estimatedFrames,selected.length,plan);
-      for(const [index,r] of selected.entries()){stage(`Preparing sources（音声素材を準備中） ${index+1}/${selected.length}`);sources.push(await finalSource(p,r,guard))}guard();
-      const frames=Math.max(...sources.map(s=>s.start+s.frames));finalCheckCapacity(frames,sources.length,plan);
+      const timings=selected.map(r=>finalSourceTiming(p,r));
+      const frames=Math.max(...timings.map(({start,frames})=>start+frames));
+      finalCheckCapacity(frames,selected.length,plan);
+      for(const [index,r] of selected.entries()){stage(`Preparing sources（音声素材を準備中） ${index+1}/${selected.length}`);sources.push(await finalSource(p,r,guard,timings[index]))}guard();
       stage('Measuring and rendering mix（元Mixの作成・音量測定中）');const prepared=await finalMeasuredWav(finalChunks(sources,frames,guard),guard,false,plan.masterCompressor),before=prepared.metrics,original=prepared.blob;if(before.lufs===null)throw Error('final-silence-or-short');const masterInput=prepared.masterInput||before;const initial=masterGainPlan(masterInput,plan.targetLufs,plan.ceilingDb);
       stage('Rendering master（Master音声を作成・検査中）');const corrected=await masterConverge(initial.gainDb,plan.targetLufs,plan.ceilingDb,g=>finalMeasuredWav(finalMasterChunks(sources,frames,guard,plan.masterCompressor,g),guard,true),result=>result.metrics,{guard});
       const master=corrected.output.blob,after=corrected.after,gainDb=corrected.gainDb,peakLimited=corrected.peakLimited,gainLimited=corrected.gainLimited;
