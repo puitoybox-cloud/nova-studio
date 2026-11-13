@@ -30,6 +30,18 @@ const mixedSources = await mixed.evaluate(async()=>{
   await repo.put(project);
   app.state.projects=[project];
   app.pcmOpen(id);
+  const missingId='whole-song-missing-instrument';
+  const missing=app.makeProject({projectId:missingId,projectName:'Missing sample',bpm:120,midiData:{
+    ...project.midiData,tracks:project.midiData.tracks.map(track=>({
+      ...track,sampleInstrument:{assetId:'missing-sample',rootPitch:60}
+    }))
+  }});
+  await repo.put(missing);
+  app.state.projects.push(missing);
+  const missingBaseline=JSON.stringify(await repo.get(missingId));
+  const missingRender=await app.midiRenderForMix(missingId,'lead');
+  if(missingRender.ok||missingRender.error!=='midi-render-missing-or-unmapped-sample'||
+     JSON.stringify(await repo.get(missingId))!==missingBaseline)throw Error('missing-midi-sample-not-rejected');
   const imported=requireOk(await app.pcmImportLongFile(new File([app.pcmEncodeWav(wave(320))],'Long.wav'),id));
   const midi=requireOk(await app.midiRenderForMix(id,'lead'));
   const recorded=app.vocalWav(wave(480).channels,48000);
@@ -51,6 +63,7 @@ const mixedSources = await mixed.evaluate(async()=>{
   const expectedStarts=[0,6000,12000,26400];
   const midiBlob=await app.pcmLoadLongWav(id,midi.assetId);
   const midiAudio=app.pcmDecodeWav(await midiBlob.arrayBuffer()).channels;
+  if(!midiAudio.some(channel=>channel.some(sample=>sample!==0)))throw Error('silent-midi-render');
   const candidate=requireOk(await app.finalPreview(id,plan)).candidate;
   if(JSON.stringify(candidate.manifest.handoff.stems.map(s=>s.sourceStartFrame))!==JSON.stringify(expectedStarts))throw Error('mixed-placement');
   const frames=12000+midiAudio[0].length;
@@ -70,6 +83,13 @@ const mixedSources = await mixed.evaluate(async()=>{
   const autoRoutes=plan.routes.map((route,i)=>({
     ...route,key:i===2?'midi:lead':route.key,role:['piano','strings','bass','vocal'][i]
   }));
+  requireOk(await app.vocalEdit(id,take.id,{
+    ...take.vocalTake.edits[0],regions:[{first:2400,end:4800,ratio:1.5,semitones:0}]
+  }));
+  const lengthCorrected=requireOk(await app.finalPreview(id,plan)).candidate;
+  if(lengthCorrected.manifest.handoff.stems[3].sourceFrames!==19200||
+     lengthCorrected.manifest.handoff.stems[3].sourceStartFrame!==expectedStarts[3])throw Error('mixed-duration-correction');
+  requireOk(await app.vocalEdit(id,take.id,undefined,-1));
   const prepared=requireOk(await app.autoFinishPrepare(id,autoRoutes));
   if(prepared.frames!==frames||prepared.stems.length!==4)throw Error('auto-finish-mixed-frames');
   const savedBaseline=JSON.stringify(await repo.get(id));
@@ -88,7 +108,7 @@ const mixedSources = await mixed.evaluate(async()=>{
       if(JSON.stringify(await repo.get(id))!==savedBaseline)throw Error('auto-finish-mutated-project');
     }
   } finally { repo.getLongWav=readBinary; }
-  return {id,frames,starts:expectedStarts,hash:await digest(mix),autoFinishMixed:true,cancelled:true,missingAndCorruptRejected:true};
+  return {id,frames,starts:expectedStarts,hash:await digest(mix),missingInstrumentRejected:true,lengthCorrection:true,autoFinishMixed:true,cancelled:true,missingAndCorruptRejected:true};
 });
 await mixedContext.close();
 mixedContext=await launchMixed();
