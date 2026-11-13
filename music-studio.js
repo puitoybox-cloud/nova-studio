@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.224';
+  const ASSET_VERSION='1.4.225';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -5182,11 +5182,14 @@
   function finalStop(){const audio=finalExport.audio,url=finalExport.url;finalExport.audio=null;finalExport.url=null;finalExport.playGeneration++;if(audio){audio.onended=null;audio.pause();audio.removeAttribute?.('src');audio.load?.()}if(url)root.URL?.revokeObjectURL(url)}
   function finalCancel(){finalExport.abort?.(Error('final-export-cancelled'));finalExport.generation++;finalExport.candidate=null;finalExport.message='Cancel（候補を取り消しました）';finalStop();requestPaint()}
   // Read-only preparation: render selected sources to a common stereo timeline.
-  async function autoFinishPrepare(id,routes){
+  async function autoFinishPrepare(id,routes,isCancelled=()=>false){
     const p=state.projects.find(p=>p.projectId===id),target=repository,baseline=JSON.stringify(p);
     if(!p||workspaceBusy()||finalExport.busy||lyricsEditor.busy||shutdownPromise||state.dirty||hasUnsavedChanges())return{ok:false,error:'auto-finish-save-first'};
     if(!Array.isArray(routes)||routes.length<2||routes.length>16||routes.some(r=>!r||typeof r.key!=='string'||!['vocal','piano','strings','bass','drums'].includes(r.role)||!Number.isFinite(r.startSeconds)||r.startSeconds<0||r.startSeconds>3600)||new Set(routes.map(r=>r.key)).size!==routes.length)return{ok:false,error:'auto-finish-source-count'};
-    const guard=()=>{if(target!==repository||baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('auto-finish-source-changed')};
+    const guard=()=>{
+      if(isCancelled())throw Error('auto-finish-preparation-cancelled');
+      if(target!==repository||baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('auto-finish-source-changed');
+    };
     pcmEditor.busy=true;
     try{
       guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('auto-finish-storage-conflict');

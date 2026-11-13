@@ -47,3 +47,26 @@ test('approved WAV digest mismatch never imports and keeps completed candidates 
 test('missing approval digest and changed same-label approval cannot import stale WAV',async()=>{
  for(const mode of ['missing','changed']){const f=approvedFixture(),a=f.w.MusicStudio;let imports=0;a.pcmImportLongFile=async()=>{imports++;return{ok:true}};if(mode==='missing')delete a.autoFinish.state.manifest.adopted.sha256;else f.w.fetch=async()=>({ok:true,blob:async()=>{a.autoFinish.state.manifest.adopted.sha256='f'.repeat(64);return new Blob(['WAV'])}});assert.equal((await a.autoFinish.saveToProject('p')).ok,false);assert.equal(imports,0);assert.equal(a.autoFinish.state.saving,false);}
 });
+
+test('stopping local Stem preparation preserves the earlier session and blocks a second start until settled', async()=>{
+ const f=fixture(),app=f.w.MusicStudio,finish=app.autoFinish;
+ finish.state.session='b'.repeat(32);
+ const previous={complete:true,adopted:{label:'A'}};
+ finish.state.manifest=previous;
+ let release;
+ app.autoFinishPrepare=async(id,routes,isCancelled)=>{
+  await new Promise(resolve=>{release=resolve});
+  assert.equal(isCancelled(),true);
+  return {ok:true,stems:[]};
+ };
+ const event={preventDefault(){},target:{querySelectorAll:()=>[]}};
+ const pending=finish.startProject(event,'p');
+ assert.equal((await finish.cancel()).ok,true);
+ assert.equal((await finish.startProject(event,'p')).error,'auto-finish-busy');
+ release();
+ assert.equal((await pending).error,'auto-finish-preparation-cancelled');
+ assert.equal(finish.state.busy,false);
+ assert.equal(finish.state.session,'b'.repeat(32));
+ assert.equal(finish.state.manifest,previous);
+ assert.deepEqual(f.calls,[]);
+});
