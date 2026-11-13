@@ -1,0 +1,19 @@
+{
+  "model": "skytnt/midi-model-tv2o-medium",
+  "revision": "0f8f265d4330f4e46527ac2313200254c5757f5f",
+  "license": "Apache-2.0",
+  "files": {
+    "model_base.onnx": {
+      "sha256": "1af68e16a0509936caeb70d322ab30619d784c7af72df019f3a59276c67c1bc4",
+      "byteLength": 821713887
+    },
+    "model_token.onnx": {
+      "sha256": "cce9376abe8f5c8d51d1b110580cc8501d38679af55ebd5a332e757e62ab9911",
+      "byteLength": 116661381
+    },
+    "config.json": {
+      "sha256": "1f393e1e8c630ddc81a976348ee246549d613f0a117dc0622eed49918dfcb511",
+      "byteLength": 2016
+    }
+  }
+}

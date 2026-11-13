@@ -7,12 +7,17 @@ locally, returned as a merged Type 1 MIDI file, then deleted with the temp tree.
 from __future__ import annotations
 
 import base64
+import copy
+import hashlib
+import importlib.util
+import importlib.metadata
 import json
 import math
 import os
 import shutil
 import subprocess
 import sys
+import threading
 import tempfile
 import traceback
 import urllib.parse
@@ -21,6 +26,225 @@ from pathlib import Path
 
 HOST = "127.0.0.1"
 PORT = 8766
+PIPELINE_REVISION = 2
+SOURCE_DIGEST = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+# Capture identity at startup; never hash a replaced source file as the running code.
+_identity_spec = importlib.util.spec_from_file_location("nova_helper_identity", Path(__file__).with_name("helper_identity.py"))
+_identity_module = importlib.util.module_from_spec(_identity_spec)
+_identity_spec.loader.exec_module(_identity_module)
+RUNTIME_IDENTITY = _identity_module.identity(Path(__file__).parent)
+# Explicit authenticated bootstrap only. Legacy remains usable and UNVERIFIED.
+_runtime_spec = importlib.util.spec_from_file_location("nova_runtime_inventory", Path(__file__).with_name("runtime_inventory.py"))
+# Local imports are scoped to the Helper's source directory, not PATH/site guesses.
+_pipeline_directory = str(Path(__file__).parent.resolve())
+if _pipeline_directory not in sys.path:
+    sys.path.insert(0, _pipeline_directory)
+STRICT_BOOTSTRAP = bool(os.environ.get("NOVA_TRUSTED_MANIFEST_PATH"))
+_runtime_module = None
+if not STRICT_BOOTSTRAP:
+    _runtime_module = importlib.util.module_from_spec(_runtime_spec)
+    _runtime_spec.loader.exec_module(_runtime_module)
+RUNTIME_INVENTORY = None
+BOOTSTRAP_ERROR = None
+DEMUCS_SESSION = None
+SCOPED_CLOSURE = {}
+INVENTORY_AGGREGATOR = None
+OFFLINE_GUARD = None
+RUNTIME_EVIDENCE_MODULE = None
+RUNTIME_EVIDENCE_CONTRACT = None
+PROCESSING_RECEIPT = None
+PROCESSING_ATTEMPTS = None
+REQUEST_RECEIPTS = threading.local()
+
+def initialize_runtime():
+    global PROCESSING_ATTEMPTS, PROCESSING_RECEIPT, RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
+    if not STRICT_BOOTSTRAP:
+        return
+    try:
+        from distribution_binding import load_manifest
+        from dependency_identity import verify_local_asset
+        manifest = load_manifest(os.environ['NOVA_TRUSTED_MANIFEST_PATH'],
+            os.environ.get('NOVA_TRUSTED_MANIFEST_DIGEST'), os.environ.get('NOVA_EXPECTED_BUILD_REVISION'))
+        # Authenticate the cache implementation with the uncached trust-root verifier before import.
+        verifier_source = next((e for e in manifest['assets'] if e['id'] == 'artifact-verification-source'), None)
+        if verifier_source is None:
+            raise ValueError('missing-authenticated-verifier-source')
+        verify_local_asset(_pipeline_directory, 'artifact_verification.py', verifier_source, 1024*1024)
+        artifact = next((e for e in manifest['assets'] if e['id'] == 'runtime-inventory-source'), None)
+        if artifact is None:
+            raise ValueError('missing-authenticated-runtime-module')
+        verify_local_asset(_pipeline_directory, 'runtime_inventory.py', artifact, 1024 * 1024)
+        # Execute the same authenticated bytes, avoiding reopen between check and exec.
+        source = Path(_pipeline_directory, 'runtime_inventory.py').read_bytes()
+        if len(source) != artifact['byteLength'] or hashlib.sha256(source).hexdigest() != artifact['digest']:
+            raise ValueError('stale-authenticated-runtime-module')
+        _runtime_module = importlib.util.module_from_spec(_runtime_spec)
+        exec(compile(source, _runtime_spec.origin, 'exec'), _runtime_module.__dict__)
+        RUNTIME_INVENTORY = _runtime_module.bootstrap(
+            os.environ["NOVA_TRUSTED_MANIFEST_PATH"],
+            os.environ.get("NOVA_TRUSTED_MANIFEST_DIGEST"),
+            os.environ.get("NOVA_EXPECTED_BUILD_REVISION"),
+            os.environ.get("NOVA_RUNTIME_ASSET_ROOT", _pipeline_directory))
+        OFFLINE_GUARD = _runtime_module.install_offline_guard()
+        manifest = RUNTIME_INVENTORY.manifest
+        for key, expected in manifest['helper'].items():
+            actual = {'version': 1, 'pipelineRevision': PIPELINE_REVISION, 'sourceDigest': SOURCE_DIGEST}.get(key, RUNTIME_IDENTITY.get(key))
+            if type(actual) is not type(expected) or actual != expected:
+                raise ValueError('runtime-bootstrap-helper-mismatch')
+        if RUNTIME_IDENTITY['architecture'] not in manifest['architectures']:
+            raise ValueError('runtime-bootstrap-architecture-mismatch')
+        RUNTIME_INVENTORY.verify_assets()
+        # Verify companion source bytes before importing any new production adapter.
+        for identity, relative in [('demucs-parent-source','demucs_parent.py'),
+                ('demucs-receipt-source','demucs_receipt.py'), ('demucs-child-source','demucs_child.py'),
+                ('artifact-verification-source','artifact_verification.py'),
+                ('runtime-evidence-source','runtime_evidence.py'),
+                ('scoped-closure-source','scoped_closure.py'), ('inventory-aggregation-source','inventory_aggregation.py')]:
+            verify_local_asset(_pipeline_directory, relative, RUNTIME_INVENTORY.expected('assets',identity), 1024*1024)
+        from scoped_closure import load_contract, verify_closure, private_runtime_preflight
+        contract = load_contract(RUNTIME_INVENTORY.root, manifest)
+        distribution = private_runtime_preflight(RUNTIME_INVENTORY,contract,_pipeline_directory)
+        import runtime_evidence
+        RUNTIME_EVIDENCE_MODULE = runtime_evidence
+        RUNTIME_EVIDENCE_CONTRACT = runtime_evidence.load(RUNTIME_INVENTORY)
+        PROCESSING_ATTEMPTS = runtime_evidence.SessionRequestRegistry(require_owned_session())
+        # Processing call receipts are created for each request, never shared across requests.
+        runtime_evidence.install_import_guard(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
+        import demucs_parent
+        import inventory_aggregation
+        INVENTORY_AGGREGATOR = inventory_aggregation
+        # Authenticate the complete scoped file footprint before importing ML/native code.
+        SCOPED_CLOSURE = verify_closure(RUNTIME_INVENTORY.root,
+            contract,distribution,
+            build=RUNTIME_INVENTORY.manifest['buildRevision'],
+            stamp_sink=lambda relative,stamp:RUNTIME_INVENTORY.stamps.__setitem__(('closure',relative),(relative,stamp)))
+        if not SCOPED_CLOSURE['complete']:
+            raise ValueError('partial-startup-scoped-closure')
+        for binding in RUNTIME_INVENTORY.bindings['dependencies']:
+            RUNTIME_INVENTORY.observe_dependency(binding)
+        for binding in RUNTIME_INVENTORY.bindings['native']:
+            if binding['id'] not in ('python-runtime','native-wrapper'):
+                raise ValueError('native-loader-not-integrated')
+            path = sys.executable if binding['id']=='python-runtime' else _runtime_module.local(RUNTIME_INVENTORY.root,binding['path'])
+            RUNTIME_INVENTORY.resolve_executable(binding['id'],path)
+        for binding in RUNTIME_INVENTORY.bindings['models']:
+            if binding['runtimeIdentifier'] == 'basic-pitch':
+                from basic_pitch.inference import Model
+                RUNTIME_INVENTORY.load_model(binding['id'], Model)
+            elif binding['runtimeIdentifier'] != 'demucs':
+                raise ValueError('model-loader-not-integrated')
+        DEMUCS_SESSION, SCOPED_CLOSURE = demucs_parent.start(RUNTIME_INVENTORY,
+            os.environ['NOVA_TRUSTED_MANIFEST_PATH'], os.environ['NOVA_TRUSTED_MANIFEST_DIGEST'],
+            os.environ['NOVA_EXPECTED_BUILD_REVISION'], OFFLINE_GUARD)
+    except Exception:
+        # Do not expose exception text containing installation or home paths.
+        BOOTSTRAP_ERROR = 'authenticated-runtime-bootstrap-incomplete'
+        if DEMUCS_SESSION is not None:
+            DEMUCS_SESSION.close()
+            DEMUCS_SESSION = None
+
+def runtime_snapshot():
+    if not STRICT_BOOTSTRAP:
+        return _runtime_module.legacy_snapshot()
+    if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
+        return {'inventoryVersion': 2, 'mode': 'STRICT', 'status': 'BLOCKED',
+                'reason': BOOTSTRAP_ERROR or 'missing-trusted-runtime-inventory'}
+    actual = INVENTORY_AGGREGATOR.snapshot(RUNTIME_INVENTORY, DEMUCS_SESSION, SCOPED_CLOSURE) if INVENTORY_AGGREGATOR else RUNTIME_INVENTORY.snapshot()
+    if RUNTIME_EVIDENCE_MODULE is None or RUNTIME_EVIDENCE_CONTRACT is None:
+        actual.update(complete=False, processingEligible=False, publicationEligible=False)
+        return actual
+    try:
+        evidence = RUNTIME_EVIDENCE_MODULE.observe(RUNTIME_INVENTORY.root,
+            RUNTIME_EVIDENCE_CONTRACT, build=RUNTIME_INVENTORY.manifest['buildRevision'])
+        if OFFLINE_GUARD is not None:
+            evidence['network'] = OFFLINE_GUARD.snapshot()
+        return RUNTIME_EVIDENCE_MODULE.upgrade(actual, evidence)
+    except (ValueError, OSError):
+        return RUNTIME_EVIDENCE_MODULE.upgrade(actual)
+
+def runtime_health_identity():
+    actual = runtime_snapshot()
+    result = {**RUNTIME_IDENTITY, 'actualInventory': actual}
+    # Additive v1 projection is derived only from complete actual v2 evidence.
+    # Never project disk existence/metadata/partial receipts as verified inventories.
+    if STRICT_BOOTSTRAP and actual.get('complete') is True and actual.get('status') == 'VERIFIED':
+        def ordered(kind):
+            entries = {e['identity']['id']:e['identity'] for e in actual[kind]}
+            expected = RUNTIME_INVENTORY.manifest[kind] if RUNTIME_INVENTORY is not None else list(entries.values())
+            return [entries[e['id']] for e in expected]
+        result['modelInventory'] = {'status':'VERIFIED','entries':ordered('models')}
+        if all(e.get('status') == 'VERIFIED_ARTIFACT' for e in actual['dependencies']):
+            result['dependencyInventory'] = {'status':'VERIFIED','entries':ordered('dependencies')}
+    return result
+
+
+def require_runtime_processing():
+    if STRICT_BOOTSTRAP:
+        if BOOTSTRAP_ERROR or RUNTIME_INVENTORY is None:
+            raise ValueError('strict-runtime-bootstrap-incomplete')
+        actual = runtime_snapshot()
+        if actual.get('status') != 'VERIFIED' or actual.get('complete') is not True or actual.get('processingEligible') is not True:
+            raise ValueError('strict-runtime-inventory-or-native-enforcement-incomplete')
+        require_owned_session()
+
+
+def require_owned_session(session=None):
+    import time
+    expected = os.environ.get('NOVA_LIFECYCLE_SESSION', '')
+    try: deadline = float(os.environ.get('NOVA_LIFECYCLE_DEADLINE', '0'))
+    except ValueError: raise ValueError('invalid-owned-session') from None
+    if (OWNED_STOP_REQUESTED.is_set() or len(expected) != 64 or any(c not in '0123456789abcdef' for c in expected) or
+            not math.isfinite(deadline) or not time.monotonic() < deadline <= time.monotonic()+300 or
+            session is not None and session != expected):
+        raise ValueError('stale-owned-session')
+    return expected
+
+
+def current_processing_calls():
+    value = getattr(REQUEST_RECEIPTS, 'calls', None)
+    if STRICT_BOOTSTRAP and value is None: raise ValueError('missing-request-processing-receipt')
+    return value
+
+
+def clear_processing_request():
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    # Revoke request-local access before calling fallible receipt cleanup.
+    REQUEST_RECEIPTS.calls = None; REQUEST_RECEIPTS.bound = None
+    REQUEST_RECEIPTS.stem_output = None
+    REQUEST_RECEIPTS.midi_output = None
+    if bound is not None and bound.state != 'CONSUMED': bound.abort()
+
+
+def recheck_stem_output():
+    if not STRICT_BOOTSTRAP: return
+    value = getattr(REQUEST_RECEIPTS, 'stem_output', None)
+    if value is None: raise ValueError('missing-child-output-binding')
+    root, receipt = value
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    if bound is None or receipt.get('parentBinding') != bound.binding or receipt not in bound.children:
+        raise ValueError('foreign-child-output-binding')
+    bound.check(bound.binding)
+    if receipt.get('output') != RUNTIME_EVIDENCE_MODULE.stem_output_identity(root):
+        raise ValueError('changed-child-output-identity')
+
+
+def generated_midi_bytes(path):
+    if not STRICT_BOOTSTRAP: return path.read_bytes()
+    expected = getattr(REQUEST_RECEIPTS, 'midi_output', None)
+    bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+    if expected is None or bound is None or expected[0] != path or expected[1] != bound.binding:
+        raise ValueError('missing-or-foreign-final-midi-output')
+    bound.check(bound.binding)
+    recheck_stem_output()
+    if RUNTIME_EVIDENCE_MODULE.audio_identity(path) != expected[2]:
+        raise ValueError('changed-final-midi-output')
+    raw = path.read_bytes()
+    if ({'digest': hashlib.sha256(raw).hexdigest(), 'byteLength': len(raw)} != expected[2] or
+            RUNTIME_EVIDENCE_MODULE.audio_identity(path) != expected[2]):
+        raise ValueError('changed-final-midi-output')
+    return raw
+
+
 MAX_BYTES = 500 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".wav", ".wave", ".mp3", ".aif", ".aiff", ".caf", ".m4a", ".flac", ".ogg"}
 ALLOWED_ORIGINS = {
@@ -28,6 +252,18 @@ ALLOWED_ORIGINS = {
     "http://localhost:8765",
     "https://puitoybox-cloud.github.io",
 }
+if STRICT_BOOTSTRAP:
+    from urllib.parse import urlsplit
+    local_origin = os.environ.get('NOVA_LOCAL_BROWSER_ORIGIN', '')
+    parsed = urlsplit(local_origin)
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
+            parsed.netloc != '127.0.0.1:'+str(parsed.port) or parsed.path or parsed.query or parsed.fragment):
+        ALLOWED_ORIGINS = set()
+    else:
+        ALLOWED_ORIGINS = {local_origin}
+
+OWNED_STOP_REQUESTED = threading.Event()
+PROCESS_LOCK = threading.Lock()  # Demucs and Basic Pitch may exhaust RAM if run concurrently.
 STEM_PROGRAMS = {
     "Vocals": 53,
     "Bass": 33,
@@ -46,7 +282,7 @@ STEM_CHANNELS = {
 
 
 def safe_name(raw: str) -> str:
-    value = Path(urllib.parse.unquote(raw or "audio-input")).name
+    value = Path(urllib.parse.unquote(raw or "audio-input").replace("\\", "/")).name
     value = "".join(ch for ch in value if ch.isalnum() or ch in " ._-()[]")[:180].strip()
     return value or "audio-input.wav"
 
@@ -67,6 +303,7 @@ def estimate_bpm(path: Path) -> float:
 
 
 def run_demucs(source: Path, output_dir: Path) -> Path:
+    require_runtime_processing()
     command = [
         sys.executable,
         "-m",
@@ -77,7 +314,14 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
         str(output_dir),
         str(source),
     ]
-    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
+    if STRICT_BOOTSTRAP:
+        if DEMUCS_SESSION is None: raise ValueError('missing-live-demucs-child')
+        child = DEMUCS_SESSION.process_audio(source, output_dir, binding=REQUEST_RECEIPTS.bound.binding)
+        REQUEST_RECEIPTS.bound.add_child(child)
+        REQUEST_RECEIPTS.stem_output = (output_dir.resolve(), child)
+        recheck_stem_output()
+    else:
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
     candidates = [path.parent for path in output_dir.rglob("vocals.wav")]
     if not candidates:
         raise RuntimeError("Stem分離結果を確認できませんでした。Demucs htdemucs_6sの出力がありません。")
@@ -87,7 +331,35 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
 def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
     from basic_pitch.inference import predict
 
-    _, midi_data, _ = predict(str(stem_path))
+    require_runtime_processing()
+    if STRICT_BOOTSTRAP:
+        bindings = [e for e in RUNTIME_INVENTORY.bindings['models'] if e['runtimeIdentifier'] == 'basic-pitch']
+        if len(bindings) != 1:
+            raise ValueError('missing-or-unexpected-loaded-model')
+        model, model_receipt = RUNTIME_INVENTORY.retained_model(bindings[0]['id'])
+        if model is None:
+            raise ValueError('missing-loaded-model')
+        import librosa
+        calls = current_processing_calls()
+        calls.entries.append({'stage':'model','logicalId':'basic-pitch-retained-model','identity':model_receipt['identity'],
+            'status':'VERIFIED','nativeIdentity':'NOT_APPLICABLE','completed':True,'fallback':False,
+            'evidence':'ACTUAL_RETAINED_OBJECT_AND_VERIFIED_SERIALIZED_BYTES'})
+        original_load = librosa.load; original_resample = librosa.resample
+        def observed_load(path, *args, **kwargs):
+            RUNTIME_EVIDENCE_MODULE.local_audio_path(path)
+            return calls.call('decoder', 'basic-pitch-input', original_load, path, *args, **kwargs)
+        def observed_resample(*args, **kwargs):
+            return calls.call('resample', 'basic-pitch-preprocess', original_resample, *args, **kwargs)
+        librosa.load = observed_load; librosa.resample = observed_resample
+        try:
+            _, midi_data, _ = calls.call('inference','basic-pitch',predict,str(stem_path),model_or_model_path=model)
+        finally:
+            librosa.load = original_load; librosa.resample = original_resample
+        # The existing actual model instance above is reused; no receipt-only reload.
+        calls.call('result', 'basic-pitch-midi', midi_data.write, str(midi_path))
+        return RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path)
+    else:
+        _, midi_data, _ = predict(str(stem_path))
     midi_data.write(str(midi_path))
 
 
@@ -105,6 +377,106 @@ def extract_note_events(midi_path: Path):
         elif message.type in {"note_on", "note_off"}:
             events.append((elapsed, message.type, int(message.note), int(getattr(message, "velocity", 0))))
     return events
+
+
+def refine_clear_melody(events, source_path: Path):
+    """Correct and join fragments only where the original audio has a clear single tone.
+
+    A mixture with chords, percussion, or a strong harmonic spectrum is left to
+    Basic Pitch. This conservative check is useful when stem separation changes
+    the fundamental or Basic Pitch splits one continuous tone into several notes.
+    """
+    import numpy as np
+    import soundfile as sf
+
+    try:
+        if STRICT_BOOTSTRAP:
+            if RUNTIME_EVIDENCE_CONTRACT is None:
+                raise ValueError('missing-strict-codec-contract')
+            channels, sr = RUNTIME_EVIDENCE_MODULE.decode_soundfile(sf, source_path, RUNTIME_EVIDENCE_CONTRACT['codec']['version'], receipt=PROCESSING_RECEIPT)
+        else:
+            channels, sr = sf.read(str(source_path), dtype="float32", always_2d=True)
+        audio = np.mean(channels, axis=1)
+    except (RuntimeError, ValueError):
+        if STRICT_BOOTSTRAP:
+            raise ValueError("strict-codec-fallback-blocked") from None
+        # Some supported containers require the runtime's librosa decoder.
+        import librosa
+        audio, sr = librosa.load(str(source_path), sr=22050, mono=True)
+    if len(audio) == 0:
+        return events
+
+    notes = []
+    active = {}
+    for time, kind, pitch, velocity in events:
+        key = int(pitch)
+        if kind == "note_on" and velocity > 0:
+            active.setdefault(key, []).append((float(time), int(velocity)))
+        elif key in active and active[key]:
+            start, strength = active[key].pop(0)
+            if time > start:
+                notes.append([start, float(time), key, strength])
+    if not notes:
+        return events
+
+    def reference_pitch(start, end):
+        center = (start + end) / 2
+        width = min(0.18, end - start)
+        if width < 0.075:
+            return None
+        left = max(0, int((center - width / 2) * sr))
+        segment = audio[left:min(len(audio), left + max(1, int(width * sr)))]
+        if len(segment) < int(0.075 * sr):
+            return None
+        segment = segment - np.mean(segment)
+        power = float(np.sum(segment * segment))
+        if power < len(segment) * 1e-7:
+            return None
+        # A window reduces spectral leakage at note edges. Require the strongest
+        # peak to explain almost all power: chords and harmonic instruments fail.
+        windowed = segment * np.hanning(len(segment))
+        spectrum = np.abs(np.fft.rfft(windowed, n=65536)) ** 2
+        frequencies = np.fft.rfftfreq(65536, d=1 / sr)
+        band = (frequencies >= 80) & (frequencies <= 1800)
+        indices = np.flatnonzero(band)
+        peak = indices[np.argmax(spectrum[band])]
+        frequency = frequencies[peak]
+        midi_pitch = round(69 + 12 * math.log2(frequency / 440))
+        if not 24 <= midi_pitch <= 96:
+            return None
+        # Measure the fraction of energy near the peak on the original waveform.
+        # The high threshold deliberately excludes chords and complex timbres.
+        nearby = (frequencies >= frequency - 12) & (frequencies <= frequency + 12)
+        if float(np.sum(spectrum[nearby])) / float(np.sum(spectrum[band])) < 0.85:
+            return None
+        return midi_pitch
+
+    def continuous_at(boundary):
+        def rms(start, end):
+            chunk = audio[max(0, int(start * sr)):min(len(audio), int(end * sr))]
+            return float(np.sqrt(np.mean(chunk * chunk))) if len(chunk) else 0.0
+        before = rms(boundary - 0.06, boundary - 0.03)
+        after = rms(boundary + 0.03, boundary + 0.06)
+        middle = rms(boundary - 0.009, boundary + 0.009)
+        return min(before, after) > 1e-4 and middle >= 0.65 * min(before, after)
+
+    for note in notes:
+        detected = reference_pitch(note[0], note[1])
+        if detected is not None and abs(detected - note[2]) <= 2:
+            note[2] = detected
+    notes.sort(key=lambda note: (note[0], note[2]))
+    merged = []
+    for note in notes:
+        if (merged and merged[-1][2] == note[2]
+                and -0.02 <= note[0] - merged[-1][1] <= 0.03
+                and continuous_at((note[0] + merged[-1][1]) / 2)):
+            merged[-1][1] = max(merged[-1][1], note[1])
+        else:
+            merged.append(note[:])
+    result = []
+    for start, end, pitch, velocity in merged:
+        result.extend(((start, "note_on", pitch, velocity), (end, "note_off", pitch, 0)))
+    return sorted(result, key=lambda event: (event[0], event[1] == "note_on"))
 
 
 def drum_events(stem_path: Path):
@@ -175,6 +547,7 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
     ]
 
     for label, filename in source_stems:
+        recheck_stem_output()
         stem_path = stem_dir / filename
         if not stem_path.exists() or stem_path.stat().st_size <= 44:
             continue
@@ -182,8 +555,14 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
             events = drum_events(stem_path)
         else:
             midi_path = work_dir / f"{label.lower()}.mid"
-            transcribe_pitched_stem(stem_path, midi_path)
+            midi_identity = transcribe_pitched_stem(stem_path, midi_path)
+            if STRICT_BOOTSTRAP and midi_identity != RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path):
+                raise ValueError('changed-transcribed-midi-identity')
             events = extract_note_events(midi_path)
+            if STRICT_BOOTSTRAP and midi_identity != RUNTIME_EVIDENCE_MODULE.audio_identity(midi_path):
+                raise ValueError('changed-transcribed-midi-identity')
+            if label == "Vocals":
+                events = refine_clear_melody(events, source)
         note_count = sum(1 for event in events if event[1] == "note_on" and event[3] > 0)
         if note_count == 0:
             continue
@@ -191,27 +570,132 @@ def build_merged_midi(stem_dir: Path, work_dir: Path, source: Path, bpm: float) 
         generated.append(label)
         counts[label] = note_count
 
+    recheck_stem_output()
+
     if not generated:
         raise RuntimeError("分離されたStemからMIDIノートを生成できませんでした。")
 
     output_path = work_dir / f"{source.stem}_stems.mid"
-    output.save(str(output_path))
+    if STRICT_BOOTSTRAP:
+        require_runtime_processing()
+        bound = getattr(REQUEST_RECEIPTS, 'bound', None)
+        if bound is None: raise ValueError('missing-final-writer-processing-binding')
+        inventory = runtime_snapshot()
+        current = RUNTIME_EVIDENCE_MODULE.processing_binding(require_owned_session(),
+            bound.binding['request'], RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+        bound.check(current)
+        recheck_stem_output()
+        current_processing_calls().call('result', 'merged-midi-writer', output.save, str(output_path))
+        REQUEST_RECEIPTS.midi_output = (output_path, __import__('copy').deepcopy(bound.binding),
+            RUNTIME_EVIDENCE_MODULE.audio_identity(output_path))
+    else:
+        output.save(str(output_path))
     return output_path, generated, counts
+
+
+STEM_NAMES = ('vocals', 'drums', 'bass', 'guitar', 'piano', 'other')
+STEM_TRANSFER_LIMIT = 24 * 1024 * 1024
+
+
+def separated_wav_payload(stem_root, target_sample_rate=None):
+    """Bound the complete transfer before reading any output bytes."""
+    import wave
+    paths = [Path(stem_root) / (name + '.wav') for name in STEM_NAMES]
+    if any(path.is_symlink() or not path.is_file() for path in paths):
+        raise ValueError('missing-or-linked-stem-output')
+    sizes = [path.stat().st_size for path in paths]
+    if sum(sizes) > STEM_TRANSFER_LIMIT:
+        raise ValueError('stem-transfer-limit-24MiB-use-shorter-input')
+    reference = None
+    result = []
+    for name, path, size in zip(STEM_NAMES, paths, sizes):
+        with wave.open(str(path), 'rb') as wav:
+            info = (wav.getnframes(), wav.getframerate(), wav.getnchannels(), wav.getsampwidth())
+            if info[0] <= 0 or info[1] != 44100 or info[2] not in (1, 2) or info[3] not in (2, 3, 4):
+                raise ValueError('invalid-stem-wav-format')
+            if reference is not None and info != reference:
+                raise ValueError('stem-timeline-mismatch')
+            reference = info
+        raw = path.read_bytes()
+        if len(raw) != size:
+            raise ValueError('changed-stem-output')
+        source_digest = hashlib.sha256(raw).hexdigest()
+        source_rate = info[1]
+        if target_sample_rate is not None and target_sample_rate != source_rate:
+            if target_sample_rate != 48000:
+                raise ValueError('unsupported-stem-export-rate')
+            import io
+            import soundfile as sf
+            from scipy.signal import resample_poly
+            pcm, rate = sf.read(io.BytesIO(raw), dtype='float32', always_2d=True)
+            converted = resample_poly(pcm, 160, 147, axis=0)
+            stream = io.BytesIO()
+            sf.write(stream, converted, target_sample_rate, format='WAV', subtype='PCM_16')
+            raw = stream.getvalue()
+            info = (len(converted), target_sample_rate, info[2], 2)
+            if sum(item['byteLength'] for item in result) + len(raw) > STEM_TRANSFER_LIMIT:
+                raise ValueError('stem-transfer-limit-24MiB-use-shorter-input')
+        result.append({'name': name, 'fileName': name + '.wav', 'byteLength': len(raw),
+                       'sourceSha256': source_digest, 'sourceSampleRate': source_rate,
+                       'sha256': hashlib.sha256(raw).hexdigest(), 'frames': info[0],
+                       'sampleRate': info[1], 'channels': info[2],
+                       'wavBase64': base64.b64encode(raw).decode('ascii')})
+    return result
+
+
+def file_sha256(path):
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def process_transcription(source, work_dir):
+    if STRICT_BOOTSTRAP:
+        raise ValueError('packaged-direct-transcription-receipt-not-supported')
+    midi = work_dir / 'transcribed.mid'
+    transcribe_pitched_stem(source, midi)
+    raw = midi.read_bytes()
+    if len(raw) > 64 * 1024 * 1024:
+        raise ValueError('midi-output-budget')
+    return {'ok': True, 'version': 1, 'pipelineRevision': PIPELINE_REVISION,
+            'sourceDigest': SOURCE_DIGEST, 'runtimeIdentity': runtime_health_identity(),
+            'localOnly': True, 'stems': [], 'model': 'basic-pitch',
+            'modelVersion': importlib.metadata.version('basic-pitch'),
+            'sourceSha256': file_sha256(source), 'confidenceAvailable': False,
+            'midiFileName': midi.name, 'midiBase64': base64.b64encode(raw).decode('ascii')}
+
+
+def process_stems(source, work_dir):
+    # The packaged protocol currently authenticates MIDI only. Never downgrade it
+    # to publish unauthenticated WAVs under a strict native session.
+    if STRICT_BOOTSTRAP:
+        raise ValueError('packaged-stem-receipt-not-supported')
+    root = run_demucs(source, work_dir / 'demucs')
+    return {'ok': True, 'pipelineRevision': PIPELINE_REVISION, 'localOnly': True,
+            'sourceSha256': file_sha256(source),
+            'model': 'htdemucs_6s', 'modelVersion': importlib.metadata.version('demucs'),
+            'audioStems': separated_wav_payload(root, target_sample_rate=48000), 'strictRuntime': False}
 
 
 def process_audio(source: Path, work_dir: Path):
     bpm = estimate_bpm(source)
     stems_root = run_demucs(source, work_dir / "demucs")
     midi_path, stems, note_counts = build_merged_midi(stems_root, work_dir, source, bpm)
+    recheck_stem_output()
     return {
         "ok": True,
         "version": 1,
+        "pipelineRevision": PIPELINE_REVISION,
+        "sourceDigest": SOURCE_DIGEST,
+        "runtimeIdentity": runtime_health_identity(),
         "localOnly": True,
         "bpm": bpm,
         "stems": stems,
         "noteCounts": note_counts,
         "midiFileName": midi_path.name,
-        "midiBase64": base64.b64encode(midi_path.read_bytes()).decode("ascii"),
+        "midiBase64": base64.b64encode(generated_midi_bytes(midi_path)).decode("ascii"),
     }
 
 
@@ -227,7 +711,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Cache-Control", "no-store")
 
@@ -253,16 +737,38 @@ class Handler(BaseHTTPRequestHandler):
         self._json(200, {
             "ok": True,
             "version": 1,
+            "pipelineRevision": PIPELINE_REVISION,
+            "sourceDigest": SOURCE_DIGEST,
+        "runtimeIdentity": runtime_health_identity(),
             "localOnly": True,
+            "lifecycleSession": os.environ.get("NOVA_LIFECYCLE_SESSION") if STRICT_BOOTSTRAP else None,
             "host": HOST,
             "port": PORT,
             "python": sys.version.split()[0],
-            "demucs": True,
-            "basicPitch": True,
+            "demucs": importlib.util.find_spec("demucs") is not None,
+            "basicPitch": importlib.util.find_spec("basic_pitch") is not None,
         })
 
     def do_POST(self):
-        if self.path != "/process":
+        if self.path == '/owned-stop':
+            try:
+                import secrets
+                session = require_owned_session()
+                token = os.environ.get('NOVA_OWNED_RESULT_CAPABILITY','')
+                if (not STRICT_BOOTSTRAP or len(token) != 64 or self.headers.get('Origin') is not None or
+                        self.headers.get('Host') != '127.0.0.1:8766' or
+                        self.headers.get('Transfer-Encoding') is not None or
+                        self.headers.get('X-Nova-Session') != session or
+                        not secrets.compare_digest(self.headers.get('X-Nova-Owned-Capability',''),token) or
+                        self.headers.get('Content-Length') != '0'):
+                    raise ValueError('foreign-owned-stop')
+                OWNED_STOP_REQUESTED.set()
+                if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
+                self._json(200,{'format':'NOVA_OWNED_STOP_RECEIPT','version':1,'session':session,'state':'STOPPING'})
+                threading.Thread(target=self.server.shutdown,daemon=True).start()
+            except (ValueError,TypeError): self._json(403,{'ok':False,'code':'INVALID_OWNED_STOP'})
+            return
+        if self.path not in ("/process", "/process-stems", "/transcribe"):
             self._json(404, {"ok": False, "message": "Not found"})
             return
         if self._origin() and self._origin() not in ALLOWED_ORIGINS:
@@ -270,6 +776,20 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.headers.get("X-Nova-Audio-Pipeline") != "1":
             self._json(403, {"ok": False, "message": "Music Studioのローカル処理要求ではありません。"})
+            return
+        try:
+            require_runtime_processing()
+            if STRICT_BOOTSTRAP:
+                require_owned_session(self.headers.get('X-Nova-Session'))
+                request = self.headers.get('X-Nova-Request', '')
+                ticket = self.headers.get('X-Nova-Authorization','')
+                if len(ticket) != 64 or any(c not in '0123456789abcdef' for c in ticket):
+                    raise ValueError('missing-processing-authorization')
+                if len(request) != 64 or any(c not in '0123456789abcdef' for c in request): raise ValueError('invalid-processing-request')
+                if PROCESSING_ATTEMPTS is None: raise ValueError('missing-owned-request-registry')
+                PROCESSING_ATTEMPTS.claim(require_owned_session(), request)
+        except ValueError:
+            self._json(503, {"ok": False, "code": "STRICT_RUNTIME_INVENTORY_INCOMPLETE"})
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -282,7 +802,11 @@ class Handler(BaseHTTPRequestHandler):
         if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
             self._json(415, {"ok": False, "message": "対応する音声形式ではありません。"})
             return
+        if not PROCESS_LOCK.acquire(blocking=False):
+            self._json(409, {"ok": False, "busy": True, "message": "別の音声を処理中です。完了後に再試行してください。"})
+            return
         try:
+            clear_processing_request()
             with tempfile.TemporaryDirectory(prefix="nova-music-audio-") as temp:
                 work_dir = Path(temp)
                 source = work_dir / filename
@@ -294,20 +818,181 @@ class Handler(BaseHTTPRequestHandler):
                             raise RuntimeError("音声ファイルの受信が途中で終了しました。")
                         handle.write(chunk)
                         remaining -= len(chunk)
-                payload = process_audio(source, work_dir)
+                if STRICT_BOOTSTRAP:
+                    session = require_owned_session(self.headers.get('X-Nova-Session'))
+                    inventory = runtime_snapshot()
+                    binding = RUNTIME_EVIDENCE_MODULE.processing_binding(session,
+                        self.headers.get('X-Nova-Request'), RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+                    admit_owned_processing(binding, ticket)
+                    REQUEST_RECEIPTS.bound = RUNTIME_EVIDENCE_MODULE.BoundProcessingReceipt(binding,
+                        timeout=min(300,float(os.environ['NOVA_LIFECYCLE_DEADLINE'])-__import__('time').monotonic()))
+                    REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
+                payload = (process_stems(source, work_dir) if self.path == "/process-stems" else
+                           process_transcription(source, work_dir) if self.path == "/transcribe" else
+                           process_audio(source, work_dir))
+                require_runtime_processing()
+                if STRICT_BOOTSTRAP:
+                    inventory = runtime_snapshot()
+                    current = RUNTIME_EVIDENCE_MODULE.processing_binding(require_owned_session(self.headers.get('X-Nova-Session')),
+                        self.headers.get('X-Nova-Request'), RUNTIME_EVIDENCE_MODULE.audio_identity(source), inventory)
+                    REQUEST_RECEIPTS.bound.add_calls(current_processing_calls().snapshot())
+                    if len(payload['midiBase64']) > 89478488: raise ValueError('processing-output-budget')
+                    raw_output = base64.b64decode(payload['midiBase64'], validate=True)
+                    if len(raw_output) > 64*1024*1024: raise ValueError('processing-output-budget')
+                    # Completion inventory/call collection can run after Base64 creation.
+                    # Reuse the active request's actual output gate before sealing its receipt.
+                    midi_output = getattr(REQUEST_RECEIPTS, 'midi_output', None)
+                    if midi_output is None or raw_output != generated_midi_bytes(midi_output[0]):
+                        raise ValueError('changed-final-response-output')
+                    output = {'digest': hashlib.sha256(raw_output).hexdigest(), 'byteLength': len(raw_output)}
+                    receipt = REQUEST_RECEIPTS.bound.finish(current, inventory, output)
+                    payload['processingReceipt'] = REQUEST_RECEIPTS.bound.consume(receipt, current)
+                    publish_owned_result(payload['processingReceipt'])
                 self._json(200, payload)
         except subprocess.TimeoutExpired:
             self._json(504, {"ok": False, "message": "Stem分離が60分以内に完了しませんでした。"})
         except Exception as error:
-            traceback.print_exc()
-            self._json(500, {"ok": False, "message": str(error)})
+            if STRICT_BOOTSTRAP:
+                self._json(503, {"ok": False, "code": "STRICT_PROCESSING_RECEIPT_INCOMPLETE"})
+            else:
+                traceback.print_exc()
+                self._json(500, {"ok": False, "message": str(error)})
+        finally:
+            try:
+                clear_processing_request()
+            finally:
+                PROCESS_LOCK.release()
 
     def log_message(self, format, *args):
         print(f"[Nova Audio Pipeline] {self.address_string()} - {format % args}")
 
 
+def owned_helper_exchange(route, value):
+    """One numeric loopback socket, one private request, bounded response; no DNS."""
+    import http.client
+    import socket
+    parsed = urllib.parse.urlsplit(os.environ.get('NOVA_OWNED_RESULT_ORIGIN',''))
+    if (route not in ('/owned-helper-result','/owned-helper-admit') or
+            parsed.scheme != 'http' or parsed.hostname != '127.0.0.1' or not parsed.port or
+            parsed.netloc != '127.0.0.1:'+str(parsed.port) or parsed.path or parsed.query or parsed.fragment):
+        raise ValueError('missing-private-result-origin')
+    session = require_owned_session()
+    capability = os.environ.get('NOVA_OWNED_RESULT_CAPABILITY','')
+    if len(capability) != 64: raise ValueError('missing-owned-capability')
+    raw = json.dumps({'session':session,'capability':capability,**value},
+        sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+    if len(raw) > 1024*1024: raise ValueError('owned-result-budget')
+    connection = http.client.HTTPConnection('127.0.0.1',parsed.port,timeout=2)
+    handle = socket.socket(socket.AF_INET,socket.SOCK_STREAM); handle.settimeout(2)
+    try:
+        if OFFLINE_GUARD is None: raise ValueError('missing-owned-network-guard')
+        with OFFLINE_GUARD.permit_owned_socket(handle,('127.0.0.1',parsed.port)):
+            handle.connect(('127.0.0.1',parsed.port))
+        connection.sock = handle
+        connection.request('POST',route,body=raw,headers={'Content-Type':'application/json'})
+        response = connection.getresponse(); body = response.read(4097)
+        if response.status != 200 or len(body)>4096: raise ValueError('owned-exchange-not-accepted')
+        return json.loads(body)
+    finally: connection.close(); handle.close()
+
+
+def admit_owned_processing(binding, ticket):
+    from runtime_evidence import evidence_digest
+    contract = runtime_snapshot().get('runtimeEvidence',{}).get('contractDigest')
+    value = owned_helper_exchange('/owned-helper-admit',{'ticket':ticket,'binding':binding,'processingContract':contract})
+    expected = {'format':'NOVA_PROCESSING_ADMISSION','version':1,'session':binding['session'],
+        'request':binding['request'],'bindingDigest':evidence_digest(binding),'state':'ADMITTED'}
+    if (not isinstance(value,dict) or set(value) != set(expected)|{'authorizationDigest','deadlineAt'} or
+            any(type(value.get(k)) != type(v) or value.get(k) != v for k,v in expected.items()) or
+            not isinstance(value['authorizationDigest'],str) or len(value['authorizationDigest']) != 64 or
+            any(c not in '0123456789abcdef' for c in value['authorizationDigest']) or
+            type(value['deadlineAt']) is not int or value['deadlineAt'] <= __import__('time').time()*1000):
+        raise ValueError('foreign-or-partial-processing-admission')
+    return value
+
+
+def publish_owned_result(receipt):
+    if receipt.get('complete') is not True: raise ValueError('partial-owned-result')
+    if owned_helper_exchange('/owned-helper-result',{'receipt':receipt}) != {'ok':True}:
+        raise ValueError('owned-result-not-accepted')
+
+
+def start_owned_stop_pipe(server):
+    """Authenticate the inherited, anonymous creator channel after source preflight."""
+    descriptor=os.environ.pop('NOVA_OWNED_STOP_FD',None)
+    identity_text=os.environ.pop('NOVA_OWNED_STOP_IDENTITY',None)
+    if descriptor is None and identity_text is None:return None
+    if not STRICT_BOOTSTRAP or BOOTSTRAP_ERROR or descriptor is None or identity_text is None:
+        raise ValueError('unverified-owned-stop-source')
+    import socket
+    import select
+    import time
+    from demucs_receipt import OwnedStopPipe,unique
+    identity=json.loads(identity_text,object_pairs_hook=unique)
+    if identity.get('session')!=require_owned_session() or identity.get('deadline')!=float(os.environ['NOVA_LIFECYCLE_DEADLINE']):
+        raise ValueError('foreign-inherited-stop-session')
+    handle=socket.socket(fileno=int(descriptor))
+    try:pipe=OwnedStopPipe(handle,identity,os.environ.get('NOVA_OWNED_RESULT_CAPABILITY',''))
+    except BaseException:handle.close();raise
+    if os.environ.pop('NOVA_OWNED_ORIGIN_REQUIRED',None)=='1':
+        try:
+            RUNTIME_INVENTORY.recheck()
+            private=RUNTIME_INVENTORY.private_python
+            if private is None:raise ValueError('missing-helper-private-origin')
+            binding=pipe.accept_origin(private)
+            private['parentLaunchEvidence']=binding
+            RUNTIME_INVENTORY.recheck()
+        except BaseException:pipe.close();raise
+    def close_admission(payload):
+        OWNED_STOP_REQUESTED.set()
+        if PROCESSING_ATTEMPTS is not None:PROCESSING_ATTEMPTS.close()
+    def monitor():
+        try:
+            while not OWNED_STOP_REQUESTED.is_set() and time.monotonic()<identity['deadline']+10:
+                if select.select([handle],[],[],0.25)[0]:
+                    pipe.accept(close_admission);break
+        except (OSError,ValueError,TypeError):
+            # EOF/invalid delivery removes admission, but never fabricates an authenticated receipt.
+            close_admission(None)
+        finally:
+            # Preserve this exact descriptor until main has collected child cleanup.
+            server.shutdown()
+    threading.Thread(target=monitor,daemon=True).start()
+    return pipe
+
+
+def finish_owned_shutdown(stop_pipe):
+    """Serialize child cleanup with processing; report through the existing stop FD.
+
+    Missing NOTE_EXIT or any unobserved deeper descendants remain PARTIAL.
+    A detached report never grants authority and never proves Helper exit itself.
+    """
+    report={'status':'PARTIAL','ownedDescendantsComplete':False,
+        'remainingOwnedDescendants':None,'hardInterruption':'UNVERIFIED',
+        'processingQuiescent':False,'child':None,'childExit':None}
+    acquired=PROCESS_LOCK.acquire(timeout=0.5)
+    try:
+        report['processingQuiescent']=acquired
+        if acquired and DEMUCS_SESSION is not None:
+            binding=copy.deepcopy(DEMUCS_SESSION.processing_binding)
+            report['child']={'session':DEMUCS_SESSION.nonce,'parentBinding':binding}
+            DEMUCS_SESSION.close()
+            report['childExit']=copy.deepcopy(getattr(DEMUCS_SESSION,'shutdown_receipt',None))
+        if stop_pipe is not None and stop_pipe.stop_payload is not None:
+            stop_pipe.send_final(report)
+    finally:
+        if acquired:PROCESS_LOCK.release()
+        if stop_pipe is not None:stop_pipe.close()
+    return report
+
+
 def main():
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    initialize_runtime()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    try:stop_pipe = start_owned_stop_pipe(server)
+    except BaseException:server.server_close();raise
     print("Nova Music Studio Audio Pipeline")
     print(f"Local endpoint: http://{HOST}:{PORT}")
     print("Audio never leaves this Mac through this helper.")
@@ -318,6 +1003,11 @@ def main():
         pass
     finally:
         server.server_close()
+        if PROCESSING_ATTEMPTS is not None: PROCESSING_ATTEMPTS.close()
+        if stop_pipe is not None:
+            try:finish_owned_shutdown(stop_pipe)
+            except (OSError,ValueError,TypeError):pass
+        elif DEMUCS_SESSION is not None: DEMUCS_SESSION.close()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,50 @@
+[
+  {
+    "width": 1440,
+    "stemTrackId": "bass",
+    "trackIds": [
+      "bass"
+    ],
+    "frames": 134400,
+    "seconds": 2,
+    "overflow": false,
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 1180,
+    "stemTrackId": "bass",
+    "trackIds": [
+      "bass"
+    ],
+    "frames": 134400,
+    "seconds": 2,
+    "overflow": false,
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 820,
+    "stemTrackId": "bass",
+    "trackIds": [
+      "bass"
+    ],
+    "frames": 134400,
+    "seconds": 2,
+    "overflow": false,
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 390,
+    "stemTrackId": "bass",
+    "trackIds": [
+      "bass"
+    ],
+    "frames": 134400,
+    "seconds": 2,
+    "overflow": false,
+    "errors": [],
+    "external": []
+  }
+]

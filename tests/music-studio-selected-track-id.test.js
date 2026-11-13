@@ -47,7 +47,7 @@ test('unknown Track selection changes only Track identity and never promotes a c
 });
 
 test('invalid Track IDs leave the complete session state unchanged',()=>{
-  const core=load(),session=core.createSession(project());core.selectNote(session,'m');session.correctionPreview={kept:true};
+  const core=load(),session=core.createSession(project());core.selectNote(session,'m');session.correctionPreview={kept:true};session.scopedMidiRepairPreview={ok:true,trackId:'melody-custom',changes:[{type:'timing',noteId:'m'}]};
   for(const id of ['missing','',null,undefined,42]){const before=JSON.stringify(session);assert.equal(core.selectTrackById(session,id),false);assert.equal(JSON.stringify(session),before)}
 });
 

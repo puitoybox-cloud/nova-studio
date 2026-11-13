@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-24 JST",
+  "inputParts": [
+    "assets/music-acoustic-v1/piano-72.wav",
+    "assets/music-acoustic-v1/bass-36.wav"
+  ],
+  "sourceSha256": "73e8e13c79d3527ec865713aa6ac3e16e4accdc82bbaead14a3d1b5b7187df54",
+  "model": "htdemucs_6s",
+  "modelVersion": "4.1.0",
+  "seconds": 3.0,
+  "elapsedSeconds": 5.568878679000136,
+  "parentPeakRssKiB": 111028,
+  "childPeakRssKiB": 1504716,
+  "stemCount": 6,
+  "exportRate": 48000,
+  "outputBytes": 3456264,
+  "qualityAccepted": false,
+  "strictRuntime": false
+}

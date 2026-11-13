@@ -13,7 +13,11 @@
   function createRecorder(options={}){
     const ppq=clamp(options.ppq||480,24,9600),tempo=Math.min(400,Math.max(20,Number(options.tempo)||120)),clock=options.clock||(()=>root.performance?.now?.()??Date.now());
     let recording=false,startedAt=0,sequence=0;const active=new Map(),notes=[],messageGate=createMessageGate(options.duplicateWindowMs);
-    const toTick=milliseconds=>Math.max(0,Math.round(milliseconds*ppq*tempo/60000));
+    const originTick=Math.max(0,Number(options.startTick)||0),tempoMap=options.tempoMap==null?null:JSON.parse(JSON.stringify(options.tempoMap)),timing=root.MusicStudioPlayback;
+    if(tempoMap!==null&&(!Array.isArray(tempoMap)||typeof timing?.tickAtSeconds!=='function'))throw Error('recording-tempo-map-service-unavailable');
+    // Relative note ticks keep the existing browser commit offset contract.
+    // Freeze the recording's map so changing the UI cannot retime active notes.
+    const toTick=milliseconds=>Math.max(0,Math.round(tempoMap===null?milliseconds*ppq*tempo/60000:timing.tickAtSeconds(originTick,Math.max(0,milliseconds)/1000,ppq,tempoMap,tempo)-originTick));
     function start(time=clock()){recording=true;startedAt=Number(time);sequence=0;active.clear();notes.length=0;messageGate.reset();return api}
     function noteOff(channel,pitch,time){const stack=active.get(key(channel,pitch));if(!stack?.length)return null;const onset=stack.shift();if(!stack.length)active.delete(key(channel,pitch));const startTick=toTick(onset.time-startedAt),endTick=toTick(Number(time)-startedAt),note={id:`midi-recorded-${++sequence}`,pitch,startTick,durationTicks:Math.max(1,endTick-startTick),velocity:onset.velocity,inputChannel:channel,inputMethod:'midi-keyboard'};notes.push(note);options.onNote?.(note);return note}
     function handleMessage(data,time=clock()){if(!recording||!data)return null;if(!messageGate.accept(data,time))return{type:'duplicate'};const status=Number(data[0])||0,command=status&0xf0,channel=(status&0x0f)+1,pitch=clamp(data[1],0,127),velocity=clamp(data[2],0,127);if(command===0x90&&velocity>0){const item={time:Number(time),velocity};const stack=active.get(key(channel,pitch))||[];stack.push(item);active.set(key(channel,pitch),stack);return{type:'noteOn',channel,pitch,velocity}}if(command===0x80||(command===0x90&&velocity===0))return noteOff(channel,pitch,time);return null}

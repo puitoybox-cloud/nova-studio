@@ -1,0 +1,222 @@
+[
+  {
+    "width": 1440,
+    "result": {
+      "peak": 0.03558349609375,
+      "size": 441644,
+      "frames": 110400,
+      "provenance": {
+        "sourceRevision": 3,
+        "trackIds": [
+          "melody",
+          "drums",
+          "bass"
+        ],
+        "noteCount": 4,
+        "seconds": 1.5,
+        "tail": 0.7999999999999998
+      },
+      "files": [
+        {
+          "name": "Master.wav",
+          "size": 441644
+        },
+        {
+          "name": "Mix.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrumental.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrument-1.wav",
+          "size": 441644
+        },
+        {
+          "name": "Song.mid",
+          "size": 178
+        },
+        {
+          "name": "Manifest.json",
+          "size": 1839
+        }
+      ],
+      "archiveBytes": 700056,
+      "hash": "ac3f815be42c400cfc5a20f5518ed20b3de5448299e0d596b5a77a0e04850be6"
+    },
+    "metrics": {
+      "overflow": false,
+      "height": 820,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
+    },
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 1180,
+    "result": {
+      "peak": 0.03558349609375,
+      "size": 441644,
+      "frames": 110400,
+      "provenance": {
+        "sourceRevision": 3,
+        "trackIds": [
+          "melody",
+          "drums",
+          "bass"
+        ],
+        "noteCount": 4,
+        "seconds": 1.5,
+        "tail": 0.7999999999999998
+      },
+      "files": [
+        {
+          "name": "Master.wav",
+          "size": 441644
+        },
+        {
+          "name": "Mix.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrumental.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrument-1.wav",
+          "size": 441644
+        },
+        {
+          "name": "Song.mid",
+          "size": 178
+        },
+        {
+          "name": "Manifest.json",
+          "size": 1839
+        }
+      ],
+      "archiveBytes": 700056,
+      "hash": "ac3f815be42c400cfc5a20f5518ed20b3de5448299e0d596b5a77a0e04850be6"
+    },
+    "metrics": {
+      "overflow": false,
+      "height": 820,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
+    },
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 820,
+    "result": {
+      "peak": 0.03558349609375,
+      "size": 441644,
+      "frames": 110400,
+      "provenance": {
+        "sourceRevision": 3,
+        "trackIds": [
+          "melody",
+          "drums",
+          "bass"
+        ],
+        "noteCount": 4,
+        "seconds": 1.5,
+        "tail": 0.7999999999999998
+      },
+      "files": [
+        {
+          "name": "Master.wav",
+          "size": 441644
+        },
+        {
+          "name": "Mix.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrumental.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrument-1.wav",
+          "size": 441644
+        },
+        {
+          "name": "Song.mid",
+          "size": 178
+        },
+        {
+          "name": "Manifest.json",
+          "size": 1839
+        }
+      ],
+      "archiveBytes": 700056,
+      "hash": "ac3f815be42c400cfc5a20f5518ed20b3de5448299e0d596b5a77a0e04850be6"
+    },
+    "metrics": {
+      "overflow": false,
+      "height": 1190,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
+    },
+    "errors": [],
+    "external": []
+  },
+  {
+    "width": 390,
+    "result": {
+      "peak": 0.03558349609375,
+      "size": 441644,
+      "frames": 110400,
+      "provenance": {
+        "sourceRevision": 3,
+        "trackIds": [
+          "melody",
+          "drums",
+          "bass"
+        ],
+        "noteCount": 4,
+        "seconds": 1.5,
+        "tail": 0.7999999999999998
+      },
+      "files": [
+        {
+          "name": "Master.wav",
+          "size": 441644
+        },
+        {
+          "name": "Mix.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrumental.wav",
+          "size": 441644
+        },
+        {
+          "name": "Instrument-1.wav",
+          "size": 441644
+        },
+        {
+          "name": "Song.mid",
+          "size": 178
+        },
+        {
+          "name": "Manifest.json",
+          "size": 1839
+        }
+      ],
+      "archiveBytes": 700056,
+      "hash": "ac3f815be42c400cfc5a20f5518ed20b3de5448299e0d596b5a77a0e04850be6"
+    },
+    "metrics": {
+      "overflow": false,
+      "height": 1759,
+      "renderSummaryColor": "rgb(238, 246, 255)",
+      "renderSummaryBackground": "rgb(17, 32, 49)"
+    },
+    "errors": [],
+    "external": []
+  }
+]

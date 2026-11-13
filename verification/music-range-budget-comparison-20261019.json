@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-19 JST",
+  "scope": "same source/seed/settings; one bar; old termination vs range termination; not whole-song speed comparison",
+  "midiByteEqualABC": [
+    true,
+    true,
+    true
+  ],
+  "baseline": {
+    "memoryBefore": {
+      "processPeakRssBytes": 11010048,
+      "peakScope": "host-process-lifetime",
+      "rssBytes": 11128832
+    },
+    "memoryAfter": {
+      "processPeakRssBytes": 1186115584,
+      "peakScope": "host-process-lifetime",
+      "rssBytes": 1186394112
+    },
+    "sessionReused": false,
+    "loadSeconds": 2.478554520999978,
+    "elapsedSeconds": 12.495643762999975,
+    "onnxCalls": {
+      "base": 192,
+      "token": 1536
+    },
+    "midiBytes": 391
+  },
+  "bounded": {
+    "memoryBefore": {
+      "processPeakRssBytes": 1186115584,
+      "peakScope": "host-process-lifetime",
+      "rssBytes": 1186414592
+    },
+    "memoryAfter": {
+      "processPeakRssBytes": 1186115584,
+      "peakScope": "host-process-lifetime",
+      "rssBytes": 1186418688
+    },
+    "sessionReused": true,
+    "loadSeconds": 0.00023968000004970236,
+    "elapsedSeconds": 1.5053815320000012,
+    "onnxCalls": {
+      "base": 29,
+      "token": 232
+    },
+    "midiBytes": 391
+  },
+  "baselineCandidateSeconds": 10.016327476000015,
+  "boundedCandidateSeconds": 1.5046073520001073
+}

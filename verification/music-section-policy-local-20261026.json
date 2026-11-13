@@ -1,0 +1,1495 @@
+{
+  "dateJst": "2026-10-26",
+  "fixtures": "synthetic PCM, not recorded vocals or musical-quality acceptance",
+  "node": {
+    "tests": 2614,
+    "passCount": 2614,
+    "fail": 0,
+    "skipped": 0
+  },
+  "portableMidpoint": "six rates PASS; numerical interpolation, categorical mismatch rejection and actual PCM compare",
+  "legacyLongMatrix": {
+    "meterCases": 9,
+    "fullPipelines": 5,
+    "peakGuards": 3,
+    "scope": "legacy/default path, unchanged audio DSP"
+  },
+  "dynamics": {
+    "legacy": {
+      "sectionGainVariationDb": 2.6780524691202388,
+      "maximumSectionCrestLossDb": 0.06125771134678981,
+      "excessiveDynamicsChange": true,
+      "thresholdDb": 1.5,
+      "perceptualQualityVerified": false,
+      "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+    },
+    "guarded": {
+      "sectionGainVariationDb": 6.146797630890433e-07,
+      "maximumSectionCrestLossDb": 0.06126125796293991,
+      "excessiveDynamicsChange": false,
+      "thresholdDb": 1.5,
+      "perceptualQualityVerified": false,
+      "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+    }
+  },
+  "rates": [
+    {
+      "rate": 44100,
+      "seconds": 15.1,
+      "sourceSha256": "b58cae36a6dfd8266d9353c15eb59f94e20b680de0cb447bf95e1333701612fb",
+      "results": {
+        "legacy": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -11.864564598447,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92674538615326,
+                "samplePeakDbFS": -6.93614112915278,
+                "rmsDbFS": -18.6034097677901,
+                "crestDb": 11.6672686386373,
+                "shortTermPercentileSpreadDb": 29.0057027842777,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270893396839,
+                  0.941172628525985,
+                  2.82134330960767e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -16.0000000022445,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -149.665539648163,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.0979935037495,
+                "samplePeakDbFS": -11.1071787436283,
+                "rmsDbFS": -22.744588697504,
+                "crestDb": 11.6374099538758,
+                "shortTermPercentileSpreadDb": 29.0056824587396,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561549191587517,
+                  0.943844801351156,
+                  2.79490091835022e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -14.9999999981565,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -150.150921503694,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -8.14418556339232,
+                "samplePeakDbFS": -8.15856902839985,
+                "rmsDbFS": -21.6767575352095,
+                "crestDb": 13.5181885068097,
+                "shortTermPercentileSpreadDb": 26.3243067559533,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534763034097903,
+                  0.946523385116293,
+                  3.11473917312078e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -14.0000000002202,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -153.891692824962,
+                "shortTermLufsLast3s": -152.371830240094,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -7.18510809438766,
+                "samplePeakDbFS": -7.19981842706006,
+                "rmsDbFS": -20.6820376156645,
+                "crestDb": 13.4822191886044,
+                "shortTermPercentileSpreadDb": 26.3355476805436,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510342186883367,
+                  0.948965472966989,
+                  3.08344674770388e-07
+                ]
+              },
+              "sectionReview": null
+            }
+          ]
+        },
+        "guarded": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -11.864564598447,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92674538615326,
+                "samplePeakDbFS": -6.93614112915278,
+                "rmsDbFS": -18.6034097677901,
+                "crestDb": 11.6672686386373,
+                "shortTermPercentileSpreadDb": 29.0057027842777,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270893396839,
+                  0.941172628525985,
+                  2.82134330960767e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -18.7056208293352,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.8036142534123,
+                "samplePeakDbFS": -13.812799652053,
+                "rmsDbFS": -25.4502095247425,
+                "crestDb": 11.6374098726895,
+                "shortTermPercentileSpreadDb": 29.0056824599615,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561549190901237,
+                  0.943844801419782,
+                  2.79490093806705e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.037087061841248e-07,
+                "maximumSectionCrestLossDb": 0.029858828178260133,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -17.7126304508861,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.847641489058,
+                "samplePeakDbFS": -12.856611966824,
+                "rmsDbFS": -24.4629544271592,
+                "crestDb": 11.6063424603352,
+                "shortTermPercentileSpreadDb": 29.0056622447853,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534830641098062,
+                  0.946516658532689,
+                  2.77357504660087e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.137395072158824e-07,
+                "maximumSectionCrestLossDb": 0.06092622003732995,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -16.719082708153,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8887688794524,
+                "samplePeakDbFS": -11.8978584458034,
+                "rmsDbFS": -23.4746429659301,
+                "crestDb": 11.5767845201267,
+                "shortTermPercentileSpreadDb": 29.0056445643813,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510405890724089,
+                  0.948959136237176,
+                  2.7469041529004e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.081009064715317e-07,
+                "maximumSectionCrestLossDb": 0.09048406531403064,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "loudness": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -11.864564598447,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92674538615326,
+                "samplePeakDbFS": -6.93614112915278,
+                "rmsDbFS": -18.6034097677901,
+                "crestDb": 11.6672686386373,
+                "shortTermPercentileSpreadDb": 29.0057027842777,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270893396839,
+                  0.941172628525985,
+                  2.82134330960767e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -11.3645646008867,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.42674564047665,
+                "samplePeakDbFS": -6.4361411157162,
+                "rmsDbFS": -18.1034097703282,
+                "crestDb": 11.667268654612,
+                "shortTermPercentileSpreadDb": 29.0057027827144,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270892895057,
+                  0.941172628576142,
+                  2.82134352733324e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 1.5426540045382353e-09,
+                "maximumSectionCrestLossDb": 1.2159305917691654e-07,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -10.8645645970193,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -146.402600352059,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.92674505766647,
+                "samplePeakDbFS": -5.93614110150381,
+                "rmsDbFS": -17.6034097663909,
+                "crestDb": 11.667268664887,
+                "shortTermPercentileSpreadDb": 29.0057027869403,
+                "clippedSamples": 0,
+                "bands": [
+                  0.058827089326011,
+                  0.941172628539642,
+                  2.82134346827593e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 5.703830296965862e-09,
+                "maximumSectionCrestLossDb": 9.982298987409877e-08,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -10.3645645999833,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.42674521775094,
+                "samplePeakDbFS": -5.43614116335294,
+                "rmsDbFS": -17.1034097693455,
+                "crestDb": 11.6672686059925,
+                "shortTermPercentileSpreadDb": 29.0057027815933,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270893246347,
+                  0.941172628541065,
+                  2.82134300050651e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 2.870879534100368e-09,
+                "maximumSectionCrestLossDb": 3.5255609986961645e-08,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "multi": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -11.864564598447,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92674538615326,
+                "samplePeakDbFS": -6.93614112915278,
+                "rmsDbFS": -18.6034097677901,
+                "crestDb": 11.6672686386373,
+                "shortTermPercentileSpreadDb": 29.0057027842777,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588270893396839,
+                  0.941172628525985,
+                  2.82134330960767e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -18.7056208293352,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.8036142534123,
+                "samplePeakDbFS": -13.812799652053,
+                "rmsDbFS": -25.4502095247425,
+                "crestDb": 11.6374098726895,
+                "shortTermPercentileSpreadDb": 29.0056824599615,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561549190901237,
+                  0.943844801419782,
+                  2.79490093806705e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.037087061841248e-07,
+                "maximumSectionCrestLossDb": 0.029858828178260133,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -17.7126304508861,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.847641489058,
+                "samplePeakDbFS": -12.856611966824,
+                "rmsDbFS": -24.4629544271592,
+                "crestDb": 11.6063424603352,
+                "shortTermPercentileSpreadDb": 29.0056622447853,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534830641098062,
+                  0.946516658532689,
+                  2.77357504660087e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.137395072158824e-07,
+                "maximumSectionCrestLossDb": 0.06092622003732995,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 665910,
+                "sampleRate": 44100,
+                "integratedLufs": -16.719082708153,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8887688794524,
+                "samplePeakDbFS": -11.8978584458034,
+                "rmsDbFS": -23.4746429659301,
+                "crestDb": 11.5767845201267,
+                "shortTermPercentileSpreadDb": 29.0056445643813,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510405890724089,
+                  0.948959136237176,
+                  2.7469041529004e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.081009064715317e-07,
+                "maximumSectionCrestLossDb": 0.09048406531403064,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "rate": 48000,
+      "seconds": 15.1,
+      "sourceSha256": "50fbb59f777fe90fd79269aa35e8a2086122a3c005b8416fd4f1cf553995f1c1",
+      "results": {
+        "legacy": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -11.8673604572307,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -154.955554585919,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92736296275955,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.603409771802,
+                "crestDb": 11.6675735302194,
+                "shortTermPercentileSpreadDb": 29.0056962511731,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296782750335,
+                  0.941170080265919,
+                  2.41459047526976e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -15.9999999965336,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.0958500525078,
+                "samplePeakDbFS": -11.1042389846724,
+                "rmsDbFS": -22.7417942773194,
+                "crestDb": 11.637555292647,
+                "shortTermPercentileSpreadDb": 29.005675885142,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561577786517286,
+                  0.943841982138363,
+                  2.39209908103871e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -15.0000000020921,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -151.4056262704,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -8.14188899069406,
+                "samplePeakDbFS": -8.15808496957491,
+                "rmsDbFS": -21.6739634838601,
+                "crestDb": 13.5158785142852,
+                "shortTermPercentileSpreadDb": 26.3243395647255,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534799573629483,
+                  0.946519733672559,
+                  3.08964492935607e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -13.9999999986578,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -152.148724791921,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -7.18216228572039,
+                "samplePeakDbFS": -7.19807043636924,
+                "rmsDbFS": -20.6792448749175,
+                "crestDb": 13.4811744385483,
+                "shortTermPercentileSpreadDb": 26.3355743774566,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510381537852775,
+                  0.948961540528567,
+                  3.0568615507206e-07
+                ]
+              },
+              "sectionReview": null
+            }
+          ]
+        },
+        "guarded": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -11.8673604572307,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -154.955554585919,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92736296275955,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.603409771802,
+                "crestDb": 11.6675735302194,
+                "shortTermPercentileSpreadDb": 29.0056962511731,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296782750335,
+                  0.941170080265919,
+                  2.41459047526976e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -18.7056238274366,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.8014741986705,
+                "samplePeakDbFS": -13.8098633101678,
+                "rmsDbFS": -25.4474181081635,
+                "crestDb": 11.6375547979957,
+                "shortTermPercentileSpreadDb": 29.0056758821935,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561577786717636,
+                  0.943841982118323,
+                  2.39209913119978e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.040397587028565e-07,
+                "maximumSectionCrestLossDb": 0.030018794056479337,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -17.7126356158865,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -157.640538657591,
+                "shortTermLufsLast3s": -158.213282798634,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.845246979213,
+                "samplePeakDbFS": -12.8538543252758,
+                "rmsDbFS": -24.4601666391334,
+                "crestDb": 11.6063123138576,
+                "shortTermPercentileSpreadDb": 29.0056556199233,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534861659473152,
+                  0.946513596656258,
+                  2.37396426588971e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.146797630890433e-07,
+                "maximumSectionCrestLossDb": 0.06126125796293991,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -16.7190907609461,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -165.215636183208,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8864770265485,
+                "samplePeakDbFS": -11.8950427736899,
+                "rmsDbFS": -23.4718593844801,
+                "crestDb": 11.5768166107901,
+                "shortTermPercentileSpreadDb": 29.0056378978408,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510439038136971,
+                  0.948955861059045,
+                  2.35127258330868e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.10494863504141e-07,
+                "maximumSectionCrestLossDb": 0.09075686641752956,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "loudness": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -11.8673604572307,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -154.955554585919,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92736296275955,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.603409771802,
+                "crestDb": 11.6675735302194,
+                "shortTermPercentileSpreadDb": 29.0056962511731,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296782750335,
+                  0.941170080265919,
+                  2.41459047526976e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -11.3673604573087,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -150.660067571776,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.42736299502981,
+                "samplePeakDbFS": -6.43583644780457,
+                "rmsDbFS": -18.1034097720517,
+                "crestDb": 11.6675733242471,
+                "shortTermPercentileSpreadDb": 29.0056962548686,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296782004021,
+                  0.941170080340564,
+                  2.41459034103877e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.7037590772115436e-09,
+                "maximumSectionCrestLossDb": 2.0623951968445908e-07,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -10.8673604570956,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.92736278899724,
+                "samplePeakDbFS": -5.93583655732558,
+                "rmsDbFS": -17.6034097715952,
+                "crestDb": 11.6675732142696,
+                "shortTermPercentileSpreadDb": 29.0056962503917,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296783062603,
+                  0.94117008023474,
+                  2.41458999808841e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.2163995911105303e-09,
+                "maximumSectionCrestLossDb": 3.161331099121867e-07,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -10.3673604584111,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -151.480853659203,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.42736313120444,
+                "samplePeakDbFS": -5.43583623037178,
+                "rmsDbFS": -17.1034097728853,
+                "crestDb": 11.6675735425135,
+                "shortTermPercentileSpreadDb": 29.0056962475551,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296783173416,
+                  0.94117008022362,
+                  2.41459038301636e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.305712148460316e-09,
+                "maximumSectionCrestLossDb": 0.0,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "multi": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -11.8673604572307,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -154.955554585919,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92736296275955,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.603409771802,
+                "crestDb": 11.6675735302194,
+                "shortTermPercentileSpreadDb": 29.0056962511731,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0588296782750335,
+                  0.941170080265919,
+                  2.41459047526976e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -18.7056238274366,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.8014741986705,
+                "samplePeakDbFS": -13.8098633101678,
+                "rmsDbFS": -25.4474181081635,
+                "crestDb": 11.6375547979957,
+                "shortTermPercentileSpreadDb": 29.0056758821935,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0561577786717636,
+                  0.943841982118323,
+                  2.39209913119978e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.040397587028565e-07,
+                "maximumSectionCrestLossDb": 0.030018794056479337,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -17.7126356158865,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -157.640538657591,
+                "shortTermLufsLast3s": -158.213282798634,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.845246979213,
+                "samplePeakDbFS": -12.8538543252758,
+                "rmsDbFS": -24.4601666391334,
+                "crestDb": 11.6063123138576,
+                "shortTermPercentileSpreadDb": 29.0056556199233,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0534861659473152,
+                  0.946513596656258,
+                  2.37396426588971e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.146797630890433e-07,
+                "maximumSectionCrestLossDb": 0.06126125796293991,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 724800,
+                "sampleRate": 48000,
+                "integratedLufs": -16.7190907609461,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -165.215636183208,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8864770265485,
+                "samplePeakDbFS": -11.8950427736899,
+                "rmsDbFS": -23.4718593844801,
+                "crestDb": 11.5768166107901,
+                "shortTermPercentileSpreadDb": 29.0056378978408,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0510439038136971,
+                  0.948955861059045,
+                  2.35127258330868e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.10494863504141e-07,
+                "maximumSectionCrestLossDb": 0.09075686641752956,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "rate": 96000,
+      "seconds": 15.1,
+      "sourceSha256": "8740d385c147aac1b503c1169dbab7582d234d0846fbb9e2ac87a3f7e61455fa",
+      "results": {
+        "legacy": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -11.8848195546309,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92334887177953,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.6034097718757,
+                "crestDb": 11.6675735302931,
+                "shortTermPercentileSpreadDb": 29.0056587529543,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231075635042,
+                  0.942176581680105,
+                  3.1075639061469e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -16.0000000013769,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -147.036602338475,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.0743592703075,
+                "samplePeakDbFS": -11.0867836391757,
+                "rmsDbFS": -22.7243410143731,
+                "crestDb": 11.6375573751974,
+                "shortTermPercentileSpreadDb": 29.005638119995,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0551942363679514,
+                  0.944805455711976,
+                  3.07920072928547e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -14.9999999984364,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -153.287034919039,
+                "shortTermLufsLast3s": -160.6831129742,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -8.1150139983113,
+                "samplePeakDbFS": -8.1283462907064,
+                "rmsDbFS": -21.6562634148353,
+                "crestDb": 13.5279171241289,
+                "shortTermPercentileSpreadDb": 26.3239117051111,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0526716193012392,
+                  0.947328034418382,
+                  3.46280378298807e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -13.999999999548,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -151.673677869895,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -7.15573952183235,
+                "samplePeakDbFS": -7.1692195791533,
+                "rmsDbFS": -20.6615613244669,
+                "crestDb": 13.4923417453136,
+                "shortTermPercentileSpreadDb": 26.3351763514494,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0502647996909284,
+                  0.949734857437791,
+                  3.42871281024522e-07
+                ]
+              },
+              "sectionReview": null
+            }
+          ]
+        },
+        "guarded": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -11.8848195546309,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92334887177953,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.6034097718757,
+                "crestDb": 11.6675735302931,
+                "shortTermPercentileSpreadDb": 29.0056587529543,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231075635042,
+                  0.942176581680105,
+                  3.1075639061469e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -18.7056366006104,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -173.064713257565,
+                "shortTermLufsLast3s": -154.016534300956,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.7799956726649,
+                "samplePeakDbFS": -13.7924199809656,
+                "rmsDbFS": -25.4299776135288,
+                "crestDb": 11.6375576325632,
+                "shortTermPercentileSpreadDb": 29.0056381197916,
+                "clippedSamples": 0,
+                "bands": [
+                  0.055194236404255,
+                  0.944805455675693,
+                  3.07920052272741e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.0830346453569746e-07,
+                "maximumSectionCrestLossDb": 0.03001595996768014,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -17.7123694675067,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.8220277115099,
+                "samplePeakDbFS": -12.8345339018126,
+                "rmsDbFS": -24.4422088030109,
+                "crestDb": 11.6076749011983,
+                "shortTermPercentileSpreadDb": 29.0056185191601,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0526777627796575,
+                  0.947321931624006,
+                  3.05596336352347e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.125657705524645e-07,
+                "maximumSectionCrestLossDb": 0.05989867402055982,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -16.7188497216835,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -157.990145096632,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8632472466406,
+                "samplePeakDbFS": -11.8757822069023,
+                "rmsDbFS": -23.4539428309664,
+                "crestDb": 11.5781606240642,
+                "shortTermPercentileSpreadDb": 29.0056004831178,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0502704489159083,
+                  0.949729248348927,
+                  3.02735165200456e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.100760642866135e-07,
+                "maximumSectionCrestLossDb": 0.08941286038475038,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "loudness": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -11.8848195546309,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92334887177953,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.6034097718757,
+                "crestDb": 11.6675735302931,
+                "shortTermPercentileSpreadDb": 29.0056587529543,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231075635042,
+                  0.942176581680105,
+                  3.1075639061469e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -11.3848195544231,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.42334892444006,
+                "samplePeakDbFS": -6.43583644780457,
+                "rmsDbFS": -18.1034097718375,
+                "crestDb": 11.6675733240329,
+                "shortTermPercentileSpreadDb": 29.0056587548424,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231074896926,
+                  0.942176581753926,
+                  3.10756381051019e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 2.413548472190996e-09,
+                "maximumSectionCrestLossDb": 2.0651607002264427e-07,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -10.884819554009,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.92334838544115,
+                "samplePeakDbFS": -5.93583655732558,
+                "rmsDbFS": -17.603409771253,
+                "crestDb": 11.6675732139274,
+                "shortTermPercentileSpreadDb": 29.0056587528708,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231075642831,
+                  0.942176581679362,
+                  3.10756354607933e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 2.3026025530725747e-09,
+                "maximumSectionCrestLossDb": 3.1655645038597413e-07,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -10.3848195548095,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -149.51620245166,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -5.42334913827025,
+                "samplePeakDbFS": -5.43583623037178,
+                "rmsDbFS": -17.1034097719623,
+                "crestDb": 11.6675735415905,
+                "shortTermPercentileSpreadDb": 29.0056587511975,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231076038078,
+                  0.942176581639786,
+                  3.10756405955388e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 1.353829048866828e-09,
+                "maximumSectionCrestLossDb": 0.0,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        },
+        "multi": {
+          "renders": [
+            {
+              "label": "original",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -11.8848195546309,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -6.92334887177953,
+                "samplePeakDbFS": -6.93583624158258,
+                "rmsDbFS": -18.6034097718757,
+                "crestDb": 11.6675735302931,
+                "shortTermPercentileSpreadDb": 29.0056587529543,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0578231075635042,
+                  0.942176581680105,
+                  3.1075639061469e-07
+                ]
+              },
+              "sectionReview": null
+            },
+            {
+              "label": "A",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -18.7056366006104,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -173.064713257565,
+                "shortTermLufsLast3s": -154.016534300956,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -13.7799956726649,
+                "samplePeakDbFS": -13.7924199809656,
+                "rmsDbFS": -25.4299776135288,
+                "crestDb": 11.6375576325632,
+                "shortTermPercentileSpreadDb": 29.0056381197916,
+                "clippedSamples": 0,
+                "bands": [
+                  0.055194236404255,
+                  0.944805455675693,
+                  3.07920052272741e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 3.0830346453569746e-07,
+                "maximumSectionCrestLossDb": 0.03001595996768014,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "B",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -17.7123694675067,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -160,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -12.8220277115099,
+                "samplePeakDbFS": -12.8345339018126,
+                "rmsDbFS": -24.4422088030109,
+                "crestDb": 11.6076749011983,
+                "shortTermPercentileSpreadDb": 29.0056185191601,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0526777627796575,
+                  0.947321931624006,
+                  3.05596336352347e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 6.125657705524645e-07,
+                "maximumSectionCrestLossDb": 0.05989867402055982,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            },
+            {
+              "label": "C",
+              "measurement": {
+                "complete": true,
+                "frames": 1449600,
+                "sampleRate": 96000,
+                "integratedLufs": -16.7188497216835,
+                "loudnessValid": true,
+                "momentaryLufsLast400ms": -160,
+                "shortTermLufsLast3s": -157.990145096632,
+                "shortTermValid": true,
+                "truePeakEstimateDbTP": -11.8632472466406,
+                "samplePeakDbFS": -11.8757822069023,
+                "rmsDbFS": -23.4539428309664,
+                "crestDb": 11.5781606240642,
+                "shortTermPercentileSpreadDb": 29.0056004831178,
+                "clippedSamples": 0,
+                "bands": [
+                  0.0502704489159083,
+                  0.949729248348927,
+                  3.02735165200456e-07
+                ]
+              },
+              "sectionReview": {
+                "sectionGainVariationDb": 9.100760642866135e-07,
+                "maximumSectionCrestLossDb": 0.08941286038475038,
+                "excessiveDynamicsChange": false,
+                "thresholdDb": 1.5,
+                "perceptualQualityVerified": false,
+                "note": "3-second diagnostic guard, not a listening test or compressor attack measurement"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

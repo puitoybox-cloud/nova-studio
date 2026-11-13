@@ -1,0 +1,11 @@
+#!/bin/sh
+# Installed as Contents/Helpers/MusicStudioEngine. No developer/PATH fallback.
+set -eu
+engine_contents=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
+engine_python="$engine_contents/Frameworks/Python/bin/python3"
+engine_boot="$engine_contents/Resources/MusicStudioEngine/code/package_boot.py"
+[ -x "$engine_python" ] && [ -f "$engine_boot" ] || {
+  echo 'Packaged engine runtime is missing' >&2
+  exit 1
+}
+exec env -i PATH=/usr/bin:/bin "$engine_python" -I -B "$engine_boot" "$@"

@@ -1,0 +1,4727 @@
+{
+  "date": "2026-10-11 JST",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "draftPRs": 143,
+  "metadataAndMergeabilityFetched": true,
+  "draftConflicts": 0,
+  "base": 398,
+  "baseHead": "0fc8657918b0c29b053f0a9beebf85b411b5dde1",
+  "evidence": [
+    {
+      "n": 398,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "index.html",
+          "music-studio.css",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-bundled-midi-browser.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-ipad-width.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-referenced-binary-archive-20261011.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38127500790,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38127500629,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38127500693,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38127500649,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38127500650,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 397,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-wrapper-swift.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-bundled-midi-browser.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-binary-backup-continuation-20261011.md",
+          "verification/music-binary-backup-start-20261011.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38122879192,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38122879193,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38122879184,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38122879222,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38122879181,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 396,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-bundled-midi-browser.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-logic-pro.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "tests/music-studio-shutdown.test.js",
+          "tests/music-studio-storage.test.js",
+          "tools/music-native-wrapper/MusicStudioApp.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioFileStorageTests.swift",
+          "tools/music-native-wrapper/Xcode/MusicStudioXcodeApp.swift",
+          "verification/music-production-session-completion-20261011.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38115132092,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132085,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132107,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132091,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132082,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38115132128,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 395,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38114148214,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114148239,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114148221,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 394,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38114002936,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114002944,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38114002961,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 393,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38113965006,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38113965025,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38113965003,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 392,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112452516,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112452489,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112452498,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "n": 391,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112383424,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112383365,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112383370,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "n": 390,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112307597,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38112307477,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112307487,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "n": 389,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112203524,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112203587,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112203514,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 388,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112167150,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112167165,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112167143,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 387,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112112933,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112112985,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112112964,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 386,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38112031491,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112031493,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38112031556,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 385,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38111992768,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38111992722,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38111992807,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 384,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38099795914,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38099795978,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38099795964,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 383,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38052078738,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38052078794,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38052078677,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 382,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38051976406,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051976513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051976447,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 381,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38051887493,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051887509,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051887495,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 380,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38051769434,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051769482,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051769427,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 379,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38051440558,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051440596,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38051440591,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 378,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/CoreMidiInputBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38050488451,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38050488374,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38050488376,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 377,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38049910097,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049910128,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049910188,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 376,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/CoreMidiInputBridge.swift",
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38049746904,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049746921,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049746917,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 375,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38049530123,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049530095,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049530098,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 374,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/NativeMidiCoordinator.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38049212749,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049212730,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38049212871,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 373,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-native-wrapper/CoreMidiInputBridge.swift",
+          "tools/music-native-wrapper/MusicStudioWebMidiBridge.swift",
+          "tools/music-native-wrapper/NativeMidiCoordinator.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38041257027,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38041257049,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38041257011,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 372,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-file-import-offline.yml",
+          ".github/workflows/music-studio-ai-assistant-ui.yml",
+          "tools/music-native-wrapper/MusicStudioApp.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioFileStorageTests.swift",
+          "verification/music-residual-ledger-20261010.json",
+          "verification/music-spm-migration-20261010.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38039200043,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38039200041,
+          "name": "Music native file import offline verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38039200021,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 371,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-wrapper-swift.yml",
+          ".github/workflows/music-spm-migration-offline.yml",
+          "music-studio.js",
+          "scripts/music-bundled-midi-browser.js",
+          "scripts/music-run-native-package.sh",
+          "tests/music-studio-bundled-assets.test.js",
+          "tests/music-studio-projects.test.js",
+          "tools/music-native-wrapper/MusicStudioApp.swift",
+          "tools/music-native-wrapper/MusicStudioRootView.swift",
+          "tools/music-native-wrapper/MusicStudioWeb/.gitignore",
+          "tools/music-native-wrapper/MusicStudioWeb/README.txt",
+          "tools/music-native-wrapper/Package.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioFileStorageTests.swift",
+          "verification/music-residual-ledger-20261010.json",
+          "verification/music-spm-migration-20261010.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38037818530,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818565,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818621,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38037818593,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 370,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-bundled-midi-offline.yml",
+          ".github/workflows/music-studio-ai-assistant-ui.yml",
+          "scripts/music-bundled-midi-browser.js",
+          "scripts/music-stage-native-web.py",
+          "tests/music-studio-bundled-assets.test.js",
+          "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+          "tools/music-native-wrapper/MusicStudioNative.xcodeproj/project.pbxproj",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+          "verification/music-bundled-midi-20261010.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38035997288,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38035997294,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 369,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-midi-session-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-offline-asset-inventory.py",
+          "scripts/music-transaction-regression.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-logic-pro.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "tools/music-audio-pipeline/test_runtime_inventory.py",
+          "verification/music-midi-session-20261010.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38027496117,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496101,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496216,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496099,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496080,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38027496104,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 368,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-midi-disconnect-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-logic-pro.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-midi-disconnect-20261010.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 38026208128,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38026207540,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 38026207529,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "id": 38026207547,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 367,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-aligned-candidates-spatial-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-aligned-spatial.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-aligned-candidates-20261010.md",
+          "verification/music-aligned-candidates-inventory-20261010.json"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 366,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-aligned-spatial-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-aligned-spatial.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-aligned-spatial-20261010.md",
+          "verification/music-aligned-spatial-inventory-20261010.json"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 365,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-collision-proposals-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-pcm-proposals.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-pcm-collision-inventory-20261010.json",
+          "verification/music-pcm-collision-proposals-20261010.md"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 364,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-measured-mix-proposals-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-measured-mix-20261009.md",
+          "verification/music-measured-mix-current-audit-20261009.json"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 363,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-long-wav-mix-ui-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-long-wav-mix-inventory-20261009.json",
+          "verification/music-long-wav-mix-ui-20261009.md"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 362,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-long-wav-archive-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "verification/music-long-wav-archive-20261009.md",
+          "verification/music-long-wav-archive-inventory-20261009.json"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 361,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-long-wav-durable-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-long-wav-storage.test.js",
+          "verification/music-long-wav-durable-20261009.md",
+          "verification/music-long-wav-inventory-20261009.json"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 360,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-wav-async-render-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 359,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-wav-stream-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 358,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-continuous-chunks-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 357,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-compression-integrated-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 356,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-compression-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 355,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-eq-persist-offline.yml"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 354,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-eq-persist-offline.yml",
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 353,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 352,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio.js",
+          "tests/music-studio-pcm-mix.test.js"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 351,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-pcm-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-pcm-mix-browser.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-pcm-mix.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-pcm-github-inventory-20261009.json",
+          "verification/music-pcm-mix-20261009.md"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 350,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-lyrics-offline.yml",
+          "app.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-lyrics-note-assignment-browser.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-lyrics-note-assignment.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-lyrics-note-assignment-20261009.md"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 349,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-readiness-offline.yml",
+          "tools/music-audio-pipeline/package_native_graph.py",
+          "tools/music-audio-pipeline/test_package_native_graph.py",
+          "verification/music-readiness-unified-20261009.md"
+        ]
+      },
+      "ci": []
+    },
+    {
+      "n": 348,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-wrapper-swift.yml",
+          "tools/music-audio-pipeline/package_macho.py",
+          "tools/music-audio-pipeline/package_native_graph.py",
+          "tools/music-audio-pipeline/test_package_native_graph.py",
+          "tools/music-audio-pipeline/test_unsigned_app.py",
+          "tools/music-audio-pipeline/test_wrapper_build_inventory.py",
+          "tools/music-audio-pipeline/unsigned_app.py",
+          "tools/music-audio-pipeline/wrapper_build_inventory.py",
+          "verification/music-package-native-graph-20261009.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37904831891,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831712,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831871,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37904831890,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 347,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-wrapper-swift.yml",
+          "tools/music-audio-pipeline/package_macho.py",
+          "tools/music-audio-pipeline/test_package_macho.py",
+          "tools/music-audio-pipeline/test_unsigned_app.py",
+          "tools/music-audio-pipeline/test_wrapper_build_inventory.py",
+          "tools/music-audio-pipeline/unsigned_app.py",
+          "tools/music-audio-pipeline/wrapper_build_inventory.py",
+          "verification/music-package-macho-loader-20261009.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37901747065,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747045,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747027,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37901747032,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 346,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-native-wrapper-swift.yml",
+          "tools/music-audio-pipeline/test_wrapper_build_inventory.py",
+          "tools/music-audio-pipeline/wrapper_build_inventory.py",
+          "verification/music-wrapper-build-inventory-20261009.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37899498505,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498458,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498457,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37899498432,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 345,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/test_unsigned_app.py",
+          "tools/music-audio-pipeline/unsigned_app.py",
+          "verification/music-unsigned-app-layout-20261009.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37896308251,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308241,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308276,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37896308225,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 344,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/test_unsigned_generation.py",
+          "tools/music-audio-pipeline/unsigned_generation.py",
+          "verification/music-unsigned-generation-20261009.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37880524345,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524355,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524389,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37880524357,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 343,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_processing_closure.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37878132813,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132708,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132693,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37878132692,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 342,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_audit.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py",
+          "tools/music-audio-pipeline/test_runtime_inventory.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37876951687,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951702,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951725,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37876951686,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 341,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37874173575,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173586,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173609,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37874173607,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 340,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37868897739,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897789,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897721,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37868897773,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 339,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioWebMidiBridgeTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37866175224,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175154,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175119,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37866175113,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 338,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37831618959,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618656,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618570,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37831618601,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 337,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift",
+          "tools/music-native-wrapper/Tests/OwnedAuditStaleGenerationTranscript.json",
+          "tools/music-native-wrapper/Tests/OwnedAuditTranscript.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37783531688,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531398,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531539,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37783531425,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 336,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-audio-pipeline/test_server_boundary.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37778205688,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205646,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205682,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37778205658,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 335,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_installed_record_assembly.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py",
+          "tools/music-audio-pipeline/test_server_boundary.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37772778259,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778327,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778326,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37772778237,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 334,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "tools/music-audio-pipeline/test_stem_backend.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37763208554,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208539,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208591,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37763208579,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 333,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-ai-assistant-ui.yml",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37759009780,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009816,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009730,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37759009812,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 332,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py",
+          "tools/music-audio-pipeline/test_private_process_origin.py",
+          "tools/music-audio-pipeline/test_private_python_delivery.py",
+          "tools/music-audio-pipeline/test_private_runtime_delivery.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37699490838,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37699490811,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37699490745,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 331,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/test_private_process_origin.py",
+          "tools/music-audio-pipeline/test_private_python_delivery.py",
+          "tools/music-audio-pipeline/test_private_runtime_delivery.py",
+          "tools/music-audio-pipeline/test_processing_closure.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37649177327,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37649177456,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37649177537,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 330,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/test_private_runtime_delivery.py",
+          "tools/music-audio-pipeline/test_runtime_inventory.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37630065832,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37630065909,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37630065841,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 329,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/PRIVATE_RUNTIME_UNIFIED_CHECKPOINT_20261007.md",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py",
+          "tools/music-audio-pipeline/test_private_python_delivery.py",
+          "tools/music-audio-pipeline/test_private_runtime_delivery.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37624095816,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37624095797,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37624095854,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 328,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_installed_record_assembly.py",
+          "tools/music-audio-pipeline/test_native_verification.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py",
+          "tools/music-audio-pipeline/test_private_runtime_delivery.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37621551843,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37621551929,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37621551997,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 327,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_native_verification.py",
+          "tools/music-audio-pipeline/test_private_python_delivery.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37620267280,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37620267478,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37620267448,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 326,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/SWIFT_PRIVATE_SUMMARY_ACK_20261007.md",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_private_native_summary.py",
+          "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37616962110,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37616962150,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37616962092,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 325,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/OWNED_DESCENDANT_FINAL_DELIVERY_20261007.md",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37601566207,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37601566184,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37601566165,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 324,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/OWNED_EXIT_PRIVATE_STOP_20261007.md",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_stop_pipe.py",
+          "verification/music-owned-exit-private-stop-20261007.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37493009134,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37493009029,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37493009033,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 323,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/RECORD_PRODUCTION_ASSEMBLY_20261007.md",
+          "scripts/music-offline-assembly-verifier.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_installed_record_assembly.py",
+          "tools/music-audio-pipeline/test_license_materials.py",
+          "verification/music-record-production-assembly-20261007.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37485221957,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37485221944,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37485222080,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 322,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/PRIVATE_RUNTIME_ASSEMBLY_20261006.md",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/test_license_materials.py",
+          "tools/music-audio-pipeline/test_owned_exit_observation.py",
+          "tools/music-audio-pipeline/test_runtime_inventory.py",
+          "verification/music-private-runtime-assembly-20261006.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37479863633,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37479863610,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37479863608,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 321,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/INSTALLED_METADATA_ASSEMBLY_20261006.md",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "verification/music-installed-metadata-assembly-20261006.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37468620751,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37468620673,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37468621086,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 320,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/EXACT_BACKEND_CANDIDATES_20261006.md",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/test_stem_backend.py",
+          "verification/music-exact-backend-candidates-20261006.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37460438514,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37460438641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37460438485,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 319,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-native-wrapper-swift.yml",
+          "docs/music-studio/BACKEND_BUNDLE_EVIDENCE_20261006.md",
+          "tools/music-audio-pipeline/bundle_evidence.py",
+          "tools/music-audio-pipeline/test_bundle_evidence.py",
+          "verification/music-backend-bundle-evidence-20261006.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37447909428,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37447909567,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37447909381,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 318,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          "docs/music-studio/PRODUCTION_ASSET_LINKAGE_20261006.md",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_native_verification.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "verification/music-production-assets-20261006.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37441261631,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37441260657,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37441260594,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 317,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/BROWSER_STREAM_OWNED_AUDIT_V1.md",
+          "music-studio-audio-pipeline.js",
+          "scripts/music-local-lifecycle-browser.js",
+          "tests/music-studio-browser-stream-hash.test.js",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/test_owned_audit.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift",
+          "tools/music-native-wrapper/Tests/OwnedAuditTranscript.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37436996022,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996018,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996009,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37436996160,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 316,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-bridge-guard.yml",
+          "docs/music-studio/AUTHORIZED_SHUTDOWN_LIFECYCLE_V1.md",
+          "music-studio-audio-pipeline.js",
+          "scripts/music-local-lifecycle-browser.js",
+          "tests/music-studio-processing-receipt.test.js",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37430887475,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887564,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887492,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37430887490,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 315,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/OWNED_RESULT_LIFECYCLE_V1.md",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_owned_lifecycle.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+          "tools/music-native-wrapper/MusicStudioNative.xcodeproj/project.pbxproj",
+          "tools/music-native-wrapper/MusicStudioOwnedLifecycle.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Package.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioOwnedLifecycleTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37424946909,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37424947067,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37424946910,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 314,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/ACTUAL_PYTHON_DISPATCH_V1.md",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37412882452,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37412882501,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37412882533,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 313,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/SCOPED_LOADER_CALL_V1.md",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/test_loader_window.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37411197617,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37411197683,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37411197629,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 312,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/NATIVE_IMAGE_ROUTING_V2.md",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/test_native_routing.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37409377416,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37409377414,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37409377422,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 311,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/NATIVE_ROUTING_CLOSURE_V1.md",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/test_processing_closure.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37396393271,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37396392435,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37396392607,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 310,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-native-wrapper-swift.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/PROCESSING_CLOSURE_V1.md",
+          "music-studio-audio-pipeline.js",
+          "scripts/music-local-lifecycle-browser.js",
+          "tests/music-studio-processing-receipt.test.js",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_processing_closure.py",
+          "verification/music-processing-start-20261005.json",
+          "verification/music-processing-start-ci-20261005.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37330981231,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981031,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981051,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37330981030,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 309,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/PRODUCTION_LIFECYCLE_V1.md",
+          "music-studio-audio-pipeline.js",
+          "scripts/music-local-lifecycle-browser.js",
+          "scripts/music-local-lifecycle-fixture.py",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_production_lifecycle.py",
+          "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+          "tools/music-native-wrapper/MusicStudioRootView.swift",
+          "tools/music-native-wrapper/MusicStudioWebViewHost.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift",
+          "tools/music-native-wrapper/Xcode/MusicStudioXcodeRootView.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37318909805,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909748,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909870,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37318909777,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 308,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "docs/music-studio/SCOPED_LOADED_TRANSPORT_V1.md",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_loaded_transport.py",
+          "tools/music-native-wrapper/MusicStudioAppConfiguration.swift",
+          "tools/music-native-wrapper/Tests/MusicStudioAppConfigurationTests.swift"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37291760163,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37291760218,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37291760193,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 307,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/NATIVE_RUNTIME_VERIFICATION_V1.md",
+          "music-studio-audio-pipeline.js",
+          "music-studio-distribution-identity.js",
+          "scripts/music-generation-package-browser.js",
+          "scripts/music-offline-assembly-verifier.py",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/artifact_verification.py",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/local_distribution_entry.py",
+          "tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper",
+          "tools/music-audio-pipeline/runtime_evidence.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "tools/music-audio-pipeline/test_native_verification.py",
+          "verification/music-native-runtime-offline-inventory.json",
+          "verification/music-native-runtime-start-audit.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37285920817,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37285920635,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37285920708,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 306,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/DEMUCS_RECEIPT_CLOSURE_V1.md",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio.html",
+          "scripts/music-generation-package-browser.js",
+          "scripts/music-offline-assembly-verifier.py",
+          "scripts/music-offline-asset-inventory.py",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/demucs_child.py",
+          "tools/music-audio-pipeline/demucs_parent.py",
+          "tools/music-audio-pipeline/demucs_receipt.py",
+          "tools/music-audio-pipeline/inventory_aggregation.py",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/scoped_closure.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_demucs_closure.py",
+          "verification/music-demucs-closure-start-audit.json",
+          "verification/music-offline-inventory-closure-v1.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37272818264,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818376,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818216,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818205,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818209,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37272818263,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 305,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/RUNTIME_INVENTORY_V2.md",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio-distribution-identity.js",
+          "music-studio.html",
+          "scripts/music-generation-package-browser.js",
+          "scripts/music-offline-asset-inventory.py",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-runtime-bootstrap.test.js",
+          "tools/music-audio-pipeline/runtime_inventory.py",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_runtime_inventory.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "verification/music-offline-asset-inventory-v2.json",
+          "verification/music-runtime-inventory-start-audit.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37268889454,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889470,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889502,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889479,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889477,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37268889441,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 304,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/DISTRIBUTION_IDENTITY_V1.md",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio-distribution-identity.js",
+          "music-studio.html",
+          "scripts/music-generation-package-browser.js",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-distribution-identity.test.js",
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/dependency_identity.py",
+          "tools/music-audio-pipeline/distribution_binding.py",
+          "tools/music-audio-pipeline/helper_identity.py",
+          "tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper",
+          "tools/music-audio-pipeline/test_dependency_identity.py",
+          "tools/music-audio-pipeline/test_distribution_binding.py",
+          "verification/music-distribution-identity-start-audit.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37260870654,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870636,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870593,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870644,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870865,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37260870564,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 303,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "app.js",
+          "docs/music-studio/RUNTIME_INGRESS_IDENTITY_V1.md",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio-binding-prerequisites.js",
+          "music-studio-generation-adapter.js",
+          "music-studio-ingress.js",
+          "music-studio-portable-package.js",
+          "music-studio-publication-prebinding.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-generation-package-browser.js",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-resource-runtime.test.js",
+          "tests/music-studio-runtime-ingress-identity.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/helper_identity.py",
+          "tools/music-audio-pipeline/mac-app/NovaMusicAudioHelper",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_helper_identity.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "verification/music-runtime-ingress-start-audit.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37258906118,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906189,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906161,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906163,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906136,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37258906143,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 302,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/RESOURCE_RUNTIME_BINDING_V1.md",
+          "music-studio-binding-prerequisites.js",
+          "music-studio-distribution-capabilities.js",
+          "music-studio-generation-adapter.js",
+          "music-studio-package-resources.js",
+          "music-studio-portable-package.js",
+          "music-studio-runtime-capabilities.js",
+          "scripts/music-generation-package-browser.js",
+          "tests/music-studio-resource-runtime.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37250302261,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 301,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/DURABLE_PACKAGE_GENERATION_V1.md",
+          "music-studio-generation-adapter.js",
+          "music-studio-portable-package.js",
+          "scripts/music-generation-fixture-backend.js",
+          "scripts/music-generation-package-browser.js",
+          "tests/music-studio-generation-package.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37248459080,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 300,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "app.js",
+          "docs/music-studio/BINARY_RESOLVER_BOUNDARY_V1.md",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "music-studio-binary-boundary.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-binary-boundary-browser.js",
+          "tests/music-studio-binary-boundary.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-binary-boundary-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37246037408,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037360,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037381,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37246037300,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 299,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "app.js",
+          "docs/music-studio/ATOMIC_METADATA_RESTORE_V1.md",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-transaction-regression.js",
+          "tests/music-studio-atomic-restore.test.js",
+          "tests/music-studio-chrome-cleanup.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-atomic-restore-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37212581558,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581514,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581590,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37212581518,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 298,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "music-studio.js",
+          "scripts/music-transaction-regression.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-measure-locks.test.js",
+          "tests/music-studio-night.test.js",
+          "tests/music-studio-storage.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37207106392,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "cancelled"
+        },
+        {
+          "id": 37207106337,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37207106378,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37207106372,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 297,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/PRODUCTION_VERIFICATION_CONTRACT_V1.md",
+          "music-studio-production-verification-contract.js",
+          "tests/music-studio-production-verification-contract.test.js",
+          "verification/music-production-contract-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37205738795,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 296,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/DISPOSABLE_DURABLE_RECOVERY_V1.md",
+          "scripts/music-studio-disposable-durable-backend.js",
+          "tests/music-studio-disposable-durable-recovery.test.js",
+          "verification/music-disposable-durable-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37204315362,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 295,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "docs/music-studio/OBSERVED_BYTE_FAULT_EVIDENCE_V1.md",
+          "music-studio-observed-byte-verification.js",
+          "tests/music-studio-observed-byte-verification.test.js",
+          "verification/music-observed-byte-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37203123331,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 294,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "docs/music-studio/PACKAGE_RESTORE_REVIEW_V1.md",
+          "music-studio-package-restore-review.js",
+          "tests/music-studio-package-restore-review.test.js",
+          "verification/music-package-restore-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37195944430,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 293,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "docs/music-studio/DEPENDENCY_CLOSURE_BOUNDARIES_V1.md",
+          "music-studio-dependency-closure-inspection.js",
+          "tests/music-studio-dependency-closure-inspection.test.js",
+          "verification/music-dependency-closure-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37194251785,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 292,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "docs/music-studio/STORAGE_CONTRACT_ALTERNATIVES_V1.md",
+          "music-studio-storage-contract-inspection.js",
+          "tests/music-studio-storage-contract-inspection.test.js",
+          "verification/music-storage-contract-start.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37192313039,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 291,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-dependency-inspection.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "music-studio-dependency-inspection.js",
+          "scripts/music-studio-standalone-dependency-inspection.js",
+          "tests/music-studio-dependency-inspection.test.js",
+          "tests/music-studio-standalone-dependency-inspection.test.js",
+          "verification/music-dependency-inspection.md",
+          "verification/music-dependency-start.json",
+          "verification/music-standalone-dependency-inventory.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37186432977,
+          "name": "Music Studio read-only dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 290,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-acceptance.yml",
+          ".github/workflows/music-audio-real-conversion.yml",
+          "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
+          "scripts/music-audio-acceptance.js",
+          "tests/music-studio-audio-acceptance.test.js",
+          "tools/music-audio-pipeline/verify_real_conversion.py",
+          "verification/music-audio-acceptance-foundation.md",
+          "verification/music-completion-start-20261004.json"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37179982952,
+          "name": "Music Studio offline audio acceptance",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37179982912,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 289,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-arrangement-reference.test.js",
+          "tests/music-studio-ai-lyrics-reference-integration.test.js",
+          "verification/music-ai-arrangement-destination-inspection.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37178379044,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37178379047,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 288,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-arrangement-reference.test.js",
+          "tests/music-studio-ai-lyrics-reference-integration.test.js",
+          "verification/music-ai-arrangement-track-inspection.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37129607156,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37129607180,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 287,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-arrangement-reference.test.js",
+          "tests/music-studio-ai-lyrics-reference-integration.test.js",
+          "verification/music-ai-arrangement-reference-inspection.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37128009522,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37128009527,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 286,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.css",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-lyrics-melody-reference.test.js",
+          "tests/music-studio-ai-lyrics-reference-integration.test.js",
+          "verification/music-ai-lyrics-reference-explicit-selection-audit.json",
+          "verification/music-ai-lyrics-reference-explicit-selection.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37125944258,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37125944260,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 285,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-lyrics-melody-reference.test.js",
+          "tests/music-studio-ai-lyrics-reference-integration.test.js",
+          "verification/music-ai-lyrics-melody-reference-audit.json",
+          "verification/music-ai-lyrics-melody-reference-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37114273041,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 284,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-ai-family-preview.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-continuation-source.test.js",
+          "verification/music-ai-continuation-source-audit.json",
+          "verification/music-ai-continuation-source-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37110146001,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 283,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-composition.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-ai-family-preview.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-arrangement-entry.test.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "verification/music-ai-arrangement-entry-audit.json",
+          "verification/music-ai-arrangement-entry-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37109206174,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 282,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-composition.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-ai-family-preview.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-candidate-preview.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "tests/music-studio-ai-family-preview.test.js",
+          "verification/music-ai-lyrics-exact-preview-audit.json",
+          "verification/music-ai-lyrics-exact-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37102960642,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37102960643,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 281,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-editor.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-ai-project-section-apply-audit.json",
+          "verification/music-ai-project-section-apply.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37101738235,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37101738234,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37101738269,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 280,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-composition.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-ai-family-preview.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-composition.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "verification/music-ai-section-exact-preview-audit.json",
+          "verification/music-ai-section-exact-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37099461793,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37099461794,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 279,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "verification/music-ai-family-metadata-range-audit.json",
+          "verification/music-ai-family-metadata-range.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37091731710,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37091731706,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 278,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-editor.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "verification/music-ai-partial-family-history.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37037679365,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679319,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679357,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 277,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-family-apply.js",
+          "music-studio-editor.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-family-apply.test.js",
+          "verification/music-ai-family-apply-transaction.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37025404027,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37025403269,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 276,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-family-preview.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-family-preview.test.js",
+          "verification/music-ai-family-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37021075209,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37021074841,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 275,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-ai-assistant-ui.yml",
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-candidate-preview.test.js",
+          "verification/music-ai-exact-adoption-browser.json",
+          "verification/music-ai-exact-adoption.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37019221774,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37019221478,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 274,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "music-studio-ai-candidate-preview.js",
+          "music-studio-ai-composition.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-candidate-preview.test.js",
+          "tests/music-studio-ai-composition.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37002368391,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 273,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-candidate-preview.js",
+          "music-studio.html",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-candidate-preview.test.js",
+          "verification/music-ai-candidate-preview.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 37000339200,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37000339178,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 272,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          "app.js",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-composition.js",
+          "music-studio.html",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-composition-integration.test.js",
+          "tests/music-studio-ai-composition.test.js",
+          "verification/music-ai-composition-workflow.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36999235875,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36999235787,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 271,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-ai-assistant-ui.yml",
+          "app.js",
+          "music-studio-ai-assistant-panel.css",
+          "music-studio-ai-assistant-panel.js",
+          "music-studio-ai-assistant-ui.js",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-studio-ai-assistant-browser-smoke.js",
+          "tests/music-studio-ai-assistant-integration.test.js",
+          "tests/music-studio-ai-assistant-ui.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36996087448,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36996087511,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 270,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-ai-workflow.yml",
+          "music-studio-ai-workflow.js",
+          "tests/music-studio-ai-workflow.test.js",
+          "verification/music-ai-workflow-foundation.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36975608931,
+          "name": "Music Studio AI workflow foundation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 269,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-bridge-guard.yml",
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-audio-real-conversion.yml",
+          ".github/workflows/music-native-wrapper-swift.yml",
+          ".github/workflows/music-studio-baseline-combined-verification.yml",
+          ".github/workflows/music-studio-cache-version-consistency.yml",
+          ".github/workflows/music-studio-coordinated-checkpoint.yml",
+          ".github/workflows/music-studio-measure-locks.yml",
+          ".github/workflows/music-studio-meter-map.yml",
+          ".github/workflows/music-studio-midi-metadata-export.yml",
+          ".github/workflows/music-studio-pr262-preview.yml",
+          ".github/workflows/music-studio-structure-info.yml",
+          ".github/workflows/music-studio-structure-metadata.yml",
+          "app.js",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio-editor.js",
+          "music-studio-measure-locks.js",
+          "music-studio-meter-map.js",
+          "music-studio-midi-input.js",
+          "music-studio-midi-parser.js",
+          "music-studio-midi.js",
+          "music-studio-scoped-midi-repair.js",
+          "music-studio-structure-info.js",
+          "music-studio.css",
+          "music-studio.html",
+          "music-studio.js",
+          "scripts/music-studio-coordinated-browser-smoke.js",
+          "tests/music-studio-audio-e2e.test.js",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-coordinated-editor.test.js",
+          "tests/music-studio-coordinated-persistence.test.js",
+          "tests/music-studio-coordinated-timing.test.js",
+          "tests/music-studio-editor-commit-locks.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-ipad-width.test.js",
+          "tests/music-studio-logic-pro.test.js",
+          "tests/music-studio-measure-locks.test.js",
+          "tests/music-studio-meter-map.test.js",
+          "tests/music-studio-midi-metadata-roundtrip.test.js",
+          "tests/music-studio-midi-parser.test.js",
+          "tests/music-studio-recording-tempo-map.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "tests/music-studio-selected-track-id.test.js",
+          "tests/music-studio-structure-info.test.js",
+          "tests/music-studio-whole-song-transpose.test.js",
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/fixtures/observed_six_notes_stems.mid",
+          "tools/music-audio-pipeline/fixtures/synthetic_six_notes.wav",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_audio_accuracy.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "tools/music-audio-pipeline/verify_real_conversion.py",
+          "tools/verify-music-measure-locks.js",
+          "tools/verify-node-baseline.js",
+          "verification/coordinated-browser-report-20261002.json",
+          "verification/coordinated-resume-20261002.md",
+          "verification/music-editor-commit-locks.md",
+          "verification/music-measure-locks.md",
+          "verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md",
+          "verification/pr262/REAL_DEVICE_CHECK.md",
+          "verification/pr262/START_PR262_PREVIEW.command",
+          "verification/pr262/STOP_PR262_PREVIEW.command"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36973666391,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666351,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666458,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666537,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666482,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666347,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666652,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666369,
+          "name": "Coordinated Music Studio checkpoint verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666427,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666467,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 268,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-editor-commit-locks.yml",
+          "music-studio-editor.js",
+          "tests/music-studio-editor-commit-locks.test.js",
+          "tools/verify-node-baseline.js",
+          "verification/music-editor-commit-locks.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36966130488,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36966130519,
+          "name": "Music Studio Editor commit lock guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 267,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-measure-locks.yml",
+          "music-studio-measure-locks.js",
+          "tests/music-studio-measure-locks.test.js",
+          "tools/verify-music-measure-locks.js",
+          "verification/music-measure-locks.md"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36880714212,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 266,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-structure-info.yml",
+          "music-studio-structure-info.js",
+          "tests/music-studio-structure-info.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36857393673,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 265,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-meter-map.yml",
+          "music-studio-meter-map.js",
+          "tests/music-studio-meter-map.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36856792517,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 264,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-midi-metadata-export.yml",
+          "music-studio-midi.js",
+          "tests/music-studio-midi-metadata-roundtrip.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36854131822,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 263,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-structure-metadata.yml",
+          "music-studio-midi-parser.js",
+          "tests/music-studio-midi-parser.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36857193454,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 262,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-bridge-guard.yml",
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-audio-real-conversion.yml",
+          ".github/workflows/music-native-wrapper-swift.yml",
+          ".github/workflows/music-studio-baseline-combined-verification.yml",
+          ".github/workflows/music-studio-cache-version-consistency.yml",
+          ".github/workflows/music-studio-pr262-preview.yml",
+          "app.js",
+          "index.html",
+          "music-studio-audio-pipeline.js",
+          "music-studio-editor.js",
+          "music-studio.html",
+          "music-studio.js",
+          "tests/music-studio-audio-e2e.test.js",
+          "tests/music-studio-audio-pipeline.test.js",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js",
+          "tests/music-studio-scoped-midi-repair.test.js",
+          "tests/music-studio-selected-track-id.test.js",
+          "tests/music-studio-whole-song-transpose.test.js",
+          "tools/music-audio-pipeline/START_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/fixtures/observed_six_notes_stems.mid",
+          "tools/music-audio-pipeline/fixtures/synthetic_six_notes.wav",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_audio_accuracy.py",
+          "tools/music-audio-pipeline/test_server_boundary.py",
+          "tools/music-audio-pipeline/verify_real_conversion.py",
+          "verification/pr262/LOCAL_AUDIO_HELPER_SOURCE.md",
+          "verification/pr262/REAL_DEVICE_CHECK.md",
+          "verification/pr262/START_PR262_PREVIEW.command",
+          "verification/pr262/STOP_PR262_PREVIEW.command"
+        ]
+      },
+      "ci": [
+        {
+          "id": 36851340615,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340507,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340535,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 261,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-baseline-combined-verification.yml",
+          ".github/workflows/music-studio-cache-version-consistency.yml",
+          "music-studio-editor.js",
+          "tests/music-studio-selected-track-id.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35857916359,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35857916467,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 260,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-studio-cache-version-consistency.yml",
+          "index.html",
+          "tests/music-studio-external-song-import.test.js",
+          "tests/music-studio-home.test.js",
+          "tests/music-studio-ipad-touch.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35853060620,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 259,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-selected-track-id-guard.yml",
+          "music-studio-editor.js",
+          "tests/music-studio-selected-track-id.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35845980410,
+          "name": "Music Selected Track ID Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35845980281,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 258,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-bridge-guard.yml",
+          "music-studio-audio-pipeline.js",
+          "tests/music-studio-audio-e2e.test.js",
+          "tests/music-studio-audio-pipeline.test.js"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35932676423,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 257,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          "tools/music-audio-pipeline/STOP_AUDIO_PIPELINE.command",
+          "tools/music-audio-pipeline/server.py",
+          "tools/music-audio-pipeline/test_server_boundary.py"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35859941419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "n": 256,
+      "status": "fulfilled",
+      "files": {
+        "filenames": [
+          ".github/workflows/music-audio-helper-macos.yml",
+          ".github/workflows/music-native-wrapper-swift.yml"
+        ]
+      },
+      "ci": [
+        {
+          "id": 35726291578,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35726291819,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

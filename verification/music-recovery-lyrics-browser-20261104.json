@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-08 JST",
+  "command": "node --test scripts/music-indexeddb-browser-persistence.cjs",
+  "passed": 4,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-indexeddb-browser-persistence.cjs": "7a3d2d8c0146d531dbdbcb370b80dddb5fb24826ec82760413b2b6c7b05f8728"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "d913038a93cbcb7c92be4deef817f5db1bd82bd6d5c871cd119dd9203a63072c"
+  },
+  "acceptedCases": [
+    "real Chromium IndexedDB persists production history and backup restore across browser restart",
+    "lyric follow scrolls active saved assignments after rerender and clears stopped playback",
+    "real IndexedDB committed checkpoint actions preserve replacement views",
+    "real IndexedDB durable duplication defers publication into changed contexts"
+  ],
+  "scope": "Real Chromium SIGKILL before transaction commit, persistent-profile restart and retry cover backup publication, daily history, material capture/import, binary recovery, AI creation, duplication, material-derived project creation, checkpoint save and session finish. Original sources/history and destination absence are checked after interruption; retry records source/session links. Lyric DOM/restart test also passed. Physical power loss and hardware remain unverified. Extended exact-runtime public checkpoint adoption/Undo/Redo SIGKILL-before-commit, restart, prior-state equality and successful retry preserve Session and daily records. Added PCM gain adoption and WAV binary import SIGKILL-before-commit/restart/retry preserve source bytes, exactly one edit history record, active Session and daily records. Added lyric assignment Apply SIGKILL-before-commit/restart/retry preserves exact original MIDI, exactly one lyric edit history addition, active Session and daily records. Seven checkpoint actions across repository replacement, newer view and cancellation after durable commit (21 combinations) preserve replacement state and match exact persisted receipts; finished forks preserve source. Project duplication: twelve commit/refresh context combinations and fresh-page recovery in the same browser context preserve durable receipts and source provenance.",
+  "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately.",
+  "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "2a877a58d8e5165b9fbd78a19445e1907822dc00",
+    "runId": 42467882183,
+    "jobId": 128691501754,
+    "step": 6,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42467882183/job/128691501754"
+  },
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "f50d5a9fd3c370d1d4ef04b59e257695a260d3a3",
+    "runId": 42423571102,
+    "jobId": 128556967234,
+    "step": 6,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423571102/job/128556967234"
+  }
+}
