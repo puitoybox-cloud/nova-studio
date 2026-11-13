@@ -22,7 +22,7 @@ struct WholeMeter {
  }
  double truePeak=0;
  void peakFrame(double l,double r){
-  // ITU Annex 2 four-phase FIR, same estimate as existing excerpt meter.
+  // ITU Annex 2 four-phase FIR for the offline whole-song meter.
   static constexpr double fir[12][4]={
    {.001708984375,-.0291748046875,-.0189208984375,-.00830078125},{.010986328125,.029296875,.0330810546875,.014892578125},
    {-.0196533203125,-.0517578125,-.0582275390625,-.026611328125},{.033203125,.089111328125,.1015625,.047607421875},

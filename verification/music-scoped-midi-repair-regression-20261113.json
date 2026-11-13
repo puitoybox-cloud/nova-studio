@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-13 JST",
+  "command": "node --test tests/music-studio-scoped-midi-repair.test.js",
+  "passed": 25,
+  "failed": 0,
+  "sourceHashes": {
+    "tests/music-studio-scoped-midi-repair.test.js": "11d16b6e4c3b22df93918e9ad8c873f880c245eabd716e1934b3d298b23dde2c"
+  },
+  "runtimeHashes": {
+    "app.js": "63a0735fdd091714293d08d7dbfe864f49fc9b29727aea847c53bc9833726da4",
+    "music-studio.html": "5c3a36342877949ef10a9c8f38edb18d8f5476698ea9b7fb7d857dd64db860cc",
+    "music-studio.js": "757841c974177d6b6b9f6d42d32bfb95cddebbcdd972453bd92b9e7c48dcacd3",
+    "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371"
+  },
+  "acceptedCases": [
+    "repair only the selected track and measures; preserve input and locked notes"
+  ]
+}

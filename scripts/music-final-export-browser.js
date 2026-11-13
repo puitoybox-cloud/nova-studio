@@ -93,9 +93,20 @@ const mixedSources = await mixed.evaluate(async()=>{
   const prepared=requireOk(await app.autoFinishPrepare(id,autoRoutes));
   if(prepared.frames!==frames||prepared.stems.length!==4)throw Error('auto-finish-mixed-frames');
   const savedBaseline=JSON.stringify(await repo.get(id));
-  const cancelled=await app.autoFinishPrepare(id,autoRoutes,()=>true);
-  if(cancelled.ok||cancelled.stems||cancelled.error!=='auto-finish-preparation-cancelled')throw Error('auto-finish-cancel');
   const readBinary=repo.getLongWav;
+  let cancelPreparation=false;
+  try {
+    repo.getLongWav=async key=>{
+      const record=await readBinary(key);
+      if(key===imported.assetId)cancelPreparation=true;
+      return record;
+    };
+    const cancelled=await app.autoFinishPrepare(id,autoRoutes,()=>cancelPreparation);
+    if(!cancelPreparation||cancelled.ok||cancelled.stems||cancelled.error!=='auto-finish-preparation-cancelled'||
+       JSON.stringify(await repo.get(id))!==savedBaseline)throw Error('auto-finish-cancel-during-source-read');
+  } finally { repo.getLongWav=readBinary; }
+  const retried=requireOk(await app.autoFinishPrepare(id,autoRoutes));
+  if(retried.frames!==prepared.frames||retried.stems.length!==prepared.stems.length)throw Error('auto-finish-cancel-retry');
   try {
     for(const corrupted of [false,true]){
       repo.getLongWav=async key=>{
