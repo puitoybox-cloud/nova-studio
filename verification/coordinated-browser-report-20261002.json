@@ -1,0 +1,91 @@
+{
+  "reports": [
+    {
+      "width": 1440,
+      "initial": {
+        "coordinated": true,
+        "range": {
+          "startMeasure": 2,
+          "endMeasure": 2,
+          "startTick": 1000,
+          "endTick": 1720,
+          "measureTicks": 720
+        },
+        "total": 9400,
+        "left": 10.6383,
+        "writes": 0,
+        "scrollWidth": 1440,
+        "viewport": 1440
+      },
+      "saved": {
+        "nativeRoundtrip": true,
+        "newLock": true,
+        "released": true,
+        "ok": true,
+        "pitch": 65,
+        "eventTick": 1000,
+        "tempoTick": 777
+      },
+      "console": [],
+      "externalRequests": []
+    },
+    {
+      "width": 820,
+      "initial": {
+        "coordinated": true,
+        "range": {
+          "startMeasure": 2,
+          "endMeasure": 2,
+          "startTick": 1000,
+          "endTick": 1720,
+          "measureTicks": 720
+        },
+        "total": 9400,
+        "left": 10.6383,
+        "writes": 0,
+        "scrollWidth": 820,
+        "viewport": 820
+      },
+      "saved": {
+        "nativeRoundtrip": true,
+        "newLock": true,
+        "released": true,
+        "ok": true,
+        "pitch": 65,
+        "eventTick": 1000,
+        "tempoTick": 777
+      },
+      "console": [],
+      "externalRequests": []
+    },
+    {
+      "width": 390,
+      "initial": {
+        "coordinated": true,
+        "range": {
+          "startMeasure": 2,
+          "endMeasure": 2,
+          "startTick": 1000,
+          "endTick": 1720,
+          "measureTicks": 720
+        },
+        "total": 9400,
+        "left": 10.6383,
+        "writes": 0,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      "saved": {
+        "nativeRoundtrip": true,
+        "newLock": true,
+        "released": true,
+        "ok": true,
+        "pitch": 65,
+        "eventTick": 1000,
+        "tempoTick": 777
+      },
+      "console": [],
+      "externalRequests": []
+    }
+  ]
+}

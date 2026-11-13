@@ -1,0 +1,67 @@
+name: NOVA downloadable AI listening samples
+on:
+  pull_request:
+    paths:
+      - 'assets/music-acoustic-v1/**'
+      - 'scripts/music-listening-*.js'
+      - '.github/workflows/music-listening.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  listening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r tools/music-local-generation/requirements.txt
+      - run: python tools/music-local-generation/prepare.py "$RUNNER_TEMP/nova-generation-assets"
+      - name: Actual ONNX 40-second A/B/C and melody preservation
+        env:
+          NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_SAMPLE_FIXTURE: ${{ runner.temp }}/listening-fixture.json
+        run: node scripts/music-listening-generation.js
+      - name: Production WAV rendering, independent stems and mastered mix
+        env:
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          NOVA_SAMPLE_FIXTURE: ${{ runner.temp }}/listening-fixture.json
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          npm install --prefix "$RUNNER_TEMP/listening-browser" playwright
+          NODE_PATH="$RUNNER_TEMP/listening-browser/node_modules" node scripts/music-listening-browser.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NOVA-AI-listening-samples
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            verification/listening/
+            verification/music-listening-generation.json
+  software-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test
+      - run: node --check scripts/music-listening-generation.js && node --check scripts/music-listening-browser.js
+      - run: git diff --check
+      - run: python -m unittest discover -s tools/music-audio-pipeline
+      - run: python tools/music-local-generation/test_constraints.py

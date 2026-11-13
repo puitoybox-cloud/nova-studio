@@ -1,0 +1,904 @@
+{
+  "date": "2026-11-07 JST",
+  "runtimeSHA256": "65c70b9139285127917bfac044416d9a4525884b654f5682b46df6896c2ee1ac",
+  "replacementSinks": [
+    "indexedDbRepository.put",
+    "indexedDbRepository.compareAndPut",
+    "indexedDbRepository.putLongWav",
+    "memoryRepository.put",
+    "memoryRepository.compareAndPut"
+  ],
+  "newIdentityPaths": [
+    "compareAndFork: destination add, source baseline comparison",
+    "commitMidiImport: destination add and import history atomic",
+    "restoreMetadata: prepareRestoreProjects generates new IDs, add only",
+    "restoreLongArchive: prepared new IDs, add only"
+  ],
+  "explicitDeletion": "Project deletion is a separate explicit action; editing must not remove a finished receipt.",
+  "callInventory": [
+    {
+      "line": 381,
+      "receiver": "target",
+      "method": "compareAndFork",
+      "context": "===id)throw Error('finished-fork-atomic-storage-required');await target.compareAndFork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(nex"
+    },
+    {
+      "line": 381,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "ork(next,id,baseline,guard,options.binaryRecords||[])}else await target.compareAndPut(next,baseline,guard);"
+    },
+    {
+      "line": 581,
+      "receiver": "store",
+      "method": "add",
+      "context": "        const write=()=>{try{guard?.();watch(store.add(value));watch(tx.objectStore(MIDI_IMPORT_HISTORY_STORE_NAME).add(entry))}catch(e){abo"
+    },
+    {
+      "line": 616,
+      "receiver": "store",
+      "method": "put",
+      "context": "-storage');preserveFinishedSnapshots(get.result,value);const put=store.put(value);put.onerror=()=>abort(put.error);put.onsuccess=()=>{try{guard?.()}catch(e){abo"
+    },
+    {
+      "line": 622,
+      "receiver": "store",
+      "method": "add",
+      "context": "inary.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}const add=store.add(value);add.onerror=()=>abort(add.error);add.onsuccess=()=>{try{guard?.()}catch(e){abo"
+    },
+    {
+      "line": 683,
+      "receiver": "store",
+      "method": "put",
+      "context": "=()=>{watch(tx.objectStore('longWavBinaries').add(record));watch(store.put(clone(item)))};"
+    },
+    {
+      "line": 719,
+      "receiver": "store",
+      "method": "add",
+      "context": "reateVocalJournal: m=>request('vocalJournals','readwrite',store=>store.add(m)),"
+    },
+    {
+      "line": 728,
+      "receiver": "store",
+      "method": "put",
+      "context": "s=()=>{try{preserveFinishedSnapshots(get.result,value);const put=store.put(value);put.onerror=()=>abort(put.error)}catch(e){abort(e)}};"
+    },
+    {
+      "line": 729,
+      "receiver": "store",
+      "method": "put",
+      "context": "ings(value){await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listAutoBackups(){return request(AUTO_BACKU"
+    },
+    {
+      "line": 729,
+      "receiver": "store",
+      "method": "put",
+      "context": "d.type})}await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.put(record));return record},async deleteAutoBackup(id){await request(AUTO_BACKUP_STORE_NA"
+    },
+    {
+      "line": 729,
+      "receiver": "store",
+      "method": "put",
+      "context": "(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI"
+    },
+    {
+      "line": 729,
+      "receiver": "store",
+      "method": "put",
+      "context": "{await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};"
+    },
+    {
+      "line": 1023,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,guard);state.projects=state.projects.map(p="
+    },
+    {
+      "line": 1179,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "      await target.compareAndPut(updated,preview.baseline,guard);"
+    },
+    {
+      "line": 1528,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "rrent);automaticEditRecord(current,updated,'audio-editor');await target.compareAndPut(updated,baseline,guard);if(repository!==target||pcmEditor.projectId!==id||pcmEditor.g"
+    },
+    {
+      "line": 1573,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,{id,blob,hashes},baseline,guard);"
+    },
+    {
+      "line": 1699,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(next,{id:binaryId,blob,hashes},baseline,guard);guard();"
+    },
+    {
+      "line": 1863,
+      "receiver": "target",
+      "method": "restoreLongArchive",
+      "context": "      guard(true);await target.restoreLongArchive(projects,records,options.settings===false?null:preserveRestoreSettings(manifest.setti"
+    },
+    {
+      "line": 1915,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,record,baseline,guard);"
+    },
+    {
+      "line": 2304,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,{id:assetId,blob:take.blob,hashes,...(vocal.journalId?{journalId:vocal.journa"
+    },
+    {
+      "line": 2316,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "      await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?updated"
+    },
+    {
+      "line": 2330,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "ated).valid)throw Error('vocal-workspace-project-invalid');await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?updated"
+    },
+    {
+      "line": 2539,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "ed).valid)throw Error('vocal-replacement-project-invalid');await target.putLongWav(updated,{id:assetId,blob:r.blob,hashes},baseline,guard);state.projects=state.projects"
+    },
+    {
+      "line": 2549,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "ed.revision);automaticEditRecord(p,updated,'vocal-editor');await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?updated"
+    },
+    {
+      "line": 2564,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "t(updated).valid)throw Error('vocal-comp-project-invalid');await target.putLongWav(updated,{id:assetId,blob:r.blob,hashes},baseline,guard);state.projects=state.projects"
+    },
+    {
+      "line": 2629,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,{id:newId,blob:r.blob,hashes},baseline,guard);state.projects=state.projects.m"
+    },
+    {
+      "line": 3560,
+      "receiver": "target",
+      "method": "commitMidiImport",
+      "context": "    try{await target.commitMidiImport(project,history,sourceId,baseline,guard)}"
+    },
+    {
+      "line": 3753,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "unction')throw Error('instrument-atomic-storage-required');await target.compareAndPut(next,serialized,guard);if(repository===target&&state.midiEditor===s){state.projects=s"
+    },
+    {
+      "line": 4210,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "    if(typeof target.compareAndPut==='function')await target.compareAndPut(updated,JSON.stringify(project),guard);else{guard();await target.put(updated)}"
+    },
+    {
+      "line": 4210,
+      "receiver": "target",
+      "method": "put",
+      "context": "AndPut(updated,JSON.stringify(project),guard);else{guard();await target.put(updated)}"
+    },
+    {
+      "line": 4218,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "    await target.compareAndPut(project,undefined,guard);return project;"
+    },
+    {
+      "line": 4323,
+      "receiver": "target",
+      "method": "compareAndFork",
+      "context": "      await target.compareAndFork(duplicate,id,baseline,guard);committed=duplicate;"
+    },
+    {
+      "line": 4370,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "      try{await target.compareAndPut(incoming,undefined,guard)}catch(error){"
+    },
+    {
+      "line": 4443,
+      "receiver": "target",
+      "method": "restoreMetadata",
+      "context": "pter:generationAdapter,settings:incomingSettings,control}):await target.restoreMetadata(projects?snapshot.projects:[],incomingSettings,control);committedResult=committed;"
+    },
+    {
+      "line": 4504,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "='function')throw Error('project-atomic-save-unavailable');await target.compareAndPut(updated,JSON.stringify(current),guard);guard();if(sequence<state.saveSequence||genera"
+    },
+    {
+      "line": 4885,
+      "receiver": "target",
+      "method": "putLongWav",
+      "context": "      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,()=>guard(true));guard(true);"
+    },
+    {
+      "line": 5082,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "p.revision);automaticEditRecord(previous,p,'final-export');await target.compareAndPut(p,c.baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?p:x);c.base"
+    },
+    {
+      "line": 5100,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "    await target.compareAndPut(p,c.baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?p:x);c.base"
+    },
+    {
+      "line": 5235,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "d===id))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?next:x);re"
+    },
+    {
+      "line": 5243,
+      "receiver": "target",
+      "method": "compareAndPut",
+      "context": "=owner))!==baseline)throw Error('material-stale')};guard();await target.compareAndPut(next,baseline,guard);state.projects=state.projects.map(x=>x.projectId===owner?next:x)"
+    },
+    {
+      "line": 5254,
+      "receiver": "target",
+      "method": "compareAndFork",
+      "context": "=owner))!==baseline)throw Error('material-stale')};guard();await target.compareAndFork(out,owner,baseline,guard);if(repository!==target)return{ok:true,committed:true,refres"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "MS03-C01",
+      "decision": "音声解析方式と品質閾値",
+      "affectedRequirements": [
+        "MS03-A02",
+        "MS03-A03",
+        "MS03-A04",
+        "MS03-A05"
+      ],
+      "neededInformation": "解析対象（単旋律/混合音）、許容誤差、評価用の権利確認済み音声。"
+    },
+    {
+      "id": "MS04-C01",
+      "decision": "文章理解・作曲モデルとライセンス・品質基準",
+      "affectedRequirements": [
+        "MS04-A02",
+        "MS04-A03",
+        "MS04-A04",
+        "MS04-A05"
+      ],
+      "neededInformation": "ローカル候補モデル、重み・辞書の配布条件、作曲評価用課題と合格閾値。"
+    },
+    {
+      "id": "MS05-C01",
+      "decision": "会話理解モデルと実行権限契約",
+      "affectedRequirements": [
+        "MS05-A02",
+        "MS05-A03",
+        "MS05-A04"
+      ],
+      "neededInformation": "日本語理解モデル、許可する操作一覧、曖昧指示の確認条件。"
+    },
+    {
+      "id": "MS07-C01",
+      "decision": "生成モデルとSection配置方針",
+      "affectedRequirements": [
+        "MS07-A02",
+        "MS07-A03",
+        "MS07-A04",
+        "MS07-A05",
+        "MS07-A06"
+      ],
+      "neededInformation": "編曲モデル、Section配置ルール、長さ・反復・接続の評価基準。"
+    },
+    {
+      "id": "MS08-C01",
+      "decision": "Destinationと音源生成モデルの契約",
+      "affectedRequirements": [
+        "MS08-A02",
+        "MS08-A03",
+        "MS08-A04",
+        "MS08-A05"
+      ],
+      "neededInformation": "音源生成モデル、Destinationの入出力形式、重み/生成音源の利用条件。"
+    },
+    {
+      "id": "MS09-C01",
+      "decision": "実音声コード解析モデルと品質基準",
+      "affectedRequirements": [
+        "MS09-A02",
+        "MS09-A03",
+        "MS09-A04"
+      ],
+      "neededInformation": "混合音のコード解析方式、コード語彙、時間位置と正答率の閾値。"
+    },
+    {
+      "id": "MS10-C01",
+      "decision": "歌詞生成モデル・読みアクセント方式",
+      "affectedRequirements": [
+        "MS10-A02",
+        "MS10-A03",
+        "MS10-A04",
+        "MS10-A05",
+        "MS10-A06",
+        "MS10-A07",
+        "MS10-A08"
+      ],
+      "neededInformation": "歌詞生成モデル、読み/アクセント方式、辞書配布条件、日本語評価用歌詞。"
+    },
+    {
+      "id": "MS11-C01",
+      "decision": "歌唱モデルの配布ライセンスと品質基準",
+      "affectedRequirements": [
+        "MS11-A02",
+        "MS11-A03"
+      ],
+      "neededInformation": "歌唱モデル/声庫、同梱・商用利用の許諾原文、発音と音質の評価基準。"
+    },
+    {
+      "id": "MS14-C01",
+      "decision": "本人声モデルと同意・ライセンス",
+      "affectedRequirements": [
+        "MS14-A02",
+        "MS14-A03",
+        "MS14-A04",
+        "MS14-A05"
+      ],
+      "neededInformation": "本人声モデル、本人同意の取得/撤回方法、学習素材と配布範囲。"
+    },
+    {
+      "id": "MS16-C01",
+      "decision": "分離モデルweightと再配布許諾",
+      "affectedRequirements": [
+        "MS16-A02",
+        "MS16-A03"
+      ],
+      "neededInformation": "分離モデルと重みの版、再配布許諾、漏れ/音質の合格基準。"
+    },
+    {
+      "id": "MS17-C01",
+      "decision": "変換モデルの対象楽器と精度基準",
+      "affectedRequirements": [
+        "MS17-A02",
+        "MS17-A03",
+        "MS17-A04"
+      ],
+      "neededInformation": "変換対象楽器、モデル/重みの版と許諾、音程/Timing/音色の評価基準。"
+    },
+    {
+      "id": "MS20-C01",
+      "decision": "Logic直接操作とlogicxの公式方式",
+      "affectedRequirements": [
+        "MS20-A02",
+        "MS20-A03"
+      ],
+      "neededInformation": "Logic連携の対象操作、公式に利用できる入出力/API仕様、対応バージョン。"
+    },
+    {
+      "id": "MS21-C01",
+      "decision": "音源と依存物の再配布条件",
+      "affectedRequirements": [
+        "MS21-A02",
+        "MS21-A03",
+        "MS21-A04"
+      ],
+      "neededInformation": "同梱する音源/依存物の一覧・版、各再配布許諾の原文、必要な表示。"
+    },
+    {
+      "id": "MS23-C01",
+      "decision": "Cloud Sync同期先・暗号化・競合・offline方針",
+      "affectedRequirements": [
+        "MS23-A02",
+        "MS23-A03",
+        "MS23-A04"
+      ],
+      "neededInformation": "同期先、暗号鍵の管理者、競合時の採用規則、offline再同期の受入条件。"
+    },
+    {
+      "id": "MS25-C01",
+      "decision": "対象モデルの容量・配布許諾・署名公証方式",
+      "affectedRequirements": [
+        "MS25-A02",
+        "MS25-A03",
+        "MS25-A04"
+      ],
+      "neededInformation": "対象モデルの容量/対応CPU、配布許諾、署名公証に用いる主体と方式。"
+    },
+    {
+      "id": "MS26-C01",
+      "decision": "有料Provider・価格根拠・課金取消契約",
+      "affectedRequirements": [
+        "MS26-A02",
+        "MS26-A03",
+        "MS26-A04",
+        "MS26-A05"
+      ],
+      "neededInformation": "有料Providerと公開価格の確認日付き根拠、上限・取消・失敗時の費用契約。"
+    },
+    {
+      "id": "MS27-C01",
+      "decision": "Provider交換と旧モデルの互換方針",
+      "affectedRequirements": [
+        "MS27-A02",
+        "MS27-A03",
+        "MS27-A04",
+        "MS27-A05"
+      ],
+      "neededInformation": "Provider/モデルの版固定、旧作品の再現方針、移行・fallbackの受入条件。"
+    },
+    {
+      "id": "MS29-C01",
+      "decision": "文章意味検索モデルとライセンス",
+      "affectedRequirements": [
+        "MS29-A02",
+        "MS29-A03",
+        "MS29-A04"
+      ],
+      "neededInformation": "意味検索モデルと配布許諾、対象日本語コーパス、検索精度と容量の基準。"
+    }
+  ],
+  "blockedRequirements": [
+    {
+      "id": "MS03-A02",
+      "requirement": "音声BPM解析",
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A03",
+      "requirement": "音声KeyとScale解析",
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A04",
+      "requirement": "音声拍子解析",
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS03-A05",
+      "requirement": "音声セクション解析",
+      "dependsOn": [
+        "MS03-C01"
+      ]
+    },
+    {
+      "id": "MS04-A02",
+      "requirement": "文章と歌詞からBPMとKeyを提案",
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A03",
+      "requirement": "文章と歌詞からコードとメロディを生成",
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A04",
+      "requirement": "構成と編成を生成",
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS04-A05",
+      "requirement": "生成物をPreviewから新曲保存へ統合",
+      "dependsOn": [
+        "MS04-C01"
+      ]
+    },
+    {
+      "id": "MS05-A02",
+      "requirement": "複数依頼の計画と機能呼出し",
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS05-A03",
+      "requirement": "会話文脈を維持した次工程案内",
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS05-A04",
+      "requirement": "完成経路までの日本語オーケストレーション",
+      "dependsOn": [
+        "MS05-C01"
+      ]
+    },
+    {
+      "id": "MS07-A02",
+      "requirement": "続きと2番の実生成",
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A03",
+      "requirement": "ラスサビとIntroの実生成",
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A04",
+      "requirement": "InterludeとOutroの実生成",
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A05",
+      "requirement": "時間指定生成",
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS07-A06",
+      "requirement": "部分再生成と固定範囲保護",
+      "dependsOn": [
+        "MS07-C01"
+      ]
+    },
+    {
+      "id": "MS08-A02",
+      "requirement": "複数Sectionアレンジの実生成",
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A03",
+      "requirement": "単一Track再生成",
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A04",
+      "requirement": "複数Track再生成",
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS08-A05",
+      "requirement": "メロディ固定と範囲固定の保存往復",
+      "dependsOn": [
+        "MS08-C01"
+      ]
+    },
+    {
+      "id": "MS09-A02",
+      "requirement": "実音声のコード解析",
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS09-A03",
+      "requirement": "コード追従補正",
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS09-A04",
+      "requirement": "別Voicing候補生成と採用保存",
+      "dependsOn": [
+        "MS09-C01"
+      ]
+    },
+    {
+      "id": "MS10-A02",
+      "requirement": "歌詞本文生成",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A03",
+      "requirement": "歌詞本文修正",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A04",
+      "requirement": "読みとアクセント整合",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A05",
+      "requirement": "文字数と音節割付",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A06",
+      "requirement": "固定歌詞再生成",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A07",
+      "requirement": "固定メロディ再生成",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS10-A08",
+      "requirement": "重複歌詞の再結合と競合履歴",
+      "dependsOn": [
+        "MS10-C01"
+      ]
+    },
+    {
+      "id": "MS11-A02",
+      "requirement": "試聴中の日本語部分修正",
+      "dependsOn": [
+        "MS11-C01"
+      ]
+    },
+    {
+      "id": "MS11-A03",
+      "requirement": "メロディ歌詞変更後の仮歌再生成と非破壊保存",
+      "dependsOn": [
+        "MS11-C01"
+      ]
+    },
+    {
+      "id": "MS14-A02",
+      "requirement": "歌声Harmonyレンダーと保存",
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A03",
+      "requirement": "Doubleレンダーと保存",
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A04",
+      "requirement": "Chorusレンダーと保存",
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS14-A05",
+      "requirement": "本人声生成の非破壊統合",
+      "dependsOn": [
+        "MS14-C01"
+      ]
+    },
+    {
+      "id": "MS16-A02",
+      "requirement": "6音声Stemの保存再開と移行の統合",
+      "dependsOn": [
+        "MS16-C01"
+      ]
+    },
+    {
+      "id": "MS16-A03",
+      "requirement": "実モデル分離の失敗取消と原音保持",
+      "dependsOn": [
+        "MS16-C01"
+      ]
+    },
+    {
+      "id": "MS17-A02",
+      "requirement": "単音和音設定の実モデル接続",
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS17-A03",
+      "requirement": "信頼度と比較修正UIの統合",
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS17-A04",
+      "requirement": "変換後の自動整理と保存再開",
+      "dependsOn": [
+        "MS17-C01"
+      ]
+    },
+    {
+      "id": "MS20-A02",
+      "requirement": "返送WAVとStemの対応差分管理",
+      "dependsOn": [
+        "MS20-C01"
+      ]
+    },
+    {
+      "id": "MS20-A03",
+      "requirement": "受渡し前検査の統合",
+      "dependsOn": [
+        "MS20-C01"
+      ]
+    },
+    {
+      "id": "MS21-A02",
+      "requirement": "MasterとInstrumentalとStemとMIDI一括出力の全経路",
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS21-A03",
+      "requirement": "配信前の欠落と音量検査",
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS21-A04",
+      "requirement": "配信前の権利申告漏れ検査",
+      "dependsOn": [
+        "MS21-C01"
+      ]
+    },
+    {
+      "id": "MS23-A02",
+      "requirement": "旧依存識別不能時の原本保持",
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS23-A03",
+      "requirement": "更新前復元と移行のソフトウェア受入",
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS23-A04",
+      "requirement": "Cloud Syncの競合とoffline復旧実装",
+      "dependsOn": [
+        "MS23-C01"
+      ]
+    },
+    {
+      "id": "MS25-A02",
+      "requirement": "Project単位の外部送信禁止境界",
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS25-A03",
+      "requirement": "送信内容の明示と取消",
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS25-A04",
+      "requirement": "全処理の配布依存閉包検証",
+      "dependsOn": [
+        "MS25-C01"
+      ]
+    },
+    {
+      "id": "MS26-A02",
+      "requirement": "事前料金表示",
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A03",
+      "requirement": "月額上限と予約",
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A04",
+      "requirement": "Provider別使用量",
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS26-A05",
+      "requirement": "失敗とCancelの料金精算",
+      "dependsOn": [
+        "MS26-C01"
+      ]
+    },
+    {
+      "id": "MS27-A02",
+      "requirement": "Provider交換と互換拒否",
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A03",
+      "requirement": "旧モデル保持と切替",
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A04",
+      "requirement": "更新前fixture品質互換ゲート",
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS27-A05",
+      "requirement": "モデルの速度容量報告",
+      "dependsOn": [
+        "MS27-C01"
+      ]
+    },
+    {
+      "id": "MS29-A02",
+      "requirement": "曲と部分素材の全形式保存",
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    },
+    {
+      "id": "MS29-A03",
+      "requirement": "素材KeyとBPM追従",
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    },
+    {
+      "id": "MS29-A04",
+      "requirement": "意味を用いた文章検索",
+      "dependsOn": [
+        "MS29-C01"
+      ]
+    }
+  ],
+  "decisionSource": {
+    "path": "docs/music-studio/MACLESS_DECISIONS_20261031.md",
+    "sha256": "a616a8e4870535c33b9c62a7f1f3f25c276ea019dfcf006576716675d352860c"
+  }
+}

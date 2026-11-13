@@ -3,6 +3,84 @@ import Foundation
 public struct MusicStudioAppConfiguration: Equatable {
     public let startURL: URL
     public let allowedHosts: Set<String>
+    private var isLoopbackHosted = false
+    public private(set) var localHandoffJSON: String? = nil
+    public private(set) var ownedCredential: MusicStudioOwnedCredential? = nil
+    public private(set) var ownedSession: String? = nil
+    public private(set) var ownedSummaryDescriptor: Int32? = nil
+
+    private var bundledRoot: URL? = nil
+
+    /// Current build's packaged web assets; absent assets never fall back online.
+    public static func bundled(resourceURL: URL?) -> MusicStudioAppConfiguration? {
+        guard let root = resourceURL?.appendingPathComponent("MusicStudioWeb", isDirectory: true) else { return nil }
+        let entry = root.appendingPathComponent("music-studio.html")
+        guard FileManager.default.fileExists(atPath: entry.path) else { return nil }
+        var result = MusicStudioAppConfiguration(startURL: entry)
+        result.bundledRoot = root.resolvingSymlinksInPath().standardizedFileURL
+        return result
+    }
+
+    /// Explicit adapter for a launcher-supplied loopback origin. Caller must
+    /// validate its anchored envelope; this is navigation containment only.
+    public static func localHosted(startURL: URL) -> MusicStudioAppConfiguration? {
+        guard startURL.scheme == "http", startURL.host == "127.0.0.1",
+              let port = startURL.port, (1...65535).contains(port),
+              startURL.user == nil, startURL.password == nil,
+              startURL.query == nil, startURL.fragment == nil else { return nil }
+        var result = MusicStudioAppConfiguration(startURL: startURL)
+        result.isLoopbackHosted = true
+        return result
+    }
+
+    /// Explicit launcher channel. Invalid/missing strict startup never chooses HTTPS.
+    public static func startup(environment: [String: String], now: Date = Date(), resourceURL: URL? = Bundle.main.resourceURL) -> MusicStudioAppConfiguration? {
+        #if os(macOS)
+        if let resourceURL, FileManager.default.fileExists(atPath: resourceURL.appendingPathComponent("package-candidate.json").path) {
+            // The package launcher owns this fixed-origin engine. Never fall back
+            // to file/online/developer pages when its startup channel is absent.
+            guard environment["NOVA_STRICT_OFFLINE"] == nil, environment["NOVA_LOCAL_HANDOFF"] == nil,
+                  environment["NOVA_TRUSTED_MANIFEST_PATH"] == nil,
+                  environment["NOVA_PACKAGE_ENGINE_ORIGIN"] == "http://127.0.0.1:8765",
+                  FileManager.default.isExecutableFile(atPath: resourceURL.deletingLastPathComponent().appendingPathComponent("Helpers/MusicStudioEngine").path) else { return nil }
+            return localHosted(startURL: URL(string: "http://127.0.0.1:8765/music-studio.html")!)
+        }
+        #endif
+        guard environment["NOVA_STRICT_OFFLINE"] == "1" || environment["NOVA_LOCAL_HANDOFF"] != nil || environment["NOVA_TRUSTED_MANIFEST_PATH"] != nil else { return bundled(resourceURL: resourceURL) }
+        guard let text = environment["NOVA_LOCAL_HANDOFF"], text.utf8.count <= 4096,
+              let data = text.data(using: .utf8),
+              var value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              value["format"] as? String == "NOVA_LOCAL_BROWSER_HANDOFF",
+              (value["version"] as? Int) == 1,
+              let origin = value["origin"] as? String,
+              let url = URL(string: origin + "/music-studio.html"),
+              var configuration = localHosted(startURL: url),
+              origin == "http://127.0.0.1:\(url.port!)",
+              let expiry = value["expiresAt"] as? Double,
+              expiry > now.timeIntervalSince1970 * 1000,
+              expiry <= now.timeIntervalSince1970 * 1000 + 300000,
+              let build = value["buildRevision"] as? String, !build.isEmpty else { return nil }
+        for key in ["nonce", "session", "manifestDigest", "runtimeConfigDigest", "helperIdentityDigest"] {
+            guard let digest = value[key] as? String, digest.count == 64,
+                  digest.allSatisfy({ "0123456789abcdef".contains($0) }) else { return nil }
+        }
+        if let control = value.removeValue(forKey: "ownedControl") {
+            guard let raw = try? JSONSerialization.data(withJSONObject: control),
+                  let credential = try? JSONDecoder().decode(MusicStudioOwnedCredential.self, from: raw),
+                  let session = value["session"] as? String,
+                  let controlOrigin = URL(string: origin),
+                  (try? MusicStudioOwnedLifecycle(origin: controlOrigin, session: session, credential: credential, now: now)) != nil else { return nil }
+            configuration.ownedCredential = credential; configuration.ownedSession = session
+            if let descriptor = environment["NOVA_OWNED_SUMMARY_FD"] {
+                guard let number = Int32(descriptor), number > 2 else { return nil }
+                configuration.ownedSummaryDescriptor = number
+            }
+        }
+        guard let sanitized = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+              let sanitizedText = String(data: sanitized, encoding: .utf8) else { return nil }
+        configuration.localHandoffJSON = sanitizedText
+        return configuration
+    }
 
     public static let production = MusicStudioAppConfiguration(
         startURL: URL(string: "https://puitoybox-cloud.github.io/nova-studio/music-studio.html")!
@@ -20,10 +98,18 @@ public struct MusicStudioAppConfiguration: Equatable {
     }
 
     public func allows(_ url: URL) -> Bool {
+        if isLoopbackHosted {
+            return url.scheme == "http" && url.host == "127.0.0.1" &&
+                url.port == startURL.port && url.user == nil && url.password == nil
+        }
         if startURL.isFileURL {
             // Local mode is selected only by a local start URL. Keep it separate
             // from the remote allowlist and reject file URLs with a remote host.
-            return url.isFileURL && url.host == nil
+            guard url.isFileURL && url.host == nil else { return false }
+            if let root = bundledRoot {
+                return url.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(root.path + "/")
+            }
+            return true
         }
 
         guard

@@ -1,0 +1,1334 @@
+{
+  "date": "2026-11-07 JST",
+  "head": "e1633ebfa27a5f6eab23d5e09a76c077f0136da3",
+  "runId": 42341291687,
+  "jobId": 128309317152,
+  "artifactId": 13562325120,
+  "artifactDigest": "sha256:6d069175930412da0aa360dd3cc5f99177a24cd7059b2d3c0929dfdbd6ab4262",
+  "reportSha256": "e7998cc2638b6c0934d962551d12300735d9a30c09d8bfba1bd86927b08e66dd",
+  "screens": [
+    {
+      "route": "music-studio",
+      "restored": [
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "label:nth-child(3)"
+            ],
+            [
+              "label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-workspace > h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/projects",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "label:nth-child(3)"
+            ],
+            [
+              "label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/new",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "label:nth-child(3)"
+            ],
+            [
+              "label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "section[aria-labelledby=\"musicFeaturesTitle\"] > .music-section-heading > div > .music-kicker"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/settings",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "TEXTAREA",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(3)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(4)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(5)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(6)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/backup",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "label:nth-child(3)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "nodes": [
+            [
+              "h3"
+            ]
+          ]
+        },
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".nova-menu-toggle"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-main-is-top-level",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".music-studio-shell"
+            ]
+          ]
+        },
+        {
+          "id": "landmark-no-duplicate-main",
+          "impact": "moderate",
+          "nodes": [
+            [
+              ".nova-studio-route-main"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/project/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ],
+            [
+              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "nav > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
+            ],
+            [
+              ".music-production-history > form:nth-child(2) > button"
+            ],
+            [
+              "form:nth-child(4) > button"
+            ],
+            [
+              "form:nth-child(7) > button"
+            ],
+            [
+              ".music-vocal-loopback > summary"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(2)"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(5)"
+            ],
+            [
+              ".music-vocal-loopback > label"
+            ],
+            [
+              "p[data-loopback-status=\"\"]"
+            ],
+            [
+              ".music-vocal-input-profiles > summary"
+            ],
+            [
+              ".music-vocal-input-profiles > p"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > button[type=\"button\"]"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > div[data-performance-panel=\"a11y-song\"] > details > p[data-performance-status=\"\"][role=\"status\"]"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(3)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > button[type=\"button\"]:nth-child(4)"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > p:nth-child(5)"
+            ],
+            [
+              "p:nth-child(6)"
+            ],
+            [
+              "pre"
+            ],
+            [
+              "form:nth-child(8) > button"
+            ],
+            [
+              ".music-project-details:nth-child(7) > details > p:nth-child(9)"
+            ],
+            [
+              "form:nth-child(10) > button"
+            ],
+            [
+              "button[type=\"button\"]:nth-child(11)"
+            ],
+            [
+              "form:nth-child(12) > button"
+            ],
+            [
+              "#music-material-results > p"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/midi-editor/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "TEXTAREA",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-time-ruler"
+            ],
+            [
+              ".music-playhead"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-time-ruler"
+            ],
+            [
+              ".music-playhead"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/ai-editor/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "TEXTAREA",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/lyrics-notes/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "TEXTAREA",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [],
+      "expanded": []
+    },
+    {
+      "route": "music-studio/vocal/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-vocal-loopback > summary"
+            ],
+            [
+              ".music-vocal-loopback > p:nth-child(2)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-workspace/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(3)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(4)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(5)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(6)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              ".music-master-dynamics > p"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(3)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(5)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(6)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(7)"
+            ],
+            [
+              ".music-production-tools > form:nth-child(3) > button"
+            ],
+            [
+              ".music-master-focus-open"
+            ],
+            [
+              ".music-production-tools > form:nth-child(7) > button"
+            ],
+            [
+              "button[onclick=\"MusicStudio.productionCancel()\"]"
+            ],
+            [
+              ".music-production-tools > button[onclick=\"MusicStudio.pcmStop()\"]"
+            ],
+            [
+              "section:nth-child(3) > button:nth-child(4)"
+            ],
+            [
+              "section:nth-child(3) > button[onclick=\"MusicStudio.pcmCancel()\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-master/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > label:nth-child(3)"
+            ],
+            [
+              "label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-master-history > h3"
+            ],
+            [
+              ".music-master-history > p"
+            ],
+            [
+              ".music-master-recipes > p"
+            ],
+            [
+              ".music-master-recipes > form > label"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-long-master/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "label:nth-child(3)"
+            ],
+            [
+              "label:nth-child(4)"
+            ],
+            [
+              "label:nth-child(5)"
+            ],
+            [
+              "label:nth-child(6)"
+            ],
+            [
+              "label:nth-child(7)"
+            ],
+            [
+              "label:nth-child(8)"
+            ],
+            [
+              "label:nth-child(9)"
+            ],
+            [
+              "label:nth-child(10)"
+            ],
+            [
+              "label:nth-child(11)"
+            ],
+            [
+              "label:nth-child(12)"
+            ],
+            [
+              "nav > details > form > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "route": "music-studio/mixing-export/a11y-song",
+      "restored": [
+        "INPUT",
+        "SELECT",
+        "BUTTON",
+        "SUMMARY"
+      ],
+      "collapsed": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-auto-finish-audition > summary"
+            ],
+            [
+              ".music-master-dynamics > summary"
+            ]
+          ]
+        }
+      ],
+      "expanded": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".music-work-controls > label:nth-child(1)"
+            ],
+            [
+              ".music-work-controls > label:nth-child(2)"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > summary"
+            ],
+            [
+              "details[data-work-visibility=\"\"] > p"
+            ],
+            [
+              "form[data-work-request=\"\"] > label"
+            ],
+            [
+              "div[data-performance-panel=\"a11y-song\"] > details > p:nth-child(3)"
+            ],
+            [
+              "p[data-performance-status=\"\"]"
+            ],
+            [
+              "button[data-gemini-bridge=\"header\"]"
+            ],
+            [
+              ".music-auto-finish-audition > summary"
+            ],
+            [
+              "form:nth-child(5) > label:nth-child(3)"
+            ],
+            [
+              "form:nth-child(5) > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > summary"
+            ],
+            [
+              ".music-master-dynamics > p"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(3)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(4)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(5)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(6)"
+            ],
+            [
+              ".music-master-dynamics > label:nth-child(7)"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "baselineHead": "459f13243d3c2754dc2f3b4b8b1020376ac55d5c",
+  "stableDefinitions": true,
+  "statusChanges": [
+    "MS02-A03",
+    "MS12-A03",
+    "MS19-A02",
+    "MS30-A04"
+  ],
+  "A": 135,
+  "verified": 56,
+  "remaining": 79,
+  "existingAcceptanceRemaining": 16,
+  "dependentA": 63,
+  "B": 30,
+  "C": 18
+}

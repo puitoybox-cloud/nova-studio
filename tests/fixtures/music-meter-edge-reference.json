@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-06 JST",
+  "source": "https://ffmpeg.org/ffmpeg-filters.html#ebur128",
+  "version": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "command": "ffmpeg -hide_banner -nostats -f f32le -ar 48000 -ac CHANNELS -i pipe:0 -af ebur128=peak=true -f null -",
+  "signalSourceSha256": "d1b01b1e5cdebd1dad0a403ab54e49d0d98c9e5acc4d59018448eba3059aab06",
+  "rounding": 0.1,
+  "truePeakToleranceDb": 0.2,
+  "rows": [
+    {
+      "id": "abrupt-50",
+      "pcmSha256": "66943ceb64b92dac8b479c4b5ab61103620a10381cac4ccc933b3cef51137524",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -8.6 LUFS\n    Threshold: -18.5 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x563dbb3c80c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 175x    \n"
+    },
+    {
+      "id": "abrupt-997",
+      "pcmSha256": "e2dd481837f7634c46cd714952d775cc53d5908eff16f4a6f5b363ede082e5f1",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -3.9 LUFS\n    Threshold: -13.9 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x56344ba630c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 194x    \n"
+    },
+    {
+      "id": "abrupt-10000",
+      "pcmSha256": "4c6c8070b8af2c0681642162fdc07af8d27dbebd5beff9a15146724d9108ee0d",
+      "truePeakDb": -0.8,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.8 dBFS\n[out#0/null @ 0x557b591b60c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 164x    \n"
+    },
+    {
+      "id": "abrupt-12000-zero",
+      "pcmSha256": "8ca5039941667cb8981a73e8132c4520d71168f26ae96475260176d53ca66c8c",
+      "truePeakDb": -0.5,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.5 dBFS\n[out#0/null @ 0x55f8a4a330c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 120x    \n"
+    },
+    {
+      "id": "abrupt-12000-quarter",
+      "pcmSha256": "1a1a21eef1541d228561667745ca8af7b1cf52027f028d98a1b7efd5404f19c1",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x562fbc0f30c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 192x    \n"
+    },
+    {
+      "id": "abrupt-19000",
+      "pcmSha256": "ab99c947dc47758b7261d7cca1daa27e97e22f9a877de771124895af43d01efe",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x565388ac10c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 133x    \n"
+    },
+    {
+      "id": "first-impulse",
+      "pcmSha256": "337b637dc456e2b626d57d43fc4e9e25ea585602e39acf2bdd7b181d165d547d",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -40.6 LUFS\n    Threshold: -50.6 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x55b047cdf0c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 103x    \n"
+    },
+    {
+      "id": "last-impulse",
+      "pcmSha256": "0fcc07e8b52f02a3a775d964cea40e4effb4a929fdb54b161b715848336ebd84",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -40.7 LUFS\n    Threshold: -50.7 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x560dc49770c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 178x    \n"
+    },
+    {
+      "id": "clipped-12000",
+      "pcmSha256": "afab9c3a633b051ce1a006948c2b1407fff922c4b44b769b0a5ebf24c4de1b5e",
+      "truePeakDb": 4.1,
+      "clippingSamples": 48000,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:           3.9 LUFS\n    Threshold:  -6.1 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:        4.1 dBFS\n[out#0/null @ 0x558ae63bd0c0] video:0KiB audio:94KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed= 136x    \n"
+    },
+    {
+      "id": "asymmetric-19000",
+      "pcmSha256": "d08e1fc21a98831669405d9066fc625197bd9ae38c174e78e3a156240f93b037",
+      "truePeakDb": -0.9,
+      "clippingSamples": 0,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.2 LUFS\n    Threshold: -10.2 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n[out#0/null @ 0x5572783080c0] video:0KiB audio:188KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown\nsize=N/A time=00:00:01.00 bitrate=N/A speed=93.7x    \n"
+    }
+  ]
+}

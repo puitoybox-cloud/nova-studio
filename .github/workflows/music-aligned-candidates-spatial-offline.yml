@@ -1,0 +1,57 @@
+name: Music aligned candidates spatial history offline verification
+on:
+  create:
+permissions:
+  contents: read
+jobs:
+  software:
+    if: github.event.ref_type == 'branch' && (github.event.ref == 'feature/music-aligned-candidates-spatial-history-v1' || startsWith(github.event.ref, 'verification/music-aligned-candidates-spatial-history-v1-final'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Exact checkout identity
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git rev-parse HEAD
+      - name: Node tests
+        run: node --test
+      - name: Python tests
+        run: python3 -m unittest discover -s tools/music-audio-pipeline -p 'test_*.py' -v
+      - name: Syntax and whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import py_compile, subprocess
+          for path in subprocess.check_output(['git','ls-files'],text=True).splitlines():
+              if path.endswith('.js'):
+                  subprocess.run(['node','--check',path],check=True)
+              elif path.endswith('.py'):
+                  py_compile.compile(path,doraise=True)
+              elif path.endswith(('.sh','.command')) or path.endswith('mac-app/NovaMusicAudioHelper'):
+                  subprocess.run(['bash','-n',path],check=True)
+          PY
+          git diff --check cc40af3b1e8fa58b99d561fdca08a4790f368d05...HEAD
+  native:
+    if: github.event.ref_type == 'branch' && (github.event.ref == 'feature/music-aligned-candidates-spatial-history-v1' || startsWith(github.event.ref, 'verification/music-aligned-candidates-spatial-history-v1-final'))
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Exact checkout identity
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Swift tests
+        working-directory: tools/music-native-wrapper
+        run: swift test
+      - name: Unsigned macOS build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioMac -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Unsigned iPad simulator build
+        working-directory: tools/music-native-wrapper
+        run: xcodebuild -project MusicStudioNative.xcodeproj -scheme MusicStudioiPad -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/iPadDerivedData CODE_SIGNING_ALLOWED=NO build

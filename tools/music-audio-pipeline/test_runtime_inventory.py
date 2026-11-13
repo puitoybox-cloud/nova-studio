@@ -1,0 +1,255 @@
+"""Offline synthetic loader/importer/executable fixtures; never real model PASS."""
+import copy
+import hashlib
+import json
+import os
+import platform
+import struct
+import tempfile
+import types
+import unittest
+from pathlib import Path
+from runtime_inventory import RuntimeInventory, bootstrap, legacy_snapshot
+
+class RuntimeTests(unittest.TestCase):
+    def test_runtime_snapshot_detaches_every_retained_evidence_collection(self):
+        from unittest.mock import patch
+        runtime=self.runtime
+        for field in ('models','dependencies','native','assets','verification_evidence'):
+            getattr(runtime,field)['fixture']={'identity':{'digest':'a'*64},'entries':[{'status':'OBSERVED'}]}
+        with patch.object(runtime,'recheck'):
+            first=runtime.snapshot();frozen=copy.deepcopy(first)
+            for field in ('models','dependencies','native','assets','verification_evidence'):
+                getattr(runtime,field)['fixture']['entries'][0]['status']='LATE'
+            self.assertEqual(first,frozen)
+            second=runtime.snapshot()
+            for field in ('models','dependencies','native','assets'):
+                next(e for e in second[field] if 'entries' in e)['entries'][0]['status']='CALLER'
+            second['largeArtifactVerification']['entries'][0]['identity']['digest']='f'*64
+            for field in ('models','dependencies','native','assets','verification_evidence'):
+                self.assertEqual(getattr(runtime,field)['fixture']['entries'][0]['status'],'LATE')
+                self.assertEqual(getattr(runtime,field)['fixture']['identity']['digest'],'a'*64)
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.root.joinpath('model').write_bytes(b'model')
+        self.root.joinpath('module.py').write_bytes(b'package')
+        self.root.joinpath('python').write_bytes(struct.pack('<8I', 0xfeedfacf,
+            0x100000c if platform.machine() == 'arm64' else 0x1000007, 0, 2, 0, 0, 0, 0))
+        self.root.joinpath('python').chmod(0o700)
+        def entry(identity, path, **fields):
+            data=self.root.joinpath(path).read_bytes()
+            return {'id':identity,'digest':hashlib.sha256(data).hexdigest(),**fields}
+        self.manifest={'models':[entry('m','model',revision='r1',byteLength=5)],
+            'dependencies':[entry('numpy','module.py',version='1')],
+            'assets':[entry('python-runtime','python',revision='1',byteLength=32)]}
+        self.bindings={'version':1,'models':[{'id':'m','path':'model','runtimeIdentifier':'basic-pitch','companions':[]}],
+            'dependencies':[{'id':'numpy','module':'numpy','path':'module.py','native':[]}],
+            'native':[{'id':'python-runtime','path':'python','architecture':platform.machine(),'version':'1'}], 'assets':[]}
+        self.runtime=RuntimeInventory(self.root,self.manifest,self.bindings)
+
+    def test_successful_load_retains_exact_object_and_logical_identity(self):
+        obj=object(); self.assertIs(self.runtime.load_model('m',lambda p:obj),obj)
+        value=self.runtime.snapshot()['models'][0]
+        self.assertEqual(value['identity'],self.manifest['models'][0])
+        self.assertEqual(value['source'],'model')
+        self.assertNotIn(str(self.root),json.dumps(self.runtime.snapshot()))
+        self.assertEqual(self.runtime.snapshot()['status'],'PARTIAL')
+
+    def test_exists_but_failed_load_is_never_loaded_including_retry(self):
+        self.runtime.load_model('m',lambda p:object())
+        def fail(p):raise RuntimeError('personal path must not be reported')
+        with self.assertRaisesRegex(ValueError,'model-load-or-identity-failed'):self.runtime.load_model('m',fail)
+        self.assertEqual(self.runtime.snapshot()['models'],[])
+        self.runtime.load_model('m',lambda p:object())
+        self.assertEqual(len(self.runtime.snapshot()['models']),1)
+
+    def test_wrong_digest_missing_unexpected_and_budget(self):
+        with self.assertRaises(ValueError):self.runtime.load_model('other',lambda p:object())
+        self.root.joinpath('model').write_bytes(b'wrong')
+        with self.assertRaises(ValueError):self.runtime.load_model('m',lambda p:object())
+        self.root.joinpath('model').unlink()
+        with self.assertRaises(ValueError):self.runtime.load_model('m',lambda p:object())
+        self.assertEqual(self.runtime.snapshot()['models'],[])
+
+    def test_changed_during_load_and_stale_after_load_clear_evidence(self):
+        def change(p):p.write_bytes(b'other');return object()
+        with self.assertRaises(ValueError):self.runtime.load_model('m',change)
+        self.root.joinpath('model').write_bytes(b'model')
+        self.runtime.load_model('m',lambda p:object())
+        self.root.joinpath('model').write_bytes(b'model')
+        self.assertEqual(self.runtime.snapshot()['status'],'BLOCKED')
+        self.assertEqual(self.runtime.loaded,{})
+
+    def test_dependency_real_file_scope_version_location_native(self):
+        b=self.bindings['dependencies'][0]
+        module=types.SimpleNamespace(__file__=str(self.root/'module.py'))
+        self.runtime.observe_dependency(b,lambda _:module,lambda _:'1')
+        self.assertEqual(self.runtime.snapshot()['dependencies'][0]['status'],'VERIFIED_ENTRY_FILE')
+        for importer,version in [(lambda _:module,lambda _:'2'),(lambda _:types.SimpleNamespace(__file__=str(self.root/'model')),lambda _:'1')]:
+            with self.assertRaises(ValueError):self.runtime.observe_dependency(b,importer,version)
+        b=copy.deepcopy(b);b['native']=[{'id':'python-runtime','path':'model'}]
+        with self.assertRaises(ValueError):self.runtime.observe_dependency(b,lambda _:module,lambda _:'1')
+
+    def test_executable_exact_path_architecture_and_no_path_guessing(self):
+        self.runtime.resolve_executable('python-runtime',self.root/'python')
+        with self.assertRaises(ValueError):self.runtime.resolve_executable('python-runtime',self.root/'module.py')
+        with self.assertRaises(ValueError):self.runtime.resolve_executable('ffmpeg',self.root/'python')
+        self.runtime.bindings['native'][0]['architecture']='wrong'
+        with self.assertRaises(ValueError):self.runtime.resolve_executable('python-runtime',self.root/'python')
+
+    def test_executable_architecture_label_cannot_override_actual_image(self):
+        for raw in (b'native', struct.pack('<8I', 0xfeedfacf,
+                0x1000007 if platform.machine() == 'arm64' else 0x100000c,
+                0, 2, 0, 0, 0, 0)):
+            self.root.joinpath('python').write_bytes(raw)
+            entry = self.runtime.manifest['assets'][0]
+            entry.update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+            with self.assertRaises(ValueError):
+                self.runtime.resolve_executable('python-runtime',self.root/'python')
+            self.assertNotIn('python-runtime',self.runtime.native)
+
+    def test_private_runtime_fat_cpu_selection_is_unique_and_disk_only(self):
+        from test_native_routing import macho, fat
+        raw=fat([(0x1000007,macho()),(0x100000c,macho(0x100000c))])
+        self.root.joinpath('python').write_bytes(raw)
+        self.runtime.manifest['assets'][0].update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        self.runtime.resolve_executable('python-runtime',self.root/'python')
+        evidence=self.runtime.native['python-runtime']
+        self.assertEqual(evidence['architectureEvidence'],'VERIFIED_DISK_IMAGE_HEADER')
+        self.assertFalse(evidence['loaderSelectionVerified'])
+        raw=fat([(0x1000007,macho()),(0x1000007,macho())])
+        self.root.joinpath('python').write_bytes(raw)
+        self.runtime.manifest['assets'][0].update(digest=hashlib.sha256(raw).hexdigest(),byteLength=len(raw))
+        with self.assertRaises(ValueError):
+            self.runtime.resolve_executable('python-runtime',self.root/'python')
+        self.assertNotIn('python-runtime',self.runtime.native)
+
+    def test_no_complete_claim_or_processing_on_metadata_partial_missing(self):
+        with self.assertRaisesRegex(ValueError,'strict-runtime-inventory-incomplete'):self.runtime.require_processing()
+        self.assertEqual(legacy_snapshot()['status'],'UNVERIFIED')
+        self.assertIn('models:m',self.runtime.snapshot()['missing'])
+
+    def test_runtime_root_symlink_is_never_an_authenticated_package_root(self):
+        real=self.root/'real-root';real.mkdir()
+        link=self.root/'linked-root';link.symlink_to(real,target_is_directory=True)
+        with self.assertRaisesRegex(ValueError,'unsafe-runtime-root'):
+            RuntimeInventory(link,self.manifest,self.bindings)
+
+    def test_runtime_root_identity_is_rechecked(self):
+        # Root identity is retained alongside per-file stamps. This synthetic
+        # mutation proves a changed package root cannot silently remain trusted.
+        self.runtime.root_identity=(-1,-1)
+        self.assertEqual(self.runtime.snapshot()['status'],'BLOCKED')
+        with self.assertRaisesRegex(ValueError,'stale-runtime-artifact'):
+            self.runtime.recheck()
+
+    def test_unsafe_path_symlink_ancestor_and_wrong_expected_inventory(self):
+        for path in ['../model','/model']:
+            self.runtime.bindings['models'][0]['path']=path
+            with self.assertRaises(ValueError):self.runtime.load_model('m',lambda p:object())
+        self.root.joinpath('linked').symlink_to(self.root,target_is_directory=True)
+        self.runtime.bindings['models'][0]['path']='linked/model'
+        with self.assertRaises(ValueError):self.runtime.load_model('m',lambda p:object())
+        wrong=copy.deepcopy(self.bindings);wrong['models']=[]
+        with self.assertRaises(ValueError):RuntimeInventory(self.root,self.manifest,wrong)
+
+    def test_authenticated_config_anchor_and_stale_manifest(self):
+        from test_distribution_binding import DistributionBindingTests
+        m,_=DistributionBindingTests().fixture()
+        raw=json.dumps(self.bindings,separators=(',',':')).encode()
+        self.root.joinpath('runtime-config.json').write_bytes(raw)
+        m['models']=self.manifest['models'];m['dependencies']=self.manifest['dependencies']
+        m['assets']=self.manifest['assets']+[{'id':'runtime-config','revision':'1','digest':hashlib.sha256(raw).hexdigest(),'byteLength':len(raw)}]
+        data=json.dumps(m,sort_keys=True,separators=(',',':')).encode()
+        self.root.joinpath('manifest.json').write_bytes(data);anchor=hashlib.sha256(data).hexdigest()
+        result=bootstrap(self.root/'manifest.json',anchor,m['buildRevision'],self.root)
+        self.assertEqual(result.snapshot()['status'],'PARTIAL')
+        for digest,build in [(None,m['buildRevision']),(anchor,'stale')]:
+            with self.assertRaises(ValueError):bootstrap(self.root/'manifest.json',digest,build,self.root)
+        self.root.joinpath('runtime-config.json').write_bytes(b'{}')
+        with self.assertRaises(ValueError):bootstrap(self.root/'manifest.json',anchor,m['buildRevision'],self.root)
+
+    def test_offline_static_inventory_detects_local_remote_registry_and_subprocess(self):
+        import importlib.util
+        source=Path(__file__).resolve().parents[2]/'scripts'/'music-offline-asset-inventory.py'
+        spec=importlib.util.spec_from_file_location('offline_inventory_fixture',source)
+        scanner=importlib.util.module_from_spec(spec);spec.loader.exec_module(scanner)
+        self.root.joinpath('app.js').write_text('fetch("https://cdn.example.invalid/a.js");')
+        self.root.joinpath('helper.py').write_text('subprocess.run(command)\n# pip install sample\nget_model()')
+        result=scanner.inspect(self.root,['app.js','helper.py'])
+        self.assertEqual(result['liveRequests'],0)
+        self.assertEqual(len(result['assets']),2)
+        self.assertIn('PACKAGE_REGISTRY_INSTALL',{e['kind'] for e in result['externalReferences']})
+        self.assertIn('NATIVE_OR_SUBPROCESS_REQUIREMENT',{e['kind'] for e in result['externalReferences']})
+        self.assertEqual(result['externalReferences'][0]['host'],'cdn.example.invalid')
+        self.assertTrue(all(e['distributionStatus']=='UNVERIFIED' for e in result['assets']))
+
+    def test_malformed_url_does_not_hide_valid_hosts_or_certify_offline(self):
+        import importlib.util
+        source=Path(__file__).resolve().parents[2]/'scripts'/'music-offline-asset-inventory.py'
+        spec=importlib.util.spec_from_file_location('offline_malformed_fixture',source)
+        scanner=importlib.util.module_from_spec(spec);spec.loader.exec_module(scanner)
+        self.root.joinpath('app.js').write_text('"http://[broken" "https://cdn.example.invalid/a" "http://[::1]/"')
+        result=scanner.inspect(self.root,['app.js'])
+        invalid=[e for e in result['externalReferences'] if e['kind']=='INVALID_URL_REFERENCE']
+        self.assertEqual(len(invalid),1)
+        self.assertEqual(invalid[0]['classification'],'UNVERIFIED')
+        self.assertEqual(invalid[0]['status'],'UNVERIFIED')
+        self.assertIn('cdn.example.invalid',{e.get('host') for e in result['externalReferences']})
+        self.assertEqual(result['actualOfflineDistribution'],'OPEN')
+        self.assertEqual(result['liveRequests'],0)
+
+    def test_missing_companion_inventory_and_model_budget_fail_closed(self):
+        wrong=copy.deepcopy(self.bindings);wrong['native']=[]
+        with self.assertRaisesRegex(ValueError,'missing-or-unexpected-local-asset'):
+            RuntimeInventory(self.root,self.manifest,wrong)
+        small=RuntimeInventory(self.root,self.manifest,self.bindings,max_bytes=4)
+        with self.assertRaises(ValueError):small.load_model('m',lambda p:object())
+        self.assertEqual(small.snapshot()['models'],[])
+
+    def test_strict_guard_blocks_socket_and_subprocess_before_execution(self):
+        import subprocess
+        import sys
+        code="""
+from runtime_inventory import install_offline_guard
+import socket, subprocess, sys
+install_offline_guard()
+blocked=0
+for call in (lambda: socket.socket().connect(('127.0.0.1', 1)), lambda: subprocess.run([sys.executable, '-c', 'pass'])):
+    try: call()
+    except PermissionError: blocked+=1
+assert blocked==2
+"""
+        subprocess.run([sys.executable,'-c',code],cwd=Path(__file__).parent,check=True,capture_output=True,timeout=5)
+
+    def test_strict_startup_never_executes_missing_or_wrong_runtime_source(self):
+        import shutil
+        import subprocess
+        import sys
+        from test_distribution_binding import DistributionBindingTests
+        original=Path(__file__).parent
+        pipeline=self.root/'pipeline';pipeline.mkdir()
+        for name in ['server.py','helper_identity.py','dependency_identity.py','distribution_binding.py','requirements.txt']:
+            shutil.copyfile(original/name,pipeline/name)
+        source=(original/'runtime_inventory.py').read_bytes()
+        (pipeline/'runtime_inventory.py').write_text('raise AssertionError("must never execute unverified code")')
+        code="""
+import importlib.util
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('fixture_server',Path('server.py'))
+s=importlib.util.module_from_spec(spec);spec.loader.exec_module(s)
+assert s._runtime_module is None
+s.initialize_runtime()
+assert s._runtime_module is None
+assert s.BOOTSTRAP_ERROR=='authenticated-runtime-bootstrap-incomplete'
+assert s.runtime_snapshot()['status']=='BLOCKED'
+"""
+        for include in [False,True]:
+            manifest,_=DistributionBindingTests().fixture()
+            manifest['assets']=([{'id':'runtime-inventory-source','revision':'1','digest':hashlib.sha256(source).hexdigest(),'byteLength':len(source)}] if include else [])
+            raw=json.dumps(manifest,sort_keys=True,separators=(',',':')).encode()
+            path=pipeline/'manifest.json';path.write_bytes(raw)
+            env={'NOVA_TRUSTED_MANIFEST_PATH':str(path),'NOVA_TRUSTED_MANIFEST_DIGEST':hashlib.sha256(raw).hexdigest(),'NOVA_EXPECTED_BUILD_REVISION':manifest['buildRevision']}
+            subprocess.run([sys.executable,'-c',code],cwd=pipeline,env=env,check=True,capture_output=True,timeout=5)

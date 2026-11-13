@@ -1,0 +1,20 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const fixture=new Function('require',fs.readFileSync('tests/music-studio-ai-midi-candidate-import.test.js','utf8').split('\ntest(')[0]+'\nreturn fixture;')(require);
+test('hosted editor never dispatches model requests; local host must be explicit',async()=>{const f=fixture();let calls=0;f.a.localGenerationRequest=async()=>{calls++};await f.panel.generateLocalModel(f.p.projectId);assert.equal(calls,0);assert.equal(f.panel._states.get(f.p.projectId).localModelBusy,undefined)});
+for(const change of ['midi','range','workspace','session'])test(`late real-model response cannot replace a changed ${change}`,async()=>{const f=fixture();f.w.location.hostname='127.0.0.1';let resolve;f.a.localGenerationRequest=()=>new Promise(r=>resolve=r);const pending=f.panel.generateLocalModel(f.p.projectId);if(change==='midi')f.s.midiData.tracks[0].notes[0].pitch++;if(change==='range')f.s.editRange={startMeasure:1,endMeasure:1};if(change==='workspace')f.panel._states.get(f.p.projectId).state.workspace.history.push({kind:'newer'});if(change==='session')f.a.state.midiEditor=f.core.createCoordinatedSession(f.p);resolve({model:'skytnt/midi-model-tv2o-medium',synthetic:false,candidates:[]});await pending;const r=f.panel._states.get(f.p.projectId);assert.equal(r.state.workspace.candidateSets.length,0);assert.equal(r.localModelBusy,false)});
+test('missing local runtime reports failure and retains notes/candidate workspace',async()=>{const f=fixture();f.w.location.hostname='127.0.0.1';const original=JSON.stringify(f.s.midiData);f.a.localGenerationRequest=async()=>{throw Error('local-model-not-configured')};await f.panel.generateLocalModel(f.p.projectId);const r=f.panel._states.get(f.p.projectId);assert.match(r.message,/local-model-not-configured/);assert.equal(r.state.workspace.candidateSets.length,0);assert.equal(JSON.stringify(f.s.midiData),original);assert.equal(r.localModelBusy,false)});
+
+test('model action without an open MIDI session fails before dispatch',async()=>{const f=fixture();f.w.location.hostname='127.0.0.1';f.a.state.midiEditor=null;let calls=0;f.a.localGenerationRequest=async()=>{calls++};assert.equal((await f.panel.generateLocalModel(f.p.projectId)).reason,'midi-session-required');assert.equal(calls,0)});
+
+test('paired host marker permits request from iPad URL and retains failure without mutation',async()=>{const f=fixture();f.w.location.hostname='192.168.1.20';f.w.__NOVA_GENERATION_HOST__=true;let calls=0;f.a.localGenerationRequest=async()=>{calls++;throw Error('mac-disconnected')};const before=JSON.stringify(f.s.midiData);await f.panel.generateLocalModel(f.p.projectId);assert.equal(calls,1);assert.equal(JSON.stringify(f.s.midiData),before);assert.match(f.panel._states.get(f.p.projectId).message,/mac-disconnected/)});
+
+test('explicit mood genre and chord settings reach the local engine without changing original MIDI',async()=>{
+ const f=fixture();f.w.location.hostname='127.0.0.1';
+ const fields={'#aiModelMood':'切ない','#aiModelGenre':'ballad','#aiModelChords':'Dm Gm A7 Dm','#aiModelRange':'57:77'};
+ f.w.document={querySelector:s=>({value:fields[s]||''}),querySelectorAll:()=>[]};
+ const before=JSON.stringify(f.s.midiData);let request;
+ f.a.localGenerationRequest=async(kind,body)=>{request={kind,body};throw Error('deliberate-offline')};
+ await f.panel.generateLocalModel(f.p.projectId);
+ assert.equal(request.kind,'compose');assert.equal(request.body.description,'切ない');assert.equal(request.body.genre,'ballad');assert.equal(request.body.chords,'Dm Gm A7 Dm');assert.equal(request.body.pitch_min,57);
+ assert.equal(JSON.stringify(f.s.midiData),before);assert.equal(f.panel._states.get(f.p.projectId).modelChords,'Dm Gm A7 Dm');
+});

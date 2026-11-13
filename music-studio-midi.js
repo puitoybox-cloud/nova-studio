@@ -9,12 +9,37 @@
   function encodeVariableLengthQuantity(value){if(!Number.isInteger(value)||value<0||value>MAX_VLQ)throw new RangeError('可変長数値は0〜268435455の整数で指定してください。');let buffer=value&0x7f,out=[];while((value>>>=7))buffer=(buffer<<8)|((value&0x7f)|0x80);for(;;){out.push(buffer&255);if(buffer&0x80)buffer>>>=8;else break}return Uint8Array.from(out)}
   function safeInt(value,min,max){const number=Number(value);return Number.isInteger(number)&&number>=min&&number<=max?number:null}
   function parseTimeSignature(value){let numerator,denominator;if(typeof value==='string')[numerator,denominator]=value.split('/').map(Number);else({numerator,denominator}=(value||{}));if(!Number.isInteger(numerator)||numerator<1||numerator>255||![1,2,4,8,16,32].includes(denominator))return null;return{numerator,denominator}}
+  function signatureMaps(data,timeSignature,errors){
+    const timeSignatureMap=[],keySignatureMap=[];
+    for(const [field,target] of [['timeSignatureMap',timeSignatureMap],['keySignatureMap',keySignatureMap]]){
+      if(data[field]!=null&&!Array.isArray(data[field])){errors.push(field+'は配列で指定してください。');continue}
+      const source=Array.isArray(data[field])?data[field]:(field==='keySignatureMap'&&data.keySignature?[data.keySignature]:[]);
+      for(const item of source){
+        const tick=typeof item?.tick==='number'?safeInt(item.tick,0,MAX_TICK):null;
+        if(tick===null){errors.push(field+'のtickが不正です。');continue}
+        if(field==='timeSignatureMap'){
+          const signature=parseTimeSignature(item),clocksPerClick=item.clocksPerClick??24,thirtySecondsPerQuarter=item.thirtySecondsPerQuarter??8;
+          if(!signature||safeInt(clocksPerClick,0,255)===null||safeInt(thirtySecondsPerQuarter,0,255)===null){errors.push(field+'の拍子または値が不正です。');continue}
+          target.push({tick,...signature,clocksPerClick,thirtySecondsPerQuarter});
+        }else{
+          if(typeof item.sharps!=='number'||safeInt(item.sharps,-7,7)===null||typeof item.minor!=='boolean'){errors.push(field+'のKey Signatureが不正です。');continue}
+          target.push({tick,sharps:item.sharps,minor:item.minor});
+        }
+      }
+      target.sort((a,b)=>a.tick-b.tick);
+    }
+    if(timeSignature){
+      for(const item of timeSignatureMap.filter(item=>item.tick===0))if(item.numerator!==timeSignature.numerator||item.denominator!==timeSignature.denominator)errors.push('timeSignatureMapの初期拍子がtimeSignatureと一致しません。');
+      if(!timeSignatureMap.some(item=>item.tick===0))timeSignatureMap.unshift({tick:0,...timeSignature,clocksPerClick:24,thirtySecondsPerQuarter:8});
+    }
+    return{timeSignatureMap,keySignatureMap};
+  }
   function validateMidiProjectData(input){
     const errors=[],warnings=[],data=input&&typeof input==='object'?input:{};
     const ppq=safeInt(data.ppq,24,0x7fff);if(ppq===null)errors.push('PPQは24〜32767の整数で指定してください。');
     const tempo=Number(data.tempo);if(!Number.isFinite(tempo)||tempo<20||tempo>400)errors.push('BPMは20〜400で指定してください。');
     const tempoByTick=new Map();for(const item of Array.isArray(data.tempoMap)?data.tempoMap:[]){const tick=safeInt(Math.round(Number(item?.tick)),0,MAX_TICK),bpm=Number(item?.bpm??(Number(item?.microsecondsPerQuarter)>0?60000000/Number(item.microsecondsPerQuarter):NaN));if(tick===null||!Number.isFinite(bpm)||bpm<20||bpm>400){errors.push('tempoMapのtickまたはBPMが不正です。');continue}tempoByTick.set(tick,{tick,bpm,microsecondsPerQuarter:Math.round(60000000/bpm),track:Number.isInteger(Number(item?.track))?Number(item.track):0})}tempoByTick.set(0,{tick:0,bpm:Number.isFinite(tempo)?tempo:120,microsecondsPerQuarter:Math.round(60000000/(Number.isFinite(tempo)?tempo:120)),track:tempoByTick.get(0)?.track??0});const tempoMap=[...tempoByTick.values()].sort((a,b)=>a.tick-b.tick);
-    const timeSignature=parseTimeSignature(data.timeSignature);if(!timeSignature)errors.push('拍子は1〜255／1・2・4・8・16・32で指定してください。');
+    const timeSignature=parseTimeSignature(data.timeSignature);if(!timeSignature)errors.push('拍子は1〜255／1・2・4・8・16・32で指定してください。');const maps=signatureMaps(data,timeSignature,errors);
     if(!Array.isArray(data.tracks)||data.tracks.length===0)errors.push('演奏トラックがありません。');
     const ids=new Set(),tracks=[];let noteCount=0;
     for(const [trackIndex,track] of (Array.isArray(data.tracks)?data.tracks:[]).entries()){
@@ -42,13 +67,20 @@
     const noteEnd=tracks.reduce((maximum,track)=>Math.max(maximum,...track.notes.map(note=>note.startTick+note.durationTicks)),0),totalTick=data.totalTick==null?noteEnd:safeInt(data.totalTick,0,MAX_TICK);
     if(totalTick===null)errors.push('曲の長さtickが不正です。');else if(totalTick<noteEnd)errors.push('曲の長さより後ろにノートがあります。');
     if(totalTick!==null&&tempoMap.some(item=>item.tick>totalTick))errors.push('曲の長さより後ろにTempo Changeがあります。');
-    return{ok:errors.length===0,errors,warnings,data:{version:Number(data.version)||1,ppq:ppq??480,tempo:Number.isFinite(tempo)?tempo:120,tempoMap,timeSignature:timeSignature||{numerator:4,denominator:4},totalTick:totalTick??noteEnd,tracks},trackCount:tracks.filter(track=>track.notes.length).length,noteCount};
+    for(const field of ['timeSignatureMap','keySignatureMap'])if(totalTick!==null&&maps[field].some(item=>item.tick>totalTick))errors.push('曲の長さより後ろに'+field+'があります。');
+    return{ok:errors.length===0,errors,warnings,data:{...maps,version:Number(data.version)||1,ppq:ppq??480,tempo:Number.isFinite(tempo)?tempo:120,tempoMap,timeSignature:timeSignature||{numerator:4,denominator:4},totalTick:totalTick??noteEnd,tracks},trackCount:tracks.filter(track=>track.notes.length).length,noteCount};
   }
   function meta(type,data){return[0xff,type,...encodeVariableLengthQuantity(data.length),...data]}
   function event(delta,bytes){return[...encodeVariableLengthQuantity(delta),...bytes]}
   function chunk(id,data){return Uint8Array.from([...utf8(id),...u32(data.length),...data])}
   function createMidiHeader(trackCount,ppq){if(!Number.isInteger(trackCount)||trackCount<1||trackCount>0xffff)throw Error('MIDIトラック数が不正です。');if(!Number.isInteger(ppq)||ppq<24||ppq>0x7fff)throw Error('PPQが不正です。');return Uint8Array.from([...utf8('MThd'),...u32(6),...u16(1),...u16(trackCount),...u16(ppq)]) }
-  function createTempoTrack(data){const ts=data.timeSignature,exponent=Math.log2(ts.denominator),events=[{tick:0,order:0,bytes:meta(0x03,utf8('Tempo & Signature'))},{tick:0,order:2,bytes:meta(0x58,[ts.numerator,exponent,24,8])}];for(const item of data.tempoMap||[{tick:0,bpm:data.tempo}]){const micros=Math.round(60000000/item.bpm);if(micros<1||micros>0xffffff)throw Error('BPMをテンポイベントへ変換できません。');events.push({tick:item.tick,order:1,bytes:meta(0x51,[(micros>>>16)&255,(micros>>>8)&255,micros&255])})}events.sort((a,b)=>a.tick-b.tick||a.order-b.order);let previous=0;const body=[];for(const item of events){body.push(...event(item.tick-previous,item.bytes));previous=item.tick}body.push(...event(Math.max(0,data.totalTick-previous),meta(0x2f,[])));return chunk('MTrk',body)}
+  function createTempoTrack(data){
+    const events=[{tick:0,order:0,bytes:meta(0x03,utf8('Tempo & Signature'))}];
+    for(const item of data.timeSignatureMap)events.push({tick:item.tick,order:2,bytes:meta(0x58,[item.numerator,Math.log2(item.denominator),item.clocksPerClick,item.thirtySecondsPerQuarter])});
+    for(const item of data.keySignatureMap)events.push({tick:item.tick,order:3,bytes:meta(0x59,[item.sharps&255,item.minor?1:0])});
+    for(const item of data.tempoMap||[{tick:0,bpm:data.tempo}]){const micros=Math.round(60000000/item.bpm);if(micros<1||micros>0xffffff)throw Error('BPMをテンポイベントへ変換できません。');events.push({tick:item.tick,order:1,bytes:meta(0x51,[(micros>>>16)&255,(micros>>>8)&255,micros&255])})}
+    events.sort((a,b)=>a.tick-b.tick||a.order-b.order);let previous=0;const body=[];for(const item of events){body.push(...event(item.tick-previous,item.bytes));previous=item.tick}body.push(...event(Math.max(0,data.totalTick-previous),meta(0x2f,[])));return chunk('MTrk',body)
+  }
   function createNoteTrack(track,totalTick){const channel=track.channel-1,events=[];if(track.program!==null)events.push({tick:0,order:1,bytes:[0xc0|channel,track.program]});for(const note of track.notes){events.push({tick:note.startTick,order:2,bytes:[0x90|channel,note.pitch,note.velocity]});events.push({tick:note.startTick+note.durationTicks,order:0,bytes:[0x80|channel,note.pitch,0]})}events.sort((a,b)=>a.tick-b.tick||a.order-b.order||a.bytes[1]-b.bytes[1]);let previous=0;const body=[...event(0,meta(0x03,utf8(track.name)))];for(const item of events){body.push(...event(item.tick-previous,item.bytes));previous=item.tick}body.push(...event(totalTick-previous,meta(0x2f,[])));return chunk('MTrk',body)}
   function concat(parts){const size=parts.reduce((sum,part)=>sum+part.length,0),bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length}return bytes}
   function createMidiFile(input){const checked=validateMidiProjectData(input);if(!checked.ok){const error=Error(checked.errors.join(' '));error.validation=checked;throw error}const playable=checked.data.tracks.filter(track=>track.notes.length);const tracks=[createTempoTrack(checked.data),...playable.map(track=>createNoteTrack(track,checked.data.totalTick))];const bytes=concat([createMidiHeader(tracks.length,checked.data.ppq),...tracks]);const inspection=inspectMidiBytes(bytes);if(!inspection.ok){const error=Error(`生成後のMIDI検査に失敗しました：${inspection.errors.join(' ')}`);error.inspection=inspection;throw error}return{bytes,validation:checked,inspection}}
