@@ -1937,7 +1937,7 @@
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "全素材形式の列挙と曲全体Mixの参照音声比較が未完。既存のMIDI/PCM/WAV/Take試験だけで全形式・配置・依存条件を受入済みとしない。",
+        "note": "曲全体MixとAuto-Finishの容量判定を編集後のテイク長・同期位置に統一し、デコード後の実フレーム数を照合。Node回帰でPCM・WAV・編集Takeの混在、全サンプル比較と破損拒否を検証。実MIDI音声化を含む混在Mixの実ブラウザ再開・全入力形式と依存条件の照合が残る。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

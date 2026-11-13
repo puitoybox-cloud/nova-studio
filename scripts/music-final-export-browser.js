@@ -12,5 +12,66 @@ const downloadPromise=page.waitForEvent('download');await panel.getByRole('butto
 await panel.getByText('History（作成履歴・直近100件）',{exact:true}).click();await panel.getByText('Delivery（書き出し履歴・直近100件）',{exact:true}).click();const metrics=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.music-final-export button')].every(b=>b.getBoundingClientRect().height>=44),japanese:document.querySelector('.music-final-export').textContent.includes('楽曲ミックス')}));assert.equal(metrics.overflow,false);assert.equal(metrics.buttons,true);assert.equal(metrics.japanese,true);await page.screenshot({path:`verification/music-final-export-${width}.png`,fullPage:true});
 const recovery=await page.evaluate(async()=>{const a=MusicStudio,c=a.finalExport.candidate,expected=await Promise.all(c.files.filter(f=>f.name!=='Manifest.json').map(async f=>({name:f.name,bytes:Array.from(new Uint8Array(await f.blob.arrayBuffer()))}))),archive=await a.createLongWavArchive(),r=await a.restoreLongWavArchive(archive,{settings:false});if(!r.ok)throw Error(r.error);const restored=r.projects.find(p=>p.finalExportPlan);if(!restored)throw Error('restore-plan');if(restored.finalExportDeliveries?.[0]?.completion!=='browser-download-requested')throw Error('restore-delivery-history');const result=await a.finalReplay(restored.projectId,restored.finalExportHistory[0].id);if(!result.ok)throw Error(result.error);const actual=result.candidate.files.filter(f=>f.name.endsWith('.wav'));const before=c.files.filter(f=>f.name.endsWith('.wav'));for(let i=0;i<before.length;i++)if(JSON.stringify(Array.from(new Uint8Array(await before[i].blob.arrayBuffer())))!==JSON.stringify(Array.from(new Uint8Array(await actual[i].blob.arrayBuffer()))))throw Error('restore-audio-diff');return{archive:true,remappedPlan:true,identicalAudio:true,expected}});
 await page.close();const reopen=await context.newPage();monitor(reopen);await reopen.goto(base+'/music-studio.html#music-studio/mixing/final-export-browser');await reopen.waitForFunction(()=>MusicStudio.state.projects.some(p=>p.projectId==='final-export-browser'));await reopen.locator('.music-final-export').getByText('History（作成履歴・直近100件）',{exact:true}).click();await reopen.getByRole('button',{name:'Retry（この設定で再作成）',exact:true}).click();await reopen.waitForFunction(()=>!MusicStudio.finalExport.busy&&!!MusicStudio.finalExport.candidate);const bytes=await reopen.evaluate(async()=>{const a=MusicStudio,p=a.state.projects.find(p=>p.projectId==='final-export-browser');if(p.finalExportHistory.length!==1)throw Error('history-reopen');if(p.finalExportDeliveries?.[0]?.completion!=='browser-download-requested')throw Error('delivery-reopen');if(!a.finalExport.message.includes('現在の保存済み音声'))throw Error('replay-disclosure');return Promise.all(a.finalExport.candidate.files.filter(f=>f.name!=='Manifest.json').map(async f=>({name:f.name,bytes:Array.from(new Uint8Array(await f.blob.arrayBuffer()))})))});assert.deepEqual(bytes,recovery.expected);assert.deepEqual(consoleMessages,[]);assert.deepEqual(external,[]);report.push({width,...evidence,...metrics,archive:true,reopenIdentical:true,remappedPlan:true,downloadVerified:true,deliveryHistoryRestored:true,historyReplayIdenticalAudio:true,console:consoleMessages,external});await context.close();}
-fs.writeFileSync(path.join(root,'verification/music-final-export-browser.json'),JSON.stringify({head:require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),report},null,2));console.log(JSON.stringify(report));
+const mixed = await browser.newPage();
+await mixed.goto(base+'/music-studio.html');
+await mixed.waitForFunction(()=>MusicStudio.state.loaded);
+const mixedSources = await mixed.evaluate(async()=>{
+  const app=MusicStudio,repo=app.indexedDbRepository(),id='whole-song-mixed-sources';
+  const requireOk=result=>{if(!result.ok)throw Error(result.error);return result};
+  const wave=(amplitude,frames=24000)=>({sampleRate:48000,channels:[Array.from({length:frames},(_,i)=>((i%40<20?1:-1)*amplitude)/32768)]});
+  const project=app.pcmImport(app.makeProject({projectId:id,projectName:'Whole song mixed sources',bpm:120,midiData:{ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},tracks:[{id:'lead',channel:1,name:'Piano',notes:[{id:'n1',pitch:60,startTick:0,durationTicks:480,velocity:70}]}]}}),wave(240),'PCM.wav');
+  app.setRepository(repo);
+  await repo.put(project);
+  app.state.projects=[project];
+  app.pcmOpen(id);
+  const imported=requireOk(await app.pcmImportLongFile(new File([app.pcmEncodeWav(wave(320))],'Long.wav'),id));
+  const midi=requireOk(await app.midiRenderForMix(id,'lead'));
+  const recorded=app.vocalWav(wave(480).channels,48000);
+  const digest=async blob=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),byte=>byte.toString(16).padStart(2,'0')).join('');
+  const take={id:'take',name:'Take.wav',size:recorded.blob.size,frames:recorded.frames,sampleRate:48000,channels:1,
+    hashes:[await digest(recorded.blob)],vocalTake:{format:'nova-vocal-take-v1',recordedAt:new Date().toISOString(),captureMime:'audio/wav',clippedSamples:0,waveform:recorded.waveform,cursor:0,
+      edits:[{first:1200,end:19200,gainDb:0,startTick:480,latencyMs:100}]}};
+  const baseline=await repo.get(id);
+  const saved={...baseline,longWavAssets:[...baseline.longWavAssets,take]};
+  await repo.putLongWav(saved,{id:take.id,blob:recorded.blob,hashes:take.hashes},JSON.stringify(baseline));
+  app.state.projects=[saved];
+  const plan={format:'nova-final-export-plan-v1',targetLufs:-18,ceilingDb:-1,includeMidi:true,
+    routes:[
+      {key:'pcm:'+project.pcmMix.assets[0].id,role:'instrument',startSeconds:0,gainDb:0,muted:false},
+      {key:'wav:'+imported.assetId,role:'instrument',startSeconds:.125,gainDb:0,muted:false},
+      {key:'wav:'+midi.assetId,role:'instrument',startSeconds:.25,gainDb:0,muted:false},
+      {key:'wav:'+take.id,role:'vocal',startSeconds:.125,gainDb:0,muted:false}
+    ]};
+  const expectedStarts=[0,6000,12000,26400];
+  const midiBlob=await app.pcmLoadLongWav(id,midi.assetId);
+  const midiAudio=app.pcmDecodeWav(await midiBlob.arrayBuffer()).channels;
+  const candidate=requireOk(await app.finalPreview(id,plan)).candidate;
+  if(JSON.stringify(candidate.manifest.handoff.stems.map(s=>s.sourceStartFrame))!==JSON.stringify(expectedStarts))throw Error('mixed-placement');
+  const frames=12000+midiAudio[0].length;
+  if(candidate.manifest.frames!==frames)throw Error('mixed-duration');
+  const mix=candidate.files.find(file=>file.name==='Mix.wav').blob;
+  const pcm=new DataView(await mix.arrayBuffer());
+  const signal=(index,frames,amplitude)=>index>=0&&index<frames?((index%40<20?1:-1)*amplitude):0;
+  for(let i=0;i<frames;i++){
+    const mono=signal(i,24000,240)+signal(i-6000,24000,320)+signal(i-26400,18000,480);
+    for(let c=0;c<2;c++){
+      const reference=mono+(midiAudio[c][i-12000]??0)*32768;
+      if(pcm.getInt16(44+(i*2+c)*2,true)!==reference)throw Error('mixed-sample '+i+' channel '+c);
+    }
+  }
+  requireOk(await app.finalSave(id));
+  return {id,frames,starts:expectedStarts,hash:await digest(mix)};
+});
+await mixed.reload();
+await mixed.waitForFunction(id=>MusicStudio.state.projects.some(p=>p.projectId===id),mixedSources.id);
+const restartedHash=await mixed.evaluate(async id=>{
+  const app=MusicStudio,project=app.state.projects.find(p=>p.projectId===id);
+  const result=await app.finalReplay(id,project.finalExportHistory[0].id);
+  if(!result.ok)throw Error(result.error);
+  const blob=result.candidate.files.find(file=>file.name==='Mix.wav').blob;
+  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),byte=>byte.toString(16).padStart(2,'0')).join('');
+},mixedSources.id);
+assert.equal(restartedHash,mixedSources.hash);
+await mixed.close();
+fs.writeFileSync(path.join(root,'verification/music-final-export-browser.json'),JSON.stringify({head:require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),report,mixedSources:{...mixedSources,reopenIdentical:true}},null,2));console.log(JSON.stringify({report,mixedSources}));
 }finally{clearTimeout(deadline);await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});
