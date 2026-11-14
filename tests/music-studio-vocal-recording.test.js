@@ -36,6 +36,28 @@ function capture(f,{deny=false,late=false,empty=false}={}){
  w.MediaRecorder=class{static isTypeSupported(){return true}constructor(){this.state='inactive';this.mimeType='audio/webm'}start(){this.state='recording';this.onstart?.()}stop(){this.state='inactive';if(!empty)this.ondataavailable?.({data:new Blob(['actual encoded bytes'])});setImmediate(()=>this.onstop?.())}};
  return{get stopped(){return stopped},resolve(){deliver(stream)}};
 }
+for(const switchBack of [false,true])test('repository switch seals the original recording journal, switch back='+switchBack,async()=>{
+ const f=await setup(),c=capture(f),a=f.a,id=f.p.projectId;
+ assert.equal((await a.vocalStart(id)).ok,true);
+ const journalId=a.vocal.recorder.journalId,completion=a.vocal.completion;
+ const replacement=a.memoryRepository([f.p]);
+ a.setRepository(replacement);
+ if(switchBack)a.setRepository(f.repo);
+ assert.equal((await completion).error,'vocal-recording-stale');
+ assert.ok(c.stopped>0);
+ assert.equal(JSON.stringify(await replacement.get(id)),JSON.stringify(f.p));
+ assert.equal(JSON.stringify(await f.repo.get(id)),JSON.stringify(f.p));
+ const journal=await f.repo.getVocalJournal(journalId);
+ assert.equal(journal.closed,true);
+ assert.equal(journal.next,1);
+ a.setRepository(f.repo);
+ await a.refresh();
+ const recovered=await a.vocalRecoverJournal(journalId);
+ assert.equal(recovered.ok,true,recovered.error);
+ assert.equal(recovered.project.longWavAssets.length,1);
+ assert.equal(recovered.project.productionHistory.filter(event=>event.journalId===journalId).length,1);
+});
+
 test('vocal capture Stop atomically saves bytes; fresh app edits and full archive recovers identical rendered WAV',async()=>{
  const f=await setup(),c=capture(f),a=f.a,id=f.p.projectId;assert.equal((await a.vocalStart(id)).ok,true);assert.equal(a.vocal.phase,'recording');assert.equal(a.pcmOpen(id),false);assert.equal((await a.vocalStop()).ok,true);assert.equal(a.vocal.phase,'saved');assert.ok(c.stopped>0);const asset=(await f.repo.get(id)).longWavAssets[0];assert.equal(asset.frames,800);assert.equal(asset.vocalTake.waveform.length,240);
  const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();const b=fresh.a;assert.equal((await b.vocalEdit(id,asset.id,{first:80,end:720,gainDb:-6,startTick:480,latencyMs:25})).ok,true);let r=await b.vocalRender(id,asset.id);assert.equal(r.blob.size,44+640*2);assert.ok(r.startSeconds>=0);assert.equal((await b.vocalEdit(id,asset.id,null,-1)).ok,true);assert.equal((await b.vocalRender(id,asset.id)).blob.size,1644);assert.equal((await b.vocalEdit(id,asset.id,null,1)).ok,true);const archive=await b.createLongWavArchive();const before=JSON.stringify(await f.repo.get(id));const restored=await b.restoreLongWavArchive(archive,{settings:false});assert.equal(restored.ok,true,restored.error);const p=restored.projects.find(p=>p.longWavAssets?.[0]?.vocalTake);assert.notEqual(p.projectId,id);const copy=await b.vocalRender(p.projectId,p.longWavAssets[0].id);assert.equal(Buffer.compare(Buffer.from(await r.blob.arrayBuffer()),Buffer.from(await copy.blob.arrayBuffer())),0);assert.equal(JSON.stringify(await f.repo.get(id)),before);

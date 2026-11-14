@@ -22,7 +22,9 @@ class LaunchLifecycle(unittest.TestCase):
             marker = Path(directory) / 'pid'
             child_code = ('import os,signal,time,pathlib; '
                           'signal.signal(signal.SIGTERM, signal.SIG_IGN); '
-                          'pathlib.Path(' + repr(str(marker)) + ').write_text(str(os.getpid())); '
+                          'marker=pathlib.Path(' + repr(str(marker)) + '); '
+                          'temporary=marker.with_suffix(".tmp"); '
+                          'temporary.write_text(str(os.getpid())); temporary.replace(marker); '
                           'time.sleep(60)')
             wrapper = 'from launch import run_engine; import sys; sys.exit(run_engine(' + repr([sys.executable, '-c', child_code]) + '))'
             parent = subprocess.Popen([sys.executable, '-c', wrapper], cwd=HERE)

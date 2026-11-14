@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.227';
+  const ASSET_VERSION='1.4.228';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -760,8 +760,20 @@
         return record;
       },async deleteAutoBackup(id,guard){await request(AUTO_BACKUP_STORE_NAME,'readwrite',store=>store.delete(id),guard)},async listMidiHistory(){return request(MIDI_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiHistory(value){await request(MIDI_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)},async listMidiImportHistory(){return request(MIDI_IMPORT_HISTORY_STORE_NAME,'readonly',store=>store.getAll())},async putMidiImportHistory(value){await request(MIDI_IMPORT_HISTORY_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value)}};
   }
-  let repository=indexedDbRepository();
-  function setRepository(next){if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);cancelBackupRestore();if(repository!==next){invalidateArchiveTransfer();state.backupPreview=null;state.autoBackups=[]}repository=next}
+  let repository=indexedDbRepository(),repositoryGeneration=0;
+  function setRepository(next){
+    if(localVocalJob?.phase==='requesting')cancelLocalScoreVocal(localVocalJob.id);
+    cancelBackupRestore();
+    if(repository===next)return;
+    invalidateArchiveTransfer();
+    state.backupPreview=null;
+    state.autoBackups=[];
+    repository=next;
+    repositoryGeneration++;
+    // Flush and seal the journal in the original repository. The recording
+    // guard rejects publishing its WAV against the new repository.
+    if(vocal.target!==next&&['armed','recording','paused'].includes(vocal.phase))vocalStop();
+  }
   async function loadSettings(){let stored=null;try{stored=await repository.getSettings?.()}catch(error){console.warn('Music Studio settings could not be read',error)}const normalized=preserveRestoreSettings(stored||{});state.settings=normalized;state.settingsDraft=clone(normalized);if(!stored)try{await repository.putSettings?.(normalized)}catch(error){console.warn('Music Studio default settings could not be saved',error)}return normalized}
   async function refresh(){const target=repository,baseline=JSON.stringify(state.projects),projects=await target.list();if(repository!==target||JSON.stringify(state.projects)!==baseline)return{ok:false,stale:true};state.projects=projects.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));state.loaded=true;requestPaint();return{ok:true}}
   let noticeTimer=null;
@@ -2385,9 +2397,9 @@
     editorStopCandidateAudition();
     const cycleContinuation=vocalCycle.active&&cycleToken===vocalCycle.options&&!vocal.finishing&&!vocal.pending&&['idle','saved','error'].includes(vocal.phase);
     if((vocalBusy()&&!cycleContinuation)||shutdownPromise||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||pcmEditor.busy||archiveTransfer.busy)return{ok:false,error:'vocal-operation-busy-or-unsaved'};
-    const target=repository,p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),token=++vocal.generation;let stream,context;
+    const target=repository,storageGeneration=repositoryGeneration,p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),token=++vocal.generation;let stream,context;
     vocalPlaybackStop();vocal.phase='permission';vocal.projectId=id;vocal.message='マイクの許可を確認しています。';requestPaint();
-    const active=()=>token===vocal.generation&&target===repository&&baseline===JSON.stringify(state.projects.find(x=>x.projectId===id))&&!state.dirty&&!midiEditorHasPendingChanges();
+    const active=()=>token===vocal.generation&&storageGeneration===repositoryGeneration&&baseline===JSON.stringify(state.projects.find(x=>x.projectId===id))&&!state.dirty&&!midiEditorHasPendingChanges();
     try{
       if(!p||target.kind!=='indexeddb'||!target.putLongWav)throw Error('vocal-durable-storage-required');
       const startTick=Number(options.startTick||0);let recordSeconds=vocalRecordingWindow(p,startTick,options.endTick);const plan=vocalTransportPlan(p,options);if(plan.gapless&&(!vocalCycle.active||cycleToken!==vocalCycle.options))throw Error('vocal-gapless-session-required');vocalPosition(p,startTick);vocalInputCompensation(p,options,'');
