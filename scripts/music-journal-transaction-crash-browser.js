@@ -1,5 +1,6 @@
 // Start SIGKILL only after the real write request succeeds and before its
 // transaction can commit. Chained reads keep that specific transaction open.
+const { setTimeout: delay } = require('node:timers/promises');
 async function killDuringWrite(page, child, storeName, operation, method = 'add') {
   let writeReached;
   const writing = new Promise(resolve => { writeReached = resolve; });
@@ -65,12 +66,24 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
     if (!started.ok) throw Error(started.error);
     return { id, journalId: studio.vocal.recorder.journalId, before: await repository.get(id) };
   }, switchRepository);
-  await page.waitForFunction(async journalId => {
-    const repo = MusicStudio.indexedDbRepository();
-    const journal = await repo.getVocalJournal(journalId);
-    await repo.close();
-    return journal?.next >= 3 && MusicStudio.vocal.phase === 'recording';
-  }, fixture.journalId, { polling: 250 });
+  const deadline = Date.now() + 30000;
+  let progress;
+  do {
+    progress = await page.evaluate(async journalId => {
+      const repo = MusicStudio.indexedDbRepository();
+      const journal = await repo.getVocalJournal(journalId);
+      await repo.close();
+      return { next: journal?.next, phase: MusicStudio.vocal.phase };
+    }, fixture.journalId);
+    if (progress.next >= 3 && progress.phase === 'recording') break;
+    if (!['permission', 'armed', 'recording'].includes(progress.phase)) {
+      throw Error('capture-ended-before-stop-fixture: ' + JSON.stringify(progress));
+    }
+    await delay(250);
+  } while (Date.now() < deadline);
+  if (!(progress.next >= 3 && progress.phase === 'recording')) {
+    throw Error('capture-did-not-reach-stop-fixture: ' + JSON.stringify(progress));
+  }
   if (switchRepository) {
     await killDuringWrite(page, child, 'vocalJournals', () => page.evaluate(async before => {
       const studio = MusicStudio;
@@ -90,8 +103,11 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
     const studio = MusicStudio;
     const repo = studio.indexedDbRepository();
     const journal = await repo.getVocalJournal(journalId);
-    if (!journal || journal.closed === switchRepository || journal.next < 3 || JSON.stringify(await repo.get(id)) !== JSON.stringify(before)) {
-      throw Error('stopped-take-was-published-or-journal-lost');
+    if (!journal || journal.closed === switchRepository || journal.next < 3) {
+      throw Error('stop-write-journal-mismatch: ' + JSON.stringify({ switchRepository, journal }));
+    }
+    if (JSON.stringify(await repo.get(id)) !== JSON.stringify(before)) {
+      throw Error('stop-write-published-project-before-commit');
     }
     const chunks = [];
     for (let index = 0; index < journal.next; index++) {
