@@ -1,0 +1,29 @@
+{
+  "dateJST": "2026-11-15",
+  "baseline": "dd70048acf060a7d5b05df950a4f11f8a8348d89",
+  "productionGitBlob": "0f94985a07726273fb81f3e243484be2de2810ec",
+  "node": "v24.22.1",
+  "fullRegression": {
+    "command": "node --test --test-reporter=tap",
+    "passed": 2985,
+    "failed": 0,
+    "skipped": 0
+  },
+  "vocalRegression": {
+    "command": "node --test tests/music-studio-vocal-recording.test.js",
+    "passed": 110,
+    "failed": 0,
+    "switchAwayAndBack": ["PCM", "MediaRecorder"]
+  },
+  "localBrowser": {
+    "version": "Chromium 156.0.8078.79",
+    "status": "blocked-before-launch",
+    "error": "process_singleton_posix.cc: socket() failed: Operation not permitted"
+  },
+  "acceptance": {
+    "id": "MS12-A02",
+    "status": "open",
+    "verifiedCount": 69,
+    "totalCount": 135
+  }
+}

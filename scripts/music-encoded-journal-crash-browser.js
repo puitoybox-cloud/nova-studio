@@ -1,6 +1,6 @@
 // Synthetic microphone, real Chromium process SIGKILL and persistent IndexedDB.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawn}=require('node:child_process'),{chromium}=require('playwright'),{createHash}=require('node:crypto');
-const {killDuringWrite}=require('./music-journal-transaction-crash-browser');
+const {killDuringWrite,verifyStopWriteCrash}=require('./music-journal-transaction-crash-browser');
 const {replaceCompTake,verifyReopenedComp}=require('./music-recovered-take-comp-browser');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'nova-encoded-crash-'));
 const delay=ms=>new Promise(r=>setTimeout(r,ms));let child,browser;
@@ -21,7 +21,9 @@ const captureDeadline=captureStarted+120000;
 let ready=false;
 while(Date.now()<captureDeadline){const progress=await page.evaluate(async()=>{const r=MusicStudio.indexedDbRepository(),m=(await r.listVocalJournals())[0];await r.close();return{next:m?.next||0,phase:MusicStudio.vocal.phase,message:MusicStudio.vocal.message}});if(progress.next>=3&&Date.now()-captureStarted>=minimumSeconds*1000){ready=true;break}if(!['permission','recording','armed'].includes(progress.phase))throw Error(JSON.stringify(progress));await delay(100)}assert.equal(ready,true,'MediaRecorder did not maintain capture and journal commits for 60 seconds');
 const captured=await page.evaluate(async()=>{const r=MusicStudio.indexedDbRepository(),m=(await r.listVocalJournals())[0];await r.close();return{id:m.id,committedBytes:m.encodedBytes,rate:m.rate,phase:MusicStudio.vocal.phase,assets:MusicStudio.state.projects[0].longWavAssets?.length||0}});assert.ok(captured.committedBytes>0);assert.equal(captured.phase,'recording');assert.equal(captured.assets,0);
-console.log('committed-before-kill',JSON.stringify(captured));const exited=new Promise(r=>child.once('exit',r));child.kill('SIGKILL');await exited;browser=null;
+console.log('committed-before-kill',JSON.stringify(captured));
+await killDuringWrite(page,child,'vocalJournalChunks');
+browser=null;
 context=await launch();page=await context.newPage();await page.goto(url);console.log('fresh-process-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.waitForFunction(()=>MusicStudio.vocalRecovery.items.length>0);const discovered=await page.evaluate(()=>MusicStudio.vocalRecovery.items.map(x=>({id:x.id,encodedBytes:x.encodedBytes,updatedAt:x.updatedAt,closed:x.closed})));const m=discovered.find(x=>x.id===captured.id);assert.ok(m);assert.ok(m.encodedBytes>=captured.committedBytes);assert.equal(m.closed,false);
 // Real 30-second heartbeat expiry; no timestamp or application-memory injection.
 await delay(Math.max(0,31000-(Date.now()-m.updatedAt)));
@@ -79,7 +81,14 @@ await page.goto(url);
 await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
 result.archiveMigrationWriteSigkillRolledBackAndRetried=true;
 result.recoveredTakeCompReplacement=await verifyReopenedComp(page,expectedComp);
+result.recordingJournalWriteSigkill=true;
 await page.close();
+const stopped=await verifyStopWriteCrash(context,child,launch,url,syntheticMicrophone);
+context=stopped.context;
+result.stoppingWriteSigkill=stopped.evidence;
+const switched=await verifyStopWriteCrash(context,child,launch,url,syntheticMicrophone,true);
+context=switched.context;
+result.repositorySwitchWriteSigkill=switched.evidence;
 const switchedPage=await context.newPage();
 await switchedPage.addInitScript(syntheticMicrophone);
 await switchedPage.goto(url);

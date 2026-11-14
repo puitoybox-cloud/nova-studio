@@ -1,30 +1,32 @@
 // Start SIGKILL only after the real write request succeeds and before its
 // transaction can commit. Chained reads keep that specific transaction open.
-async function killDuringWrite(page, child, storeName, operation) {
+async function killDuringWrite(page, child, storeName, operation, method = 'add') {
   let writeReached;
   const writing = new Promise(resolve => { writeReached = resolve; });
   await page.exposeBinding('novaWriteReached', writeReached);
-  await page.evaluate(name => {
-    const add = IDBObjectStore.prototype.add;
-    IDBObjectStore.prototype.add = function (value, ...args) {
-      const request = add.call(this, value, ...args);
-      if (this.name === name) {
-        IDBObjectStore.prototype.add = add;
+  await page.evaluate(({ name, method }) => {
+    const original = IDBObjectStore.prototype[method];
+    IDBObjectStore.prototype[method] = function (value, ...args) {
+      const request = original.call(this, value, ...args);
+      if (this.name === name && (method !== 'put' || value.closed === true)) {
+        IDBObjectStore.prototype[method] = original;
         request.addEventListener('success', () => {
-          const hold = () => this.get(request.result).addEventListener('success', hold, { once: true });
+          const hold = () => this.count(request.result).addEventListener('success', hold, { once: true });
           hold();
           window.novaWriteReached();
         }, { once: true });
       }
       return request;
     };
-  }, storeName);
-  const completed = operation();
+  }, { name: storeName, method });
+  const completed = operation?.();
   let timer;
   try {
     await Promise.race([
       writing,
-      completed.then(result => { throw Error('operation-ended-before-write: ' + JSON.stringify(result)); }),
+      ...(completed ? [completed.then(result => {
+        throw Error('operation-ended-before-write: ' + JSON.stringify(result));
+      })] : []),
       new Promise((_, reject) => { timer = setTimeout(() => reject(Error('write-boundary-timeout')), 45000); })
     ]);
   } finally {
@@ -34,7 +36,103 @@ async function killDuringWrite(page, child, storeName, operation) {
   child.kill('SIGKILL');
   const [, signal] = await exited;
   if (signal !== 'SIGKILL') throw Error('expected-chromium-sigkill');
-  await completed.catch(() => {});
+  await completed?.catch(() => {});
 }
 
-module.exports = { killDuringWrite };
+async function verifyStopWriteCrash(context, child, launch, url, microphone, switchRepository = false) {
+  const assert = require('node:assert/strict');
+  let page = await context.newPage();
+  await page.addInitScript(microphone);
+  await page.goto(url);
+  await page.bringToFront();
+  await page.waitForFunction(() => window.MusicStudio?.state.loaded);
+  const fixture = await page.evaluate(async switchRepository => {
+    const studio = MusicStudio;
+    const repository = studio.indexedDbRepository();
+    studio.setRepository(repository);
+    const id = switchRepository ? 'switch-write-crash' : 'stop-write-crash';
+    window.novaRecordingRepository = repository;
+    const project = studio.makeProject({ projectId: id, projectName: 'Stop transaction crash' });
+    await repository.put(project);
+    await studio.refresh();
+    const session = await studio.productionSessionSave(id, 'start', 'Stop and recover');
+    if (!session.ok) throw Error(session.error);
+    const day = await studio.productionDaySave(id, new Date().toISOString().slice(0, 10), 'Stop write');
+    if (!day.ok) throw Error(day.error);
+    const started = await studio.vocalStart(id);
+    if (!started.ok) throw Error(started.error);
+    return { id, journalId: studio.vocal.recorder.journalId, before: await repository.get(id) };
+  }, switchRepository);
+  await page.waitForFunction(async journalId => {
+    const repo = MusicStudio.indexedDbRepository();
+    const journal = await repo.getVocalJournal(journalId);
+    await repo.close();
+    return journal?.next >= 3 && MusicStudio.vocal.phase === 'recording';
+  }, fixture.journalId, { polling: 250 });
+  if (switchRepository) {
+    await killDuringWrite(page, child, 'vocalJournals', () => page.evaluate(async before => {
+      const studio = MusicStudio;
+      const done = studio.vocal.completion;
+      studio.setRepository(studio.memoryRepository([before]));
+      studio.setRepository(window.novaRecordingRepository);
+      return done;
+    }, fixture.before), 'put');
+  } else {
+    await killDuringWrite(page, child, 'longWavBinaries', () => page.evaluate(() => MusicStudio.vocalStop()));
+  }
+  context = await launch();
+  page = await context.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => window.MusicStudio?.state.loaded);
+  const recovered = await page.evaluate(async ({ id, journalId, before, switchRepository }) => {
+    const studio = MusicStudio;
+    const repo = studio.indexedDbRepository();
+    const journal = await repo.getVocalJournal(journalId);
+    if (!journal || journal.closed === switchRepository || journal.next < 3 || JSON.stringify(await repo.get(id)) !== JSON.stringify(before)) {
+      throw Error('stopped-take-was-published-or-journal-lost');
+    }
+    const chunks = [];
+    for (let index = 0; index < journal.next; index++) {
+      chunks.push((await repo.getVocalJournalChunk(journalId + ':' + index)).bytes);
+    }
+    const hash = async blob => Array.from(new Uint8Array(await crypto.subtle.digest(
+      'SHA-256', await blob.arrayBuffer()
+    )), byte => byte.toString(16).padStart(2, '0')).join('');
+    let expected = new Blob(chunks);
+    if (journal.encoding) {
+      const decoder = new AudioContext({ sampleRate: journal.rate });
+      try {
+        const pcm = await decoder.decodeAudioData(await expected.arrayBuffer());
+        expected = studio.vocalWav(Array.from({ length: pcm.numberOfChannels },
+          (_, channel) => pcm.getChannelData(channel)), pcm.sampleRate).blob.slice(44);
+      } finally {
+        await decoder.close();
+      }
+    }
+    if (!journal.closed) {
+      await new Promise(resolve => setTimeout(resolve, Math.max(0, 31000 - (Date.now() - journal.updatedAt))));
+    }
+    const result = await studio.vocalRecoverJournal(journalId);
+    if (!result.ok) throw Error(result.error);
+    const wav = await studio.pcmLoadLongWav(id, result.assetId);
+    const project = await repo.get(id);
+    const matches = project.productionHistory.filter(event => event.journalId === journalId);
+    const edit = project.songVersions.edits.find(edit => edit.id === matches[0]?.editId);
+    if (project.longWavAssets.length !== 1 || matches.length !== 1 || matches[0].assetId !== result.assetId ||
+        edit?.sessionId !== before.songVersions.sessions[0].id ||
+        JSON.stringify(project.songVersions.days) !== JSON.stringify(before.songVersions.days)) {
+      throw Error('stop-crash-recovery-history-mismatch');
+    }
+    const repeated = await studio.vocalRecoverJournal(journalId);
+    await repo.close();
+    return { expected: await hash(expected), actual: await hash(wav.slice(44)),
+      repeated: repeated.ok, chunks: chunks.length };
+  }, { ...fixture, switchRepository });
+  assert.equal(recovered.actual, recovered.expected);
+  assert.equal(recovered.repeated, false);
+  await page.close();
+  return { context, evidence: { rolledBackBeforeCommit: true, confirmedOnRestart: true,
+    recoveredAudioHash: recovered.actual, journalChunks: recovered.chunks, duplicateRejected: true } };
+}
+
+module.exports = { killDuringWrite, verifyStopWriteCrash };
