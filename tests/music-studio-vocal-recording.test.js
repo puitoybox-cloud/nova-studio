@@ -583,3 +583,39 @@ for(const competing of [false,true])test('lost journal recovery acknowledgement 
  assert.equal((await f.b.vocalRecoverJournal(f.m.id)).ok,false);
  assert.equal((await repo.get(f.m.owner)).songVersions.edits.filter(e=>e.source==='vocal-editor').length,1);
 });
+
+for (const encoded of [false, true]) {
+ test('recovery must retry after switching away from and back to its save repository, encoded='+encoded, async()=>{
+  const f=encoded?await encodedJournal():await interruptedJournal();
+  if(!encoded)ageJournal(f);
+  const a=encoded?f.fresh.a:f.b, source=a.indexedDbRepository();
+  const before=await source.get(f.p.projectId);
+  const replacement=a.memoryRepository([before]);
+  const readChunk=source.getVocalJournalChunk;
+  let switched=false;
+  source.getVocalJournalChunk=async id=>{
+   const chunk=await readChunk(id);
+   if(!switched){
+    switched=true;
+    a.setRepository(replacement);
+    a.setRepository(source);
+   }
+   return chunk;
+  };
+  a.setRepository(source);
+  const interrupted=await a.vocalRecoverJournal(f.m.id);
+  assert.equal(switched,true);
+  assert.equal(interrupted.error,'vocal-recovery-conflict');
+  assert.equal(JSON.stringify(await source.get(before.projectId)),JSON.stringify(before));
+  assert.equal(JSON.stringify(await replacement.get(before.projectId)),JSON.stringify(before));
+  const retained=await source.getVocalJournal(f.m.id);
+  assert.equal(retained.next,f.m.next);
+  assert.equal(retained.consumed,f.m.consumed);
+  const recovered=await a.vocalRecoverJournal(f.m.id);
+  assert.equal(recovered.ok,true,recovered.error);
+  assert.equal(recovered.project.longWavAssets.length,1);
+  assert.equal(recovered.project.productionHistory.filter(event=>event.journalId===f.m.id).length,1);
+  assert.equal((await a.vocalRecoverJournal(f.m.id)).ok,false);
+  f.a.vocalDiscard();
+ });
+}

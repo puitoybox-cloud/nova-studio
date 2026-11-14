@@ -1,5 +1,7 @@
 // Synthetic microphone, real Chromium process SIGKILL and persistent IndexedDB.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawn}=require('node:child_process'),{chromium}=require('playwright'),{createHash}=require('node:crypto');
+const {killDuringWrite}=require('./music-journal-transaction-crash-browser');
+const {replaceCompTake,verifyReopenedComp}=require('./music-recovered-take-comp-browser');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'nova-pcm-crash-'));
 const delay=ms=>new Promise(r=>setTimeout(r,ms));let child,browser;
 const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(req.url,'http://localhost').pathname.slice(1)||'music-studio.html');if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.html')?'text/html':'application/octet-stream');fs.createReadStream(file).pipe(res)});
@@ -21,6 +23,22 @@ console.log('committed-before-kill',JSON.stringify(captured));const exited=new P
 context=await launch();page=await context.newPage();await page.goto(url);console.log('fresh-process-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.waitForFunction(()=>MusicStudio.vocalRecovery.items.length>0);const discovered=await page.evaluate(()=>MusicStudio.vocalRecovery.items.map(x=>({id:x.id,frames:x.frames,updatedAt:x.updatedAt,closed:x.closed})));const m=discovered.find(x=>x.id===captured.id);assert.ok(m);assert.ok(m.frames>=captured.committedFrames);assert.equal(m.closed,false);
 // Real 30-second heartbeat expiry; no timestamp or application-memory injection.
 await delay(Math.max(0,31000-(Date.now()-m.updatedAt)));
+const readStorage=page=>page.evaluate(async()=>{
+  const repo=MusicStudio.indexedDbRepository();
+  const snapshot={projects:await repo.list(),journals:await repo.listVocalJournals()};
+  await repo.close();
+  return snapshot;
+});
+const beforeWrite=await readStorage(page);
+await killDuringWrite(page,child,'longWavBinaries',()=>page.evaluate(id=>MusicStudio.vocalRecoverJournal(id),captured.id));
+browser=null;
+context=await launch();
+page=await context.newPage();
+await page.goto(url);
+await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
+const afterWrite=await readStorage(page);
+assert.deepEqual(afterWrite.projects,beforeWrite.projects);
+assert.deepEqual(afterWrite.journals,beforeWrite.journals.map(journal=>({...journal,closed:true})));
 const result=await page.evaluate(async id=>{const a=MusicStudio,r=a.indexedDbRepository(),m=await r.getVocalJournal(id),pieces=[];for(let i=0;i<m.next;i++)pieces.push((await r.getVocalJournalChunk(id+':'+i)).bytes);const hash=async blob=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),v=>v.toString(16).padStart(2,'0')).join(''),expected=await hash(new Blob(pieces));
 const before=await r.get(m.owner), add=IDBObjectStore.prototype.add;
 let aborted=false;
@@ -46,6 +64,17 @@ const versions=saved.project.songVersions,edit=versions.edits.find(edit=>edit.id
 if(edit?.sessionId!==before.songVersions.sessions[0].id||
    JSON.stringify(versions.days)!==JSON.stringify(before.songVersions.days)||
    JSON.stringify(versions.sessions)!==JSON.stringify(before.songVersions.sessions))throw Error('pcm-recovery-session-day-mismatch');
-const archive=await a.createLongWavArchive(),restored=await a.restoreLongWavArchive(archive,{settings:false});if(!restored.ok)throw Error(restored.error);const p=restored.projects.find(p=>p.projectId!==saved.project.projectId&&p.longWavAssets?.length),copy=await a.pcmLoadLongWav(p.projectId,p.longWavAssets[0].id);if(await hash(copy)!==await hash(wav))throw Error('archive-bytes-differ');const repeated=await a.vocalRecoverJournal(id);await r.close();return{frames:asset.frames,sampleRate:asset.sampleRate,hash:actual,committedPCMIdentical:true,recoveryTransactionAbortRetried:true,sessionAndDailyHistoryPreserved:true,archiveIdentical:true,repeatRejected:!repeated.ok,remainingJournals:(await a.vocalDiscoverRecovery()).length}},captured.id);
+const archive=await a.createLongWavArchive(),restored=await a.restoreLongWavArchive(archive,{settings:false});if(!restored.ok)throw Error(restored.error);const p=restored.projects.find(p=>p.projectId!==saved.project.projectId&&p.longWavAssets?.length),copy=await a.pcmLoadLongWav(p.projectId,p.longWavAssets[0].id);if(await hash(copy)!==await hash(wav))throw Error('archive-bytes-differ');const repeated=await a.vocalRecoverJournal(id);await r.close();return{projectId:saved.project.projectId,assetId:asset.id,frames:asset.frames,sampleRate:asset.sampleRate,hash:actual,committedPCMIdentical:true,recoveryTransactionAbortRetried:true,sessionAndDailyHistoryPreserved:true,archiveIdentical:true,repeatRejected:!repeated.ok,remainingJournals:(await a.vocalDiscoverRecovery()).length}},captured.id);
+const expectedComp=await replaceCompTake(page,result.projectId,result.assetId);
+const restarted=new Promise(resolve=>child.once('exit',resolve));
+child.kill('SIGKILL');
+await restarted;
+browser=null;
+context=await launch();
+page=await context.newPage();
+await page.goto(url);
+await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
+result.recoveryWriteSigkillRolledBackAndRetried=true;
+result.recoveredTakeCompReplacement=await verifyReopenedComp(page,expectedComp);
 assert.equal(result.frames,m.frames);assert.equal(result.remainingJournals,0);assert.equal(result.repeatRejected,true);const report={date:new Date().toISOString(),syntheticMicrophone:true,physicalPowerLossTested:false,processKill:'SIGKILL',freshChromiumSameProfile:true,captured,discovered,result,sourceSHA256:createHash('sha256').update(fs.readFileSync(path.join(root,'music-studio.js'))).digest('hex')};fs.writeFileSync(path.join(root,'verification/music-pcm-journal-crash-browser.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(e){console.error('PCM crash scenario failed:',e);throw e}finally{await browser?.close().catch(()=>{});if(child&&child.exitCode===null&&child.signalCode===null){const exited=new Promise(r=>child.once('exit',r));child.kill('SIGKILL');await exited}await new Promise(r=>server.close(r));try{await fs.promises.rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200})}catch(e){console.warn('Temporary profile cleanup:',e.message)}}})().catch(e=>{console.error(e);process.exitCode=1});

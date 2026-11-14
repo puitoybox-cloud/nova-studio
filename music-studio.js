@@ -2267,12 +2267,14 @@
   async function vocalDiscoverRecovery(){try{vocalRecovery.items=await repository.listVocalJournals?.()||[];vocalRecovery.error=''}catch(e){vocalRecovery.error=e.message}requestPaint();return vocalRecovery.items}
   async function vocalRecoverJournal(journalId,options={}){
     if(vocalBusy()||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'vocal-recovery-busy'};
-    const target=repository;vocal.phase='stopping';requestPaint();
-    try{const m=await target.getVocalJournal(journalId);if(m?.encoding)return await vocalRecoverEncodedJournal(m,target,options);const p=state.projects.find(x=>x.projectId===m?.owner);
+    const target=repository,storageGeneration=repositoryGeneration;
+    const guardStorage=()=>{if(repository!==target||repositoryGeneration!==storageGeneration)throw Error('vocal-recovery-conflict')};
+    vocal.phase='stopping';requestPaint();
+    try{const m=await target.getVocalJournal(journalId);guardStorage();if(m?.encoding)return await vocalRecoverEncodedJournal(m,target,options,guardStorage);const p=state.projects.find(x=>x.projectId===m?.owner);
       if(!m||m.format!=='nova-vocal-journal-v1'||!p||!Number.isInteger(m.rate)||m.rate<8000||m.rate>192000||!Number.isSafeInteger(m.next)||m.next<1||m.next>90000||!Number.isSafeInteger(m.frames)||m.frames<1||m.frames>m.rate*VOCAL_CAPTURE_MAX_SECONDS||!Number.isSafeInteger(m.consumed)||m.consumed<0||m.consumed>=m.frames||!Number.isSafeInteger(m.startTick)||m.startTick<0||!Number.isFinite(m.latencyMs)||Math.abs(m.latencyMs)>2000)throw Error('vocal-journal-metadata-invalid');
       vocalJournalMetadata(m);
       if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
-      const baseline=JSON.stringify(p),guard=()=>{if(repository!==target||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};
+      const baseline=JSON.stringify(p),guard=()=>{guardStorage();if(state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};
       await target.sealVocalJournal(m.id,m);guard();const pieces=[];let frames=0,damage='';
       for(let i=0;i<m.next;i++){guard();const c=await target.getVocalJournalChunk(m.id+':'+i);
         if(!c||!(c.bytes instanceof ArrayBuffer)||c.bytes.byteLength<2||c.bytes.byteLength>8192||c.bytes.byteLength%2||JSON.stringify(await longWavDigest(new Blob([c.bytes]),guard))!==JSON.stringify(c.hash)){damage='vocal-journal-corrupt-prefix-only';break}
@@ -2291,10 +2293,10 @@
       const result=await vocalSave();if(result.ok){vocal.message='中断した録音の有効な音声を復旧しました。'+(damage?'破損した後続部分は復旧できません。':'');result.warning=damage}await vocalDiscoverRecovery();return result;
     }catch(e){vocal.phase='error';vocal.message='復旧できません：'+e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
-  async function vocalRecoverEncodedJournal(m,target,options={}){
+  async function vocalRecoverEncodedJournal(m,target,options,guardStorage){
     let context;try{
       vocalJournalMetadata(m);if(m.recoveredAt!==undefined)throw Error('vocal-encoded-journal-already-recovered-source-retained');const p=state.projects.find(p=>p.projectId===m.owner);if(!p||!m.next)throw Error('vocal-journal-no-valid-unsaved-audio');if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
-      const baseline=JSON.stringify(p),guard=()=>{if(repository!==target||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};await target.sealVocalJournal(m.id,m);guard();const pieces=[];let size=0;
+      const baseline=JSON.stringify(p),guard=()=>{guardStorage();if(state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};await target.sealVocalJournal(m.id,m);guard();const pieces=[];let size=0;
       let excluded=0;
       for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);guard();if(!c||!(c.bytes instanceof ArrayBuffer)||c.bytes.byteLength<1||c.bytes.byteLength>1048576||JSON.stringify(await longWavDigest(new Blob([c.bytes]),guard))!==JSON.stringify(c.hash)){
         if(options.salvageTail!==true||!pieces.length)throw Error('vocal-encoded-journal-corrupt');excluded=m.next-i;break;
@@ -2449,8 +2451,8 @@
   function vocalStop(naturalCompletion=false){if(vocalCalibration){vocalCalibrationCancel();return Promise.resolve({ok:false,error:'vocal-calibration-cancelled'})}if(!naturalCompletion){vocalCycle.active=false;root.clearTimeout?.(vocalCycle.timer);}if(vocal.stopPromise)return vocal.stopPromise;if(vocal.phase==='permission'){vocalDiscard();return Promise.resolve({ok:false,error:'vocal-permission-cancelled'})}if(!vocal.recorder)return Promise.resolve({ok:!vocal.pending});vocal.phase='stopping';vocalMonitor(false);root.clearTimeout?.(vocal.meterTimer);root.clearTimeout?.(vocal.timer);if(vocal.recorder.state!=='inactive')vocal.recorder.stop();requestPaint();const promise=vocal.completion;vocal.stopPromise=promise;promise.finally(()=>{if(vocal.stopPromise===promise)vocal.stopPromise=null});return promise}
   async function vocalSave(){
     if(!vocal.pending||vocal.phase==='saving')return{ok:false,error:'vocal-no-pending-take'};
-    const target=vocal.target,id=vocal.projectId,baseline=vocal.baseline,token=vocal.generation,take=vocal.pending;
-    const guard=()=>{if(repository!==target||token!==vocal.generation||vocal.pending!==take||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-save-conflict')};
+    const target=vocal.target,id=vocal.projectId,baseline=vocal.baseline,token=vocal.generation,take=vocal.pending,storageGeneration=repositoryGeneration;
+    const guard=()=>{if(repository!==target||storageGeneration!==repositoryGeneration||token!==vocal.generation||vocal.pending!==take||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-save-conflict')};
     vocal.phase='saving';requestPaint();try{guard();const hashes=await longWavDigest(take.blob,guard),p=await target.get(id);guard();if(JSON.stringify(p)!==baseline)throw Error('vocal-storage-conflict');
       const assetId=uuid(),asset={id:assetId,name:take.name,size:take.blob.size,frames:take.frames,sampleRate:take.sampleRate,channels:take.channels,hashes,vocalTake:{format:'nova-vocal-take-v1',recordedAt:now(),...(take.cycle?{cycle:clone(take.cycle)}:{}),...(take.recordingPlan?{recordingPlan:clone(take.recordingPlan)}:{}),captureMime:take.captureMime,clippedSamples:take.clipped,waveform:take.waveform,cursor:0,edits:[{first:0,end:take.frames,gainDb:0,startTick:take.startTick,latencyMs:take.latencyMs}]}};
       vocalHistory(asset);const updated=clone(p);updated.longWavAssets=[...(updated.longWavAssets||[]),asset];updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'vocal-editor');

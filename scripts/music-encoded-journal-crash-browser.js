@@ -1,12 +1,19 @@
 // Synthetic microphone, real Chromium process SIGKILL and persistent IndexedDB.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawn}=require('node:child_process'),{chromium}=require('playwright'),{createHash}=require('node:crypto');
+const {killDuringWrite}=require('./music-journal-transaction-crash-browser');
+const {replaceCompTake,verifyReopenedComp}=require('./music-recovered-take-comp-browser');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'nova-encoded-crash-'));
 const delay=ms=>new Promise(r=>setTimeout(r,ms));let child,browser;
 const server=http.createServer((req,res)=>{const file=path.resolve(root,new URL(req.url,'http://localhost').pathname.slice(1)||'music-studio.html');if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.html')?'text/html':'application/octet-stream');fs.createReadStream(file).pipe(res)});
 async function launch(){let launchError;const portFile=path.join(profile,'DevToolsActivePort');fs.rmSync(portFile,{force:true});child=spawn(process.env.CHROME_EXECUTABLE||chromium.executablePath(),['--headless','--no-sandbox','--disable-dev-shm-usage','--remote-debugging-port=0','--user-data-dir='+profile,'--autoplay-policy=no-user-gesture-required','about:blank'],{stdio:'ignore'});child.once('error',e=>{launchError=e});for(let i=0;i<200;i++){if(launchError)throw launchError;if(child.exitCode!==null)throw Error('chromium-exited');if(fs.existsSync(portFile))break;await delay(100)}const port=fs.readFileSync(portFile,'utf8').split('\n')[0];browser=await chromium.connectOverCDP('http://127.0.0.1:'+port);return browser.contexts()[0]}
 const syntheticMicrophone=()=>{window.AudioWorkletNode=undefined;navigator.mediaDevices.getUserMedia=async()=>{const c=new AudioContext({sampleRate:48000}),s=c.createOscillator(),g=c.createGain(),d=c.createMediaStreamDestination();s.frequency.value=220;g.gain.value=.1;s.connect(g);g.connect(d);s.start();await c.resume();return d.stream}};
 (async()=>{try{await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/music-studio.html`;let context=await launch(),page=await context.newPage();await page.addInitScript(syntheticMicrophone);
-await page.goto(url);await page.bringToFront();console.log('recording-page-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'crash-journal',projectName:'SIGKILL MediaRecorder'}),r=a.indexedDbRepository();a.setRepository(r);await r.put(p);a.state.projects=[p];const result=await a.vocalStart(p.projectId);if(!result.ok)throw Error(result.error)});
+await page.goto(url);await page.bringToFront();console.log('recording-page-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.evaluate(async()=>{const a=MusicStudio,p=a.makeProject({projectId:'crash-journal',projectName:'SIGKILL MediaRecorder'}),r=a.indexedDbRepository();a.setRepository(r);await r.put(p);a.state.projects=[p];
+const session=await a.productionSessionSave(p.projectId,'start','MediaRecorder recovery');
+if(!session.ok)throw Error(session.error);
+const day=await a.productionDaySave(p.projectId,new Date().toISOString().slice(0,10),'Keep with the recovery edit');
+if(!day.ok)throw Error(day.error);
+const result=await a.vocalStart(p.projectId);if(!result.ok)throw Error(result.error)});
 console.log('capture-started');
 const minimumSeconds=60;
 const captureStarted=Date.now();
@@ -18,6 +25,25 @@ console.log('committed-before-kill',JSON.stringify(captured));const exited=new P
 context=await launch();page=await context.newPage();await page.goto(url);console.log('fresh-process-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.waitForFunction(()=>MusicStudio.vocalRecovery.items.length>0);const discovered=await page.evaluate(()=>MusicStudio.vocalRecovery.items.map(x=>({id:x.id,encodedBytes:x.encodedBytes,updatedAt:x.updatedAt,closed:x.closed})));const m=discovered.find(x=>x.id===captured.id);assert.ok(m);assert.ok(m.encodedBytes>=captured.committedBytes);assert.equal(m.closed,false);
 // Real 30-second heartbeat expiry; no timestamp or application-memory injection.
 await delay(Math.max(0,31000-(Date.now()-m.updatedAt)));
+const readStorage=page=>page.evaluate(async()=>{
+  const repo=MusicStudio.indexedDbRepository();
+  const snapshot={projects:await repo.list(),journals:await repo.listVocalJournals()};
+  await repo.close();
+  return snapshot;
+});
+const beforeWrite=await readStorage(page);
+await killDuringWrite(page,child,'vocalJournalChunks',()=>page.evaluate(async()=>{
+  const archive=await MusicStudio.createLongWavArchive();
+  return MusicStudio.restoreLongWavArchive(archive,{settings:false});
+}));
+browser=null;
+context=await launch();
+page=await context.newPage();
+await page.goto(url);
+await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
+const afterWrite=await readStorage(page);
+assert.deepEqual(afterWrite.projects,beforeWrite.projects);
+assert.deepEqual(afterWrite.journals,beforeWrite.journals);
 const result=await page.evaluate(async id=>{const a=MusicStudio,r=a.indexedDbRepository(),m=await r.getVocalJournal(id),pieces=[];for(let i=0;i<m.next;i++)pieces.push((await r.getVocalJournalChunk(id+':'+i)).bytes);const hash=async blob=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer())),v=>v.toString(16).padStart(2,'0')).join(''),encoded=new Blob(pieces,{type:m.encoding}),decoder=new AudioContext({sampleRate:m.rate}),buffer=await decoder.decodeAudioData(await encoded.arrayBuffer()),expected=await hash(a.vocalWav(Array.from({length:Math.min(2,buffer.numberOfChannels)},(_,c)=>buffer.getChannelData(c)),buffer.sampleRate).blob.slice(44));await decoder.close();a.state.settings=a.normalizeSettings({...a.state.settings,backup:{...a.state.settings.backup,automaticEnabled:true,intervalHours:1}});await r.putSettings(a.state.settings);const automatic=await a.runAutoBackupCheck('2099-10-30T00:00:00Z');if(!automatic.created||!automatic.backup.archive)throw Error('unfinished-automatic-backup-failed:'+JSON.stringify(automatic));const unfinished=automatic.backup.archive,migration=await a.restoreLongWavArchive(unfinished,{settings:false});if(!migration.ok)throw Error(migration.error);const imported=(await r.listVocalJournals()).find(j=>j.id!==id),migrated=await a.vocalRecoverJournal(imported.id);if(!migrated.ok)throw Error(migrated.error);const moved=await a.pcmLoadLongWav(migrated.project.projectId,migrated.assetId);if(await hash(moved.slice(44))!==expected)throw Error('unfinished-migration-PCM-differs');const saved=await a.vocalRecoverJournal(id);if(!saved.ok)throw Error(saved.error);const asset=saved.project.longWavAssets[0],wav=await a.pcmLoadLongWav(saved.project.projectId,asset.id),actual=await hash(wav.slice(44));if(expected!==actual)throw Error('committed-PCM-differs');
 const events=saved.project.productionHistory.filter(e=>e.type==='recording-recovery'&&e.journalId===id);
 const event=events[0],marker=await r.getVocalJournal(id);
@@ -41,7 +67,18 @@ if(compMaxSampleDelta>1)throw Error('recovered-comp-PCM-differs');
 const storedComp=await r.get(projectId);
 if(JSON.stringify(storedComp.vocalComp)!==JSON.stringify(comp.project.vocalComp)||
    !storedComp.productionHistory.some(item=>item.id===event.id))throw Error('recovered-comp-history-differs');
-await r.close();return{compFromRecoveredTake:true,compMaxSampleDelta,frames:asset.frames,sampleRate:asset.sampleRate,hash:actual,decodedCommittedContainerIdentical:true,unfinishedArchiveMigrationIdentical:true,automaticUnfinishedBackup:true,archiveIdentical:true,repeatRejected:!repeated.ok,retainedContainersIdentical:true,recoveryMarkersAtomic:true,recoveryEventId:event.id,recoveryJournalId:event.journalId,remainingJournals:(await a.vocalDiscoverRecovery()).length}},captured.id);
+await r.close();return{projectId,assetId:asset.id,compFromRecoveredTake:true,compMaxSampleDelta,frames:asset.frames,sampleRate:asset.sampleRate,hash:actual,decodedCommittedContainerIdentical:true,unfinishedArchiveMigrationIdentical:true,automaticUnfinishedBackup:true,archiveIdentical:true,repeatRejected:!repeated.ok,retainedContainersIdentical:true,recoveryMarkersAtomic:true,recoveryEventId:event.id,recoveryJournalId:event.journalId,remainingJournals:(await a.vocalDiscoverRecovery()).length}},captured.id);
+const expectedComp=await replaceCompTake(page,result.projectId,result.assetId);
+const restarted=new Promise(resolve=>child.once('exit',resolve));
+child.kill('SIGKILL');
+await restarted;
+browser=null;
+context=await launch();
+page=await context.newPage();
+await page.goto(url);
+await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
+result.archiveMigrationWriteSigkillRolledBackAndRetried=true;
+result.recoveredTakeCompReplacement=await verifyReopenedComp(page,expectedComp);
 await page.close();
 const switchedPage=await context.newPage();
 await switchedPage.addInitScript(syntheticMicrophone);

@@ -9,6 +9,8 @@ on:
       - 'scripts/music-song-checkpoints-browser.js'
       - 'scripts/music-finished-immutability-browser.js'
       - 'scripts/music-pcm-journal-crash-browser.js'
+      - 'scripts/music-recovered-take-comp-browser.js'
+      - 'scripts/music-journal-transaction-crash-browser.js'
       - 'scripts/music-encoded-journal-crash-browser.js'
       - 'tests/music-studio-vocal-recording.test.js'
       - '.github/workflows/music-song-checkpoints.yml'
