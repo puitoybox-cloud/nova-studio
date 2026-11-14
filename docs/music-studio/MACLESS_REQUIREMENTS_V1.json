@@ -1314,7 +1314,7 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         }
       ],
       "dependsOn": []
@@ -1348,27 +1348,27 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "scheduled punch-in omits preroll samples and captures exact punch-out without UI timer",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "restart after the first gapless Take commits recovers only unsaved frames",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "gapless crash recovery recreates exact Take boundaries and cycle metadata",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         }
       ],
       "dependsOn": [],
@@ -1452,7 +1452,7 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         }
       ],
       "dependsOn": [],
@@ -1837,7 +1837,7 @@
         {
           "path": "tests/music-studio-scoped-midi-repair.test.js",
           "acceptance": "repair only the selected track and measures; preserve input and locked notes",
-          "run": "verification/music-recording-repository-regression-20261114.json"
+          "run": "verification/music-recovered-take-regression-20261115.json"
         }
       ],
       "dependsOn": []

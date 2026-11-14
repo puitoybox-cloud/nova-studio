@@ -22,9 +22,16 @@ let ready=false;
 while(Date.now()<captureDeadline){const progress=await page.evaluate(async()=>{const r=MusicStudio.indexedDbRepository(),m=(await r.listVocalJournals())[0];await r.close();return{next:m?.next||0,phase:MusicStudio.vocal.phase,message:MusicStudio.vocal.message}});if(progress.next>=3&&Date.now()-captureStarted>=minimumSeconds*1000){ready=true;break}if(!['permission','recording','armed'].includes(progress.phase))throw Error(JSON.stringify(progress));await delay(100)}assert.equal(ready,true,'MediaRecorder did not maintain capture and journal commits for 60 seconds');
 const captured=await page.evaluate(async()=>{const r=MusicStudio.indexedDbRepository(),m=(await r.listVocalJournals())[0];await r.close();return{id:m.id,committedBytes:m.encodedBytes,rate:m.rate,phase:MusicStudio.vocal.phase,assets:MusicStudio.state.projects[0].longWavAssets?.length||0}});assert.ok(captured.committedBytes>0);assert.equal(captured.phase,'recording');assert.equal(captured.assets,0);
 console.log('committed-before-kill',JSON.stringify(captured));
-await killDuringWrite(page,child,'vocalJournalChunks');
+const interruptedAppend=await killDuringWrite(page,child,'vocalJournalChunks');
 browser=null;
 context=await launch();page=await context.newPage();await page.goto(url);console.log('fresh-process-loaded');await page.waitForFunction(()=>window.MusicStudio?.state.loaded);await page.waitForFunction(()=>MusicStudio.vocalRecovery.items.length>0);const discovered=await page.evaluate(()=>MusicStudio.vocalRecovery.items.map(x=>({id:x.id,encodedBytes:x.encodedBytes,updatedAt:x.updatedAt,closed:x.closed})));const m=discovered.find(x=>x.id===captured.id);assert.ok(m);assert.ok(m.encodedBytes>=captured.committedBytes);assert.equal(m.closed,false);
+assert.equal(await page.evaluate(async ({ id, key }) => {
+  const repo = MusicStudio.indexedDbRepository();
+  const journal = await repo.getVocalJournal(id);
+  const missing = (await repo.getVocalJournalChunk(key)) === undefined;
+  await repo.close();
+  return missing && key === id + ':' + journal.next;
+}, { id: captured.id, key: interruptedAppend }), true, 'interrupted append must publish neither its chunk nor metadata');
 // Real 30-second heartbeat expiry; no timestamp or application-memory injection.
 await delay(Math.max(0,31000-(Date.now()-m.updatedAt)));
 const readStorage=page=>page.evaluate(async()=>{
@@ -81,7 +88,7 @@ await page.goto(url);
 await page.waitForFunction(()=>window.MusicStudio?.state.loaded);
 result.archiveMigrationWriteSigkillRolledBackAndRetried=true;
 result.recoveredTakeCompReplacement=await verifyReopenedComp(page,expectedComp);
-result.recordingJournalWriteSigkill=true;
+result.recordingJournalWriteSigkill={uncommittedChunkAbsent:true,committedPrefixRecovered:true};
 await page.close();
 const stopped=await verifyStopWriteCrash(context,child,launch,url,syntheticMicrophone);
 context=stopped.context;

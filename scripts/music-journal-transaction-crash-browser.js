@@ -3,7 +3,7 @@
 async function killDuringWrite(page, child, storeName, operation, method = 'add') {
   let writeReached;
   const writing = new Promise(resolve => { writeReached = resolve; });
-  await page.exposeBinding('novaWriteReached', writeReached);
+  await page.exposeBinding('novaWriteReached', (_source, key) => writeReached(key));
   await page.evaluate(({ name, method }) => {
     const original = IDBObjectStore.prototype[method];
     IDBObjectStore.prototype[method] = function (value, ...args) {
@@ -13,7 +13,7 @@ async function killDuringWrite(page, child, storeName, operation, method = 'add'
         request.addEventListener('success', () => {
           const hold = () => this.count(request.result).addEventListener('success', hold, { once: true });
           hold();
-          window.novaWriteReached();
+          window.novaWriteReached(request.result);
         }, { once: true });
       }
       return request;
@@ -21,8 +21,9 @@ async function killDuringWrite(page, child, storeName, operation, method = 'add'
   }, { name: storeName, method });
   const completed = operation?.();
   let timer;
+  let key;
   try {
-    await Promise.race([
+    key = await Promise.race([
       writing,
       ...(completed ? [completed.then(result => {
         throw Error('operation-ended-before-write: ' + JSON.stringify(result));
@@ -37,6 +38,7 @@ async function killDuringWrite(page, child, storeName, operation, method = 'add'
   const signal = await exited;
   if (signal !== 'SIGKILL') throw Error('expected-chromium-sigkill');
   await completed?.catch(() => {});
+  return key;
 }
 
 async function verifyStopWriteCrash(context, child, launch, url, microphone, switchRepository = false) {
