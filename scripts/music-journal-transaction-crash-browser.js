@@ -32,9 +32,9 @@ async function killDuringWrite(page, child, storeName, operation, method = 'add'
   } finally {
     clearTimeout(timer);
   }
-  const exited = new Promise(resolve => child.once('exit', resolve));
+  const exited = new Promise(resolve => child.once('exit', (_code, signal) => resolve(signal)));
   child.kill('SIGKILL');
-  const [, signal] = await exited;
+  const signal = await exited;
   if (signal !== 'SIGKILL') throw Error('expected-chromium-sigkill');
   await completed?.catch(() => {});
 }
