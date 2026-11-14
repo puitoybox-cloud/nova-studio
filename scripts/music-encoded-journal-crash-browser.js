@@ -50,7 +50,7 @@ await switchedPage.bringToFront();
 await switchedPage.waitForFunction(()=>window.MusicStudio?.state.loaded);
 const switchRecovery=await switchedPage.evaluate(async()=>{
   const a=MusicStudio,id='recording-repository-switch';
-  const source=a.indexedDbRepository(),project=a.makeProject({projectId:id});
+  const source=a.indexedDbRepository(),project=a.makeProject({projectId:id,projectName:'MediaRecorder repository switch'});
   a.setRepository(source);
   await source.put(project);
   await a.refresh();
