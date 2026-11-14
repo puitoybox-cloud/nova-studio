@@ -4,6 +4,7 @@ on:
     paths:
       - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
+      - 'scripts/music-chromium-devtools-port.cjs'
       - 'music-studio.html'
       - 'tests/music-song-checkpoints.test.js'
       - 'scripts/music-song-checkpoints-browser.js'

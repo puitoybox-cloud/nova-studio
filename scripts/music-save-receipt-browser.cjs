@@ -6,6 +6,7 @@ const http=require('node:http');
 const {chromium}=require('playwright');
 const {spawn}=require('node:child_process');
 const {once}=require('node:events');
+const {waitForDevToolsPort}=require('./music-chromium-devtools-port.cjs');
 // Drive the form submit, idle autosave timer and MIDI editor through their
 // production entry points with the same edit after a process restart.
 async function saveEditorEntry(entry, project) {
@@ -70,14 +71,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   fs.rmSync(dir+'/DevToolsActivePort',{force:true});
   assert.ok(fs.existsSync(executable),'Playwright Chromium must be installed');
   processHandle=spawn(executable,['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});
-  let launchError;processHandle.on('error',error=>{launchError=error});
-  const deadline=Date.now()+15000;
-  while(!fs.existsSync(dir+'/DevToolsActivePort')){
-   if(launchError)throw launchError;
-   if(processHandle.exitCode!==null||Date.now()>deadline)throw Error('Chromium failed to start');
-   await new Promise(resolve=>setTimeout(resolve,25));
-  }
-  const port=fs.readFileSync(dir+'/DevToolsActivePort','utf8').split('\n')[0];
+  const port=await waitForDevToolsPort(dir+'/DevToolsActivePort',processHandle);
   const connection=await chromium.connectOverCDP('http://127.0.0.1:'+port);
   return connection.contexts()[0];
  }
