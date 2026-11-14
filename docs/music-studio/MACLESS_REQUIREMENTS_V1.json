@@ -7,14 +7,24 @@
   "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "historicalRuntimeSnapshots": {
-    "app.js": "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
+    "app.js": [
+      "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+    ],
     "music-studio-auto-finish.js": "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
-    "music-studio.html": "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
+    "music-studio.html": [
+      "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+    ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
       "70d536537a71957d68a1e79aeeb3f072b4de9554",
       "0268a30fc80769038911eb94f86d69728fcaadb5",
-      "51f15505e9a6513a648e7ecd788dee0f7fd37cf5"
+      "51f15505e9a6513a648e7ecd788dee0f7fd37cf5",
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+    ],
+    "index.html": [
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
     ]
   },
   "requirements": [
@@ -1304,7 +1314,7 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         }
       ],
       "dependsOn": []
@@ -1338,27 +1348,27 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "scheduled punch-in omits preroll samples and captures exact punch-out without UI timer",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "restart after the first gapless Take commits recovers only unsaved frames",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         },
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "gapless crash recovery recreates exact Take boundaries and cycle metadata",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         }
       ],
       "dependsOn": [],
@@ -1442,7 +1452,7 @@
         {
           "path": "tests/music-studio-vocal-recording.test.js",
           "acceptance": "Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery",
-          "run": "verification/music-macless-special-save-regression-20261112.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         }
       ],
       "dependsOn": [],
@@ -1827,7 +1837,7 @@
         {
           "path": "tests/music-studio-scoped-midi-repair.test.js",
           "acceptance": "repair only the selected track and measures; preserve input and locked notes",
-          "run": "verification/music-scoped-midi-repair-regression-20261113.json"
+          "run": "verification/music-recording-repository-regression-20261114.json"
         }
       ],
       "dependsOn": []
