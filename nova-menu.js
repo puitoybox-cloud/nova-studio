@@ -7,12 +7,16 @@
   const panel=root.querySelector('.nova-menu-panel');
   const scrim=root.querySelector('.nova-menu-scrim');
 
+  const standalone=document.body?.dataset.musicStudioStandalone==='true';
+  const musicDestinations={home:['music-studio','goHome'],projects:['music-studio/recent-projects','goProjects'],'music-studio':['music-studio','goHome'],settings:['music-studio/settings','goSettings'],backup:['music-studio/backup','goBackup']};
+
   function menuItems(){return [...panel.querySelectorAll('button:not([disabled]),summary')]}
   function currentRoute(){return (location.hash||'#home').slice(1)||'home'}
   function updateActive(){
     const route=currentRoute();
     panel.querySelectorAll('button[data-route],button[data-active-route]').forEach(button=>{
-      const active=(button.dataset.activeRoute||button.dataset.route)===route;
+      const destination=standalone?musicDestinations[button.dataset.route]?.[0]:button.dataset.route;
+      const active=(button.dataset.activeRoute||destination)===route;
       button.classList.toggle('is-current',active);
       if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     });
@@ -42,7 +46,7 @@
     root.classList.add('is-open');
     scrim.hidden=false;
     toggle.setAttribute('aria-expanded','true');
-    toggle.setAttribute('aria-label','メインメニューを閉じる');
+    toggle.setAttribute('aria-label','MENU メインメニューを閉じる');
     toggle.setAttribute('aria-hidden','true');
     toggle.tabIndex=-1;
     panel.setAttribute('aria-hidden','false');
@@ -52,7 +56,7 @@
     root.classList.remove('is-open');
     scrim.hidden=true;
     toggle.setAttribute('aria-expanded','false');
-    toggle.setAttribute('aria-label','メインメニューを開く');
+    toggle.setAttribute('aria-label','MENU メインメニューを開く');
     toggle.removeAttribute('aria-hidden');
     toggle.tabIndex=0;
     panel.setAttribute('aria-hidden','true');
@@ -60,9 +64,11 @@
   }
   function go(route){
     closeMenu(false);
-    if(document.body?.dataset.musicStudioStandalone==='true'){
-      if(route==='music-studio'){location.hash='music-studio';return}
-      location.href=`./index.html#${route}`;
+    if(standalone){
+      // Stay in the packaged document: index.html is not a Music Studio resource.
+      // The public actions apply the editor's existing unsaved-change guard.
+      const destination=musicDestinations[route];
+      if(destination)window.MusicStudio?.[destination[1]]?.();
       return;
     }
     if(typeof window.setView==='function')window.setView(route);else location.hash=route;

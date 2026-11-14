@@ -20,7 +20,7 @@
   function resolvePlaybackAudio(track={}){const declared=String(track.role||'').toLowerCase(),role=TRACK_ROLES.has(declared)?declared:playbackRole(track);return role?{mode:role,fallback:false,reason:null}:{mode:'melody',fallback:true,reason:'missing-core-role'}}
   function createPlaybackDescriptor(track={},playbackState={}){
     const id=String(track.id||''),part=String(track.part||playbackRole(track)||''),role=playbackRole({...track,part}),storedMuted=track.muted===true,audio=resolvePlaybackAudio({role});
-    return{id,part,role,channel:Number(track.channel),program:track.program==null?null:Number(track.program),audio,notes:Array.isArray(track.notes)?track.notes.map(clone):[],muted:runtimeValue(playbackState,'mutedByTrackId',id,storedMuted)===true,solo:runtimeValue(playbackState,'soloByTrackId',id,false)===true,soloEligible:role!==null}
+    return{id,part,role,...(track.sampleInstrument?{sampleInstrument:clone(track.sampleInstrument)}:{}),channel:Number(track.channel),program:track.program==null?null:Number(track.program),audio,notes:Array.isArray(track.notes)?track.notes.map(clone):[],muted:runtimeValue(playbackState,'mutedByTrackId',id,storedMuted)===true,solo:runtimeValue(playbackState,'soloByTrackId',id,false)===true,soloEligible:role!==null}
   }
   function descriptorTracks(input=[]){return Array.isArray(input)?input:Array.isArray(input?.tracks)?input.tracks:[]}
   function createPlaybackDescriptors(tracks=[],playbackState={}){return descriptorTracks(tracks).map(track=>createPlaybackDescriptor(track,playbackState))}

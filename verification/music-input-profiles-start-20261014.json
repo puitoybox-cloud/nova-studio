@@ -1,0 +1,1446 @@
+{
+  "date": "2026-10-14 JST",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "prs": [
+    {
+      "number": 413,
+      "head": "e4a8c54ab8db2ab7864cdfdf477cf9f7c1699d54",
+      "base": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24",
+      "branch": "feature/music-long-master-workspace-versions-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 412,
+      "head": "87c89704bc6fe4310aeb3181d9f7fd860afcaf24",
+      "base": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55",
+      "branch": "feature/music-master-versions-workspace-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 411,
+      "head": "adbbe7f9dea8a5778552ac55dc8bc126b1cb2a55",
+      "base": "4a5128a1521dc676a45cd626029ad5dcff235a29",
+      "branch": "feature/music-mix-versions-workspace-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 410,
+      "head": "4a5128a1521dc676a45cd626029ad5dcff235a29",
+      "base": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c",
+      "branch": "feature/music-landscape-workspace-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 409,
+      "head": "fde6933fa5b8e83cf44f802fd5d0683c90719c6c",
+      "base": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883",
+      "branch": "feature/music-ipad-recovery-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 408,
+      "head": "f1e29ec5522291b9fa89e6a1b674c6fe086d4883",
+      "base": "3326d50ffcca629e06ed5a24d77ed4b100a4b836",
+      "branch": "feature/music-export-history-replay-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 407,
+      "head": "3326d50ffcca629e06ed5a24d77ed4b100a4b836",
+      "base": "fc9d934169f6ee1f6551d32933a94a296972da1b",
+      "branch": "feature/music-work-modes-favorites-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 406,
+      "head": "fc9d934169f6ee1f6551d32933a94a296972da1b",
+      "base": "33c87c1b8903fa73234d5d488ec2189a65ef4e61",
+      "branch": "feature/music-final-export-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 405,
+      "head": "33c87c1b8903fa73234d5d488ec2189a65ef4e61",
+      "base": "509bcd570590549283a417ee1bf52ef3ee92307c",
+      "branch": "feature/music-unified-ui-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 404,
+      "head": "509bcd570590549283a417ee1bf52ef3ee92307c",
+      "base": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1",
+      "branch": "feature/music-vocal-transport-cycle-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 403,
+      "head": "bd11cf930eba7af2f1fb2cac6602189ff46fccc1",
+      "base": "fc3f315547943eb83142a2c6751e2a9f2c3e179f",
+      "branch": "feature/music-vocal-production-next-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 402,
+      "head": "fc3f315547943eb83142a2c6751e2a9f2c3e179f",
+      "base": "5f9a0409271db30fa946a7095e339a9123afa3e2",
+      "branch": "feature/music-vocal-correction-comp-sync-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 401,
+      "head": "5f9a0409271db30fa946a7095e339a9123afa3e2",
+      "base": "f522db43e63858c2ae0d8043136af0985f309f26",
+      "branch": "feature/music-vocal-recording-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 400,
+      "head": "f522db43e63858c2ae0d8043136af0985f309f26",
+      "base": "33cc706c7d1bc1e2451d967181ee3924127ce354",
+      "branch": "feature/music-long-master-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 399,
+      "head": "33cc706c7d1bc1e2451d967181ee3924127ce354",
+      "base": "0fc8657918b0c29b053f0a9beebf85b411b5dde1",
+      "branch": "feature/music-vocal-harmony-mastering-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 398,
+      "head": "0fc8657918b0c29b053f0a9beebf85b411b5dde1",
+      "base": "3a60972e487d7c85f05e73488df52c4b969880b1",
+      "branch": "feature/music-referenced-binary-archive-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 397,
+      "head": "3a60972e487d7c85f05e73488df52c4b969880b1",
+      "base": "0f36624de7cfde69e35180ecc128584fb06fcad2",
+      "branch": "feature/music-production-continuation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 396,
+      "head": "0f36624de7cfde69e35180ecc128584fb06fcad2",
+      "base": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "branch": "feature/music-production-session-completion-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 395,
+      "head": "459306debbb96cf6831622d6fe833b39dfd96b9d",
+      "base": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "branch": "feature/music-midi-open-after-explicit-close-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 394,
+      "head": "f3d43f38b0fc67618b0807d803ba8d53e25fe255",
+      "base": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "branch": "feature/music-midi-closed-port-release-regressions-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 393,
+      "head": "267dc4a6974bbf5c6e085799b187024afb912061",
+      "base": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "branch": "fix/music-midi-overlap-test-contract-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 392,
+      "head": "df13df679f0dcfa60bf9eb235160586b6ae5b8c7",
+      "base": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "branch": "feature/music-midi-reentrant-note-release-safety-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 391,
+      "head": "59f747fe0dd47bc271d1e4ff0c04649d43a165c0",
+      "base": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "branch": "fix/music-midi-release-count-bounds-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 390,
+      "head": "c8374785eb3fdf8b9e9b328275d6cd9d410a7612",
+      "base": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "branch": "fix/music-midi-overlap-release-bound-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 389,
+      "head": "f0d5b5745a017f3689e63cbffa06020f71f3f563",
+      "base": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "branch": "feature/music-midi-note-count-release-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 388,
+      "head": "1321e59ef23c8f311bbe0c3bbe2fdd5728b7cade",
+      "base": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "branch": "feature/music-midi-multi-press-held-count-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 387,
+      "head": "24e640eb82986678532b3f4e0c3a85ab3b7aea3a",
+      "base": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "branch": "fix/music-midi-release-reentrant-notify-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 386,
+      "head": "68f700b1dbe92ea0afc18f0d332d6b4b0b429088",
+      "base": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "branch": "fix/music-midi-reconnect-notification-consistency-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 385,
+      "head": "10c30b9146d45a1d7456841a89e4c3339f214f3e",
+      "base": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "branch": "fix/music-midi-reconnect-release-ci-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 384,
+      "head": "0580a21dd7fac0ec9c3f6f9d275ad92dcea2ca7f",
+      "base": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "branch": "feature/music-midi-atomic-reconnect-state-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 383,
+      "head": "57b5d82506cad6bd711564c13fc28ec69ef8d3d8",
+      "base": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "branch": "feature/music-midi-close-reopen-atomic-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 382,
+      "head": "4ee0201eb66b819646b7f1f277eeefbed9a1f4a8",
+      "base": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "branch": "feature/music-midi-state-event-snapshots-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 381,
+      "head": "dfe4641c97b7c0a4aa80ab34a4353d64865e6514",
+      "base": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "branch": "feature/music-midi-strict-event-payload-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 380,
+      "head": "63a631c868295b03a7224f27c5a740a17922dd43",
+      "base": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "branch": "feature/music-midi-delivery-fault-containment-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 379,
+      "head": "1e24007696cf5f2462e429fb02e38d09d2688d18",
+      "base": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "branch": "feature/music-midi-reentrant-source-state-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 378,
+      "head": "af9efa2c95076f79c0b7ee6e1db5d9cd91c638ec",
+      "base": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "branch": "feature/music-midi-source-notification-lock-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 377,
+      "head": "5e30ba49cbed0825cfb052f708b8c8d4862f7120",
+      "base": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "branch": "feature/music-midi-listener-fault-isolation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 376,
+      "head": "6aa0a3175bcdc8aa78dc342e81322ea982514a5f",
+      "base": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "branch": "feature/music-midi-production-edge-closure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 375,
+      "head": "e63b3fbabc242b932a96f502b15dbd0ef7daedc7",
+      "base": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "branch": "feature/music-midi-close-before-release-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 374,
+      "head": "384465f3b38ecf54a756e05b85181ae8830c2e47",
+      "base": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "branch": "feature/music-midi-source-state-tests-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 373,
+      "head": "8a001a4d683acd64ead56d91a81c29851496be61",
+      "base": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "branch": "feature/music-midi-source-state-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 372,
+      "head": "9087f6a7871ae52542caf56b433f3b34892c5130",
+      "base": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "branch": "feature/music-native-file-import-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 371,
+      "head": "97d6cdecf61f07ca6d896819704c68d978f40461",
+      "base": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "branch": "feature/music-spm-assets-migration-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 370,
+      "head": "f661d538b1c83b7e0005dd2e6af5b89e29e88ecf",
+      "base": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "branch": "feature/music-bundled-midi-production-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 369,
+      "head": "69114edbb37ce8af21c7d7ba14d01ea4f0a0b443",
+      "base": "1587ed74025970282810f43f50295931dd7e0f79",
+      "branch": "feature/music-midi-session-cancellation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 368,
+      "head": "1587ed74025970282810f43f50295931dd7e0f79",
+      "base": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "branch": "feature/music-midi-disconnect-countin-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 367,
+      "head": "29d61d61b673c90e7df276cde0614b6da2454773",
+      "base": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "branch": "feature/music-aligned-candidates-spatial-history-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 366,
+      "head": "cc40af3b1e8fa58b99d561fdca08a4790f368d05",
+      "base": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "branch": "feature/music-aligned-spatial-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 365,
+      "head": "13bf1acb1cb6380559e66b4336575e989fdb9b56",
+      "base": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "branch": "feature/music-pcm-collision-proposals-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 364,
+      "head": "efd2157729eadbfa9cd6fbbb2ac2e3af072c8a8a",
+      "base": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "branch": "feature/music-measured-mix-proposals-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 363,
+      "head": "84e8064e77049f2a268bc305da36c9474c63a4eb",
+      "base": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "branch": "feature/music-long-wav-mix-ui-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 362,
+      "head": "b77ff36566ec9b95f06c8b56cdfee3d6d1a9c6ff",
+      "base": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "branch": "feature/music-long-wav-archive-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 361,
+      "head": "0ece49e1b1767e221c9ce5708a97bdc823c19eba",
+      "base": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "branch": "feature/music-long-wav-durable-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 360,
+      "head": "e60c44209fbed9c3ce710db1b505a01908101b36",
+      "base": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "branch": "feature/music-wav-async-render-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 359,
+      "head": "7962eeadde1c8d6dbf14355ac16b81db6e6572d4",
+      "base": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "branch": "feature/music-wav-stream-read-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 358,
+      "head": "1e2ed849a1ec02fe51d6983583d1cfac209a3b94",
+      "base": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "branch": "feature/music-pcm-continuous-chunks-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 357,
+      "head": "65abb1cb496304bec90dfd594d004b9b892e4e9d",
+      "base": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "branch": "feature/music-pcm-compression-integrated-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 356,
+      "head": "ae40df2bbed0c89201f8d776b06a8e6e66838076",
+      "base": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "branch": "feature/music-pcm-compression-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 355,
+      "head": "0835135cea49977697e260b34dcd1ce753e9372d",
+      "base": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "branch": "feature/music-pcm-eq-persist-verify-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 354,
+      "head": "7bf8248d718f9802119d3ba5a13e96dfd290ee4e",
+      "base": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "branch": "feature/music-pcm-eq-persist-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 353,
+      "head": "73009702854ab77049174e27f5ab2848896fbd2f",
+      "base": "3c40354e65d6945df14676efe317771e3a715947",
+      "branch": "feature/music-pcm-eq-preview-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 352,
+      "head": "3c40354e65d6945df14676efe317771e3a715947",
+      "base": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "branch": "feature/music-pcm-peaking-eq-chat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 351,
+      "head": "2523803b25d9182cc05cd5b27688b34beeecffdc",
+      "base": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "branch": "feature/music-pcm-mix-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 350,
+      "head": "752a4bf3522736b9c69e4635ba4635c3a52307e8",
+      "base": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "branch": "feature/music-lyrics-note-assignment-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 349,
+      "head": "ffaf8dc45205d421d928e53964948dd0f2498ee3",
+      "base": "6ef95994a939817b5d579ff452997598da356673",
+      "branch": "feature/music-native-format-closure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 348,
+      "head": "6ef95994a939817b5d579ff452997598da356673",
+      "base": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "branch": "feature/music-package-native-graph-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 347,
+      "head": "412cb636d43e60a1466f51dbb011cc1b711427a1",
+      "base": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "branch": "feature/music-package-macho-loader-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 346,
+      "head": "1303a26041c07425bb0469f5abcfc017307a9ebb",
+      "base": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "branch": "feature/music-wrapper-build-inventory-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 345,
+      "head": "f9d3255c373053029190b9f0ac16d1edf7cc6f6e",
+      "base": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "branch": "feature/music-unsigned-app-layout-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 344,
+      "head": "765d0396a5079486a2c0eabc25dcfca834a3d248",
+      "base": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "branch": "feature/music-unsigned-generation-assembly-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 343,
+      "head": "61435e4ff3ac20d06559ffb56abd9f544e368714",
+      "base": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "branch": "feature/music-validated-publication-snapshot-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 342,
+      "head": "ac6f8a2fd88f4a1a65abd8a5d1f341d11b58ff96",
+      "base": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "branch": "feature/music-sealed-summary-immutability-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 341,
+      "head": "f63d635fbc45757641f7852a257895ecb7ae2f01",
+      "base": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "branch": "feature/music-native-observation-snapshot-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 340,
+      "head": "27ab7dc7860c6074dd56b6c3d0966f763f0d20e8",
+      "base": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "branch": "feature/music-terminal-transport-callback-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 339,
+      "head": "e4a44b2585af87b001d94158dc3dea3dae3b4426",
+      "base": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "branch": "feature/music-terminal-shutdown-failure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 338,
+      "head": "7930d40f733e736bd6b66b1dfcf2680cd27ae659",
+      "base": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "branch": "feature/music-request-authority-isolation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 337,
+      "head": "f1d555c739525c92a33ced647f3af2f96e2c8665",
+      "base": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "branch": "feature/music-authorized-result-generation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 336,
+      "head": "5ce9979c7c162ae487a430c7b0927cf264c60428",
+      "base": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "branch": "feature/music-final-response-output-recheck-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 335,
+      "head": "4517279de9f227972ca0681b399ce2868ba10b9a",
+      "base": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "branch": "feature/music-stem-output-continuity-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 334,
+      "head": "f00bc150c5ab025c63416fcade9ee3a50187b9af",
+      "base": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "branch": "feature/music-processing-publication-continuity-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 333,
+      "head": "d8be6f8d9d0c3148747523cc84b91fe3bd78ff0f",
+      "base": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "branch": "feature/music-owned-health-continuity-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 332,
+      "head": "7657ddac3e860f4c9e470a6e3357419df44b90cf",
+      "base": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "branch": "feature/music-parent-owned-origin-binding-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 331,
+      "head": "1e8fc07364b78cad3f8486ed45288c6ebb7619b0",
+      "base": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "branch": "feature/music-owned-process-origin-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 330,
+      "head": "0351f6d9ccefe843eec24ee99732e15cf467d9de",
+      "base": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "branch": "feature/music-packaged-native-runtime-origin-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 329,
+      "head": "a3ddd0105f81a7387cf5bb307d12402bcb07d1df",
+      "base": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "branch": "feature/music-private-runtime-unified-checkpoint-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 328,
+      "head": "1491d6732155f500cb929d4e927bf9a5cb83eaae",
+      "base": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "branch": "feature/music-private-runtime-production-slots-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 327,
+      "head": "96c7d8698847a22afd53dc991c61b0110d5d3902",
+      "base": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "branch": "feature/music-private-python-anchored-routing-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 326,
+      "head": "6c46910c2915c3b7e3810aaa5eeac629cd4e7396",
+      "base": "95287bd846009004e705f267e965510cce56a455",
+      "branch": "feature/music-swift-private-summary-ack-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 325,
+      "head": "95287bd846009004e705f267e965510cce56a455",
+      "base": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "branch": "feature/music-owned-descendant-final-delivery-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 324,
+      "head": "f909543081adcb7bef0254b0230ce825a319caf0",
+      "base": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "branch": "feature/music-owned-exit-delivery-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 323,
+      "head": "7f717c6a3cbdfd463f97da992a5e2dfd3441bdd6",
+      "base": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "branch": "feature/music-record-manifest-production-assembly-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 322,
+      "head": "848a3dd1e73f3b027e0f0e52a815bb9597eb6a9d",
+      "base": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "branch": "feature/music-private-runtime-assembly-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 321,
+      "head": "d0ecf98c932d2955eb0c6fea2c3401a4cc17a6e2",
+      "base": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "branch": "feature/music-installed-dependency-assembly-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 320,
+      "head": "9bf70a4289d4384c8010bee62b42d7a4538af74c",
+      "base": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "branch": "feature/music-exact-backend-candidates-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 319,
+      "head": "17525108dc6939e2a10f3dab630f78a3e7270479",
+      "base": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "branch": "feature/music-backend-bundle-evidence-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 318,
+      "head": "042090a4cec078b4a3e2460da9ed70ce5a7a2c52",
+      "base": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "branch": "feature/music-production-source-preflight-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 317,
+      "head": "8b1a4640be4960e99a8e040caf6615f3a68bc72e",
+      "base": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "branch": "feature/music-browser-stream-audit-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 316,
+      "head": "2e0d6ec738bc2e691f7081c32e12ec111dbb30c0",
+      "base": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "branch": "feature/music-authorized-shutdown-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 315,
+      "head": "d244983a4643490e8a8fedf501cdb65cb6299ecf",
+      "base": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "branch": "feature/music-owned-result-lifecycle-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 314,
+      "head": "24730636102cdec68b952bc5834be50a94b00a5b",
+      "base": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "branch": "feature/music-dispatch-evidence-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 313,
+      "head": "17e46c76a6ad4f5f766853dbfe68246c8a63c10b",
+      "base": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "branch": "feature/music-native-runtime-events-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 312,
+      "head": "a43af2d282e50b229a2828e4be2de3b102b5c2c1",
+      "base": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "branch": "feature/music-native-image-routing-v2",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 311,
+      "head": "3b5e04eb3d614e1b8ef6634e1141e07b9ae5a6db",
+      "base": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "branch": "feature/music-native-routing-closure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 310,
+      "head": "5023ba50b4474843c0b0dad6c85b7c2b74f7e142",
+      "base": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "branch": "feature/music-processing-closure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 309,
+      "head": "d268830e9b84ae39d5791499f6a99f05ba773561",
+      "base": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "branch": "feature/music-production-lifecycle-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 308,
+      "head": "79741ef371ea513032d78a0834f7ac041c84036b",
+      "base": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "branch": "feature/music-scoped-loaded-library-receipts-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 307,
+      "head": "8317535ffe327f8437f39827f836d3c893ce98d9",
+      "base": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "branch": "feature/music-native-runtime-verification-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 306,
+      "head": "c774e9191cd60a3642854cd61d5f0a05c21fe6e5",
+      "base": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "branch": "feature/music-demucs-receipt-closure-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 305,
+      "head": "e468e5dac3d3d5aae3ee0dfd78c11d79522524f4",
+      "base": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "branch": "feature/music-runtime-inventory-v2",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 304,
+      "head": "b6ba1d3063153899fe0eb6ec4f7764d4afce3f55",
+      "base": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "branch": "feature/music-distribution-identity-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 303,
+      "head": "3b3b178f81a5b6096af421a577f80fe49fa6b74e",
+      "base": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "branch": "feature/music-runtime-ingress-identity-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 302,
+      "head": "5adfc3cf13ef488ce116c8c655166f5dce0560df",
+      "base": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "branch": "feature/music-resource-runtime-contract-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 301,
+      "head": "16db7aecd30313618837beaefa235bb8a3032a28",
+      "base": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "branch": "feature/music-durable-package-generation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 300,
+      "head": "4fef6c143340f4ff0c9d01b1796a38f4641dce12",
+      "base": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "branch": "feature/music-binary-resolver-boundary-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 299,
+      "head": "269c29a74004e9e883de0fee2e59ac3e71b57d73",
+      "base": "031def44c194787f4e8e17552961d62e93b10df2",
+      "branch": "feature/music-restore-atomic-safety-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 298,
+      "head": "031def44c194787f4e8e17552961d62e93b10df2",
+      "base": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "branch": "feature/music-transaction-completion-safety-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 297,
+      "head": "f4402bc7d4dee5470b454f0f8058c57c96b3c601",
+      "base": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "branch": "feature/music-production-verification-contract-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 296,
+      "head": "89570b292efc2417b5a927cf94037e4fe878063a",
+      "base": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "branch": "feature/music-disposable-durable-recovery-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 295,
+      "head": "120b4527780bbfe00b164875c57f852c4055cc9a",
+      "base": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "branch": "feature/music-observed-byte-fault-evidence-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 294,
+      "head": "24f4cb1a472dadb64b4e15c3b67bc237f50a5519",
+      "base": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "branch": "feature/music-package-restore-review-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 293,
+      "head": "d22ad93e738c96bdded6064013f79fd48129bc3c",
+      "base": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "branch": "feature/music-dependency-closure-boundaries-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 292,
+      "head": "29a9223d23a16bb4de5cac0040ce6867dd4a7201",
+      "base": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "branch": "feature/music-storage-contract-inspection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 291,
+      "head": "58ea34fa6c6ef14a070f84664f49621d7d9323a1",
+      "base": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "branch": "feature/music-asset-dependency-inspection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 290,
+      "head": "bd9fdd7bf777f4bbc34dd02481805572a0005169",
+      "base": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "branch": "feature/music-completion-foundation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 289,
+      "head": "418dc57429f91ffcef6b578a7edfda36012576fd",
+      "base": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "branch": "feature/music-ai-arrangement-destination-inspection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 288,
+      "head": "c041822d9715622302478f40d3f74ada8f830ee2",
+      "base": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "branch": "feature/music-ai-arrangement-track-inspection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 287,
+      "head": "daadc79ab48772a420bf8720c1ef0f75afe10cbe",
+      "base": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "branch": "feature/music-ai-arrangement-reference-inspection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 286,
+      "head": "512d039dfda432bfb65356d5162440ccf8ea1b4f",
+      "base": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "branch": "feature/music-ai-lyrics-reference-explicit-selection-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 285,
+      "head": "58d4d358b4ba5844f1494844060fbf7239ef3815",
+      "base": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "branch": "feature/music-ai-lyrics-melody-reference-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 284,
+      "head": "cf283a96c0bd25e3ca4ff467b63f687a17720ccb",
+      "base": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "branch": "feature/music-ai-continuation-source-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 283,
+      "head": "2cef9c22c99cceb231263fa75f0091470309a103",
+      "base": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "branch": "feature/music-ai-arrangement-entry-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 282,
+      "head": "b2075209428dedd91775de52ea45585ed9ba7bbd",
+      "base": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "branch": "feature/music-ai-lyrics-exact-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 281,
+      "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "base": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "branch": "feature/music-ai-project-section-apply-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 280,
+      "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "base": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "branch": "feature/music-ai-section-exact-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 279,
+      "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "base": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "branch": "feature/music-ai-family-metadata-range-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 278,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "base": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "branch": "feature/music-ai-partial-family-history-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 277,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "base": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "branch": "feature/music-ai-family-apply-transaction-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 276,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "base": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "branch": "feature/music-ai-family-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 275,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "base": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "branch": "feature/music-ai-exact-partial-adoption-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 274,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "base": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "branch": "feature/music-ai-candidate-family-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 273,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "base": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "branch": "feature/music-ai-candidate-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 272,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "base": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "branch": "feature/music-ai-composition-workflow-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 271,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "base": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "branch": "feature/music-ai-assistant-ui-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 270,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "base": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "branch": "feature/music-ai-workflow-foundation-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 269,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-coordinated-a-browser-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 268,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-editor-commit-lock-guard-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 267,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-measure-lock-compat-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 266,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-structure-descriptors-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 265,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-meter-boundaries-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 264,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-midi-metadata-export-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 263,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "feature/music-structure-metadata-maps-v1",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 262,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "verification/music-studio-all-drafts-255",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 261,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "base": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "branch": "verification/music-studio-baseline-combined",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 260,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "agent/music-studio-cache-version-consistency",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 259,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "agent/music-selected-track-invalid-id-guard",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 258,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "agent/music-audio-bridge-midi-guard",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 257,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "agent/music-audio-helper-boundary-tests",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 256,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "base": "552d56eafddfd192970c09f7d6278696cf8775c3",
+      "branch": "agent/music-studio-current-main-build-verification",
+      "mergeable": true,
+      "draft": true,
+      "error": false
+    },
+    {
+      "number": 35,
+      "head": "0066ce391b5f5dd54f04612edd1111d59ed5d763",
+      "base": "091fd97890712b98e0934511be64c6408b81821a",
+      "branch": "codex/add-url-registration-for-story-archive",
+      "mergeable": false,
+      "draft": false,
+      "error": false
+    },
+    {
+      "number": 10,
+      "head": "060bf78b8cadf773209c441a332d420043c356f5",
+      "base": "38e14b57ddfa5e0d340724a5dc1e17278d8365c6",
+      "branch": "codex/scene",
+      "mergeable": false,
+      "draft": false,
+      "error": false
+    }
+  ]
+}

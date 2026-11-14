@@ -1,0 +1,508 @@
+{
+  "date": "2026-10-03",
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "selectedBase": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+  "drafts": [
+    {
+      "number": 278,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "branch": "feature/music-ai-partial-family-history-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37037679365,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679319,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37037679357,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 277,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "branch": "feature/music-ai-family-apply-transaction-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37025404027,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37025403269,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 276,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "branch": "feature/music-ai-family-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37021075209,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37021074841,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 275,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "branch": "feature/music-ai-exact-partial-adoption-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37019221774,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37019221478,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 274,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "branch": "feature/music-ai-candidate-family-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37002368391,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 273,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "branch": "feature/music-ai-candidate-preview-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 37000339200,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 37000339178,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 272,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "branch": "feature/music-ai-composition-workflow-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36999235875,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36999235787,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 271,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "branch": "feature/music-ai-assistant-ui-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36996087448,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36996087511,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 270,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "branch": "feature/music-ai-workflow-foundation-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36975608931,
+          "name": "Music Studio AI workflow foundation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 269,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "branch": "feature/music-coordinated-a-browser-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36973666391,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666351,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666458,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666537,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666482,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666347,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666652,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666369,
+          "name": "Coordinated Music Studio checkpoint verification",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666427,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36973666467,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 268,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "branch": "feature/music-editor-commit-lock-guard-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36966130488,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36966130519,
+          "name": "Music Studio Editor commit lock guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 267,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "branch": "feature/music-measure-lock-compat-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36880714212,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 266,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "branch": "feature/music-structure-descriptors-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36857393673,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 265,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "branch": "feature/music-meter-boundaries-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36856792517,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 264,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "branch": "feature/music-midi-metadata-export-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36854131822,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 263,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "branch": "feature/music-structure-metadata-maps-v1",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36857193454,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 262,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "branch": "verification/music-studio-all-drafts-255",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 36851340615,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340507,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340535,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 36851340513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 261,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "branch": "verification/music-studio-baseline-combined",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35857916359,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35857916467,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 260,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "branch": "agent/music-studio-cache-version-consistency",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35853060620,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 259,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "branch": "agent/music-selected-track-invalid-id-guard",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35845980410,
+          "name": "Music Selected Track ID Guard",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35845980281,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 258,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "branch": "agent/music-audio-bridge-midi-guard",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35932676423,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 257,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "branch": "agent/music-audio-helper-boundary-tests",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35859941419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "number": 256,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "branch": "agent/music-studio-current-main-build-verification",
+      "mergeable": true,
+      "draft": true,
+      "ci": [
+        {
+          "id": 35726291578,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 35726291819,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

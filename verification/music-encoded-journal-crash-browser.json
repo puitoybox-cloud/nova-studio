@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-13T15:19:53.423Z",
+  "syntheticMicrophone": true,
+  "physicalPowerLossTested": false,
+  "processKill": "SIGKILL",
+  "freshChromiumSameProfile": true,
+  "captured": {
+    "id": "5a9e8a5e-89c5-48aa-a75a-71fca240a656",
+    "committedBytes": 936178,
+    "rate": 48000,
+    "phase": "recording",
+    "assets": 0
+  },
+  "discovered": [
+    {
+      "id": "5a9e8a5e-89c5-48aa-a75a-71fca240a656",
+      "encodedBytes": 936178,
+      "updatedAt": 1794583154722,
+      "closed": false
+    }
+  ],
+  "result": {
+    "compFromRecoveredTake": true,
+    "compMaxSampleDelta": 0,
+    "frames": 2787840,
+    "sampleRate": 48000,
+    "hash": "7376dc4ce4e3ca52709623d9663e9d1d8b81db5d05bfc5a805e4708c574ce815",
+    "decodedCommittedContainerIdentical": true,
+    "unfinishedArchiveMigrationIdentical": true,
+    "automaticUnfinishedBackup": true,
+    "archiveIdentical": true,
+    "repeatRejected": true,
+    "retainedContainersIdentical": true,
+    "recoveryMarkersAtomic": true,
+    "recoveryEventId": "78efec5b-cc51-430e-ba58-5b40fbd5394c",
+    "recoveryJournalId": "5a9e8a5e-89c5-48aa-a75a-71fca240a656",
+    "remainingJournals": 4
+  },
+  "sourceSHA256": "5162c2be4fd8ef9cf49d2af984e61b6646659d8d97dd7abea2b2f3c290e1d1d5"
+}

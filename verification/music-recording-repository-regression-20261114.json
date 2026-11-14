@@ -1,0 +1,27 @@
+{
+  "head": "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
+  "command": "node --test --test-concurrency=8",
+  "passed": 2983,
+  "failed": 0,
+  "sourceHashes": {
+    "tests/music-studio-vocal-recording.test.js": "0ffd8985f1be14dffa814865fc8d60178cc8dead9104471b5d8628fc4f33bb69",
+    "tests/music-studio-scoped-midi-repair.test.js": "03af845e1c733d0d3303560cced76c4824a2427c346f22935dffd2bce12b7413"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "e239f6885ae2a798667a7136cc62660db70e33c3bea376f390eebb23b218eab1",
+    "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371",
+    "app.js": "bda99574de5b36014f8a163f2a10abda845fc4f25197fc74034b62736dc70d8f",
+    "index.html": "e333510c3861b3031ddcb10503a4b8cf2fde4ba6e5f1cbf339b8e56a777a1f83",
+    "music-studio.html": "e5a5a4eada4c667e420f5bfbcec474961d9ace6d715857afb10015e081ff9165"
+  },
+  "acceptedCases": [
+    "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
+    "scheduled punch-in omits preroll samples and captures exact punch-out without UI timer",
+    "two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore",
+    "cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project",
+    "restart after the first gapless Take commits recovers only unsaved frames",
+    "gapless crash recovery recreates exact Take boundaries and cycle metadata",
+    "Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery",
+    "repair only the selected track and measures; preserve input and locked notes"
+  ]
+}
