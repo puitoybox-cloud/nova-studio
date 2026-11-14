@@ -1,0 +1,33 @@
+# Long sequential generation — 2026-10-19 JST
+
+Parent: #466 / 09da6554e036a932911c859691a0518740b2f6a8. Main unchanged.
+
+Production changes:
+- Stop token decoding only when the monotonic beat lower bound proves all future events fall outside the requested range. A source-conditioned continuation anchors to its first generated note. Do not stop on a late subbeat alone. Preserve sampled notes inside the requested range; retain the existing 64-event cap and model-session identity verification.
+- Return per-candidate events, range termination, ONNX calls and elapsed time. Return RSS where available and the Python process lifetime RSS high-water mark, explicitly distinguished from per-request peak.
+- Persist bar runtime measurements in whole-song candidate provenance and display measured per-bar A/B/C total elapsed time and calls after reopen.
+- Expire request-ID based composition cooperatively after 240 seconds, including abandoned requests, between existing model checks. Does not interrupt a single native ONNX call.
+- Add an actual 480-second/144-bar/576-source-note fixture at BPM72 through the existing production generator: 72 completed bars, durable automatic checkpoints, backup/fresh-session restoration, Resume without redoing completed bars, A/B/C save, source preservation, counts, storage bytes and resource report. Linux CI runs this with fixed licensed real model weights; failure retains a partial artifact. This is a generated fixture, not the user's original music or physical acceptance.
+
+Local verification: initial complete Node2473/2473 PASS (97.835s); focused checkpoint/performance save/backup regression PASS. Python budget5, runtime7, constraints8, cancellation4, HTTPS transport5, startup4 PASS. Audio pipeline509 run/504 pass/5 inherited skips (33.534s), intentional fault logs and existing ResourceWarnings. JS syntax/Python compile and whitespace checks PASS. Full final Node rerun and real-model measurements pending at initial checkpoint publication. Swift/Xcode/Chrome are not locally available.
+
+Initial real whole-song attempt failed before bar1: onnxruntime missing. Isolated scratch runtime provisioning and fixed licensed asset preparation attempted subsequently; results must be reported separately. No estimated speedup, peak-memory reduction, musical-quality completion or eight-minute success is claimed by this checkpoint.
+
+A0/B0/C30 remains provisional and unchanged. Current formal PDF reread through Library: all5 pages/166 lines, modified2026-09-30; no entire feature has new closure proof. This work is bounded performance/cancellation/measurement implementation; the requested20–30 independent production items are not completed. Musical voicing algorithms, free-form understanding, HTTPS session renewal, signing/notarization, full Mix/Mastering/Export acceptance and physical listening remain open. Original MIDI/user data/8 screens retained. No Provider calls, unlicensed assets, main/Ready/Merge/force-push changes.
+
+Startup audit:213 Open PRs/211 Drafts; all211 Draft head/base/conflict metadata, latest commits, all changed filenames and exact-head check-runs reread, no pagination overflow. #466 remains latest safe Draft;2 successful execution checks and42 skipped, all on exact09da6554. Older workflow log histories not exhaustively reread.
+
+
+## Actual 480-second execution completed
+
+Linux x86_64, ONNX1.23.2 CPU,2 intra-op/1 inter-op threads; SHA256-fixed model pair. Constructed144-bar4/4 BPM72 fixture with576 original notes (not the user's own song). Completed A/B/C,72-bar checkpoint→backup→fresh-session reopen→Resume→saved candidates; no repeated completed-bar inference, original MIDI byte-for-byte JSON snapshot unchanged.144 composition requests /432 candidate decodes; base3203+token25415=28618 real ONNX calls. Generated model notes A916/B892/C887 (2695 total), MIDI47468bytes. The four instrument accompaniment still uses explicit rules; these note counts are model melodies, not all rendered accompaniment notes.
+
+Measured wall time306.932739680s including startup, checkpoints, backup/restore, whole-song preview validation and final save. Sum compose elapsed175.611996816s. First model load2.296948004s;143 reused calls, median warm load0.000302842s. Python host lifetime high-water RSS1205018624bytes; first warm RSS1204903936→last1205153792bytes (observed change249856bytes). This is not total application peak, a general no-leak proof, or Intel hardware performance.72-bar checkpoint275126bytes; final saved JSON project1395068bytes. Actual report: music-local-real-whole-song.json. Test product tree8343a1bff4db00a5ab215660786164739a21ba89. Subsequent UI finalization progress/yield change is covered by focused pause/resume tests and new-head CI, not retroactively attributed to this local wall time.
+
+Same input/seed/settings one-bar comparison: baseline192+1536 calls versus bounded29+232; retained A/B/C MIDI hashes all equal. Candidate-generation elapsed10.016327476s versus1.504607352s, with baseline cold/warm load explicitly separated in the artifact. Concurrent host activity and single fixture limit this comparison; no general speedup or whole-song ratio inferred. See music-range-budget-comparison-20261019.json.
+
+Actual long execution exposed time in final orchestration validation after inference. Added A/B/C finalization progress and event-loop yield before each synchronous candidate validation; Pause keeps completed checkpoint and Resume performs zero new inference. A single synchronous candidate validation still blocks until completion; no claim of fully cancellable inner rendering.
+
+Final local whole-song focused22/22 PASS (5.167s). Complete Node rerun pending completion when this evidence was written. Startup full Node2473PASS retained separately; final count must use final logs. Python budget5/runtime7/constraints8/cancel4/transport5/startup4 PASS; audio509run/504PASS/5skip. Local Sinsy preparation stopped on HTS archive SHA256 mismatch without bypass; CI on5f37f5f already passed fixed asset preparation and real ONNX/Sinsy step, but it is not final-head evidence. Initial e60661 CI failed due new tokenizer test running before Pillow installation; workflow order fixed in5f37f5f. No old-head success is used for final-head acceptance.
+
+Remaining: actual user-song and varied-section quality listening, complete longer complex-song acceptance, per-native-call cancellation, inner finalization responsiveness, actual iPad HTTPS reconnect/auth renewal, complete MIDI→WAV→Mix→Mastering→all Export product acceptance, policy/runtime distribution/signing/notarization. A0/B0/C30 unchanged, all30 residual rows preserved in music-range-budget-30-features-20261019.json.20–30 independent production items not achieved.

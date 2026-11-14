@@ -1,0 +1,142 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),os=require('node:os'),{execFileSync}=require('node:child_process'),{chromium}=require('playwright');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'nova-bundled-midi-'));
+execFileSync('python3',[path.join(__dirname,'music-stage-native-web.py'),root]);
+const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://localhost').pathname.slice(1),file=path.resolve(root,name);if(!file.startsWith(root+'/')||!fs.existsSync(file)){res.writeHead(404);return res.end()}res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res)});
+async function verify(browser,base,width){
+ const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),messages=[],external=[],expectedStorageErrors=[];let injectingStorageFailure=false;
+ page.on('console',m=>{if(['error','warning'].includes(m.type()))(injectingStorageFailure?expectedStorageErrors:messages).push(m.text())});page.on('pageerror',e=>messages.push(e.message));page.on('response',r=>{if(r.status()>=400)console.log('BUNDLED_HTTP_ERROR',r.status(),r.url())});
+ await page.route('**/*',route=>{const u=route.request().url();if(u.startsWith(base+'/')||u.startsWith('data:'))return route.continue();external.push(u);return route.abort()});
+ await context.addInitScript(()=>{
+  const input={id:'virtual-keys',name:'Controlled virtual MIDI',state:'connected',type:'input',onmidimessage:null},access={inputs:new Map([[input.id,input]]),onstatechange:null};
+  window.__midi={input,access,permissions:0};
+  Object.defineProperty(navigator,'requestMIDIAccess',{configurable:true,value:async()=>{__midi.permissions++;if(__midi.defer)return new Promise(resolve=>{__midi.resolve=()=>resolve(access)});return access}});
+ });
+ await page.goto(base+'/music-studio.html#music-studio',{waitUntil:'networkidle'});await page.waitForFunction(()=>MusicStudio?.state.loaded);
+ await page.evaluate(async()=>{const app=MusicStudio,repo=app.indexedDbRepository();window.__repo=repo;app.setRepository(repo);const p=app.makeProject({projectId:'virtual-midi',projectName:'Virtual MIDI verification',midiData:{ppq:480,tempo:400,timeSignature:{numerator:1,denominator:4},editor:{measureCount:4,transport:{countInEnabled:true,metronomeEnabled:true}},tracks:[{id:'melody',part:'melody',notes:[]},{id:'bass',part:'bass',notes:[{id:'untouched',pitch:48,startTick:0,durationTicks:120,velocity:91}]},{id:'drums',part:'drums',notes:[]}]}});await repo.put(p);app.state.projects=[p];location.hash='music-studio/midi-editor/virtual-midi'});
+ await page.waitForSelector('.music-midi-editor-page');await page.waitForFunction(()=>MusicStudio.state.midiInput.initialized);
+ const other=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody')));
+ await page.locator('[onclick*="editorToggleMidiRecording"]').first().click();
+ await page.waitForFunction(()=>MusicStudio.state.midiInput.countingIn||MusicStudio.state.midiInput.recording);
+ await page.waitForFunction(()=>MusicStudio.state.midiInput.recording);
+ assert.ok(await page.evaluate(()=>__midi.permissions>0));
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x90,64,100],timeStamp:performance.now()}));await page.waitForTimeout(80);
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x80,64,0],timeStamp:performance.now()}));
+ assert.equal((await page.evaluate(()=>MusicStudio.editorStopTransport())).ok,true);
+ const notes=await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData.tracks.find(t=>t.id==='melody').notes));assert.equal(notes.length,1);assert.equal(notes[0].pitch,64);assert.ok(notes[0].durationTicks>0);
+ assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');await page.waitForFunction(()=>MusicStudio.state.midiEditor?.midiData?.tracks.some(t=>t.notes.some(n=>n.pitch===64)));
+ assert.deepEqual(await page.evaluate(()=>structuredClone(MusicStudio.state.midiEditor.midiData.tracks.find(t=>t.id==='melody').notes)),notes);
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.playheadTick=0;return MusicStudio.editorToggleMelodyPlayback()});await page.waitForFunction(()=>MusicStudio.state.melodyAudio.playing);assert.ok(await page.evaluate(()=>MusicStudio.state.melodyAudio.synth.diagnostics.oscillatorsCreated>0));await page.evaluate(()=>MusicStudio.editorStopTransport());
+ await page.evaluate(id=>{MusicStudioEditor.selectNote(MusicStudio.state.midiEditor,id);MusicStudio.editorDeleteNote()},notes[0].id);await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}));
+ assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ // Deferred audio uses the production synth with a controlled unlock gate.
+ await page.evaluate(()=>{const synth=MusicStudio.state.melodyAudio.synth;window.__unlock=synth.unlock;synth.unlock=()=>new Promise(r=>window.__releaseAudio=r);window.__start=MusicStudio.editorStartMidiRecording()});
+ await page.waitForFunction(()=>MusicStudio.state.midiInput.starting);await page.evaluate(()=>MusicStudio.editorStopTransport());await page.evaluate(async()=>{__releaseAudio(true);await __start;MusicStudio.state.melodyAudio.synth.unlock=__unlock});assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.recording),false);
+ // Permission pending Stop and route cancellation, on real page event loop.
+ for(const route of [false,true]){
+  await page.evaluate(()=>{MusicStudio.state.midiInput.initialized=false;MusicStudio.state.midiInput.access=null;__midi.defer=true;window.__start=MusicStudio.editorStartMidiRecording()});await page.waitForFunction(()=>typeof __midi.resolve==='function');
+  if(route){await page.evaluate(()=>MusicStudio.goHome());await page.waitForFunction(()=>!document.querySelector('.music-midi-editor-page'))}else await page.evaluate(()=>MusicStudio.editorStopTransport());
+  await page.evaluate(async()=>{__midi.resolve();await __start;__midi.defer=false;delete __midi.resolve});assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.recording),false);
+  if(route){await page.evaluate(()=>location.hash='music-studio/midi-editor/virtual-midi');await page.waitForSelector('.music-midi-editor-page')}
+ }
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.midiData.editor.transport.countInEnabled=true;window.__start=MusicStudio.editorStartMidiRecording()});await page.waitForFunction(()=>MusicStudio.state.midiInput.countingIn);await page.evaluate(()=>MusicStudio.editorStopTransport());await page.evaluate(()=>__start);assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.recording),false);
+ // Disconnect closes held notes, preserves exact Track and permits reconnect.
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.midiData.editor.transport.countInEnabled=false;MusicStudio.state.midiEditor.playheadTick=0;return MusicStudio.editorStartMidiRecording()});await page.waitForFunction(()=>MusicStudio.state.midiInput.recording);
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x90,67,100],timeStamp:performance.now()}));await page.waitForTimeout(80);
+ await page.evaluate(()=>{__midi.access.inputs.clear();__midi.access.onstatechange({port:__midi.input})});await page.waitForFunction(()=>!MusicStudio.state.midiInput.recording&&!MusicStudio.state.midiInput.stopping);
+ assert.ok(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(t=>t.id==='melody').notes.some(n=>n.pitch===67)));
+ await page.evaluate(()=>{__midi.access.inputs.set(__midi.input.id,__midi.input);__midi.access.onstatechange({port:__midi.input})});
+ assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.selectedId),'virtual-keys');
+ // Repeated starts are rejected while a recording session is active.
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.playheadTick=0;return MusicStudio.editorStartMidiRecording()});await page.waitForFunction(()=>MusicStudio.state.midiInput.recording);
+ assert.equal((await page.evaluate(()=>MusicStudio.editorStartMidiRecording())).ok,false);
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x90,69,100],timeStamp:performance.now()}));await page.waitForTimeout(60);await page.evaluate(()=>__midi.input.onmidimessage({data:[0x80,69,0],timeStamp:performance.now()}));
+ // Actual IndexedDB write transaction abort, not a memory repository replacement.
+ injectingStorageFailure=true;
+ await page.evaluate(()=>{window.__transaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(stores,mode,...args){const tx=__transaction.call(this,stores,mode,...args);if(mode==='readwrite'&&(stores==='projects'||Array.isArray(stores)&&stores.includes('projects')))queueMicrotask(()=>tx.abort());return tx}});
+ const failed=await page.evaluate(()=>MusicStudio.editorStopTransport());assert.equal(failed.ok,false);assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.dirty),true);
+ await page.evaluate(()=>{IDBDatabase.prototype.transaction=__transaction});injectingStorageFailure=false;
+ assert.equal((await page.evaluate(()=>MusicStudio.saveMidiEditor({silent:true}))).ok,true);
+ await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');await page.waitForFunction(()=>MusicStudio.state.midiEditor?.midiData?.tracks.find(t=>t.id==='melody')?.notes.some(n=>n.pitch===69));
+ assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ // Production shutdown uses Stop and awaits its IndexedDB commit before returning.
+ await page.evaluate(()=>{MusicStudio.state.midiEditor.playheadTick=0;return MusicStudio.editorStartMidiRecording({skipCountIn:true})});
+ await page.waitForFunction(()=>MusicStudio.state.midiInput.recording);
+ await page.evaluate(()=>__midi.input.onmidimessage({data:[0x90,77,100],timeStamp:performance.now()}));await page.waitForTimeout(60);
+ assert.equal((await page.evaluate(()=>MusicStudio.prepareForShutdown())).ok,true);
+ assert.equal(await page.evaluate(()=>MusicStudio.state.midiInput.recording),false);
+ await page.reload({waitUntil:'networkidle'});await page.waitForSelector('.music-midi-editor-page');
+ assert.ok(await page.evaluate(()=>MusicStudio.state.midiEditor.midiData.tracks.find(t=>t.id==='melody').notes.some(n=>n.pitch===77)));
+ // JSON transfer flushes a direct pending editor edit, not an obsolete snapshot.
+ await page.evaluate(()=>MusicStudioEditor.addNote(MusicStudio.state.midiEditor,{pitch:74,startTick:0,durationTicks:120,velocity:90}));
+ assert.equal((await page.evaluate(()=>MusicStudio.exportBackup())).error,'backup-unsaved-changes');
+ const latestJSON=await page.evaluate(()=>MusicStudio.exportProject('virtual-midi'));
+ assert.ok(JSON.parse(latestJSON.text).midiData.tracks.find(t=>t.id==='melody').notes.some(n=>n.pitch===74));
+ assert.equal(await page.evaluate(()=>MusicStudio.state.midiEditor.dirty),false);
+ assert.equal(await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor.midiData.tracks.filter(t=>t.id!=='melody'))),other);
+ // Explicit transfer into an isolated destination repository; no old-origin reads.
+ const transfer=await page.evaluate(()=>JSON.stringify(MusicStudio.state.projects.find(p=>p.projectId==='virtual-midi')));
+ const destination=await browser.newContext({viewport:{width,height:900}}),migrated=await destination.newPage();
+ await destination.route('**/*',route=>{const u=route.request().url();if(u.startsWith(base+'/')||u.startsWith('data:'))return route.continue();external.push(u);return route.abort()});
+ migrated.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push(m.text())});migrated.on('pageerror',e=>messages.push(e.message));
+ await migrated.goto(base+'/music-studio.html#music-studio',{waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),0);
+ const first=await migrated.evaluate(text=>MusicStudio.importText(text),transfer);assert.equal(first.ok,true);
+ const second=await migrated.evaluate(text=>MusicStudio.importText(text),transfer);assert.equal(second.ok,true);assert.equal(second.duplicated,true);assert.notEqual(second.project.projectId,first.project.projectId);
+ assert.deepEqual(second.project.midiData.tracks,first.project.midiData.tracks);
+ assert.equal((await migrated.evaluate(()=>MusicStudio.importText('{broken'))).ok,false);
+ const raced=await migrated.evaluate(async text=>{
+  const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);
+  const incoming=JSON.parse(text);incoming.projectId='race-song';incoming.projectName='Incoming race';if(incoming.aiWorkspace)incoming.aiWorkspace.projectId=incoming.projectId;
+  const checked=app.validateProject(incoming);if(!checked.valid)throw Error('Invalid race fixture: '+checked.errors.join(' '));
+  const protectedSong=structuredClone(incoming);protectedSong.projectName='Protected race';
+  const has=repo.has;let inserted=false;repo.has=async id=>{const found=await has(id);if(!inserted){inserted=true;await repo.put(protectedSong)}return found};
+  const result=await app.importText(JSON.stringify(incoming));
+  return {result,protectedSong:await repo.get('race-song')};
+ },transfer);
+ assert.equal(raced.result.ok,true,raced.result.message);assert.equal(raced.result.duplicated,true);assert.notEqual(raced.result.project.projectId,'race-song');assert.equal(raced.protectedSong.projectName,'Protected race');assert.deepEqual(raced.result.project.midiData.tracks,raced.protectedSong.midiData.tracks);
+ await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),4);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.find(p=>p.projectId==='race-song').projectName),'Protected race');
+ assert.deepEqual(await migrated.evaluate(id=>MusicStudio.state.projects.find(p=>p.projectId===id).midiData.tracks,first.project.projectId),first.project.midiData.tracks);
+ // Actual IndexedDB Blob backup, preview and add-only restore on the production page.
+ const archiveResult=await migrated.evaluate(async()=>{
+  const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);await app.refresh();
+  const song=app.state.projects[0];app.pcmOpen(song.projectId);
+  const file=new Blob([app.pcmEncodeWav({sampleRate:8000,channels:[Array(160).fill(.1)]})],{type:'audio/wav'});file.name='backup-tone.wav';
+  const imported=await app.pcmImportLongFile(file,song.projectId);if(!imported.ok)throw Error(imported.error);
+  const copied=structuredClone(await repo.get(song.projectId));copied.projectId='shared-wav-copy';copied.projectName='Shared WAV copy';if(copied.aiWorkspace)copied.aiWorkspace.projectId=copied.projectId;await repo.put(copied);await app.refresh();
+  app.state.settings.backup.automaticEnabled=true;await repo.putSettings(app.state.settings);
+  const result=await app.runAutoBackupCheck();if(!result.created)throw Error(result.reason);
+  window.__archive=result.backup.archive;window.__archiveCount=app.state.projects.length;
+  const preview=await app.previewLongWavArchive(__archive);if(!preview.ok)throw Error(preview.error);
+  return{preview:preview.preview.projectCount,before:(await repo.list()).length,bytes:__archive.size};
+ });
+ assert.equal(archiveResult.preview,archiveResult.before);assert.ok(archiveResult.bytes>320);
+ await migrated.evaluate(()=>MusicStudio.goBackup());await migrated.waitForSelector('#archiveRestoreSettings');
+ await migrated.screenshot({path:`music-ai-archive-preview-${width}.png`,fullPage:true});
+ await migrated.locator('#archiveRestoreSettings').uncheck();
+ const recovered=await migrated.evaluate(()=>MusicStudio.restorePreviewedArchive());assert.equal(recovered.ok,true,recovered.error);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),archiveResult.before*2);
+ await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ assert.equal(await migrated.evaluate(()=>MusicStudio.state.projects.length),archiveResult.before*2);
+ const savedArchive=await migrated.evaluate(async()=>{const app=MusicStudio,repo=app.indexedDbRepository();app.setRepository(repo);await app.loadAutoBackups();const record=app.state.autoBackups[0];return{blob:record.archive instanceof Blob,size:record.archive.size}});
+ assert.equal(savedArchive.blob,true);assert.equal(savedArchive.size,archiveResult.bytes);
+
+ // File chooser -> durable original -> reload -> full archive -> additive recovery.
+ const referenceSong=await migrated.evaluate(()=>MusicStudio.state.projects[0].projectId);
+ await migrated.evaluate(id=>MusicStudio.openProject(id),referenceSong);
+ const chooser=migrated.locator('input[type=file][onchange*="retainReferenceFile"]').first();
+ await chooser.setInputFiles({name:'logic-original.mid',mimeType:'audio/midi',buffer:Buffer.from([77,84,104,100,0,0,0,6,0,0,0,1,0,96])});
+ await migrated.waitForFunction(id=>!MusicStudio.archiveTransfer.busy&&MusicStudio.state.projects.find(p=>p.projectId===id)?.fileReferences?.[0]?.binary,referenceSong);
+ await migrated.screenshot({path:`music-ai-original-files-${width}.png`,fullPage:true});
+ assert.equal(await migrated.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
+ await migrated.reload({waitUntil:'networkidle'});await migrated.waitForFunction(()=>MusicStudio?.state.loaded);
+ const retained=await migrated.evaluate(async id=>{const app=MusicStudio,p=app.state.projects.find(p=>p.projectId===id),original=await app.loadReferenceFile(id,'fileReferences',0);const bytes=Array.from(new Uint8Array(await original.blob.arrayBuffer()));const archive=await app.createLongWavArchive();const before=app.state.projects.length;const preview=await app.previewLongWavArchive(archive);if(!preview.ok)throw Error(preview.error);const restored=await app.restorePreviewedArchive();if(!restored.ok)throw Error(restored.error);const copy=restored.projects.find(p=>p.fileReferences?.length);const recovered=await app.loadReferenceFile(copy.projectId,'fileReferences',0);return{bytes,recovered:Array.from(new Uint8Array(await recovered.blob.arrayBuffer())),added:app.state.projects.length-before,count:restored.projects.length,newIdentity:copy.fileReferences[0].binary.id!==p.fileReferences[0].binary.id}},referenceSong);
+ assert.deepEqual(retained.bytes,[77,84,104,100,0,0,0,6,0,0,0,1,0,96]);assert.deepEqual(retained.recovered,retained.bytes);assert.equal(retained.added,retained.count);assert.equal(retained.newIdentity,true);
+ await destination.close();
+ assert.ok(expectedStorageErrors.length>0);
+ assert.deepEqual(messages,[]);assert.deepEqual(external,[]);await context.close();return{width,virtualPermission:true,countIn:true,indexedDBSaveReopen:true,realWebAudioScheduling:true,oneNoteEditOtherTracksPreserved:true,pendingAudioStop:true,pendingPermissionStopAndRoute:true,countInStop:true,disconnectReconnect:true,duplicateStartRejected:true,indexedDBAbortRetryReopen:true,explicitIsolatedImportDuplicateAndCorruptProtection:true,indexedDBImportRacePreservesConcurrentSong:true,shutdownStopCommitReopen:true,jsonFlushesPendingEditor:true,backupRejectsPendingChanges:true,archivePreviewAndAddOnlyRecovery:true,automaticBinaryBackupReopen:true,referenceChooserReopenArchiveRecovery:true,expectedStorageErrors,console:messages,external};
+}
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||undefined,args:['--autoplay-policy=no-user-gesture-required']});try{const results=[];for(const width of [1440,820,390])results.push(await verify(browser,base,width));fs.mkdirSync('verification',{recursive:true});fs.writeFileSync('verification/music-bundled-midi-browser.json',JSON.stringify({scope:'CONTROLLED_VIRTUAL_MIDI_CHROME_NOT_PHYSICAL_OR_WKWEBVIEW',results},null,2));console.log(JSON.stringify(results))}finally{await browser.close();server.close();fs.rmSync(root,{recursive:true,force:true})}})().catch(e=>{console.error(e);server.close();process.exitCode=1});

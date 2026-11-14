@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-08 JST",
+  "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately.",
+  "command": "CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-song-checkpoints-browser.js",
+  "passed": 1,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "d913038a93cbcb7c92be4deef817f5db1bd82bd6d5c871cd119dd9203a63072c",
+    "music-studio-meter-map.js": "9dae87e958c59c11e7f144cd9c3d31adf537204db085e3045ce91e82a0980d55"
+  },
+  "acceptedCases": [
+    "report.targetedUndo",
+    "report.targetedUndoRestart",
+    "report.crossDomainUndo",
+    "report.rangeGuards"
+  ],
+  "scope": "One successful browser workflow, with checkpoint comparisons, stale concurrent update rejection, and true process restart. Not a Mac hardware or audio listening acceptance.",
+  "previousRun_report": "verification/music-song-checkpoints-browser.json",
+  "previousRun_reportSha256": "cb61fd95d4c055c317db24916b6d3a78e42de90f6ed9862789e041a668bfafb0",
+  "previousRun_logSha256": "76227b9eb3efaf4b9ce0880ccab1473d7ccafb966e243ef7aae0e6074c5e7540",
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "2a877a58d8e5165b9fbd78a19445e1907822dc00",
+    "runId": 42467882246,
+    "jobId": 128691502011,
+    "step": 7,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42467882246/job/128691502011"
+  },
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+    "runId": 42423714835,
+    "jobId": 128557398035,
+    "step": 7,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714835/job/128557398035"
+  }
+}

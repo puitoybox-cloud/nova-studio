@@ -1,0 +1,64 @@
+name: Music Studio structure descriptors guard
+
+on:
+  pull_request:
+    paths:
+      - 'music-studio-structure-info.js'
+      - 'tests/music-studio-structure-info.test.js'
+      - '.github/workflows/music-studio-structure-info.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run explicit key and marker descriptor tests
+        run: node --test tests/music-studio-structure-info.test.js
+      - name: Run full Node test suite on PR head
+        id: pr-full
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=tap 2>&1 | tee "$RUNNER_TEMP/pr-full.log"
+      - name: Verify full-suite failures introduce no regression from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/main-baseline" "origin/${{ github.base_ref }}"
+          (
+            cd "$RUNNER_TEMP/main-baseline"
+            node --test --test-reporter=tap > "$RUNNER_TEMP/main-full.log" 2>&1 || true
+          )
+          # Incomplete/crashed test processes must not look like an empty failure list.
+          for log in "$RUNNER_TEMP/pr-full.log" "$RUNNER_TEMP/main-full.log"; do
+            grep -Eq '^# tests [1-9][0-9]*$' "$log"
+            grep -Eq '^# fail [0-9]+$' "$log"
+            failures=$(sed -n 's/^# fail //p' "$log")
+            observed=$(grep -c '^not ok [0-9]' "$log" || true)
+            test "$failures" -eq "$observed"
+          done
+          sed -n 's/^not ok [0-9][0-9]* - /not ok - /p' "$RUNNER_TEMP/pr-full.log" | sort > "$RUNNER_TEMP/pr-failures.txt"
+          sed -n 's/^not ok [0-9][0-9]* - /not ok - /p' "$RUNNER_TEMP/main-full.log" | sort > "$RUNNER_TEMP/main-failures.txt"
+          echo "PR head failures:"
+          cat "$RUNNER_TEMP/pr-failures.txt"
+          echo "main baseline failures:"
+          cat "$RUNNER_TEMP/main-failures.txt"
+          comm -13 "$RUNNER_TEMP/main-failures.txt" "$RUNNER_TEMP/pr-failures.txt" > "$RUNNER_TEMP/new-failures.txt"
+          cat "$RUNNER_TEMP/new-failures.txt"
+          test ! -s "$RUNNER_TEMP/new-failures.txt"
+      - name: Check all JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Check PR whitespace
+        run: git diff --check "origin/${{ github.base_ref }}...HEAD"

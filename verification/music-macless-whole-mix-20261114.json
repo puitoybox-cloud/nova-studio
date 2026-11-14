@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-14 JST",
+  "command": "node scripts/music-final-export-browser.js --mixed-only",
+  "browser": "Chromium Headless Shell 153",
+  "passed": 1,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-final-export-browser.js": "393eb26584f7800cec480ebedd037a491ea0e9ee51e443e60fc63b01c7f170d5"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "5162c2be4fd8ef9cf49d2af984e61b6646659d8d97dd7abea2b2f3c290e1d1d5",
+    "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782",
+    "music-studio-auto-finish.js": "be70fde88a2b3355bb92e671744c73dc4e379a81049198784db2e5a69fd3e7f8",
+    "music-studio.html": "3e48cde4d2daff302bb2f03d52068a20eb2d10800fe0fb91e8fcb7765bb557c4"
+  },
+  "acceptedCases": [
+    "全素材形式の曲全体Mix統合"
+  ],
+  "mixedSources": {
+    "id": "whole-song-mixed-sources",
+    "frames": 74400,
+    "starts": [
+      0,
+      6000,
+      12000,
+      26400
+    ],
+    "hash": "296a659fedf9c129d5eda772d67f1369a13a256c23f84beaf975365e215101b0",
+    "missingInstrumentRejected": true,
+    "lengthCorrection": true,
+    "autoFinishMixed": true,
+    "cancelled": true,
+    "missingAndCorruptRejected": true,
+    "transferCancelledPreviousSessionPreserved": true,
+    "freshSessionRetried": true,
+    "reopenIdentical": true
+  },
+  "helperProtocol": "Browser request interception for cancellation and retry. The local Python helper was exercised separately by its 22-test regression suite."
+}

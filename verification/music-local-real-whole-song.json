@@ -1,0 +1,2923 @@
+{
+  "version": 1,
+  "completed": true,
+  "fixture": true,
+  "seconds": 480,
+  "bars": 144,
+  "bpm": 72,
+  "ppq": 480,
+  "sourceNotes": 576,
+  "measurements": [
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 17231872,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 17432576
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204875264
+      },
+      "sessionReused": false,
+      "loadSeconds": 2.2969480040000008,
+      "elapsedSeconds": 4.3951265199999625,
+      "onnxCalls": {
+        "base": 29,
+        "token": 232
+      },
+      "midiBytes": 391
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204817920
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204903936
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002910400000359914,
+      "elapsedSeconds": 1.1981856339999695,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 332
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204834304
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204908032
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026556199998140073,
+      "elapsedSeconds": 1.1925190000000612,
+      "onnxCalls": {
+        "base": 23,
+        "token": 184
+      },
+      "midiBytes": 340
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204846592
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204924416
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003309649999891917,
+      "elapsedSeconds": 1.2000384130000157,
+      "onnxCalls": {
+        "base": 22,
+        "token": 173
+      },
+      "midiBytes": 328
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204854784
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204936704
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002527760000248236,
+      "elapsedSeconds": 1.139264388000015,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 315
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204867072
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204936704
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026024600003893283,
+      "elapsedSeconds": 0.795732254000086,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204871168
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204944896
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003664159999061667,
+      "elapsedSeconds": 1.114766478999968,
+      "onnxCalls": {
+        "base": 20,
+        "token": 160
+      },
+      "midiBytes": 309
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204875264
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204957184
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000376225999957569,
+      "elapsedSeconds": 1.2217183509999359,
+      "onnxCalls": {
+        "base": 23,
+        "token": 178
+      },
+      "midiBytes": 329
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204887552
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204961280
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028859999997621344,
+      "elapsedSeconds": 1.7177570559999822,
+      "onnxCalls": {
+        "base": 24,
+        "token": 192
+      },
+      "midiBytes": 347
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204895744
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204965376
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003344709999737461,
+      "elapsedSeconds": 1.5009753409999576,
+      "onnxCalls": {
+        "base": 23,
+        "token": 172
+      },
+      "midiBytes": 325
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204895744
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204965376
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002604219999966517,
+      "elapsedSeconds": 1.2286052450000398,
+      "onnxCalls": {
+        "base": 22,
+        "token": 170
+      },
+      "midiBytes": 316
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204903936
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204973568
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030600800005231577,
+      "elapsedSeconds": 1.0289601570000286,
+      "onnxCalls": {
+        "base": 19,
+        "token": 149
+      },
+      "midiBytes": 301
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204494336,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204908032
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00025536100008594076,
+      "elapsedSeconds": 1.9844290959999853,
+      "onnxCalls": {
+        "base": 37,
+        "token": 296
+      },
+      "midiBytes": 421
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204916224
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026374099991244293,
+      "elapsedSeconds": 1.3997508429999925,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 352
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204924416
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026464100005796354,
+      "elapsedSeconds": 1.2410529950000182,
+      "onnxCalls": {
+        "base": 23,
+        "token": 181
+      },
+      "midiBytes": 338
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204625408,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204924416
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003238989999090336,
+      "elapsedSeconds": 1.3673402669999177,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 361
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00025825000000168075,
+      "elapsedSeconds": 0.7937787979999484,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002941010000085953,
+      "elapsedSeconds": 1.3843107999999802,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 363
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002736359999744309,
+      "elapsedSeconds": 2.0720935509999663,
+      "onnxCalls": {
+        "base": 39,
+        "token": 312
+      },
+      "midiBytes": 469
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028940799995780253,
+      "elapsedSeconds": 1.0466059319999204,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 305
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002729610000642424,
+      "elapsedSeconds": 1.0912029970000958,
+      "onnxCalls": {
+        "base": 21,
+        "token": 160
+      },
+      "midiBytes": 302
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204928512
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204998144
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0005762509999840404,
+      "elapsedSeconds": 0.8709010179999268,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204932608
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205002240
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032134599996425095,
+      "elapsedSeconds": 1.5419732799999792,
+      "onnxCalls": {
+        "base": 29,
+        "token": 232
+      },
+      "midiBytes": 388
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204932608
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205002240
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002656170000818747,
+      "elapsedSeconds": 1.898250836000102,
+      "onnxCalls": {
+        "base": 36,
+        "token": 288
+      },
+      "midiBytes": 439
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204932608
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205002240
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002628759999652175,
+      "elapsedSeconds": 1.1798332269999037,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 327
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204932608
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032925499999691965,
+      "elapsedSeconds": 2.2349870000000465,
+      "onnxCalls": {
+        "base": 33,
+        "token": 255
+      },
+      "midiBytes": 392
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032205500008331,
+      "elapsedSeconds": 1.1166041700000733,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 318
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026756700003716105,
+      "elapsedSeconds": 0.950675699000044,
+      "onnxCalls": {
+        "base": 18,
+        "token": 144
+      },
+      "midiBytes": 303
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002575629999910234,
+      "elapsedSeconds": 1.0519960789999914,
+      "onnxCalls": {
+        "base": 18,
+        "token": 144
+      },
+      "midiBytes": 303
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002969760000723909,
+      "elapsedSeconds": 0.7406949470000654,
+      "onnxCalls": {
+        "base": 14,
+        "token": 112
+      },
+      "midiBytes": 267
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00031282800000553834,
+      "elapsedSeconds": 1.2952769089999947,
+      "onnxCalls": {
+        "base": 24,
+        "token": 192
+      },
+      "midiBytes": 348
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002835569999888321,
+      "elapsedSeconds": 1.2781783289999566,
+      "onnxCalls": {
+        "base": 25,
+        "token": 192
+      },
+      "midiBytes": 333
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002593680000018139,
+      "elapsedSeconds": 1.9266665779999812,
+      "onnxCalls": {
+        "base": 36,
+        "token": 288
+      },
+      "midiBytes": 424
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003488910000442047,
+      "elapsedSeconds": 1.3690001950000124,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 361
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00031299500005843583,
+      "elapsedSeconds": 2.491834451000045,
+      "onnxCalls": {
+        "base": 37,
+        "token": 296
+      },
+      "midiBytes": 448
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204940800
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205010432
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032737400010773854,
+      "elapsedSeconds": 1.0627758070000937,
+      "onnxCalls": {
+        "base": 20,
+        "token": 160
+      },
+      "midiBytes": 319
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204944896
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205026816
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003260660000705684,
+      "elapsedSeconds": 0.7071325670000306,
+      "onnxCalls": {
+        "base": 13,
+        "token": 104
+      },
+      "midiBytes": 256
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204961280
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205030912
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00031806000004053203,
+      "elapsedSeconds": 0.7484564620000356,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204965376
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002954349999981787,
+      "elapsedSeconds": 0.8913555760000236,
+      "onnxCalls": {
+        "base": 17,
+        "token": 133
+      },
+      "midiBytes": 286
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002666650000264781,
+      "elapsedSeconds": 1.4358062969999992,
+      "onnxCalls": {
+        "base": 27,
+        "token": 216
+      },
+      "midiBytes": 372
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00033080299999710405,
+      "elapsedSeconds": 1.1536469790000865,
+      "onnxCalls": {
+        "base": 17,
+        "token": 136
+      },
+      "midiBytes": 291
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003622530000484403,
+      "elapsedSeconds": 1.5414595820000159,
+      "onnxCalls": {
+        "base": 30,
+        "token": 237
+      },
+      "midiBytes": 391
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00027252799998223054,
+      "elapsedSeconds": 1.6545721960000037,
+      "onnxCalls": {
+        "base": 32,
+        "token": 256
+      },
+      "midiBytes": 415
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003717339999411706,
+      "elapsedSeconds": 1.0400823859999946,
+      "onnxCalls": {
+        "base": 20,
+        "token": 154
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028065000003607565,
+      "elapsedSeconds": 1.4453340559999788,
+      "onnxCalls": {
+        "base": 27,
+        "token": 216
+      },
+      "midiBytes": 368
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00034218100006455643,
+      "elapsedSeconds": 1.3125914009999633,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 357
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002841149999994741,
+      "elapsedSeconds": 0.8033620930000325,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026168900001266593,
+      "elapsedSeconds": 0.7629335789999914,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 274
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00027502199998252763,
+      "elapsedSeconds": 1.0405570409999427,
+      "onnxCalls": {
+        "base": 20,
+        "token": 160
+      },
+      "midiBytes": 317
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204969472
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00027456800000891235,
+      "elapsedSeconds": 2.397011601000031,
+      "onnxCalls": {
+        "base": 47,
+        "token": 376
+      },
+      "midiBytes": 528
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026595999997880426,
+      "elapsedSeconds": 1.0912355529999331,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 328
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002925679999634667,
+      "elapsedSeconds": 1.0566230839999662,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 311
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00034714900004928495,
+      "elapsedSeconds": 0.7890612859999919,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 273
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204756480,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026957199997923453,
+      "elapsedSeconds": 1.1065838370000165,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 332
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204981760
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205055488
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030284199999641714,
+      "elapsedSeconds": 0.7323979110000209,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204985856
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205055488
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032608700007585867,
+      "elapsedSeconds": 1.0797443250000924,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 322
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204985856
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205055488
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002641899999389352,
+      "elapsedSeconds": 0.851030324999897,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204985856
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002545700000382567,
+      "elapsedSeconds": 1.1148157000000083,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 327
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002973089999613876,
+      "elapsedSeconds": 1.285967340999946,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 310
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003749500000367334,
+      "elapsedSeconds": 1.0045507629999975,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003054649999967296,
+      "elapsedSeconds": 1.6152919789999487,
+      "onnxCalls": {
+        "base": 31,
+        "token": 248
+      },
+      "midiBytes": 402
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002500430000509368,
+      "elapsedSeconds": 1.011884278000025,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 326
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000323686000001544,
+      "elapsedSeconds": 1.29460950400005,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 337
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002522790000512032,
+      "elapsedSeconds": 0.7854586830000017,
+      "onnxCalls": {
+        "base": 15,
+        "token": 118
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00031015900003694696,
+      "elapsedSeconds": 0.854828150000003,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002736980000008771,
+      "elapsedSeconds": 0.8506201249999776,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204989952
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00039059899995663727,
+      "elapsedSeconds": 0.832599666999954,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 273
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028101199995944626,
+      "elapsedSeconds": 0.7553062359999103,
+      "onnxCalls": {
+        "base": 14,
+        "token": 112
+      },
+      "midiBytes": 267
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002954060000774916,
+      "elapsedSeconds": 1.3760797120000916,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 362
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030465900010767655,
+      "elapsedSeconds": 1.046835164000072,
+      "onnxCalls": {
+        "base": 20,
+        "token": 154
+      },
+      "midiBytes": 306
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003769200000078854,
+      "elapsedSeconds": 0.8382610229999727,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0005022750000307497,
+      "elapsedSeconds": 1.0143596520000528,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003910890000042855,
+      "elapsedSeconds": 0.9719545359999984,
+      "onnxCalls": {
+        "base": 18,
+        "token": 141
+      },
+      "midiBytes": 300
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002664460000687541,
+      "elapsedSeconds": 0.8136872200000198,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004396620000761686,
+      "elapsedSeconds": 1.3048462330000348,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 355
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028350799993859255,
+      "elapsedSeconds": 1.1990152299999863,
+      "onnxCalls": {
+        "base": 22,
+        "token": 164
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002976170000010825,
+      "elapsedSeconds": 1.4033980949999432,
+      "onnxCalls": {
+        "base": 29,
+        "token": 232
+      },
+      "midiBytes": 384
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002596809999886318,
+      "elapsedSeconds": 0.7454620120000754,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1204994048
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002998089998982323,
+      "elapsedSeconds": 0.8655433650000077,
+      "onnxCalls": {
+        "base": 17,
+        "token": 136
+      },
+      "midiBytes": 292
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205006336
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026722499990228243,
+      "elapsedSeconds": 1.1383104969999067,
+      "onnxCalls": {
+        "base": 22,
+        "token": 159
+      },
+      "midiBytes": 285
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205018624
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000328830999933416,
+      "elapsedSeconds": 0.8963635979999935,
+      "onnxCalls": {
+        "base": 17,
+        "token": 136
+      },
+      "midiBytes": 294
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00033721099998729187,
+      "elapsedSeconds": 1.2968442249999725,
+      "onnxCalls": {
+        "base": 25,
+        "token": 197
+      },
+      "midiBytes": 354
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00033779900002173235,
+      "elapsedSeconds": 0.8693830350000553,
+      "onnxCalls": {
+        "base": 16,
+        "token": 125
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000265517999991971,
+      "elapsedSeconds": 1.3633612869999752,
+      "onnxCalls": {
+        "base": 28,
+        "token": 224
+      },
+      "midiBytes": 378
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003261499999780426,
+      "elapsedSeconds": 0.8927496699999438,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030051999999614054,
+      "elapsedSeconds": 1.5854189369999858,
+      "onnxCalls": {
+        "base": 30,
+        "token": 237
+      },
+      "midiBytes": 387
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004012990000319405,
+      "elapsedSeconds": 1.1016203830000677,
+      "onnxCalls": {
+        "base": 21,
+        "token": 153
+      },
+      "midiBytes": 285
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002921650000189402,
+      "elapsedSeconds": 1.16875806500002,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 332
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003099310000607147,
+      "elapsedSeconds": 1.1286910960000114,
+      "onnxCalls": {
+        "base": 23,
+        "token": 184
+      },
+      "midiBytes": 343
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003237180000041917,
+      "elapsedSeconds": 1.858824262999974,
+      "onnxCalls": {
+        "base": 27,
+        "token": 216
+      },
+      "midiBytes": 369
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002668509999921298,
+      "elapsedSeconds": 1.39963393000005,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 356
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205092352
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00027618699994036433,
+      "elapsedSeconds": 1.1592219740000473,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 324
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205022720
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205104640
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004865759999574948,
+      "elapsedSeconds": 1.0198075989999325,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 307
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205035008
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205104640
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003272220000098969,
+      "elapsedSeconds": 0.8139537800000198,
+      "onnxCalls": {
+        "base": 15,
+        "token": 117
+      },
+      "midiBytes": 278
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205039104
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205112832
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002649509999628208,
+      "elapsedSeconds": 0.8166067969999631,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000311150000015914,
+      "elapsedSeconds": 0.882357805999959,
+      "onnxCalls": {
+        "base": 18,
+        "token": 144
+      },
+      "midiBytes": 300
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0007660859999987224,
+      "elapsedSeconds": 1.623213115999988,
+      "onnxCalls": {
+        "base": 31,
+        "token": 242
+      },
+      "midiBytes": 384
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002751780000380677,
+      "elapsedSeconds": 0.8761291719999917,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003620749999981854,
+      "elapsedSeconds": 1.210804770999971,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 323
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003179130000035002,
+      "elapsedSeconds": 1.7415988690000859,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 361
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030819599999176717,
+      "elapsedSeconds": 0.6943047720000095,
+      "onnxCalls": {
+        "base": 14,
+        "token": 112
+      },
+      "midiBytes": 267
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002783360000648827,
+      "elapsedSeconds": 0.9000196210000695,
+      "onnxCalls": {
+        "base": 17,
+        "token": 136
+      },
+      "midiBytes": 290
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003457259999777307,
+      "elapsedSeconds": 1.0239920209999127,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 309
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026833600009013026,
+      "elapsedSeconds": 0.7529668210000864,
+      "onnxCalls": {
+        "base": 14,
+        "token": 112
+      },
+      "midiBytes": 266
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002525439999772061,
+      "elapsedSeconds": 0.784253878999948,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 284
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026777000005040463,
+      "elapsedSeconds": 1.5889368040000136,
+      "onnxCalls": {
+        "base": 32,
+        "token": 253
+      },
+      "midiBytes": 403
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205047296
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205116928
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002943900000218491,
+      "elapsedSeconds": 0.9686404349999975,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205051392
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205121024
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00032043099997736135,
+      "elapsedSeconds": 0.8140695829999913,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 278
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205059584
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205133312
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000322776999951202,
+      "elapsedSeconds": 0.7286350739999534,
+      "onnxCalls": {
+        "base": 15,
+        "token": 118
+      },
+      "midiBytes": 278
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205063680
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205133312
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000395770999944034,
+      "elapsedSeconds": 1.0564088520000041,
+      "onnxCalls": {
+        "base": 20,
+        "token": 160
+      },
+      "midiBytes": 315
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205137408
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003383209999583414,
+      "elapsedSeconds": 1.2898834359999682,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 309
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205137408
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026491700009501074,
+      "elapsedSeconds": 1.2095000580000033,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 358
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205137408
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026820300001872965,
+      "elapsedSeconds": 1.1053447290000804,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 319
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205137408
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026296100008948997,
+      "elapsedSeconds": 1.2401152390000334,
+      "onnxCalls": {
+        "base": 26,
+        "token": 205
+      },
+      "midiBytes": 351
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205067776
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003054450000945508,
+      "elapsedSeconds": 2.007997850000038,
+      "onnxCalls": {
+        "base": 30,
+        "token": 240
+      },
+      "midiBytes": 393
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003458270000464836,
+      "elapsedSeconds": 1.4061446150000165,
+      "onnxCalls": {
+        "base": 28,
+        "token": 224
+      },
+      "midiBytes": 380
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00025927100000444625,
+      "elapsedSeconds": 0.9849432259999276,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 301
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004968920000010257,
+      "elapsedSeconds": 0.9825776739999128,
+      "onnxCalls": {
+        "base": 18,
+        "token": 142
+      },
+      "midiBytes": 300
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002788610000834524,
+      "elapsedSeconds": 2.03335800800005,
+      "onnxCalls": {
+        "base": 41,
+        "token": 328
+      },
+      "midiBytes": 458
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003645799999958399,
+      "elapsedSeconds": 1.3409277770000472,
+      "onnxCalls": {
+        "base": 28,
+        "token": 224
+      },
+      "midiBytes": 383
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00028652599996803474,
+      "elapsedSeconds": 1.0694791649999615,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 308
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00033849600004032254,
+      "elapsedSeconds": 1.2473989439999968,
+      "onnxCalls": {
+        "base": 26,
+        "token": 208
+      },
+      "midiBytes": 364
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030538299995441776,
+      "elapsedSeconds": 1.1219403530000136,
+      "onnxCalls": {
+        "base": 21,
+        "token": 168
+      },
+      "midiBytes": 328
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000264733999983946,
+      "elapsedSeconds": 1.8455450639999071,
+      "onnxCalls": {
+        "base": 34,
+        "token": 272
+      },
+      "midiBytes": 426
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00026816399997642293,
+      "elapsedSeconds": 0.8410357430000204,
+      "onnxCalls": {
+        "base": 17,
+        "token": 133
+      },
+      "midiBytes": 294
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003481929999225031,
+      "elapsedSeconds": 1.2092115240000112,
+      "onnxCalls": {
+        "base": 25,
+        "token": 200
+      },
+      "midiBytes": 364
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002655030000369152,
+      "elapsedSeconds": 0.7493548290000263,
+      "onnxCalls": {
+        "base": 14,
+        "token": 112
+      },
+      "midiBytes": 267
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003797370000029332,
+      "elapsedSeconds": 2.094103414000074,
+      "onnxCalls": {
+        "base": 40,
+        "token": 320
+      },
+      "midiBytes": 474
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00047878200007289706,
+      "elapsedSeconds": 1.2918398780000189,
+      "onnxCalls": {
+        "base": 19,
+        "token": 152
+      },
+      "midiBytes": 305
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004631489999837868,
+      "elapsedSeconds": 0.7489705179999646,
+      "onnxCalls": {
+        "base": 15,
+        "token": 120
+      },
+      "midiBytes": 276
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0007021520000307646,
+      "elapsedSeconds": 1.770544553000036,
+      "onnxCalls": {
+        "base": 33,
+        "token": 255
+      },
+      "midiBytes": 400
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002927310000586658,
+      "elapsedSeconds": 1.2796169100000725,
+      "onnxCalls": {
+        "base": 24,
+        "token": 183
+      },
+      "midiBytes": 334
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1204887552,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.000489524000045094,
+      "elapsedSeconds": 0.9155936309999788,
+      "onnxCalls": {
+        "base": 17,
+        "token": 136
+      },
+      "midiBytes": 292
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003008889999591702,
+      "elapsedSeconds": 1.167885626000043,
+      "onnxCalls": {
+        "base": 23,
+        "token": 181
+      },
+      "midiBytes": 340
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205071872
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205141504
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003402529999902981,
+      "elapsedSeconds": 1.2865135460000374,
+      "onnxCalls": {
+        "base": 24,
+        "token": 192
+      },
+      "midiBytes": 348
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205075968
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205145600
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003057019999914701,
+      "elapsedSeconds": 1.5442046360000177,
+      "onnxCalls": {
+        "base": 29,
+        "token": 232
+      },
+      "midiBytes": 379
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205080064
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205149696
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00030897099998128397,
+      "elapsedSeconds": 0.7588375210000322,
+      "onnxCalls": {
+        "base": 15,
+        "token": 112
+      },
+      "midiBytes": 269
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205080064
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205149696
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0003316659999654803,
+      "elapsedSeconds": 0.85075107199998,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 285
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0004990339999721982,
+      "elapsedSeconds": 1.3222382080000443,
+      "onnxCalls": {
+        "base": 22,
+        "token": 176
+      },
+      "midiBytes": 327
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00033554699996329873,
+      "elapsedSeconds": 1.631680691999918,
+      "onnxCalls": {
+        "base": 23,
+        "token": 184
+      },
+      "midiBytes": 343
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00039665900010277255,
+      "elapsedSeconds": 1.491683890000104,
+      "onnxCalls": {
+        "base": 29,
+        "token": 223
+      },
+      "midiBytes": 370
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002737869999691611,
+      "elapsedSeconds": 0.8680653520000305,
+      "onnxCalls": {
+        "base": 16,
+        "token": 128
+      },
+      "midiBytes": 283
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.0002784949999750097,
+      "elapsedSeconds": 1.7054246569999805,
+      "onnxCalls": {
+        "base": 33,
+        "token": 264
+      },
+      "midiBytes": 412
+    },
+    {
+      "memoryBefore": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205084160
+      },
+      "memoryAfter": {
+        "processPeakRssBytes": 1205018624,
+        "peakScope": "host-process-lifetime",
+        "rssBytes": 1205153792
+      },
+      "sessionReused": true,
+      "loadSeconds": 0.00031336799997916387,
+      "elapsedSeconds": 1.2931882990000076,
+      "onnxCalls": {
+        "base": 26,
+        "token": 193
+      },
+      "midiBytes": 330
+    }
+  ],
+  "midpointCheckpointBytes": 275126,
+  "generatedNotes": [
+    {
+      "variant": "A",
+      "notes": 916
+    },
+    {
+      "variant": "B",
+      "notes": 892
+    },
+    {
+      "variant": "C",
+      "notes": 887
+    }
+  ],
+  "savedProjectBytes": 1395068,
+  "backupReopenResume": true,
+  "originalMidiUnchanged": true,
+  "elapsedSeconds": 306.93273968,
+  "onnxCalls": {
+    "base": 3203,
+    "token": 25415
+  },
+  "midiBytes": 47468,
+  "processPeakRssBytes": 1205018624,
+  "memoryScope": "Python host process lifetime",
+  "date": "2026-10-19 JST",
+  "testedProductTree": "8343a1bff4db00a5ab215660786164739a21ba89",
+  "environment": "Linux x86_64 / onnxruntime1.23.2 CPU / intra-op2 inter-op1",
+  "sourceFixture": "Constructed144-bar C-major four-note-per-bar source, not user-provided original MIDI",
+  "limitations": "Python host lifetime peak RSS only; Node/browser total peak not measured. Four-instrument orchestration is rule-based over model-generated notes. Listening quality not accepted. Final candidate-validation yield/UI progress change subsequently checked by focused tests."
+}

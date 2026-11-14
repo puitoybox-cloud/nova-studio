@@ -1,0 +1,21 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+test('refreshing microphones preserves pending recording form values and selected device',async()=>{
+  const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,location:{hash:'#music-studio'}};
+  w.window=w;vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);
+  const recording={latency:75,countIn:4,punchTick:480},status={textContent:''};
+  const select={value:'mic-old',options:[{value:'',textContent:'Default（既定）'},{value:'mic-old',textContent:'Old microphone'}],add(option){this.options.push(option)}};
+  w.document={querySelectorAll(selector){if(selector.includes('select[name="device"]'))return[select];if(selector==='[data-vocal-status]')return[status];return[]},createElement(){return{value:'',textContent:''}}};
+  w.navigator={mediaDevices:{enumerateDevices:async()=>[{kind:'audioinput',deviceId:'mic-old',label:'Updated microphone'},{kind:'audioinput',deviceId:'mic-new',label:'New microphone'},{kind:'videoinput',deviceId:'camera',label:'Camera'}]}};
+  const result=await w.MusicStudio.vocalRefreshInputs();
+  assert.equal(result.ok,true);assert.equal(select.value,'mic-old');
+  assert.equal(select.options.find(x=>x.value==='mic-old').textContent,'Updated microphone');
+  assert.equal(select.options.find(x=>x.value==='mic-new').textContent,'New microphone');
+  assert.equal(select.options.some(x=>x.value==='camera'),false);
+  assert.deepEqual(recording,{latency:75,countIn:4,punchTick:480});
+  assert.match(status.textContent,/Inputs/);
+  w.navigator.mediaDevices.enumerateDevices=async()=>{throw Error('NotAllowedError')};
+  const failed=await w.MusicStudio.vocalRefreshInputs();
+  assert.equal(failed.ok,false);assert.equal(select.value,'mic-old');
+  assert.equal(select.options.length,3);
+  assert.match(status.textContent,/NotAllowedError/);
+});

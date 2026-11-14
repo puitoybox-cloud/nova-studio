@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-08 JST",
+  "command": "CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-checkpoint-audition-browser.js",
+  "passed": 3,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-checkpoint-audition-browser.js": "e9f23906a4ff701758f1f3a31abb5fcc6a1b970560f981361c4af5b1af855f47"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "d913038a93cbcb7c92be4deef817f5db1bd82bd6d5c871cd119dd9203a63072c",
+    "music-studio-audio.js": "badceb3243ab3b90d2939366104838ce6e46596c237263e366a5207ca4419782"
+  },
+  "acceptedCases": [
+    "real MIDI and PCM audible A/B preserves stored source and adopts selected candidate",
+    "saved export routing offset compressor and Master targets render read-only",
+    "audible candidate adoption survives reload with exact MIDI Undo and Redo"
+  ],
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "2a877a58d8e5165b9fbd78a19445e1907822dc00",
+    "runId": 42467882182,
+    "jobId": 128691501733,
+    "step": 5,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42467882182/job/128691501733"
+  },
+  "scope": "Real Chromium HTMLAudioElement and OfflineAudioContext MIDI/PCM A/B, no audition writes, adoption and page reload Undo/Redo. Hardware listening remains separate.",
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "f50d5a9fd3c370d1d4ef04b59e257695a260d3a3",
+    "runId": 42423571041,
+    "jobId": 128556966926,
+    "step": 5,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423571041/job/128556966926"
+  },
+  "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately."
+}

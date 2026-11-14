@@ -1,0 +1,32 @@
+name: Music checkpoint audible comparison
+on:
+  pull_request:
+    paths:
+      - 'tools/music-local-generation/prepare.py'
+      - 'music-studio*.js'
+      - 'scripts/music-checkpoint-audition-browser.js'
+      - '.github/workflows/music-checkpoint-audition.yml'
+permissions:
+  contents: read
+jobs:
+  audible-comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/audition" playwright
+      - run: node scripts/music-checkpoint-audition-browser.js
+        env:
+          NODE_PATH: ${{ runner.temp }}/audition/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+          NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-checkpoint-audition
+          path: verification/music-checkpoint-audition-browser.json

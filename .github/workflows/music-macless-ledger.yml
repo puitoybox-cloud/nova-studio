@@ -1,0 +1,39 @@
+name: Music Macless requirements and Auto-Finish recovery
+on:
+  pull_request:
+    paths:
+      - 'tools/music-local-generation/prepare.py'
+      - 'music-studio-editor.js'
+      - 'music-studio.js'
+      - 'music-studio-auto-finish.js'
+      - 'tests/*.test.js'
+      - 'docs/music-studio/MACLESS_REQUIREMENTS_V1.*'
+      - 'scripts/music-macless-ledger.py'
+      - 'tools/nova-au/auto-finish-server.py'
+      - 'tools/nova-au/tests/test_auto_finish_server.py'
+      - 'verification/music-macless-*'
+      - '.github/workflows/music-macless-ledger.yml'
+permissions:
+  contents: read
+jobs:
+  software-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python3 -m unittest discover -s tools/nova-au/tests -p test_auto_finish_server.py -v
+      - run: node --test --test-concurrency=2 tests/*.test.js
+      - name: Fetch runtime snapshots referenced by acceptance evidence
+        run: |
+          python3 -c 'import json; snapshots=json.load(open("docs/music-studio/MACLESS_REQUIREMENTS_V1.json")).get("historicalRuntimeSnapshots", {}); print(*(sha for value in snapshots.values() for sha in ([value] if isinstance(value, str) else value)), sep=chr(10))' |
+            while IFS= read -r sha; do
+              if [[ -z "$sha" ]]; then continue; fi
+              [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+              git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch --depth=1 origin "$sha" || exit 1
+            done
+      - run: python3 scripts/music-macless-ledger.py

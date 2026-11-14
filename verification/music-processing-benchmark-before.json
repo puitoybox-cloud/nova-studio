@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-20T08:56:55.419Z",
+  "source": "/tmp/nova-before.js",
+  "seconds": 480.8,
+  "frames": 23078400,
+  "stemBytes": 92313644,
+  "decodeMs": 1459.2563199999995,
+  "decodeReads": 1413,
+  "totalMs": 91087.161465,
+  "performance": null,
+  "before": {
+    "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate",
+    "frames": 23078400,
+    "channels": 2,
+    "sampleRate": 48000,
+    "lufs": -24.938314243946518,
+    "peak": 0.056604551852003214,
+    "peakDb": -24.94297287279945,
+    "truePeak": 0.0567113309986378,
+    "truePeakDb": -24.926603196554584,
+    "clippingSamples": 0,
+    "blocks": 4805,
+    "gatedBlocks": 4805
+  },
+  "after": {
+    "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; Annex 2 4x FIR estimate",
+    "frames": 23078400,
+    "channels": 2,
+    "sampleRate": 48000,
+    "lufs": -17.999987767975686,
+    "peak": 0.294921875,
+    "peakDb": -10.605860273653228,
+    "truePeak": 0.2995191514492035,
+    "truePeakDb": -10.471508066308427,
+    "clippingSamples": 0,
+    "blocks": 4805,
+    "gatedBlocks": 4805
+  },
+  "gainDb": 26.10453182233192,
+  "passes": 1,
+  "hashes": [
+    {
+      "name": "Master.wav",
+      "size": 92313644,
+      "sha256": "7698d759346a67ecaab8ce8240fdf90ea535df3f24da1128764dcf1693db2fbe"
+    },
+    {
+      "name": "Mix.wav",
+      "size": 92313644,
+      "sha256": "264f2ccf71050fd99994411bf49d4fad01e379525c0428401bc0597059cd64e5"
+    }
+  ],
+  "maxRssKiB": 661296,
+  "scope": "Node CPU/Blob in-memory repository, no browser/IndexedDB/native or acoustic samples; not comparable to 478.15-second CI acceptance"
+}
