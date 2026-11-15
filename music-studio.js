@@ -734,7 +734,7 @@
         const tx=openTransaction(db,[STORE_NAME,'vocalJournals','vocalJournalChunks'],'readwrite');let failure;const timer=root.setTimeout?.(()=>abort(Error('vocal-rescue-import-timeout')),15000),done=()=>root.clearTimeout?.(timer);
         const abort=e=>{failure=e;try{tx.abort()}catch(_){reject(e)}};
         tx.onabort=()=>{done();reject(failure||tx.error||Error('vocal-rescue-import-aborted'))};tx.onerror=()=>abort(tx.error||Error('vocal-rescue-import-failed'));tx.oncomplete=()=>{done();resolve()};
-        const r=tx.objectStore(STORE_NAME).get(m.owner);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard();if(JSON.stringify(r.result)!==baseline)throw Error('vocal-recovery-conflict');const watch=q=>{q.onerror=()=>abort(q.error)};watch(tx.objectStore('vocalJournals').add(m));for(const c of items)watch(tx.objectStore('vocalJournalChunks').add(c));}catch(e){abort(e)}};
+        const r=tx.objectStore(STORE_NAME).get(m.owner);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard();if(JSON.stringify(r.result)!==baseline)throw Error('vocal-recovery-conflict');const watch=q=>{q.onerror=()=>abort(q.error);q.onsuccess=()=>{try{guard()}catch(e){abort(e)}}};watch(tx.objectStore('vocalJournals').add(m));for(const c of items)watch(tx.objectStore('vocalJournalChunks').add(c));}catch(e){abort(e)}};
       })),
       sealVocalJournal: (id,expected,guard)=>journalWrite(id,(m,meta,chunks,abort)=>{
         guard?.();
@@ -2348,8 +2348,8 @@
   }
   async function vocalImportRescue(file,projectId){
     if(vocalBusy()||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'vocal-recovery-busy'};
-    const target=repository,p=state.projects.find(p=>p.projectId===projectId),baseline=JSON.stringify(p),previousPhase=vocal.phase;
-    const guard=()=>{if(repository!==target||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===projectId))!==baseline)throw Error('vocal-recovery-conflict')};
+    const target=repository,storageGeneration=repositoryGeneration,p=state.projects.find(p=>p.projectId===projectId),baseline=JSON.stringify(p),previousPhase=vocal.phase;
+    const guard=()=>{if(repository!==target||repositoryGeneration!==storageGeneration||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===projectId))!==baseline)throw Error('vocal-recovery-conflict')};
     vocal.phase='stopping';requestPaint();
     try{
       if(!p||!target.importVocalJournal)throw Error('vocal-durable-storage-required');

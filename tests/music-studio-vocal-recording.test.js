@@ -648,3 +648,37 @@ for (const encoded of [false, true]) {
   f.a.vocalDiscard();
  });
 }
+
+test('rescue import rolls back journal and chunks when the repository changes during the write',async()=>{
+ const recording=await interruptedJournal();
+ ageJournal(recording);
+ const rescue=await recording.b.vocalJournalAction(recording.m.id);
+ const {a:studio,repo:source,p:project}=await setup();
+ const alternate=studio.memoryRepository([project]);
+ const write=source.importVocalJournal;
+ let attempted,guardCalls=0;
+ source.importVocalJournal=(meta,chunks,baseline,guard)=>{
+  source.importVocalJournal=write;
+  attempted=meta.id;
+  return write(meta,chunks,baseline,()=>{
+   if(++guardCalls===2){
+    studio.setRepository(alternate);
+    studio.setRepository(source);
+   }
+   guard();
+  });
+ };
+ const cancelled=await studio.vocalImportRescue(rescue.blob,project.projectId);
+ assert.equal(cancelled.error,'vocal-recovery-conflict');
+ assert.equal(await source.getVocalJournal(attempted),undefined);
+ assert.equal(await source.getVocalJournalChunk(attempted+':0'),undefined);
+ assert.equal(JSON.stringify(await source.get(project.projectId)),JSON.stringify(project));
+ assert.equal(JSON.stringify(await alternate.get(project.projectId)),JSON.stringify(project));
+ const imported=await studio.vocalImportRescue(rescue.blob,project.projectId);
+ assert.equal(imported.ok,true,imported.error);
+ assert.equal((await source.listVocalJournals()).length,1);
+ const recovered=await studio.vocalRecoverJournal(imported.journalId);
+ assert.equal(recovered.ok,true,recovered.error);
+ assert.equal(recovered.project.longWavAssets[0].frames,recording.m.frames);
+ recording.a.vocalDiscard();
+});
