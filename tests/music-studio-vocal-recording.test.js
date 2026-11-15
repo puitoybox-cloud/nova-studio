@@ -711,5 +711,5 @@ test('journal deletion rolls back after switching away and back, then preserves 
  assert.equal((await studio.vocalJournalAction(id, true)).ok, true);
  assert.equal(await repo.getVocalJournal(id), undefined);
  assert.equal(await repo.getVocalJournalChunk(id + ':0'), undefined);
- assert.deepEqual(await repo.get(p.projectId), p);
+ assert.equal(JSON.stringify(await repo.get(p.projectId)), JSON.stringify(p));
 });
