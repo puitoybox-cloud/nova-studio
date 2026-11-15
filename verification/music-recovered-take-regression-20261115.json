@@ -1,19 +1,23 @@
 {
   "dateJST": "2026-11-15",
-  "baseline": "dd70048acf060a7d5b05df950a4f11f8a8348d89",
-  "productionGitBlob": "0f94985a07726273fb81f3e243484be2de2810ec",
+  "baseline": "de4158bd8333ac43b7909b68c92bf67eb2ca0896",
+  "productionGitBlob": "44295e3d1fdb104c672ae15ba0f9058b9ba40ab3",
   "node": "v24.22.1",
   "fullRegression": {
     "command": "node --test --test-reporter=tap",
-    "passed": 2985,
+    "passed": 2987,
     "failed": 0,
     "skipped": 0
   },
   "vocalRegression": {
     "command": "node --test tests/music-studio-vocal-recording.test.js",
-    "passed": 110,
+    "passed": 112,
     "failed": 0,
     "switchAwayAndBack": [
+      "PCM",
+      "MediaRecorder"
+    ],
+    "recoverySealSwitchAwayAndBack": [
       "PCM",
       "MediaRecorder"
     ]
@@ -30,14 +34,14 @@
     "totalCount": 135
   },
   "command": "node --test --test-reporter=tap",
-  "passed": 2985,
+  "passed": 2987,
   "failed": 0,
   "sourceHashes": {
-    "tests/music-studio-vocal-recording.test.js": "d343f4cd167cfcc2de781c2c5a8f529aa739cbfbc2195bf04d9de85e87498ca1",
+    "tests/music-studio-vocal-recording.test.js": "dda6884e9c3f942944646c17afe2e110dd2a608107ed36cc80fae64cdb788590",
     "tests/music-studio-scoped-midi-repair.test.js": "03af845e1c733d0d3303560cced76c4824a2427c346f22935dffd2bce12b7413"
   },
   "runtimeHashes": {
-    "music-studio.js": "8e8c041bd3f74b13945396b13f931dedf4a388d4474e473fa36d55c384cdf3ce",
+    "music-studio.js": "7cdf87727c7686dbdd3d35f19681c7bf97c8120aedb90008795d135f971d28ea",
     "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371",
     "app.js": "bda99574de5b36014f8a163f2a10abda845fc4f25197fc74034b62736dc70d8f",
     "index.html": "e333510c3861b3031ddcb10503a4b8cf2fde4ba6e5f1cbf339b8e56a777a1f83",
