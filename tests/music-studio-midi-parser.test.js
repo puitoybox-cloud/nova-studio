@@ -1,5 +1,5 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const vm=require('node:vm');
-function load(){const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer};window.window=window;for(const name of ['music-studio-midi.js','music-studio-midi-parser.js'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:name});return{writer:window.MusicStudioMidi,parser:window.MusicStudioMidiParser}}
+function load(math=Math){const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer};window.window=window;for(const name of ['music-studio-midi.js','music-studio-midi-parser.js'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent,Math:math},{filename:name});return{writer:window.MusicStudioMidi,parser:window.MusicStudioMidiParser}}
 const be16=n=>[n>>8,n&255],be32=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255];
 function vlq(n){let b=n&127,out=[];while(n>>=7)b=(b<<8)|((n&127)|128);for(;;){out.push(b&255);if(b&128)b>>=8;else return out}}
 function track(events){return[77,84,114,107,...be32(events.length),...events]}
@@ -58,6 +58,35 @@ test('unknown MIDI tracks remain additional tracks regardless of position',()=>{
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
+
+test('large valid MIDI tracks calculate pitch and velocity ranges without spreading all notes into Math',()=>{
+  // JavaScript engines have different maximum call-argument counts. A legal
+  // 70,000-note MIDI file must import even when one engine caps them at 64K.
+  const limitedMath=Object.create(Math);
+  limitedMath.min=(...args)=>{if(args.length>64000)throw RangeError('engine-argument-limit');return Math.min(...args)};
+  limitedMath.max=(...args)=>{if(args.length>64000)throw RangeError('engine-argument-limit');return Math.max(...args)};
+  const p=load(limitedMath).parser,n=70000,bytes=new Uint8Array(14+8+n*8+4);
+  bytes.set([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107]);
+  new DataView(bytes.buffer).setUint32(18,n*8+4);
+  for(let i=0;i<n;i++)bytes.set([0,144,i%2?72:48,i%2?110:45,0,128,i%2?72:48,0],22+i*8);
+  bytes.set([0,255,47,0],22+n*8);
+  const result=p.parseMidiFile(bytes);
+  assert.equal(result.validation.importable,true);
+  assert.equal(result.normalized.totalNotes,n);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.normalized.tracks[0].range)),{min:48,max:72});
+  assert.deepEqual(JSON.parse(JSON.stringify(result.normalized.tracks[0].velocityRange)),{min:45,max:110});
+});
+
+test('many unmatched MIDI note-offs return warnings without overflowing call arguments',()=>{
+  const p=load().parser,n=140000,bytes=new Uint8Array(14+8+n*4+4);
+  bytes.set([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107]);
+  new DataView(bytes.buffer).setUint32(18,n*4+4);
+  for(let i=0;i<n;i++)bytes.set([0,128,60,0],22+i*4);
+  bytes.set([0,255,47,0],22+n*4);
+  const result=p.parseMidiFile(bytes);
+  assert.equal(result.normalized.totalNotes,0);
+  assert.equal(result.normalized.warnings.filter(w=>w.code==='orphan-note-off').length,n);
+});
 
 
 test('key changes on separate Type 1 tracks are imported chronologically without losing provenance',()=>{

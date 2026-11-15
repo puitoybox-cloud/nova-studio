@@ -11,8 +11,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def stage(destination):
-    destination = Path(destination).resolve()
-    if destination == ROOT or ROOT in destination.parents and '.git' in destination.parts:
+    requested = Path(destination).absolute()
+    if requested.is_symlink():
+        raise ValueError('symlink-stage-destination')
+    destination = requested.resolve()
+    protected = (ROOT / '.git', ROOT / 'assets')
+    if destination == ROOT or any(destination == item or item in destination.parents for item in protected):
         raise ValueError('unsafe-stage-destination')
     tracked = subprocess.check_output(['git', 'ls-files'], cwd=ROOT, text=True).splitlines()
     # All root runtime JS/CSS and image assets cover dynamic UI references as well
@@ -25,12 +29,22 @@ def stage(destination):
     for reference in re.findall(r'(?:src|href)="\./([^"?]+)', html):
         if reference not in files:
             raise ValueError('missing-entry-asset:' + reference)
+    # Validate the complete inventory and every destination component before
+    # writing anything. copyfile follows output symlinks by default.
+    for name in sorted(set(files)) + ['asset-manifest.json']:
+        source = ROOT / name
+        if name != 'asset-manifest.json':
+            if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(ROOT):
+                raise ValueError('unsafe-or-missing-asset:' + name)
+        target = destination
+        for component in Path(name).parts:
+            target = target / component
+            if target.is_symlink():
+                raise ValueError('symlink-output:' + name)
     destination.mkdir(parents=True, exist_ok=True)
     inventory = []
     for name in sorted(set(files)):
         source = ROOT / name
-        if source.is_symlink():
-            raise ValueError('symlink-asset:' + name)
         (destination / name).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination / name)
         inventory.append({'path': name, 'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
