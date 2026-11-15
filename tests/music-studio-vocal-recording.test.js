@@ -619,3 +619,32 @@ for (const encoded of [false, true]) {
   f.a.vocalDiscard();
  });
 }
+
+for (const encoded of [false, true]) {
+ test('repository switch before recovery seal leaves the original journal unchanged, encoded='+encoded, async()=>{
+  const f=encoded?await encodedJournal():await interruptedJournal();
+  if(!encoded)ageJournal(f);
+  const studio=encoded?f.fresh.a:f.b, source=studio.indexedDbRepository();
+  const before=await source.get(f.m.owner);
+  const journal=await source.getVocalJournal(f.m.id);
+  const alternate=studio.memoryRepository([before]);
+  const seal=source.sealVocalJournal;
+  source.sealVocalJournal=(id,expected,guard)=>{
+   source.sealVocalJournal=seal;
+   studio.setRepository(alternate);
+   studio.setRepository(source);
+   return seal(id,expected,guard);
+  };
+  studio.setRepository(source);
+  const cancelled=await studio.vocalRecoverJournal(f.m.id);
+  assert.equal(cancelled.error,'vocal-recovery-conflict');
+  assert.equal(JSON.stringify(await source.getVocalJournal(f.m.id)),JSON.stringify(journal));
+  assert.equal(JSON.stringify(await source.get(f.m.owner)),JSON.stringify(before));
+  assert.equal(JSON.stringify(await alternate.get(f.m.owner)),JSON.stringify(before));
+  const recovered=await studio.vocalRecoverJournal(f.m.id);
+  assert.equal(recovered.ok,true,recovered.error);
+  assert.equal(recovered.project.longWavAssets.length,1);
+  assert.equal((await studio.vocalRecoverJournal(f.m.id)).ok,false);
+  f.a.vocalDiscard();
+ });
+}

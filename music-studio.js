@@ -736,7 +736,13 @@
         tx.onabort=()=>{done();reject(failure||tx.error||Error('vocal-rescue-import-aborted'))};tx.onerror=()=>abort(tx.error||Error('vocal-rescue-import-failed'));tx.oncomplete=()=>{done();resolve()};
         const r=tx.objectStore(STORE_NAME).get(m.owner);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard();if(JSON.stringify(r.result)!==baseline)throw Error('vocal-recovery-conflict');const watch=q=>{q.onerror=()=>abort(q.error)};watch(tx.objectStore('vocalJournals').add(m));for(const c of items)watch(tx.objectStore('vocalJournalChunks').add(c));}catch(e){abort(e)}};
       })),
-      sealVocalJournal: (id,expected)=>journalWrite(id,(m,meta,chunks,abort)=>{if(!m||m.next!==expected.next||m.consumed!==expected.consumed||m.frames!==expected.frames)throw Error('vocal-journal-conflict');const r=meta.put({...m,closed:true});r.onerror=()=>abort(r.error)}),
+      sealVocalJournal: (id,expected,guard)=>journalWrite(id,(m,meta,chunks,abort)=>{
+        guard?.();
+        if(!m||m.next!==expected.next||m.consumed!==expected.consumed||m.frames!==expected.frames)throw Error('vocal-journal-conflict');
+        const write=meta.put({...m,closed:true});
+        write.onerror=()=>abort(write.error);
+        write.onsuccess=()=>{try{guard?.()}catch(error){abort(error)}};
+      }),
       deleteVocalJournal: (id,expected,guard)=>journalWrite(id,(m,meta,chunks,abort)=>{guard?.();if(!m||JSON.stringify(m)!==JSON.stringify(expected)||(!m.closed&&Date.now()-m.updatedAt<30000)||!Number.isSafeInteger(m.next)||m.next<0||m.next>90000)throw Error('vocal-journal-conflict');for(let i=0;i<m.next;i++){const r=chunks.delete(id+':'+i);r.onerror=()=>abort(r.error)}const r=meta.delete(id);r.onerror=()=>abort(r.error);r.onsuccess=()=>{try{guard?.()}catch(e){abort(e)}}}),
       createVocalJournal: m=>request('vocalJournals','readwrite',store=>store.add(m)),
       listVocalJournals: ()=>request('vocalJournals','readonly',store=>store.getAll()),
@@ -2275,7 +2281,7 @@
       vocalJournalMetadata(m);
       if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
       const baseline=JSON.stringify(p),guard=()=>{guardStorage();if(state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};
-      await target.sealVocalJournal(m.id,m);guard();const pieces=[];let frames=0,damage='';
+      await target.sealVocalJournal(m.id,m,guard);guard();const pieces=[];let frames=0,damage='';
       for(let i=0;i<m.next;i++){guard();const c=await target.getVocalJournalChunk(m.id+':'+i);
         if(!c||!(c.bytes instanceof ArrayBuffer)||c.bytes.byteLength<2||c.bytes.byteLength>8192||c.bytes.byteLength%2||JSON.stringify(await longWavDigest(new Blob([c.bytes]),guard))!==JSON.stringify(c.hash)){damage='vocal-journal-corrupt-prefix-only';break}
         const n=c.bytes.byteLength/2;if(frames+n>m.frames){damage='vocal-journal-frame-mismatch';break}
@@ -2296,7 +2302,7 @@
   async function vocalRecoverEncodedJournal(m,target,options,guardStorage){
     let context;try{
       vocalJournalMetadata(m);if(m.recoveredAt!==undefined)throw Error('vocal-encoded-journal-already-recovered-source-retained');const p=state.projects.find(p=>p.projectId===m.owner);if(!p||!m.next)throw Error('vocal-journal-no-valid-unsaved-audio');if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
-      const baseline=JSON.stringify(p),guard=()=>{guardStorage();if(state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};await target.sealVocalJournal(m.id,m);guard();const pieces=[];let size=0;
+      const baseline=JSON.stringify(p),guard=()=>{guardStorage();if(state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===p.projectId))!==baseline)throw Error('vocal-recovery-conflict')};await target.sealVocalJournal(m.id,m,guard);guard();const pieces=[];let size=0;
       let excluded=0;
       for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);guard();if(!c||!(c.bytes instanceof ArrayBuffer)||c.bytes.byteLength<1||c.bytes.byteLength>1048576||JSON.stringify(await longWavDigest(new Blob([c.bytes]),guard))!==JSON.stringify(c.hash)){
         if(options.salvageTail!==true||!pieces.length)throw Error('vocal-encoded-journal-corrupt');excluded=m.next-i;break;

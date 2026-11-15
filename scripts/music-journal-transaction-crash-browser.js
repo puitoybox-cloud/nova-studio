@@ -66,24 +66,32 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
     if (!started.ok) throw Error(started.error);
     return { id, journalId: studio.vocal.recorder.journalId, before: await repository.get(id) };
   }, switchRepository);
-  const deadline = Date.now() + 30000;
+  const minimumSeconds = 60;
+  const deadline = Date.now() + 115000;
   let progress;
   do {
     progress = await page.evaluate(async journalId => {
       const repo = MusicStudio.indexedDbRepository();
       const journal = await repo.getVocalJournal(journalId);
       await repo.close();
-      return { next: journal?.next, phase: MusicStudio.vocal.phase };
+      return {
+        next: journal?.next,
+        phase: MusicStudio.vocal.phase,
+        seconds: journal?.encoding
+          ? (Date.now() - MusicStudio.vocal.startedAt) / 1000
+          : (journal?.frames || 0) / (journal?.rate || 1)
+      };
     }, fixture.journalId);
-    if (progress.next >= 3 && progress.phase === 'recording') break;
+    if (progress.next >= 3 && progress.phase === 'recording' && progress.seconds >= minimumSeconds) break;
     if (!['permission', 'armed', 'recording'].includes(progress.phase)) {
       throw Error('capture-ended-before-stop-fixture: ' + JSON.stringify(progress));
     }
     await delay(250);
   } while (Date.now() < deadline);
-  if (!(progress.next >= 3 && progress.phase === 'recording')) {
+  if (!(progress.next >= 3 && progress.phase === 'recording' && progress.seconds >= minimumSeconds)) {
     throw Error('capture-did-not-reach-stop-fixture: ' + JSON.stringify(progress));
   }
+  console.log('stop-crash-capture-ready', JSON.stringify({ switchRepository, ...progress }));
   if (switchRepository) {
     await killDuringWrite(page, child, 'vocalJournals', () => page.evaluate(async before => {
       const studio = MusicStudio;
@@ -130,6 +138,35 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
     if (!journal.closed) {
       await new Promise(resolve => setTimeout(resolve, Math.max(0, 31000 - (Date.now() - journal.updatedAt))));
     }
+    if (switchRepository) {
+      studio.setRepository(repo);
+      const alternate = studio.memoryRepository([before]);
+      const put = IDBObjectStore.prototype.put;
+      let switched = false;
+      IDBObjectStore.prototype.put = function (value, ...args) {
+        const request = put.call(this, value, ...args);
+        if (this.name === 'vocalJournals' && value.id === journalId && value.closed) {
+          request.addEventListener('success', () => {
+            switched = true;
+            studio.setRepository(alternate);
+            studio.setRepository(repo);
+          }, { once: true });
+        }
+        return request;
+      };
+      let stale;
+      try {
+        stale = await studio.vocalRecoverJournal(journalId);
+      } finally {
+        IDBObjectStore.prototype.put = put;
+      }
+      if (!switched || stale.error !== 'vocal-recovery-conflict' ||
+          JSON.stringify(await repo.getVocalJournal(journalId)) !== JSON.stringify(journal) ||
+          JSON.stringify(await repo.get(id)) !== JSON.stringify(before) ||
+          JSON.stringify(await alternate.get(id)) !== JSON.stringify(before)) {
+        throw Error('repository-switch-recovery-seal-was-not-rolled-back');
+      }
+    }
     const result = await studio.vocalRecoverJournal(journalId);
     if (!result.ok) throw Error(result.error);
     const wav = await studio.pcmLoadLongWav(id, result.assetId);
@@ -142,7 +179,6 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
       throw Error('stop-crash-recovery-history-mismatch');
     }
     const repeated = await studio.vocalRecoverJournal(journalId);
-    await repo.close();
     return { expected: await hash(expected), actual: await hash(wav.slice(44)),
       repeated: repeated.ok, chunks: chunks.length };
   }, { ...fixture, switchRepository });
@@ -150,7 +186,8 @@ async function verifyStopWriteCrash(context, child, launch, url, microphone, swi
   assert.equal(recovered.repeated, false);
   await page.close();
   return { context, evidence: { rolledBackBeforeCommit: true, confirmedOnRestart: true,
-    recoveredAudioHash: recovered.actual, journalChunks: recovered.chunks, duplicateRejected: true } };
+    recoveredAudioHash: recovered.actual, journalChunks: recovered.chunks, captureSeconds: progress.seconds,
+    duplicateRejected: true, ...(switchRepository ? { staleRecoverySealRolledBack: true } : {}) } };
 }
 
 module.exports = { killDuringWrite, verifyStopWriteCrash };
