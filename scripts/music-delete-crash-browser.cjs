@@ -391,5 +391,95 @@ test('journal and backup deletions roll back on SIGKILL and commit completely on
    assert.ok(split.editIds.includes(event.editId));
   }
 
+  // Exercise the public recording rescue and deletion actions against the
+  // same persistent databases, using real successful IndexedDB requests.
+  const rescue = await page.evaluate(async () => {
+   const journal = await repo.getVocalJournal('archive-journal');
+   if (!journal) throw Error('missing-original-archive-journal');
+   const exported = await app.vocalJournalAction(journal.id);
+   if (!exported.ok) throw Error(exported.error);
+   return Array.from(new Uint8Array(await exported.blob.arrayBuffer()));
+  });
+  const beforeRescue = await snapshot(page);
+  await page.evaluate(async bytes => {
+   await app.refresh();
+   const add = IDBObjectStore.prototype.add;
+   IDBObjectStore.prototype.add = function (...args) {
+    const request = add.apply(this, args);
+    if (this.name === 'vocalJournalChunks') {
+     request.addEventListener('success', () => {
+      const hold = () => this.count(request.result).addEventListener('success', hold, { once: true });
+      hold();
+      window.rescueChunkWritten = true;
+     }, { once: true });
+    }
+    return request;
+   };
+   void app.vocalImportRescue(new Blob([new Uint8Array(bytes)]), 'archive-source');
+  }, rescue);
+  await page.waitForFunction(() => window.rescueChunkWritten);
+  await stop();
+  page = await open();
+  assert.deepEqual(await snapshot(page), beforeRescue, 'rescue import must roll back journal and chunks');
+  const imported = await page.evaluate(async bytes => {
+   await app.refresh();
+   return app.vocalImportRescue(new Blob([new Uint8Array(bytes)]), 'archive-source');
+  }, rescue);
+  assert.equal(imported.ok, true, imported.error);
+  const beforeDelete = await snapshot(page);
+  const switchedDelete = await page.evaluate(async id => {
+   window.confirm = () => true;
+   const remove = IDBObjectStore.prototype.delete;
+   let hit = false;
+   IDBObjectStore.prototype.delete = function (...args) {
+    const request = remove.apply(this, args);
+    if (this.name === 'vocalJournals' && args[0] === id) {
+     request.addEventListener('success', () => {
+      hit = true;
+      app.setRepository(app.memoryRepository());
+      app.setRepository(repo);
+     }, { once: true });
+    }
+    return request;
+   };
+   try {
+    return { result: await app.vocalJournalAction(id, true), hit };
+   } finally {
+    IDBObjectStore.prototype.delete = remove;
+   }
+  }, imported.journalId);
+  assert.equal(switchedDelete.hit, true);
+  assert.equal(switchedDelete.result.error, 'vocal-journal-conflict');
+  assert.deepEqual(await snapshot(page), beforeDelete, 'switching away and back must roll back deletion');
+  await stop();
+  page = await open();
+  assert.deepEqual(await snapshot(page), beforeDelete, 'rolled-back deletion must stay rolled back after restart');
+  const restored = await page.evaluate(async id => {
+   await app.refresh();
+   const before = await repo.get('archive-source');
+   const result = await app.vocalRecoverJournal(id);
+   if (!result.ok) throw Error(result.error);
+   const song = await repo.get(before.projectId);
+   const wav = await app.pcmLoadLongWav(song.projectId, result.assetId);
+   const events = song.productionHistory.filter(event => event.journalId === id);
+   return {
+    pcm: Array.from(new Int16Array(await wav.slice(44).arrayBuffer())),
+    assetsAdded: song.longWavAssets.length - before.longWavAssets.length,
+    events,
+    sessionId: song.songVersions.edits.find(edit => edit.id === events[0]?.editId)?.sessionId,
+    expectedSessionId: before.songVersions.sessions[0].id,
+    sameDays: JSON.stringify(song.songVersions.days) === JSON.stringify(before.songVersions.days),
+    sourceRetained: Boolean(await repo.getVocalJournal('archive-journal')),
+    duplicateRejected: !(await app.vocalRecoverJournal(id)).ok
+   };
+  }, imported.journalId);
+  assert.deepEqual(restored.pcm, [11, -22, 33]);
+  assert.equal(restored.assetsAdded, 1);
+  assert.equal(restored.events.length, 1);
+  assert.equal(restored.sessionId, restored.expectedSessionId);
+  assert.equal(restored.sameDays, true);
+  assert.equal(restored.sourceRetained, true);
+  assert.equal(restored.duplicateRejected, true);
+
  }finally{await stop();await new Promise(r=>{server.close(r);server.closeAllConnections()});fs.rmSync(dir,{recursive:true,force:true})}
 });

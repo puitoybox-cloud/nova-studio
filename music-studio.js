@@ -2322,18 +2322,21 @@
   }
   async function vocalJournalAction(journalId,remove=false,diagnose=false){
     if(vocalBusy()||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'vocal-recovery-busy'};
-    const target=repository,previousPhase=vocal.phase;vocal.phase='stopping';requestPaint();
+    const target=repository,storageGeneration=repositoryGeneration,previousPhase=vocal.phase;vocal.phase='stopping';requestPaint();
     try{
+      const current=()=>{if(repository!==target||repositoryGeneration!==storageGeneration)throw Error('vocal-journal-conflict')};
       const m=await target.getVocalJournal(journalId);if(!m||!Number.isSafeInteger(m.next)||m.next<0||m.next>90000)throw Error('vocal-journal-metadata-invalid');
+      current();
       if(!m.closed&&Date.now()-m.updatedAt<30000)throw Error('vocal-journal-may-be-active-wait-30s');
-      const current=()=>{if(repository!==target)throw Error('vocal-journal-conflict')};const guard=async()=>{current();const observed=await target.getVocalJournal(journalId);current();if(JSON.stringify(observed)!==JSON.stringify(m))throw Error('vocal-journal-conflict')};
+      const guard=async()=>{current();const observed=await target.getVocalJournal(journalId);current();if(JSON.stringify(observed)!==JSON.stringify(m))throw Error('vocal-journal-conflict')};
       if(remove){
         if(!(root.confirm?.('この未完了録音を完全に削除しますか？復元できません。必要なら先に「元データを退避」を実行してください。保存済みTakeは削除されません。')??false))return{ok:false,cancelled:true};
-        await guard();await target.deleteVocalJournal(journalId,m,current);current();vocal.message='未完了録音を削除しました。';
+        await guard();await target.deleteVocalJournal(journalId,m,current);
+        if(repository===target&&repositoryGeneration===storageGeneration)vocal.message='未完了録音を削除しました。';
       }else{
         // Rescue container preserves observed bytes, including corrupt chunks. It is not a verified audio backup.
         const parts=[],entries=[];let offset=0;
-        for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);if(!c||!(c.bytes instanceof ArrayBuffer)){entries.push({seq:i,missing:true});continue}if(c.bytes.byteLength>1048576||offset+c.bytes.byteLength>VOCAL_MAX_BYTES)throw Error('vocal-journal-rescue-capacity');const observed=await longWavDigest(new Blob([c.bytes]),()=>{});entries.push({seq:i,offset,size:c.bytes.byteLength,expected:c.hash,observed,verified:JSON.stringify(observed)===JSON.stringify(c.hash)});parts.push(c.bytes);offset+=c.bytes.byteLength;}
+        for(let i=0;i<m.next;i++){const c=await target.getVocalJournalChunk(m.id+':'+i);current();if(!c||!(c.bytes instanceof ArrayBuffer)){entries.push({seq:i,missing:true});continue}if(c.bytes.byteLength>1048576||offset+c.bytes.byteLength>VOCAL_MAX_BYTES)throw Error('vocal-journal-rescue-capacity');const observed=await longWavDigest(new Blob([c.bytes]),current);entries.push({seq:i,offset,size:c.bytes.byteLength,expected:c.hash,observed,verified:JSON.stringify(observed)===JSON.stringify(c.hash)});parts.push(c.bytes);offset+=c.bytes.byteLength;}
         await guard();if(diagnose){
           vocalJournalMetadata(m);let prefixFrames=0,prefix=true;
           for(const e of entries){const valid=e.verified&&!e.missing&&e.size>=2&&e.size<=8192&&e.size%2===0;if(!valid)prefix=false;if(prefix)prefixFrames+=e.size/2;}
