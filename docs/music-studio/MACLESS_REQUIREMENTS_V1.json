@@ -1324,14 +1324,27 @@
       "feature": 12,
       "category": "A",
       "requirement": "長時間録音中断からの全保存経路の復旧検証",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-pcm-journal-crash-browser.js",
+          "acceptance": "PCM長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp",
+          "declaration": "long-recording-recovery-and-comp",
+          "run": "verification/music-macless-recording-recovery-20261115.json"
+        },
+        {
+          "path": "scripts/music-encoded-journal-crash-browser.js",
+          "acceptance": "圧縮長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp",
+          "declaration": "long-recording-recovery-and-comp",
+          "run": "verification/music-macless-recording-recovery-20261115.json"
+        }
+      ],
       "dependsOn": [],
       "triage": {
         "date": "2026-11-07 JST",
         "baselinePR": 550,
         "classification": "実装済み・検証不足",
-        "note": "PCM/圧縮録音の長時間・保存先切替・中断位置別の復旧を全保存経路へ結び付けた証拠が未完。短時間fixtureと既存クラッシュ試験だけでは全条件を証明しない。",
+        "note": "実ChromiumでPCM・圧縮録音を各60秒以上収録し、追記中・停止保存中・保存先切替中の強制終了、同じ保存先での再起動と再試行を検証。復旧処理中の切替と切り戻しはジャーナルのシールをロールバック。確定音声のSHA-256と重複拒否、Archive、Comp差し替え、Session・日次・編集履歴を照合。分割テイクは確定済みの位置から再開し、フレームと履歴IDを照合。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"

@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **69**、残数 **66**、受入確認率 **51.11%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率 **51.85%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装3件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+優先順：①既存実装2件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -25,7 +25,7 @@ A：総数 **135**、証拠付き完了 **69**、残数 **66**、受入確認率
 | 9 | 4 | 1 | 3 | 1 | 1 |
 | 10 | 8 | 1 | 7 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
-| 12 | 4 | 3 | 1 | 1 | 0 |
+| 12 | 4 | 4 | 0 | 1 | 0 |
 | 13 | 4 | 4 | 0 | 1 | 0 |
 | 14 | 5 | 1 | 4 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
@@ -119,7 +119,7 @@ A：総数 **135**、証拠付き完了 **69**、残数 **66**、受入確認率
 | MS11-B01 | B | 日本語仮歌の聴感品質 | open | 未確認 |
 | MS11-C01 | C | 歌唱モデルの配布ライセンスと品質基準 | open | 未確認 |
 | MS12-A01 | A | selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes` |
-| MS12-A02 | A | 長時間録音中断からの全保存経路の復旧検証 | open | 未確認 |
+| MS12-A02 | A | 長時間録音中断からの全保存経路の復旧検証 | verified | [scripts/music-pcm-journal-crash-browser.js](../../scripts/music-pcm-journal-crash-browser.js) — `PCM長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp`; [scripts/music-encoded-journal-crash-browser.js](../../scripts/music-encoded-journal-crash-browser.js) — `圧縮長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp` |
 | MS12-A03 | A | PunchとCycleの保存再開 | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `scheduled punch-in omits preroll samples and captures exact punch-out without UI timer`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `restart after the first gapless Take commits recovers only unsaved frames`; [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `gapless crash recovery recreates exact Take boundaries and cycle metadata` |
 | MS12-A04 | A | 歌詞スクロール同期 | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `lyric following uses explicit saved track, respects tempo and rest, excludes stale and duplicate assignments`; [scripts/music-indexeddb-browser-persistence.cjs](../../scripts/music-indexeddb-browser-persistence.cjs) — `lyric follow scrolls active saved assignments after rerender and clears stopped playback` |
 | MS12-B01 | B | マイク権限・monitor・latency・長時間録音 | open | 未確認 |
@@ -236,7 +236,7 @@ A：総数 **135**、証拠付き完了 **69**、残数 **66**、受入確認率
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
-| 実装済み・検証不足 | 23 | 3 |
+| 実装済み・検証不足 | 23 | 2 |
 | 仕様判断待ち | 63 | 63 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
@@ -284,7 +284,7 @@ A：総数 **135**、証拠付き完了 **69**、残数 **66**、受入確認率
 | MS10-A08 | 仕様判断待ち | open |
 | MS11-A02 | 仕様判断待ち | open |
 | MS11-A03 | 仕様判断待ち | open |
-| MS12-A02 | 実装済み・検証不足 | open |
+| MS12-A02 | 実装済み・検証不足 | verified |
 | MS12-A03 | 実装済み・検証不足 | verified |
 | MS12-A04 | 実装済み・検証不足 | verified |
 | MS13-A02 | 実装が必要 | verified |
