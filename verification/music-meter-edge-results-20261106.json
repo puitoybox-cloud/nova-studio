@@ -1,0 +1,168 @@
+{
+  "date": "2026-11-06 JST",
+  "runtimeSha256": "77a63105544e6e25b1070d15b20e4aac86b712b9aa1e2f9e12426ba083f07450",
+  "toleranceDb": 0.2,
+  "rows": [
+    {
+      "id": "mono-997",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "stereo-997",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "low-50",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "high-10000",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "intersample-12000",
+      "truePeakDb": -0.9137653135847859,
+      "referenceDb": -0.9,
+      "differenceDb": -0.013765313584785832,
+      "clippingSamples": 0
+    },
+    {
+      "id": "high-19000",
+      "truePeakDb": -0.9151500413110016,
+      "referenceDb": -0.9,
+      "differenceDb": -0.015150041311001616,
+      "clippingSamples": 0
+    },
+    {
+      "id": "absolute-gate",
+      "truePeakDb": -66.02059950072201,
+      "referenceDb": -66,
+      "differenceDb": -0.020599500722013886,
+      "clippingSamples": 0
+    },
+    {
+      "id": "relative-gate",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "silence-tail",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "asymmetric-stereo",
+      "truePeakDb": -19.99999987057016,
+      "referenceDb": -20,
+      "differenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "hard-onset-12000",
+      "truePeakDb": -0.2841529192249398,
+      "referenceDb": -0.3,
+      "differenceDb": 0.015847080775060196,
+      "clippingSamples": 0
+    },
+    {
+      "id": "clipped-997",
+      "truePeakDb": 1.642064763340667,
+      "referenceDb": 1.6,
+      "differenceDb": 0.042064763340667,
+      "clippingSamples": 53694
+    },
+    {
+      "id": "silence",
+      "truePeakDb": null,
+      "referenceDb": null,
+      "differenceDb": null,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-50",
+      "truePeakDb": -0.9151500413110016,
+      "referenceDb": -0.9,
+      "differenceDb": -0.015150041311001616,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-997",
+      "truePeakDb": -0.8567103590289964,
+      "referenceDb": -0.9,
+      "differenceDb": 0.04328964097100363,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-10000",
+      "truePeakDb": -0.7968993555075066,
+      "referenceDb": -0.8,
+      "differenceDb": 0.003100644492493476,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-12000-zero",
+      "truePeakDb": -0.4353967785196923,
+      "referenceDb": -0.5,
+      "differenceDb": 0.06460322148030773,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-12000-quarter",
+      "truePeakDb": -0.9151500413110016,
+      "referenceDb": -0.9,
+      "differenceDb": -0.015150041311001616,
+      "clippingSamples": 0
+    },
+    {
+      "id": "abrupt-19000",
+      "truePeakDb": -0.7267234416700906,
+      "referenceDb": -0.9,
+      "differenceDb": 0.1732765583299094,
+      "clippingSamples": 0
+    },
+    {
+      "id": "first-impulse",
+      "truePeakDb": -0.9151500413110016,
+      "referenceDb": -0.9,
+      "differenceDb": -0.015150041311001616,
+      "clippingSamples": 0
+    },
+    {
+      "id": "last-impulse",
+      "truePeakDb": -0.9151500413110016,
+      "referenceDb": -0.9,
+      "differenceDb": -0.015150041311001616,
+      "clippingSamples": 0
+    },
+    {
+      "id": "clipped-12000",
+      "truePeakDb": 4.1528215849916785,
+      "referenceDb": 4.1,
+      "differenceDb": 0.05282158499167888,
+      "clippingSamples": 48000
+    },
+    {
+      "id": "asymmetric-19000",
+      "truePeakDb": -0.7267234416700906,
+      "referenceDb": -0.9,
+      "differenceDb": 0.1732765583299094,
+      "clippingSamples": 0
+    }
+  ]
+}

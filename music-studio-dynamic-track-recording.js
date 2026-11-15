@@ -26,6 +26,8 @@
   function transportShortcut(event){
     if(!event||event.isComposing||event.repeat||shortcutTargetBlocked(event))return null;
     const key=String(event.key||''),code=String(event.code||''),lower=key.toLowerCase(),meta=Boolean(event.metaKey),control=Boolean(event.ctrlKey),shift=Boolean(event.shiftKey),option=Boolean(event.altKey);
+    const rawTarget=event.target,target=rawTarget?.nodeType===3?rawTarget.parentElement:rawTarget;
+    if((['Enter','Return',' ','Spacebar'].includes(key)||['Enter','NumpadEnter','Space'].includes(code))&&target?.closest?.('button,summary,a[href]'))return null;
     if(!meta&&!control&&!option&&!shift&&(code==='KeyR'||lower==='r'))return'record';
     if(!meta&&!control&&!option&&!shift&&(code==='Space'||key===' '||key==='Spacebar'))return'playback';
     if(!meta&&!option&&(code==='Enter'||code==='NumpadEnter'||key==='Enter'||key==='Return'))return'go-start';

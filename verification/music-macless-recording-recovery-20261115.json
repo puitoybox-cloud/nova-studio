@@ -1,0 +1,172 @@
+{
+  "date": "2026-11-15 JST",
+  "head": "52fbe679a5d3cd55fcdb174153d580956e8e17f4",
+  "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/43673585763/job/132688750240",
+  "passed": 2,
+  "failed": 0,
+  "acceptedCases": [
+    "PCM長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp",
+    "圧縮長時間録音の中断・停止・保存先切替・再起動復旧・Archive・Comp"
+  ],
+  "sourceHashes": {
+    "scripts/music-journal-transaction-crash-browser.js": "3c6892eaa26f809aac9dc45c83afc27cb18a0f9fafcc201bef216292f4751549",
+    "scripts/music-encoded-journal-crash-browser.js": "62335ceaabdb47fec23b601e45dd2617ff554be050759c20f7d9f111cf8ee277",
+    "scripts/music-pcm-journal-crash-browser.js": "a9c96241c6368b6a4bb932b8b52ff07c3c6b77f558792ab518ac1d4ae68a3f51",
+    "scripts/music-recovered-take-comp-browser.js": "d9bc2816e087063247aea2c7849070693dedfcddf7ca4e27dabcbc0c1e5b6a34"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "7cdf87727c7686dbdd3d35f19681c7bf97c8120aedb90008795d135f971d28ea",
+    "music-studio-vocal-worklet.js": "28a30f72f51d8a771cbe74eb0337c46672259106d5cc6e755ace7b9fcfe01c06",
+    "music-studio.html": "e5a5a4eada4c667e420f5bfbcec474961d9ace6d715857afb10015e081ff9165"
+  },
+  "pcm": {
+    "date": "2026-11-15T03:49:29.721Z",
+    "syntheticMicrophone": true,
+    "physicalPowerLossTested": false,
+    "processKill": "SIGKILL",
+    "freshChromiumSameProfile": true,
+    "captured": {
+      "id": "cca408fe-1888-400b-8f5d-4275cf297b09",
+      "committedFrames": 2883584,
+      "rate": 48000,
+      "phase": "recording",
+      "assets": 0
+    },
+    "discovered": [
+      {
+        "id": "cca408fe-1888-400b-8f5d-4275cf297b09",
+        "frames": 2883584,
+        "updatedAt": 1794714381833,
+        "closed": false
+      }
+    ],
+    "result": {
+      "projectId": "crash-journal",
+      "assetId": "f270d64f-68e4-4bf0-8814-98184eaab89e",
+      "frames": 2883584,
+      "sampleRate": 48000,
+      "hash": "47ae48fd8eaa8fe6e008f9bd6298ac56d86fd6126b60ca2ed71d099e22e10edd",
+      "committedPCMIdentical": true,
+      "recoveryTransactionAbortRetried": true,
+      "sessionAndDailyHistoryPreserved": true,
+      "archiveIdentical": true,
+      "repeatRejected": true,
+      "remainingJournals": 0,
+      "recoveryWriteSigkillRolledBackAndRetried": true,
+      "recoveredTakeCompReplacement": {
+        "beforeHash": "4bcd39871e40cebb158a7d020d7dbcf4343aaecf5499abee02bd4bb17c0b8627",
+        "afterHash": "c44a27da89293dc6bd7f14c9886585c0fab81e6ff3df26171cf8bf785a5a5d5e",
+        "maxSampleDelta": 0,
+        "restarted": true,
+        "undoRedo": true,
+        "savedCompAndBothSourcesIdentical": true,
+        "sessionDayAndEditHistory": true
+      },
+      "recordingJournalWriteSigkill": {
+        "uncommittedChunkAbsent": true,
+        "committedPrefixRecovered": true
+      },
+      "stoppingWriteSigkill": {
+        "rolledBackBeforeCommit": true,
+        "confirmedOnRestart": true,
+        "recoveredAudioHash": "c076c839bb7a81fbab80b7214c6a7ae05f3d1379776897f4b77c0322cdd9938c",
+        "journalChunks": 705,
+        "captureSeconds": 60.074666666666666,
+        "duplicateRejected": true
+      },
+      "repositorySwitchWriteSigkill": {
+        "rolledBackBeforeCommit": true,
+        "confirmedOnRestart": true,
+        "recoveredAudioHash": "caf652273041efafa26f7671c7edce11b0c477207c13cfaf5510a86c21cb263e",
+        "journalChunks": 705,
+        "captureSeconds": 60.074666666666666,
+        "duplicateRejected": true,
+        "staleRecoverySealRolledBack": true
+      }
+    },
+    "sourceSHA256": "7cdf87727c7686dbdd3d35f19681c7bf97c8120aedb90008795d135f971d28ea"
+  },
+  "mediaRecorder": {
+    "date": "2026-11-15T03:53:42.417Z",
+    "syntheticMicrophone": true,
+    "physicalPowerLossTested": false,
+    "processKill": "SIGKILL",
+    "freshChromiumSameProfile": true,
+    "captured": {
+      "id": "08c94cc5-6265-493b-8c91-57d4cefb014a",
+      "committedBytes": 952584,
+      "rate": 48000,
+      "phase": "recording",
+      "assets": 0
+    },
+    "discovered": [
+      {
+        "id": "08c94cc5-6265-493b-8c91-57d4cefb014a",
+        "encodedBytes": 952584,
+        "updatedAt": 1794714629796,
+        "closed": false
+      }
+    ],
+    "result": {
+      "projectId": "crash-journal",
+      "assetId": "9281668f-89c2-44d8-8a93-dd8644c71de2",
+      "compFromRecoveredTake": true,
+      "compMaxSampleDelta": 0,
+      "frames": 2836800,
+      "sampleRate": 48000,
+      "hash": "f60e986add7c369d91e8eacd008dbc63423d54117f8d76df30d154f09177eadc",
+      "decodedCommittedContainerIdentical": true,
+      "unfinishedArchiveMigrationIdentical": true,
+      "automaticUnfinishedBackup": true,
+      "archiveIdentical": true,
+      "repeatRejected": true,
+      "retainedContainersIdentical": true,
+      "recoveryMarkersAtomic": true,
+      "recoveryEventId": "f57961d0-e364-4de3-93fd-3df76add27dc",
+      "recoveryJournalId": "08c94cc5-6265-493b-8c91-57d4cefb014a",
+      "remainingJournals": 4,
+      "archiveMigrationWriteSigkillRolledBackAndRetried": true,
+      "recoveredTakeCompReplacement": {
+        "beforeHash": "2eda803a28d06ed7a2bd7dc76144ac6079c2b9b3c6d4632de02b8a3921e54906",
+        "afterHash": "f1ad7507234b661a098bc091f3e61648e7e23dfa1db187dfeeec26bc7a10c8d1",
+        "maxSampleDelta": 0,
+        "restarted": true,
+        "undoRedo": true,
+        "savedCompAndBothSourcesIdentical": true,
+        "sessionDayAndEditHistory": true
+      },
+      "recordingJournalWriteSigkill": {
+        "uncommittedChunkAbsent": true,
+        "committedPrefixRecovered": true
+      },
+      "stoppingWriteSigkill": {
+        "rolledBackBeforeCommit": true,
+        "confirmedOnRestart": true,
+        "recoveredAudioHash": "a91b677008f3897b3517a74cd2b48307e68980306a41f8f039af50deab7f5b92",
+        "journalChunks": 59,
+        "captureSeconds": 60.085,
+        "duplicateRejected": true
+      },
+      "repositorySwitchWriteSigkill": {
+        "rolledBackBeforeCommit": true,
+        "confirmedOnRestart": true,
+        "recoveredAudioHash": "50ecc06f774022a49c78cc6fc426c57329a83acc0d3679350f7f5f420b0230e2",
+        "journalChunks": 60,
+        "captureSeconds": 60.117,
+        "duplicateRejected": true,
+        "staleRecoverySealRolledBack": true
+      },
+      "repositorySwitch": {
+        "durableChunks": 3,
+        "frames": 97920,
+        "switchedBackBeforeStop": true
+      }
+    },
+    "sourceSHA256": "7cdf87727c7686dbdd3d35f19681c7bf97c8120aedb90008795d135f971d28ea"
+  },
+  "splitTakeRecovery": {
+    "run": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/43651735852/job/132621492524",
+    "head": "de4158bd8333ac43b7909b68c92bf67eb2ca0896",
+    "fixture": "Committed take 1, SIGKILL, resume at frame 800, restore 3 takes and link journal/WAV/edit IDs."
+  }
+}

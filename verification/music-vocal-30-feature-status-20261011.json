@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-11 JST",
+  "source": "verification/music-residual-ledger-20261010.json (current repository)",
+  "A": 0,
+  "B": 0,
+  "C": 30,
+  "features": [
+    {
+      "number": 1,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 2,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 3,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 4,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 5,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 6,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 7,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 8,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 9,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 10,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 11,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 12,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 13,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 14,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 15,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 16,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 17,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 18,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 19,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 20,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 21,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 22,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 23,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 24,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 25,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 26,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 27,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 28,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 29,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    },
+    {
+      "number": 30,
+      "classification": "C",
+      "reason": "Full production/software and physical acceptance requirements remain unclosed; this patch establishes a bounded subset of vocal capture/edit/save/recovery."
+    }
+  ],
+  "remainingSoftware": [
+    "Punch/cycle/comp and lyric scroll during capture",
+    "Live monitor routing and automatic latency measurement",
+    "Lossless capture assurance on unsupported Worklet environments (fallback is compressed)",
+    "Pitch/formant/timing/crossfade/breath/vibrato editor",
+    "Lyrics/notes/audio synchronized editor and singing model runtime/assets/license closure",
+    "Whole-song vocal harmony/double/chorus and final multi/stem batch export",
+    "Native file-origin mic/AudioWorklet production acceptance, standalone distribution/model closure",
+    "Complete current per-subrequirement production evidence mapping and legacy/origin migration"
+  ],
+  "residualCount": null,
+  "percentComplete": null
+}

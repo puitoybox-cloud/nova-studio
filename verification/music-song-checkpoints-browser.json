@@ -1,0 +1,166 @@
+{
+  "head": null,
+  "completed": true,
+  "errors": [],
+  "external": [],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 820,
+      "overflow": false
+    },
+    {
+      "width": 1180,
+      "height": 820,
+      "overflow": false
+    },
+    {
+      "width": 820,
+      "height": 820,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 820,
+      "overflow": false
+    }
+  ],
+  "browserProcessRestart": true,
+  "restore": {
+    "historyOnlyAutomaticBackup": true,
+    "unchangedHistoriesSkipped": true,
+    "archiveBytes": 19685,
+    "rebackupBytes": 42355,
+    "historicalBinaryCount": 1,
+    "restoredAssetBytes": 9644,
+    "corruptRestoreRejected": true,
+    "restoredUndoAndPartialAdoption": true,
+    "restoredAICandidateBinding": true,
+    "originalRetained": true
+  },
+  "restoreSafety": {
+    "completeSafetyArchive": true,
+    "historicalBinaryCount": 2,
+    "midiExportCount": 2,
+    "midiImportCount": 2,
+    "downloadFailureBlocksRestore": true,
+    "projectsUnchanged": true
+  },
+  "rangeGuards": {
+    "rejected": [
+      "invalid-range",
+      "unknown-track",
+      "audio-drift",
+      "track-settings",
+      "timeline",
+      "linked-score",
+      "locked-track",
+      "locked-note",
+      "crossing-note",
+      "duplicate-note-id",
+      "missing-midi-tracks",
+      "protected-note",
+      "unbounded-measures",
+      "historical-protected-note",
+      "historical-crossing-note",
+      "duplicate-track-identity",
+      "missing-historical-midi",
+      "historical-track-settings"
+    ],
+    "selectionRejected": [
+      "range-with-audio",
+      "audio-dependency-drift",
+      "duplicate-groups",
+      "unknown-group"
+    ],
+    "originalPersisted": true
+  },
+  "meterRange": {
+    "midBarMeterRange": true,
+    "unrelatedNotesRetained": true,
+    "reversible": true
+  },
+  "meterRangeStale": {
+    "staleDenied": true,
+    "unrelatedNoteRetained": true,
+    "adoptionAfterRecompare": true
+  },
+  "meterRangeRestart": {
+    "restart": true,
+    "undoRedo": true,
+    "otherNotesAndNotesPreserved": true
+  },
+  "range": {
+    "otherTrackAndRangeRetained": true,
+    "incorrectOriginalRejected": true
+  },
+  "dependencyMissing": true,
+  "binaryRecovery": {
+    "exactBytes": true,
+    "idempotentRetry": true,
+    "completeRebackupRestore": true
+  },
+  "finished": {
+    "restart": true,
+    "immutableSource": true,
+    "editableCopy": true,
+    "aiBinding": true,
+    "historicalWav": true,
+    "sessionAndDailyNote": true,
+    "completeArchiveRestore": true
+  },
+  "dependencyVerified": {
+    "verified": true,
+    "unassignedLyricsRetained": true,
+    "legacyReported": true
+  },
+  "singingCancellation": [
+    {
+      "width": 1440,
+      "height": 820,
+      "originalPreserved": true
+    },
+    {
+      "width": 1180,
+      "height": 820,
+      "originalPreserved": true
+    },
+    {
+      "width": 820,
+      "height": 820,
+      "originalPreserved": true
+    },
+    {
+      "width": 390,
+      "height": 820,
+      "originalPreserved": true
+    }
+  ],
+  "crossDomainUndo": {
+    "stalePreviewRejected": true,
+    "allThreeDomainsAdopted": true,
+    "restart": true
+  },
+  "targetedUndo": [
+    {
+      "kind": "audio",
+      "staleRejected": true,
+      "unrelatedNotePreserved": true
+    },
+    {
+      "kind": "music",
+      "staleRejected": true,
+      "unrelatedNotePreserved": true
+    }
+  ],
+  "targetedUndoRestart": [
+    {
+      "kind": "audio",
+      "persistentUndoRedo": true
+    },
+    {
+      "kind": "music",
+      "persistentUndoRedo": true
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-31 JST",
+  "source": "https://ffmpeg.org/ffmpeg-filters.html#ebur128",
+  "version": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+  "command": "ffmpeg -hide_banner -nostats -f f32le -ar 48000 -ac CHANNELS -i pipe:0 -af ebur128=peak=true -f null -",
+  "signalSourceSha256": "fbbe2803e1ca6cb01d70d2783cd43e94a417db5dfcf05d12ca1c27b07bea7b14",
+  "rounding": 0.1,
+  "lufsTolerance": 0.11,
+  "steadyTruePeakToleranceDb": 0.2,
+  "discontinuousTruePeakCharacterizationOnly": true,
+  "rows": [
+    {
+      "id": "mono-997",
+      "pcmSha256": "c3d1583e71d20affcae3ed9d24e77a1cb9435be3277df23613e630052ee43b6d",
+      "lufs": -23.1,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -23.1 LUFS\n    Threshold: -33.1 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -43.2 LUFS\n    LRA low:   -43.2 LUFS\n    LRA high:  -23.2 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "stereo-997",
+      "pcmSha256": "74ec6c32555aea56715b192e87cb494435ec0b457e7c149dd2b194ed07e24b8f",
+      "lufs": -20.1,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -20.1 LUFS\n    Threshold: -30.1 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -40.2 LUFS\n    LRA low:   -40.2 LUFS\n    LRA high:  -20.2 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "low-50",
+      "pcmSha256": "5f91767b2ade03947f9bf887a824494a52a3f434795074f0328345fc0ca3ac99",
+      "lufs": -27.7,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -27.7 LUFS\n    Threshold: -37.7 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -47.8 LUFS\n    LRA low:   -47.8 LUFS\n    LRA high:  -27.8 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "high-10000",
+      "pcmSha256": "7b44bbf460b12c6b6218f86f713734efd3e42fd5d36bae9325ad7aeb73a6b655",
+      "lufs": -19.7,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -19.7 LUFS\n    Threshold: -29.7 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -39.9 LUFS\n    LRA low:   -39.9 LUFS\n    LRA high:  -19.9 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "intersample-12000",
+      "pcmSha256": "c00aad3de0498be31fe2e2d424c9106498a417ce439de83c394a6a52ba8bb7ae",
+      "lufs": -0.6,
+      "truePeakDb": -0.9,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -20.8 LUFS\n    LRA low:   -20.8 LUFS\n    LRA high:   -0.8 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n"
+    },
+    {
+      "id": "high-19000",
+      "pcmSha256": "4eebe90cb716dffa40b258ee984fcc01a6a2c5d7562737f5df1c1eb05f3e328a",
+      "lufs": -0.6,
+      "truePeakDb": -0.9,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -20.8 LUFS\n    LRA low:   -20.8 LUFS\n    LRA high:   -0.8 LUFS\n\n  True peak:\n    Peak:       -0.9 dBFS\n"
+    },
+    {
+      "id": "absolute-gate",
+      "pcmSha256": "6f47070b1c541af168b3b5bac5729e161d98db4b47cbbad60182344106639ebf",
+      "lufs": -69.1,
+      "truePeakDb": -66,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -69.1 LUFS\n    Threshold: -79.1 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:      -66.0 dBFS\n"
+    },
+    {
+      "id": "relative-gate",
+      "pcmSha256": "7de3802a8d899a9c8a070d65214eb1f932bda2574350529efff1c3ed305c7a33",
+      "lufs": -23.3,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -23.3 LUFS\n    Threshold: -36.0 LUFS\n\n  Loudness range:\n    LRA:         9.9 LU\n    Threshold: -46.0 LUFS\n    LRA low:   -33.0 LUFS\n    LRA high:  -23.2 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "silence-tail",
+      "pcmSha256": "e46cfe64afd6b145650f0cc12b40420ba57f36923833fe0a61f24bf4a4d871a9",
+      "lufs": -23.3,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -23.3 LUFS\n    Threshold: -33.3 LUFS\n\n  Loudness range:\n    LRA:         9.9 LU\n    Threshold: -45.9 LUFS\n    LRA low:   -33.0 LUFS\n    LRA high:  -23.2 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "asymmetric-stereo",
+      "pcmSha256": "d483b2cccb9bddef260c90d859c03f9e34be847f62f3b929bed519d300700995",
+      "lufs": -22.7,
+      "truePeakDb": -20,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -22.7 LUFS\n    Threshold: -32.7 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -42.8 LUFS\n    LRA low:   -42.8 LUFS\n    LRA high:  -22.8 LUFS\n\n  True peak:\n    Peak:      -20.0 dBFS\n"
+    },
+    {
+      "id": "hard-onset-12000",
+      "pcmSha256": "13463b8ff21c22dbbcb68fa828fb482e4b2ee5c9eb61b22d81462365ea70c1ad",
+      "lufs": -0.6,
+      "truePeakDb": -0.3,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -0.6 LUFS\n    Threshold: -10.6 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -20.6 LUFS\n    LRA low:   -20.6 LUFS\n    LRA high:   -0.6 LUFS\n\n  True peak:\n    Peak:       -0.3 dBFS\n"
+    },
+    {
+      "id": "clipped-997",
+      "pcmSha256": "8816fd58b4e8f28617b3b6d302e69efcd0318fbe640bd30d9b354de2e3f30eaf",
+      "lufs": -1.4,
+      "truePeakDb": 1.6,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:          -1.4 LUFS\n    Threshold: -11.4 LUFS\n\n  Loudness range:\n    LRA:        20.0 LU\n    Threshold: -21.4 LUFS\n    LRA low:   -21.4 LUFS\n    LRA high:   -1.4 LUFS\n\n  True peak:\n    Peak:        1.6 dBFS\n"
+    },
+    {
+      "id": "silence",
+      "pcmSha256": "fa23d5875df710437db3c2894ee2355f4b1a05cc7c3195f55d7ebf01248b6e5e",
+      "lufs": -70,
+      "truePeakDb": null,
+      "summary": "Summary:\n\n  Integrated loudness:\n    I:         -70.0 LUFS\n    Threshold:   0.0 LUFS\n\n  Loudness range:\n    LRA:         0.0 LU\n    Threshold:   0.0 LUFS\n    LRA low:     0.0 LUFS\n    LRA high:    0.0 LUFS\n\n  True peak:\n    Peak:       -inf dBFS\n"
+    }
+  ]
+}

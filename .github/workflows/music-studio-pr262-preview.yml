@@ -1,0 +1,35 @@
+name: Music Studio exact-head browser preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [verification/music-studio-all-drafts-255]
+    paths: ['verification/pr262/**', '.github/workflows/music-studio-pr262-preview.yml']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verify scripts and create exact-head bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n verification/pr262/*.command
+          printf '%s\n' "$GITHUB_SHA" > verification/pr262/PRODUCT_HEAD.txt
+          chmod +x verification/pr262/*.command
+          git ls-files -z | tar --null -T - -cf "$RUNNER_TEMP/product.tar"
+          mkdir -p "$RUNNER_TEMP/preview"
+          tar -xf "$RUNNER_TEMP/product.tar" -C "$RUNNER_TEMP/preview"
+          cp verification/pr262/PRODUCT_HEAD.txt "$RUNNER_TEMP/preview/verification/pr262/PRODUCT_HEAD.txt"
+          chmod +x "$RUNNER_TEMP/preview/verification/pr262/"*.command
+          cd "$RUNNER_TEMP/preview"
+          ditto -c -k --sequesterRsrc --keepParent . "$RUNNER_TEMP/PR262-Browser-Exact-Head.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PR262-Browser-Exact-Head-${{ github.sha }}
+          path: ${{ runner.temp }}/PR262-Browser-Exact-Head.zip
+          if-no-files-found: error
+          retention-days: 14

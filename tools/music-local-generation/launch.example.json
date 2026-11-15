@@ -1,0 +1,4 @@
+{
+  "assets": "/absolute/path/nova-generation-assets",
+  "port": 8766
+}

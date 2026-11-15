@@ -1,0 +1,315 @@
+{
+  "date": "2026-10-20 JST",
+  "formalSpecification": {
+    "name": "Music_Studio_最終機能仕様書_v1.pdf",
+    "date": "2026-09-30",
+    "read": "Re-read current original 2026-10-20 JST, all five pages /166 lines.",
+    "libraryFileId": "libfile_fea4127fde5c81919fee8296d5c7647d"
+  },
+  "A": 0,
+  "B": 0,
+  "C": 30,
+  "scope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+  "features": [
+    {
+      "number": 1,
+      "name": "MIDI・Track編集",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全対象Track・Partial Edit・Correction/Cleanupの単独製品受入対応表が閉じていない。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "複数Trackの音符/Velocity/Quantize/範囲編集を行い、Undo/Redo→保存→再Open。"
+    },
+    {
+      "number": 2,
+      "name": "MIDI録音",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "単独起動→入力権限→Stop保存→再起動までの配布runtime受入が閉じていない。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "Keystation接続→Count-in録音→Stop→保存→終了→再起動→再Open→編集。"
+    },
+    {
+      "number": 3,
+      "name": "曲構造・音楽情報",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実音声BPM/Key/Scale/セクション解析の全要件・品質が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "Tempo/Key/拍子変更を入れ、小節位置と保存/再Openの整合を確認。"
+    },
+    {
+      "number": 4,
+      "name": "AI新曲スタート",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実ONNX経路は存在。文章/歌詞から構成・楽器編成まで含む実用候補の全要件適合が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "文章/歌詞・曲調指定から候補を生成し、採用後の編成/音楽品質を確認。"
+    },
+    {
+      "number": 5,
+      "name": "Music Studio AI制作アシスタント",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "自然言語から複数作業を計画し、必要な機能を実行する中核AIの全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "制作相談と複数依頼を自然言語で行い、対象と実行結果を照合。"
+    },
+    {
+      "number": 6,
+      "name": "AI安全編集・変更管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "領域横断の特定変更Undo・競合解決の全要件受入が閉じていない。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "保護範囲を設定→候補比較→部分採用→特定変更Undo→保存/復元。"
+    },
+    {
+      "number": 7,
+      "name": "AI作曲・曲展開",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全セクション展開・指定時間版・選択再生成の品質と全要件適合が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "続き/2番/Intro/Outro/指定時間を生成し、対象外音符保持を照合。"
+    },
+    {
+      "number": 8,
+      "name": "AIアレンジ支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "既存単一/複数パートの明示再生成・差し替え、新規Track、規則ドラムは存在。全曲複数Sectionの一括モデル生成、演奏表現・音色・音楽的品質と全要件受入は未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "メロディ固定で単一/複数楽器だけ再生成し、対象外Track保持を確認。"
+    },
+    {
+      "number": 9,
+      "name": "AIコード支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実音声コード解析とVoicing・追従補正の全要件品質が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "コード解析→別案/Voicing→採用→メロディ追従を確認。"
+    },
+    {
+      "number": 10,
+      "name": "AI歌詞・メロディ制作",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "歌詞生成/アクセント・歌詞固定/メロディ固定再生成の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "日本語歌詞/読みを割り付け、アクセントと歌詞固定再生成を確認。"
+    },
+    {
+      "number": 11,
+      "name": "AI仮歌・対話修正",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実Sinsy接続・小節別テイクは実装済み。聴きながら自然言語で部分修正する対話経路は未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "仮歌を生成/試聴→小節別再生成→比較採用→保存/復元。"
+    },
+    {
+      "number": 12,
+      "name": "ボーカル録音",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "8分PCM録音のproduction経路は親#455に存在。録音中のタブ終了/電源断からのdurable復旧、長時間高度補正/Comp、単独配布runtimeの受入が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "許可→録音/Pause/Resume→Stop保存→Cycle複数テイク→遅延補正→再Open。"
+    },
+    {
+      "number": 13,
+      "name": "ボーカル編集",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "非破壊編集・部分置換は存在。Vibrato等を含む全ボーカル補正の品質受入が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "波形範囲のCut/Move/Join/Gain→Undo/Redo→Mix保存→再Open。"
+    },
+    {
+      "number": 14,
+      "name": "ボーカル生成・Harmony",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実歌声Harmony/Double/Chorus・本人同意済み声のモデル/権利確認の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "同意/権利確認済み声だけでHarmony/Double/Chorusを生成・比較。"
+    },
+    {
+      "number": 15,
+      "name": "ボーカル完成チェック",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "仮歌対比・録り直し/補正判断まで含む完成チェックの全要件受入が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "仮歌/テイク比較・音程/Timing/音域を確認し、補正/録り直し判断。"
+    },
+    {
+      "number": 16,
+      "name": "Stem Separation",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実分離モデル・依存runtime・配布接続と一般作品品質受入の全要件が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "許諾済みテスト音声を分離し各Stemと再合成品質を試聴。"
+    },
+    {
+      "number": 17,
+      "name": "Audio-to-MIDI",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実変換の配布runtime接続・信頼度/比較修正・一般作品精度受入の全要件が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "許諾済み単音/和音音声を変換し、誤検出/信頼度/修正/保存を確認。"
+    },
+    {
+      "number": 18,
+      "name": "AIミックス支援",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実測Gain/EQ/Compression候補と名前付きLong Mix版は存在。作品全体の音楽的品質と全形式/音源を含む受入は未認定。",
+      "newScope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+      "physicalProcedure": "MIDI音声化とVocalをSourcesへ明示選択しGain/EQ/Comp→候補比較/部分採用。"
+    },
+    {
+      "number": 19,
+      "name": "AIマスタリング",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "実LUFS/Peak測定・複数候補・長時間処理は存在。測定の規格適合と全曲品質受入は未認定。",
+      "newScope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+      "physicalProcedure": "短/長MasterをBefore/After比較しLUFS/Peak/Clippingと保存を確認。"
+    },
+    {
+      "number": 20,
+      "name": "Logic Pro往復連携",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "Logic往復の対応/差分管理と単独アプリ受渡し全要件が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "WAV/Stem/MIDIをLogicへ渡し、仕上げを再取込して対応/差分を確認。"
+    },
+    {
+      "number": 21,
+      "name": "最終書出し・配信パッケージ",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "簡易音源/指定サンプルによる8分MIDI音声化と実一括出力を追加。全音源/配信前チェック・配布権利の全要件は未認定。",
+      "newScope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+      "physicalProcedure": "130秒超・8分以内の曲を音声化→Master/Instrumental/MIDIを一括Export。"
+    },
+    {
+      "number": 22,
+      "name": "保存・曲バージョン管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "保存/複製/候補は存在。名前付きCheckpointと複数Version部分合成の全要件が未完了。",
+      "newScope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+      "physicalProcedure": "編集→保存→終了→再Open→再編集→再保存、候補版/部分合成を照合。"
+    },
+    {
+      "number": 23,
+      "name": "バックアップ・復旧・移行",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "完全WAV Archiveは実装済み。全旧依存ファイル移行の受入と採用済みCloud Syncの暗号化/競合/Offline設計実装が未完了。",
+      "newScope": "Master post-DSP gain, optional final stereo-bus compression, quiet loudness correction, explicit target attainment, durable history/backup/restore and unchanged source exports. No whole-feature promotion.",
+      "physicalProcedure": "Full WAV Archiveを別保存先へ復元しMIDI/音声hash・旧データを照合。"
+    },
+    {
+      "number": 24,
+      "name": "Music Studio診断・安全修復",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "全製品の性能診断→安全修復の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "重い/欠損/不正状態の診断→修復候補を確認し元曲保持を照合。"
+    },
+    {
+      "number": 25,
+      "name": "AI実行環境・作品保護",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "固定実生成資産の許諾は存在。Intel/Apple Siliconの配布runtime閉包・署名公証等の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "完全LocalとProject外部送信禁止で処理し、外部通信がないことを確認。"
+    },
+    {
+      "number": 26,
+      "name": "AI料金管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "承認済み有料Provider条件を基にする料金予約/上限/使用量のproduction閉包が未完了。今回Live Provider APIを呼ばない。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "承認済み料金条件で見積/上限/取消/使用量台帳を確認（現状実施不可）。"
+    },
+    {
+      "number": 27,
+      "name": "AIモデル管理・互換性",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "固定ONNX/Sinsyは存在。モデル交換/旧モデル/更新前品質テストを含む全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "モデル更新前後で旧成果を開き、交換/互換テスト結果を確認。"
+    },
+    {
+      "number": 28,
+      "name": "スマートUI",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "8制作画面と1180x820は検証。全編集状態・設定/ダイアログ・自然言語画面呼出しの全要件が未認定。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "iPad横1180x820で8画面、長い候補/履歴/ダイアログと未保存切替を確認。"
+    },
+    {
+      "number": 29,
+      "name": "素材・テンプレートライブラリ",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "再利用素材保存・曲に合わせたKey/BPM調整・文章検索の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "素材保存→文章検索→別曲でKey/BPM追従を確認。"
+    },
+    {
+      "number": 30,
+      "name": "完成版・制作履歴管理",
+      "formal": "C",
+      "onlyPhysicalRemaining": false,
+      "completionEvidence": "Full UI/backend/runtime/storage/restore/policy closure is not certified. See repository implementation and prior checkpoint ledger; presence is not completion.",
+      "unclosedRequirementOrEvidence": "書出し履歴は存在。完成版固定/検索・制作Session/日次時系列の全要件が未完了。",
+      "newScope": "No whole-feature closure proved; original requirement and remaining evidence retained.",
+      "physicalProcedure": "完成版固定→検索→Session/日次履歴→再Openを確認。"
+    }
+  ]
+}

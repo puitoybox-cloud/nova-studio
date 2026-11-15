@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-08 JST",
+  "baselinePR": 606,
+  "baselineHead": "600c9df90ec6a53868ed589c7eadce3a1304536e",
+  "requirement": "MS28-A02",
+  "status": "partial",
+  "newVerified": [],
+  "regression": {
+    "command": "node --test",
+    "passed": 2942,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "73cf3e16cdbf5eed4bbbd2ba6da1e294c3e4422bde06c3dbe10e1c8dc7dec128"
+  },
+  "targeted": {
+    "passed": 42,
+    "failed": 0
+  },
+  "baselineCounterexample": {
+    "command": "new navigation tests against unchanged PR606 production source",
+    "passed": 18,
+    "failed": 4,
+    "logSha256": "abf569463d0f1abe926026bed54b06ac918ef92760a0b6369cefe7ac946ea4ef"
+  },
+  "helperTests": {
+    "passed": 22,
+    "failed": 0
+  },
+  "browser": {
+    "status": "success",
+    "fixtureCases": 528,
+    "realFormWidths": 4,
+    "head": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
+    "runId": 42468646465,
+    "jobId": 128693962157,
+    "step": 9,
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42468646465/job/128693962157",
+    "note": "Pending start/count-in are state-machine fixtures in a real MIDI editor, including same-route no-ops. No microphone or long-duration lifecycle claim."
+  },
+  "limitations": [
+    "MS28-A02 remains open: no exhaustive edit-state/navigation lifecycle proof.",
+    "MS22-A04, MS30-A02, MS12-A02, MS18-A02 remain open."
+  ],
+  "sourceHashes": {
+    "music-studio.js": "30eb46645af49d69b6cae4d9cb65760d6cd392321d68d592171b78632518a614",
+    "tests/music-studio-navigation-guards.test.js": "c5c25ed4c098df647f73b7603265e8e8f277d32f7785b6de5a6e8ddc2a9099f5",
+    "scripts/music-navigation-veto-browser.js": "490c268a51cdde32dd441893875529fa6fadf3bceafa5705fd15eee237263d43"
+  }
+}

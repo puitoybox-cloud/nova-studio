@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-17",
+  "source": "music-multisample-30-features-20261016.json",
+  "assessment": "conservative inheritance; no full recertification",
+  "counts": {
+    "A": 0,
+    "B": 0,
+    "C": 30
+  },
+  "features": [
+    {
+      "number": 1,
+      "status": "C"
+    },
+    {
+      "number": 2,
+      "status": "C"
+    },
+    {
+      "number": 3,
+      "status": "C"
+    },
+    {
+      "number": 4,
+      "status": "C"
+    },
+    {
+      "number": 5,
+      "status": "C"
+    },
+    {
+      "number": 6,
+      "status": "C"
+    },
+    {
+      "number": 7,
+      "status": "C"
+    },
+    {
+      "number": 8,
+      "status": "C"
+    },
+    {
+      "number": 9,
+      "status": "C"
+    },
+    {
+      "number": 10,
+      "status": "C"
+    },
+    {
+      "number": 11,
+      "status": "C"
+    },
+    {
+      "number": 12,
+      "status": "C"
+    },
+    {
+      "number": 13,
+      "status": "C"
+    },
+    {
+      "number": 14,
+      "status": "C"
+    },
+    {
+      "number": 15,
+      "status": "C"
+    },
+    {
+      "number": 16,
+      "status": "C"
+    },
+    {
+      "number": 17,
+      "status": "C"
+    },
+    {
+      "number": 18,
+      "status": "C"
+    },
+    {
+      "number": 19,
+      "status": "C"
+    },
+    {
+      "number": 20,
+      "status": "C"
+    },
+    {
+      "number": 21,
+      "status": "C"
+    },
+    {
+      "number": 22,
+      "status": "C"
+    },
+    {
+      "number": 23,
+      "status": "C"
+    },
+    {
+      "number": 24,
+      "status": "C"
+    },
+    {
+      "number": 25,
+      "status": "C"
+    },
+    {
+      "number": 26,
+      "status": "C"
+    },
+    {
+      "number": 27,
+      "status": "C"
+    },
+    {
+      "number": 28,
+      "status": "C"
+    },
+    {
+      "number": 29,
+      "status": "C"
+    },
+    {
+      "number": 30,
+      "status": "C"
+    }
+  ],
+  "newImplementation": "Bounded vocal measure replacement with internal fades, independent editable take, comparison, adoption history and archive preservation. Physical acceptance, streaming long WAV and remaining production gaps are incomplete."
+}
