@@ -1,0 +1,318 @@
+{
+  "date": "2026-10-31 JST",
+  "baselinePR": 554,
+  "baselineHead": "459f13243d3c2754dc2f3b4b8b1020376ac55d5c",
+  "scope": "repository evidence only; no model download, license approval, external API or model execution",
+  "sourceHashes": {
+    "tools/music-local-generation/model-lock.json": "db3e026ef0857d0284e1544a152d680e1f98d691e7e4f6fc21d917ebae4174c6",
+    "tools/music-local-generation/source-lock.json": "a2679f9503011d69fce6522352e796779b16ee164d86b24a0cb36fdce9525cd2",
+    "tools/music-local-generation/intel-requirements.lock": "018b60196dc81ebb1297afb9cdf54bf52aad709e7926fbb7405475079520cfd3",
+    "tools/music-local-generation/intel-wheels.json": "c3a2532b41871a6df80b509a09c3986c2c5851ff15979405e0f89e950ce9c178",
+    "tools/music-local-generation/vendor/SkyTNT-LICENSE": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+    "tools/music-local-generation/vendor/Sinsy-COPYING": "9206292c8c2ec1e6370497dbb85f9590a76670e5feac0b92e31bc1af4ecf4fd4",
+    "tools/music-local-generation/vendor/HTS-engine-COPYING": "ef929f0f6d88d6c8e43de915e2529d0e01de7663bb11c267e5c658b79a277813",
+    "tools/music-local-generation/vendor/NIT-SONG070-COPYING": "283bf9d2501279f240a76af35247c83115d98dc5c403bf9e88b4aac14fd72615",
+    "tools/music-audio-pipeline/requirements.txt": "a6513f696889aedb65a337e7f221abcc18c68f00ffa863bbfecb090d2d4ae8f9",
+    "docs/music-studio/EXACT_BACKEND_CANDIDATES_20261006.md": "75f0b8f40156d2ab922fbd1ccc4c01b90e498249f5bc3fbce155a4f2edffcb73",
+    "docs/music-studio/BACKEND_BUNDLE_EVIDENCE_20261006.md": "4782526e004500f643ce5c61cfd9c676861607e7f25327144117e52f2e50b787"
+  },
+  "decisions": [
+    {
+      "id": "MS03-C01",
+      "requirement": "音声解析方式と品質閾値",
+      "status": "open",
+      "dependentA": [
+        "MS03-A02",
+        "MS03-A03",
+        "MS03-A04",
+        "MS03-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS04-C01",
+      "requirement": "文章理解・作曲モデルとライセンス・品質基準",
+      "status": "open",
+      "dependentA": [
+        "MS04-A02",
+        "MS04-A03",
+        "MS04-A04",
+        "MS04-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS05-C01",
+      "requirement": "会話理解モデルと実行権限契約",
+      "status": "open",
+      "dependentA": [
+        "MS05-A02",
+        "MS05-A03",
+        "MS05-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS07-C01",
+      "requirement": "生成モデルとSection配置方針",
+      "status": "open",
+      "dependentA": [
+        "MS07-A02",
+        "MS07-A03",
+        "MS07-A04",
+        "MS07-A05",
+        "MS07-A06"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS08-C01",
+      "requirement": "Destinationと音源生成モデルの契約",
+      "status": "open",
+      "dependentA": [
+        "MS08-A02",
+        "MS08-A03",
+        "MS08-A04",
+        "MS08-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS09-C01",
+      "requirement": "実音声コード解析モデルと品質基準",
+      "status": "open",
+      "dependentA": [
+        "MS09-A02",
+        "MS09-A03",
+        "MS09-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS10-C01",
+      "requirement": "歌詞生成モデル・読みアクセント方式",
+      "status": "open",
+      "dependentA": [
+        "MS10-A02",
+        "MS10-A03",
+        "MS10-A04",
+        "MS10-A05",
+        "MS10-A06",
+        "MS10-A07",
+        "MS10-A08"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS11-C01",
+      "requirement": "歌唱モデルの配布ライセンスと品質基準",
+      "status": "open",
+      "dependentA": [
+        "MS11-A02",
+        "MS11-A03"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS14-C01",
+      "requirement": "本人声モデルと同意・ライセンス",
+      "status": "open",
+      "dependentA": [
+        "MS14-A02",
+        "MS14-A03",
+        "MS14-A04",
+        "MS14-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS16-C01",
+      "requirement": "分離モデルweightと再配布許諾",
+      "status": "open",
+      "dependentA": [
+        "MS16-A02",
+        "MS16-A03"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS17-C01",
+      "requirement": "変換モデルの対象楽器と精度基準",
+      "status": "open",
+      "dependentA": [
+        "MS17-A02",
+        "MS17-A03",
+        "MS17-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS20-C01",
+      "requirement": "Logic直接操作とlogicxの公式方式",
+      "status": "open",
+      "dependentA": [
+        "MS20-A02",
+        "MS20-A03"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS21-C01",
+      "requirement": "音源と依存物の再配布条件",
+      "status": "open",
+      "dependentA": [
+        "MS21-A02",
+        "MS21-A03",
+        "MS21-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS23-C01",
+      "requirement": "Cloud Sync同期先・暗号化・競合・offline方針",
+      "status": "open",
+      "dependentA": [
+        "MS23-A02",
+        "MS23-A03",
+        "MS23-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS25-C01",
+      "requirement": "対象モデルの容量・配布許諾・署名公証方式",
+      "status": "open",
+      "dependentA": [
+        "MS25-A02",
+        "MS25-A03",
+        "MS25-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS26-C01",
+      "requirement": "有料Provider・価格根拠・課金取消契約",
+      "status": "open",
+      "dependentA": [
+        "MS26-A02",
+        "MS26-A03",
+        "MS26-A04",
+        "MS26-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS27-C01",
+      "requirement": "Provider交換と旧モデルの互換方針",
+      "status": "open",
+      "dependentA": [
+        "MS27-A02",
+        "MS27-A03",
+        "MS27-A04",
+        "MS27-A05"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    },
+    {
+      "id": "MS29-C01",
+      "requirement": "文章意味検索モデルとライセンス",
+      "status": "open",
+      "dependentA": [
+        "MS29-A02",
+        "MS29-A03",
+        "MS29-A04"
+      ],
+      "missingProof": [
+        "final input/output contract",
+        "exact distributable dependency manifest and applicable terms",
+        "rights-cleared evaluation fixtures and agreed thresholds",
+        "production model execution and reproducible save/recovery"
+      ]
+    }
+  ]
+}

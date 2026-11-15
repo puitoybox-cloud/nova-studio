@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-19T12:17:22.150Z",
+  "kind": "deterministic-pcm-packaging-only",
+  "midiRenderVerified": false,
+  "seconds": 480,
+  "sampleRate": 48000,
+  "channels": 2,
+  "frames": 23040000,
+  "files": [
+    {
+      "name": "Piano.wav",
+      "bytes": 92160044,
+      "sha256": "945ccbf5ab4b90218b849017edd37ead3f5974ab019e24bc0a472d15a7201012"
+    },
+    {
+      "name": "Bass.wav",
+      "bytes": 92160044,
+      "sha256": "5cb5f30223fc6876fcaf650eeab2c0805f81240cefc89608b8b352a4b857e9c5"
+    },
+    {
+      "name": "Strings.wav",
+      "bytes": 92160044,
+      "sha256": "2b59f80600c1be190e24eb9afef1f9d4791a9b7bcde3ef5e9df5cb1ab0c2c83b"
+    },
+    {
+      "name": "Drums.wav",
+      "bytes": 92160044,
+      "sha256": "368be0aaf2fad6b4494c4f2e86c0aeea16d71e6f8ce807b80b8a53cbbfb5c735"
+    }
+  ],
+  "zipBytes": 368640576,
+  "fixturePreparationMs": 2637.8200930000003,
+  "packagingMs": 4623.883127,
+  "peakRssKiB": 503040,
+  "progress": [
+    {
+      "completedBytes": 65536,
+      "totalBytes": 368640176,
+      "ratio": 0.0001777776929012751
+    },
+    {
+      "completedBytes": 33619968,
+      "totalBytes": 368640176,
+      "ratio": 0.09119995645835412
+    },
+    {
+      "completedBytes": 67174400,
+      "totalBytes": 368640176,
+      "ratio": 0.18222213522380698
+    },
+    {
+      "completedBytes": 100745260,
+      "totalBytes": 368640176,
+      "ratio": 0.27328887777006705
+    },
+    {
+      "completedBytes": 134299692,
+      "totalBytes": 368640176,
+      "ratio": 0.3643110565355199
+    },
+    {
+      "completedBytes": 167854124,
+      "totalBytes": 368640176,
+      "ratio": 0.45533323530097275
+    },
+    {
+      "completedBytes": 201424984,
+      "totalBytes": 368640176,
+      "ratio": 0.5463999778472328
+    },
+    {
+      "completedBytes": 234979416,
+      "totalBytes": 368640176,
+      "ratio": 0.6374221566126856
+    },
+    {
+      "completedBytes": 268533848,
+      "totalBytes": 368640176,
+      "ratio": 0.7284443353781385
+    },
+    {
+      "completedBytes": 302104708,
+      "totalBytes": 368640176,
+      "ratio": 0.8195110779243986
+    },
+    {
+      "completedBytes": 335659140,
+      "totalBytes": 368640176,
+      "ratio": 0.9105332566898514
+    },
+    {
+      "completedBytes": 368640176,
+      "totalBytes": 368640176,
+      "ratio": 1
+    }
+  ],
+  "zipCrcAndByteHashesVerified": true
+}

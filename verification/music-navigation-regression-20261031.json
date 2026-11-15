@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-31 JST",
+  "baselineHead": "459f13243d3c2754dc2f3b4b8b1020376ac55d5c",
+  "execution": "VM application code; no actual DOM or browser history implementation",
+  "reports": {
+    "baseline": {
+      "tests": 16,
+      "pass": 0,
+      "fail": 16,
+      "cancelled": 0,
+      "skipped": 0,
+      "logSha256": "295a81f691ba748a2630c4da46ad50a5d41da05bc1c8c575325eb63d582ebfa1"
+    },
+    "patched": {
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "logSha256": "a187cc1092c48ccb7605c4e99ff419e7413c7f98ab810065ac04ebc5b5058424"
+    }
+  }
+}

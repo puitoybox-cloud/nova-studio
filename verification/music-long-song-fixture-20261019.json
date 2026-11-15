@@ -1,0 +1,12 @@
+{
+  "fixture": "rule-only-not-model-performance",
+  "seconds": 480,
+  "bars": 144,
+  "sourceNotes": 576,
+  "renderedNotes": 3748,
+  "compactABCBytes": 837493,
+  "legacyABCBytes": 25079605,
+  "backupBytes": 1224741,
+  "elapsedMs": 76491,
+  "audioBytes": null
+}

@@ -1,0 +1,16 @@
+{
+  "realInference": true,
+  "model": "skytnt/midi-model-tv2o-medium",
+  "candidateNotes": [
+    15,
+    11,
+    10
+  ],
+  "midiPartialApply": true,
+  "midiSaveReopen": true,
+  "singingEngine": "Sinsy 0.92 HMM",
+  "voice": "NIT SONG070 F001",
+  "wavBytes": 192044,
+  "archiveByteEquality": true,
+  "foreignOriginRejected": true
+}

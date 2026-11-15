@@ -1,0 +1,496 @@
+"""Dependency-free local HTTP boundary regression tests for the audio helper."""
+import importlib.util
+import hashlib
+import json
+import threading
+import time
+import tempfile
+from types import SimpleNamespace
+import unittest
+from http.client import HTTPConnection
+from pathlib import Path
+from unittest.mock import patch
+
+SERVER_PATH = Path(__file__).with_name("server.py")
+spec = importlib.util.spec_from_file_location("nova_audio_server", SERVER_PATH)
+server_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(server_module)
+
+
+def bind_stem_output(root, bound, evidence):
+    stems = root/'demucs'/'htdemucs_6s'/'input'
+    stems.mkdir(parents=True)
+    (stems/'vocals.wav').write_bytes(b'x'*45)
+    receipt = {'parentBinding': bound.binding, 'output': evidence.stem_output_identity(root/'demucs')}
+    bound.children.append(receipt)
+    return stems, (root/'demucs', receipt)
+
+
+class FinalWriterBindingTests(unittest.TestCase):
+    def test_cleanup_detaches_all_request_state_before_fallible_abort(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        for failure in (False, True):
+            with self.subTest(failure=failure):
+                def abort():
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    if failure: raise RuntimeError('cleanup-abort-failure')
+                bound = SimpleNamespace(state='ACTIVE', abort=abort)
+                with patch.object(server_module.REQUEST_RECEIPTS, 'bound', bound, create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'calls', object(), create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'stem_output', object(), create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS, 'midi_output', object(), create=True):
+                    if failure:
+                        with self.assertRaisesRegex(RuntimeError, 'cleanup-abort-failure'):
+                            server_module.clear_processing_request()
+                    else: server_module.clear_processing_request()
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    server_module.clear_processing_request()
+
+    def test_final_midi_delivery_checks_written_bytes_and_matching_request(self):
+        import copy
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('unchanged','bytes','path','request','missing'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),fixture_inventory())
+                bound=evidence.BoundProcessingReceipt(binding)
+                _,stem_output=bind_stem_output(root,bound,evidence)
+                path=root/'output.mid';path.write_bytes(b'written-midi')
+                expected=(path,copy.deepcopy(binding),evidence.audio_identity(path))
+                if mutation=='bytes':path.write_bytes(b'changed-midi')
+                if mutation=='path':expected=(root/'foreign.mid',expected[1],expected[2])
+                if mutation=='request':expected[1]['request']='f'*64
+                with patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'midi_output',None if mutation=='missing' else expected,create=True):
+                    if mutation=='unchanged':self.assertEqual(server_module.generated_midi_bytes(path),b'written-midi')
+                    else:
+                        with self.assertRaisesRegex(ValueError,'final-midi-output'):server_module.generated_midi_bytes(path)
+
+    def test_changed_stems_during_transcription_never_reach_final_writer(self):
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('bytes','missing','renamed','extra','foreign-receipt','missing-receipt','midi-bytes'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
+                def transcribe(stem_path,midi_path):
+                    midi_path.write_bytes(b'fixture-midi')
+                    identity=evidence.audio_identity(midi_path)
+                    if mutation=='bytes':(stems/'vocals.wav').write_bytes(b'y'*45)
+                    if mutation=='missing':(stems/'vocals.wav').unlink()
+                    if mutation=='renamed':(stems/'vocals.wav').rename(stems/'other.wav')
+                    if mutation=='extra':(stems/'other.wav').write_bytes(b'x'*45)
+                    if mutation=='foreign-receipt':stem_output[1]['parentBinding']={'session':'f'*64}
+                    if mutation=='missing-receipt':server_module.REQUEST_RECEIPTS.stem_output=None
+                    if mutation=='midi-bytes':midi_path.write_bytes(b'changed-midi')
+                    return identity
+                class Output:
+                    def __init__(self):self.tracks=[]
+                    def save(self,path):raise AssertionError('changed-stem-final-writer-dispatched')
+                mido=SimpleNamespace(MidiFile=lambda **kw:Output(),MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                with patch.dict('sys.modules',{'mido':mido}), \
+                        patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
+                        patch.object(server_module,'current_processing_calls') as calls, \
+                        patch.object(server_module,'transcribe_pitched_stem',side_effect=transcribe), \
+                        patch.object(server_module,'extract_note_events',return_value=[(0,'note_on',60,90)]), \
+                        patch.object(server_module,'refine_clear_melody',side_effect=lambda events,source:events), \
+                        patch.object(server_module,'write_track'):
+                    with self.assertRaisesRegex(ValueError,'child-output|child-outputs|transcribed-midi'):
+                        server_module.build_merged_midi(stems,root,source,120)
+                    calls.assert_not_called()
+                self.assertFalse((root/'input_stems.mid').exists())
+
+    def test_actual_final_writer_passes_through_strict_receipt_and_denial_blocks_write(self):
+        class Output:
+            def __init__(self): self.tracks=[]
+            def save(self, path): Path(path).write_bytes(b'disposable-writer-bytes')
+        class Calls:
+            def __init__(self, denied=False): self.denied=denied; self.observed=[]
+            def call(self, stage, logical, function, path):
+                self.observed.append((stage,logical,function.__self__,path))
+                if self.denied: raise ValueError('unverified-or-fallback-processing-backend')
+                return function(path)
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for denied in (False,True):
+            with self.subTest(denied=denied), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);(root/'vocals.wav').write_bytes(b'x'*45);(root/'input.wav').write_bytes(b'input')
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(root/'input.wav'),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
+                output=Output();calls=Calls(denied)
+                mido=SimpleNamespace(MidiFile=lambda **kw:output,MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                events=[(0,'note_on',60,90)]
+                with patch.dict('sys.modules',{'mido':mido}),\
+                     patch.object(server_module,'STRICT_BOOTSTRAP',True),\
+                     patch.object(server_module,'current_processing_calls',return_value=calls),\
+                     patch.object(server_module,'require_runtime_processing'),\
+                     patch.object(server_module,'require_owned_session',return_value='a'*64),\
+                     patch.object(server_module,'runtime_snapshot',return_value=inventory),\
+                     patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence),\
+                     patch.object(server_module.REQUEST_RECEIPTS,'bound',bound,create=True),\
+                     patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True),\
+                     patch.object(server_module,'transcribe_pitched_stem',side_effect=lambda stem,path:(path.write_bytes(b'fixture-midi'),evidence.audio_identity(path))[1]),\
+                     patch.object(server_module,'extract_note_events',return_value=events),\
+                     patch.object(server_module,'refine_clear_melody',return_value=events),\
+                     patch.object(server_module,'write_track'):
+                    if denied:
+                        with self.assertRaisesRegex(ValueError,'unverified-or-fallback'):
+                            server_module.build_merged_midi(stems,root,root/'input.wav',120)
+                        self.assertFalse((root/'input_stems.mid').exists())
+                    else:
+                        path,labels,counts=server_module.build_merged_midi(stems,root,root/'input.wav',120)
+                        self.assertEqual(path.read_bytes(),b'disposable-writer-bytes')
+                        self.assertEqual((labels,counts),(['Vocals'],{'Vocals':1}))
+                self.assertEqual(len(calls.observed),1)
+                self.assertEqual(calls.observed[0][:2],('result','merged-midi-writer'))
+                self.assertIs(calls.observed[0][2],output)
+
+    def test_changed_inventory_input_and_stale_receipt_never_reach_final_writer(self):
+        import copy
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory
+        for mutation in ('inventory', 'input', 'session', 'expired', 'missing'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);source=root/'input.wav';source.write_bytes(b'input')
+                (root/'vocals.wav').write_bytes(b'x'*45)
+                inventory=fixture_inventory()
+                binding=evidence.processing_binding('a'*64,'b'*64,evidence.audio_identity(source),inventory)
+                bound=evidence.BoundProcessingReceipt(binding)
+                stems,stem_output=bind_stem_output(root,bound,evidence)
+                current=copy.deepcopy(inventory)
+                if mutation=='inventory':current['privatePython']={'buildRevision':'changed'}
+                if mutation=='input':source.write_bytes(b'changed')
+                if mutation=='expired':bound.deadline=0
+                class Output:
+                    def __init__(self):self.tracks=[]
+                    def save(self,path):raise AssertionError('stale-final-writer-dispatched')
+                mido=SimpleNamespace(MidiFile=lambda **kw:Output(),MidiTrack=list,
+                    MetaMessage=lambda *a,**kw:None,bpm2tempo=lambda bpm:500000)
+                with patch.dict('sys.modules',{'mido':mido}), \
+                        patch.object(server_module,'STRICT_BOOTSTRAP',True), \
+                        patch.object(server_module,'require_runtime_processing'), \
+                        patch.object(server_module,'require_owned_session',return_value='f'*64 if mutation=='session' else 'a'*64), \
+                        patch.object(server_module,'runtime_snapshot',return_value=current), \
+                        patch.object(server_module,'RUNTIME_EVIDENCE_MODULE',evidence), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'bound',None if mutation=='missing' else bound,create=True), \
+                        patch.object(server_module.REQUEST_RECEIPTS,'stem_output',stem_output,create=True), \
+                        patch.object(server_module,'current_processing_calls') as calls, \
+                        patch.object(server_module,'transcribe_pitched_stem',side_effect=lambda stem,path:(path.write_bytes(b'fixture-midi'),evidence.audio_identity(path))[1]), \
+                        patch.object(server_module,'extract_note_events',return_value=[(0,'note_on',60,90)]), \
+                        patch.object(server_module,'refine_clear_melody',side_effect=lambda events,source:events), \
+                        patch.object(server_module,'write_track'):
+                    with self.assertRaisesRegex(ValueError,'processing-binding|stale-or-expired-processing|foreign-child-output-binding'):
+                        server_module.build_merged_midi(stems,root,source,120)
+                    calls.assert_not_called()
+                self.assertFalse((root/'input_stems.mid').exists())
+
+
+class AudioHelperBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        self.server = server_module.ThreadingHTTPServer(("127.0.0.1", 0), server_module.Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=5)
+
+    def request(self, method, path, body=None, headers=None):
+        connection = HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
+        try:
+            connection.request(method, path, body=body, headers=headers or {})
+            response = connection.getresponse()
+            return response.status, dict(response.getheaders()), json.loads(response.read())
+        finally:
+            connection.close()
+
+    def test_cleanup_exception_releases_lock_and_next_request_has_no_old_state(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        finished = threading.Event()
+        observed = []
+        def process(source, root):
+            observed.append([getattr(server_module.REQUEST_RECEIPTS, field, None) for field in fields])
+            if len(observed) == 1:
+                def abort():
+                    for field in fields:
+                        self.assertIsNone(getattr(server_module.REQUEST_RECEIPTS, field))
+                    raise RuntimeError('cleanup-abort-failure')
+                server_module.REQUEST_RECEIPTS.bound = SimpleNamespace(state='ACTIVE', abort=abort)
+                for field in fields[1:]: setattr(server_module.REQUEST_RECEIPTS, field, object())
+            return {'ok': True}
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                patch.object(server_module, 'process_audio', side_effect=process), \
+                patch.object(self.server, 'handle_error', side_effect=lambda *args: finished.set()):
+            headers = {'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav'}
+            self.assertEqual(self.request('POST', '/process', body=b'input-a', headers=headers)[0], 200)
+            self.assertTrue(finished.wait(3))
+            self.assertFalse(server_module.PROCESS_LOCK.locked())
+            self.assertEqual(self.request('POST', '/process', body=b'input-b', headers=headers)[0], 200)
+            self.assertEqual(observed, [[None]*4, [None]*4])
+
+    def test_request_entry_resets_stale_worker_artifact_bindings(self):
+        fields = ('bound', 'calls', 'stem_output', 'midi_output')
+        observed = []
+        def stale_state():
+            server_module.REQUEST_RECEIPTS.bound = SimpleNamespace(state='CONSUMED')
+            for field in fields[1:]: setattr(server_module.REQUEST_RECEIPTS, field, object())
+        def process(source, root):
+            observed.append([getattr(server_module.REQUEST_RECEIPTS, field, None) for field in fields])
+            return {'ok': True}
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                patch.object(server_module, 'require_runtime_processing', side_effect=stale_state), \
+                patch.object(server_module, 'process_audio', side_effect=process):
+            self.assertEqual(self.request('POST', '/process', body=b'input', headers={
+                'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav'})[0], 200)
+            self.assertEqual(observed, [[None]*4])
+
+    def test_strict_missing_bootstrap_rejects_before_body_storage_processing(self):
+        with patch.object(server_module, 'STRICT_BOOTSTRAP', True), patch.object(server_module, 'RUNTIME_INVENTORY', None), patch.object(server_module, 'BOOTSTRAP_ERROR', 'fixture'), patch.object(server_module.tempfile, 'TemporaryDirectory') as storage, patch.object(server_module, 'process_audio') as processor:
+            status, _, payload = self.request('POST', '/process', body=b'fixture', headers={'X-Nova-Audio-Pipeline': '1', 'X-Nova-File-Name': 'fixture.wav'})
+            self.assertEqual(status, 503)
+            self.assertEqual(payload['code'], 'STRICT_RUNTIME_INVENTORY_INCOMPLETE')
+            storage.assert_not_called(); processor.assert_not_called()
+            status, _, health = self.request('GET', '/health')
+            self.assertEqual(health['runtimeIdentity']['actualInventory']['status'], 'BLOCKED')
+
+    def test_completion_mutation_after_base64_never_publishes_http_success(self):
+        import base64
+        import copy
+        import os
+        import runtime_evidence as evidence
+        from test_processing_closure import fixture_inventory, complete_calls
+        for mutation in ('unchanged', 'stem-bytes', 'stem-rename', 'stem-extra',
+                         'stem-symlink', 'midi-bytes', 'response-bytes', 'missing-midi-binding'):
+            with self.subTest(mutation=mutation):
+                inventory = fixture_inventory()
+                state = {}
+                def process(source, root):
+                    bound = server_module.REQUEST_RECEIPTS.bound
+                    stems, stem_output = bind_stem_output(root, bound, evidence)
+                    path = root/'output.mid'; path.write_bytes(b'written-midi')
+                    server_module.REQUEST_RECEIPTS.stem_output = stem_output
+                    server_module.REQUEST_RECEIPTS.midi_output = (path, copy.deepcopy(bound.binding), evidence.audio_identity(path))
+                    state.update(stems=stems, path=path)
+                    raw = server_module.generated_midi_bytes(path)
+                    if mutation == 'response-bytes': raw = b'foreign-midi'
+                    return {'ok': True, 'midiBase64': base64.b64encode(raw).decode('ascii')}
+                def snapshot():
+                    if state and not state.get('mutated'):
+                        state['mutated'] = True
+                        stem = state['stems']/'vocals.wav'
+                        if mutation == 'stem-bytes': stem.write_bytes(b'y'*45)
+                        if mutation == 'stem-rename': stem.rename(state['stems']/'other.wav')
+                        if mutation == 'stem-extra': (state['stems']/'other.wav').write_bytes(b'x'*45)
+                        if mutation == 'stem-symlink':
+                            stem.unlink(); stem.symlink_to(state['path'])
+                        if mutation == 'midi-bytes': state['path'].write_bytes(b'changed-midi')
+                        if mutation == 'missing-midi-binding': server_module.REQUEST_RECEIPTS.midi_output = None
+                    return inventory
+                registry = evidence.SessionRequestRegistry('a'*64)
+                with patch.object(server_module, 'STRICT_BOOTSTRAP', True), \
+                        patch.object(server_module, 'RUNTIME_EVIDENCE_MODULE', evidence), \
+                        patch.object(server_module, 'RUNTIME_INVENTORY', SimpleNamespace(root=Path('.'))), \
+                        patch.object(evidence, 'ProcessingReceipt', return_value=SimpleNamespace(snapshot=complete_calls)), \
+                        patch.object(server_module, 'PROCESSING_ATTEMPTS', registry), \
+                        patch.object(server_module, 'require_runtime_processing'), \
+                        patch.object(server_module, 'require_owned_session', return_value='a'*64), \
+                        patch.object(server_module, 'runtime_snapshot', side_effect=snapshot), \
+                        patch.object(server_module, 'admit_owned_processing'), \
+                        patch.object(server_module, 'current_processing_calls', return_value=SimpleNamespace(snapshot=complete_calls)), \
+                        patch.object(server_module, 'process_audio', side_effect=process), \
+                        patch.object(server_module, 'publish_owned_result') as publish, \
+                        patch.dict(os.environ, {'NOVA_LIFECYCLE_DEADLINE': str(time.monotonic()+60)}):
+                    status, _, payload = self.request('POST', '/process', body=b'input', headers={
+                        'X-Nova-Audio-Pipeline':'1', 'X-Nova-File-Name':'input.wav',
+                        'X-Nova-Session':'a'*64, 'X-Nova-Request':'b'*64, 'X-Nova-Authorization':'c'*64})
+                    deadline = time.monotonic()+3
+                    while server_module.PROCESS_LOCK.locked() and time.monotonic() < deadline: time.sleep(.01)
+                    self.assertFalse(server_module.PROCESS_LOCK.locked())
+                    self.assertFalse(state['path'].exists())
+                    if mutation == 'unchanged':
+                        self.assertEqual(status, 200); publish.assert_called_once()
+                        self.assertTrue(payload['processingReceipt']['complete'])
+                    else:
+                        self.assertEqual(status, 503); publish.assert_not_called()
+                        self.assertEqual(payload['code'], 'STRICT_PROCESSING_RECEIPT_INCOMPLETE')
+                        self.assertNotIn('midiBase64', payload)
+
+    def test_health_version2_is_additive_legacy_is_never_verified(self):
+        status, _, health = self.request('GET', '/health')
+        self.assertEqual(status, 200)
+        self.assertEqual(health['runtimeIdentity']['version'], 1)
+        inventory = health['runtimeIdentity']['actualInventory']
+        self.assertEqual(inventory['inventoryVersion'], 2)
+        self.assertEqual(inventory['status'], 'UNVERIFIED')
+        self.assertEqual(inventory['models'], [])
+
+    def test_health_is_local_and_does_not_claim_dependencies_are_installed(self):
+        status, headers, payload = self.request("GET", "/health")
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["localOnly"])
+        self.assertEqual(payload["host"], "127.0.0.1")
+        self.assertEqual(payload["port"], 8766)
+        self.assertIsInstance(payload["demucs"], bool)
+        self.assertIsInstance(payload["basicPitch"], bool)
+        self.assertEqual(payload["pipelineRevision"], 2)
+        self.assertEqual(payload["sourceDigest"], hashlib.sha256(SERVER_PATH.read_bytes()).hexdigest())
+        self.assertEqual(headers["Cache-Control"], "no-store")
+
+    def test_health_does_not_advertise_missing_audio_dependencies(self):
+        with patch.object(server_module.importlib.util, "find_spec", return_value=None):
+            status, _, payload = self.request("GET", "/health")
+        self.assertEqual(status, 200)
+        self.assertFalse(payload["demucs"])
+        self.assertFalse(payload["basicPitch"])
+        self.assertTrue(payload["localOnly"])
+
+    def test_unknown_endpoint_and_disallowed_origin(self):
+        status, _, _ = self.request("GET", "/missing")
+        self.assertEqual(status, 404)
+        status, _, _ = self.request("OPTIONS", "/process", headers={"Origin": "https://example.invalid"})
+        self.assertEqual(status, 403)
+        status, _, _ = self.request("POST", "/process", body=b"x", headers={
+            "Origin": "https://example.invalid", "X-Nova-Audio-Pipeline": "1",
+            "X-Nova-File-Name": "test.wav",
+        })
+        self.assertEqual(status, 403)
+
+    def test_process_rejects_missing_marker_invalid_size_and_extension(self):
+        headers = {"Origin": "https://puitoybox-cloud.github.io", "X-Nova-File-Name": "test.wav"}
+        status, _, _ = self.request("POST", "/process", body=b"x", headers=headers)
+        self.assertEqual(status, 403)
+        headers["X-Nova-Audio-Pipeline"] = "1"
+        status, _, _ = self.request("POST", "/process", body=b"", headers=headers)
+        self.assertEqual(status, 413)
+        headers["X-Nova-File-Name"] = "test.txt"
+        status, _, _ = self.request("POST", "/process", body=b"x", headers=headers)
+        self.assertEqual(status, 415)
+
+    def test_second_request_is_rejected_while_first_conversion_is_running(self):
+        entered = threading.Event()
+        release = threading.Event()
+        first_result = []
+
+        def slow_processor(source, work_dir):
+            entered.set()
+            if not release.wait(timeout=5):
+                raise RuntimeError("Test processor was not released")
+            return {"ok": True, "localOnly": True, "midiBase64": "TVRoZA=="}
+
+        headers = {"Origin": "https://puitoybox-cloud.github.io",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
+        with patch.object(server_module, "process_audio", side_effect=slow_processor) as processor:
+            first = threading.Thread(target=lambda: first_result.append(
+                self.request("POST", "/process", body=b"first", headers=headers)))
+            first.start()
+            try:
+                self.assertTrue(entered.wait(timeout=3), "First conversion did not start")
+                status, _, payload = self.request("POST", "/process", body=b"second", headers=headers)
+                self.assertEqual(status, 409)
+                self.assertTrue(payload["busy"])
+                self.assertEqual(processor.call_count, 1)
+            finally:
+                release.set()
+                first.join(timeout=5)
+        self.assertFalse(first.is_alive())
+        self.assertEqual(first_result[0][0], 200)
+
+    def test_failed_conversion_releases_lock_and_deletes_temporary_input(self):
+        headers = {"Origin": "http://127.0.0.1:8765",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "failed.wav"}
+        with patch.object(server_module, "process_audio", side_effect=RuntimeError("mock conversion failure")) as processor:
+            status, _, payload = self.request("POST", "/process", body=b"audio", headers=headers)
+        self.assertEqual(status, 500)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(processor.call_count, 1)
+        temporary_input = processor.call_args.args[0]
+        deadline = time.monotonic() + 3
+        while (temporary_input.exists() or server_module.PROCESS_LOCK.locked()) and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(temporary_input.exists())
+        self.assertFalse(server_module.PROCESS_LOCK.locked())
+        with patch.object(server_module, "process_audio", return_value={
+            "ok": True, "localOnly": True, "midiBase64": "TVRoZA==",
+        }) as recovered:
+            status, _, payload = self.request("POST", "/process", body=b"next", headers=headers)
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(recovered.call_count, 1)
+
+    def test_timeout_returns_gateway_timeout_and_releases_lock(self):
+        headers = {"Origin": "http://localhost:8765",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "slow.wav"}
+        with patch.object(server_module, "process_audio", side_effect=server_module.subprocess.TimeoutExpired("demucs", 3600)):
+            status, _, payload = self.request("POST", "/process", body=b"audio", headers=headers)
+        self.assertEqual(status, 504)
+        self.assertFalse(payload["ok"])
+        deadline = time.monotonic() + 3
+        while server_module.PROCESS_LOCK.locked() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(server_module.PROCESS_LOCK.locked())
+
+    def test_filename_sanitization_keeps_audio_inside_temporary_directory(self):
+        self.assertEqual(server_module.safe_name("../../song.wav"), "song.wav")
+        self.assertEqual(server_module.safe_name("%2e%2e%2f%2e%2e%2fnotes.wav"), "notes.wav")
+        self.assertEqual(server_module.safe_name("folder%2Fother.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("folder\\\\other.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("folder%5Cother.mp3"), "other.mp3")
+        self.assertEqual(server_module.safe_name("..%5C..%5Cother.wav"), "other.wav")
+
+    def test_stop_command_refuses_to_kill_stale_or_unrelated_pid(self):
+        stop = Path(__file__).with_name("STOP_AUDIO_PIPELINE.command").read_text()
+        self.assertIn('[[ "$PID" =~ ^[0-9]+$ ]]', stop)
+        self.assertIn('COMMAND="$(/bin/ps -p "$PID" -o command=', stop)
+        self.assertIn('[[ "$COMMAND" != *server.py* ]]', stop)
+        self.assertIn('-a -p "$PID" -iTCP:8766 -sTCP:LISTEN', stop)
+        self.assertLess(stop.index('if [[ "$COMMAND" != *python* ]]'), stop.index('kill "$PID"'))
+
+    def test_start_command_rejects_another_running_source(self):
+        start = Path(__file__).with_name("START_AUDIO_PIPELINE.command").read_text()
+        self.assertIn('EXPECTED_SOURCE_DIGEST=', start)
+        self.assertIn('helper_identity.py "$PWD"', start)
+        identity = server_module._identity_module
+        health = {"ok": True, "localOnly": True, "host": "127.0.0.1", "port": 8766, "version": 1, "pipelineRevision": 2, "sourceDigest": "0" * 64, "runtimeIdentity": identity.identity(SERVER_PATH.parent)}
+        with self.assertRaisesRegex(ValueError, "sourceDigest"):
+            identity.validate(health, SERVER_PATH.parent)
+        self.assertIn('check_running_source || stale_helper_error', start)
+
+    def test_allowed_origin_reaches_local_processor_without_real_ai_or_network(self):
+        headers = {"Origin": "https://puitoybox-cloud.github.io",
+                   "X-Nova-Audio-Pipeline": "1", "X-Nova-File-Name": "test.wav"}
+        with patch.object(server_module, "process_audio", return_value={
+            "ok": True, "localOnly": True, "midiBase64": "TVRoZA==",
+        }) as processor:
+            status, response_headers, payload = self.request("POST", "/process", body=b"fake-audio", headers=headers)
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(response_headers["Access-Control-Allow-Origin"], headers["Origin"])
+        self.assertEqual(processor.call_count, 1)
+        # The HTTP response can arrive before the handler exits its TemporaryDirectory.
+        # Wait briefly for the server-side cleanup rather than racing that finalizer.
+        temporary_input = processor.call_args.args[0]
+        deadline = time.monotonic() + 3
+        while temporary_input.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(temporary_input.exists(), "Temporary input must be deleted")
+
+
+if __name__ == "__main__":
+    unittest.main()

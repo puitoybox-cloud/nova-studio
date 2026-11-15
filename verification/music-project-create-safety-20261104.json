@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-04 JST",
+  "baselineHead": "3d20562e6d838f1552b5b2d79586f30025a59f81",
+  "passed": 2850,
+  "failed": 0,
+  "browserPassed": 2,
+  "browserFailed": 0,
+  "checkpointCompleted": true,
+  "newVerified": [],
+  "verified": 62,
+  "total": 135,
+  "remaining": 73,
+  "rate": 45.93,
+  "sourceHashes": {
+    "music-studio.js": "c1e4cb551ea25e18a0c77e87bbff5d38a1efba6fd723b767471ccb8a55da0b0e",
+    "tests/music-project-create-atomic.test.js": "b9453e09cba083c4d5059e850f4b39832823e3888bca42325905470a30b6f255",
+    "tests/music-studio-external-song-import.test.js": "cea9e006dae64595cdccfcb883b921a0799e519ce7b514527f4aa38532885601",
+    "scripts/music-indexeddb-browser-persistence.cjs": "0c1bffb13a2c4ee0337733f33a0271f0fdef31eeecdea08182fa892f5bf1740a",
+    "scripts/music-song-checkpoints-browser.js": "40fe37ab1923463664f3be79922c96fe989bdda150b9ea22977fba30504ac72a"
+  },
+  "logs": {
+    "nodeSha256": "94500165103474deba2fc552ed9211215e8b4a6bc174cc33d4320886676524c4",
+    "browserSha256": "3ef129bcc3eeaa48293ec797a18e5e48b207644438302694db95100f334fe188"
+  },
+  "processInterruptionEntries": [
+    "productionDaySave",
+    "materialCapture",
+    "materialImport",
+    "recoverMissingBinary",
+    "createAIProject",
+    "duplicateProject"
+  ],
+  "limits": [
+    "No physical power-loss or Intel Mac acceptance",
+    "MS22-A04 and MS30-A02 remain open",
+    "63 open A requirements retain declared C dependencies"
+  ]
+}

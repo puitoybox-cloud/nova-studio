@@ -1,0 +1,17 @@
+{
+  "sinsy": {
+    "url": "https://downloads.sourceforge.net/sinsy/sinsy-0.92.tar.gz",
+    "sha256": "0496d06fbb96e30b22a2ddb29714a68938c53d0bfb70f8622a93a6e233dcfada"
+  },
+  "hts": {
+    "url": "https://downloads.sourceforge.net/hts-engine/hts_engine_API-1.10.tar.gz",
+    "sha256": "e2132be5860d8fb4a460be766454cfd7c3e21cf67b509c48e1804feab14968f7"
+  },
+  "voice": {
+    "url": "https://downloads.sourceforge.net/sinsy/hts_voice_nitech_jp_song070_f001-0.90.tar.gz",
+    "sha256": "461c94d2eadd4f81d31ae860527382002cb7bfc5a28b9648bfa96ca89b33b227"
+  },
+  "voiceFile": {
+    "sha256": "25253e329df090e0452c8f63d660346b3b1bdc27f429e1958a5162dde018f7b2"
+  }
+}

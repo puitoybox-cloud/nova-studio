@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-08 JST",
+  "passed": 114,
+  "failed": 0,
+  "sourceHashes": {
+    "scripts/music-finished-immutability-browser.js": "c510664d4daf917b8accf9edb5f325fbd7e9537e25fb7a15b54d2dd654e27db2"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "d913038a93cbcb7c92be4deef817f5db1bd82bd6d5c871cd119dd9203a63072c"
+  },
+  "acceptedCases": [
+    "finished snapshot immutability across every replacement sink, editable fork and failed-write preservation"
+  ],
+  "currentExecution": {
+    "provider": "GitHub Actions",
+    "head": "2a877a58d8e5165b9fbd78a19445e1907822dc00",
+    "runId": 42467882246,
+    "jobId": 128691502011,
+    "step": 8,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42467882246/job/128691502011"
+  },
+  "coverage": [
+    "114 attempted receipt/snapshot mutations, through put / compareAndPut / putLongWav",
+    "strict transaction rollback including binary writes",
+    "working source edits through all three replacement sinks",
+    "finished copy opened and edited without changing source",
+    "fresh page reopens source and editable copy",
+    "Node 36 checkpoint tests cover cancellation, quota, missing dependency, source race, destination collision and archive restoration"
+  ],
+  "boundaryAudit": "verification/music-finished-boundary-audit-20261107.json",
+  "scope": "Application editing and save boundaries. Explicit project deletion, arbitrary DevTools database tampering and physical hardware are separate.",
+  "previousExecution": {
+    "provider": "GitHub Actions",
+    "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+    "runId": 42423714835,
+    "jobId": 128557398035,
+    "step": 8,
+    "conclusion": "success",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/42423714835/job/128557398035"
+  },
+  "source": "Exact final production runtime passed the identified GitHub Actions real Chrome step; full workflow and formal acceptance conclusions are recorded separately."
+}

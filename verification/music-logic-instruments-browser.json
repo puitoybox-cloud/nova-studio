@@ -1,0 +1,90 @@
+[
+  {
+    "width": 1440,
+    "result": {
+      "history": 1,
+      "velocity": 64,
+      "hostApplied": false
+    },
+    "layout": {
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    "errors": [],
+    "external": [],
+    "routingChecks": [
+      "ピアノを削除して",
+      "ピアノを温かい音にして、ベースを削除して",
+      "ピアノを温かくしないで",
+      "「Other」のピアノを選んで",
+      "A/B/Cを比較して",
+      "前の設定に戻して"
+    ]
+  },
+  {
+    "width": 820,
+    "result": {
+      "history": 1,
+      "velocity": 64,
+      "hostApplied": false
+    },
+    "layout": {
+      "width": 820,
+      "scrollWidth": 820
+    },
+    "errors": [],
+    "external": [],
+    "routingChecks": [
+      "ピアノを削除して",
+      "ピアノを温かい音にして、ベースを削除して",
+      "ピアノを温かくしないで",
+      "「Other」のピアノを選んで",
+      "A/B/Cを比較して",
+      "前の設定に戻して"
+    ]
+  },
+  {
+    "width": 390,
+    "result": {
+      "history": 1,
+      "velocity": 64,
+      "hostApplied": false
+    },
+    "layout": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "errors": [],
+    "external": [],
+    "routingChecks": [
+      "ピアノを削除して",
+      "ピアノを温かい音にして、ベースを削除して",
+      "ピアノを温かくしないで",
+      "「Other」のピアノを選んで",
+      "A/B/Cを比較して",
+      "前の設定に戻して"
+    ]
+  },
+  {
+    "width": 1180,
+    "result": {
+      "history": 1,
+      "velocity": 64,
+      "hostApplied": false
+    },
+    "layout": {
+      "width": 1180,
+      "scrollWidth": 1180
+    },
+    "errors": [],
+    "external": [],
+    "routingChecks": [
+      "ピアノを削除して",
+      "ピアノを温かい音にして、ベースを削除して",
+      "ピアノを温かくしないで",
+      "「Other」のピアノを選んで",
+      "A/B/Cを比較して",
+      "前の設定に戻して"
+    ]
+  }
+]

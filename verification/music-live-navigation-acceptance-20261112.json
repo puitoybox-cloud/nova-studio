@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-12 JST",
+  "testedHead": "30d9f50d2cef39ac55abc44159bf93214f002883",
+  "pullRequest": 622,
+  "githubActions": {
+    "runId": 43114241607,
+    "jobId": 130837958945,
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/43114241607/job/130837958945",
+    "steps": [
+      9,
+      10
+    ]
+  },
+  "previousBrowserProof": {
+    "pullRequest": 619,
+    "head": "5a741662cd2d38a3f28a285345fe9e05a47d6cc7",
+    "url": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/43021111454/job/130524240832",
+    "liveAttempts": 780
+  },
+  "widths": [
+    1440,
+    1180,
+    820,
+    390
+  ],
+  "fixtureCases": 1056,
+  "realFormWidths": 4,
+  "livePhasesPerWidth": 17,
+  "liveAttempts": 1020,
+  "passed": 2076,
+  "failed": 0,
+  "acceptedCases": [
+    "1,056 navigation fixtures plus real project form drafts at four viewport widths",
+    "Unsaved PCM candidate survives navigation, applies once and reopens",
+    "Live MIDI recording retains held note, saves once and reopens with one edit",
+    "Archive preview retains restore settings and restores once without replacing projects",
+    "Pending WAV destination retains candidate, writes verified bytes and records delivery once"
+  ],
+  "sourceHashes": {
+    "scripts/music-navigation-veto-browser.js": "2f87a853f90e6ba0310ddcdb68d3767878a539e3ce628e4b460068470f016cfe",
+    "scripts/music-live-navigation-browser.js": "c72f2a9f2540c0612c49e8057746a0f2373ecebb90e3dd5b0103984346450d82"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "3a99066b2d2e7c0e6c59d62d30f92c4a0c1b5ce7670f77a9586bb6177ba1b414",
+    "music-studio-midi-input.js": "5f45ae058e601e67637047685296da9f1d7f8c123c6753000ff1f60201836127",
+    "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371"
+  },
+  "testBoundaries": "Chrome uses simulated microphone and Web MIDI input. A controlled picker promise holds the platform boundary open. The app writes to a real origin-private FileSystemFileHandle and checks the bytes and persisted delivery history."
+}

@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-07 JST",
+  "command": "node --test tests/music-studio-ipad-width.test.js tests/music-studio-ipad-touch.test.js tests/music-production-tabs.test.js tests/music-studio-workspace.test.js",
+  "passed": 45,
+  "failed": 0,
+  "sourceHashes": {
+    "tests/music-studio-ipad-width.test.js": "a0634685fc6e67f3745cf4880f3061ed04dd30655c9c9b06594bb0261fe49172",
+    "tests/music-studio-ipad-touch.test.js": "43c1e7e0c35d5379c1980739a0ef0a791d0b71cbf17ee05b6d00ac89df69d065",
+    "tests/music-production-tabs.test.js": "b1173047cf7789462fdcff79b712877ff739b25eaca74ede22eb990e97dca528",
+    "tests/music-studio-workspace.test.js": "a0f6130ac83c74230a3de7793c177b3a7bed09bb16d29f1533c03189cbe22443"
+  },
+  "runtimeHashes": {
+    "music-studio-compact-ui.css": "0f8b3e245be6f8be2ffe581ffc89b52980db55ed20731a66d692a41e1aac967d"
+  },
+  "logSha256": "60b9c4c644669c1f72e5c57564b9bfaa9c89bd12f32c70090938b6632399d328",
+  "scope": "Additional style/layout/workspace regression after the final CSS contrast refinement; this is not a zero-violation Chromium accessibility claim."
+}
