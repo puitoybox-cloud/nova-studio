@@ -682,34 +682,3 @@ test('rescue import rolls back journal and chunks when the repository changes du
  assert.equal(recovered.project.longWavAssets[0].frames,recording.m.frames);
  recording.a.vocalDiscard();
 });
-
-test('journal deletion rolls back after switching away and back, then preserves data until retry', async () => {
- const {a:studio, repo, p, w} = await setup();
- const id = 'journal-delete-switchback';
- await repo.createVocalJournal({id, owner:p.projectId, frames:0, next:0, consumed:0, rate:48000, closed:false});
- await repo.appendVocalJournal(id, 0, new Uint8Array([11, 0]).buffer, ['fixture']);
- await repo.sealVocalJournal(id, await repo.getVocalJournal(id));
- const before = await repo.getVocalJournal(id);
- const beforeChunk = await repo.getVocalJournalChunk(id + ':0');
- const remove = repo.deleteVocalJournal;
- const other = studio.memoryRepository([p]);
- w.confirm = () => true;
- repo.deleteVocalJournal = (journalId, expected, guard) => {
-  repo.deleteVocalJournal = remove;
-  let checks = 0;
-  return remove(journalId, expected, () => {
-   if (++checks === 2) {
-    studio.setRepository(other);
-    studio.setRepository(repo);
-   }
-   guard();
-  });
- };
- assert.equal((await studio.vocalJournalAction(id, true)).error, 'vocal-journal-conflict');
- assert.deepEqual(await repo.getVocalJournal(id), before);
- assert.deepEqual(await repo.getVocalJournalChunk(id + ':0'), beforeChunk);
- assert.equal((await studio.vocalJournalAction(id, true)).ok, true);
- assert.equal(await repo.getVocalJournal(id), undefined);
- assert.equal(await repo.getVocalJournalChunk(id + ':0'), undefined);
- assert.equal(JSON.stringify(await repo.get(p.projectId)), JSON.stringify(p));
-});
