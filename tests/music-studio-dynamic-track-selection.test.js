@@ -179,3 +179,9 @@ test('stale External editing provenance cannot modify a same-ID note after Track
 test('External edit result survives MIDI data Save Reload without losing or duplicating Tracks',()=>{
   const h=editingHarness();h.core.selectTrackById(h.session,'ext-a');h.api.editorAddNote();const saved=JSON.stringify(h.session.midiData),reloaded=h.core.createSession({projectId:'reloaded',midiData:JSON.parse(saved)});assert.equal(JSON.stringify(reloaded.midiData),saved);assert.deepEqual(Array.from(reloaded.midiData.tracks,track=>track.id),Array.from(h.session.midiData.tracks,track=>track.id));assert.equal(reloaded.midiData.tracks.find(track=>track.id==='ext-a').notes.length,h.track('ext-a').notes.length)
 });
+
+test('External popup Escape delegates to the shared dismiss handler even inside inputs',()=>{
+ const h=deletionHarness();prepareKeyboardSelection(h);const before=JSON.stringify(h.session.midiData);
+ assert.equal(h.api.editorHandleShortcut(keyEvent('Escape',{target:{closest:()=>({})}})),true);
+ assert.equal(JSON.stringify(h.session.midiData),before);
+});

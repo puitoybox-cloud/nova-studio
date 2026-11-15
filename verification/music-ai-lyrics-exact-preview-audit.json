@@ -1,0 +1,1030 @@
+{
+  "main": "552d56eafddfd192970c09f7d6278696cf8775c3",
+  "prs": [
+    {
+      "number": 281,
+      "draft": true,
+      "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "branch": "feature/music-ai-project-section-apply-v1",
+      "base": "feature/music-ai-section-exact-preview-v1"
+    },
+    {
+      "number": 280,
+      "draft": true,
+      "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "branch": "feature/music-ai-section-exact-preview-v1",
+      "base": "feature/music-ai-family-metadata-range-v1"
+    },
+    {
+      "number": 279,
+      "draft": true,
+      "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "branch": "feature/music-ai-family-metadata-range-v1",
+      "base": "feature/music-ai-partial-family-history-v1"
+    },
+    {
+      "number": 278,
+      "draft": true,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "branch": "feature/music-ai-partial-family-history-v1",
+      "base": "feature/music-ai-family-apply-transaction-v1"
+    },
+    {
+      "number": 277,
+      "draft": true,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "branch": "feature/music-ai-family-apply-transaction-v1",
+      "base": "feature/music-ai-family-preview-v1"
+    },
+    {
+      "number": 276,
+      "draft": true,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "branch": "feature/music-ai-family-preview-v1",
+      "base": "feature/music-ai-exact-partial-adoption-v1"
+    },
+    {
+      "number": 275,
+      "draft": true,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "branch": "feature/music-ai-exact-partial-adoption-v1",
+      "base": "feature/music-ai-candidate-family-v1"
+    },
+    {
+      "number": 274,
+      "draft": true,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "branch": "feature/music-ai-candidate-family-v1",
+      "base": "feature/music-ai-candidate-preview-v1"
+    },
+    {
+      "number": 273,
+      "draft": true,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "branch": "feature/music-ai-candidate-preview-v1",
+      "base": "feature/music-ai-composition-workflow-v1"
+    },
+    {
+      "number": 272,
+      "draft": true,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "branch": "feature/music-ai-composition-workflow-v1",
+      "base": "feature/music-ai-assistant-ui-v1"
+    },
+    {
+      "number": 271,
+      "draft": true,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "branch": "feature/music-ai-assistant-ui-v1",
+      "base": "feature/music-ai-workflow-foundation-v1"
+    },
+    {
+      "number": 270,
+      "draft": true,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "branch": "feature/music-ai-workflow-foundation-v1",
+      "base": "feature/music-coordinated-a-browser-v1"
+    },
+    {
+      "number": 269,
+      "draft": true,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "branch": "feature/music-coordinated-a-browser-v1",
+      "base": "main"
+    },
+    {
+      "number": 268,
+      "draft": true,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "branch": "feature/music-editor-commit-lock-guard-v1",
+      "base": "main"
+    },
+    {
+      "number": 267,
+      "draft": true,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "branch": "feature/music-measure-lock-compat-v1",
+      "base": "main"
+    },
+    {
+      "number": 266,
+      "draft": true,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "branch": "feature/music-structure-descriptors-v1",
+      "base": "main"
+    },
+    {
+      "number": 265,
+      "draft": true,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "branch": "feature/music-meter-boundaries-v1",
+      "base": "main"
+    },
+    {
+      "number": 264,
+      "draft": true,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "branch": "feature/music-midi-metadata-export-v1",
+      "base": "main"
+    },
+    {
+      "number": 263,
+      "draft": true,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "branch": "feature/music-structure-metadata-maps-v1",
+      "base": "main"
+    },
+    {
+      "number": 262,
+      "draft": true,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "branch": "verification/music-studio-all-drafts-255",
+      "base": "main"
+    },
+    {
+      "number": 261,
+      "draft": true,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "branch": "verification/music-studio-baseline-combined",
+      "base": "agent/music-studio-cache-version-consistency"
+    },
+    {
+      "number": 260,
+      "draft": true,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "branch": "agent/music-studio-cache-version-consistency",
+      "base": "main"
+    },
+    {
+      "number": 259,
+      "draft": true,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "branch": "agent/music-selected-track-invalid-id-guard",
+      "base": "main"
+    },
+    {
+      "number": 258,
+      "draft": true,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "branch": "agent/music-audio-bridge-midi-guard",
+      "base": "main"
+    },
+    {
+      "number": 257,
+      "draft": true,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "branch": "agent/music-audio-helper-boundary-tests",
+      "base": "main"
+    },
+    {
+      "number": 256,
+      "draft": true,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "branch": "agent/music-studio-current-main-build-verification",
+      "base": "main"
+    },
+    {
+      "number": 35,
+      "draft": false,
+      "head": "0066ce391b5f5dd54f04612edd1111d59ed5d763",
+      "branch": "codex/add-url-registration-for-story-archive",
+      "base": "main"
+    },
+    {
+      "number": 10,
+      "draft": false,
+      "head": "060bf78b8cadf773209c441a332d420043c356f5",
+      "branch": "codex/scene",
+      "base": "main"
+    }
+  ],
+  "issues": [
+    {
+      "number": 255,
+      "title": "Music Studio: end-to-end completion and consolidated acceptance",
+      "body": "## Goal\nComplete Music Studio as an end-to-end production workflow before asking Tia for repeated real-song testing. Preserve existing projects, exact Track ID editing, and all merged behavior. This is a tracking issue, not a claim that the work is implemented.\n\n## Verified starting points\n- #241 merged: local audio → Demucs 6 stems → Basic Pitch/drum onset → Type 1 MIDI → existing External Song Import.\n- #247/#248 merged: native Mac/iPad Xcode targets and Core MIDI → Web MIDI bridge. Real-device signing/distribution remains unverified.\n- #254 merged: scoped conservative converted-MIDI repair preview/apply model. Its PR explicitly says UI/persistence/Undo integration is incomplete.\n- Existing external track edit, playback, recording, quantize, correction, local partial edit, MIDI export, and iPad UI work must not be rebuilt.\n\n## Implementation sequence and acceptance\n1. Audit current main and record code-implemented vs automated-tested vs real-device-tested vs incomplete; avoid treating historical PR descriptions as present-day test results.\n2. Connect scoped repair (#254) to explicit selected Track ID and measure range with Preview/Cancel/Apply, project persistence and one Undo/Redo transaction; locked/out-of-range/other-track notes untouched; stale preview rejected. Never auto-apply uncertain short-note suggestions or bulk-fix the original song.\n3. Harden local audio helper: clear setup/health/progress/failure/retry behavior, single processing guard, temp-file cleanup and no audio uploads; ensure Intel Mac package is reproducible from current main. Confirm Python/package/macOS compatibility rather than assuming.\n4. Verify audio → 6 named MIDI tracks → Track Review → edit/save/reopen → single-track and combined Logic Pro MIDI round-trip, with synthetic fixtures before real song.\n5. Verify Mac/iPad app builds and distribution readiness separately from browser compatibility; distinguish simulator CI from signed physical-device installation.\n6. Update CI workflows so latest main and relevant PRs can be validated rather than only old agent branches. Avoid destructive schema/storage changes.\n7. Run node --test, node --check for all repo JS, git diff --check, targeted Python/Swift tests and 1440/820/390 UI/console smoke where available. Record exact HEAD, tests and limitations.\n8. Only after automated development checks: one consolidated Tia real-song acceptance pass; use a copied project for risky operations. Original 「かわいいは絶対無敵なんだよ (5)_stems」 must remain intact.\n\n## Guardrails\n- Keep implementation in scoped Draft PR(s). No Ready/Merge/Auto Merge/force push without Tia approval.\n- No Live Provider API or External AI API communication.\n- No unapproved changes to original music project, existing backups, app schema or other PRs.\n- Do not claim functionality is complete without actual test evidence.\n"
+    }
+  ],
+  "drafts": [
+    {
+      "number": 281,
+      "draft": true,
+      "head": "f0d13fc8c355f624210538ca0d7655b8b2abea57",
+      "branch": "feature/music-ai-project-section-apply-v1",
+      "base": "feature/music-ai-section-exact-preview-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37101738235,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 60,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738235/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738235/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37101738234,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 44,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738234/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738234/logs",
+          "workflow_id": 365062326
+        },
+        {
+          "id": 37101738269,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 27,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738269/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37101738269/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 280,
+      "draft": true,
+      "head": "4faed5d1810c841d2e191984e9ff99cf33aa8db7",
+      "branch": "feature/music-ai-section-exact-preview-v1",
+      "base": "feature/music-ai-family-metadata-range-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37099461793,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 58,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461793/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461793/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37099461794,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 25,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461794/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37099461794/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 279,
+      "draft": true,
+      "head": "c6a73c24706e31a95120201f1b552dbca43f6312",
+      "branch": "feature/music-ai-family-metadata-range-v1",
+      "base": "feature/music-ai-partial-family-history-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37091731710,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 56,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731710/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731710/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37091731706,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 23,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731706/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37091731706/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 278,
+      "draft": true,
+      "head": "0777660e8871830b0d167fd00cbc13ced150d1c4",
+      "branch": "feature/music-ai-partial-family-history-v1",
+      "base": "feature/music-ai-family-apply-transaction-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37037679365,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 54,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679365/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679365/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37037679319,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 42,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679319/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679319/logs",
+          "workflow_id": 365062326
+        },
+        {
+          "id": 37037679357,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 21,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679357/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37037679357/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 277,
+      "draft": true,
+      "head": "f7383c988f9d98f0854a652edeb9171d949a8fd2",
+      "branch": "feature/music-ai-family-apply-transaction-v1",
+      "base": "feature/music-ai-family-preview-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37025404027,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 18,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025404027/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025404027/logs",
+          "workflow_id": 373005862
+        },
+        {
+          "id": 37025403269,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 51,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025403269/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37025403269/logs",
+          "workflow_id": 363922058
+        }
+      ]
+    },
+    {
+      "number": 276,
+      "draft": true,
+      "head": "8b40e3eebb0890fc3bf6c5c580f67936e060f573",
+      "branch": "feature/music-ai-family-preview-v1",
+      "base": "feature/music-ai-exact-partial-adoption-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37021075209,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 14,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021075209/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021075209/logs",
+          "workflow_id": 373005862
+        },
+        {
+          "id": 37021074841,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 47,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021074841/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37021074841/logs",
+          "workflow_id": 363922058
+        }
+      ]
+    },
+    {
+      "number": 275,
+      "draft": true,
+      "head": "58c523ddeac2f5b77ae94fed50cca7b197bd5027",
+      "branch": "feature/music-ai-exact-partial-adoption-v1",
+      "base": "feature/music-ai-candidate-family-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37019221774,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 43,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221774/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221774/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37019221478,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 10,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221478/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37019221478/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 274,
+      "draft": true,
+      "head": "cde821afe4a7f115c670b5b7f822520771d57eac",
+      "branch": "feature/music-ai-candidate-family-v1",
+      "base": "feature/music-ai-candidate-preview-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37002368391,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 6,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37002368391/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37002368391/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 273,
+      "draft": true,
+      "head": "5227f6c91d1892aad15cde3bdd6279845fbb53d9",
+      "branch": "feature/music-ai-candidate-preview-v1",
+      "base": "feature/music-ai-composition-workflow-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 37000339200,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 42,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339200/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339200/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 37000339178,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 5,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339178/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/37000339178/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 272,
+      "draft": true,
+      "head": "1240a62bc88b8bd38e483ed5b5b674e048eb4877",
+      "branch": "feature/music-ai-composition-workflow-v1",
+      "base": "feature/music-ai-assistant-ui-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36999235875,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 40,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235875/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235875/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 36999235787,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 3,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235787/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36999235787/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 271,
+      "draft": true,
+      "head": "e7bdbb2b558e9e368cf38ec4051198f7eef21316",
+      "branch": "feature/music-ai-assistant-ui-v1",
+      "base": "feature/music-ai-workflow-foundation-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36996087448,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 38,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087448/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087448/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 36996087511,
+          "name": "Music Studio AI Assistant UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087511/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36996087511/logs",
+          "workflow_id": 373005862
+        }
+      ]
+    },
+    {
+      "number": 270,
+      "draft": true,
+      "head": "44c2e3f5c53481d46054d76d4e0595c7a765905b",
+      "branch": "feature/music-ai-workflow-foundation-v1",
+      "base": "feature/music-coordinated-a-browser-v1",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36975608931,
+          "name": "Music Studio AI workflow foundation",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36975608931/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36975608931/logs",
+          "workflow_id": 372864946
+        }
+      ]
+    },
+    {
+      "number": 269,
+      "draft": true,
+      "head": "98b7067bbdf0a967c6d4c69b9be8721d688e7e52",
+      "branch": "feature/music-coordinated-a-browser-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36973666391,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 37,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666391/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666391/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 36973666351,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 97,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666351/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666351/logs",
+          "workflow_id": 364728764
+        },
+        {
+          "id": 36973666458,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 39,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666458/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666458/logs",
+          "workflow_id": 365062326
+        },
+        {
+          "id": 36973666537,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 9,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666537/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666537/logs",
+          "workflow_id": 372069755
+        },
+        {
+          "id": 36973666482,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 10,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666482/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666482/logs",
+          "workflow_id": 372198725
+        },
+        {
+          "id": 36973666347,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 6,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666347/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666347/logs",
+          "workflow_id": 372078552
+        },
+        {
+          "id": 36973666652,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 6,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666652/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666652/logs",
+          "workflow_id": 372100449
+        },
+        {
+          "id": 36973666369,
+          "name": "Coordinated Music Studio checkpoint verification",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 10,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666369/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666369/logs",
+          "workflow_id": 372814992
+        },
+        {
+          "id": 36973666427,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 6,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666427/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666427/logs",
+          "workflow_id": 372105444
+        },
+        {
+          "id": 36973666419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 79,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666419/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666419/logs",
+          "workflow_id": 357094842
+        },
+        {
+          "id": 36973666467,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 51,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666467/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36973666467/logs",
+          "workflow_id": 357826330
+        }
+      ]
+    },
+    {
+      "number": 268,
+      "draft": true,
+      "head": "909f5c41ee96c051ae7f0b5f8d982ff1f4c441ee",
+      "branch": "feature/music-editor-commit-lock-guard-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36966130488,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 32,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130488/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130488/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 36966130519,
+          "name": "Music Studio Editor commit lock guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130519/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36966130519/logs",
+          "workflow_id": 372802129
+        }
+      ]
+    },
+    {
+      "number": 267,
+      "draft": true,
+      "head": "f06cf5ac29d2fa96857ce0dc623d6e1696f016a6",
+      "branch": "feature/music-measure-lock-compat-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36880714212,
+          "name": "Music Studio measure lock compatibility guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 5,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36880714212/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36880714212/logs",
+          "workflow_id": 372198725
+        }
+      ]
+    },
+    {
+      "number": 266,
+      "draft": true,
+      "head": "0101b246e219e3307ef55836b372f36fa331fa48",
+      "branch": "feature/music-structure-descriptors-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36857393673,
+          "name": "Music Studio structure descriptors guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857393673/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857393673/logs",
+          "workflow_id": 372105444
+        }
+      ]
+    },
+    {
+      "number": 265,
+      "draft": true,
+      "head": "7d2f0f49cdbc56e57fab6cef9a64681cc6168c8c",
+      "branch": "feature/music-meter-boundaries-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36856792517,
+          "name": "Music Studio meter map guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36856792517/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36856792517/logs",
+          "workflow_id": 372100449
+        }
+      ]
+    },
+    {
+      "number": 264,
+      "draft": true,
+      "head": "c052f1614155f8ccd8e84235d6218e81ccc53758",
+      "branch": "feature/music-midi-metadata-export-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36854131822,
+          "name": "Music Studio MIDI metadata export guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36854131822/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36854131822/logs",
+          "workflow_id": 372078552
+        }
+      ]
+    },
+    {
+      "number": 263,
+      "draft": true,
+      "head": "9c877b267a181b560332e07071b7f86539eb1cbf",
+      "branch": "feature/music-structure-metadata-maps-v1",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36857193454,
+          "name": "Music Studio structure metadata guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 4,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857193454/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36857193454/logs",
+          "workflow_id": 372069755
+        }
+      ]
+    },
+    {
+      "number": 262,
+      "draft": true,
+      "head": "a857c27674d6949488ff8884948499966f9bca40",
+      "branch": "verification/music-studio-all-drafts-255",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 36851340615,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 31,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340615/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340615/logs",
+          "workflow_id": 363922058
+        },
+        {
+          "id": 36851340507,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 92,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340507/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340507/logs",
+          "workflow_id": 364728764
+        },
+        {
+          "id": 36851340535,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 34,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340535/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340535/logs",
+          "workflow_id": 365062326
+        },
+        {
+          "id": 36851340641,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 74,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340641/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340641/logs",
+          "workflow_id": 357094842
+        },
+        {
+          "id": 36851340513,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 46,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340513/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/36851340513/logs",
+          "workflow_id": 357826330
+        }
+      ]
+    },
+    {
+      "number": 261,
+      "draft": true,
+      "head": "3d818bb1a2ba598f396822bb2e79c6d586d88265",
+      "branch": "verification/music-studio-baseline-combined",
+      "base": "agent/music-studio-cache-version-consistency",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35857916359,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 10,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916359/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916359/logs",
+          "workflow_id": 365062326
+        },
+        {
+          "id": 35857916467,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 7,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916467/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35857916467/logs",
+          "workflow_id": 363922058
+        }
+      ]
+    },
+    {
+      "number": 260,
+      "draft": true,
+      "head": "9fce9944f8112fab9b5dea7f3e1953175bea5c09",
+      "branch": "agent/music-studio-cache-version-consistency",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35853060620,
+          "name": "Music Studio cache version consistency",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 8,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35853060620/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35853060620/logs",
+          "workflow_id": 365062326
+        }
+      ]
+    },
+    {
+      "number": 259,
+      "draft": true,
+      "head": "8da76987e8c0a46df703d34643f432ab57730768",
+      "branch": "agent/music-selected-track-invalid-id-guard",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35845980410,
+          "name": "Music Selected Track ID Guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 4,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980410/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980410/logs",
+          "workflow_id": 365011907
+        },
+        {
+          "id": 35845980281,
+          "name": "Music Studio scoped MIDI repair",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 6,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980281/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35845980281/logs",
+          "workflow_id": 363922058
+        }
+      ]
+    },
+    {
+      "number": 258,
+      "draft": true,
+      "head": "97f1b43c113bc2d2d4f1e964725e0a59d9da06e3",
+      "branch": "agent/music-audio-bridge-midi-guard",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35932676423,
+          "name": "Music Audio Bridge Guard",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 61,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35932676423/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35932676423/logs",
+          "workflow_id": 364728764
+        }
+      ]
+    },
+    {
+      "number": 257,
+      "draft": true,
+      "head": "fbd7ef3c982890a5fc5912362367d9810ff95583",
+      "branch": "agent/music-audio-helper-boundary-tests",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35859941419,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 38,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35859941419/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35859941419/logs",
+          "workflow_id": 357094842
+        }
+      ]
+    },
+    {
+      "number": 256,
+      "draft": true,
+      "head": "d814d508bf992942376b32463e9122b9ffdb4fc8",
+      "branch": "agent/music-studio-current-main-build-verification",
+      "base": "main",
+      "mergeable": true,
+      "ci": [
+        {
+          "id": 35726291578,
+          "name": "Music Audio Helper macOS",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 5,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291578/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291578/logs",
+          "workflow_id": 357094842
+        },
+        {
+          "id": 35726291819,
+          "name": "Music Native Wrapper Swift",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 20,
+          "jobs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291819/jobs",
+          "logs_url": "https://api.github.com/repos/puitoybox-cloud/nova-studio/actions/runs/35726291819/logs",
+          "workflow_id": 357826330
+        }
+      ]
+    }
+  ]
+}

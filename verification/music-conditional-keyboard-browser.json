@@ -1,0 +1,1096 @@
+{
+  "head": "f64db4d1b9924a9e4198afdafdcb48d31fa2be5d",
+  "screens": [
+    {
+      "width": 1440,
+      "route": "music-studio",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/projects",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/new",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/settings",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/backup",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/project/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project settings（曲の設定）",
+        "Checkpoints（曲の比較・部分採用）",
+        "History（完成版・制作履歴） · 3",
+        "Recover source（履歴の元ファイルを復旧）",
+        "Help（録音の使い方）",
+        "Record（録音操作を開く）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）",
+        "Project tools（読み込み・バックアップ・管理）",
+        "診断・素材・AI料金",
+        "全体性能診断・表示の軽量化"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/midi-editor/conditional-song",
+      "candidate": "instrument-management-and-AI-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/ai-editor/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Renamed Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/lyrics-notes/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Guide（歌詞・読みの入力方法）",
+        "Notes（割付の確認方法）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/vocal/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Record（録音操作を開く）",
+        "Help（録音の使い方）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Lyrics（歌詞同期・設定）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/mixing-workspace/conditional-song",
+      "candidate": "mix",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "About Mix（ミックスの使い方）",
+        "Production（AI提案・Mastering・書き出し・保存版）",
+        "Export（楽曲ミックス・一括書き出し）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）",
+        "Versions（名前付きミックス保存・比較） · 0/32",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "History（音量・EQ・圧縮のUndo / Redo）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/mixing-master/conditional-song",
+      "candidate": "master-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Saved masters（保存済みMaster）",
+        "Recipes（名前付き候補設定・再作成）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/mixing-long-master/conditional-song",
+      "candidate": "long-master",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Help（処理の範囲）",
+        "History / Export（履歴・書き出し）",
+        "Versions（名前付きMix / Master設定）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1440,
+      "route": "music-studio/mixing-export/conditional-song",
+      "candidate": "export-files",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Stem Auto-Finish（自動Mix・Mastering）",
+        "MIDI Audio（演奏音をMixへ）",
+        "Help（書き出しの仕様）",
+        "Sources（音声の選択・配置・音量）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "Files（個別ファイル・保存先）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/projects",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/new",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/settings",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/backup",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/project/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project settings（曲の設定）",
+        "Checkpoints（曲の比較・部分採用）",
+        "History（完成版・制作履歴） · 3",
+        "Recover source（履歴の元ファイルを復旧）",
+        "Help（録音の使い方）",
+        "Record（録音操作を開く）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）",
+        "Project tools（読み込み・バックアップ・管理）",
+        "診断・素材・AI料金",
+        "全体性能診断・表示の軽量化"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/midi-editor/conditional-song",
+      "candidate": "instrument-management-and-AI-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/ai-editor/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Renamed Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/lyrics-notes/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Guide（歌詞・読みの入力方法）",
+        "Notes（割付の確認方法）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/vocal/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Record（録音操作を開く）",
+        "Help（録音の使い方）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Lyrics（歌詞同期・設定）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/mixing-workspace/conditional-song",
+      "candidate": "mix",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "About Mix（ミックスの使い方）",
+        "Production（AI提案・Mastering・書き出し・保存版）",
+        "Export（楽曲ミックス・一括書き出し）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）",
+        "Versions（名前付きミックス保存・比較） · 0/32",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "History（音量・EQ・圧縮のUndo / Redo）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/mixing-master/conditional-song",
+      "candidate": "master-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Saved masters（保存済みMaster）",
+        "Recipes（名前付き候補設定・再作成）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/mixing-long-master/conditional-song",
+      "candidate": "long-master",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Help（処理の範囲）",
+        "History / Export（履歴・書き出し）",
+        "Versions（名前付きMix / Master設定）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 1180,
+      "route": "music-studio/mixing-export/conditional-song",
+      "candidate": "export-files",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Stem Auto-Finish（自動Mix・Mastering）",
+        "MIDI Audio（演奏音をMixへ）",
+        "Help（書き出しの仕様）",
+        "Sources（音声の選択・配置・音量）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "Files（個別ファイル・保存先）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/projects",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/new",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/settings",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/backup",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/project/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project settings（曲の設定）",
+        "Checkpoints（曲の比較・部分採用）",
+        "History（完成版・制作履歴） · 3",
+        "Recover source（履歴の元ファイルを復旧）",
+        "Help（録音の使い方）",
+        "Record（録音操作を開く）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）",
+        "Project tools（読み込み・バックアップ・管理）",
+        "診断・素材・AI料金",
+        "全体性能診断・表示の軽量化"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/midi-editor/conditional-song",
+      "candidate": "instrument-management-and-AI-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/ai-editor/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Renamed Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/lyrics-notes/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Guide（歌詞・読みの入力方法）",
+        "Notes（割付の確認方法）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/vocal/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Record（録音操作を開く）",
+        "Help（録音の使い方）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Lyrics（歌詞同期・設定）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/mixing-workspace/conditional-song",
+      "candidate": "mix",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "About Mix（ミックスの使い方）",
+        "Production（AI提案・Mastering・書き出し・保存版）",
+        "Export（楽曲ミックス・一括書き出し）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）",
+        "Versions（名前付きミックス保存・比較） · 0/32",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "History（音量・EQ・圧縮のUndo / Redo）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/mixing-master/conditional-song",
+      "candidate": "master-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Saved masters（保存済みMaster）",
+        "Recipes（名前付き候補設定・再作成）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/mixing-long-master/conditional-song",
+      "candidate": "long-master",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Help（処理の範囲）",
+        "History / Export（履歴・書き出し）",
+        "Versions（名前付きMix / Master設定）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 820,
+      "route": "music-studio/mixing-export/conditional-song",
+      "candidate": "export-files",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Stem Auto-Finish（自動Mix・Mastering）",
+        "MIDI Audio（演奏音をMixへ）",
+        "Help（書き出しの仕様）",
+        "Sources（音声の選択・配置・音量）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "Files（個別ファイル・保存先）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/projects",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/new",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/settings",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/backup",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/project/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project settings（曲の設定）",
+        "Checkpoints（曲の比較・部分採用）",
+        "History（完成版・制作履歴） · 3",
+        "Recover source（履歴の元ファイルを復旧）",
+        "Help（録音の使い方）",
+        "Record（録音操作を開く）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）",
+        "Project tools（読み込み・バックアップ・管理）",
+        "診断・素材・AI料金",
+        "全体性能診断・表示の軽量化"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/midi-editor/conditional-song",
+      "candidate": "instrument-management-and-AI-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/ai-editor/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Project（プロジェクト情報）",
+        "Shortcuts（ショートカット）",
+        "Import / Export（読み込み／書き出し）",
+        "Melody Correction（メロディ補正）",
+        "MIDI入力",
+        "Sound（音源）",
+        "Single sample（単一素材へ切替）",
+        "Acoustic samples（実楽器サンプル）",
+        "Multi sample（複数素材・音色管理） / 2 zones",
+        "Coverage（Trackの割当確認）: 1/1",
+        "Zone 1（音域）: 0–127 / Velocity 1–70",
+        "Zone 2（音域）: 0–127 / Velocity 71–127",
+        "Manage presets（保存音色を編集）",
+        "Renamed Keyboard Piano",
+        "Second Piano",
+        "Assets（素材一覧・使用先）",
+        "Soft sample / 0.500s / 1ch",
+        "Loud sample / 0.500s / 1ch",
+        "AI Assistant（AI制作）\nLocal only（端末内）",
+        "Remake target（既存曲の対象）",
+        "Instrument analysis（楽器・役割分析）",
+        "Chord analysis（コード候補・規則推定）",
+        "Section orchestration（選択小節の規則編曲）",
+        "Japanese instructions（日本語の定型指示）",
+        "Whole song（全曲一括編曲）",
+        "AI model / Remake（実モデル作曲・既存曲修正）",
+        "MIDI output（生成済み候補を読み込む）",
+        "Local recipe（端末内の生成設定）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）",
+        "Edit（候補を調整）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/lyrics-notes/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Guide（歌詞・読みの入力方法）",
+        "Notes（割付の確認方法）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/vocal/conditional-song",
+      "candidate": "saved-instruments",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Record（録音操作を開く）",
+        "Help（録音の使い方）",
+        "Recording settings（録音設定）",
+        "Measure latency（実マイク・ファイル測定）",
+        "Input compensation（入力別の手動補正）",
+        "Lyrics（歌詞同期・設定）",
+        "Rename（テイクの名前）",
+        "Replace measures（歌声の小節置換）",
+        "Pitch / Timing / Lyrics（音程・長さ・歌詞）",
+        "Take Comp（テイクの組合せ）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/mixing-workspace/conditional-song",
+      "candidate": "mix",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "About Mix（ミックスの使い方）",
+        "Production（AI提案・Mastering・書き出し・保存版）",
+        "Export（楽曲ミックス・一括書き出し）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）",
+        "Versions（名前付きミックス保存・比較） · 0/32",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "Versions（名前付きMix / Master設定）",
+        "History（音量・EQ・圧縮のUndo / Redo）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/mixing-master/conditional-song",
+      "candidate": "master-ABC",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Saved masters（保存済みMaster）",
+        "Recipes（名前付き候補設定・再作成）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/mixing-long-master/conditional-song",
+      "candidate": "long-master",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Help（処理の範囲）",
+        "History / Export（履歴・書き出し）",
+        "Versions（名前付きMix / Master設定）"
+      ],
+      "axeViolations": 0
+    },
+    {
+      "width": 390,
+      "route": "music-studio/mixing-export/conditional-song",
+      "candidate": "export-files",
+      "disclosures": [
+        "Workspace（制作モード・お気に入り） · Compose（作曲）",
+        "Visible actions（表示する操作）",
+        "画面案内・性能診断",
+        "全体性能診断・表示の軽量化",
+        "Stem Auto-Finish（自動Mix・Mastering）",
+        "MIDI Audio（演奏音をMixへ）",
+        "Help（書き出しの仕様）",
+        "Sources（音声の選択・配置・音量）",
+        "Master dynamics（仕上げの圧縮・任意）",
+        "Files（個別ファイル・保存先）",
+        "History（作成履歴・直近100件）",
+        "Delivery（書き出し履歴・直近100件）"
+      ],
+      "axeViolations": 0
+    }
+  ],
+  "axeFailures": [],
+  "focusFailures": [],
+  "complete": true
+}

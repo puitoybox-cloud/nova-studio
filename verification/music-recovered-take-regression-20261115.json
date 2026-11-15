@@ -1,0 +1,61 @@
+{
+  "dateJST": "2026-11-15",
+  "baseline": "60121490eed3e3e94f2e9ff06ce8eb1d5d61eb6e",
+  "productionGitBlob": "06fcf450e15cf4698a1cfeceef1df5c3f343b426",
+  "node": "v24.22.1",
+  "fullRegression": {
+    "command": "node --test --test-reporter=tap",
+    "passed": 2988,
+    "failed": 0,
+    "skipped": 0
+  },
+  "vocalRegression": {
+    "command": "node --test tests/music-studio-vocal-recording.test.js",
+    "passed": 113,
+    "failed": 0,
+    "switchAwayAndBack": [
+      "PCM",
+      "MediaRecorder"
+    ],
+    "recoverySealSwitchAwayAndBack": [
+      "PCM",
+      "MediaRecorder"
+    ],
+    "rescueImportRepositorySwitch": "rolled back and explicitly retried"
+  },
+  "localBrowser": {
+    "version": "Chromium 156.0.8078.79",
+    "status": "blocked-before-launch",
+    "error": "process_singleton_posix.cc: socket() failed: Operation not permitted"
+  },
+  "acceptance": {
+    "id": "MS12-A02",
+    "status": "verified",
+    "verifiedCount": 70,
+    "totalCount": 135
+  },
+  "command": "node --test --test-reporter=tap",
+  "passed": 2988,
+  "failed": 0,
+  "sourceHashes": {
+    "tests/music-studio-vocal-recording.test.js": "1a77ded6ffca1596bcae6dca9265fbee24426cdd02baba6bdfaa85e29540e274",
+    "tests/music-studio-scoped-midi-repair.test.js": "03af845e1c733d0d3303560cced76c4824a2427c346f22935dffd2bce12b7413"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "4188fa4a8ed5d921dfc2e2d8d636b75190208338ecbf511dcd18059e0d58cd61",
+    "music-studio-editor.js": "3055987baab293e337af0f48de8c386d03e2215a0b34a821f5f8b08b39590371",
+    "app.js": "bda99574de5b36014f8a163f2a10abda845fc4f25197fc74034b62736dc70d8f",
+    "index.html": "e333510c3861b3031ddcb10503a4b8cf2fde4ba6e5f1cbf339b8e56a777a1f83",
+    "music-studio.html": "e5a5a4eada4c667e420f5bfbcec474961d9ace6d715857afb10015e081ff9165"
+  },
+  "acceptedCases": [
+    "selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes",
+    "scheduled punch-in omits preroll samples and captures exact punch-out without UI timer",
+    "two cycle takes save actual bytes atomically, group/order survive reopen/export/Comp and full restore",
+    "cycle quota failure halts auto-repeat, retains retry PCM and does not overwrite project",
+    "restart after the first gapless Take commits recovers only unsaved frames",
+    "gapless crash recovery recreates exact Take boundaries and cycle metadata",
+    "Vibrato preview applies local pitch attenuation with exact Undo, reopen and full archive recovery",
+    "repair only the selected track and measures; preserve input and locked notes"
+  ]
+}

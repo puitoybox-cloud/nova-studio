@@ -32,7 +32,7 @@
   .music-midi-editor-page .music-editor-chrome .music-editor-heading h1{font-size:.82rem;line-height:1}
   .music-midi-editor-page .music-editor-guide-button{min-height:20px;gap:2px;padding:0 4px;font-size:.6rem;line-height:1}
   .music-midi-editor-page .music-editor-guide-button>span:first-child{width:15px;height:15px;flex-basis:15px;font-size:.6rem}
-  .music-midi-editor-page .music-editor-topbar{box-sizing:border-box;width:100%;min-height:24px;max-height:24px;flex:0 0 24px;flex-wrap:nowrap;gap:2px;padding-top:0;padding-right:3px;padding-bottom:0;overflow-x:hidden;overflow-y:visible;white-space:nowrap}
+  .music-midi-editor-page .music-editor-topbar{box-sizing:border-box;width:100%;min-height:24px;max-height:24px;flex:0 0 24px;flex-wrap:nowrap;gap:2px;padding-top:0;padding-right:3px;padding-bottom:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap}
   .music-midi-editor-page .music-editor-topbar>.music-editor-menu,.music-midi-editor-page .music-editor-topbar>.music-external-track-review-entry,.music-midi-editor-page .music-editor-topbar>.music-editor-save{width:auto;min-width:0;flex:0 1 auto}
   .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{width:auto;min-width:0;flex:0 1 auto;margin-right:0;margin-left:auto}
   .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary,.music-midi-editor-page .music-editor-topbar>button{box-sizing:border-box;width:auto;min-width:0;min-height:21px;height:21px;padding:0 4px;overflow:hidden;font-size:.58rem;line-height:1;text-overflow:ellipsis;white-space:nowrap}
@@ -66,4 +66,80 @@
   .music-midi-editor-page .music-assist-quantize-controls>button:last-child{box-sizing:border-box;width:100%;min-width:64px;max-width:70px;padding-inline:2px;overflow:hidden;white-space:nowrap;word-break:keep-all;font-size:.62rem}
   .music-midi-editor-page .music-partial-edit-provider textarea{height:28px;min-height:28px}.music-midi-editor-page .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]){height:22px;min-height:22px;padding-block:0}
   .music-midi-editor-page .music-partial-edit-provider button{width:max-content;justify-self:start}.music-midi-editor-page .music-edit-range-fields{flex:none}.music-midi-editor-page .music-edit-range label{min-width:0;margin:0}.music-midi-editor-page .music-edit-range input{height:22px;min-height:22px;margin-top:0;padding-block:0}.music-midi-editor-page .music-edit-range p{margin-top:0}
+}
+
+/* Do not hide MIDI commands when the landscape toolbar is narrower than its content.
+   The rail scrolls independently; expanded dropdowns are not clipped by the rail. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-editor-topbar::-webkit-scrollbar{display:none}
+ .music-midi-editor-page .music-editor-topbar:has(.music-editor-menu[open]),
+ .music-midi-editor-page .music-editor-topbar:has(.music-midi-input-menu[open]){overflow:visible}
+ .music-midi-editor-page .music-editor-topbar>button,
+ .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
+ .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu{flex-shrink:0}
+}
+
+/* iPad landscape: make primary MIDI transport and part selection genuinely
+   touchable rather than enlarging only their visible icons. Compensate for
+   the taller navigation rows inside the existing viewport budget. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-editor-topbar{
+   height:44px;min-height:44px;max-height:44px;flex:0 0 44px;
+   align-items:center;scroll-padding-inline:10px
+ }
+ .music-midi-editor-page .music-editor-topbar .music-editor-menu>summary,
+ .music-midi-editor-page .music-editor-topbar .music-midi-input-menu>summary,
+ .music-midi-editor-page .music-editor-topbar>button{
+   box-sizing:border-box;height:44px;min-height:44px;max-height:44px;
+   padding:6px 10px;font-size:.75rem;display:inline-flex;align-items:center
+ }
+ .music-midi-editor-page .music-editor-topbar>.music-editor-menu,
+ .music-midi-editor-page .music-editor-topbar>.music-midi-input-menu,
+ .music-midi-editor-page .music-editor-topbar>.music-external-track-review-entry{
+   min-height:44px
+ }
+ .music-midi-editor-page .music-part-tabs{
+   min-height:44px;height:44px;flex:0 0 44px;align-items:center;
+   scroll-padding-inline:8px
+ }
+ .music-midi-editor-page .music-part-tabs button,
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab),
+ .music-midi-editor-page .music-history-controls>button{
+   box-sizing:border-box;height:44px;min-height:44px;max-height:44px;
+   padding:6px 10px;font-size:.74rem
+ }
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>button:not(.music-part-tab){
+   width:44px;min-width:44px;max-width:44px
+ }
+ .music-midi-editor-page .music-part-tabs .music-part-tab-group>.music-part-tab{
+   min-width:82px;width:auto
+ }
+ .music-midi-editor-page .music-editor-layout{
+   height:calc(50svh - 42px)!important;
+   max-height:calc(50svh - 42px)!important;
+   flex:0 0 calc(50svh - 42px)!important
+ }
+}
+
+/* The lower MIDI control dock is independently scrollable. Do not force
+   20–28px targets on touch users to squeeze all advanced settings in view. */
+@media (min-width:601px) and (orientation:landscape) and (hover:none) and (pointer:coarse){
+ .music-midi-editor-page .music-editor-bottom{
+   overflow-x:auto;overflow-y:auto;overscroll-behavior:contain;
+   -webkit-overflow-scrolling:touch;scroll-padding:8px
+ }
+ .music-midi-editor-page .music-editor-bottom :is(button,select,input:not([type=checkbox]):not([type=radio]),textarea),
+ .music-midi-editor-page .music-assist-snap-controls :is(button,select),
+ .music-midi-editor-page .music-assist-quantize-controls :is(button,select){
+   box-sizing:border-box;min-height:44px;height:auto;max-height:none;
+   padding:6px 10px;font-size:.75rem;line-height:1.25
+ }
+ .music-midi-editor-page .music-editor-bottom .music-partial-edit-provider textarea,
+ .music-midi-editor-page .music-editor-bottom .music-partial-edit-provider :is(textarea[name="instruction"],input[name="model"],input[name="apiKey"]),
+ .music-midi-editor-page .music-editor-bottom .music-edit-range input{
+   min-height:44px;height:auto;max-height:none;padding:6px 10px
+ }
+ .music-midi-editor-page .music-editor-bottom>section{
+   overflow:visible;min-width:0;align-self:start
+ }
 }

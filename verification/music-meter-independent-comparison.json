@@ -1,0 +1,138 @@
+{
+  "date": "2026-10-31 JST",
+  "runtimeSha256": "60ed42c33f56b0d2bf6ef30a0fb8ba49127fe8f37b58d6835633fc21cc0cd2e2",
+  "referenceSha256": "6f584a6ab7f4ea225037c92e2500287e1a6ea0ce88a7a3a62bf22861190c0c31",
+  "finiteLufsMaxAbsDifference": 0.04603569677819763,
+  "rows": [
+    {
+      "id": "mono-997",
+      "lufs": -23.064264259861616,
+      "referenceLufs": -23.1,
+      "lufsDifference": 0.0357357401383851,
+      "truePeakDb": -19.991151250685125,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.008848749314875448,
+      "clippingSamples": 0
+    },
+    {
+      "id": "stereo-997",
+      "lufs": -20.053964303221804,
+      "referenceLufs": -20.1,
+      "lufsDifference": 0.04603569677819763,
+      "truePeakDb": -19.991151250685125,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.008848749314875448,
+      "clippingSamples": 0
+    },
+    {
+      "id": "low-50",
+      "lufs": -27.68940415099178,
+      "referenceLufs": -27.7,
+      "lufsDifference": 0.01059584900821875,
+      "truePeakDb": -19.986245520642374,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.013754479357626082,
+      "clippingSamples": 0
+    },
+    {
+      "id": "high-10000",
+      "lufs": -19.71337646746267,
+      "referenceLufs": -19.7,
+      "lufsDifference": -0.013376467462670405,
+      "truePeakDb": -19.99999987057016,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 1.2942983929065122e-7,
+      "clippingSamples": 0
+    },
+    {
+      "id": "intersample-12000",
+      "lufs": -0.6277445247874418,
+      "referenceLufs": -0.6,
+      "lufsDifference": -0.027744524787441827,
+      "truePeakDb": -0.8704586876718554,
+      "referenceTruePeakDb": -0.9,
+      "truePeakDifferenceDb": 0.02954131232814461,
+      "clippingSamples": 0
+    },
+    {
+      "id": "high-19000",
+      "lufs": -0.6273004241190341,
+      "referenceLufs": -0.6,
+      "lufsDifference": -0.027300424119034106,
+      "truePeakDb": -0.7470852139756672,
+      "referenceTruePeakDb": -0.9,
+      "truePeakDifferenceDb": 0.15291478602433284,
+      "clippingSamples": 0
+    },
+    {
+      "id": "absolute-gate",
+      "lufs": -69.07373823014538,
+      "referenceLufs": -69.1,
+      "lufsDifference": 0.026261769854613704,
+      "truePeakDb": -66.01175091084255,
+      "referenceTruePeakDb": -66,
+      "truePeakDifferenceDb": -0.011750910842550866,
+      "clippingSamples": 0
+    },
+    {
+      "id": "relative-gate",
+      "lufs": -23.258603947741847,
+      "referenceLufs": -23.3,
+      "lufsDifference": 0.041396052258154015,
+      "truePeakDb": -19.991151250685125,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.008848749314875448,
+      "clippingSamples": 0
+    },
+    {
+      "id": "silence-tail",
+      "lufs": -23.258625912605634,
+      "referenceLufs": -23.3,
+      "lufsDifference": 0.041374087394366654,
+      "truePeakDb": -19.991151250685125,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.008848749314875448,
+      "clippingSamples": 0
+    },
+    {
+      "id": "asymmetric-stereo",
+      "lufs": -22.68999928017979,
+      "referenceLufs": -22.7,
+      "lufsDifference": 0.010000719820208559,
+      "truePeakDb": -19.991151250685125,
+      "referenceTruePeakDb": -20,
+      "truePeakDifferenceDb": 0.008848749314875448,
+      "clippingSamples": 0
+    },
+    {
+      "id": "hard-onset-12000",
+      "lufs": -0.573786772784819,
+      "referenceLufs": -0.6,
+      "lufsDifference": 0.026213227215180934,
+      "truePeakDb": -0.8325013528101406,
+      "referenceTruePeakDb": -0.3,
+      "truePeakDifferenceDb": -0.5325013528101405,
+      "clippingSamples": 0
+    },
+    {
+      "id": "clipped-997",
+      "lufs": -1.42664688218402,
+      "referenceLufs": -1.4,
+      "lufsDifference": -0.026646882184020004,
+      "truePeakDb": 1.592473898469802,
+      "referenceTruePeakDb": 1.6,
+      "truePeakDifferenceDb": -0.00752610153019817,
+      "clippingSamples": 53694
+    },
+    {
+      "id": "silence",
+      "lufs": null,
+      "referenceLufs": -70,
+      "lufsDifference": null,
+      "truePeakDb": null,
+      "referenceTruePeakDb": null,
+      "truePeakDifferenceDb": null,
+      "clippingSamples": 0
+    }
+  ]
+}

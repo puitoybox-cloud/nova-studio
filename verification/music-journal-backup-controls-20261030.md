@@ -1,0 +1,19 @@
+# Unfinished recording automatic backup and lifecycle controls
+
+2026-10-30 JST. Base PR #541, HEAD 9cdae8517a07950a93449c4bff894ecc2008cf62, tree 3a638c91beb2ac2e75abcfacc9640cd44dcf285a.
+
+Confirmed cause: automatic backup checked a signature containing project revisions/settings/MIDI histories before checking unfinished recording journals. Journal creation/appends/consumption could leave that signature unchanged. Include journal metadata in both the signature and the final state conflict check; reuse the existing verified Full WAV Archive binary path. Active or corrupt journals fail closed without replacing an earlier backup. The configured backup interval remains in force.
+
+Unfinished recording UI now exposes raw rescue export and explicit confirmed permanent deletion. Delete compares all observed metadata and checks the activity heartbeat inside the same strict metadata/chunk transaction; interrupted/failed deletion rolls back. It never deletes saved Takes, project records, binaries or MIDI history. Cancellation is the default without confirmation. Other active recording/recovery/save/archive operations block the UI action.
+
+Rescue export is a separate .nova-recording investigation container: four-byte little-endian JSON header length, UTF-8 metadata/ordered chunk manifest, then observed binary bytes. Manifest records expected/observed hashes and missing chunk positions. It does not decode, repair, consume or delete source audio and is not a Full WAV Archive. No rescue-container importer or guaranteed compressed-container repair is implemented. Users may retain it for later investigation; intact but undecodable containers still migrate through Full WAV Archive without decoding. Damaged PCM prefix recovery remains unchanged.
+
+Five added regression scenarios cover journal-only automatic backup and subsequent appends, independent-database restore/recovery, active/cancelled/conflicting/failed deletion, corrupt/missing-chunk rescue identity, retention of the previous automatic archive on corrupt journals, and undecodable encoded automatic backup/rescue. Existing forced-stop, save-failure, restart, gapless Take, MIDI and archive tests remain enabled. The real MediaRecorder SIGKILL browser harness now obtains its unfinished migration archive through automatic backup; no existing identity assertions were removed.
+
+Base CI at inspection: 9 successful workflows and 3 still running, no reported failures. Running steps: production loudness baseline rendering; real generation browser/native packaged inference; UI real Chrome acceptance. Running is not failure evidence. Final base/new-head results require separate confirmation.
+
+No.12/23 remain partial: physical power-loss/storage guarantees, uncommitted audio, Intel/WebKit physical microphone quality/latency/permissions, codec-specific incomplete containers, corrupt journal full-archive migration and complete production acceptance remain unresolved. Raw rescue export is protection, not proven audio repair. Formal 30-feature status remains 28/30 partial confirmed, No.26/29 partial unconfirmed, 0/30 all requirements implemented and automatically verified, 0/30 final completion. See docs/music-studio/COMPLETION_MASTER_PLAN_V1.md and verification/music-completion-focus-20261030.md. No completion percentage is inferred.
+
+Independent branch only; existing PRs/main unmodified. No Ready/Merge/force push or physical Mac operation.
+
+Final local validation: 2,707 tests passed, 0 failed/skipped/cancelled, 109.109 seconds. Syntax checks for core, host and changed browser harness plus git diff --check passed. Cache marker 1.4.213 and host loader 1.5.93 are consistent. The first whole-suite run exposed two outdated escaped cache assertions; all final assertions and the host runtime marker were corrected before the successful full rerun. Browser SIGKILL acceptance awaits exact-head GitHub CI; no local Chromium result is claimed.

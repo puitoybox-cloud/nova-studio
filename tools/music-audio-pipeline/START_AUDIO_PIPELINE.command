@@ -7,6 +7,20 @@ VENV_DIR=".venv"
 PID_FILE=".pipeline.pid"
 LOG_FILE="audio-pipeline.log"
 HEALTH_URL="http://127.0.0.1:8766/health"
+EXPECTED_SOURCE_DIGEST="$(/usr/bin/shasum -a 256 server.py | /usr/bin/awk '{print $1}')"
+
+check_running_source(){
+  local health
+  health="$(curl -fsS --max-time 2 "$HEALTH_URL" 2>/dev/null)" || return 1
+  printf '%s' "$health" | "$PYTHON_BIN" helper_identity.py "$PWD"
+}
+
+stale_helper_error(){
+  echo "別の版のAudio Helperが127.0.0.1:8766で起動しています。今回のserver.pyは使用されていません。"
+  echo "以前のHelperを、その配布フォルダのSTOP_AUDIO_PIPELINE.commandで停止し、もう一度起動してください。"
+  echo "このスクリプトは別のプロセスを推測で停止しません。"
+  pause_and_exit 1
+}
 
 pause_and_exit(){
   local code="${1:-0}"
@@ -31,6 +45,17 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   pause_and_exit 1
 fi
 
+# Strict entry executes before legacy setup, health reuse, or network-capable tools.
+if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then
+  [ -x "$VENV_DIR/bin/python" ] || { echo "Preinstalled strict runtime required."; exit 2; }
+  exec "$VENV_DIR/bin/python" -I -S -B local_distribution_entry.py
+fi
+
+if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ] && [ ! -x "$VENV_DIR/bin/python" ]; then
+  echo "Strict distribution requires a preinstalled local runtime; setup is blocked."
+  exit 1
+fi
+
 if [ ! -x "$VENV_DIR/bin/python" ]; then
   echo "初回セットアップを開始します。"
   "$PYTHON_BIN" -m venv "$VENV_DIR"
@@ -40,11 +65,13 @@ if [ ! -x "$VENV_DIR/bin/python" ]; then
 fi
 
 if ! "$VENV_DIR/bin/python" -c 'import pkg_resources' >/dev/null 2>&1; then
+  if [ -n "${NOVA_TRUSTED_MANIFEST_PATH:-}" ]; then exit 1; fi
   echo "Audio Pipelineの互換部品を修復します。"
   "$VENV_DIR/bin/python" -m pip install 'setuptools<82'
 fi
 
 if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+  check_running_source || stale_helper_error
   echo "Audio Pipeline はすでに起動しています。"
   echo "$HEALTH_URL"
   pause_and_exit 0
@@ -52,6 +79,7 @@ fi
 rm -f "$PID_FILE"
 
 if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 2 "$HEALTH_URL" >/dev/null 2>&1; then
+  check_running_source || stale_helper_error
   echo "Audio Pipeline はすでに 127.0.0.1:8766 で起動しています。"
   echo "$HEALTH_URL"
   pause_and_exit 0
@@ -71,7 +99,7 @@ echo "$PID" > "$PID_FILE"
 
 STARTED=0
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 "$HEALTH_URL" >/dev/null 2>&1; then
+  if check_running_source; then
     STARTED=1
     break
   fi
