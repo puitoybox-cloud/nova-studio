@@ -1,5 +1,5 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const vm=require('node:vm');
-function load(){const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer};window.window=window;for(const name of ['music-studio-midi.js','music-studio-midi-parser.js'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent},{filename:name});return{writer:window.MusicStudioMidi,parser:window.MusicStudioMidiParser}}
+function load(math=Math){const window={TextEncoder,TextDecoder,Uint8Array,ArrayBuffer};window.window=window;for(const name of ['music-studio-midi.js','music-studio-midi-parser.js'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),{window,globalThis:window,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,Blob,unescape,encodeURIComponent,Math:math},{filename:name});return{writer:window.MusicStudioMidi,parser:window.MusicStudioMidiParser}}
 const be16=n=>[n>>8,n&255],be32=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255];
 function vlq(n){let b=n&127,out=[];while(n>>=7)b=(b<<8)|((n&127)|128);for(;;){out.push(b&255);if(b&128)b>>=8;else return out}}
 function track(events){return[77,84,114,107,...be32(events.length),...events]}
@@ -24,7 +24,20 @@ test('meta clears running status',()=>assert.throws(()=>load().parser.parseMidiF
 test('SysEx clears running status and is summarized',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([0,240,2,1,247,...meta(0,47,[])])]));assert.equal(parsed.normalized.unsupportedEventsSummary[0].type,'SysEx')})
 test('Japanese track name, lyric and marker decode',()=>{const p=load().parser,e=new TextEncoder(),parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[...e.encode('ピアノ🎹')]),...meta(0,5,[...e.encode('歌詞')]),...meta(0,6,[...e.encode('Aメロ')]),...meta(0,47,[])])]));assert.equal(parsed.normalized.tracks[0].name,'ピアノ🎹');assert.equal(parsed.normalized.lyrics[0].text,'歌詞');assert.equal(parsed.normalized.markers[0].text,'Aメロ')})
 test('invalid UTF-8 uses replacement and warning',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[255]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.some(w=>w.code==='text-encoding'))})
-test('tempo and time signature changes are mapped',()=>{const p=load().parser,body=[...meta(0,81,[7,161,32]),...meta(480,81,[6,239,145]),...meta(0,88,[3,2,24,8]),...meta(480,88,[6,3,24,8]),...meta(0,47,[])],n=p.parseMidiFile(smf(0,[track(body)])).normalized;assert.equal(n.tempoMap.length,2);assert.ok(Math.abs(n.tempoMap[1].bpm-132)<.01);assert.equal(n.timeSignatureMap[1].display,'6/8');assert.ok(n.estimatedDurationSeconds>0)})
+test('tempo and time signature changes are mapped',()=>{const p=load().parser,body=[...meta(0,81,[7,161,32]),...meta(480,81,[6,239,145]),...meta(0,88,[3,2,24,8]),...meta(480,88,[6,3,24,8]),...meta(0,47,[])],n=p.parseMidiFile(smf(0,[track(body)])).normalized;assert.equal(n.tempoMap.length,2);assert.ok(Math.abs(n.tempoMap[1].bpm-132)<.01);assert.equal(n.timeSignatureMap[0].display,'4/4');assert.equal(n.timeSignatureMap[0].defaulted,true);assert.equal(n.timeSignatureMap[2].display,'6/8');assert.ok(n.estimatedDurationSeconds>0)})
+test('MIDI tempo and meter first declared after tick zero retain the correct initial defaults',()=>{
+ const {parser,writer}=load(),body=[0,144,60,90,...vlq(480),128,60,0,...meta(480,81,[10,44,42]),...meta(0,88,[3,2,24,8]),...meta(0,47,[])];
+ const parsed=parser.parseMidiFile(smf(0,[track(body)])),n=parsed.normalized;
+ assert.equal(parsed.validation.importable,true);
+ assert.equal(n.tempo,120);
+ assert.deepEqual(JSON.parse(JSON.stringify(n.tempoMap.map(e=>[e.tick,e.bpm,e.defaulted||false]))),[[0,120,true],[960,60000000/666666,false]]);
+ assert.deepEqual(JSON.parse(JSON.stringify(n.timeSignatureMap.map(e=>[e.tick,e.numerator,e.denominator,e.defaulted||false]))),[[0,4,4,true],[960,3,4,false]]);
+ assert.ok(Math.abs(n.estimatedDurationSeconds-1)<1e-9);
+ const converted=parser.convertParsedMidiToProjectData(parsed),again=parser.parseMidiFile(writer.createMidiFile(converted).bytes).normalized;
+ assert.equal(again.tempo,120);
+ assert.deepEqual(JSON.parse(JSON.stringify(again.tempoMap.map(e=>e.tick))),[0,960]);
+ assert.deepEqual(JSON.parse(JSON.stringify(again.timeSignatureMap.map(e=>e.tick))),[0,960]);
+});
 test('conversion preserves changing time and key signature maps',()=>{const p=load().parser,body=[...meta(0,88,[4,2,24,8]),...meta(0,89,[0,0]),...meta(960,88,[3,2,24,8]),...meta(0,89,[253,1]),...meta(0,47,[])],parsed=p.parseMidiFile(smf(0,[track(body)])),data=p.convertParsedMidiToProjectData(parsed,{fileName:'structure.mid'});assert.equal(JSON.stringify(data.timeSignatureMap.map(item=>[item.tick,item.display])),JSON.stringify([[0,'4/4'],[960,'3/4']]));assert.equal(JSON.stringify(data.keySignatureMap.map(item=>[item.tick,item.sharps,item.minor])),JSON.stringify([[0,0,false],[960,-3,true]]));assert.equal(data.keySignature.tick,0);assert.equal(data.importSource.fileName,'structure.mid')})
 test('missing tempo and signature get explicit defaults',()=>{const n=load().parser.parseMidiFile(smf(0,[track(meta(0,47,[]))])).normalized;assert.equal(n.tempo,120);assert.equal(`${n.timeSignature.numerator}/${n.timeSignature.denominator}`,'4/4');assert.equal(n.tempoMap[0].defaulted,true)})
 test('invalid tempo and signature produce warnings',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,81,[0,0,0]),...meta(0,88,[4,9,24,8]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.filter(w=>w.code==='invalid-meta').length>=2)})
@@ -58,6 +71,35 @@ test('unknown MIDI tracks remain additional tracks regardless of position',()=>{
 test('preflight uses content later, not extension or MIME alone',()=>{const p=load().parser;assert.equal(p.preflightMidiFile({name:'song.bin',size:20,type:'text/plain'}).ok,true);assert.equal(p.preflightMidiFile({name:'empty.mid',size:0,type:'audio/midi'}).ok,false);assert.equal(p.preflightMidiFile(null).cancelled,true)})
 test('large files reject before parsing',()=>assert.throws(()=>load().parser.parseMidiFile(new Uint8Array(load().parser.MAX_FILE_SIZE+1)),/16 MB/));
 test('parses thousands of events within practical time',()=>{const p=load().parser,events=[];for(let i=0;i<5000;i++)events.push(0,144,60,90,0,128,60,0);events.push(...meta(0,47,[]));const bytes=smf(0,[track(events)]),start=Date.now(),parsed=p.parseMidiFile(bytes);assert.equal(parsed.normalized.totalNotes,5000);assert.ok(Date.now()-start<1500)})
+
+test('large valid MIDI tracks calculate pitch and velocity ranges without spreading all notes into Math',()=>{
+  // JavaScript engines have different maximum call-argument counts. A legal
+  // 70,000-note MIDI file must import even when one engine caps them at 64K.
+  const limitedMath=Object.create(Math);
+  limitedMath.min=(...args)=>{if(args.length>64000)throw RangeError('engine-argument-limit');return Math.min(...args)};
+  limitedMath.max=(...args)=>{if(args.length>64000)throw RangeError('engine-argument-limit');return Math.max(...args)};
+  const p=load(limitedMath).parser,n=70000,bytes=new Uint8Array(14+8+n*8+4);
+  bytes.set([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107]);
+  new DataView(bytes.buffer).setUint32(18,n*8+4);
+  for(let i=0;i<n;i++)bytes.set([0,144,i%2?72:48,i%2?110:45,0,128,i%2?72:48,0],22+i*8);
+  bytes.set([0,255,47,0],22+n*8);
+  const result=p.parseMidiFile(bytes);
+  assert.equal(result.validation.importable,true);
+  assert.equal(result.normalized.totalNotes,n);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.normalized.tracks[0].range)),{min:48,max:72});
+  assert.deepEqual(JSON.parse(JSON.stringify(result.normalized.tracks[0].velocityRange)),{min:45,max:110});
+});
+
+test('many unmatched MIDI note-offs return warnings without overflowing call arguments',()=>{
+  const p=load().parser,n=140000,bytes=new Uint8Array(14+8+n*4+4);
+  bytes.set([77,84,104,100,0,0,0,6,0,0,0,1,1,224,77,84,114,107]);
+  new DataView(bytes.buffer).setUint32(18,n*4+4);
+  for(let i=0;i<n;i++)bytes.set([0,128,60,0],22+i*4);
+  bytes.set([0,255,47,0],22+n*4);
+  const result=p.parseMidiFile(bytes);
+  assert.equal(result.normalized.totalNotes,0);
+  assert.equal(result.normalized.warnings.filter(w=>w.code==='orphan-note-off').length,n);
+});
 
 
 test('key changes on separate Type 1 tracks are imported chronologically without losing provenance',()=>{

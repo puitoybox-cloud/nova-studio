@@ -4,3 +4,28 @@ test('native staging copies exact current recording entry and dependency bytes',
 test('Xcode both production targets stage assets and file loading is explicit',()=>{const project=fs.readFileSync(path.join(__dirname,'../tools/music-native-wrapper/MusicStudioNative.xcodeproj/project.pbxproj'),'utf8');assert.equal((project.match(/C30000000000000000000001\); buildRules/g)||[]).length,2);assert.match(project,/music-stage-native-web.py/);const host=fs.readFileSync(path.join(__dirname,'../tools/music-native-wrapper/MusicStudioWebViewHost.swift'),'utf8');assert.match(host,/loadFileURL\(configuration.startURL, allowingReadAccessTo:/)});
 
 test('Swift Package supported launcher stages assets and executable uses resource bundle',()=>{const read=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');assert.match(read('tools/music-native-wrapper/Package.swift'),/resources: \[\.copy\("MusicStudioWeb"\)\]/);assert.equal((read('tools/music-native-wrapper/MusicStudioRootView.swift').match(/resourceURL: Bundle.module.resourceURL/g)||[]).length,2);const launcher=read('scripts/music-run-native-package.sh');assert.ok(launcher.indexOf('music-stage-native-web.py')<launcher.indexOf('exec swift run'));assert.match(read('.github/workflows/music-native-wrapper-swift.yml'),/SPM|verify-bundled-assets/);});
+
+test('native staging rejects an output symlink before copying any asset or overwriting its external target',()=>{
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'nova-assets-symlink-'));
+ try{
+  const destination=path.join(parent,'bundle'),outside=path.join(parent,'external.js');
+  fs.mkdirSync(destination);fs.writeFileSync(outside,'untouched-external-file');
+  fs.symlinkSync(outside,path.join(destination,'app.js'));
+  assert.throws(()=>execFileSync('python3',[path.join(__dirname,'../scripts/music-stage-native-web.py'),destination],{stdio:'pipe'}));
+  assert.equal(fs.readFileSync(outside,'utf8'),'untouched-external-file');
+  assert.equal(fs.existsSync(path.join(destination,'asset-manifest.json')),false);
+  assert.deepEqual(fs.readdirSync(destination),['app.js']);
+ }finally{fs.rmSync(parent,{recursive:true,force:true});}
+});
+
+test('native staging rejects a symlinked asset directory before writing bundle files',()=>{
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'nova-assets-symlink-dir-'));
+ try{
+  const destination=path.join(parent,'bundle'),outside=path.join(parent,'external-assets');
+  fs.mkdirSync(destination);fs.mkdirSync(outside);
+  fs.symlinkSync(outside,path.join(destination,'assets'));
+  assert.throws(()=>execFileSync('python3',[path.join(__dirname,'../scripts/music-stage-native-web.py'),destination],{stdio:'pipe'}));
+  assert.equal(fs.readdirSync(outside).length,0);
+  assert.deepEqual(fs.readdirSync(destination),['assets']);
+ }finally{fs.rmSync(parent,{recursive:true,force:true});}
+});
