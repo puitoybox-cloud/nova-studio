@@ -3663,7 +3663,10 @@
       const generated=options.separatedAudio===true;
       const roles=['vocals','drums','bass','guitar','piano','other'];
       if(generated&&(!source.midiData||entries.length!==6||entries.some((e,i)=>e.role!==roles[i])||options.model!=='htdemucs_6s'||!/^[a-f0-9]{64}$/.test(options.sourceSha256||'')))throw Error('separated-audio-contract');
-      const addedTracks=generated?entries.map(e=>({id:e.trackId,name:'Demucs '+e.role,part:e.role==='vocals'?'melody':e.role==='other'?'accompaniment':e.role,notes:[],channel:e.role==='drums'?9:0})):[];
+      // Song MIDI channels are one-based (1–16); percussion is channel 10.
+      // Audio-only separated stems start with no notes, but their track
+      // descriptors must remain exportable when notes are added later.
+      const addedTracks=generated?entries.map(e=>({id:e.trackId,name:'Demucs '+e.role,part:e.role==='vocals'?'melody':e.role==='other'?'accompaniment':e.role,notes:[],channel:e.role==='drums'?10:1})):[];
       const tracks=[...(source.midiData?.tracks||[]),...addedTracks];
       if(generated&&new Set(tracks.map(t=>t.id)).size!==tracks.length)throw Error('separated-audio-track-collision');
       for(const e of entries)if(!tracks.some(t=>t.id===e.trackId)||!e.file||!/\.wav$/i.test(e.file.name||''))throw Error('logic-stems-track-or-wav-required');
