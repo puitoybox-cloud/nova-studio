@@ -64,7 +64,11 @@
     }
     if(noteCount===0)errors.push('書き出せるノートがありません。空のMIDIは生成しません。');
     if(noteCount>MAX_NOTES)errors.push(`ノート数が安全上限${MAX_NOTES.toLocaleString()}件を超えています。`);else if(noteCount>10000)warnings.push('ノート数が10,000件を超えるため、書き出しに時間がかかる場合があります。');
-    const noteEnd=tracks.reduce((maximum,track)=>Math.max(maximum,...track.notes.map(note=>note.startTick+note.durationTicks)),0),totalTick=data.totalTick==null?noteEnd:safeInt(data.totalTick,0,MAX_TICK);
+    // Even a valid MIDI project can contain more notes than some JavaScript
+    // engines accept as function arguments. Traverse without spreading notes.
+    let noteEnd=0;
+    for(const track of tracks)for(const note of track.notes){const end=note.startTick+note.durationTicks;if(end>noteEnd)noteEnd=end}
+    const totalTick=data.totalTick==null?noteEnd:safeInt(data.totalTick,0,MAX_TICK);
     if(totalTick===null)errors.push('曲の長さtickが不正です。');else if(totalTick<noteEnd)errors.push('曲の長さより後ろにノートがあります。');
     if(totalTick!==null&&tempoMap.some(item=>item.tick>totalTick))errors.push('曲の長さより後ろにTempo Changeがあります。');
     for(const field of ['timeSignatureMap','keySignatureMap'])if(totalTick!==null&&maps[field].some(item=>item.tick>totalTick))errors.push('曲の長さより後ろに'+field+'があります。');
