@@ -24,7 +24,20 @@ test('meta clears running status',()=>assert.throws(()=>load().parser.parseMidiF
 test('SysEx clears running status and is summarized',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([0,240,2,1,247,...meta(0,47,[])])]));assert.equal(parsed.normalized.unsupportedEventsSummary[0].type,'SysEx')})
 test('Japanese track name, lyric and marker decode',()=>{const p=load().parser,e=new TextEncoder(),parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[...e.encode('ピアノ🎹')]),...meta(0,5,[...e.encode('歌詞')]),...meta(0,6,[...e.encode('Aメロ')]),...meta(0,47,[])])]));assert.equal(parsed.normalized.tracks[0].name,'ピアノ🎹');assert.equal(parsed.normalized.lyrics[0].text,'歌詞');assert.equal(parsed.normalized.markers[0].text,'Aメロ')})
 test('invalid UTF-8 uses replacement and warning',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,3,[255]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.some(w=>w.code==='text-encoding'))})
-test('tempo and time signature changes are mapped',()=>{const p=load().parser,body=[...meta(0,81,[7,161,32]),...meta(480,81,[6,239,145]),...meta(0,88,[3,2,24,8]),...meta(480,88,[6,3,24,8]),...meta(0,47,[])],n=p.parseMidiFile(smf(0,[track(body)])).normalized;assert.equal(n.tempoMap.length,2);assert.ok(Math.abs(n.tempoMap[1].bpm-132)<.01);assert.equal(n.timeSignatureMap[1].display,'6/8');assert.ok(n.estimatedDurationSeconds>0)})
+test('tempo and time signature changes are mapped',()=>{const p=load().parser,body=[...meta(0,81,[7,161,32]),...meta(480,81,[6,239,145]),...meta(0,88,[3,2,24,8]),...meta(480,88,[6,3,24,8]),...meta(0,47,[])],n=p.parseMidiFile(smf(0,[track(body)])).normalized;assert.equal(n.tempoMap.length,2);assert.ok(Math.abs(n.tempoMap[1].bpm-132)<.01);assert.equal(n.timeSignatureMap[0].display,'4/4');assert.equal(n.timeSignatureMap[0].defaulted,true);assert.equal(n.timeSignatureMap[2].display,'6/8');assert.ok(n.estimatedDurationSeconds>0)})
+test('MIDI tempo and meter first declared after tick zero retain the correct initial defaults',()=>{
+ const {parser,writer}=load(),body=[0,144,60,90,...vlq(480),128,60,0,...meta(480,81,[10,44,42]),...meta(0,88,[3,2,24,8]),...meta(0,47,[])];
+ const parsed=parser.parseMidiFile(smf(0,[track(body)])),n=parsed.normalized;
+ assert.equal(parsed.validation.importable,true);
+ assert.equal(n.tempo,120);
+ assert.deepEqual(JSON.parse(JSON.stringify(n.tempoMap.map(e=>[e.tick,e.bpm,e.defaulted||false]))),[[0,120,true],[960,60000000/666666,false]]);
+ assert.deepEqual(JSON.parse(JSON.stringify(n.timeSignatureMap.map(e=>[e.tick,e.numerator,e.denominator,e.defaulted||false]))),[[0,4,4,true],[960,3,4,false]]);
+ assert.ok(Math.abs(n.estimatedDurationSeconds-1)<1e-9);
+ const converted=parser.convertParsedMidiToProjectData(parsed),again=parser.parseMidiFile(writer.createMidiFile(converted).bytes).normalized;
+ assert.equal(again.tempo,120);
+ assert.deepEqual(JSON.parse(JSON.stringify(again.tempoMap.map(e=>e.tick))),[0,960]);
+ assert.deepEqual(JSON.parse(JSON.stringify(again.timeSignatureMap.map(e=>e.tick))),[0,960]);
+});
 test('conversion preserves changing time and key signature maps',()=>{const p=load().parser,body=[...meta(0,88,[4,2,24,8]),...meta(0,89,[0,0]),...meta(960,88,[3,2,24,8]),...meta(0,89,[253,1]),...meta(0,47,[])],parsed=p.parseMidiFile(smf(0,[track(body)])),data=p.convertParsedMidiToProjectData(parsed,{fileName:'structure.mid'});assert.equal(JSON.stringify(data.timeSignatureMap.map(item=>[item.tick,item.display])),JSON.stringify([[0,'4/4'],[960,'3/4']]));assert.equal(JSON.stringify(data.keySignatureMap.map(item=>[item.tick,item.sharps,item.minor])),JSON.stringify([[0,0,false],[960,-3,true]]));assert.equal(data.keySignature.tick,0);assert.equal(data.importSource.fileName,'structure.mid')})
 test('missing tempo and signature get explicit defaults',()=>{const n=load().parser.parseMidiFile(smf(0,[track(meta(0,47,[]))])).normalized;assert.equal(n.tempo,120);assert.equal(`${n.timeSignature.numerator}/${n.timeSignature.denominator}`,'4/4');assert.equal(n.tempoMap[0].defaulted,true)})
 test('invalid tempo and signature produce warnings',()=>{const p=load().parser,parsed=p.parseMidiFile(smf(0,[track([...meta(0,81,[0,0,0]),...meta(0,88,[4,9,24,8]),...meta(0,47,[])])]));assert.ok(parsed.validation.warnings.filter(w=>w.code==='invalid-meta').length>=2)})
