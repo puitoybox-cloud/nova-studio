@@ -27,8 +27,30 @@
   function activePlaybackTracks(tracks=[],playbackState={}){const descriptors=createPlaybackDescriptors(tracks,playbackState),hasSolo=descriptors.some(track=>track.solo&&track.soloEligible);return(hasSolo?descriptors.filter(track=>track.solo&&track.soloEligible&&!track.muted):descriptors.filter(track=>!track.muted)).map(clone)}
   function normalizeTempoMap(items=[],initialTempo=120){const initial=Number(initialTempo),fallback=Number.isFinite(initial)&&initial>=20&&initial<=400?initial:120,byTick=new Map();for(const item of Array.isArray(items)?items:[]){const tick=Math.round(Number(item?.tick)),bpm=Number(item?.bpm??(Number(item?.microsecondsPerQuarter)>0?60000000/Number(item.microsecondsPerQuarter):NaN));if(Number.isInteger(tick)&&tick>=0&&Number.isFinite(bpm)&&bpm>=20&&bpm<=400)byTick.set(tick,{tick,bpm,microsecondsPerQuarter:Math.round(60000000/bpm),track:Number.isInteger(Number(item?.track))?Number(item.track):0})}byTick.set(0,{tick:0,bpm:fallback,microsecondsPerQuarter:Math.round(60000000/fallback),track:byTick.get(0)?.track??0});return[...byTick.values()].sort((a,b)=>a.tick-b.tick)}
   function tempoAtTick(tick,tempoMap=[],initialTempo=120){let tempo=Number(initialTempo)||120;for(const item of normalizeTempoMap(tempoMap,tempo)){if(item.tick>tick)break;tempo=item.bpm}return tempo}
-  function tickDurationSeconds(startTick,endTick,ppq=480,tempoMap=[],initialTempo=120){let start=Math.max(0,Number(startTick)||0),end=Math.max(start,Number(endTick)||0),seconds=0,current=start;const map=normalizeTempoMap(tempoMap,initialTempo);while(current<end){const bpm=tempoAtTick(current,map,initialTempo),next=map.find(item=>item.tick>current)?.tick??end,segmentEnd=Math.min(end,next);seconds+=(segmentEnd-current)*60/(bpm*ppq);current=segmentEnd}return seconds}
-  function tickAtSeconds(startTick,elapsedSeconds,ppq=480,tempoMap=[],initialTempo=120){let tick=Math.max(0,Number(startTick)||0),remaining=Math.max(0,Number(elapsedSeconds)||0),map=normalizeTempoMap(tempoMap,initialTempo);while(remaining>0){const bpm=tempoAtTick(tick,map,initialTempo),next=map.find(item=>item.tick>tick)?.tick??Infinity,secondsToNext=(next-tick)*60/(bpm*ppq);if(remaining<secondsToNext||!Number.isFinite(secondsToNext))return tick+remaining*bpm*ppq/60;tick=next;remaining-=secondsToNext}return tick}
+  // A transport operation normalizes the map once, then visits each tempo
+  // segment at most once. Re-normalizing inside every segment turns a long
+  // imported song with many tempo changes into quadratic main-thread work.
+  function segmentAtTick(map,tick){let index=0;while(index+1<map.length&&map[index+1].tick<=tick)index++;return index}
+  function tickDurationSeconds(startTick,endTick,ppq=480,tempoMap=[],initialTempo=120){
+    const start=Math.max(0,Number(startTick)||0),end=Math.max(start,Number(endTick)||0),map=normalizeTempoMap(tempoMap,initialTempo);
+    let current=start,seconds=0,index=segmentAtTick(map,current);
+    while(current<end){
+      const next=map[index+1]?.tick??end,segmentEnd=Math.min(end,next);
+      seconds+=(segmentEnd-current)*60/(map[index].bpm*ppq);
+      current=segmentEnd;if(index+1<map.length&&current>=map[index+1].tick)index++;
+    }
+    return seconds;
+  }
+  function tickAtSeconds(startTick,elapsedSeconds,ppq=480,tempoMap=[],initialTempo=120){
+    let tick=Math.max(0,Number(startTick)||0),remaining=Math.max(0,Number(elapsedSeconds)||0);
+    const map=normalizeTempoMap(tempoMap,initialTempo);let index=segmentAtTick(map,tick);
+    while(remaining>0){
+      const bpm=map[index].bpm,next=map[index+1]?.tick??Infinity,secondsToNext=(next-tick)*60/(bpm*ppq);
+      if(remaining<secondsToNext||!Number.isFinite(secondsToNext))return tick+remaining*bpm*ppq/60;
+      tick=next;remaining-=secondsToNext;index++;
+    }
+    return tick;
+  }
   function createTransportState(midiData={},runtime={}){
     const editor=midiData.editor||{},loopStart=Number(editor.loopStart),loopEnd=Number(editor.loopEnd),hasLoop=editor.loopEnabled===true&&Number.isFinite(loopStart)&&Number.isFinite(loopEnd)&&loopStart>=0&&loopEnd>loopStart;
     const bpm=Number(midiData.tempo)||120;return{playing:runtime.playing===true,currentTick:Math.max(0,Number(runtime.currentTick)||0),ppq:Number(midiData.ppq)||480,bpm,tempoMap:normalizeTempoMap(midiData.tempoMap,bpm),loopEnabled:hasLoop,loopStart:hasLoop?loopStart:null,loopEnd:hasLoop?loopEnd:null,playbackStartOrigin:Number.isFinite(Number(runtime.playbackStartOrigin))?Number(runtime.playbackStartOrigin):null,activePlaybackTrackIds:activePlaybackTracks(midiData.tracks||[],runtime.playbackState||runtime).map(track=>track.id)}
