@@ -417,13 +417,27 @@
     const api=root.MusicStudio;
     if(!api||typeof originalImport!=='function')return{ok:false,message:'Music StudioのImport機能を読み込めません。'};
     if(processing)return{ok:false,busy:true,message:'音声をStem分離・MIDI化しています。'};
+    // The helper may run for minutes. Bind its result to the review and project
+    // visible when conversion began, not whichever song is open when it ends.
+    const selectionAvailable=typeof api.selectedMidiProject==='function';
+    const selected=selectionAvailable?api.selectedMidiProject():null;
+    const projectSnapshot=JSON.stringify(selected??null),reviewSnapshot=JSON.stringify(api.state?.externalSongImport??null);
+    const routeSnapshot=typeof root.location?.hash==='string'?root.location.hash:null;
+    const staleContext=()=>{
+      if(JSON.stringify(api.state?.externalSongImport??null)!==reviewSnapshot)return true;
+      if(routeSnapshot!==null&&root.location?.hash!==routeSnapshot)return true;
+      return selectionAvailable&&JSON.stringify(api.selectedMidiProject()??null)!==projectSnapshot;
+    };
+    let importerStarted=false;
     processing=true;
     setStatus('音声をMac内で処理しています。Stem分離 → MIDI化の順で進みます。曲の長さによって時間がかかります。');
     try{
-      const payload=await processAudioLocally(file,options),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
+      const payload=await processAudioLocally(file,{...options,reason:()=>staleContext()?'audio-import-context-changed':options.reason?.()}),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
+      if(staleContext())throw Error('audio-import-context-changed');
       setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
+      importerStarted=true;
       const result=await originalImport(midiFile);
       const {midiBase64:unusedMidiBytes,...pipelineMetadata}=payload;
       if(result?.ok){
@@ -435,16 +449,17 @@
       }
       return{...(result||{ok:false,message:'MIDI取り込み結果を確認できませんでした。'}),audioPipeline:pipelineMetadata};
     }catch(error){
-      const message=error?.message||String(error);
-      if(api.state){
+      const stale=!importerStarted&&staleContext(),failure=stale?Error('audio-import-context-changed'):error;
+      const message=failure?.message||String(failure);
+      if(!stale&&api.state){
         const previous=api.state.externalSongImport||{};
         const failure=`音声のStem分離 / MIDI化に失敗しました：${message}`;
         api.state.externalSongImport=Array.isArray(previous.tracks)&&previous.tracks.length
           ?{...previous,audioPipelineError:failure}
           :{...previous,status:'error',message:failure};
       }
-      setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
-      return{ok:false,error,message};
+      if(!stale)setStatus(`音声のStem分離 / MIDI化に失敗しました：${message}`,'error');
+      return{ok:false,error:failure,message};
     }finally{processing=false}
   }
 
