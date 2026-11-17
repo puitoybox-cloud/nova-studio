@@ -5400,6 +5400,45 @@
         return {file:`${source.role==='vocal'?'Vocal':'Instrument'}-${index+1}.wav`,sourceKey:source.key,sourceName:source.name,role:source.role,sourceStartFrame:source.start,sourceFrames:source.frames,midiTrackIds:clone(asset?.midiRender?.trackIds||[])};
       }),instructions:['Import all WAV files at the same song start; each includes its leading silence and full song length.','Use Song.mid for tempo, meter and MIDI tracks. Key and source mappings are recorded here.','Keep the original project; import returned MIDI as a duplicate and returned WAV through Mix / Gain.','Instrumental and individual stems are pre-master; Master.wav includes mastering.'],physicalLogicAcceptance:false};
   }
+  // This checks the *actual* delivery manifest, not merely the requested export plan.
+  // Legal rights cannot be inferred from an audio file, a user-selected route or a model name.
+  // Do not interpret a technically valid package as permission to distribute it.
+  function finalPackageAudit(manifest){
+    const errors=[],warnings=[],plan=manifest?.plan,records=manifest?.files;
+    if(manifest?.format!=='nova-final-package-v1'||!plan||!Array.isArray(plan.routes)||!Array.isArray(records)){
+      return {format:'nova-final-package-audit-v1',packageValid:false,distributionReady:false,errors:['package-manifest-invalid'],warnings:['distribution-rights-not-verified']};
+    }
+    const active=plan.routes.filter(route=>route&&!route.muted),expected=new Set(['Master.wav','Mix.wav']);
+    if(!active.length)errors.push('package-no-active-sources');
+    if(!plan.mixMasterOnly){
+      if(active.some(route=>route.role==='instrument'))expected.add('Instrumental.wav');
+      if(active.some(route=>route.role==='vocal'))expected.add('Vocal-Stem.wav');
+      for(const [index,route] of active.entries())expected.add(`${route.role==='vocal'?'Vocal':'Instrument'}-${index+1}.wav`);
+    }else warnings.push('individual-stems-intentionally-excluded');
+    if(plan.includeMidi)expected.add('Song.mid');
+    const names=new Set();
+    for(const record of records){
+      const name=record?.name;
+      if(typeof name!=='string'||!name||names.has(name)){errors.push('package-duplicate-or-invalid-name');continue}
+      names.add(name);
+      if(!expected.has(name))errors.push(`package-unexpected-file:${name}`);
+      if(!Number.isSafeInteger(record.size)||record.size<=0||!record.checksum||record.checksum.algorithm!=='CRC32'||!/^[0-9a-f]{8}$/i.test(record.checksum.value))errors.push(`package-file-integrity:${name}`);
+      if(name.endsWith('.wav')){
+        const audio=record.audio;
+        if(!audio||audio.encoding!=='PCM'||audio.sampleRate!==48000||audio.channels!==2||audio.bitDepth!==16||audio.startFrame!==0||audio.frames!==manifest.frames||record.size!==44+manifest.frames*4)errors.push(`package-audio-format-or-length:${name}`);
+      }
+    }
+    for(const name of expected)if(!names.has(name))errors.push(`package-missing-file:${name}`);
+    if(!Number.isSafeInteger(manifest.frames)||manifest.frames<=0||manifest.sampleRate!==48000||manifest.channels!==2||manifest.bitDepth!==16||manifest.encoding!=='PCM')errors.push('package-timeline-or-format-invalid');
+    const after=manifest.after;
+    if(!after||!Number.isFinite(after.lufs)||!Number.isFinite(after.truePeakDb)||!Number.isFinite(plan.ceilingDb)||after.truePeakDb>plan.ceilingDb+.01||after.clippingSamples!==0)errors.push('package-master-meter-invalid');
+    if(!manifest.targetReached)warnings.push('master-loudness-target-not-reached');
+    // A read-only rights check is intentionally unresolved until explicit source- and
+    // dependency-level redistribution terms are defined (formal requirement MS21-C01).
+    warnings.push('distribution-rights-not-verified');
+    return {format:'nova-final-package-audit-v1',packageValid:errors.length===0,distributionReady:false,
+      selectedSources:active.map(route=>({key:route.key,role:route.role})),expectedFiles:[...expected],errors,warnings};
+  }
   async function finalPreview(id,input){
     if(finalExport.busy||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
     finalStop();finalExport.candidate=null;const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=++finalExport.generation;finalExport.busy=true;pcmEditor.busy=true;requestPaint();
@@ -5424,8 +5463,10 @@
       if(!plan.includeMidi)manifest.handoff.midi.file=null;
       if(plan.mixMasterOnly)manifest.handoff.stems=[];
       for(const file of files){const record=await finalFileRecord(file,guard);if(record.audio&&record.audio.frames!==frames)throw Error('final-stem-length-mismatch');manifest.files.push(record)}
+      manifest.audit=finalPackageAudit(manifest);
+      if(!manifest.audit.packageValid)throw Error('final-package-audit: '+manifest.audit.errors.join(', '));
       files.push({name:'Manifest.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});stage('Packaging export（書き出しファイルをまとめています）');const zip=await finalZip(files,guard,progress=>{guard();const message=`Packaging Stems（楽器別WAV） ${Math.floor(progress.ratio*100)}%`;if(pcmEditor.message!==message){pcmEditor.message=message;requestPaint()}});guard();if(JSON.stringify(await target.get(id))!==baseline)throw Error('final-storage-conflict');guard(true);
-      files.forEach(Object.freeze);Object.freeze(files);finishPhase();const candidate={baseline,plan,manifest,files,zip,performance:{totalMs:Math.max(0,clock()-started),phaseMs}};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：Mix / Masterを試聴してから設定を保存・書き出してください。';return{ok:true,candidate};
+      files.forEach(Object.freeze);Object.freeze(files);finishPhase();const candidate={baseline,plan,manifest,files,zip,performance:{totalMs:Math.max(0,clock()-started),phaseMs}};finalExportProof.set(candidate,{baseline,proof:JSON.stringify({plan,manifest}),files:files.slice(),zip});finalExport.candidate=candidate;finalExport.message='Preview（候補完成）：ファイル欠落・形式・音量の検査済み。配信権利・再配布条件は未確認です。Mix / Masterを試聴してから保存・書き出してください。';return{ok:true,candidate};
     }catch(e){finalExport.message='作成できません：'+e.message;return{ok:false,error:e.message}}finally{finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }
   function finalCandidate(id){const c=finalExport.candidate,proof=c&&finalExportProof.get(c);if(!c||!proof||c.baseline!==proof.baseline||c.baseline!==JSON.stringify(state.projects.find(p=>p.projectId===id))||proof.proof!==JSON.stringify({plan:c.plan,manifest:c.manifest})||proof.zip!==c.zip||proof.files.length!==c.files.length||proof.files.some((f,i)=>f!==c.files[i]))throw Error('final-preview-stale-or-modified');return c}
@@ -5497,6 +5538,7 @@
   Object.assign(api,{longMasterWorkspaceState,longMasterOpenFocused,longMasterFocusedView,longMasterSelectAsset,longMixVersionsValidate,longMixVersionCapture,longMixVersionSave,longMixVersionRecall,longMixVersionsView,masterOpenFocused,masterFocusedView,masterRecipesValidate,masterRecipeCapture,masterCompare,masterChoose,masterCompareSubmit,masterRecipeSave,masterRecipeRecall,masterChoices,pcmOpenFocused,pcmFocusedView,mixWorkspaceToggle,pcmVersionsValidate,pcmVersionCapture,pcmVersionPreview,pcmVersionSave,pcmVersionSelect,pcmVersionsView,longMasterInvalidate,longMasterCompare,longMasterSelect,longMasterCompareSubmit,longMasterPreview,longMasterSubmit,longMasterView,masterGainPlan,masterMeasure,masterPreview,harmonyPreview,harmonyTone,productionPreview,productionSubmit,productionSave,productionListen,productionCancel,productionView});
   api.prepareForShutdown=prepareForShutdown;
   api.finalFileRecord=finalFileRecord;
+  api.finalPackageAudit=finalPackageAudit;
   api.finalHandoff=finalHandoff;
   api.logicMidiDifference=logicMidiDifference;
   api.logicConfirmTrackCandidates=logicConfirmTrackCandidates;
