@@ -189,11 +189,15 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    };
    const material=await app.materialCapture(id,{name:'Captured after adoption'});
    if(!material.ok)throw Error(material.error);
+   const afterCapture=await repo.get(id);
+   if(afterCapture.updatedAt!==timeAfterMaterial||afterCapture.revision!==adopted.project.revision+2||
+      JSON.stringify(app.state.projects.find(p=>p.projectId===id))!==JSON.stringify(afterCapture))
+    throw Error('Material capture receipt did not preserve the newer project');
    const materialFile=app.materialExport(id).text;
    const imported=await app.materialImport(id,{size:materialFile.length,text:async()=>materialFile});
    if(!imported.ok)throw Error(imported.error);
    const withMaterial=await repo.get(id);
-   if(withMaterial.updatedAt!==timeAfterMaterial||withMaterial.revision!==adopted.project.revision+3||
+   if(withMaterial.revision!==afterCapture.revision+1||
       JSON.stringify(app.state.projects.find(p=>p.projectId===id))!==JSON.stringify(withMaterial))
     throw Error('Material receipt did not preserve the newer project');
    repo.compareAndPut=loseReceipt;
