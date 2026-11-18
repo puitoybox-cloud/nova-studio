@@ -53,14 +53,49 @@ test('enharmonic aliases use the shortest chromatic interval without changing ma
 test('enharmonic respelling clears obsolete MIDI signature while retaining exact pitches',async()=>{
  const {app,repo,project}=fixture('C#');await repo.put(project);
  const captured=await app.materialCapture(project.projectId,{name:'Enharmonic copy'});assert.equal(captured.ok,true);
- const p=await repo.get(project.projectId);p.materialLibrary[0].midiData.keySignatureMap=[{tick:0,sharps:7,minor:false}];
+ const p=await repo.get(project.projectId);p.materialLibrary[0].midiData.keySignatureMap=[{tick:0,sharps:7,minor:false}];p.materialLibrary[0].midiData.keySignature={tick:0,sharps:7,minor:false};
  await repo.put(p);app.state.projects=[p];
  const result=await app.materialCreate(project.projectId,captured.material.id,{targetKey:'Db',bpm:120});
  assert.equal(result.ok,true,result.error);
  assert.equal(result.project.musicalSettings.key,'Db');
  assert.equal(result.project.midiData.tracks[0].notes[0].pitch,60);
  assert.equal(result.project.midiData.keySignatureMap,undefined);
+ assert.equal(result.project.midiData.keySignature,undefined);
  assert.equal(JSON.stringify(await repo.get(project.projectId)),JSON.stringify(p));
+});
+
+test('a ranged MIDI material carries active tempo and meter, then preserves later changes',async()=>{
+ const {app,repo,project}=fixture('C');
+ project.midiData.tempoMap=[{tick:0,bpm:120},{tick:480,bpm:90},{tick:1440,bpm:100}];
+ project.midiData.timeSignatureMap=[{tick:0,numerator:4,denominator:4},{tick:480,numerator:3,denominator:4}];
+ project.midiData.keySignatureMap=[{tick:0,sharps:0,minor:false},{tick:480,sharps:1,minor:false}];
+ project.midiData.tracks[0].notes=[{id:'inside',pitch:60,startTick:960,durationTicks:240,velocity:90}];
+ project.midiData.tracks[1].notes=[];
+ app.state.projects=[project];await repo.put(project);
+ const result=await app.materialCapture(project.projectId,{name:'Ranged',startTick:960,endTick:1920});
+ assert.equal(result.ok,true,result.error);
+ const material=result.material;
+ assert.equal(material.bpm,90);assert.equal(material.midiData.tempo,90);
+ assert.deepEqual(plain(material.midiData.tempoMap.map(e=>[e.tick,e.bpm])),[[0,90],[480,100]]);
+ assert.deepEqual(plain(material.midiData.timeSignatureMap.map(e=>[e.tick,e.numerator])),[[0,3]]);
+ assert.deepEqual(plain(material.midiData.keySignatureMap.map(e=>[e.tick,e.sharps])),[[0,1]]);
+ assert.equal(material.midiData.tracks[0].notes[0].startTick,0);
+ const made=await app.materialCreate(project.projectId,material.id,{bpm:120});
+ assert.equal(made.ok,true,made.error);
+ assert.deepEqual(plain(made.project.midiData.tempoMap.map(e=>[e.tick,e.bpm])),[[0,120],[480,100*120/90]]);
+ assert.equal(JSON.stringify((await repo.get(project.projectId)).midiData),JSON.stringify(project.midiData));
+});
+
+test('mixed-channel MIDI keeps channel 10 drum notes at their original pitches',async()=>{
+ const {app,repo,project}=fixture('C');
+ project.midiData.tracks[0].channels=[1,10];
+ project.midiData.tracks[0].notes.push({id:'mixed-drum',channel:10,pitch:36,startTick:480,durationTicks:120,velocity:90});
+ app.state.projects=[project];await repo.put(project);
+ const captured=await app.materialCapture(project.projectId,{name:'Mixed'});
+ assert.equal(captured.ok,true,captured.error);
+ const created=await app.materialCreate(project.projectId,captured.material.id,{targetKey:'D'});
+ assert.equal(created.ok,true,created.error);
+ assert.deepEqual(plain(created.project.midiData.tracks[0].notes.map(n=>n.pitch)),[62,36]);
 });
 
 test('invalid modes, conflicting manual shifts and unsafe resulting pitches never create a project',async()=>{
