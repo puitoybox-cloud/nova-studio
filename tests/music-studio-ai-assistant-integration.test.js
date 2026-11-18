@@ -153,3 +153,42 @@ test('audio routing invalidates an existing MIDI approval before returning a sep
  r.audioFile={name:'original.wav'};w.MusicStudioAudioPipeline={parseAudioInstruction:()=>({kind:'separate',model:'htdemucs_6s'})};instruction='この音声を6ステムに分離して';
  await panel.previewEdit(p.projectId);assert.equal(prior.status,'rejected');assert.equal(r.audioPlan.model,'htdemucs_6s');assert.deepEqual(plain(s.midiData),before);
 });
+
+test('Japanese batch previews in order and applies MIDI and history as one undoable operation',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ const valid=['1小節目の音を半音上げる','1小節目の音を全音上げる','2小節目の音を半音下げる'].join('\n');
+ let instruction=valid+'\n対応外の指示';w.document={querySelector:s=>s==='#musicAIInstruction'?{value:instruction}:null};panel.render(p,session);
+ const record=panel._states.get(p.projectId),before=plain(session.midiData),workspace=plain(record.state.workspace);
+ await panel.previewEdit(p.projectId);assert.equal(record.editBatch,null);assert.deepEqual(plain(record.state.workspace),workspace);
+ instruction=valid;await panel.previewEdit(p.projectId);assert.equal(record.editBatch?.steps.length,3,record.message);
+ assert.deepEqual(plain(session.midiData),before);assert.deepEqual(plain(record.state.workspace),workspace);assert.equal(record.pending,false);
+ panel.requestEditApproval(p.projectId);instruction=valid.replace('全音','半音');panel.confirmApprovedChange(p.projectId);
+ assert.deepEqual(plain(session.midiData),before);assert.equal(session.undo.length,0);
+ instruction=valid;panel.requestEditApproval(p.projectId);panel.cancelApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.deepEqual(plain(session.midiData),before);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.deepEqual(plain(session.midiData.tracks[0].notes.map(n=>n.pitch)),[63,63],record.message);
+ assert.match(record.message,/次はA\/B\/C候補/);assert.equal(session.undo.length,1);
+ assert.equal(record.state.workspace.history.filter(e=>e.kind==='edit-applied').length,3);
+ core.undo(session);assert.deepEqual(plain(session.midiData),before);assert.deepEqual(plain(record.state.workspace),workspace);
+ core.redo(session);assert.equal((await app.saveMidiEditor({silent:true})).ok,true);
+ const saved=await repo.get(p.projectId);assert.equal(saved.aiWorkspace.history.filter(e=>e.kind==='edit-applied').length,3);
+ assert.deepEqual(plain(saved.midiData.tracks[0].notes.map(n=>n.pitch)),[63,63]);
+});
+
+test('changed candidate range requires a new preview and Undo restores adoption history with MIDI',()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),session=core.createCoordinatedSession(p);
+ app.state.projects=[p];app.state.midiEditor=session;app.repaintEditor=()=>{};
+ const fields={'#aiCandidateKind':'melody','#aiFromA':'1','#aiToA':'1'};
+ w.document={querySelector:s=>({value:fields[s]||''})};panel.render(p,session);
+ panel.generateCandidates(p.projectId);panel.previewCandidate(p.projectId,'A');
+ const record=panel._states.get(p.projectId),before=plain(session.midiData),workspace=plain(record.state.workspace);
+ fields['#aiToA']='2';panel.applyCandidatePreview(p.projectId,'A');
+ assert.match(record.message,/再Preview/);
+ assert.deepEqual(plain(session.midiData),before);assert.deepEqual(plain(record.state.workspace),workspace);
+ panel.previewCandidate(p.projectId,'A');panel.applyCandidatePreview(p.projectId,'A');
+ assert.equal(record.state.workspace.candidateSets.at(-1).adopted.length,1,record.message);
+ assert.equal(session.undo.length,1);core.undo(session);
+ assert.deepEqual(plain(session.midiData),before);assert.deepEqual(plain(record.state.workspace),workspace);
+});
