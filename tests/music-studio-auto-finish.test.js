@@ -70,3 +70,30 @@ test('stopping local Stem preparation preserves the earlier session and blocks a
  assert.equal(finish.state.manifest,previous);
  assert.deepEqual(f.calls,[]);
 });
+
+test('aborted Stem fetch returns stable cancellation receipt after helper cleanup and allows retry',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,original=f.w.fetch;
+ f.w.AbortController=AbortController;
+ let uploadReached;
+ const entered=new Promise(resolve=>{uploadReached=resolve});
+ let cancellations=0,uploads=0;
+ f.w.fetch=async(url,options={})=>{
+  if(options.method==='PUT'){
+   uploads++;
+   if(uploads===1)return new Promise((resolve,reject)=>{
+    options.signal.addEventListener('abort',()=>reject(new Error('signal is aborted without reason')),{once:true});
+    uploadReached();
+   });
+  }
+  if(url.endsWith('/cancel'))cancellations++;
+  return original(url,options);
+ };
+ const pending=a.autoFinish.start({preventDefault(){},target:f.form},'p');
+ await entered;
+ assert.equal((await a.autoFinish.cancel()).ok,true);
+ assert.equal((await pending).error,'auto-finish-transfer-cancelled');
+ assert.equal(cancellations,1);
+ assert.equal(a.autoFinish.state.busy,false);
+ assert.equal(a.autoFinish.state.session,null);
+ assert.equal((await a.autoFinish.start({preventDefault(){},target:f.form},'p')).ok,true);
+});
