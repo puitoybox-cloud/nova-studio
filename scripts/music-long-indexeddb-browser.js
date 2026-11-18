@@ -20,7 +20,7 @@ async function open(){browser=await chromium.launchPersistentContext(profile,{he
   const waitStart=performance.now();while(a.state.midiEditor?.projectId!==p.projectId){if(performance.now()-waitStart>10000)throw Error('editor not ready');await new Promise(r=>setTimeout(r,20))}
   const original=JSON.stringify(a.state.midiEditor.midiData),nativeFetch=window.fetch.bind(window),calls=[];
   window.fetch=async(...args)=>{const response=await nativeFetch(...args);if(String(args[0]).endsWith('/compose')&&response.ok)calls.push((await response.clone().json()).performance);return response};
-  const start=performance.now();await MusicStudioAIAssistantPanel.generateWholeSong(p.projectId,true,true);window.fetch=nativeFetch;
+  const start=performance.now();await (MusicStudioAIAssistantPanel.generateWholeSong(p.projectId,true,true),MusicStudioAIAssistantPanel.confirmApprovedChange(p.projectId));window.fetch=nativeFetch;
   const record=MusicStudioAIAssistantPanel._states.get(p.projectId),set=record.state.workspace.candidateSets.at(-1);
   if(!set||set.candidates.length!==3||record.state.workspace.wholeSongCheckpoint)throw Error(record.message);
   if(calls.length!==72)throw Error('Resume regenerated completed bars: '+calls.length);

@@ -19,7 +19,7 @@ function attach(f,pause){
  f.s.midiData.tracks[0].notes=Array.from({length:576},(_,i)=>({id:'source-'+i,pitch:[60,64,67,64][i%4],startTick:i*480,durationTicks:360,velocity:80}));
  const record=f.panel._states.get(f.p.projectId);record.state.workspace.sectionArrangements=[{range:f.core.measureRangeToTicks({startMeasure:1,endMeasure:144},f.s.midiData),name:'verse',density:'normal',roles:['piano','bass','strings','drums'],targets:{}}];
  const before=JSON.stringify(f.s.midiData),repo=f.a.memoryRepository();f.a.setRepository(repo);await repo.put(f.p);attach(f,true);
- await f.panel.generateWholeSong(f.p.projectId,false,true);
+ await (f.panel.generateWholeSong(f.p.projectId,false,true),f.panel.confirmApprovedChange(f.p.projectId));
  assert.equal(record.state.workspace.wholeSongCheckpoint?.results.length,72,record.message);
  assert.equal(JSON.stringify(f.s.midiData),before);
  const stored=await repo.get(f.p.projectId);assert.equal(stored.aiWorkspace.wholeSongCheckpoint.results.length,72);
@@ -28,7 +28,7 @@ function attach(f,pause){
  const g=fixture(),rr=g.a.memoryRepository();g.a.setRepository(rr);
  assert.equal((await g.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
  const restored=await rr.get(f.p.projectId);g.a.state.projects=[restored];g.a.state.midiEditor=g.core.createCoordinatedSession(restored);g.panel.render(restored,g.a.state.midiEditor,g.core);attach(g,false);
- await g.panel.generateWholeSong(restored.projectId,true,true);
+ await (g.panel.generateWholeSong(restored.projectId,true,true),g.panel.confirmApprovedChange(restored.projectId));
  const r=g.panel._states.get(restored.projectId),set=r.state.workspace.candidateSets.at(-1);assert.ok(set,r.message);assert.equal(set.candidates.length,3);assert.equal(report.measurements.length,144);assert.equal(JSON.stringify(g.a.state.midiEditor.midiData),before);
  report.generatedNotes=set.candidates.map(c=>({variant:c.value.variant,notes:c.value.ensemble.wholeSong.parts.reduce((n,p)=>n+p.importedMidi.notes.length,0)}));
  const saved=await rr.get(restored.projectId);assert.equal(saved.aiWorkspace.wholeSongCheckpoint,undefined);report.savedProjectBytes=Buffer.byteLength(JSON.stringify(saved));
