@@ -164,3 +164,21 @@ test('failed checkpoint storage does not create history or receipt and permits r
  assert.equal(saved.songVersions.checkpoints.length,1);
  assert.equal(saved.specialSaveReceipts.length,1);
 });
+
+test('checkpoint adoption after a lost commit acknowledgement records one operation and one receipt',async()=>{
+ const {app,repo}=fixture();
+ assert.equal((await app.versionSave('receipts-song','Before adoption')).ok,true);
+ const checkpointId=(await repo.get('receipts-song')).songVersions.checkpoints[0].id;
+ let p=await repo.get('receipts-song');
+ p.productionNotes='Edited after checkpoint';p.revision++;await repo.put(p);app.state.projects=[p];
+ assert.equal(app.versionPreview('receipts-song',checkpointId,['notes']).ok,true);
+ const original=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{await original(...args);throw Error('adoption notification lost')};
+ const adopted=await app.versionApply('receipts-song');
+ assert.equal(adopted.ok,true,adopted.error);
+ const saved=await repo.get('receipts-song');
+ assert.equal(saved.songVersions.operations.length,1);
+ assert.deepEqual(saved.specialSaveReceipts.map(x=>x.action),['checkpoint-save','checkpoint-adopt']);
+ assert.equal(saved.specialSaveReceipts.at(-1).entryId,saved.songVersions.operations[0].id);
+ assert.equal(new Set(saved.specialSaveReceipts.map(x=>x.id)).size,2);
+});
