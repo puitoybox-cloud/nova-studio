@@ -1,7 +1,7 @@
 /* Music Studio compact local-only AI Assistant panel. Optional loopback host; no external provider path. */
 (function(root){
   'use strict';
-  const states=new Map(),tabs=new Map();
+  const states=new Map(),tabs=new Map(),executionKey=Symbol('ai-approved-execution');
   const FAMILY_COMPONENTS=[['melody','Melody（メロディ）'],['chord','Chord / Bass（コード候補からBass）'],['section','Section（構成）'],['arrangement','Arrangement（編成metadata）'],['lyrics-structure','Lyrics（歌詞metadata）'],['continuation','Continuation（続き）']];
   const clone=value=>JSON.parse(JSON.stringify(value));
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -15,7 +15,7 @@
   function editApprovalScope(id,record){const p=project(id),session=app().state.midiEditor,request=activeRequest(record.state),audio=record.audioPlan,ids=noteReviewInputs(id).filter(input=>input.checked).map(input=>input.value).sort();if(audio){if(value('#musicAIInstruction')?.trim()!==audio.instruction)throw Error('指示を再Previewしてください');return{kind:'audio',target:`${p.title||p.name||id} / ${audio.file.name}`,change:audio.kind==='separate'?'音声を分離':'音声をMIDIへ変換',impact:'選択音声全体を処理します。結果の取り込みを確認してください。',signature:JSON.stringify({project:p,session:session.midiData,file:{name:audio.file.name,size:audio.file.size,lastModified:audio.file.lastModified},baseline:audio.baseline,instruction:value('#musicAIInstruction')})}};if(request?.status!=='preview'||!ids.length)throw Error('承認するPreviewと選択音符を確認してください');if(value('#musicAIInstruction')?.trim()!==record.state.instruction)throw Error('指示を再Previewしてください');const changes=request.proposal?.result?.changes;return{kind:'edit',target:`${p.title||p.name||id} / ${request.context.target.trackId} / ${request.context.target.range.startMeasure}–${request.context.target.range.endMeasure}小節`,change:`${ids.length}音符を採用（${ids.join(', ')}）`,impact:'選択音符とプロジェクトの編集履歴が変更されます。保存時に永続化されます。',signature:JSON.stringify({project:p,session:session.midiData,request,ids,instruction:value('#musicAIInstruction')})}}
   function requestEditApproval(id){const record=stateFor(project(id));try{record.approval=editApprovalScope(id,record);record.message='対象・変更内容・影響を確認し、承認して実行してください。'}catch(error){record.approval=null;record.message=error.message}refresh(id)}
   function cancelApproval(id){const record=stateFor(project(id));record.approval=null;record.message='取消しました。変更は実行していません。';refresh(id)}
-  function confirmApprovedChange(id){const record=stateFor(project(id)),approved=record.approval;if(!approved)return;try{const now=approved.kind==='song'?songApprovalScope(id,record):editApprovalScope(id,record);if(now.kind!==approved.kind||now.signature!==approved.signature)throw Error('操作内容が変わりました。再承認してください。');record.approval=null;if(approved.kind==='song')return confirmSong(id,true);return applyEdit(id,true)}catch(error){record.approval=null;record.message=`実行拒否: ${error.message}`;refresh(id)}}
+  function confirmApprovedChange(id){const record=stateFor(project(id)),approved=record.approval;if(!approved)return;try{const now=approved.kind==='song'?songApprovalScope(id,record):editApprovalScope(id,record);if(now.kind!==approved.kind||now.signature!==approved.signature)throw Error('操作内容が変わりました。再承認してください。');record.approval=null;if(approved.kind==='song')return confirmSong(id,executionKey);return applyEdit(id,executionKey)}catch(error){record.approval=null;record.message=`実行拒否: ${error.message}`;refresh(id)}}
   function songApprovalScope(id,record){const plan=record.state.newSongPreview;if(!plan)throw Error('新規曲のPreviewが必要です');return{kind:'song',target:plan.title,change:`${plan.bpm} BPM / ${plan.bars}小節 / ${plan.tracks.map(t=>t.name).join(', ')}の新規曲を作成`,impact:'新しいProjectを保存し、編集画面を開きます。',signature:JSON.stringify({plan,draft:record.state.newSongDraft,inputs:['#aiSongTitle','#aiSongBpm','#aiSongMeter','#aiSongKey','#aiSongBars','#aiSongMood','#aiSongGenre','#aiSongTracks','#aiSongMemo'].map(value)})}}
   function requestSongApproval(id){const record=stateFor(project(id));try{record.approval=songApprovalScope(id,record);record.message='新規曲作成の内容を承認してください。'}catch(error){record.message=error.message}refresh(id)}
   function status(request){if(!request)return'Previewまでは原本を変更しません。';const c=request.proposal?.result?.changes;return`${request.status} / ${request.provenance.adapter||'local'}${c?` / 更新 ${c.updates.length}・追加 ${c.adds.length}・削除 ${c.deleteNoteIds.length}`:''}`}
@@ -338,8 +338,8 @@
     const result=plan.kind==='separate'?await bridge.importSeparatedAudio(plan.file):await bridge.importAudioFile(plan.file,{mode:'transcribe'});
     record.message=result.ok?'実処理の結果を確認してください。':'音声処理を採用できません：'+(result.error||result.message||'取消');refresh(id);return result;}finally{record.pending=wasPending}
   }
-  function applyEdit(id,approved=false){
-    if(!approved){const record=stateFor(project(id));record.message='実行前に承認画面を確認してください。';refresh(id);return}
+  function applyEdit(id,approved){
+    if(approved!==executionKey){const record=stateFor(project(id));record.message='実行前に承認画面を確認してください。';refresh(id);return}
     const audioRecord=states.get(id);if(audioRecord?.audioPlan)return applyAudioPlan(id,audioRecord);
     const p=project(id),record=touch(id),notes=noteReviewInputs(id),ids=notes.filter(input=>input.checked).map(input=>input.value);
     try{
@@ -359,7 +359,7 @@
   function rejectEdit(id){const record=touch(id);record.approval=null;record.audioPlan=null;try{ui().rejectActive(record.state,'User rejected preview');record.message='Rejectしました。原本は変更していません。'}catch(error){record.message=`Reject拒否: ${error.message}`}refresh(id)}
   function value(selector){return root.document?.querySelector?.(selector)?.value||''}
   function previewSong(id){const record=touch(id);record.approval=null;const meter=value('#aiSongMeter').split('/').map(Number),tracks=value('#aiSongTracks').split(',').map(item=>item.trim()).filter(Boolean);try{ui().setNewSongDraft(record.state,{title:value('#aiSongTitle'),bpm:Number(value('#aiSongBpm')),numerator:meter[0],denominator:meter[1],key:value('#aiSongKey'),bars:Number(value('#aiSongBars')),mood:value('#aiSongMood'),genre:value('#aiSongGenre'),memo:value('#aiSongMemo'),tracks});ui().previewNewSong(record.state)}catch(error){record.message=`New Song Preview拒否: ${error.message}`}refresh(id)}
-  async function confirmSong(id,approved=false){if(!approved){const record=stateFor(project(id));record.message='実行前に承認画面を確認してください。';refresh(id);return}const record=touch(id);try{const made=ui().confirmNewSong(record.state),created=await app().createAIProject(made);app().openMidiEditor(created.projectId)}catch(error){record.message=`新規作成拒否: ${error.message}`;refresh(id)}}
+  async function confirmSong(id,approved){if(approved!==executionKey){const record=stateFor(project(id));record.message='実行前に承認画面を確認してください。';refresh(id);return}const record=touch(id);try{const made=ui().confirmNewSong(record.state),created=await app().createAIProject(made);app().openMidiEditor(created.projectId)}catch(error){record.message=`新規作成拒否: ${error.message}`;refresh(id)}}
   async function importMidiCandidates(id,input,modelResult=null){
     const files=Array.from(input?.files||[]);if(input)input.value='';if(!files.length)return;
     app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor;
