@@ -97,3 +97,49 @@ test('aborted Stem fetch returns stable cancellation receipt after helper cleanu
  assert.equal(a.autoFinish.state.session,null);
  assert.equal((await a.autoFinish.start({preventDefault(){},target:f.form},'p')).ok,true);
 });
+
+test('aborted transfer with failed helper cleanup reports both failures and preserves previous output',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,original=f.w.fetch;
+ f.w.AbortController=AbortController;
+ const previous='b'.repeat(32);
+ a.autoFinish.state.session=previous;
+ a.autoFinish.state.manifest={complete:true,adopted:{label:'A'}};
+ let entered;
+ const uploading=new Promise(resolve=>{entered=resolve});
+ f.w.fetch=async(url,options={})=>{
+  if(options.method==='PUT')return new Promise((resolve,reject)=>{
+   options.signal.addEventListener('abort',()=>reject(new Error('signal is aborted without reason')),{once:true});
+   entered();
+  });
+  if(url.endsWith('/cancel'))throw Error('helper cleanup failed');
+  return original(url,options);
+ };
+ const pending=a.autoFinish.start({preventDefault(){},target:f.form},'p');
+ await uploading;
+ assert.equal((await a.autoFinish.cancel()).ok,true);
+ const result=await pending;
+ assert.equal(result.ok,false);
+ assert.match(result.error,/helper cleanup failed/);
+ assert.equal(a.autoFinish.state.session,previous);
+ assert.equal(a.autoFinish.state.manifest.adopted.label,'A');
+ assert.equal(a.autoFinish.state.busy,false);
+});
+
+test('source revision change during Stem transfer cancels new helper session without replacing prior mix',async()=>{
+ const f=fixture(),a=f.w.MusicStudio,original=f.w.fetch;
+ const previous='b'.repeat(32);
+ a.autoFinish.state.session=previous;
+ a.autoFinish.state.manifest={complete:true,adopted:{label:'A'}};
+ let cancels=0;
+ f.w.fetch=async(url,options={})=>{
+  if(options.method==='PUT')a.state.projects[0].revision++;
+  if(url.endsWith('/cancel'))cancels++;
+  return original(url,options);
+ };
+ const result=await a.autoFinish.start({preventDefault(){},target:f.form},'p');
+ assert.equal(result.error,'auto-finish-source-changed');
+ assert.equal(cancels,1);
+ assert.equal(a.autoFinish.state.session,previous);
+ assert.equal(a.autoFinish.state.manifest.adopted.label,'A');
+ assert.equal(a.autoFinish.state.busy,false);
+});

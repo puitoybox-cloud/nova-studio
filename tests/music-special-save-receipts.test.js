@@ -122,3 +122,63 @@ test('malformed or duplicate receipts fail validation without rewriting source h
  }
  assert.deepEqual(receipts(await repo.get('receipts-song')),receipts(original));
 });
+
+test('checkpoint commit notification loss preserves one checkpoint and one receipt',async()=>{
+ const {app,repo}=fixture(),original=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{await original(...args);throw Error('checkpoint reply lost')};
+ const result=await app.versionSave('receipts-song','Before vocals');
+ const saved=await assertSaved(result,repo);
+ assert.equal(saved.songVersions.checkpoints.length,1);
+ assert.equal(saved.specialSaveReceipts.length,1);
+ assert.equal(saved.specialSaveReceipts[0].action,'checkpoint-save');
+ assert.equal(saved.specialSaveReceipts[0].entryId,saved.songVersions.checkpoints[0].id);
+});
+
+test('session start and finish preserve their identity across confirmed lost replies',async()=>{
+ const {app,repo}=fixture(),original=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{await original(...args);throw Error('session reply lost')};
+ const started=await app.productionSessionSave('receipts-song','start','Start');
+ assert.equal(started.ok,true,started.error);
+ const session=(await repo.get('receipts-song')).songVersions.sessions[0];
+ const finished=await app.productionSessionSave('receipts-song','finish','End');
+ assert.equal(finished.ok,true,finished.error);
+ const saved=await repo.get('receipts-song');
+ assert.equal(saved.songVersions.sessions.length,1);
+ assert.deepEqual(saved.specialSaveReceipts.map(x=>x.action),['session-start','session-finish']);
+ assert.equal(saved.specialSaveReceipts[0].entryId,session.id);
+ assert.equal(saved.specialSaveReceipts[1].entryId,session.id);
+ assert.equal(new Set(saved.specialSaveReceipts.map(x=>x.id)).size,2);
+});
+
+test('failed checkpoint storage does not create history or receipt and permits retry',async()=>{
+ const {app,repo}=fixture(),original=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async()=>{throw Error('checkpoint write refused')};
+ const failed=await app.versionSave('receipts-song','Failed attempt');
+ assert.equal(failed.ok,false);
+ const unchanged=await repo.get('receipts-song');
+ assert.equal(unchanged.songVersions?.checkpoints?.length||0,0);
+ assert.equal(unchanged.specialSaveReceipts?.length||0,0);
+ repo.compareAndPut=original;
+ const retried=await app.versionSave('receipts-song','Retry');
+ const saved=await assertSaved(retried,repo);
+ assert.equal(saved.songVersions.checkpoints.length,1);
+ assert.equal(saved.specialSaveReceipts.length,1);
+});
+
+test('checkpoint adoption after a lost commit acknowledgement records one operation and one receipt',async()=>{
+ const {app,repo}=fixture();
+ assert.equal((await app.versionSave('receipts-song','Before adoption')).ok,true);
+ const checkpointId=(await repo.get('receipts-song')).songVersions.checkpoints[0].id;
+ let p=await repo.get('receipts-song');
+ p.productionNotes='Edited after checkpoint';p.revision++;await repo.put(p);app.state.projects=[p];
+ assert.equal(app.versionPreview('receipts-song',checkpointId,['notes']).ok,true);
+ const original=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{await original(...args);throw Error('adoption notification lost')};
+ const adopted=await app.versionApply('receipts-song');
+ assert.equal(adopted.ok,true,adopted.error);
+ const saved=await repo.get('receipts-song');
+ assert.equal(saved.songVersions.operations.length,1);
+ assert.deepEqual(saved.specialSaveReceipts.map(x=>x.action),['checkpoint-save','checkpoint-adopt']);
+ assert.equal(saved.specialSaveReceipts.at(-1).entryId,saved.songVersions.operations[0].id);
+ assert.equal(new Set(saved.specialSaveReceipts.map(x=>x.id)).size,2);
+});
