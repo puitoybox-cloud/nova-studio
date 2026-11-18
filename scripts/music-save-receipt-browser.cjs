@@ -197,7 +197,7 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const imported=await app.materialImport(id,{size:materialFile.length,text:async()=>materialFile});
    if(!imported.ok)throw Error(imported.error);
    const withMaterial=await repo.get(id);
-   if(withMaterial.revision!==afterCapture.revision+1||
+   if(withMaterial.updatedAt!==timeAfterMaterial||withMaterial.revision!==afterCapture.revision+2||
       JSON.stringify(app.state.projects.find(p=>p.projectId===id))!==JSON.stringify(withMaterial))
     throw Error('Material receipt did not preserve the newer project');
    repo.compareAndPut=loseReceipt;
