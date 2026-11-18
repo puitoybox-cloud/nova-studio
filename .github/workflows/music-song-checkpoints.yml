@@ -14,6 +14,7 @@ on:
       - 'scripts/music-journal-transaction-crash-browser.js'
       - 'scripts/music-encoded-journal-crash-browser.js'
       - 'tests/music-studio-vocal-recording.test.js'
+      - 'scripts/music-ci-japanese-fonts.sh'
       - '.github/workflows/music-song-checkpoints.yml'
 permissions:
   contents: read
@@ -31,18 +32,7 @@ jobs:
       - run: node --test tests/music-song-checkpoints.test.js
       - name: Japanese UI fonts
         timeout-minutes: 6
-        run: |
-          if [[ "$(fc-match -f '%{family}' 'Noto Sans CJK JP')" != *"Noto Sans CJK JP"* ]]; then
-            sources="$(mktemp --suffix=.list)"
-            trap 'rm -f "$sources"' EXIT
-            chmod 644 "$sources"
-            printf '%s\n' 'deb [signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] https://archive.ubuntu.com/ubuntu noble main' > "$sources"
-            apt_source=(-o "Dir::Etc::sourcelist=$sources" -o Dir::Etc::sourceparts=- -o Acquire::Retries=2 -o Acquire::https::Timeout=30)
-            # Use only the explicit signed archive, independent of runner mirror configuration.
-            sudo apt-get "${apt_source[@]}" update
-            sudo timeout 180s apt-get "${apt_source[@]}" install -y fonts-noto-cjk
-          fi
-          [[ "$(fc-match -f '%{family}' 'Noto Sans CJK JP')" == *"Noto Sans CJK JP"* ]]
+        run: bash scripts/music-ci-japanese-fonts.sh
       - id: browser-setup
         if: ${{ !cancelled() }}
         run: npm install --prefix "$RUNNER_TEMP/checkpoint-browser" playwright
