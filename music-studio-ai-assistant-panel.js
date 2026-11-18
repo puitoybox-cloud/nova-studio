@@ -741,9 +741,12 @@
     try{
       const selection=candidateSelection(candidateId),set=activeCandidateSet(record),candidate=set?.candidates.find(item=>item.candidateId===candidateId);
       if(!bundle||bundle.candidateId!==candidateId||!source)throw Error('candidate-preview-required');
-      if(source.session!==session||source.setId!==set?.setId||source.midi!==JSON.stringify(session.midiData)
-        ||source.selection!==JSON.stringify(selection)||source.candidate!==JSON.stringify(candidate))throw Error('候補の対象・内容が変わりました。再Previewしてください。');
+      if(source.session!==session||source.setId!==set?.setId||source.selection!==JSON.stringify(selection)
+        ||source.candidate!==JSON.stringify(candidate))throw Error('候補の対象・内容が変わりました。再Previewしてください。');
+      if(source.midi!==JSON.stringify(session.midiData))throw Error(bundle.kind==='continuation'
+        ?'stale-continuation-source-preview':'MIDIが変わりました。候補を再Previewしてください。');
       const staged=clone(session),state=clone(record.state),workspace=record.state.workspace;
+      if(staged.coordinatedTimeline)core().enableCoordinatedTimeline(staged);
       if(core().currentTrackId(staged)!==bundle.targetTrackId)core().selectTrackById(staged,bundle.targetTrackId);
       const applied=materializer().applyPreview(staged,core(),bundle,selection);
       const adoption={mode:'midi-preview',targetTrackId:applied.targetTrackId};
