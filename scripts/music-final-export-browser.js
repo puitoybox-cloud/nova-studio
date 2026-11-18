@@ -134,9 +134,11 @@ const mixedSources = await mixed.evaluate(async()=>{
 const helper = 'http://127.0.0.1:8767';
 const oldSession = 'a'.repeat(32), cancelledSession = 'b'.repeat(32), retrySession = 'c'.repeat(32);
 const calls = [];
-let created = 0, releaseUpload, markUpload;
+let created = 0, releaseUpload, markUpload, releaseCancel, markCancel;
 const uploadStarted = new Promise(resolve => { markUpload = resolve; });
 const heldUpload = new Promise(resolve => { releaseUpload = resolve; });
+const cancelStarted = new Promise(resolve => { markCancel = resolve; });
+const heldCancel = new Promise(resolve => { releaseCancel = resolve; });
 await mixed.route(helper+'/**',async route=>{
   const request=route.request(),url=new URL(request.url()),pathname=url.pathname;
   const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,PUT,OPTIONS'};
@@ -146,6 +148,7 @@ await mixed.route(helper+'/**',async route=>{
   if(pathname==='/health')json={localOnly:true,host:'127.0.0.1',port:8767,protocol:1,token:'t'.repeat(43)};
   if(pathname==='/sessions')json={session:[cancelledSession,retrySession][created++]};
   if(pathname.startsWith('/sessions/'+cancelledSession+'/stems/')){markUpload();await heldUpload;}
+  if(pathname==='/sessions/'+cancelledSession+'/cancel'){markCancel();await heldCancel;}
   if(pathname==='/sessions/'+retrySession)json={complete:true,projectId:mixedSources.id};
   await route.fulfill({json,headers});
 });
@@ -172,8 +175,9 @@ const pending=begin();
 await Promise.race([uploadStarted,pending.then(result=>{throw Error('upload not reached: '+JSON.stringify(result))})]);
 try {
   await autoPanel.getByRole('button',{name:'停止',exact:true}).click();
+  await Promise.race([cancelStarted,pending.then(result=>{throw Error('cleanup not reached: '+JSON.stringify(result))})]);
   assert.equal((await begin()).error,'auto-finish-busy');
-} finally { releaseUpload(); }
+} finally { releaseUpload();releaseCancel(); }
 assert.equal((await pending).error,'auto-finish-transfer-cancelled');
 assert.ok(calls.includes('/sessions/'+cancelledSession+'/cancel'));
 assert.ok(!calls.includes('/sessions/'+cancelledSession+'/start'));
