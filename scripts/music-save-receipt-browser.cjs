@@ -447,5 +447,54 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   assert.deepEqual(days,recording.before.songVersions.days);
   assert.ok(recovery.projects.filter(project=>project.projectId!==event.projectId)
    .every(project=>!project.productionHistory.some(row=>row.id===event.id)));
+  const editsAfterLoss=await recordingPage.evaluate(async({id,assetId})=>{
+   const app=MusicStudio,repo=app.indexedDbRepository();
+   app.setRepository(repo);
+   let before=await repo.get(id);
+   const track=before.midiData.tracks.find(t=>t.notes.length);
+   if(!track)throw Error('Missing MIDI fixture for lyrics');
+   app.lyricsAssignmentView(id);
+   app.lyricsEditor.preview=app.lyricsAssignmentPreview(before,{
+    trackId:track.id,fromNote:1,toNote:1,text:'あ',reading:'あ'
+   });
+   const write=repo.compareAndPut.bind(repo);
+   const committed=[];
+   repo.compareAndPut=async(...args)=>{
+    await write(...args);
+    const [project]=args;
+    const later={...project,revision:project.revision+1,productionNotes:'Competing edit after save'};
+    await repo.put(later);
+    committed.push(later);
+    throw Error('Injected loss of edit save notification');
+   };
+   const lyric=await app.saveLyricsAssignment(id);
+   if(!lyric.ok)throw Error(lyric.error);
+   const take=lyric.project.longWavAssets.find(asset=>asset.id===assetId).vocalTake;
+   const vocal=await app.vocalEdit(id,assetId,{...take.edits[take.cursor],gainDb:-1});
+   if(!vocal.ok)throw Error(vocal.error);
+   return {committed,lyric:lyric.project,vocal:vocal.project};
+  },{id:recovery.project.projectId,assetId:recording.assetId});
+  assert.equal(editsAfterLoss.committed.length,2);
+  assert.deepEqual(editsAfterLoss.committed,[editsAfterLoss.lyric,editsAfterLoss.vocal]);
+  const mediaEdits=editsAfterLoss.vocal.songVersions.edits.slice(-2);
+  assert.deepEqual(mediaEdits.map(edit=>edit.source),['lyrics-editor','vocal-editor']);
+  for(const edit of mediaEdits){
+   assert.equal(edit.sessionId,sessionId);
+   assert.equal(editsAfterLoss.vocal.songVersions.edits.filter(row=>row.id===edit.id).length,1);
+  }
+  assert.deepEqual(editsAfterLoss.vocal.songVersions.days,days);
+  assert.deepEqual(editsAfterLoss.vocal.songVersions.sessions,sessions);
+  await stop('SIGKILL');
+  browser=await launch();
+  const editedPage=await browser.newPage();
+  await editedPage.goto(origin);
+  await editedPage.addScriptTag({url:origin+'/music-studio.js'});
+  await editedPage.waitForFunction(()=>MusicStudio.state.loaded===true);
+  const reopenedMedia=await editedPage.evaluate(async({id,assetId})=>{
+   const repo=MusicStudio.indexedDbRepository(),wav=await repo.getLongWav(assetId);
+   return {project:await repo.get(id),bytes:[...new Uint8Array(await wav.blob.slice(44).arrayBuffer())]};
+  },{id:recovery.project.projectId,assetId:recording.assetId});
+  assert.deepEqual(reopenedMedia.project,editsAfterLoss.vocal);
+  assert.deepEqual(reopenedMedia.bytes,recording.bytes);
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });

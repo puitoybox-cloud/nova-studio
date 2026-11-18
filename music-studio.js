@@ -1302,14 +1302,15 @@
   function previewLyricsAssignment(event,id){event?.preventDefault?.();if(lyricsEditor.busy)return;try{const p=state.projects.find(p=>p.projectId===id);lyricsEditor.input=readLyricsInput();lyricsEditor.preview=lyricsAssignmentPreview(p,lyricsEditor.input);lyricsEditor.pending=true;lyricsEditor.message='割付候補を確認してください。まだ保存していません。'}catch(e){lyricsEditor.preview=null;lyricsEditor.message='割付できません：'+e.message}requestPaint()}
   async function saveLyricsAssignment(id){
     if(lyricsEditor.busy)return{ok:false,error:'lyrics-save-busy'};
-    const target=repository,preview=lyricsEditor.preview;lyricsEditor.busy=true;requestPaint();
+    const target=repository,storageGeneration=repositoryGeneration,preview=lyricsEditor.preview;lyricsEditor.busy=true;requestPaint();
     try{
-      const guard=()=>{if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==preview?.baseline||repository!==target||lyricsEditor.projectId!==id||lyricsEditor.preview!==preview||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('lyrics-unsaved-or-stale-state')};guard();
+      const guard=()=>{if(JSON.stringify(state.projects.find(p=>p.projectId===id))!==preview?.baseline||repository!==target||repositoryGeneration!==storageGeneration||lyricsEditor.projectId!==id||lyricsEditor.preview!==preview||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('lyrics-unsaved-or-stale-state')};guard();
       const project=await target.get(id);guard();const updated=adoptLyricsAssignment(project,preview);automaticEditRecord(project,updated,'lyrics-editor');
       if(typeof target.compareAndPut!=='function')throw Error('lyrics-atomic-save-unavailable');
-      await target.compareAndPut(updated,preview.baseline,guard);
-      if(repository!==target||lyricsEditor.projectId!==id||lyricsEditor.preview!==preview||JSON.stringify(state.projects.find(p=>p.projectId===id))!==preview.baseline)return{ok:true,committed:true,refreshPending:true,project:updated};
-      state.projects=state.projects.map(p=>p.projectId===id?updated:p);lyricsEditor.preview=null;lyricsEditor.pending=false;lyricsEditor.message='歌詞の音符割付を保存しました。';return{ok:true,project:updated};
+      const edit=updated.songVersions?.edits?.at(-1);
+      const saved=await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,preview.baseline,guard),edit?.revision===updated.revision?edit:null);
+      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,project:saved}}
+      state.projects=state.projects.map(p=>p.projectId===id?saved:p);lyricsEditor.preview=null;lyricsEditor.pending=false;lyricsEditor.message='歌詞の音符割付を保存しました。';return{ok:true,project:saved};
     }catch(e){lyricsEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}
     finally{lyricsEditor.busy=false;requestPaint()}
   }
@@ -2519,13 +2520,19 @@
   }
   async function vocalEdit(id,assetId,value,direction=0){
     if(vocalBusy()||pcmEditor.busy||archiveTransfer.busy||state.dirty||midiEditorHasPendingChanges()||shutdownPromise)return{ok:false,error:'vocal-edit-busy'};
-    const target=repository,p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),token=vocal.generation;
-    const guard=()=>{if(repository!==target||vocal.generation!==token||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-edit-conflict')};
+    const target=repository,storageGeneration=repositoryGeneration,p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),token=vocal.generation;
+    const guard=()=>{if(repository!==target||repositoryGeneration!==storageGeneration||vocal.generation!==token||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('vocal-edit-conflict')};
     vocal.phase='saving';vocalPlaybackStop();requestPaint();try{guard();const updated=clone(p),asset=updated.longWavAssets.find(x=>x.id===assetId),h=vocalHistory(asset);
       if(direction){if(![-1,1].includes(direction)||h.cursor+direction<0||h.cursor+direction>=h.edits.length)throw Error('vocal-history-boundary');h.cursor+=direction}
       else{if(h.cursor>=99)throw Error('vocal-history-full');h.edits=h.edits.slice(0,h.cursor+1);h.edits.push(vocalSetting(asset,value));h.cursor++}
       asset.vocalTake={...asset.vocalTake,...h,format:asset.vocalTake.format==='nova-vocal-take-v3'||h.edits.some(e=>e.regions?.some(r=>r.gainDb!==undefined))?'nova-vocal-take-v3':h.edits.some(e=>e.regions?.length||e.lyricOffsets?.length)?'nova-vocal-take-v2':asset.vocalTake.format};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'vocal-editor');if(!validateProject(updated).valid)throw Error('vocal-project-invalid');
-      await target.compareAndPut(updated,baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?updated:x);vocal.phase='saved';vocalCorrection.preview=null;vocal.message='編集を保存しました。元音声は保持しています。';return{ok:true,project:updated};
+      const edit=updated.songVersions?.edits?.at(-1);
+      const saved=await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,baseline,guard),edit?.revision===updated.revision?edit:null);
+      try{guard()}catch(error){
+        if(vocal.generation===token){vocal.phase='saved';vocalCorrection.preview=null;vocal.message='編集を保存しました。表示の更新が必要です。';}
+        return{ok:true,committed:true,refreshPending:true,project:saved};
+      }
+      state.projects=state.projects.map(x=>x.projectId===id?saved:x);vocal.phase='saved';vocalCorrection.preview=null;vocal.message='編集を保存しました。元音声は保持しています。';return{ok:true,project:saved};
     }catch(e){vocal.phase='error';vocal.message=e.message;return{ok:false,error:e.message}}finally{requestPaint()}
   }
   function vocalWorkspace(p){
@@ -4490,7 +4497,7 @@
       if (JSON.stringify(saved) === JSON.stringify(project)) return project;
       // A unique receipt written atomically with the change also proves commit
       // when another writer has already advanced the saved revision.
-      if (receipt && saved?.revision>project.revision && [saved?.productionHistory,saved?.specialSaveReceipts].some(entries=>entries?.some(event=>JSON.stringify(event)===JSON.stringify(receipt)))) return saved;
+      if (receipt && saved?.revision>project.revision && [saved?.productionHistory,saved?.specialSaveReceipts,saved?.songVersions?.edits].some(entries=>entries?.some(event=>JSON.stringify(event)===JSON.stringify(receipt)))) return saved;
       throw error;
     }
     return project;
@@ -5650,15 +5657,18 @@
       if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end<=start)throw Error('material-range-invalid');
       // Carry the effective metadata at the cut point, then retain changes inside the range.
       // A later tempo event must never become the new material's initial BPM.
+      const keyEvents=midi.keySignatureMap?.length?midi.keySignatureMap:(midi.keySignature?[midi.keySignature]:[]);
+      if(keyEvents.length)midi.keySignatureMap=keyEvents;
       for(const f of ['tempoMap','timeSignatureMap','keySignatureMap'])if(Array.isArray(midi[f])){
         const map=midi[f].slice().sort((a,b)=>a.tick-b.tick);
         const active=map.filter(e=>e.tick<=start).at(-1);
         midi[f]=[...(active?[{...active,tick:0}]:[]),...map.filter(e=>e.tick>start&&e.tick<end).map(e=>({...e,tick:e.tick-start}))];
       }
-      const initialTempo=midi.tempoMap?.[0];
+      const initialTempo=midi.tempoMap?.find(event=>event.tick===0);
       if(initialTempo){midi.tempo=initialTempo.bpm??60000000/initialTempo.microsecondsPerQuarter;if(!Number.isFinite(midi.tempo)||midi.tempo<20||midi.tempo>400)throw Error('material-tempo-invalid');}
-      if(midi.timeSignatureMap?.[0])midi.timeSignature={numerator:midi.timeSignatureMap[0].numerator,denominator:midi.timeSignatureMap[0].denominator};
-      if(midi.keySignatureMap)midi.keySignature=midi.keySignatureMap[0]||null;
+      const initialMeter=midi.timeSignatureMap?.find(event=>event.tick===0);
+      if(initialMeter)midi.timeSignature={numerator:initialMeter.numerator,denominator:initialMeter.denominator};
+      if(keyEvents.length)midi.keySignature=midi.keySignatureMap.find(event=>event.tick===0)||null;
       for(const t of midi.tracks){if(t.notes.some(n=>n.startTick<start&&n.startTick+n.durationTicks>start||n.startTick<end&&n.startTick+n.durationTicks>end))throw Error('material-boundary-note');t.notes=t.notes.filter(n=>n.startTick>=start&&n.startTick<end).map(n=>({...n,startTick:n.startTick-start}));}
       if(!midi.tracks.some(t=>t.notes.length))throw Error('material-empty');midi.totalTick=end-start;delete midi.editor;
       if(midi.markers)midi.markers=midi.markers.filter(e=>e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick-start}));

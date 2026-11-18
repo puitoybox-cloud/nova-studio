@@ -73,3 +73,28 @@ test('waveform lyric note synchronization survives failed save fresh reopen and 
  assert.equal(JSON.stringify(b.vocalTimeline(copy,copyAsset,'lead')),JSON.stringify(rows));assert.equal(JSON.stringify(copy.midiData),JSON.stringify(saved.midiData));assert.equal(JSON.stringify(copyAsset.vocalTake.waveform),JSON.stringify(asset.vocalTake.waveform));
  assert.equal(Buffer.compare(Buffer.from(await(await b.pcmLoadLongWav(copy.projectId,copyAsset.id)).arrayBuffer()),Buffer.from(await original.arrayBuffer())),0);
 });
+
+test('vocal correction confirms a committed edit without replacing a switched repository view',async()=>{
+ const f=await setup(),{a,repo}=f,id=f.p.projectId,assetId=await take(f);
+ const before=await repo.get(id),original=await a.pcmLoadLongWav(id,assetId);
+ const replacement=a.makeProject({projectId:id,projectName:'New repository'});
+ const destination=a.memoryRepository([replacement]);
+ const write=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{
+  await write(...args);
+  a.setRepository(destination);
+  a.state.projects=[replacement];
+  throw Error('lost notification');
+ };
+ const result=await a.vocalRegionEdit(id,assetId,0,4000,2,1);
+ assert.equal(result.ok,true,result.error);
+ assert.equal(result.refreshPending,true);
+ assert.equal(a.state.projects[0],replacement);
+ assert.equal(JSON.stringify(await destination.get(id)),JSON.stringify(replacement));
+ const committed=await repo.get(id);
+ assert.equal(committed.revision,before.revision+1);
+ assert.equal(committed.longWavAssets[0].vocalTake.cursor,1);
+ assert.equal(committed.songVersions.edits.at(-1).source,'vocal-editor');
+ a.setRepository(repo);await a.refresh();
+ assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await(await a.pcmLoadLongWav(id,assetId)).arrayBuffer())),0);
+});
