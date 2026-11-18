@@ -538,10 +538,10 @@
         "MS05-C01"
       ],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-18 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "承認契約確定・production実装と受入検証が必要",
+        "note": "MS05-C01の操作承認方針は確定。会話理解・計画・機能呼出し・日本語工程案内の実装と受入証拠が揃うまでopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -559,10 +559,10 @@
         "MS05-C01"
       ],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-18 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "承認契約確定・production実装と受入検証が必要",
+        "note": "MS05-C01の操作承認方針は確定。会話理解・計画・機能呼出し・日本語工程案内の実装と受入証拠が揃うまでopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -580,10 +580,10 @@
         "MS05-C01"
       ],
       "triage": {
-        "date": "2026-10-31 JST",
+        "date": "2026-11-18 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "承認契約確定・production実装と受入検証が必要",
+        "note": "MS05-C01の操作承認方針は確定。会話理解・計画・機能呼出し・日本語工程案内の実装と受入証拠が揃うまでopenを維持。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -606,7 +606,20 @@
       "requirement": "会話理解モデルと実行権限契約",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-18 JST",
+        "status": "確定",
+        "policy": "AIアシスタントのすべてのデータ・設定変更操作は実行前にユーザーの明示的承認を必要とする。提案・計画・説明は承認不要。",
+        "conditions": [
+          "実行前に対象・変更内容・影響を表示する",
+          "明示的に承認された操作だけ実行し、拒否・取消時は変更しない",
+          "承認後に対象・内容・影響または操作範囲が変われば再承認する",
+          "複数操作の各実行内容と承認範囲を明示し、範囲外の操作を実行しない"
+        ],
+        "source": "ユーザー確定仕様（2026-11-18）",
+        "remaining": "会話理解モデルの選定・品質検証は別途必要"
+      }
     },
     {
       "id": "MS06-A01",
