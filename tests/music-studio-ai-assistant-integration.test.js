@@ -105,7 +105,12 @@ test('Japanese transpose uses actual instruction, preserves other measures, save
  const before=plain(session.midiData);await panel.previewEdit(p.projectId);const record=panel._states.get(p.projectId),request=record.state.workspace.requests.at(-1);
  assert.equal(request.status,'preview');assert.equal(request.provenance.adapter,'local-japanese-transpose--2');assert.deepEqual(plain(session.midiData),before);
  assert.deepEqual(plain(request.proposal.result.changes.updates.map(n=>[n.id,n.pitch])),[['n2',62]]);
- w.document.querySelectorAll=selector=>selector==='.music-ai-panel[data-project-id]'?[{dataset:{projectId:p.projectId},querySelectorAll:s=>s==='input[name="musicAINote"]'?[{value:'n2',checked:true}]:[]}]:[];panel.applyEdit(p.projectId);assert.deepEqual(plain(session.midiData.tracks[0].notes.map(n=>n.pitch)),[60,62],record.message);assert.deepEqual(plain(session.midiData.tracks.slice(1)),before.tracks.slice(1));
+ w.document.querySelectorAll=selector=>selector==='.music-ai-panel[data-project-id]'?[{dataset:{projectId:p.projectId},querySelectorAll:s=>s==='input[name="musicAINote"]'?[{value:'n2',checked:true}]:[]}]:[];panel.applyEdit(p.projectId);assert.deepEqual(plain(session.midiData),before);
+ panel.requestEditApproval(p.projectId);assert.match(panel.render(p,session),/n2 → MIDI 62/);
+ panel.cancelApproval(p.projectId);panel.confirmApprovedChange(p.projectId);assert.deepEqual(plain(session.midiData),before);
+ panel.requestEditApproval(p.projectId);instruction='音を半音上げる';panel.confirmApprovedChange(p.projectId);assert.deepEqual(plain(session.midiData),before);
+ instruction='「Melody」の2小節目の音を2半音下げる';panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.deepEqual(plain(session.midiData.tracks[0].notes.map(n=>n.pitch)),[60,62],record.message);assert.deepEqual(plain(session.midiData.tracks.slice(1)),before.tracks.slice(1));
  assert.equal((await app.saveMidiEditor({silent:true})).ok,true);const saved=await repo.get(p.projectId);assert.equal(saved.aiWorkspace.history.at(-1).kind,'edit-applied');
  panel._states.delete(p.projectId);const reopened=core.createCoordinatedSession(saved);panel.render(saved,reopened);assert.deepEqual(plain(reopened.midiData),plain(saved.midiData));
  const backup=app.backupObject(),fresh=load(),target=fresh.app.memoryRepository();fresh.app.setRepository(target);assert.equal((await fresh.app.restoreBackup(backup,{projects:true,settings:false})).ok,true);const restored=await target.get(p.projectId);assert.deepEqual(plain(restored.midiData),plain(saved.midiData));assert.deepEqual(plain(restored.aiWorkspace),plain(saved.aiWorkspace));

@@ -11,7 +11,7 @@ const whole=await page.evaluate(async()=>{
  await repo.put(p);a.state.projects=[p];a.openMidiEditor(p.projectId);await new Promise((resolve,reject)=>{const start=Date.now();const poll=()=>{if(a.state.midiEditor?.projectId===p.projectId)return resolve();if(Date.now()-start>10000)return reject(Error('whole route timeout'));setTimeout(poll,20)};poll();});
  panel.setTab(p.projectId,'candidates');
  for(const [from,to,name] of [[1,2,'verse'],[3,4,'chorus']]){core.setEditRange(a.state.midiEditor,{startMeasure:from,endMeasure:to});a.repaintEditor();panel.setTab(p.projectId,'candidates');document.querySelector('#aiSectionName').value=name;document.querySelector('#aiSectionDensity').value='normal';for(const role of ['piano','bass','strings','drums'])document.querySelector('#aiSection'+role).checked=true;panel.saveSectionArrangement(p.projectId);}
- document.querySelector('#aiJapaneseArrangement').value='Aメロは静かに。サビを豪華に。元のメロディーは変更しない。';panel.previewJapaneseArrangement(p.projectId);const record=panel._states.get(p.projectId);if(!record.japanesePlan)throw Error(record.message);panel.applyJapaneseArrangement(p.projectId);
+ document.querySelector('#aiJapaneseArrangement').value='Aメロは静かに。サビを豪華に。元のメロディーは変更しない。';panel.previewJapaneseArrangement(p.projectId);const record=panel._states.get(p.projectId);if(!record.japanesePlan)throw Error(record.message);panel.requestArrangementApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
  const original=JSON.stringify(a.state.midiEditor.midiData),request=a.localGenerationRequest;let requestCount=0;
  a.localGenerationRequest=async function(kind,...args){if(kind==='compose'){
    const committed=await repo.get(p.projectId);
