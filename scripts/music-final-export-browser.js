@@ -16,6 +16,14 @@ await panel.getByRole('button',{name:'Before（元ミックス試聴）',exact:t
  };
 });
 await panel.getByRole('button',{name:'Save（設定・履歴を保存）',exact:true}).click();await page.waitForFunction(()=>!MusicStudio.finalExport.busy&&MusicStudio.state.projects.find(p=>p.projectId==='final-export-browser').finalExportHistory?.length===1);
+await page.evaluate(()=>{
+ const repo=window.__finalExportRepo,write=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{
+  repo.compareAndPut=write;
+  await write(...args);
+  throw Error('Injected loss of delivery history notification');
+ };
+});
 const downloadPromise=page.waitForEvent('download');await panel.getByRole('button',{name:'ZIP（まとめて書き出し）',exact:true}).click();const download=await downloadPromise;await page.waitForFunction(()=>!MusicStudio.finalExport.busy&&MusicStudio.state.projects.find(p=>p.projectId==='final-export-browser').finalExportDeliveries?.length===1);assert.equal(await download.failure(),null);const file=await download.path();const zip=fs.readFileSync(file);assert.equal(zip.readUInt32LE(0),0x04034b50);assert.equal(zip.readUInt32LE(zip.length-22),0x06054b50);assert.equal(zip.length,evidence.zipSize);
 await panel.getByText('History（作成履歴・直近100件）',{exact:true}).click();await panel.getByText('Delivery（書き出し履歴・直近100件）',{exact:true}).click();const metrics=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.music-final-export button')].every(b=>b.getBoundingClientRect().height>=44),japanese:document.querySelector('.music-final-export').textContent.includes('楽曲ミックス')}));assert.equal(metrics.overflow,false);assert.equal(metrics.buttons,true);assert.equal(metrics.japanese,true);await page.screenshot({path:`verification/music-final-export-${width}.png`,fullPage:true});
 const recovery=await page.evaluate(async()=>{const a=MusicStudio,c=a.finalExport.candidate,expected=await Promise.all(c.files.filter(f=>f.name!=='Manifest.json').map(async f=>({name:f.name,bytes:Array.from(new Uint8Array(await f.blob.arrayBuffer()))}))),archive=await a.createLongWavArchive(),r=await a.restoreLongWavArchive(archive,{settings:false});if(!r.ok)throw Error(r.error);const restored=r.projects.find(p=>p.finalExportPlan);if(!restored)throw Error('restore-plan');if(restored.finalExportDeliveries?.[0]?.completion!=='browser-download-requested')throw Error('restore-delivery-history');const result=await a.finalReplay(restored.projectId,restored.finalExportHistory[0].id);if(!result.ok)throw Error(result.error);const actual=result.candidate.files.filter(f=>f.name.endsWith('.wav'));const before=c.files.filter(f=>f.name.endsWith('.wav'));for(let i=0;i<before.length;i++)if(JSON.stringify(Array.from(new Uint8Array(await before[i].blob.arrayBuffer())))!==JSON.stringify(Array.from(new Uint8Array(await actual[i].blob.arrayBuffer()))))throw Error('restore-audio-diff');return{archive:true,remappedPlan:true,identicalAudio:true,expected}});

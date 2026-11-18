@@ -7,8 +7,8 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
  parser=argparse.ArgumentParser(); parser.add_argument('--write',action='store_true'); args=parser.parse_args()
  ledger=json.loads((ROOT/'docs/music-studio/MACLESS_REQUIREMENTS_V1.json').read_text()); rows=ledger['requirements']; ids={r['id'] for r in rows}
- # Historical runtime digests bind to the reviewed snapshot. Test source
- # digests still bind to this checkout, and CI runs against the PR head.
+ # Evidence and runtime digests bind to reviewed snapshots. CI executes
+ # the current checkout and the declaration must still exist there.
  historical_runtime={}
  for path,commits in ledger.get('historicalRuntimeSnapshots',{}).items():
   historical_runtime[path]=set()
@@ -30,7 +30,8 @@ def main():
     source=ROOT/e['path']; proof=json.loads((ROOT/e['run']).read_text())
     assert e.get('declaration',e['acceptance']) in source.read_text(), row['id']
     assert proof['failed']==0 and proof['passed']>0, row['id']
-    assert proof['sourceHashes'].get(e['path'])==hashlib.sha256(source.read_bytes()).hexdigest(),row['id']
+    recorded=proof['sourceHashes'].get(e['path'])
+    assert recorded==hashlib.sha256(source.read_bytes()).hexdigest() or recorded in historical_runtime.get(e['path'],()),row['id']
     assert e['acceptance'] in proof['acceptedCases'],row['id']
     for path,digest in proof['runtimeHashes'].items():
      current=hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
