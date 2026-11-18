@@ -98,3 +98,47 @@ test('vocal correction confirms a committed edit without replacing a switched re
  a.setRepository(repo);await a.refresh();
  assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await(await a.pcmLoadLongWav(id,assetId)).arrayBuffer())),0);
 });
+
+test('Comp recipe and WAV acknowledge commits despite lost notifications and preserve a switched repository',async()=>{
+ const f=await setup(),{a,repo}=f,id=f.p.projectId,assetId=await take(f);
+ const session=await a.productionSessionSave(id,'start','Comp receipt');
+ assert.equal(session.ok,true,session.error);
+ const before=await repo.get(id);
+ a.vocalSelectRange(id,assetId,0,8000);
+ const write=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{
+  await write(...args);
+  throw Error('lost recipe notification');
+ };
+ const recipe=await a.vocalCompAdd(id,assetId);
+ assert.equal(recipe.ok,true,recipe.error);
+ const original=await a.pcmLoadLongWav(id,assetId);
+ const expected=await a.vocalCompRender(id);
+ const alternate=a.makeProject({projectId:id,projectName:'Alternate repository'});
+ const destination=a.memoryRepository([alternate]);
+ const putWav=repo.putLongWav.bind(repo);
+ repo.putLongWav=async(...args)=>{
+  await putWav(...args);
+  a.setRepository(destination);
+  a.state.projects=[alternate];
+  throw Error('lost WAV notification');
+ };
+ const result=await a.vocalCompSave(id);
+ assert.equal(result.ok,true,result.error);
+ assert.equal(result.refreshPending,true);
+ assert.equal(a.state.projects[0],alternate);
+ assert.equal((await destination.get(id)).longWavAssets?.length ?? 0,0);
+ const committed=await repo.get(id);
+ assert.equal(committed.revision,before.revision+2);
+ const edits=committed.songVersions.edits.slice(-2);
+ assert.equal(new Set(edits.map(edit=>edit.id)).size,2);
+ assert.ok(edits.every(edit=>edit.sessionId===before.songVersions.sessions.at(-1).id));
+ assert.equal(committed.longWavAssets.length,2);
+ const fresh=fixture(f.indexedDB).a;
+ fresh.setRepository(fresh.indexedDbRepository());
+ await fresh.refresh();
+ for(const [key,blob] of [[assetId,original],[result.assetId,expected.blob]]){
+  const reopened=await fresh.pcmLoadLongWav(id,key);
+  assert.deepEqual(Buffer.from(await reopened.arrayBuffer()),Buffer.from(await blob.arrayBuffer()));
+ }
+});
