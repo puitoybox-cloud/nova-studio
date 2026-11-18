@@ -189,3 +189,26 @@ test('export-only delivery and repeated recipe save publish session-linked produ
  assert.equal((await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true})).ok,true);
  assert.deepEqual(plain(d.a.state.projects[0].songVersions.edits),plain(p.songVersions.edits));
 });
+
+test('prepared export reconciles a lost commit reply without publishing a duplicate history event',async()=>{
+ const f=fixture();
+ assert.equal((await f.a.productionSessionSave('p','start','Export session')).ok,true);
+ assert.equal((await f.a.finalPreview('p',f.plan)).ok,true);
+ const write=f.repo.compareAndPut.bind(f.repo);
+ f.repo.compareAndPut=async(...args)=>{
+  await write(...args);
+  const [saved]=args;
+  await f.repo.put({...saved,revision:saved.revision+1,productionNotes:'Concurrent edit'});
+  throw Error('Lost commit reply');
+ };
+ const result=await f.a.finalSave('p');
+ assert.equal(result.ok,true);
+ assert.equal(result.refreshPending,true);
+ assert.equal(result.project.productionNotes,'Concurrent edit');
+ assert.equal(f.a.state.projects[0].finalExportHistory,undefined);
+ assert.equal((await f.a.finalSave('p')).ok,false);
+ const saved=await f.repo.get('p');
+ assert.equal(saved.finalExportHistory.length,1);
+ assert.equal(saved.songVersions.edits.length,1);
+ assert.equal(saved.songVersions.edits[0].sessionId,saved.songVersions.sessions[0].id);
+});

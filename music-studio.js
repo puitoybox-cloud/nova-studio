@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.228';
+  const ASSET_VERSION='1.4.229';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -5507,9 +5507,34 @@
   async function finalListen(id,name){let audio;try{const c=finalCandidate(id),file=c.files.find(f=>f.name===name);if(!file||!name.endsWith('.wav'))throw Error('final-audio-missing');pcmStop();longMixStop();vocalPlaybackStop();finalStop();const token=finalExport.generation,playToken=finalExport.playGeneration;finalExport.url=root.URL.createObjectURL(file.blob);audio=new root.Audio(finalExport.url);finalExport.audio=audio;await audio.play();if(token!==finalExport.generation||playToken!==finalExport.playGeneration||finalExport.audio!==audio)return{ok:false,error:'final-listen-cancelled'};audio.onended=()=>{if(finalExport.audio===audio&&playToken===finalExport.playGeneration)finalStop()};return{ok:true}}catch(e){if(audio&&finalExport.audio!==audio)return{ok:false,error:'final-listen-cancelled'};finalStop();finalExport.message=e.message;requestPaint();return{ok:false,error:e.message}}}
 
   async function finalSave(id){
-    if(finalExport.busy||pcmEditor.busy||vocalBusy()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};finalExport.busy=true;pcmEditor.busy=true;const target=repository,token=finalExport.generation;requestPaint();
-    try{const c=finalCandidate(id),guard=()=>{if(token!==finalExport.generation||repository!==target||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy||shutdownPromise||state.midiInput.recording||state.midiInput.starting)throw Error('final-save-stale');finalCandidate(id)};guard.registerAbort=a=>{finalExport.abort=a};guard.clearAbort=()=>{finalExport.abort=null};guard();const previous=state.projects.find(p=>p.projectId===id),p=clone(previous);p.finalExportPlan=clone(c.plan);p.finalExportHistory=[...(p.finalExportHistory||[]),{id:uuid(),createdAt:now(),status:'prepared',...clone(c.manifest)}].slice(-100);p.revision++;p.updatedAt=now();if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,id,p.revision);automaticEditRecord(previous,p,'final-export');await target.compareAndPut(p,c.baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?p:x);c.baseline=JSON.stringify(p);finalExportProof.get(c).baseline=c.baseline;finalExport.message='Save（設定・作成履歴を保存しました）。ブラウザのダウンロード完了は確認できません。';return{ok:true,project:p};
-    }catch(e){finalExport.message=e.message;return{ok:false,error:e.message}}finally{finalExport.abort=null;finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
+    if(finalExport.busy||pcmEditor.busy||vocalBusy()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
+    finalExport.busy=true;pcmEditor.busy=true;
+    const target=repository,token=finalExport.generation;
+    requestPaint();
+    try{
+      const candidate=finalCandidate(id);
+      const guard=()=>finalDeliveryGuard(id,candidate,target,token);
+      guard.registerAbort=abort=>{finalExport.abort=abort};
+      guard.clearAbort=()=>{finalExport.abort=null};
+      guard();
+      const previous=state.projects.find(project=>project.projectId===id),next=clone(previous);
+      next.finalExportPlan=clone(candidate.plan);
+      next.finalExportHistory=[...(next.finalExportHistory||[]),{id:uuid(),createdAt:now(),status:'prepared',...clone(candidate.manifest)}].slice(-100);
+      next.revision++;next.updatedAt=now();
+      if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,id,next.revision);
+      automaticEditRecord(previous,next,'final-export');
+      const receipt=next.songVersions.edits.at(-1);
+      const committed=await confirmProjectWrite(target,next,()=>target.compareAndPut(next,candidate.baseline,guard),receipt);
+      const deferred={ok:true,committed:true,refreshPending:true,project:committed};
+      if(committed!==next)return deferred;
+      try{guard()}catch{return deferred}
+      state.projects=state.projects.map(project=>project.projectId===id?next:project);
+      candidate.baseline=JSON.stringify(next);
+      finalExportProof.get(candidate).baseline=candidate.baseline;
+      finalExport.message='設定と作成履歴を保存しました。';
+      return{ok:true,project:next};
+    }catch(error){finalExport.message=error.message;return{ok:false,error:error.message}}
+    finally{finalExport.abort=null;finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }
   function finalDeliveryValidate(items){
     if(!Array.isArray(items)||items.length>100)throw Error('final-delivery-history-invalid');

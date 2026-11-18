@@ -12,9 +12,9 @@ test('AI drawer Escape closes and returns focus to its summary, other keys stay 
  assert.equal(prevented,1);assert.equal(stopped,1);
  assert.equal(a.closeOnEscape(event,detail),false);
 });
-test('AI refresh preserves only unsubmitted instruction and new-song fields, not adoption state',()=>{
+test('AI refresh preserves only unsubmitted instruction, arrangement and new-song fields, not adoption state',()=>{
  assert.match(source,/target\.querySelectorAll\?\.\('textarea\[id\],input\[id\],select\[id\]'\)/);
- assert.match(source,/node\.id==='musicAIInstruction'\|\|node\.id\.startsWith\('aiSong'\)/);
+ assert.match(source,/node\.id==='musicAIInstruction'\|\|node\.id==='aiJapaneseArrangement'\|\|node\.id\.startsWith\('aiSong'\)/);
  assert.match(source,/target\.outerHTML=render\(p,s\)/);
  assert.match(source,/if\(node&&typeof draft\.value==='string'\)node\.value=draft\.value/);
  assert.match(source,/onkeydown="MusicStudioAIAssistantPanel\.closeOnEscape\(event,this\)"/);

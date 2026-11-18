@@ -9,7 +9,7 @@ test('landscape AI panel keeps existing preview/action family inside preserved d
  assert.match(source,/const expanded=prior\?prior\.open:!landscape/);
  assert.match(source,/music-ai-body.*projectSectionsHtml\(project,session\).*\$\{body\}<\/div><\/details><\/section>/);
  assert.match(source,/function previewEdit\(id\)/);
- assert.match(source,/function confirmSong\(id\)/);
+ assert.match(source,/function requestSongApproval\(id\)/);
 });
 test('landscape AI editor is bounded and touch-sized without hiding advanced candidate controls',()=>{
  assert.match(css,/@media \(min-width:601px\) and \(orientation:landscape\) and \(hover:none\) and \(pointer:coarse\)/);
@@ -18,5 +18,5 @@ test('landscape AI editor is bounded and touch-sized without hiding advanced can
  assert.match(css,/\.music-ai-panel :is\(button,select,input:not\(\[type=checkbox\]\):not\(\[type=radio\]\),textarea\)/);
  assert.match(css,/min-height:44px;padding:6px 10px/);
  assert.match(html,/music-studio-ai-assistant-panel\.css\?v=1\.0\.5/);
- assert.match(html,/music-studio-ai-assistant-panel\.js\?v=1\.0\.49/);
+ assert.match(html,/music-studio-ai-assistant-panel\.js\?v=1\.0\.50/);
 });
