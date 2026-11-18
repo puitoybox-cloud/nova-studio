@@ -9,7 +9,8 @@
   "historicalRuntimeSnapshots": {
     "app.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
-      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -21,7 +22,8 @@
     "music-studio-midi.js": "8871933c41a63a68c2f9035475480b25424ea255",
     "music-studio.html": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
-      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -33,10 +35,26 @@
       "32135053b37862f509b157ffb74c7380c45ae7f0",
       "81caec977f7dfbb29e1d0a6850635b94f56a55c3",
       "a6f803694cbc09907a36bd0568eb19d0b8efaf68",
-      "0dc6c34fdad125544fc4811e1355d4e2966f1f0a"
+      "0dc6c34fdad125544fc4811e1355d4e2966f1f0a",
+      "d88245560bd216197e5b868df8e54529240b4aa2"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+    ],
+    "music-studio-ai-assistant-panel.js": [
+      "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
+    ],
+    "tests/music-studio-whole-song.test.js": [
+      "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
+    ],
+    "tests/music-studio-scoped-midi-repair.test.js": [
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
+    ],
+    "scripts/music-final-export-browser.js": [
+      "fb7d426e74f5e9fb946503b511a8c04a8d7b0507"
+    ],
+    "tests/music-studio-final-export.test.js": [
+      "d889137661f54781e59d74853771566141f92084"
     ]
   },
   "requirements": [

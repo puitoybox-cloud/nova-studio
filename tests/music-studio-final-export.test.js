@@ -212,3 +212,26 @@ test('prepared export reconciles a lost commit reply without publishing a duplic
  assert.equal(saved.songVersions.edits.length,1);
  assert.equal(saved.songVersions.edits[0].sessionId,saved.songVersions.sessions[0].id);
 });
+
+test('published delivery survives a lost commit reply and preserves the competing revision',async()=>{
+ const f=fixture();downloadHost(f.w);
+ assert.equal((await f.a.productionSessionSave('p','start','Delivery session')).ok,true);
+ assert.equal((await f.a.finalPreview('p',f.plan)).ok,true);
+ const write=f.repo.compareAndPut.bind(f.repo);
+ f.repo.compareAndPut=async(...args)=>{
+  await write(...args);
+  const [saved]=args;
+  await f.repo.put({...saved,revision:saved.revision+1,productionNotes:'Concurrent delivery edit'});
+  throw Error('Lost delivery reply');
+ };
+ const result=await f.a.finalDownload('p');
+ assert.equal(result.historySaved,true);
+ assert.equal(result.refreshPending,true);
+ assert.equal(f.a.state.projects[0].finalExportDeliveries,undefined);
+ assert.equal((await f.a.finalDownload('p')).ok,false);
+ const saved=await f.repo.get('p');
+ assert.equal(saved.productionNotes,'Concurrent delivery edit');
+ assert.equal(saved.finalExportDeliveries.length,1);
+ assert.equal(saved.songVersions.edits.length,1);
+ assert.equal(saved.songVersions.edits[0].sessionId,saved.songVersions.sessions[0].id);
+});

@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.229';
+  const ASSET_VERSION='1.4.230';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -803,6 +803,7 @@
     state.autoBackups=[];
     repository=next;
     repositoryGeneration++;
+    root.MusicStudioAIAssistantPanel?.invalidateApprovals?.();
     // Flush and seal the journal in the original repository. The recording
     // guard rejects publishing its WAV against the new repository.
     if(vocal.target!==next&&['armed','recording','paused'].includes(vocal.phase))vocalStop();
@@ -5523,14 +5524,8 @@
       next.revision++;next.updatedAt=now();
       if(next.aiWorkspace)next.aiWorkspace=rebindAIWorkspace(next.aiWorkspace,id,next.revision);
       automaticEditRecord(previous,next,'final-export');
-      const receipt=next.songVersions.edits.at(-1);
-      const committed=await confirmProjectWrite(target,next,()=>target.compareAndPut(next,candidate.baseline,guard),receipt);
-      const deferred={ok:true,committed:true,refreshPending:true,project:committed};
-      if(committed!==next)return deferred;
-      try{guard()}catch{return deferred}
-      state.projects=state.projects.map(project=>project.projectId===id?next:project);
-      candidate.baseline=JSON.stringify(next);
-      finalExportProof.get(candidate).baseline=candidate.baseline;
+      const publication=await finalPublish(candidate,target,next,guard);
+      if(publication.refreshPending)return publication;
       finalExport.message='設定と作成履歴を保存しました。';
       return{ok:true,project:next};
     }catch(error){finalExport.message=error.message;return{ok:false,error:error.message}}
@@ -5548,10 +5543,21 @@
   function finalDeliveryGuard(id,c,target,token){
     if(repository!==target||token!==finalExport.generation||state.dirty||midiEditorHasPendingChanges()||vocalBusy()||archiveTransfer.busy||shutdownPromise||state.midiInput.recording||state.midiInput.starting||c!==finalCandidate(id))throw Error('final-delivery-stale');
   }
+  async function finalPublish(candidate,target,next,guard){
+    const receipt=next.songVersions.edits.at(-1);
+    const committed=await confirmProjectWrite(target,next,()=>target.compareAndPut(next,candidate.baseline,guard),receipt);
+    const deferred={ok:true,committed:true,refreshPending:true,project:committed};
+    if(committed!==next)return deferred;
+    try{guard()}catch{return deferred}
+    state.projects=state.projects.map(project=>project.projectId===next.projectId?next:project);
+    candidate.baseline=JSON.stringify(next);
+    finalExportProof.get(candidate).baseline=candidate.baseline;
+    return {ok:true,project:next};
+  }
   async function finalRecordDelivery(id,c,target,token,delivery){
     const guard=()=>finalDeliveryGuard(id,c,target,token);guard.registerAbort=a=>{finalExport.abort=a};guard.clearAbort=()=>{finalExport.abort=null};guard();
     const previous=state.projects.find(p=>p.projectId===id),p=clone(previous);p.finalExportDeliveries=[...(p.finalExportDeliveries||[]),{id:uuid(),createdAt:now(),...delivery}].slice(-100);finalDeliveryValidate(p.finalExportDeliveries);p.revision++;p.updatedAt=now();if(p.aiWorkspace)p.aiWorkspace=rebindAIWorkspace(p.aiWorkspace,id,p.revision);automaticEditRecord(previous,p,'final-export');
-    await target.compareAndPut(p,c.baseline,guard);state.projects=state.projects.map(x=>x.projectId===id?p:x);c.baseline=JSON.stringify(p);finalExportProof.get(c).baseline=c.baseline;
+    return finalPublish(c,target,p,guard);
   }
   async function finalDownload(id,name='Package.zip',chooseDestination=false){
     if(finalExport.busy||pcmEditor.busy||state.dirty||midiEditorHasPendingChanges()||vocalBusy()||archiveTransfer.busy||shutdownPromise)return{ok:false,error:'final-production-busy'};
@@ -5572,9 +5578,10 @@
         try{const a=root.document.createElement('a');a.href=url;a.download=outputName;root.document.body.appendChild(a);try{a.click()}finally{a.remove()}}finally{root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000)}
         completion='browser-download-requested';
       }
-      let historySaved=true,historyError;try{await finalRecordDelivery(id,c,target,token,{name:outputName,size:file.blob.size,completion})}catch(e){historySaved=false;historyError=e.message}
-      finalExport.message=(completion==='file-written-verified'?'Save as（選択したファイルへ保存・内容照合済み）。':'Download（ブラウザへ依頼済み・保存先と完了は確認できません）。')+(historySaved?'履歴を保存しました。':'履歴を保存できません：'+historyError);
-      return{ok:true,name:outputName,size:file.blob.size,completion,historySaved,...(historyError?{historyError}:{})};
+      let historySaved=true,historyError,refreshPending=false;
+      try{refreshPending=(await finalRecordDelivery(id,c,target,token,{name:outputName,size:file.blob.size,completion})).refreshPending===true}catch(e){historySaved=false;historyError=e.message}
+      if(!refreshPending&&repository===target&&token===finalExport.generation)finalExport.message=(completion==='file-written-verified'?'Save as（選択したファイルへ保存・内容照合済み）。':'Download（ブラウザへ依頼済み・保存先と完了は確認できません）。')+(historySaved?'履歴を保存しました。':'履歴を保存できません：'+historyError);
+      return{ok:true,name:outputName,size:file.blob.size,completion,historySaved,...(refreshPending?{refreshPending:true}:{}),...(historyError?{historyError}:{})};
     }catch(e){if(writable)try{await writable.abort()}catch(_){}finalExport.message=e.name==='AbortError'?'Cancel（保存先の選択を取り消しました）':'書き出しできません：'+e.message;return{ok:false,error:e.message,...(handle?{fileMayHaveChanged:true}:{})}}
     finally{finalExport.abort=null;finalExport.busy=false;pcmEditor.busy=false;requestPaint()}
   }
