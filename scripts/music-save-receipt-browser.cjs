@@ -179,12 +179,28 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const writesBeforeHistory=writes;
    const adopted=await app.versionApply(id);
    if(!adopted.ok)throw Error(adopted.error);
+   const timeAfterMaterial='2026-11-18T00:00:00.000Z';
+   repo.compareAndPut=async(...args)=>{
+    await loseReceipt(...args).catch(async error=>{
+     const saved=await repo.get(id);
+     await originalWrite({...saved,revision:saved.revision+1,updatedAt:timeAfterMaterial},JSON.stringify(saved));
+     throw error;
+    });
+   };
    const material=await app.materialCapture(id,{name:'Captured after adoption'});
    if(!material.ok)throw Error(material.error);
+   const afterCapture=await repo.get(id);
+   if(afterCapture.updatedAt!==timeAfterMaterial||afterCapture.revision!==adopted.project.revision+2||
+      JSON.stringify(app.state.projects.find(p=>p.projectId===id))!==JSON.stringify(afterCapture))
+    throw Error('Material capture receipt did not preserve the newer project');
    const materialFile=app.materialExport(id).text;
    const imported=await app.materialImport(id,{size:materialFile.length,text:async()=>materialFile});
    if(!imported.ok)throw Error(imported.error);
    const withMaterial=await repo.get(id);
+   if(withMaterial.updatedAt!==timeAfterMaterial||withMaterial.revision!==afterCapture.revision+2||
+      JSON.stringify(app.state.projects.find(p=>p.projectId===id))!==JSON.stringify(withMaterial))
+    throw Error('Material receipt did not preserve the newer project');
+   repo.compareAndPut=loseReceipt;
    const undone=await app.versionUndoRedo(id,-1);
    if(!undone.ok)throw Error(undone.error);
    const redone=await app.versionUndoRedo(id,1);
@@ -472,29 +488,48 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const take=lyric.project.longWavAssets.find(asset=>asset.id===assetId).vocalTake;
    const vocal=await app.vocalEdit(id,assetId,{...take.edits[take.cursor],gainDb:-1});
    if(!vocal.ok)throw Error(vocal.error);
-   return {committed,lyric:lyric.project,vocal:vocal.project};
+   if(!app.vocalSelectRange(id,assetId,0,take.edits[take.cursor].end))
+    throw Error('Comp source range was rejected');
+   const recipe=await app.vocalCompAdd(id,assetId);
+   if(!recipe.ok)throw Error(recipe.error);
+   const render=await app.vocalCompRender(id);
+   const writeWav=repo.putLongWav.bind(repo);
+   repo.putLongWav=async(...args)=>{
+    await writeWav(...args);
+    app.setRepository(app.memoryRepository([before]));
+    app.state.projects=[before];
+    throw Error('Injected loss of Comp WAV save notification');
+   };
+   const comp=await app.vocalCompSave(id);
+   if(!comp.ok||!comp.refreshPending||app.state.projects[0]!==before)
+    throw Error(comp.error||'Comp save overwrote the switched repository');
+   return {committed,lyric:lyric.project,vocal:vocal.project,recipe:recipe.project,comp:comp.project,
+    compId:comp.assetId,compBytes:[...new Uint8Array(await render.blob.arrayBuffer())]};
   },{id:recovery.project.projectId,assetId:recording.assetId});
-  assert.equal(editsAfterLoss.committed.length,2);
-  assert.deepEqual(editsAfterLoss.committed,[editsAfterLoss.lyric,editsAfterLoss.vocal]);
-  const mediaEdits=editsAfterLoss.vocal.songVersions.edits.slice(-2);
-  assert.deepEqual(mediaEdits.map(edit=>edit.source),['lyrics-editor','vocal-editor']);
+  assert.equal(editsAfterLoss.committed.length,3);
+  assert.deepEqual(editsAfterLoss.committed,[editsAfterLoss.lyric,editsAfterLoss.vocal,editsAfterLoss.recipe]);
+  const mediaEdits=editsAfterLoss.comp.songVersions.edits.slice(-4);
+  assert.deepEqual(mediaEdits.map(edit=>edit.source),['lyrics-editor','vocal-editor','vocal-editor','vocal-editor']);
   for(const edit of mediaEdits){
    assert.equal(edit.sessionId,sessionId);
-   assert.equal(editsAfterLoss.vocal.songVersions.edits.filter(row=>row.id===edit.id).length,1);
+   assert.equal(editsAfterLoss.comp.songVersions.edits.filter(row=>row.id===edit.id).length,1);
   }
-  assert.deepEqual(editsAfterLoss.vocal.songVersions.days,days);
-  assert.deepEqual(editsAfterLoss.vocal.songVersions.sessions,sessions);
+  assert.deepEqual(editsAfterLoss.comp.songVersions.days,days);
+  assert.deepEqual(editsAfterLoss.comp.songVersions.sessions,sessions);
   await stop('SIGKILL');
   browser=await launch();
   const editedPage=await browser.newPage();
   await editedPage.goto(origin);
   await editedPage.addScriptTag({url:origin+'/music-studio.js'});
   await editedPage.waitForFunction(()=>MusicStudio.state.loaded===true);
-  const reopenedMedia=await editedPage.evaluate(async({id,assetId})=>{
-   const repo=MusicStudio.indexedDbRepository(),wav=await repo.getLongWav(assetId);
-   return {project:await repo.get(id),bytes:[...new Uint8Array(await wav.blob.slice(44).arrayBuffer())]};
-  },{id:recovery.project.projectId,assetId:recording.assetId});
-  assert.deepEqual(reopenedMedia.project,editsAfterLoss.vocal);
+  const reopenedMedia=await editedPage.evaluate(async({id,assetId,compId})=>{
+   const repo=MusicStudio.indexedDbRepository();
+   const wav=await repo.getLongWav(assetId),comp=await repo.getLongWav(compId);
+   return {project:await repo.get(id),bytes:[...new Uint8Array(await wav.blob.slice(44).arrayBuffer())],
+    compBytes:[...new Uint8Array(await comp.blob.arrayBuffer())]};
+  },{id:recovery.project.projectId,assetId:recording.assetId,compId:editsAfterLoss.compId});
+  assert.deepEqual(reopenedMedia.project,editsAfterLoss.comp);
   assert.deepEqual(reopenedMedia.bytes,recording.bytes);
+  assert.deepEqual(reopenedMedia.compBytes,editsAfterLoss.compBytes);
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });
