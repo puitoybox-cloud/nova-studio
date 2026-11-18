@@ -1071,7 +1071,7 @@
         {
           "path": "tests/music-studio-lyrics-note-assignment.test.js",
           "acceptance": "Explicit reading assigns exact chronological note IDs, melisma and real timing without MIDI mutation",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         }
       ],
       "dependsOn": []
@@ -1418,7 +1418,7 @@
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "lyric following uses explicit saved track, respects tempo and rest, excludes stale and duplicate assignments",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         },
         {
           "path": "scripts/music-indexeddb-browser-persistence.cjs",
@@ -1462,7 +1462,7 @@
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "peak normalization previews measured PCM, adopts only on request and survives history/archive",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         }
       ],
       "dependsOn": []
@@ -1502,17 +1502,17 @@
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "Comp blends real opposite-polarity samples, persists recipe Undo/Redo, saves editable WAV and fully restores",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         },
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "stereo Comp linear crossfade limits seam steps and retains both channels",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         },
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "Comp quota failures and concurrent metadata reject without modifying old audio",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         }
       ],
       "dependsOn": [],
@@ -1537,7 +1537,7 @@
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "waveform lyric note synchronization survives failed save fresh reopen and full archive restoration",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         }
       ],
       "dependsOn": [],
@@ -1688,7 +1688,7 @@
         {
           "path": "tests/music-studio-vocal-correction-comp.test.js",
           "acceptance": "actual PCM pitch analysis detects A4 and rejects silence and nonfinite audio",
-          "run": "verification/music-macless-node-summary.json"
+          "run": "verification/music-lyrics-vocal-edit-node-20261118.json"
         }
       ],
       "dependsOn": []

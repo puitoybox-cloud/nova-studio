@@ -14,6 +14,7 @@ on:
       - 'scripts/music-journal-transaction-crash-browser.js'
       - 'scripts/music-encoded-journal-crash-browser.js'
       - 'tests/music-studio-vocal-recording.test.js'
+      - 'scripts/music-ci-japanese-fonts.sh'
       - '.github/workflows/music-song-checkpoints.yml'
 permissions:
   contents: read
@@ -31,17 +32,9 @@ jobs:
       - run: node --test tests/music-song-checkpoints.test.js
       - name: Japanese UI fonts
         timeout-minutes: 6
-        run: |
-          # Two exact-head attempts stalled downloading the 61 MB CJK package
-          # from the Azure HTTP mirror. Keep signed Ubuntu packages and the
-          # real Japanese-font UI assertions; use the official HTTPS archive.
-          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
-          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
-          sudo timeout 240s apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --download-only fonts-noto-cjk
-          sudo apt-get --no-download install -y fonts-noto-cjk
-          checkpoint_font_family="$(fc-match -f '%{family}' 'Noto Sans CJK JP')"
-          [[ "$checkpoint_font_family" == *"Noto Sans CJK JP"* ]]
+        run: bash scripts/music-ci-japanese-fonts.sh
       - id: browser-setup
+        if: ${{ !cancelled() }}
         run: npm install --prefix "$RUNNER_TEMP/checkpoint-browser" playwright
       - name: Browser UI, restart and complete recovery
         env:
@@ -50,12 +43,14 @@ jobs:
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/music-song-checkpoints-browser.js
       - name: Finished snapshots reject every replacement sink and reopen intact
+        if: ${{ !cancelled() && steps.browser-setup.outcome == 'success' }}
         env:
           NODE_PATH: ${{ runner.temp }}/checkpoint-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome
           NOVA_TESTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/music-finished-immutability-browser.js
       - name: Recording PCM survives Chromium SIGKILL and fresh process recovery
+        if: ${{ !cancelled() && steps.browser-setup.outcome == 'success' }}
         env:
           NODE_PATH: ${{ runner.temp }}/checkpoint-browser/node_modules
           CHROME_EXECUTABLE: /usr/bin/google-chrome

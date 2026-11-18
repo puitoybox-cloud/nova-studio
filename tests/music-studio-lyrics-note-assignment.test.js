@@ -55,3 +55,21 @@ test('committed lyric assignment preserves replacement repository, editor previe
   const saved=await f.repo.get('p');assert.equal(saved.syllableAssignments[1].assignments.length,3);assert.deepEqual(plain(saved.midiData),plain(f.p.midiData));
  }
 });
+
+test('lyrics Apply recognizes the same edit after notification loss and a later write',async()=>{
+ const {app,repo,p}=await indexedFixture();
+ const write=repo.compareAndPut.bind(repo);
+ repo.compareAndPut=async(...args)=>{
+  await write(...args);
+  const committed=await repo.get(p.projectId);
+  await repo.put({...committed,revision:committed.revision+1,productionNotes:'Other edit'});
+  throw Error('lost notification');
+ };
+ const result=await app.saveLyricsAssignment(p.projectId);
+ assert.equal(result.ok,true,result.error);
+ assert.equal(result.project.productionNotes,'Other edit');
+ assert.equal(result.project.syllableAssignments.length,p.syllableAssignments.length+1);
+ assert.equal(result.project.songVersions.edits.filter(edit=>edit.source==='lyrics-editor').length,1);
+ assert.equal(app.lyricsEditor.preview,null);
+ assert.deepEqual(plain(app.state.projects[0]),plain(await repo.get(p.projectId)));
+});

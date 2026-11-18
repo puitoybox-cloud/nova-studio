@@ -131,3 +131,21 @@ test('material search UI exposes key matching and manual transpose remains backw
  assert.equal(result.project.musicalSettings.key,null,'manual transposition never fabricates a new key declaration');
  assert.equal(result.project.midiData.tracks[0].notes[0].pitch,63);
 });
+
+test('range before the first MIDI signature or tempo change preserves the initial settings',async()=>{
+ const {app,repo,project}=fixture('C');
+ project.midiData.tempoMap=[{tick:480,bpm:90}];
+ project.midiData.timeSignatureMap=[{tick:480,numerator:3,denominator:4}];
+ project.midiData.keySignatureMap=[{tick:480,sharps:1,minor:false}];
+ project.midiData.keySignature=project.midiData.keySignatureMap[0];
+ await repo.put(project);
+ const result=await app.materialCapture(project.projectId,{name:'Before changes',endTick:960});
+ assert.equal(result.ok,true,result.error);
+ const {midiData,bpm}=result.material;
+ assert.equal(bpm,120);
+ assert.deepEqual(plain(midiData.timeSignature),{numerator:4,denominator:4});
+ assert.equal(midiData.keySignature,null);
+ assert.deepEqual(plain(midiData.tempoMap),[{tick:480,bpm:90}]);
+ assert.deepEqual(plain(midiData.timeSignatureMap),[{tick:480,numerator:3,denominator:4}]);
+ assert.deepEqual(plain(midiData.keySignatureMap),[{tick:480,sharps:1,minor:false}]);
+});
