@@ -52,7 +52,9 @@
     try{await json(`/sessions/${encodeURIComponent(operation.session)}/cancel`,{method:'POST',body:'{}'})}
     catch(cancelError){return fail(`${error.message}: ${cancelError.message}`)}
    }
-   return fail(error.message);
+   // An aborted fetch may reject with a browser-specific DOMException before guard() runs.
+   // Preserve a stable cancellation result for the caller after helper cleanup.
+   return fail(operation.cancelled?'auto-finish-transfer-cancelled':error.message);
   }finally{transfer=null}
  }
  async function startProject(event,projectId){
