@@ -476,7 +476,8 @@
     // same tab is re-rendered. The persisted project and proposal results
     // remain controlled by their existing explicit preview/adoption paths.
     const drafts=Array.from(target.querySelectorAll?.('textarea[id],input[id],select[id]')||[])
-      .filter(node=>node.id==='musicAIInstruction'||(preserveArrangementDraft&&node.id==='aiJapaneseArrangement')||node.id.startsWith('aiSong')||(preserveSettingsDrafts&&/^ai(?:Section|Harmony)/.test(node.id))||(preserveCandidateDrafts&&/^ai(?:Transpose|Velocity|Length)[a-zA-Z0-9_-]+$/.test(node.id)))
+      .filter(node=>node.id==='musicAIInstruction'||node.id==='aiJapaneseArrangement'||node.id.startsWith('aiSong')||(preserveSettingsDrafts&&/^ai(?:Section|Harmony)/.test(node.id))||(preserveCandidateDrafts&&/^ai(?:Transpose|Velocity|Length)[a-zA-Z0-9_-]+$/.test(node.id)))
+      .filter(node=>preserveArrangementDraft||node.id!=='aiJapaneseArrangement')
       .map(node=>({id:node.id,value:node.value,checked:node.type==='checkbox'?node.checked:undefined}));
     const arrangementOpen=target.querySelector?.('.music-ai-japanese-arrangement')?.open;
     const editPanels=Array.from(target.querySelectorAll?.('details[data-candidate-edit]')||[]).filter(node=>node.open).map(node=>node.dataset.candidateEdit);
