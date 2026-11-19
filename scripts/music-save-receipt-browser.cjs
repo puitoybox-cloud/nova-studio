@@ -510,5 +510,49 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
   },{id:recovery.project.projectId,assetId:recording.assetId});
   assert.deepEqual(reopenedMedia.project,editsAfterLoss.vocal);
   assert.deepEqual(reopenedMedia.bytes,recording.bytes);
+  const commonReceipts=await editedPage.evaluate(async id=>{
+   const app=MusicStudio,repo=app.indexedDbRepository();
+   app.setRepository(repo);
+   const before=await repo.get(id);
+   const pcm=app.pcmImport(before,{sampleRate:8000,channels:[[0.125,-0.125,0.25,-0.25]]},'receipt-test.wav');
+   await repo.put(pcm);
+   app.state.projects=await repo.list();
+   app.pcmMixView(id);
+   const assetId=pcm.pcmMix.assets.at(-1).id;
+   app.pcmEditor.assetId=assetId;
+   app.pcmEditor.preview=app.pcmPreview(pcm,assetId,-6);
+   const write=repo.compareAndPut.bind(repo);
+   const committed=[];
+   repo.compareAndPut=async(...args)=>{
+    await write(...args);
+    const [project]=args;
+    const later={...project,revision:project.revision+1,productionNotes:'Concurrent revision after commit'};
+    await write(later,JSON.stringify(project));
+    committed.push(later);
+    throw Error('Injected loss of completion notification');
+   };
+   const mixed=await app.pcmApply(id);
+   if(!mixed.ok||app.pcmEditor.preview)throw Error(mixed.error||'PCM Apply retained a stale preview');
+   const created=await app.createAIProject({projectInput:{projectId:'chromium-receipt-created-song',projectName:'Created once'}});
+   return {committed,mixed:mixed.project,created,assetId};
+  },recovery.project.projectId);
+  assert.deepEqual(commonReceipts.committed,[commonReceipts.mixed,commonReceipts.created]);
+  const pcmEdit=commonReceipts.mixed.songVersions.edits.at(-1);
+  assert.equal(pcmEdit.source,'audio-editor');
+  assert.equal(pcmEdit.sessionId,sessionId);
+  assert.equal(pcmEdit.revision,commonReceipts.mixed.revision-1);
+  assert.equal(commonReceipts.mixed.pcmMix.assets.find(asset=>asset.id===commonReceipts.assetId).cursor,1);
+  assert.equal(commonReceipts.created.productionHistory.filter(event=>event.type==='project-create').length,1);
+  await stop('SIGKILL');
+  browser=await launch();
+  const finalPage=await browser.newPage();
+  await finalPage.goto(origin);
+  await finalPage.addScriptTag({url:origin+'/music-studio.js'});
+  await finalPage.waitForFunction(()=>MusicStudio.state.loaded===true);
+  const savedCommon=await finalPage.evaluate(async ids=>{
+   const repo=MusicStudio.indexedDbRepository();
+   return Promise.all(ids.map(id=>repo.get(id)));
+  },[commonReceipts.mixed.projectId,commonReceipts.created.projectId]);
+  assert.deepEqual(savedCommon,commonReceipts.committed);
  }finally{await stop();await new Promise(resolve=>server.close(resolve));fs.rmSync(dir,{recursive:true,force:true})}
 });

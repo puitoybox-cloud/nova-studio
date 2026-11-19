@@ -17,7 +17,10 @@
       "f6a701e4140963efe8262cefdffd7fde0110655a"
     ],
     "music-studio-playback.js": "2907ff2137dfd1d6b0b42ff01095ca7de1a90e72",
-    "music-studio-audio-pipeline.js": "8b4172defbc760ed9592ec0626791331af943dd7",
+    "music-studio-audio-pipeline.js": [
+      "8b4172defbc760ed9592ec0626791331af943dd7",
+      "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+    ],
     "music-studio-midi-parser.js": "c4485e8c5477810703072b5da0aa092ef476e510",
     "music-studio-midi.js": "8871933c41a63a68c2f9035475480b25424ea255",
     "music-studio.html": [
@@ -40,7 +43,8 @@
       "460ebf9f285abefc01c00df0ff5bac8d742574a3"
     ],
     "index.html": [
-      "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
+      "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
     ],
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
@@ -59,7 +63,9 @@
     ],
     "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-production-tools.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-    "tests/music-studio-vocal-correction-comp.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+    "tests/music-studio-vocal-correction-comp.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+    "tests/music-studio-audio-pipeline.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+    "tests/music-studio-pcm-mix.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
   },
   "requirements": [
     {

@@ -256,3 +256,102 @@ test('A reopened Japanese edit can target the previous approved range and Undo r
  assert.equal(session.midiData.tracks[0].notes[1].velocity,saved.midiData.tracks[0].notes[1].velocity);
  assert.equal(record.state.workspace.history.filter(e=>e.kind==='edit-applied').length,1);
 });
+
+test('Japanese guide reads project context without writes, and assistant Undo requires approval',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p),before=plain(session.midiData);
+ let instruction='次の工程';
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:instruction}:null};
+ panel.render(p,session);
+ await panel.previewEdit(p.projectId);
+ assert.match(panel.render(p,session),/曲作りから完成WAVまでの工程/);
+ assert.match(panel.render(p,session),/<p role="status">曲をセクションに分け/);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(p));
+ instruction='1小節目の音を半音上げる\n同じ範囲の音の強さを5上げる';
+ await panel.previewEdit(p.projectId);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ const after=plain(session.midiData);assert.notDeepEqual(after,before);
+ panel.requestUndoApproval(p.projectId);panel.cancelApproval(p.projectId);
+ panel.confirmApprovedChange(p.projectId);assert.deepEqual(plain(session.midiData),after);
+ panel.requestUndoApproval(p.projectId);panel.confirmApprovedChange(p.projectId);app.cancelScheduledSave();
+ assert.deepEqual(plain(session.midiData),before);
+});
+
+test('AI new song reconciles a lost commit notification followed by a competing write',async()=>{
+ const {app}=load(),repo=app.memoryRepository();
+ app.setRepository(repo);
+ const put=repo.compareAndPut;
+ repo.compareAndPut=async(...args)=>{
+   await put(...args);
+   const saved=await repo.get(args[0].projectId);
+   await repo.put({...saved,revision:saved.revision+1,projectName:'Competing name'});
+   throw Error('commit-notification-lost');
+ };
+ const saved=await app.createAIProject({projectInput:{projectId:'creation-retry',projectName:'Original'}});
+ assert.equal(saved.projectName,'Competing name');assert.equal(saved.revision,2);
+ const projects=await repo.list();assert.equal(projects.length,1);
+ assert.equal(projects[0].productionHistory.filter(item=>item.type==='project-create').length,1);
+ assert.equal(app.state.projects[0].projectName,'Competing name');
+});
+
+test('A mixed-meter MIDI and confirmed code lock plan restores both changes with one Undo',async()=>{
+ const {window:w,app,core,panel,composition}=load(),p=make(app),repo=app.memoryRepository();
+ p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];
+ p.midiData.tracks[0].notes[1].startTick=1100;
+ p.midiData.tracks[0].notes[1].durationTicks=120;
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ const instruction='2小節目の音を半音上げる\n2小節目のコードの固定を設定する';
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:instruction}:null};
+ panel.render(p,session);
+ const record=panel._states.get(p.projectId),analysis=composition.analyzeChords(session,core);
+ const rows=analysis.rows.map(row=>({...row,symbol:'C',status:'confirmed',locked:false}));
+ record.state.workspace.harmonyReview={version:1,chords:rows.map(row=>row.symbol).join(' '),analysis:{...analysis,rows:plain(rows)},rows};
+ const before=plain(session.midiData),workspace=plain(record.state.workspace);
+ await panel.previewEdit(p.projectId);
+ assert.equal(record.editBatch?.steps.length,2,record.message);
+ assert.deepEqual(plain(record.state.workspace),workspace);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.equal(session.midiData.tracks[0].notes[0].pitch,60);
+ assert.equal(session.midiData.tracks[0].notes[1].pitch,65);
+ assert.equal(record.state.workspace.harmonyReview.rows.find(row=>row.measure===2).locked,true);
+ assert.equal(session.undo.length,1);
+ core.undo(session);
+ assert.deepEqual(plain(session.midiData),before);
+ assert.deepEqual(plain(record.state.workspace),workspace);
+});
+
+test('MIDI Save refuses to replace an AI workspace written by another editor',async()=>{
+ const {window:w,app,core,panel,ui}=load(),p=make(app),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ panel.render(p,session);const pending=panel._states.get(p.projectId);
+ ui.createCandidates(pending.state,'chord',{},[{summary:'local'}]);pending.pending=true;
+ const contender=ui.createState(p);
+ ui.createCandidates(contender,'chord',{},[{summary:'concurrent'}]);
+ const saved={...p,revision:p.revision+1,aiWorkspace:ui.workspaceForRevision(contender,p.projectId,p.revision+1)};
+ await repo.put(saved);w.console={...console,error(){}};
+ assert.equal((await app.saveMidiEditor({silent:true})).ok,false);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(saved));
+ assert.equal(panel.hasPending(p.projectId),true);
+});
+
+test('AI audio approval refuses a changed separation target before starting processing',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),other=make(app,'other'),repo=app.memoryRepository();
+ await repo.put(p);await repo.put(other);app.setRepository(repo);app.state.projects=[p,other];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ let selected=p,calls=0;
+ app.selectedMidiProject=()=>selected;
+ w.MusicStudioAudioPipeline={parseAudioInstruction:()=>({kind:'separate',model:'htdemucs_6s'}),
+   async importSeparatedAudio(){calls++;return {ok:true}}};
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:'この音声をボーカルと楽器に分けて'}:null};
+ panel.render(p,session);panel.captureAudioFile(p.projectId,{name:'take.wav'});
+ await panel.previewEdit(p.projectId);panel.requestEditApproval(p.projectId);
+ assert.match(panel.render(p,session),/別バージョンへの保存を確認/);
+ selected=other;await panel.confirmApprovedChange(p.projectId);
+ assert.equal(calls,0);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(p));
+ selected=p;panel.requestEditApproval(p.projectId);await panel.confirmApprovedChange(p.projectId);
+ assert.equal(calls,1);
+});
