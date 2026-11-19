@@ -149,3 +149,23 @@ test('range before the first MIDI signature or tempo change preserves the initia
  assert.deepEqual(plain(midiData.timeSignatureMap),[{tick:480,numerator:3,denominator:4}]);
  assert.deepEqual(plain(midiData.keySignatureMap),[{tick:480,sharps:1,minor:false}]);
 });
+
+test('ranged materials use the active MIDI key for filtering and reuse',async()=>{
+ const {app,repo,project}=fixture('Am');
+ project.midiData.keySignatureMap=[{tick:0,sharps:0,minor:true},{tick:240,sharps:1,minor:false}];
+ await repo.put(project);
+ const captured=await app.materialCapture(project.projectId,{name:'Open Groove',description:'piano lead',startTick:480,endTick:960});
+ assert.equal(captured.ok,false);
+ project.midiData.tracks[0].notes.push({id:'next',pitch:62,startTick:480,durationTicks:240,velocity:90});
+ await repo.put(project);
+ const ranged=await app.materialCapture(project.projectId,{name:'Open Groove',description:'piano lead',startTick:480,endTick:960});
+ assert.equal(ranged.ok,true,ranged.error);
+ assert.equal(ranged.material.key,'G');
+ assert.equal(app.materialSearch('ｇｒｏｏｖｅ piano',{key:'g',minBpm:110,maxBpm:120}).length,1);
+ assert.equal(app.materialSearch('groove',{key:'Am'}).length,0);
+ assert.equal(app.materialSearch('groove',{minBpm:121}).length,0);
+ assert.throws(()=>app.materialSearch('',{minBpm:140,maxBpm:100}),/BPM範囲/);
+ const created=await app.materialCreate(project.projectId,ranged.material.id,{targetKey:'A'});
+ assert.equal(created.ok,true,created.error);
+ assert.equal(created.project.midiData.tracks[0].notes[0].pitch,64);
+});

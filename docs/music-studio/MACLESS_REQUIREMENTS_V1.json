@@ -36,7 +36,8 @@
       "81caec977f7dfbb29e1d0a6850635b94f56a55c3",
       "a6f803694cbc09907a36bd0568eb19d0b8efaf68",
       "0dc6c34fdad125544fc4811e1355d4e2966f1f0a",
-      "d88245560bd216197e5b868df8e54529240b4aa2"
+      "d88245560bd216197e5b868df8e54529240b4aa2",
+      "460ebf9f285abefc01c00df0ff5bac8d742574a3"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb"
@@ -55,7 +56,8 @@
     ],
     "tests/music-studio-final-export.test.js": [
       "d889137661f54781e59d74853771566141f92084"
-    ]
+    ],
+    "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
   },
   "requirements": [
     {

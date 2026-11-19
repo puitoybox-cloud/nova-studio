@@ -4,6 +4,8 @@ on:
     paths:
       - 'tools/music-local-generation/prepare.py'
       - 'music-studio.js'
+      - 'music-studio-ai-assistant-panel.js'
+      - 'music-studio-ai-workflow.js'
       - 'scripts/music-chromium-devtools-port.cjs'
       - 'tests/music-indexeddb-browser-persistence.test.cjs'
       - 'scripts/music-indexeddb-browser-persistence.cjs'
