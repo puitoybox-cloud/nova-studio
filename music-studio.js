@@ -804,6 +804,7 @@
     repository=next;
     repositoryGeneration++;
     root.MusicStudioAIAssistantPanel?.invalidateApprovals?.();
+    if(vocalCorrection.preview||vocalCorrection.comparison||vocal.phase==='analyzing')vocalCorrectionCancel();
     // Flush and seal the journal in the original repository. The recording
     // guard rejects publishing its WAV against the new repository.
     if(vocal.target!==next&&['armed','recording','paused'].includes(vocal.phase))vocalStop();
@@ -2621,7 +2622,22 @@
     const lyrics=lyricsSavedRows(p).filter(r=>r.trackId===trackId&&!r.stale).flatMap(r=>r.assignments);
     return notes.map(n=>{const lyric=lyrics.find(x=>x.noteId===n.id),offset=(s.lyricOffsets||[]).find(x=>x.noteId===n.id&&(x.trackId===trackId||(!x.trackId&&(p.midiData?.tracks||[]).flatMap(t=>t.notes||[]).filter(note=>note.id===n.id).length===1)))?.seconds||0;return{noteId:n.id,pitch:n.pitch,token:lyric?.token||'',start:vocalPosition(p,n.startTick)+offset,end:vocalPosition(p,n.startTick+n.durationTicks)+offset,first:Math.round((vocalPosition(p,n.startTick)+offset-origin)*asset.sampleRate),last:Math.round((vocalPosition(p,n.startTick+n.durationTicks)+offset-origin)*asset.sampleRate)}});
   }
-  function vocalKeyPitches(key){const match=/^([A-G])([#b]?)(?:\s+(major|minor))?$/i.exec(String(key||''));if(!match)throw Error('vocal-key-required');const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[match[1].toUpperCase()]+(match[2]==='#'?1:match[2]==='b'?-1:0),steps=match[3]?.toLowerCase()==='minor'?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];return steps.map(x=>(x+base+12)%12)}
+  function parseTonalKey(value){
+    if(typeof value!=='string')return null;
+    const source=value.normalize('NFKC').trim().replace(/♯/g,'#').replace(/♭/g,'b').split('/')[0].trim();
+    const match=/^([A-Ga-g])([#b]?)(m|\s+(?:major|minor))?$/.exec(source);
+    if(!match)return null;
+    const tones={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+    const pitch=(tones[match[1].toUpperCase()]+(match[2]==='#'?1:match[2]==='b'?-1:0)+12)%12;
+    const mode=match[3]?.trim();
+    return {pitch,minor:mode==='m'||mode==='minor'};
+  }
+  function vocalKeyPitches(key){
+    const scale=parseTonalKey(key);
+    if(!scale)throw Error('vocal-key-required');
+    const steps=scale.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
+    return steps.map(semitones=>(scale.pitch+semitones)%12);
+  }
   async function vocalCompareReference(id,assetId,referenceId){
     if(vocalBusy()||pcmEditor.busy||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy)return{ok:false,error:'vocal-analysis-busy'};
     const p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),target=repository,generation=++vocalCorrection.generation;
@@ -5749,14 +5765,9 @@
   }
   async function materialImportSubmit(event,owner){const r=await materialImport(owner,event.target.elements.materialFile.files[0]);notice(r.ok?'MIDI素材を読み込みました。':r.error,r.ok?'success':'error');return r;}
   function materialKeyShift(sourceKey,targetKey){
-    const tones={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-    const parse=value=>{
-      if(typeof value!=='string')throw Error('material-key-required');
-      const normalized=value.trim().replace(/♯/g,'#').replace(/♭/g,'b').split('/')[0],match=/^([A-G])([#b]?)(m?)$/.exec(normalized);
-      if(!match)throw Error('material-key-unsupported');
-      return {pitch:(tones[match[1]]+(match[2]==='#'?1:match[2]==='b'?-1:0)+12)%12,minor:match[3]==='m'};
-    };
-    const source=parse(sourceKey),target=parse(targetKey);
+    if(typeof sourceKey!=='string'||typeof targetKey!=='string')throw Error('material-key-required');
+    const source=parseTonalKey(sourceKey),target=parseTonalKey(targetKey);
+    if(!source||!target)throw Error('material-key-unsupported');
     // Transposition moves the tonic, not the major/minor scale quality.
     if(source.minor!==target.minor)throw Error('material-key-mode-mismatch');
     const ascending=(target.pitch-source.pitch+12)%12;
