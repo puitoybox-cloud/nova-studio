@@ -49,26 +49,47 @@
     const bars=rest.match(/^(\d+)(?:[〜～–-](\d+))?小節目?(?:の|を)/);
     if(bars){range={startMeasure:Number(bars[1]),endMeasure:Number(bars[2]||bars[1])};rest=rest.slice(bars[0].length);}
     if(rest.startsWith('選択した音を')){selected=true;rest=rest.slice('選択した音を'.length);}else rest=rest.replace(/^(?:音符|音)(?:を)/,'');
-    const match=rest.match(/^(半音|全音|1オクターブ|[1-9][0-9]?半音)(上げる|下げる)$/);
-    if(!match)throw Error('未対応の指示です。例：「Piano」の2小節目の音を2半音下げる。複数操作・編曲・曖昧な音程は実行しません。');
-    const amount={'半音':1,'全音':2,'1オクターブ':12}[match[1]]||Number(match[1].replace('半音',''));
-    if(amount>24)throw Error('transpose-range');
+    const pitch=rest.match(/^(半音|全音|1オクターブ|[1-9][0-9]?半音)(上げる|下げる)$/);
+    const velocity=rest.match(/^(?:強さ|ベロシティ)を([1-9][0-9]?)(上げる|下げる)$/);
+    const length=rest.match(/^長さを([1-9][0-9]{0,2})[%％]にする$/);
+    if(!pitch&&!velocity&&!length)throw Error('未対応の指示です。例：「Piano」の2小節目の音を2半音下げる。');
     const track=core.getTrackById(session.midiData.tracks,trackId);
-    if(!track||core.resolveTrackType(track)==='midi-drums'||core.resolveCoreTrackRole(track)==='drums')throw Error('pitched-track-required');
+    if(!track||(pitch&&(core.resolveTrackType(track)==='midi-drums'||core.resolveCoreTrackRole(track)==='drums')))throw Error('pitched-track-required');
+    let edit;
+    if(pitch){
+      const amount={'半音':1,'全音':2,'1オクターブ':12}[pitch[1]]||Number(pitch[1].replace('半音',''));
+      if(amount>24)throw Error('transpose-range');
+      edit={operation:'transpose',semitones:amount*(pitch[2]==='上げる'?1:-1)};
+    }else if(velocity){
+      const amount=Number(velocity[1]);
+      if(amount>64)throw Error('velocity-range');
+      edit={operation:'velocity',velocityDelta:amount*(velocity[2]==='上げる'?1:-1)};
+    }else{
+      const amount=Number(length[1]);
+      if(amount<25||amount>200)throw Error('length-percent-range');
+      edit={operation:'length',lengthPercent:amount};
+    }
     const count=session.midiData.editor?.measureCount;if(!Number.isSafeInteger(range?.startMeasure)||!Number.isSafeInteger(range?.endMeasure)||range.startMeasure<1||range.endMeasure<range.startMeasure||range.endMeasure>count)throw Error('指示の小節範囲を確認してください。');
     core.measureRangeToTicks(range,session.midiData);
     if(selected&&session.selectionTrackId&&session.selectionTrackId!==trackId)throw Error('selection-track-mismatch');
     const noteIds=selected?core.selectedIds(session):null;
     if(selected&&!noteIds.length)throw Error('音符を選択してください。');
-    return{trackId,range,noteIds,semitones:amount*(match[2]==='上げる'?1:-1),operation:'transpose',instruction};
+    return{trackId,range,noteIds,...edit,instruction};
   }
   function japaneseEditAdapter(plan){
     const snapshot=clone(plan);
-    return localAdapter({id:`local-japanese-transpose-${snapshot.semitones}`,kind:'local',generate:({partialRequest,context})=>{
+    const amount=snapshot.semitones??snapshot.velocityDelta??snapshot.lengthPercent;
+    return localAdapter({id:`local-japanese-${snapshot.operation||'transpose'}-${amount}`,kind:'local',generate:({partialRequest,context})=>{
       if(context.target.trackId!==snapshot.trackId)throw Error('instruction-target-changed');
       const selected=snapshot.noteIds&&new Set(snapshot.noteIds),notes=partialRequest.notes.filter(n=>partialRequest.targetNoteIds.includes(n.id)&&(!selected||selected.has(n.id)));
       if(!notes.length)throw Error('no-editable-target-notes');
-      return{updates:notes.map(n=>{const pitch=n.pitch+snapshot.semitones;if(pitch<0||pitch>127)throw Error('transpose-out-of-midi-range');return{...n,pitch}}),adds:[],deleteNoteIds:[]};
+      return{updates:notes.map(n=>{if(snapshot.operation==='length')return {...n,durationTicks:Math.max(1,Math.round(n.durationTicks*snapshot.lengthPercent/100))};
+        if(snapshot.operation==='velocity'){
+          const velocity=n.velocity+snapshot.velocityDelta;
+          if(velocity<1||velocity>127)throw Error('velocity-out-of-midi-range');
+          return {...n,velocity};
+        }
+        const pitch=n.pitch+snapshot.semitones;if(pitch<0||pitch>127)throw Error('transpose-out-of-midi-range');return{...n,pitch}}),adds:[],deleteNoteIds:[]};
     }});
   }
   function syntheticPitchAdapter(semitones=1){const delta=integer(semitones,-24,24,1);return localAdapter({id:`synthetic-pitch-${delta}`,kind:'synthetic',generate:({partialRequest})=>({updates:partialRequest.notes.filter(note=>partialRequest.targetNoteIds.includes(note.id)).map(note=>({...note,pitch:Math.max(0,Math.min(127,note.pitch+delta))})),adds:[],deleteNoteIds:[]})})}
