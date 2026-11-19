@@ -256,3 +256,41 @@ test('A reopened Japanese edit can target the previous approved range and Undo r
  assert.equal(session.midiData.tracks[0].notes[1].velocity,saved.midiData.tracks[0].notes[1].velocity);
  assert.equal(record.state.workspace.history.filter(e=>e.kind==='edit-applied').length,1);
 });
+
+test('Japanese guide reads project context without writes, and assistant Undo requires approval',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p),before=plain(session.midiData);
+ let instruction='次の工程';
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:instruction}:null};
+ panel.render(p,session);
+ await panel.previewEdit(p.projectId);
+ assert.match(panel.render(p,session),/曲作りから完成WAVまでの工程/);
+ assert.match(panel.render(p,session),/<p role="status">曲をセクションに分け/);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(p));
+ instruction='1小節目の音を半音上げる\n同じ範囲の音の強さを5上げる';
+ await panel.previewEdit(p.projectId);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ const after=plain(session.midiData);assert.notDeepEqual(after,before);
+ panel.requestUndoApproval(p.projectId);panel.cancelApproval(p.projectId);
+ panel.confirmApprovedChange(p.projectId);assert.deepEqual(plain(session.midiData),after);
+ panel.requestUndoApproval(p.projectId);panel.confirmApprovedChange(p.projectId);app.cancelScheduledSave();
+ assert.deepEqual(plain(session.midiData),before);
+});
+
+test('AI new song reconciles a lost commit notification followed by a competing write',async()=>{
+ const {app}=load(),repo=app.memoryRepository();
+ app.setRepository(repo);
+ const put=repo.compareAndPut;
+ repo.compareAndPut=async(...args)=>{
+   await put(...args);
+   const saved=await repo.get(args[0].projectId);
+   await repo.put({...saved,revision:saved.revision+1,projectName:'Competing name'});
+   throw Error('commit-notification-lost');
+ };
+ const saved=await app.createAIProject({projectInput:{projectId:'creation-retry',projectName:'Original'}});
+ assert.equal(saved.projectName,'Competing name');assert.equal(saved.revision,2);
+ const projects=await repo.list();assert.equal(projects.length,1);
+ assert.equal(projects[0].productionHistory.filter(item=>item.type==='project-create').length,1);
+ assert.equal(app.state.projects[0].projectName,'Competing name');
+});
