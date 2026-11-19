@@ -804,6 +804,7 @@
     repository=next;
     repositoryGeneration++;
     root.MusicStudioAIAssistantPanel?.invalidateApprovals?.();
+    if(vocalCorrection.preview||vocalCorrection.comparison||vocal.phase==='analyzing')vocalCorrectionCancel();
     // Flush and seal the journal in the original repository. The recording
     // guard rejects publishing its WAV against the new repository.
     if(vocal.target!==next&&['armed','recording','paused'].includes(vocal.phase))vocalStop();
@@ -2621,7 +2622,22 @@
     const lyrics=lyricsSavedRows(p).filter(r=>r.trackId===trackId&&!r.stale).flatMap(r=>r.assignments);
     return notes.map(n=>{const lyric=lyrics.find(x=>x.noteId===n.id),offset=(s.lyricOffsets||[]).find(x=>x.noteId===n.id&&(x.trackId===trackId||(!x.trackId&&(p.midiData?.tracks||[]).flatMap(t=>t.notes||[]).filter(note=>note.id===n.id).length===1)))?.seconds||0;return{noteId:n.id,pitch:n.pitch,token:lyric?.token||'',start:vocalPosition(p,n.startTick)+offset,end:vocalPosition(p,n.startTick+n.durationTicks)+offset,first:Math.round((vocalPosition(p,n.startTick)+offset-origin)*asset.sampleRate),last:Math.round((vocalPosition(p,n.startTick+n.durationTicks)+offset-origin)*asset.sampleRate)}});
   }
-  function vocalKeyPitches(key){const match=/^([A-G])([#b]?)(?:\s+(major|minor))?$/i.exec(String(key||''));if(!match)throw Error('vocal-key-required');const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[match[1].toUpperCase()]+(match[2]==='#'?1:match[2]==='b'?-1:0),steps=match[3]?.toLowerCase()==='minor'?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];return steps.map(x=>(x+base+12)%12)}
+  function parseTonalKey(value){
+    if(typeof value!=='string')return null;
+    const source=value.normalize('NFKC').trim().replace(/♯/g,'#').replace(/♭/g,'b').split('/')[0].trim();
+    const match=/^([A-Ga-g])([#b]?)(m|\s+(?:major|minor))?$/.exec(source);
+    if(!match)return null;
+    const tones={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+    const pitch=(tones[match[1].toUpperCase()]+(match[2]==='#'?1:match[2]==='b'?-1:0)+12)%12;
+    const mode=match[3]?.trim();
+    return {pitch,minor:mode==='m'||mode==='minor'};
+  }
+  function vocalKeyPitches(key){
+    const scale=parseTonalKey(key);
+    if(!scale)throw Error('vocal-key-required');
+    const steps=scale.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
+    return steps.map(semitones=>(scale.pitch+semitones)%12);
+  }
   async function vocalCompareReference(id,assetId,referenceId){
     if(vocalBusy()||pcmEditor.busy||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy)return{ok:false,error:'vocal-analysis-busy'};
     const p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),target=repository,generation=++vocalCorrection.generation;
@@ -5682,7 +5698,29 @@
     if(JSON.stringify(items).length>2097152)throw Error('material-library-capacity');return items;
   }
   let materialSaving=false;const projectDiagnostics=new Map();
-  function materialSearch(query=''){const terms=String(query).normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);return state.projects.flatMap(p=>(p.materialLibrary||[]).map(m=>({...clone(m),owner:p.projectId}))).filter(m=>terms.every(t=>(m.name+' '+m.description).normalize('NFKC').toLocaleLowerCase().includes(t)));}
+  function materialSearch(query='',filters={}){
+    const normalize=value=>String(value??'').normalize('NFKC').toLowerCase().trim();
+    const terms=normalize(query).split(/\s+/).filter(Boolean);
+    const key=normalize(filters.key),min=filters.minBpm==null||filters.minBpm===''?20:Number(filters.minBpm),
+      max=filters.maxBpm==null||filters.maxBpm===''?400:Number(filters.maxBpm);
+    if(!Number.isFinite(min)||!Number.isFinite(max)||min<20||max>400||min>max)throw Error('BPM範囲を20〜400で確認してください。');
+    return state.projects.flatMap(p=>(p.materialLibrary||[]).filter(m=>
+      m.bpm>=min&&m.bpm<=max&&(!key||normalize(m.key)===key)
+      &&terms.every(term=>normalize(m.name+' '+m.description).includes(term)))
+      .map(m=>({...clone(m),owner:p.projectId})));
+  }
+  function materialSourceKey(signature,fallback){
+    if(!Number.isInteger(signature?.sharps)||Math.abs(signature.sharps)>7)return fallback;
+    const major=['Cb','Gb','Db','Ab','Eb','Bb','F','C','G','D','A','E','B','F#','C#'];
+    const minor=['Abm','Ebm','Bbm','Fm','Cm','Gm','Dm','Am','Em','Bm','F#m','C#m','G#m','D#m','A#m'];
+    return (signature.minor?minor:major)[signature.sharps+7];
+  }
+  async function publishMaterialProject(target,next,write,guard){
+    const receipt=next.productionHistory.at(-1),committed=await confirmProjectWrite(target,next,write,receipt);
+    let refreshPending=committed!==next;
+    try{guard()}catch{refreshPending=true}
+    return {committed,refreshPending};
+  }
   async function materialCapture(id,input={}){
     if(materialSaving||workspaceBusy())return{ok:false,error:'material-busy'};const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p);materialSaving=true;
     try{if(!p?.midiData)throw Error('material-midi-required');const midi=clone(p.midiData);if(midi.tempo===undefined)midi.tempo=p.musicalSettings.bpm;const start=Number(input.startTick??0),end=Number(input.endTick??midi.totalTick??Math.max(0,...midi.tracks.flatMap(t=>t.notes.map(n=>n.startTick+n.durationTicks))));
@@ -5704,11 +5742,11 @@
       for(const t of midi.tracks){if(t.notes.some(n=>n.startTick<start&&n.startTick+n.durationTicks>start||n.startTick<end&&n.startTick+n.durationTicks>end))throw Error('material-boundary-note');t.notes=t.notes.filter(n=>n.startTick>=start&&n.startTick<end).map(n=>({...n,startTick:n.startTick-start}));}
       if(!midi.tracks.some(t=>t.notes.length))throw Error('material-empty');midi.totalTick=end-start;delete midi.editor;
       if(midi.markers)midi.markers=midi.markers.filter(e=>e.tick>=start&&e.tick<end).map(e=>({...e,tick:e.tick-start}));
-      const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:midi.tempo,key:p.musicalSettings.key,createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
+      const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:midi.tempo,key:materialSourceKey(midi.keySignature,p.musicalSettings.key),createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
       automaticEditRecord(p,next,'material-library');
       next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id,editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,material:item}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();const {refreshPending}=await publishMaterialProject(target,next,()=>target.compareAndPut(next,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,material:item};
       state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
@@ -5720,21 +5758,16 @@
       const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...imported];materialValidate(next.materialLibrary);
       automaticEditRecord(p,next,'material-library');
       next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:imported.length,materialIds:imported.map(m=>m.id),editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();const {refreshPending}=await publishMaterialProject(target,next,()=>target.compareAndPut(next,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length};
       state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
   async function materialImportSubmit(event,owner){const r=await materialImport(owner,event.target.elements.materialFile.files[0]);notice(r.ok?'MIDI素材を読み込みました。':r.error,r.ok?'success':'error');return r;}
   function materialKeyShift(sourceKey,targetKey){
-    const tones={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-    const parse=value=>{
-      if(typeof value!=='string')throw Error('material-key-required');
-      const normalized=value.trim().replace(/♯/g,'#').replace(/♭/g,'b').split('/')[0],match=/^([A-G])([#b]?)(m?)$/.exec(normalized);
-      if(!match)throw Error('material-key-unsupported');
-      return {pitch:(tones[match[1]]+(match[2]==='#'?1:match[2]==='b'?-1:0)+12)%12,minor:match[3]==='m'};
-    };
-    const source=parse(sourceKey),target=parse(targetKey);
+    if(typeof sourceKey!=='string'||typeof targetKey!=='string')throw Error('material-key-required');
+    const source=parseTonalKey(sourceKey),target=parseTonalKey(targetKey);
+    if(!source||!target)throw Error('material-key-unsupported');
     // Transposition moves the tonic, not the major/minor scale quality.
     if(source.minor!==target.minor)throw Error('material-key-mode-mismatch');
     const ascending=(target.pitch-source.pitch+12)%12;
@@ -5749,8 +5782,8 @@
       // Transposed key signatures require spelling policy; omit old key declarations rather than retain false ones.
       if(shift||targetKey!==null&&targetKey!==m.key){delete midi.keySignatureMap;delete midi.keySignature;}
       const out=makeProject({projectName:m.name+' — 素材から作成',bpm,key:targetKey??(shift?null:m.key),timeSignature:`${midi.timeSignature?.numerator||4}/${midi.timeSignature?.denominator||4}`,midiData:midi});out.productionHistory.push({id:uuid(),type:'material-create',createdAt:now(),sourceProjectId:owner,materialId,sourceRevision:m.sourceRevision,semitones:shift,bpm,...(targetKey?{targetKey}:{})});if(!validateProject(out).valid||validateRestoredMidi(out).errors.length)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,out,()=>target.compareAndFork(out,owner,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,project:out}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();const {committed,refreshPending}=await publishMaterialProject(target,out,()=>target.compareAndFork(out,owner,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,project:committed};
       state.projects.push(out);return{ok:true,committed:true,project:out};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
@@ -5795,11 +5828,16 @@
   }
   function openDiagnosticRepair(){const panel=root.document?.querySelector?.('.music-song-versions');if(!panel)return false;panel.open=true;const input=panel.querySelector('[name=recoveryFile]');if(input){const details=input.closest('details');if(details)details.open=true;input.scrollIntoView?.({block:'center'});}else panel.scrollIntoView?.({block:'start'});return true;}
   function projectCostSummary(p){try{return root.MusicStudioAIWorkflow?.localCostSummary?.(p.aiWorkspace)||{status:'unavailable'}}catch(e){return{status:'unverified',error:e.message}}}
-  function productionToolsView(p){const h=escapeHtml,id=JSON.stringify(p.projectId),d=projectDiagnostics.get(p.projectId);return `<details><summary>診断・素材・AI料金</summary>${performanceView(p)}<button type="button" onclick="${h(`MusicStudio.productionDiagnose(${id})`)}">診断する（原本保持）</button>${d?`<pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(d.baseline===JSON.stringify(p)?JSON.stringify(d.report,null,2):'曲が変更されています。再診断してください。')}</pre>`:''}<button type="button" onclick="MusicStudio.openDiagnosticRepair()">元ファイルの復旧画面を開く</button><p>録音の修復・退避はボーカル画面の未完了録音から選択します。欠落した依存ファイルはCheckpoints内の照合復旧を使用します。破損本体は置換しません。</p><p>AI料金：現在のアプリ内ローカル処理のAPI料金は0。有料処理・未確認料金は実行を拒否します。外部サービスでの利用額は確認できません。有料Providerの月額台帳・精算は未実装です。</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(JSON.stringify(projectCostSummary(p),null,2))}</pre><form onsubmit="event.preventDefault();MusicStudio.materialCaptureSubmit(event,${h(id)})"><label>素材名<input name="name" maxlength="120" required></label><label>検索用の説明<input name="description" maxlength="1000"></label><label>開始tick<input name="startTick" type="number" min="0" value="0"></label><label>終了tick（空欄は曲末）<input name="endTick" type="number" min="1"></label><button>現在のMIDIを素材保存</button></form><p>MIDIだけを保存します。音声・歌詞・外部音源設定は含みません。境界をまたぐ音符や途中からの可変テンポ素材は拒否します。</p><form onsubmit="event.preventDefault();MusicStudio.materialSearchSubmit(event)"><label>素材を文章で絞り込み<input name="query" maxlength="240"></label><button>検索</button></form><button type="button" onclick="${h(`MusicStudio.materialExport(${id})`)}">MIDI素材JSONを書き出す</button><form onsubmit="event.preventDefault();MusicStudio.materialImportSubmit(event,${h(id)})"><label>MIDI素材JSON<input type="file" name="materialFile" accept=".json,application/json" required></label><button>このプロジェクトへ素材を読み込む</button></form><div id="music-material-results">${materialResults('')}</div></details>`;}
-  function materialResults(query){const h=escapeHtml,keys=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B','Cm','C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m','Am','Bbm','Bm'];return materialSearch(query).map(m=>`<form onsubmit="event.preventDefault();MusicStudio.materialCreateSubmit(event,${h(JSON.stringify(m.owner))},${h(JSON.stringify(m.id))})"><p>${h(m.name)} · ${h(m.description)}</p><label>BPM（新しい曲のテンポ）<input name="bpm" type="number" min="20" max="400" step="any" value="${h(m.bpm)}"></label><label>合わせるKey（同じ長調・短調のみ）<select name="targetKey" onchange="if(this.value)this.form.elements.semitones.value='0'"><option value="">手動の移調を使う</option>${keys.map(key=>`<option value="${h(key)}">${h(key)}</option>`).join('')}</select></label><label>手動の移調（半音）<input name="semitones" type="number" min="-24" max="24" value="0"></label><p>Keyを選ぶと、素材のKeyから必要な半音数を自動計算します。元素材・元プロジェクトは変更しません。長調から短調への変更は自動変換しません。</p><button>別プロジェクトを作成</button></form>`).join('')||'<p>一致する素材はありません。</p>';}
+  function productionToolsView(p){const h=escapeHtml,id=JSON.stringify(p.projectId),d=projectDiagnostics.get(p.projectId);return `<details><summary>診断・素材・AI料金</summary>${performanceView(p)}<button type="button" onclick="${h(`MusicStudio.productionDiagnose(${id})`)}">診断する（原本保持）</button>${d?`<pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(d.baseline===JSON.stringify(p)?JSON.stringify(d.report,null,2):'曲が変更されています。再診断してください。')}</pre>`:''}<button type="button" onclick="MusicStudio.openDiagnosticRepair()">元ファイルの復旧画面を開く</button><p>録音の修復・退避はボーカル画面の未完了録音から選択します。欠落した依存ファイルはCheckpoints内の照合復旧を使用します。破損本体は置換しません。</p><p>AI料金：現在のアプリ内ローカル処理のAPI料金は0。有料処理・未確認料金は実行を拒否します。外部サービスでの利用額は確認できません。有料Providerの月額台帳・精算は未実装です。</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(JSON.stringify(projectCostSummary(p),null,2))}</pre><form onsubmit="event.preventDefault();MusicStudio.materialCaptureSubmit(event,${h(id)})"><label>素材名<input name="name" maxlength="120" required></label><label>検索用の説明<input name="description" maxlength="1000"></label><label>開始tick<input name="startTick" type="number" min="0" value="0"></label><label>終了tick（空欄は曲末）<input name="endTick" type="number" min="1"></label><button>現在のMIDIを素材保存</button></form><p>MIDIだけを保存します。音声・歌詞・外部音源設定は含みません。境界をまたぐ音符や途中からの可変テンポ素材は拒否します。</p><form onsubmit="event.preventDefault();MusicStudio.materialSearchSubmit(event)"><label>素材名・説明<input name="query" maxlength="240"></label><label>Key<input name="key" maxlength="8" placeholder="Am"></label><label>最低BPM<input name="minBpm" type="number" min="20" max="400" step="any"></label><label>最高BPM<input name="maxBpm" type="number" min="20" max="400" step="any"></label><button>検索</button></form><button type="button" onclick="${h(`MusicStudio.materialExport(${id})`)}">MIDI素材JSONを書き出す</button><form onsubmit="event.preventDefault();MusicStudio.materialImportSubmit(event,${h(id)})"><label>MIDI素材JSON<input type="file" name="materialFile" accept=".json,application/json" required></label><button>このプロジェクトへ素材を読み込む</button></form><div id="music-material-results">${materialResults('')}</div></details>`;}
+  function materialResults(query,filters){const h=escapeHtml,keys=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B','Cm','C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m','Am','Bbm','Bm'];return materialSearch(query,filters).map(m=>`<form onsubmit="event.preventDefault();MusicStudio.materialCreateSubmit(event,${h(JSON.stringify(m.owner))},${h(JSON.stringify(m.id))})"><p>${h(m.name)} · ${h(m.description)} · ${h(m.key||'Key未設定')} / ${h(m.bpm)} BPM</p><label>BPM（新しい曲のテンポ）<input name="bpm" type="number" min="20" max="400" step="any" value="${h(m.bpm)}"></label><label>合わせるKey（同じ長調・短調のみ）<select name="targetKey" onchange="if(this.value)this.form.elements.semitones.value='0'"><option value="">手動の移調を使う</option>${keys.map(key=>`<option value="${h(key)}">${h(key)}</option>`).join('')}</select></label><label>手動の移調（半音）<input name="semitones" type="number" min="-24" max="24" value="0"></label><p>Keyを選ぶと、素材のKeyから必要な半音数を自動計算します。元素材・元プロジェクトは変更しません。長調から短調への変更は自動変換しません。</p><button>別プロジェクトを作成</button></form>`).join('')||'<p>一致する素材はありません。</p>';}
   async function materialCaptureSubmit(event,id){const f=event.target.elements,input={name:f.name.value,description:f.description.value,startTick:Number(f.startTick.value)};if(f.endTick.value)input.endTick=Number(f.endTick.value);const r=await materialCapture(id,input);notice(r.ok?'MIDI素材を保存しました。':r.error,r.ok?'success':'error');requestPaint();return r;}
   async function materialCreateSubmit(event,owner,id){const f=event.target.elements,r=await materialCreate(owner,id,{bpm:Number(f.bpm.value),semitones:Number(f.semitones.value),...(f.targetKey?.value?{targetKey:f.targetKey.value}:{})});notice(r.ok?'別プロジェクトに保存しました。':r.error,r.ok?'success':'error');requestPaint();return r;}
-  function materialSearchSubmit(event){const el=root.document?.getElementById('music-material-results');if(el)el.innerHTML=materialResults(event.target.elements.query.value);}
+  function materialSearchSubmit(event){
+    const el=root.document?.getElementById('music-material-results'),fields=event.target.elements;
+    if(!el)return;
+    try{el.innerHTML=materialResults(fields.query.value,{key:fields.key?.value,minBpm:fields.minBpm?.value,maxBpm:fields.maxBpm?.value});}
+    catch(error){el.textContent=error.message;}
+  }
   Object.assign(api,{performanceDiagnose,performanceReduce,performanceView,previewProductionRequest,materialExport,materialImport,materialImportSubmit,openDiagnosticRepair,materialValidate,materialCapture,materialCreate,materialKeyShift,materialSearch,materialCaptureSubmit,materialCreateSubmit,materialSearchSubmit,productionDiagnose,productionToolsView});
   root.MusicStudio=api;
   if(root.document){root.document.addEventListener?.('keydown',event=>{if(event.target?.closest?.('.music-studio-shell'))vocalDisclosureKey(event,event.target.closest('details[open]'))});for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}

@@ -46,7 +46,7 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     const heard=await page.evaluate(()=>({notes:window.auditionResult.scheduledNotes,snapshot:JSON.stringify(MusicStudio.state.midiEditor)}));
     assert.equal(heard.snapshot,original);assert.ok(heard.notes.length);assert.ok(heard.notes.every(n=>n.audible&&n.soundPath==='sample'));
     await page.getByRole('button',{name:'Stop（試聴停止）',exact:true}).click();
-    await page.getByRole('button',{name:'PreviewをApply',exact:true}).click();
+    await page.getByRole('button',{name:'PreviewをApply',exact:true}).click();await page.getByRole('button',{name:'承認して実行',exact:true}).click();
     const adopted=await page.evaluate(()=>structuredClone(MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes));
     assert.deepEqual(heard.notes.map(n=>n.pitch),adopted.map(n=>n.pitch));
     // Close the AI drawer with its visible control before using the editor toolbar.

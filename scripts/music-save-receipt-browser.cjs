@@ -179,12 +179,26 @@ test('real IndexedDB reconciles lost save notifications and preserves competing 
    const writesBeforeHistory=writes;
    const adopted=await app.versionApply(id);
    if(!adopted.ok)throw Error(adopted.error);
+   const loseReceiptAfterCompetingWrite=async(...args)=>{
+    writes++;
+    await originalWrite(...args);
+    const [committed]=args;
+    await originalWrite({...committed,revision:committed.revision+1},JSON.stringify(committed));
+    throw Error('Lost material notification after a concurrent revision');
+   };
+   repo.compareAndPut=loseReceiptAfterCompetingWrite;
    const material=await app.materialCapture(id,{name:'Captured after adoption'});
-   if(!material.ok)throw Error(material.error);
+   if(!material.ok||!material.committed||!material.refreshPending||app.state.projects.find(project=>project.projectId===id)?.revision!==adopted.project.revision)
+    throw Error(material.error||'Material capture replaced a view after a competing write');
+   app.state.projects=await repo.list();
    const materialFile=app.materialExport(id).text;
+   const beforeImport=await repo.get(id);
    const imported=await app.materialImport(id,{size:materialFile.length,text:async()=>materialFile});
-   if(!imported.ok)throw Error(imported.error);
+   if(!imported.ok||!imported.committed||!imported.refreshPending||app.state.projects.find(project=>project.projectId===id)?.revision!==beforeImport.revision)
+    throw Error(imported.error||'Material import replaced a view after a competing write');
    const withMaterial=await repo.get(id);
+   app.state.projects=await repo.list();
+   repo.compareAndPut=loseReceipt;
    const undone=await app.versionUndoRedo(id,-1);
    if(!undone.ok)throw Error(undone.error);
    const redone=await app.versionUndoRedo(id,1);

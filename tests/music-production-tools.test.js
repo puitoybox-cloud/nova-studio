@@ -62,3 +62,34 @@ test('lost MIDI material acknowledgement confirms one material and its session-l
  assert.equal(stored.songVersions.edits.length,1);
  assert.equal(stored.songVersions.edits[0].sessionId,started.project.songVersions.sessions[0].id);
 });
+
+test('material receipts survive loss of completion after a competing revision',async()=>{
+ const {a,r,p}=await setup(),id=p.projectId,write=r.compareAndPut.bind(r),fork=r.compareAndFork.bind(r);
+ const loseAfterWrite=async next=>{
+  await write({...next,revision:next.revision+1,productionNotes:'Saved by another writer'},JSON.stringify(next));
+  throw Error('Lost material acknowledgement');
+ };
+ r.compareAndPut=async(...args)=>{await write(...args);await loseAfterWrite(args[0]);};
+ const captured=await a.materialCapture(id,{name:'Competing write'});
+ assert.equal(captured.committed,true,captured.error);
+ assert.equal(captured.refreshPending,true);
+ const capturedProject=await r.get(id);
+ assert.equal(a.state.projects[0].revision,p.revision);
+ assert.equal(capturedProject.materialLibrary.length,1);
+ a.state.projects=await r.list();
+ const file=a.materialExport(id).text;
+ const imported=await a.materialImport(id,{size:file.length,text:async()=>file});
+ assert.equal(imported.committed,true,imported.error);
+ assert.equal(imported.refreshPending,true);
+ const importedProject=await r.get(id);
+ assert.equal(importedProject.materialLibrary.length,2);
+ assert.equal(importedProject.productionHistory.at(-1).editId,importedProject.songVersions.edits.at(-1).id);
+ a.state.projects=await r.list();
+ r.compareAndFork=async(...args)=>{await fork(...args);await loseAfterWrite(args[0]);};
+ const created=await a.materialCreate(id,captured.material.id);
+ assert.equal(created.committed,true,created.error);
+ assert.equal(created.refreshPending,true);
+ assert.equal(created.project.productionNotes,'Saved by another writer');
+ assert.equal((await r.list()).length,2);
+ assert.equal(a.state.projects.length,1);
+});

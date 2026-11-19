@@ -98,3 +98,24 @@ test('vocal correction confirms a committed edit without replacing a switched re
  a.setRepository(repo);await a.refresh();
  assert.equal(Buffer.compare(Buffer.from(await original.arrayBuffer()),Buffer.from(await(await a.pcmLoadLongWav(id,assetId)).arrayBuffer())),0);
 });
+
+test('compact minor and Unicode accidentals resolve the same vocal scale and repository swaps invalidate correction',async()=>{
+ const f=await setup(),a=f.a,id=f.p.projectId,assetId=await take(f,445);
+ const baseline=await f.repo.get(id);
+ const analyze=async key=>{
+  const p={...baseline,musicalSettings:{...baseline.musicalSettings,key}};
+  await f.repo.put(p);a.state.projects=[p];
+  const result=await a.vocalAnalyze(id,assetId);
+  assert.equal(result.ok,true,result.error);
+  return JSON.stringify(result.candidates);
+ };
+ const spelled=await analyze('F# minor');
+ assert.equal(await analyze('F♯m'),spelled);
+ assert.ok(a.vocalCorrection.preview);
+ const projectBefore=JSON.stringify(await f.repo.get(id));
+ a.setRepository(a.memoryRepository());
+ a.setRepository(f.repo);
+ assert.equal(a.vocalCorrection.preview,null);
+ assert.equal((await a.vocalCorrectionApply()).ok,false);
+ assert.equal(JSON.stringify(await f.repo.get(id)),projectBefore);
+});
