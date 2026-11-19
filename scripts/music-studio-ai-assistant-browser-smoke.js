@@ -344,7 +344,7 @@ async function arrangementReferenceCases(browser,base,width,inspectTracks=false)
       const pitches=()=>page.evaluate(()=>MusicStudioEditor.currentTrack(MusicStudio.state.midiEditor).notes.map(note=>note.pitch));
       await instruction.fill(batch);
       await previewButton.click();
-      await page.waitForFunction(()=>document.querySelector('.music-ai-status')?.textContent.includes('2件の移調を計画'));
+      await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('ai-browser')?.editBatch?.steps.length===2);
       assert.deepEqual(await pitches(),original);
       await applyButton.click();
       assert.match(await approval.textContent(),/MIDI 61.*MIDI 62/s);
