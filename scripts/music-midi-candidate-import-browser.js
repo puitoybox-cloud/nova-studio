@@ -13,6 +13,7 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     const events=[120,144,60,90,120,128,60,0,120,144,64,80,120,128,64,0,0,255,47,0],buffer=Buffer.from([77,84,104,100,0,0,0,6,0,0,0,1,0,240,77,84,114,107,0,0,0,events.length,...events]);
     await page.locator('.music-ai-panel input[type=file]').setInputFiles([{name:'A.mid',mimeType:'audio/midi',buffer},{name:'B.mid',mimeType:'audio/midi',buffer},{name:'C.mid',mimeType:'audio/midi',buffer}]);
     await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('import-browser').state.workspace.candidateSets.at(-1)?.candidates.length===3);
+    await page.fill('#aiFromA','1');await page.fill('#aiToA','1');
     const original=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor));
     await page.getByRole('button',{name:'MIDI Preview',exact:true}).first().click();
     await page.getByText('Edit（候補を調整）',{exact:true}).first().click();await page.fill('#aiTransposeA','2');await page.fill('#aiLengthA','50');await page.getByRole('button',{name:'調整をPreview',exact:true}).first().click();

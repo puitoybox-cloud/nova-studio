@@ -5699,6 +5699,12 @@
     const minor=['Abm','Ebm','Bbm','Fm','Cm','Gm','Dm','Am','Em','Bm','F#m','C#m','G#m','D#m','A#m'];
     return (signature.minor?minor:major)[signature.sharps+7];
   }
+  async function publishMaterialProject(target,next,write,guard){
+    const receipt=next.productionHistory.at(-1),committed=await confirmProjectWrite(target,next,write,receipt);
+    let refreshPending=committed!==next;
+    try{guard()}catch{refreshPending=true}
+    return {committed,refreshPending};
+  }
   async function materialCapture(id,input={}){
     if(materialSaving||workspaceBusy())return{ok:false,error:'material-busy'};const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p);materialSaving=true;
     try{if(!p?.midiData)throw Error('material-midi-required');const midi=clone(p.midiData);if(midi.tempo===undefined)midi.tempo=p.musicalSettings.bpm;const start=Number(input.startTick??0),end=Number(input.endTick??midi.totalTick??Math.max(0,...midi.tracks.flatMap(t=>t.notes.map(n=>n.startTick+n.durationTicks))));
@@ -5723,8 +5729,8 @@
       const item={format:'nova-midi-material-v1',id:uuid(),name:String(input.name||'').trim(),description:String(input.description||''),bpm:midi.tempo,key:materialSourceKey(midi.keySignature,p.musicalSettings.key),createdAt:now(),sourceRevision:p.revision,sourceRange:{startTick:start,endTick:end},midiData:midi};const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),item];materialValidate(next.materialLibrary);
       automaticEditRecord(p,next,'material-library');
       next.productionHistory.push({id:uuid(),type:'material-capture',createdAt:now(),materialId:item.id,editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,material:item}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===id))!==baseline)throw Error('material-stale')};guard();const {refreshPending}=await publishMaterialProject(target,next,()=>target.compareAndPut(next,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,material:item};
       state.projects=state.projects.map(x=>x.projectId===id?next:x);return{ok:true,material:item};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
@@ -5736,8 +5742,8 @@
       const next=versionTouch(clone(p));next.materialLibrary=[...(p.materialLibrary||[]),...imported];materialValidate(next.materialLibrary);
       automaticEditRecord(p,next,'material-library');
       next.productionHistory.push({id:uuid(),type:'material-import',createdAt:now(),count:imported.length,materialIds:imported.map(m=>m.id),editId:next.songVersions.edits.at(-1).id});if(!validateProject(next).valid)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,next,()=>target.compareAndPut(next,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();const {refreshPending}=await publishMaterialProject(target,next,()=>target.compareAndPut(next,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,count:bundle.materials.length};
       state.projects=state.projects.map(x=>x.projectId===owner?next:x);return{ok:true,count:bundle.materials.length};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }
@@ -5765,8 +5771,8 @@
       // Transposed key signatures require spelling policy; omit old key declarations rather than retain false ones.
       if(shift||targetKey!==null&&targetKey!==m.key){delete midi.keySignatureMap;delete midi.keySignature;}
       const out=makeProject({projectName:m.name+' — 素材から作成',bpm,key:targetKey??(shift?null:m.key),timeSignature:`${midi.timeSignature?.numerator||4}/${midi.timeSignature?.denominator||4}`,midiData:midi});out.productionHistory.push({id:uuid(),type:'material-create',createdAt:now(),sourceProjectId:owner,materialId,sourceRevision:m.sourceRevision,semitones:shift,bpm,...(targetKey?{targetKey}:{})});if(!validateProject(out).valid||validateRestoredMidi(out).errors.length)throw Error('material-project-invalid');
-      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();await confirmProjectWrite(target,out,()=>target.compareAndFork(out,owner,baseline,guard));
-      try{guard()}catch(error){return{ok:true,committed:true,refreshPending:true,project:out}}
+      const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();const {committed,refreshPending}=await publishMaterialProject(target,out,()=>target.compareAndFork(out,owner,baseline,guard),guard);
+      if(refreshPending)return{ok:true,committed:true,refreshPending:true,project:committed};
       state.projects.push(out);return{ok:true,committed:true,project:out};
     }catch(e){return{ok:false,error:e.message}}finally{materialSaving=false;requestPaint()}
   }

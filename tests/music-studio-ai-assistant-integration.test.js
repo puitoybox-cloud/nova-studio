@@ -228,3 +228,31 @@ test('Mixed Japanese MIDI and section plan resolves follow-up scope and commits 
  assert.deepEqual(plain(saved.midiData.tracks[0].notes),notes);
  assert.equal(saved.aiWorkspace.sectionArrangements[0].density,'rich');
 });
+
+
+test('A reopened Japanese edit can target the previous approved range and Undo restores both scopes',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app,'context-reopen'),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ let session=app.state.midiEditor=core.createCoordinatedSession(p);
+ let instruction='2小節目の音を半音上げる';
+ w.document={querySelector:selector=>selector==='#musicAIInstruction'?{value:instruction}:null,
+   querySelectorAll:selector=>selector==='.music-ai-panel[data-project-id]'?[{
+     dataset:{projectId:p.projectId},querySelectorAll:s=>s==='input[name="musicAINote"]'?[{value:'n2',checked:true}]:[]
+   }]:[]};
+ panel.render(p,session);await panel.previewEdit(p.projectId);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.equal((await app.saveMidiEditor({silent:true})).ok,true);
+ const saved=await repo.get(p.projectId);
+ assert.equal(saved.midiData.tracks[0].notes[1].pitch,p.midiData.tracks[0].notes[1].pitch+1);
+ panel._states.delete(p.projectId);session=app.state.midiEditor=core.createCoordinatedSession(saved);app.state.projects=[saved];
+ panel.render(saved,session);
+ instruction='同じ範囲の音の強さを5上げる';
+ await panel.previewEdit(p.projectId);panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ const record=panel._states.get(p.projectId);
+ assert.deepEqual(plain(session.midiData.tracks[0].notes[0]),plain(saved.midiData.tracks[0].notes[0]));
+ assert.equal(session.midiData.tracks[0].notes[1].velocity,saved.midiData.tracks[0].notes[1].velocity+5,record.message);
+ assert.equal(record.state.workspace.history.filter(e=>e.kind==='edit-applied').length,2);
+ core.undo(session);
+ assert.equal(session.midiData.tracks[0].notes[1].velocity,saved.midiData.tracks[0].notes[1].velocity);
+ assert.equal(record.state.workspace.history.filter(e=>e.kind==='edit-applied').length,1);
+});

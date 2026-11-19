@@ -57,7 +57,8 @@
     "tests/music-studio-final-export.test.js": [
       "d889137661f54781e59d74853771566141f92084"
     ],
-    "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+    "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+    "tests/music-production-tools.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
   },
   "requirements": [
     {
