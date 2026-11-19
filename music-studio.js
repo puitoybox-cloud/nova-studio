@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.230';
+  const ASSET_VERSION='1.4.231';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1659,7 +1659,14 @@
   function pcmShowPreview(event,id){event?.preventDefault?.();if(pcmEditor.busy)return;try{pcmEditor.preview=pcmPreview(state.projects.find(p=>p.projectId===id),pcmEditor.assetId,pcmEditor.gainDb);pcmEditor.message='実音声の処理候補です。A/Bで確認してから保存してください。'}catch(e){pcmEditor.preview=null;pcmEditor.message=e.message}requestPaint()}
   async function pcmCommit(id,operation,token=pcmEditor.generation,extraGuard=()=>{}){
     if(pcmEditor.busy)return{ok:false,error:'pcm-save-busy'};const target=repository,baseline=JSON.stringify(state.projects.find(p=>p.projectId===id));pcmEditor.busy=true;pcmStop();requestPaint();
-    try{const guard=()=>{extraGuard();if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('pcm-unsaved-or-stale-state')};guard.registerAbort=extraGuard.registerAbort;guard.clearAbort=extraGuard.clearAbort;guard();if(typeof target.compareAndPut!=='function')throw Error('pcm-atomic-save-unavailable');const current=await target.get(id);guard();if(JSON.stringify(current)!==baseline)throw Error('pcm-storage-conflict');const updated=operation(current);automaticEditRecord(current,updated,'audio-editor');await target.compareAndPut(updated,baseline,guard);if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:updated};state.projects=state.projects.map(p=>p.projectId===id?updated:p);pcmEditor.preview=null;pcmEditor.message='音声と処理設定を保存しました。';return{ok:true,project:updated};}catch(e){pcmEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}finally{pcmEditor.busy=false;requestPaint()}
+    try{const guard=()=>{extraGuard();if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting)throw Error('pcm-unsaved-or-stale-state')};guard.registerAbort=extraGuard.registerAbort;guard.clearAbort=extraGuard.clearAbort;guard();if(typeof target.compareAndPut!=='function')throw Error('pcm-atomic-save-unavailable');const current=await target.get(id);guard();if(JSON.stringify(current)!==baseline)throw Error('pcm-storage-conflict');const updated=operation(current);automaticEditRecord(current,updated,'audio-editor');
+      const edit=updated.songVersions?.edits?.at(-1),receipt=edit?.revision===updated.revision?edit:null;
+      const saved=await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,baseline,guard),receipt);
+      if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)
+        return{ok:true,committed:true,refreshPending:true,project:saved};
+      state.projects=state.projects.map(p=>p.projectId===id?saved:p);pcmEditor.preview=null;
+      pcmEditor.message=saved===updated?'音声と処理設定を保存しました。':'保存を確認し、後続の変更を読み込みました。';
+      return{ok:true,project:saved};}catch(e){pcmEditor.message='保存できません：'+e.message;return{ok:false,error:e.message}}finally{pcmEditor.busy=false;requestPaint()}
   }
   async function longWavDigest(blob,guard=()=>{}){
     if(!root.crypto?.subtle)throw Error('long-wav-integrity-unavailable');

@@ -294,3 +294,45 @@ test('AI new song reconciles a lost commit notification followed by a competing 
  assert.equal(projects[0].productionHistory.filter(item=>item.type==='project-create').length,1);
  assert.equal(app.state.projects[0].projectName,'Competing name');
 });
+
+test('A mixed-meter MIDI and confirmed code lock plan restores both changes with one Undo',async()=>{
+ const {window:w,app,core,panel,composition}=load(),p=make(app),repo=app.memoryRepository();
+ p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];
+ p.midiData.tracks[0].notes[1].startTick=1100;
+ p.midiData.tracks[0].notes[1].durationTicks=120;
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ const instruction='2小節目の音を半音上げる\n2小節目のコードの固定を設定する';
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:instruction}:null};
+ panel.render(p,session);
+ const record=panel._states.get(p.projectId),analysis=composition.analyzeChords(session,core);
+ const rows=analysis.rows.map(row=>({...row,symbol:'C',status:'confirmed',locked:false}));
+ record.state.workspace.harmonyReview={version:1,chords:rows.map(row=>row.symbol).join(' '),analysis:{...analysis,rows:plain(rows)},rows};
+ const before=plain(session.midiData),workspace=plain(record.state.workspace);
+ await panel.previewEdit(p.projectId);
+ assert.equal(record.editBatch?.steps.length,2,record.message);
+ assert.deepEqual(plain(record.state.workspace),workspace);
+ panel.requestEditApproval(p.projectId);panel.confirmApprovedChange(p.projectId);
+ assert.equal(session.midiData.tracks[0].notes[0].pitch,60);
+ assert.equal(session.midiData.tracks[0].notes[1].pitch,65);
+ assert.equal(record.state.workspace.harmonyReview.rows.find(row=>row.measure===2).locked,true);
+ assert.equal(session.undo.length,1);
+ core.undo(session);
+ assert.deepEqual(plain(session.midiData),before);
+ assert.deepEqual(plain(record.state.workspace),workspace);
+});
+
+test('MIDI Save refuses to replace an AI workspace written by another editor',async()=>{
+ const {window:w,app,core,panel,ui}=load(),p=make(app),repo=app.memoryRepository();
+ await repo.put(p);app.setRepository(repo);app.state.projects=[p];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ panel.render(p,session);const pending=panel._states.get(p.projectId);
+ ui.createCandidates(pending.state,'chord',{},[{summary:'local'}]);pending.pending=true;
+ const contender=ui.createState(p);
+ ui.createCandidates(contender,'chord',{},[{summary:'concurrent'}]);
+ const saved={...p,revision:p.revision+1,aiWorkspace:ui.workspaceForRevision(contender,p.projectId,p.revision+1)};
+ await repo.put(saved);w.console={...console,error(){}};
+ assert.equal((await app.saveMidiEditor({silent:true})).ok,false);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(saved));
+ assert.equal(panel.hasPending(p.projectId),true);
+});

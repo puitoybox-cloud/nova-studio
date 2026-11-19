@@ -264,3 +264,23 @@ test('read-ahead keeps PCM order across non-aligned windows with bounded encoded
  let at=0;for await(const pcm of a.pcmDecodeWavStream(file,30001)){assert.ok(pcm.channels[0].length<=30001);for(let i=0;i<pcm.channels[0].length;i++,at++){assert.equal(pcm.channels[0][i],(at%65536-32768)/32768);assert.equal(pcm.channels[1][i],(32767-at%65536)/32768)}}
  assert.equal(at,frames);assert.equal(reads.filter(([start])=>start>=44).length,3);assert.ok(reads.every(([start,end])=>end-start<=1048576));
 });
+
+test('PCM Apply reconciles a lost notification and retains the competing revision',async()=>{
+ const f=await indexedPcm(),write=f.repo.compareAndPut;
+ f.repo.compareAndPut=async(...args)=>{
+   await write(...args);
+   const saved=await f.repo.get('p');
+   await f.repo.put({...saved,revision:saved.revision+1,projectName:'Second writer'});
+   throw Error('commit-notification-lost');
+ };
+ const result=await f.a.pcmApply('p');
+ assert.equal(result.ok,true);
+ assert.equal(result.project.projectName,'Second writer');
+ assert.equal(f.a.state.projects[0].projectName,'Second writer');
+ assert.equal(f.a.pcmEditor.preview,null);
+ const saved=await f.repo.get('p');
+ assert.equal(saved.pcmMix.assets[0].cursor,1);
+ const edits=saved.songVersions.edits.filter(edit=>edit.source==='audio-editor');
+ assert.equal(edits.length,1);
+ assert.equal(edits[0].revision,saved.revision-1);
+});
