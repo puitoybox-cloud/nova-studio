@@ -154,17 +154,19 @@
     return null;
   }
   let stemController=null;
-  async function importSeparatedAudio(file){
+  async function importSeparatedAudio(file,options={}){
     const api=root.MusicStudio,project=api?.selectedMidiProject?.();
     if(processing||!project)return {ok:false,error:'project-required-or-processing'};
+    if(options.expectedProjectId!==undefined&&options.expectedProjectId!==project.projectId)return {ok:false,error:'stem-cancelled-or-source-changed'};
     if(localSession||bootstrapState!=='LEGACY_UNVERIFIED')return {ok:false,error:'packaged-stem-receipt-not-supported'};
     if(!isAudioFile(file)||!file.size||file.size>MAX_AUDIO_BYTES)return {ok:false,error:'invalid-audio-input'};
     const baseline=JSON.stringify(project),id=project.projectId;
     if(!root.confirm?.('Demucs htdemucs_6sで6本のStemを生成します。元音声を保持し、結果を確認してから別バージョンへ保存します。実行しますか？'))return {ok:false,cancelled:true};
     processing=true;stemController=new AbortController();
     const signal=stemController.signal;
-    const check=()=>{if(signal.aborted||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
+    const check=()=>{if(signal.aborted||options.reason?.()||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
     try{
+      check();
       setStatus('Demucsで分離中です。Cancelで結果の受取と採用を中止できます。');
       const response=await root.fetch(`${ENDPOINT}/process-stems`,{method:'POST',signal,headers:{'Content-Type':file.type||'application/octet-stream','X-Nova-Audio-Pipeline':'1','X-Nova-File-Name':encodeURIComponent(file.name)},body:file});
       check();if(!response.ok)throw Error(await parseError(response));
@@ -435,7 +437,7 @@
       const payload=await processAudioLocally(file,{...options,reason:()=>staleContext()?'audio-import-context-changed':options.reason?.()}),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
-      if(staleContext())throw Error('audio-import-context-changed');
+      if(staleContext()||options.reason?.())throw Error('audio-import-context-changed');
       setStatus(`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
       importerStarted=true;
       const result=await originalImport(midiFile);

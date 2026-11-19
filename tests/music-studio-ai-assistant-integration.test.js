@@ -336,3 +336,22 @@ test('MIDI Save refuses to replace an AI workspace written by another editor',as
  assert.deepEqual(plain(await repo.get(p.projectId)),plain(saved));
  assert.equal(panel.hasPending(p.projectId),true);
 });
+
+test('AI audio approval refuses a changed separation target before starting processing',async()=>{
+ const {window:w,app,core,panel}=load(),p=make(app),other=make(app,'other'),repo=app.memoryRepository();
+ await repo.put(p);await repo.put(other);app.setRepository(repo);app.state.projects=[p,other];
+ const session=app.state.midiEditor=core.createCoordinatedSession(p);
+ let selected=p,calls=0;
+ app.selectedMidiProject=()=>selected;
+ w.MusicStudioAudioPipeline={parseAudioInstruction:()=>({kind:'separate',model:'htdemucs_6s'}),
+   async importSeparatedAudio(){calls++;return {ok:true}}};
+ w.document={querySelector:s=>s==='#musicAIInstruction'?{value:'この音声をボーカルと楽器に分けて'}:null};
+ panel.render(p,session);panel.captureAudioFile(p.projectId,{name:'take.wav'});
+ await panel.previewEdit(p.projectId);panel.requestEditApproval(p.projectId);
+ assert.match(panel.render(p,session),/別バージョンへの保存を確認/);
+ selected=other;await panel.confirmApprovedChange(p.projectId);
+ assert.equal(calls,0);
+ assert.deepEqual(plain(await repo.get(p.projectId)),plain(p));
+ selected=p;panel.requestEditApproval(p.projectId);await panel.confirmApprovedChange(p.projectId);
+ assert.equal(calls,1);
+});
