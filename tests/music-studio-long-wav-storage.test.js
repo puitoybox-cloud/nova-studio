@@ -801,3 +801,35 @@ test('WAV committed import retains original bytes and cannot overwrite a replace
  const result=await a.pcmImportLongFile(file,p.projectId);assert.equal(result.ok,true,result.error);assert.equal(JSON.stringify(a.state.projects),expected,mode);assert.equal(result.committed,true);assert.equal(result.refreshPending,true);const saved=await repo.get(p.projectId);assert.equal(saved.longWavAssets.length,1);assert.equal(saved.longWavAssets[0].id,result.assetId);assert.equal(saved.songVersions.edits.at(-1).source,'audio-editor');const record=indexedDB.stores.get('longWavBinaries').get(result.assetId);assert.deepEqual(Buffer.from(await record.blob.arrayBuffer()),Buffer.from(await file.arrayBuffer()));
  }
 });
+
+test('explicit archive destination verifies bytes and reports cancellation before commit',async()=>{
+ const {a,w}=await setup();
+ let staged,saved,aborted=false,mode='save';
+ w.showSaveFilePicker=async({suggestedName})=>{
+  assert.match(suggestedName,/\.nova$/);
+  return {
+   name:suggestedName,
+   createWritable:async(options)=>{
+    assert.equal(options.mode,'exclusive');
+    return {
+     write:async blob=>{staged=blob;if(mode==='cancel')a.cancelArchiveTransfer()},
+     close:async()=>{saved=staged},
+     abort:async()=>{aborted=true},
+    };
+   },
+   getFile:async()=>mode==='corrupt'?new Blob([new Uint8Array(saved.size)]):saved,
+  };
+ };
+ const first=await a.exportLongWavArchive(true);
+ assert.equal(first.completion,'file-written-verified');
+ assert.equal((await a.previewLongWavArchive(saved)).ok,true);
+ const original=saved;
+ mode='cancel';
+ assert.equal((await a.exportLongWavArchive(true)).error,'archive-cancelled');
+ assert.equal(saved,original);
+ assert.equal(aborted,true);
+ mode='corrupt';
+ const corrupt=await a.exportLongWavArchive(true);
+ assert.equal(corrupt.fileWritten,true);
+ assert.equal(corrupt.error,'archive-file-verification-failed');
+});

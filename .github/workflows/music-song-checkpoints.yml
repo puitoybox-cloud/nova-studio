@@ -31,7 +31,7 @@ jobs:
           node-version: '22'
       - run: node --test tests/music-song-checkpoints.test.js
       - name: Japanese UI fonts
-        timeout-minutes: 6
+        timeout-minutes: 9
         run: bash scripts/music-ci-japanese-fonts.sh
       - id: browser-setup
         if: ${{ !cancelled() }}
