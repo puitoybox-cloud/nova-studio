@@ -271,3 +271,18 @@ test('test AI reservations survive reopen, enforce the monthly cap and settle ea
     [first,'completed',4],[second,'failed',0],[release,'cancelled',0]
   ]);
 });
+
+test('vocal layers can print a short trimmed region of a take longer than the render limit',async()=>{
+  const {a,p,recordId}=await scoreSetup(),id=p.projectId;
+  const bytes=await wav(126*8000).arrayBuffer(),pcm=new DataView(bytes),start=125*8000;
+  for(let i=0;i<8000;i++)pcm.setInt16(44+2*(start+i),Math.round(8000*Math.sin(2*Math.PI*220*i/8000)),true);
+  const file=Object.assign(new Blob([bytes]),{name:'long-source.wav'});
+  const take=await a.importScoreVocal(file,id,recordId,'score-zero',{trimStartSeconds:125});
+  assert.equal(take.ok,true,take.error);
+  const result=await a.vocalLayerSave(id,take.assetId,'harmony',7);
+  assert.equal(result.ok,true,result.error);
+  const dry=await a.vocalRender(id,take.assetId),printed=await a.vocalRender(id,result.assetId);
+  assert.equal(printed.frames,8000);
+  assert.equal(printed.startSeconds,dry.startSeconds);
+  assert.notDeepEqual(Buffer.from(await printed.blob.arrayBuffer()),Buffer.from(await dry.blob.arrayBuffer()));
+});

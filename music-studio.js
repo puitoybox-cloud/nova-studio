@@ -2651,12 +2651,28 @@
     if(!Array.isArray(regions)||regions.length>512)throw Error('vocal-regions-invalid');let end=0;
     return regions.map(r=>{if(!r||!Number.isSafeInteger(r.first)||!Number.isSafeInteger(r.end)||r.first<end||r.end<=r.first||r.end>asset.frames||!Number.isFinite(r.semitones)||Math.abs(r.semitones)>12||!Number.isFinite(r.ratio)||r.ratio<.5||r.ratio>2)throw Error('vocal-region-bounds');if(r.gainDb!==undefined&&(!Number.isFinite(r.gainDb)||r.gainDb< -60||r.gainDb>12))throw Error('vocal-region-gain-invalid');end=r.end;return{first:r.first,end:r.end,semitones:r.semitones,ratio:r.ratio,...(r.gainDb!==undefined?{gainDb:r.gainDb}:{})}});
   }
-  async function vocalReadPCM(id,assetId,guard=()=>{}){
-    const p=state.projects.find(x=>x.projectId===id),asset=p?.longWavAssets?.find(x=>x.id===assetId);vocalHistory(asset);
-    if(asset.frames>asset.sampleRate*125||asset.frames*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');const file=await pcmLoadLongWav(id,assetId,guard);guard();
-    const channels=Array.from({length:asset.channels},()=>new Float32Array(asset.frames));let offset=0;
-    for await(const chunk of pcmDecodeWavStream(file)){guard();if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||offset+chunk.channels[0].length>asset.frames)throw Error('vocal-pcm-metadata-mismatch');for(let c=0;c<channels.length;c++)channels[c].set(chunk.channels[c],offset);offset+=chunk.channels[0].length}
-    guard();if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');return{channels,sampleRate:asset.sampleRate,asset};
+  async function vocalReadPCM(id,assetId,guard=()=>{},range){
+    const p=state.projects.find(x=>x.projectId===id),asset=p?.longWavAssets?.find(x=>x.id===assetId);
+    vocalHistory(asset);
+    const first=range?.first??0,end=range?.end??asset.frames,length=end-first;
+    if(!Number.isSafeInteger(first)||!Number.isSafeInteger(end)||first<0||end>asset.frames||length<1||
+      length>asset.sampleRate*125||length*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');
+    const file=await pcmLoadLongWav(id,assetId,guard);
+    guard();
+    const channels=Array.from({length:asset.channels},()=>new Float32Array(length));
+    let offset=0;
+    for await(const chunk of pcmDecodeWavStream(file)){
+      guard();
+      const next=offset+chunk.channels[0].length;
+      if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||next>asset.frames)
+        throw Error('vocal-pcm-metadata-mismatch');
+      const from=Math.max(first,offset),to=Math.min(end,next);
+      if(to>from)for(let c=0;c<channels.length;c++)channels[c].set(chunk.channels[c].slice(from-offset,to-offset),from-first);
+      offset=next;
+    }
+    guard();
+    if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');
+    return{channels,sampleRate:asset.sampleRate,asset};
   }
   function vocalDetectPitch(samples,rate){
     if(!samples?.length||!Number.isInteger(rate)||rate<8000||rate>192000)throw Error('vocal-analysis-format');
@@ -2673,14 +2689,15 @@
     }return rows;
   }
   async function vocalDetectPitchAsync(samples,rate,guard){const rows=[],block=Math.round(rate),overlap=Math.ceil(rate*.08);if(samples.length/rate>125)throw Error('vocal-analysis-duration');for(let first=0;first<samples.length;first+=block){guard();rows.push(...vocalDetectPitch(samples.subarray(first,Math.min(samples.length,first+block+overlap)),rate).filter(r=>r.first<block).map(r=>({...r,first:r.first+first,end:Math.min(samples.length,r.end+first)})));await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve())}guard();return rows}
-  function vocalGrain(samples,rate,semitones,ratio){
+  function vocalGrain(samples,rate,semitones,ratio,pitchAnalysis){
     const frames=Math.round(samples.length*ratio);if(frames<1||frames>rate*125)throw Error('vocal-render-duration');
     if(semitones===0&&ratio===1)return new Float32Array(samples);
     // Short pitch envelopes need local resampling: a 50ms grain otherwise masks a 40ms correction.
     if(ratio===1&&samples.length<rate*.09){const pitch=2**(semitones/12),center=(samples.length-1)/2;return Float32Array.from(samples,(_,i)=>{const x=Math.max(0,Math.min(samples.length-1,center+(i-center)*pitch)),k=Math.floor(x);return samples[k]+(samples[Math.min(k+1,samples.length-1)]-samples[k])*(x-k)})}
 
-    const out=new Float32Array(frames),weights=new Float32Array(frames),size=Math.max(64,Math.round(rate*.05)),hop=Math.floor(size/4),pitch=2**(semitones/12),analysis=vocalDetectPitch(samples,rate);let previousSource=null,previousCenter=null;
-    for(let center=-hop;center<frames+size/2;center+=hop){const nominal=center/ratio,row=analysis.find(r=>nominal>=r.first&&nominal<r.end),period=row?rate/row.frequency:0,expected=previousSource===null?nominal:previousSource+(center-previousCenter)*pitch,source=period?expected+Math.round((nominal-expected)/period)*period:nominal;previousSource=source;previousCenter=center;for(let j=Math.max(0,Math.ceil(center-size/2));j<Math.min(frames,center+size/2);j++){const d=j-center,x=source+d*pitch;if(x<0||x>=samples.length-1)continue;const k=Math.floor(x),w=.5+.5*Math.cos(2*Math.PI*d/size);out[j]+=(samples[k]+(samples[k+1]-samples[k])*(x-k))*w;weights[j]+=w}}
+    const out=new Float32Array(frames),weights=new Float32Array(frames),size=Math.max(64,Math.round(rate*.05)),hop=Math.floor(size/4),pitch=2**(semitones/12),analysis=pitchAnalysis??vocalDetectPitch(samples,rate);let previousSource=null,previousCenter=null,rowIndex=0;
+    for(let center=-hop;center<frames+size/2;center+=hop){const nominal=center/ratio;while(analysis[rowIndex]?.end<=nominal)rowIndex++;
+      const row=analysis[rowIndex]?.first<=nominal?analysis[rowIndex]:null,period=row?rate/row.frequency:0,expected=previousSource===null?nominal:previousSource+(center-previousCenter)*pitch,source=period?expected+Math.round((nominal-expected)/period)*period:nominal;previousSource=source;previousCenter=center;for(let j=Math.max(0,Math.ceil(center-size/2));j<Math.min(frames,center+size/2);j++){const d=j-center,x=source+d*pitch;if(x<0||x>=samples.length-1)continue;const k=Math.floor(x),w=.5+.5*Math.cos(2*Math.PI*d/size);out[j]+=(samples[k]+(samples[k+1]-samples[k])*(x-k))*w;weights[j]+=w}}
     for(let i=0;i<frames;i++)out[i]=weights[i]>1e-6?out[i]/weights[i]:samples[Math.min(samples.length-1,Math.round(i/ratio))];return out;
   }
   function vocalEditedFrames(setting,regions=setting.regions||[]){
@@ -3145,7 +3162,7 @@
     if(!takes.length)return '';
     const handler=escapeHtml(`MusicStudio.vocalLayerSubmit(event,${JSON.stringify(p.projectId)})`);
     return `<details class="music-vocal-layers"><summary>Harmony / Double / Chorus（録音から別テイクを作成）</summary>
-      <p>録音の保存済み編集を反映し、加工した声部を別テイクに保存します。Harmonyは曲の調に合わせて半音数を指定してください。</p>
+      <p>録音の保存済み編集を反映し、加工した声部を別テイクに保存します。長いテイクは125秒以内にトリムしてください。Harmonyは曲の調に合わせて半音数を指定できます。</p>
       <form onsubmit="${handler}">
         <label>加工元のテイク<select name="source" required ${disabled}>${takes.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('')}</select></label>
         <label>加工する声部<select name="kind" ${disabled}>${Object.entries(vocalLayers).map(([key,layer])=>`<option value="${key}">${layer.label}</option>`).join('')}</select></label>
@@ -3176,9 +3193,12 @@
     try{
       if(!Object.hasOwn(vocalLayers,kind)||(kind==='harmony'&&(!Number.isInteger(interval)||!interval||Math.abs(interval)>12)))
         throw Error('Harmonyの移調は−12〜12の範囲で0以外の整数を指定してください。');
-      const layer=vocalLayers[kind],input=await vocalReadPCM(id,sourceId,guard);
-      const settings=vocalHistory(input.asset),edit=settings.edits[settings.cursor];
-      const {channels,sampleRate,frames}=vocalProcessPCM(input,edit);
+      const layer=vocalLayers[kind],source=project?.longWavAssets?.find(asset=>asset.id===sourceId);
+      const settings=vocalHistory(source),edit=settings.edits[settings.cursor];
+      const input=await vocalReadPCM(id,sourceId,guard,edit);
+      const adjusted={...edit,first:0,end:edit.end-edit.first,regions:edit.regions?.map(region=>
+        ({...region,first:region.first-edit.first,end:region.end-edit.first}))};
+      const {channels,sampleRate,frames}=vocalProcessPCM(input,adjusted);
       const voices=kind==='harmony'?[{semitones:interval,delay:0}]:layer.voices;
       const delays=voices.map(voice=>Math.round(voice.delay*sampleRate));
       const length=frames+Math.max(...delays);
@@ -3186,9 +3206,10 @@
       const output=[];
       for(const samples of channels){
         const rendered=new Float32Array(length);
+        const pitch=await vocalDetectPitchAsync(samples,sampleRate,guard);
         for(const [index,voice] of voices.entries()){
           guard();
-          const shifted=vocalGrain(samples,sampleRate,voice.semitones,1);
+          const shifted=vocalGrain(samples,sampleRate,voice.semitones,1,pitch);
           for(let i=0;i<shifted.length;i++)rendered[i+delays[index]]+=shifted[i]*(.88/voices.length);
           await new Promise(resolve=>root.setTimeout(resolve,0));
         }
