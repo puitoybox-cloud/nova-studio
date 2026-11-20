@@ -65,7 +65,16 @@
     "tests/music-production-tools.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-vocal-correction-comp.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-audio-pipeline.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-    "tests/music-studio-pcm-mix.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+    "tests/music-studio-pcm-mix.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+    "tests/music-studio-logic-pro.test.js": [
+      "6b4a463fbf2944f0969986b12d63df2445bc670a"
+    ],
+    "tests/music-studio-score-vocal-return.test.js": [
+      "6b4a463fbf2944f0969986b12d63df2445bc670a"
+    ],
+    "tests/music-studio-long-wav-storage.test.js": [
+      "6b4a463fbf2944f0969986b12d63df2445bc670a"
+    ]
   },
   "requirements": [
     {
