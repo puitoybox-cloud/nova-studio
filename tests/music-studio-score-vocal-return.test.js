@@ -60,7 +60,7 @@ test('exported tempo, vocal timeline and returned WAV share project BPM despite 
 test('score lists only linked takes, distinguishes changed scores and selects exact take durably',async()=>{
  const f=await scoreSetup(),a=f.a,id=f.p.projectId;
  const one=await a.importScoreVocal(wav(800),id,f.recordId,'first-note'),two=await a.importScoreVocal(wav(800),id,f.recordId,'score-zero');assert.equal(two.ok,true);
- let p=a.state.projects[0],r=p.syllableAssignments[0],html=a.scoreVocalLinkedView(p,r);assert.match(html,/Current score/);assert.match(html,/同期試聴/);assert.equal(a.scoreVocalLinkedView(p,{...r,id:'unrelated'}).includes('同期試聴'),false);
+ let p=a.state.projects[0],r=p.syllableAssignments[0],html=a.scoreVocalLinkedView(p,r);assert.match(html,/Current score/);assert.match(html,/取り込みWAV · 生成元は未確認/);assert.match(html,/同期試聴/);assert.equal(a.scoreVocalLinkedView(p,{...r,id:'unrelated'}).includes('同期試聴'),false);
  assert.equal((await a.openScoreVocalTake(id,one.assetId)).ok,true);assert.equal((await f.repo.get(id)).vocalWorkspace.selectedAssetId,one.assetId);
  p=a.state.projects[0];p.musicalSettings.bpm=80;html=a.scoreVocalLinkedView(p,r);assert.match(html,/Previous score/);assert.doesNotMatch(html,/Current score/);
  const before=JSON.stringify(p);assert.equal((await a.openScoreVocalTake(id,'missing')).ok,false);assert.equal(JSON.stringify(a.state.projects[0]),before);
@@ -144,6 +144,9 @@ test('late compact Sinsy range inherits tempo, preserves full source binding and
  const asset=imported.project.longWavAssets[0];assert.equal(asset.vocalTake.edits[0].startTick,192000);assert.equal(asset.vocalTake.scoreSource.scoreXML,a.lyricsScoreXML(selected,record).text);
  const rendered=await a.vocalRender(p.projectId,imported.assetId);assert.ok(rendered.startSeconds>120);assert.equal(rendered.frames,24000);
  const fresh=fixture(),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);const restored=await fresh.a.restoreLongWavArchive(await a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0],again=await fresh.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);assert.equal(again.startSeconds,rendered.startSeconds);assert.equal(Buffer.compare(Buffer.from(await again.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer())),0);
+ const html=a.scoreVocalLinkedView(imported.project,imported.project.syllableAssignments[0]);
+ assert.match(html,/端末内合成 · NIT SONG070 F001 · CC BY 3.0/);
+ assert.match(html,/Current score/);
  assert.throws(()=>a.lyricsScoreXML(selected,record,{startMeasure:102,endMeasure:102}),/invalid-synthesis/);
  assert.equal((await a.importScoreVocal(wav(800),p.projectId,record,'score-zero',{compactRange:true})).ok,false);
 });

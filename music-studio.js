@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.231';
+  const ASSET_VERSION='1.4.232';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1078,10 +1078,18 @@
   function scoreVocalLinkedView(project,record){
     const takes=(project.longWavAssets||[]).filter(a=>a.vocalTake?.scoreSource?.recordId===record.id&&a.vocalTake.scoreSource.trackId===record.trackId);
     if(!takes.length)return '<p>Imported takes（取り込み済み歌声）：なし</p>';
-    let xml;try{xml=lyricsScoreXML(project,record.id).text}catch(_){}
+    const currentScores=new Map();
     return `<div class="music-score-vocal-takes"><p>Imported takes（取り込み済み歌声）：${takes.length}</p>${takes.map(a=>{
-      const current=xml===a.vocalTake.scoreSource.scoreXML,id=JSON.stringify(project.projectId),key=JSON.stringify(a.id),disabled=vocalBusy()?' disabled':'';
-      return `<div><strong>${escapeHtml(a.name)}</strong><span> / ${current?'Current score（現在の楽譜）':'Previous score（以前の楽譜・同期を再確認）'}</span><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPlay(${id},${key},true)`)}">Play with MIDI（同期試聴）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.openScoreVocalTake(${id},${key})`)}">Edit take（この歌声を編集）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPublishForMix(${id},${key})`)}">Save for Mix（編集音声をミックスへ）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalTimelineExport(${id},${key})`)}">Timeline WAV（曲先頭から同期書出し）</button></div>`;
+      const source=a.vocalTake.scoreSource,id=JSON.stringify(project.projectId),key=JSON.stringify(a.id),disabled=vocalBusy()?' disabled':'';
+      const scoreKey=JSON.stringify([source.engine,source.generationRange]);
+      if(!currentScores.has(scoreKey)){
+        let currentXML;
+        try{currentXML=currentScoreVocalXML(project,source)}catch(_){}
+        currentScores.set(scoreKey,currentXML);
+      }
+      const current=typeof source.scoreXML==='string'&&currentScores.get(scoreKey)===scoreVocalMusicalXML(source.scoreXML);
+      const origin=source.engine==='Sinsy-0.92'&&source.voice==='NIT-SONG070-F001'?'端末内合成 · NIT SONG070 F001 · CC BY 3.0':'取り込みWAV · 生成元は未確認';
+      return `<div><strong>${escapeHtml(a.name)}</strong><span> / ${origin} / ${current?'Current score（現在の楽譜）':'Previous score（以前の楽譜・同期を再確認）'}</span><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPlay(${id},${key},true)`)}">Play with MIDI（同期試聴）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.openScoreVocalTake(${id},${key})`)}">Edit take（この歌声を編集）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPublishForMix(${id},${key})`)}">Save for Mix（編集音声をミックスへ）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalTimelineExport(${id},${key})`)}">Timeline WAV（曲先頭から同期書出し）</button></div>`;
     }).join('')}</div>`;
   }
   async function openScoreVocalTake(id,assetId){
@@ -1243,7 +1251,7 @@
   function scoreVocalReturnView(id,record){
     const disabled=record.stale||vocalBusy()||localVocalJob?' disabled':'';
     const project=state.projects.find(p=>p.projectId===id);let timing='';try{const t=scoreVocalTiming(project,record.id);timing=`<p>Score timing（楽譜の時刻）：最初の音符 ${t.firstNoteSeconds.toFixed(3)} 秒 / 最後の音符末尾 ${t.endSeconds.toFixed(3)} 秒。書出しソフトの冒頭休符の有無に合わせて開始位置を選択してください。</p>`}catch(_){}
-    return `${localVocalJob?.id===id?`<p role="status">Sinsy（歌声生成）: ${localVocalJob.cancelled?'停止を要求しました。':localVocalJob.phase==='importing'?'生成したWAVを安全に保存中…':'生成中…'} 元の曲と歌声を保持します。</p>${localVocalJob.phase==='requesting'&&!localVocalJob.cancelled?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.cancelLocalScoreVocal(${JSON.stringify(id)})`)}">Cancel singing（歌声生成を中断）</button>`:''}`:''}${(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocal(${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Sinsy（端末内で歌声生成・取り込み）</button><div data-vocal-generation class="music-form-grid"><label>First bar（開始小節）<input name="startMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><label>Last bar（終了小節）<input name="endMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocalRange(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Generate range（選択小節を別テイク生成）</button><small>範囲内の歌詞音符だけを送ります。選択小節内の休符だけを生成し、元の曲位置へ自動配置します。元の歌声を保持し、VocalのReplace measures（小節置換）で比較・採用できます。</small></div><small>NIT SONG070 F001 / 名古屋工業大学 / CC BY 3.0。HMM歌声合成。</small>`:''}${timing}<form class="music-score-vocal-return music-form-grid" oninput="this.querySelector('[data-score-audio-report]').textContent='WAVを再確認してください。'" onsubmit="${escapeHtml(`MusicStudio.importScoreVocalForm(event,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"><p>対応する歌声ソフトで作成したWAVを選択してください。このフォームでは生成エンジンの実行・生成元の自動判定は行いません。</p><label>WAV（歌声音声・最大120秒）<input name="audio" type="file" accept="audio/wav,.wav" required${disabled}></label><label>Audio origin（音声の開始位置）<select name="origin" required${disabled}><option value="">選択してください</option><option value="score-zero">Score start（楽譜先頭・冒頭休符を含む）</option><option value="first-note">First note（最初の歌詞音符・冒頭休符なし）</option></select></label><details class="music-span-2"><summary>Import settings（取り込み時の編集）</summary><p>選択範囲の先頭を、選んだ楽譜開始位置へ配置します。元WAVは完全に保持し、編集画面で元に戻せます。</p><div class="music-form-grid"><label>Trim start（音声の開始秒）<input name="trimStart" type="number" min="0" max="120" step="0.001" value="0"${disabled}></label><label>Trim end（音声の終了秒・空欄は最後）<input name="trimEnd" type="number" min="0" max="120" step="0.001"${disabled}></label><label>Gain（音量 dB）<input name="gain" type="number" min="-24" max="12" step="0.1" value="0"${disabled}></label><label>Latency（前へ補正 ms）<input name="latency" type="number" min="-2000" max="2000" step="1" value="0"${disabled}></label></div></details><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.inspectScoreVocalForm(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Check WAV（保存前に確認）</button><p data-score-audio-report role="status">長さ・音量・楽譜との時間差を確認できます。生成元は判定しません。</p><label><input type="checkbox" name="editAfter"${disabled}>Open editor（保存後に編集画面へ）</label><button class="music-secondary"${disabled}>Import Vocal WAV（歌声を保存）</button><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction('vocal',${JSON.stringify(id)})`)}">Vocal（ボーカル編集）</button></form>`;
+    return `${localVocalJob?.id===id?`<p role="status">Sinsy（歌声生成）: ${localVocalJob.cancelled?'停止を要求しました。':localVocalJob.phase==='importing'?'生成したWAVを安全に保存中…':'生成中…'} 元の曲と歌声を保持します。</p>${localVocalJob.phase==='requesting'&&!localVocalJob.cancelled?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.cancelLocalScoreVocal(${JSON.stringify(id)})`)}">Cancel singing（歌声生成を中断）</button>`:''}`:''}${(root.location?.hostname==='127.0.0.1'||root.__NOVA_GENERATION_HOST__===true)?`<button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocal(${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Sinsy（端末内で歌声生成・取り込み）</button><div data-vocal-generation class="music-form-grid"><label>First bar（開始小節）<input name="startMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><label>Last bar（終了小節）<input name="endMeasure" type="number" min="1" max="512" step="1" value="1"${disabled}></label><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.generateLocalScoreVocalRange(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Generate range（選択小節を別テイク生成）</button><small>範囲内の歌詞音符だけを送ります。選択小節内の休符だけを生成し、元の曲位置へ自動配置します。元の歌声を保持し、VocalのReplace measures（小節置換）で比較・採用できます。</small></div><small>NIT SONG070 F001 / 名古屋工業大学 / <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>。</small>`:''}<p>歌声の素材は、人の歌唱録音、端末内合成、取り込み済みWAVから選べます。</p><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction('vocal',${JSON.stringify(id)})`)}"${disabled}>人の歌唱を録音・編集</button>${timing}<form class="music-score-vocal-return music-form-grid" oninput="this.querySelector('[data-score-audio-report]').textContent='WAVを再確認してください。'" onsubmit="${escapeHtml(`MusicStudio.importScoreVocalForm(event,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"><p>対応する歌声ソフトで作成したWAVを選択してください。このフォームでは生成エンジンの実行・生成元の自動判定は行いません。</p><label>WAV（歌声音声・最大120秒）<input name="audio" type="file" accept="audio/wav,.wav" required${disabled}></label><label>Audio origin（音声の開始位置）<select name="origin" required${disabled}><option value="">選択してください</option><option value="score-zero">Score start（楽譜先頭・冒頭休符を含む）</option><option value="first-note">First note（最初の歌詞音符・冒頭休符なし）</option></select></label><details class="music-span-2"><summary>Import settings（取り込み時の編集）</summary><p>選択範囲の先頭を、選んだ楽譜開始位置へ配置します。元WAVは完全に保持し、編集画面で元に戻せます。</p><div class="music-form-grid"><label>Trim start（音声の開始秒）<input name="trimStart" type="number" min="0" max="120" step="0.001" value="0"${disabled}></label><label>Trim end（音声の終了秒・空欄は最後）<input name="trimEnd" type="number" min="0" max="120" step="0.001"${disabled}></label><label>Gain（音量 dB）<input name="gain" type="number" min="-24" max="12" step="0.1" value="0"${disabled}></label><label>Latency（前へ補正 ms）<input name="latency" type="number" min="-2000" max="2000" step="1" value="0"${disabled}></label></div></details><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.inspectScoreVocalForm(this,${JSON.stringify(id)},${JSON.stringify(record.id)})`)}"${disabled}>Check WAV（保存前に確認）</button><p data-score-audio-report role="status">長さ・音量・楽譜との時間差を確認できます。生成元は判定しません。</p><label><input type="checkbox" name="editAfter"${disabled}>Open editor（保存後に編集画面へ）</label><button class="music-secondary"${disabled}>Import Vocal WAV（歌声を保存）</button><button type="button" class="music-secondary" onclick="${escapeHtml(`MusicStudio.openWorkAction('vocal',${JSON.stringify(id)})`)}">Vocal（ボーカル編集）</button></form>`;
   }
   function lyricsAssignmentView(id){
     const project=state.projects.find(p=>p.projectId===id);if(!project)return'<main class="music-studio-shell"><p>プロジェクトが見つかりません。</p></main>';
@@ -2080,15 +2088,46 @@
     const settings=preview.restoreSettings??(root.document?.querySelector('#archiveRestoreSettings')?.checked!==false);
     return restoreLongWavArchive(preview.file,{settings});
   }
-  async function exportLongWavArchive(){
+  async function verifySavedFile(handle, expected, errorCode){
+    const actual=await handle.getFile();
+    if(actual.size!==expected.size)throw Error(errorCode);
+    for(let offset=0;offset<actual.size;offset+=65536){
+      const [saved,source]=await Promise.all([actual,expected].map(blob=>blob.slice(offset,offset+65536).arrayBuffer()));
+      const bytes=new Uint8Array(source);
+      if(saved.byteLength!==bytes.length||new Uint8Array(saved).some((value,index)=>value!==bytes[index]))throw Error(errorCode);
+    }
+  }
+  async function exportLongWavArchive(chooseDestination=false){
     if(archiveTransfer.busy)return{ok:false,error:'archive-transfer-busy'};
     const target=repository,token=++archiveTransfer.generation;archiveTransfer.busy=true;requestPaint();
-    try{const blob=await createLongWavArchive({preserveDamagedJournals:true,signal:{get aborted(){return token!==archiveTransfer.generation}}});
+    let writable,committed=false;
+    const signal={get aborted(){return token!==archiveTransfer.generation}};
+    try{
+      const name='Music-Studio_'+now().replace(/[:.]/g,'-')+'_'+uuid()+'.nova';
+      const handle=chooseDestination?await root.showSaveFilePicker({suggestedName:name}):null;
+      archiveGuard(target,signal);
+      const blob=await createLongWavArchive({preserveDamagedJournals:true,signal});
+      if(handle){
+        writable=await handle.createWritable({mode:'exclusive'});
+        archiveGuard(target,signal);
+        await writable.write(blob);
+        archiveGuard(target,signal);
+        await writable.close();
+        writable=null;
+        committed=true;
+        await verifySavedFile(handle,blob,'archive-file-verification-failed');
+        notice('選択したファイルにアーカイブを保存し、保存した内容を照合しました。','success');
+        return{ok:true,name:handle.name,size:blob.size,completion:'file-written-verified'};
+      }
       archiveGuard(target,{aborted:token!==archiveTransfer.generation});
       if(!root.document||!root.URL?.createObjectURL)return{ok:true,blob};
       const url=root.URL.createObjectURL(blob),link=root.document.createElement('a');link.href=url;link.download=`music-studio-full-wav_${now().slice(0,10)}.nova`;root.document.body.appendChild(link);link.click();link.remove();root.setTimeout?.(()=>root.URL.revokeObjectURL(url),1000);
       notice('元ファイル・プロジェクト・設定を含むアーカイブのダウンロードをブラウザに依頼しました。保存の完了はダウンロード一覧で確認してください。未完了録音の破損・欠落はそのまま保持され、音声修復を保証しません。','success');return{ok:true};
-    }catch(e){notice('書き出せません：'+e.message,'error');return{ok:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
+    }catch(e){
+      if(writable)try{await writable.abort()}catch(_){}
+      notice(committed?'保存後に内容を確認できません：'+e.message:e.name==='AbortError'?'保存先の選択を取り消しました。':'書き出せません：'+e.message,committed||e.name!=='AbortError'?'error':'info');
+      return{ok:false,error:e.message,...(committed?{fileWritten:true}:{})};
+    }finally{archiveTransfer.busy=false;requestPaint()}
   }
   async function pcmImportLongFile(file,id){
     if(pcmEditor.busy)return{ok:false,error:'pcm-save-busy'};
@@ -2645,6 +2684,12 @@
     const steps=scale.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
     return steps.map(semitones=>(scale.pitch+semitones)%12);
   }
+  const scoreVocalMusicalXML=text=>text.replace(/<work-title>[\s\S]*?<\/work-title>/,'<work-title/>');
+  function currentScoreVocalXML(project,source){
+    const scoreProject=vocalRangeProject(project,source.recordId,source.generationRange);
+    const input=source.engine==='Sinsy-0.92'?japaneseVocalProject(scoreProject,source.recordId):scoreProject;
+    return scoreVocalMusicalXML(lyricsScoreXML(input,source.recordId).text);
+  }
   async function vocalCompareReference(id,assetId,referenceId){
     if(vocalBusy()||pcmEditor.busy||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy)return{ok:false,error:'vocal-analysis-busy'};
     const p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),target=repository,generation=++vocalCorrection.generation;
@@ -2653,10 +2698,7 @@
     try{
       const reference=p?.longWavAssets?.find(a=>a.id===referenceId),source=reference?.vocalTake?.scoreSource;
       if(assetId===referenceId||!source)throw Error('vocal-comparison-score-reference-required');
-      const scoreProject=source.generationRange?vocalRangeProject(p,source.recordId,source.generationRange):p;
-      const score=lyricsScoreXML(source.engine==='Sinsy-0.92'?japaneseVocalProject(scoreProject,source.recordId):scoreProject,source.recordId);
-      const musicalXML=text=>text.replace(/<work-title>[\s\S]*?<\/work-title>/,'<work-title/>');
-      if(musicalXML(score.text)!==musicalXML(source.scoreXML))throw Error('vocal-comparison-score-changed');
+      if(currentScoreVocalXML(p,source)!==scoreVocalMusicalXML(source.scoreXML))throw Error('vocal-comparison-score-changed');
       const timeline=vocalTimeline(p,reference,source.trackId);
       const analyze=async key=>{const pcm=await vocalReadPCM(id,key,guard),setting=vocalHistory(pcm.asset).edits[pcm.asset.vocalTake.cursor];
         if(setting.regions?.some(r=>r.ratio!==1))throw Error('vocal-comparison-render-timing-edits-first');
@@ -3642,7 +3684,7 @@
   ${settingSection('appInfo','アプリ情報',`<dl class="music-info-list"><div><dt>アプリ名</dt><dd>Music Studio</dd></div><div><dt>所属</dt><dd>Dream Architect Studio</dd></div><div><dt>現在のバージョン</dt><dd>${APP_VERSION}</dd></div><div><dt>開発段階</dt><dd>Music Studio 0.4 実装完了</dd></div><div><dt>設定形式</dt><dd>${SETTINGS_FORMAT} Version ${SETTINGS_VERSION}</dd></div><div><dt>プロジェクト形式</dt><dd>${FORMAT} Version 1</dd></div><div><dt>バックアップ形式</dt><dd>${BACKUP_FORMAT} Version ${BACKUP_VERSION}</dd></div><div><dt>保存場所</dt><dd>端末内</dd></div><div><dt>外部送信</dt><dd>行いません</dd></div></dl><p>単体アプリ化を前提とし、端末内保存のみを行います。ライセンス情報とCHANGELOGは同梱文書を参照してください。</p><p><a href="./docs/music-studio/MS-00C_LICENSE_REGISTER.md">ライセンス情報</a> · <a href="./CHANGELOG.md">CHANGELOG</a></p>`)}
   ${settingSection('experimental','詳細設定',`<p>将来機能用です。販売版で不安定機能を誤って有効化しないため、すべて無効です。</p>${toggle('experimental.enabled','実験機能',false,'現在は変更できません',true)}`)}
   <div class="music-sticky-actions"><button class="music-primary" type="submit">変更を保存</button><button class="music-secondary" type="button" onclick="MusicStudio.discardSettings()">変更を破棄</button><button class="music-secondary" type="button" onclick="MusicStudio.resetSettings()">初期値に戻す</button><button class="music-secondary" type="button" onclick="MusicStudio.exportSettings()">設定を書き出す</button><input id="musicSettingsImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.importSettingsFile(this.files[0]);this.value=''"><button class="music-secondary" type="button" onclick="document.querySelector('#musicSettingsImport').click()">設定を読み込む</button></div></form></div></main>`}
-  function backupView(){const archive=archiveTransfer.preview;const preview=state.backupPreview;const automatic=state.autoBackups.map(item=>`<article class="music-auto-backup-row"><div><b>${formatDate(item.createdAt)}</b><small>プロジェクト ${item.snapshot?.projects?.length||0}件${item.archive?' · 元ファイル本体を含む':''} · ${escapeHtml(item.sizeLabel||'容量不明')}</small></div><button class="music-secondary" onclick="MusicStudio.restoreAutoBackup('${escapeHtml(item.backupId)}')">この自動バックアップを復元</button></article>`).join('')||'<p class="music-empty">自動バックアップはまだありません。</p>';return `<main class="music-studio-shell music-settings-page" aria-labelledby="musicBackupTitle">${flowNavigation('Music Studio設定','MusicStudio.goSettings()','プロジェクト一覧','MusicStudio.goProjects()')}${noticeView()}<header class="music-page-header"><p class="music-kicker">Local JSON backup（端末内JSONバックアップ）</p><h1 id="musicBackupTitle">Music Studioバックアップ</h1><p>対象：設定1件、プロジェクト${state.projects.length}件、参照ファイルのメタ情報。JSONには外部ファイル本体を含みません。長時間WAVがある場合はWAVアーカイブで保存します。</p></header><section class="music-setting-section"><h2>手動バックアップを書き出す</h2><p>Full WAV Archive（元ファイル・プロジェクト・設定）：外部参照ファイルがある場合は完全性を保証できないため中止します。復元は既存曲を残して追加し、設定を復元します。</p><button class="music-primary" onclick="MusicStudio.exportLongWavArchive()">Full WAV Archive（完全保存）</button><label>Restore Archive（アーカイブを復元）<input type="file" accept=".nova" onchange="MusicStudio.previewLongWavArchive(this.files[0]);this.value=''"></label>${archiveTransfer.busy?'<p role="status">アーカイブの検証・保存中です。</p><button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button>':''}${archive?`<div class="music-backup-preview" role="status"><h3>Archive Preview（復元前の確認）</h3><p>プロジェクト ${archive.projectCount}件 / 元ファイル ${archive.assetCount}件 / ${(archive.size/1048576).toFixed(2)} MiB</p><label><input id="archiveRestoreSettings" type="checkbox" onchange="MusicStudio.setArchiveRestoreSettings(this.checked)"${archive.restoreSettings===false?'':' checked'}> 設定も復元する</label><p>保存済みWAVを検証済みです。既存曲を残し、新しいIDで追加します。${archive.preservedRecordings?`破損・欠落を保持した未完了録音 ${archive.preservedRecordings}件を含みます。音声修復の保証ではありません。`:""}</p>${archive.priorRestores.length?`<p>同じアーカイブの復元履歴が見つかりました。</p><ul>${archive.priorRestores.map(project=>`<li>${escapeHtml(project.projectName)}</li>`).join('')}</ul><button class="music-primary" onclick="MusicStudio.restorePreviewedArchive(true)">別のコピーを追加して復元</button>`:'<button class="music-primary" onclick="MusicStudio.restorePreviewedArchive()">内容を確認して復元</button>'}<button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button></div>`:''}<p>既存データを変更せず、Music Studio全体をVersion 1 JSONへまとめます。手動ファイルは自動整理の対象外です。</p><button class="music-primary" onclick="MusicStudio.exportBackup()">Backup（曲に合わせて書き出す）</button></section><section class="music-setting-section"><h2>バックアップを検証・復元</h2><input id="musicBackupImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.previewBackupFile(this.files[0]);this.value=''"><button class="music-secondary" onclick="document.querySelector('#musicBackupImport').click()">バックアップJSONを選択</button>${preview?`<div class="music-backup-preview" role="status"><h3>復元前の概要</h3><p>作成：${formatDate(preview.metadata.createdAt)} / プロジェクト ${preview.projects.length}件 / 参照 ${preview.references?.length||0}件</p><label><input id="restoreSettings" type="checkbox" checked> 設定を復元</label><label><input id="restoreProjects" type="checkbox" checked> プロジェクトを追加・統合</label><p>同じIDは新しいIDで追加します。全項目を検査し、不正な項目があれば復元全体を中止します。外部ファイル本体は別途再選択が必要です。既存データは削除・上書きせず、復元前に現在状態を安全コピーとしてダウンロードします。</p><button class="music-primary" onclick="MusicStudio.restorePreviewedBackup()">内容を確認して復元</button><button class="music-secondary" onclick="MusicStudio.clearBackupPreview()">キャンセル</button></div>`:''}</section><section class="music-setting-section"><div class="music-section-heading"><div><h2>端末内の自動バックアップ</h2><p>Music Studioを開いた時だけ期限を確認します。バックグラウンド常駐は行いません。</p></div><button class="music-secondary" onclick="MusicStudio.checkAutoBackupNow()">期限を確認</button></div><div class="music-auto-backup-list">${automatic}</div></section></main>`}
+  function backupView(){const archive=archiveTransfer.preview;const preview=state.backupPreview;const automatic=state.autoBackups.map(item=>`<article class="music-auto-backup-row"><div><b>${formatDate(item.createdAt)}</b><small>プロジェクト ${item.snapshot?.projects?.length||0}件${item.archive?' · 元ファイル本体を含む':''} · ${escapeHtml(item.sizeLabel||'容量不明')}</small></div><button class="music-secondary" onclick="MusicStudio.restoreAutoBackup('${escapeHtml(item.backupId)}')">この自動バックアップを復元</button></article>`).join('')||'<p class="music-empty">自動バックアップはまだありません。</p>';return `<main class="music-studio-shell music-settings-page" aria-labelledby="musicBackupTitle">${flowNavigation('Music Studio設定','MusicStudio.goSettings()','プロジェクト一覧','MusicStudio.goProjects()')}${noticeView()}<header class="music-page-header"><p class="music-kicker">Local JSON backup（端末内JSONバックアップ）</p><h1 id="musicBackupTitle">Music Studioバックアップ</h1><p>対象：設定1件、プロジェクト${state.projects.length}件、参照ファイルのメタ情報。JSONには外部ファイル本体を含みません。長時間WAVがある場合はWAVアーカイブで保存します。</p></header><section class="music-setting-section"><h2>手動バックアップを書き出す</h2><p>Full WAV Archive（元ファイル・プロジェクト・設定）：外部参照ファイルがある場合は完全性を保証できないため中止します。復元は既存曲を残して追加し、設定を復元します。</p><button class="music-primary" onclick="MusicStudio.exportLongWavArchive()">Full WAV Archive（完全保存）</button>${typeof root.showSaveFilePicker==='function'?'<button type="button" class="music-secondary" onclick="MusicStudio.exportLongWavArchive(true)">iCloud・外付けSSDなどに保存</button>':''}<label>Restore Archive（アーカイブを復元）<input type="file" accept=".nova" onchange="MusicStudio.previewLongWavArchive(this.files[0]);this.value=''"></label>${archiveTransfer.busy?'<p role="status">アーカイブの検証・保存中です。</p><button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button>':''}${archive?`<div class="music-backup-preview" role="status"><h3>Archive Preview（復元前の確認）</h3><p>プロジェクト ${archive.projectCount}件 / 元ファイル ${archive.assetCount}件 / ${(archive.size/1048576).toFixed(2)} MiB</p><label><input id="archiveRestoreSettings" type="checkbox" onchange="MusicStudio.setArchiveRestoreSettings(this.checked)"${archive.restoreSettings===false?'':' checked'}> 設定も復元する</label><p>保存済みWAVを検証済みです。既存曲を残し、新しいIDで追加します。${archive.preservedRecordings?`破損・欠落を保持した未完了録音 ${archive.preservedRecordings}件を含みます。音声修復の保証ではありません。`:""}</p>${archive.priorRestores.length?`<p>同じアーカイブの復元履歴が見つかりました。</p><ul>${archive.priorRestores.map(project=>`<li>${escapeHtml(project.projectName)}</li>`).join('')}</ul><button class="music-primary" onclick="MusicStudio.restorePreviewedArchive(true)">別のコピーを追加して復元</button>`:'<button class="music-primary" onclick="MusicStudio.restorePreviewedArchive()">内容を確認して復元</button>'}<button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button></div>`:''}<p>既存データを変更せず、Music Studio全体をVersion 1 JSONへまとめます。手動ファイルは自動整理の対象外です。</p><button class="music-primary" onclick="MusicStudio.exportBackup()">Backup（曲に合わせて書き出す）</button></section><section class="music-setting-section"><h2>バックアップを検証・復元</h2><input id="musicBackupImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.previewBackupFile(this.files[0]);this.value=''"><button class="music-secondary" onclick="document.querySelector('#musicBackupImport').click()">バックアップJSONを選択</button>${preview?`<div class="music-backup-preview" role="status"><h3>復元前の概要</h3><p>作成：${formatDate(preview.metadata.createdAt)} / プロジェクト ${preview.projects.length}件 / 参照 ${preview.references?.length||0}件</p><label><input id="restoreSettings" type="checkbox" checked> 設定を復元</label><label><input id="restoreProjects" type="checkbox" checked> プロジェクトを追加・統合</label><p>同じIDは新しいIDで追加します。全項目を検査し、不正な項目があれば復元全体を中止します。外部ファイル本体は別途再選択が必要です。既存データは削除・上書きせず、復元前に現在状態を安全コピーとしてダウンロードします。</p><button class="music-primary" onclick="MusicStudio.restorePreviewedBackup()">内容を確認して復元</button><button class="music-secondary" onclick="MusicStudio.clearBackupPreview()">キャンセル</button></div>`:''}</section><section class="music-setting-section"><div class="music-section-heading"><div><h2>端末内の自動バックアップ</h2><p>Music Studioを開いた時だけ期限を確認します。バックグラウンド常駐は行いません。</p></div><button class="music-secondary" onclick="MusicStudio.checkAutoBackupNow()">期限を確認</button></div><div class="music-auto-backup-list">${automatic}</div></section></main>`}
   function selectedMidiProject(){const last=getLastProject();return state.projects.find(project=>project.projectId===last)||state.projects.find(project=>project.midiData)||state.projects[0]||null}
   const MIDI_EXPORT_SCOPES={melody:'Melody',drums:'Drums',bass:'Bass',all:'All'};
   function currentMidiExportProject(projectId=''){const targetId=projectId||state.midiEditor?.projectId||getLastProject(),project=state.projects.find(item=>item.projectId===targetId)||selectedMidiProject();return project&&state.midiEditor?.projectId===project.projectId?{...project,midiData:clone(state.midiEditor.midiData)}:project}
@@ -4150,9 +4192,22 @@
     if(!['created','result-ready'].includes(partial.status)){notice(partialEditMessage(partial.status),'error');return false}
     const provider=String(form.elements?.provider?.value||''),model=String(form.elements?.model?.value||'').trim(),apiKey=String(form.elements?.apiKey?.value||''),intent=String(form.elements?.intent?.value||''),text=String(form.elements?.instruction?.value||'').trim();
     if(form.elements?.apiKey)form.elements.apiKey.value='';
-    runtime.provider=provider;runtime.model=model;runtime.intent=intent;runtime.text=text;runtime.errorCode='';const runId=++runtime.runId;runtime.status='loading';repaintEditor();
+    let runId=runtime.runId;
+
     try{
-      const aiInput=core.createPartialEditAIInput(partial.request,{context:{tempo:session.midiData.tempo,timeSignature:session.midiData.timeSignature}}),instruction=core.createPartialEditInstruction({intent,...(text?{text}:{})}),context=core.createPartialEditPromptContext(partial.request,aiInput,instruction),payload=core.createPartialEditProviderPayload(provider,context),config=core.createPartialEditProviderConfig(provider,{apiKey,model}),execution=await core.executePartialEditProviderRequest(provider,payload,{config,apiKey});
+      const aiInput=core.createPartialEditAIInput(partial.request,{context:{tempo:session.midiData.tempo,timeSignature:session.midiData.timeSignature}}),instruction=core.createPartialEditInstruction({intent,...(text?{text}:{})}),context=core.createPartialEditPromptContext(partial.request,aiInput,instruction),payload=core.createPartialEditProviderPayload(provider,context),config=core.createPartialEditProviderConfig(provider,{apiKey,model});
+      const range=partial.request.range;
+      const review=[
+        `外部AIへの送信を承認しますか？ ${config.provider} / ${config.model}`,
+        `対象: ${range.startMeasure}〜${range.endMeasure}小節、ノート ${partial.request.targetNoteIds.length}件`,
+        '送信内容: トラックID、対象小節、編集可能・固定音符のIDと音程・長さ・強さ、テンポ・拍子、編集指示。音声ファイルの送信はありません。',
+        `編集指示: ${text||intent}`,
+        '予想費用: 確認できません。プロバイダーの契約に応じて課金される場合があります。',
+      ].join('\n');
+      if(root.confirm?.(review)!==true)return{ok:false,reason:'external-provider-not-approved'};
+      runtime.provider=provider;runtime.model=model;runtime.intent=intent;runtime.text=text;runtime.errorCode='';
+      runId=++runtime.runId;runtime.status='loading';repaintEditor();
+      const execution=await core.executePartialEditProviderRequest(provider,payload,{config,apiKey});
       if(runtime.runId!==runId||state.partialEditSession!==partial)return{ok:false,reason:'stale-response'};
       if(execution.status!=='success'){const code=execution.error?.category||execution.error?.code||'provider-error';runtime.status='error';runtime.errorCode=code;notice(partialEditProviderErrorMessage(code),'error');repaintEditor();return{ok:false,error:clone(execution.error)}}
       const output=core.extractPartialEditProviderOutput(execution),proposal=core.parsePartialEditAIOutput(partial.request,output),result=core.createPartialEditResult(partial.request,proposal),preview=core.createPartialEditPreview(partial.request,result),staleCheck=core.applyPartialEditPreview(core.clone(session),partial.request,result,preview);
@@ -5593,8 +5648,7 @@
       if(JSON.stringify(await target.get(id))!==c.baseline)throw Error('final-storage-conflict');finalDeliveryGuard(id,c,target,token);
       if(handle){
         writable=await handle.createWritable();finalDeliveryGuard(id,c,target,token);await writable.write(file.blob);finalDeliveryGuard(id,c,target,token);await writable.close();writable=null;
-        const actual=await handle.getFile();if(actual.size!==file.blob.size)throw Error('final-file-verification-failed');
-        for(let at=0;at<actual.size;at+=65536){const [x,y]=await Promise.all([actual.slice(at,at+65536).arrayBuffer(),file.blob.slice(at,at+65536).arrayBuffer()]);const a=new Uint8Array(x),b=new Uint8Array(y);if(a.length!==b.length||a.some((v,i)=>v!==b[i]))throw Error('final-file-verification-failed')}
+        await verifySavedFile(handle,file.blob,'final-file-verification-failed');
         outputName=handle.name;completion='file-written-verified';
       }else{
         if(!root.document||!root.URL?.createObjectURL)throw Error('final-download-unavailable');const url=root.URL.createObjectURL(file.blob);

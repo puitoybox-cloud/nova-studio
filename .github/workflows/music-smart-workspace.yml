@@ -35,7 +35,7 @@ jobs:
       - run: node --check music-studio.js && node --check scripts/music-workspace-browser.js
       - run: npm install --prefix "$RUNNER_TEMP/workspace-browser" playwright @axe-core/playwright
       - name: Japanese UI fonts
-        timeout-minutes: 6
+        timeout-minutes: 9
         run: bash scripts/music-ci-japanese-fonts.sh
       - name: Chrome UI, IndexedDB restart and full backup recovery
         env:
