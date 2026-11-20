@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.235';
+  const ASSET_VERSION='1.4.236';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1234,6 +1234,10 @@
     }
     return updated;
   }
+  const localScoreVoice=Object.freeze({
+    engine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001 0.90',license:'CC-BY-3.0',
+    filename:'Sinsy-NIT-SONG070-F001.wav'
+  });
   let localVocalJob=null;
   function cancelLocalScoreVocal(id){
     const job=localVocalJob;if(!job||job.id!==id||job.phase!=='requesting')return{ok:false,error:'local-vocal-not-cancellable'};
@@ -1262,8 +1266,10 @@
       const result=await localGenerationRequest('sing',{scoreXML:score.text,requestId:job.requestId},{signal:job.controller?.signal});
       if(job.cancelled||localVocalJob!==job)throw Error('local-vocal-cancelled');
       if(repository!==target||state.projects.find(p=>p.projectId===id)!==p||JSON.stringify(p)!==baseline)throw Error('score-changed-during-generation');
+      if(result.engine!==localScoreVoice.engine||result.voice!==localScoreVoice.voice||result.license!==localScoreVoice.license)
+        throw Error('歌声生成ホストの声庫またはライセンスを確認できません。');
       if(typeof result.wavBase64!=='string'||result.wavBase64.length>Math.ceil(VOCAL_MAX_BYTES/3)*4)throw Error('local-vocal-response-size');
-      const bytes=Uint8Array.from(root.atob(result.wavBase64),x=>x.charCodeAt(0)),file=new root.File([bytes],'Sinsy-NIT-SONG070-F001.wav',{type:'audio/wav'});
+      const bytes=Uint8Array.from(root.atob(result.wavBase64),x=>x.charCodeAt(0)),file=new root.File([bytes],localScoreVoice.filename,{type:'audio/wav'});
       job.phase='importing';root.clearTimeout?.(timer);
       return await importScoreVocal(file,id,recordId,'score-zero',{generationRange:range,localSinsy:true,compactRange:range!==undefined});
     }catch(error){
@@ -2645,12 +2651,28 @@
     if(!Array.isArray(regions)||regions.length>512)throw Error('vocal-regions-invalid');let end=0;
     return regions.map(r=>{if(!r||!Number.isSafeInteger(r.first)||!Number.isSafeInteger(r.end)||r.first<end||r.end<=r.first||r.end>asset.frames||!Number.isFinite(r.semitones)||Math.abs(r.semitones)>12||!Number.isFinite(r.ratio)||r.ratio<.5||r.ratio>2)throw Error('vocal-region-bounds');if(r.gainDb!==undefined&&(!Number.isFinite(r.gainDb)||r.gainDb< -60||r.gainDb>12))throw Error('vocal-region-gain-invalid');end=r.end;return{first:r.first,end:r.end,semitones:r.semitones,ratio:r.ratio,...(r.gainDb!==undefined?{gainDb:r.gainDb}:{})}});
   }
-  async function vocalReadPCM(id,assetId,guard=()=>{}){
-    const p=state.projects.find(x=>x.projectId===id),asset=p?.longWavAssets?.find(x=>x.id===assetId);vocalHistory(asset);
-    if(asset.frames>asset.sampleRate*125||asset.frames*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');const file=await pcmLoadLongWav(id,assetId,guard);guard();
-    const channels=Array.from({length:asset.channels},()=>new Float32Array(asset.frames));let offset=0;
-    for await(const chunk of pcmDecodeWavStream(file)){guard();if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||offset+chunk.channels[0].length>asset.frames)throw Error('vocal-pcm-metadata-mismatch');for(let c=0;c<channels.length;c++)channels[c].set(chunk.channels[c],offset);offset+=chunk.channels[0].length}
-    guard();if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');return{channels,sampleRate:asset.sampleRate,asset};
+  async function vocalReadPCM(id,assetId,guard=()=>{},range){
+    const p=state.projects.find(x=>x.projectId===id),asset=p?.longWavAssets?.find(x=>x.id===assetId);
+    vocalHistory(asset);
+    const first=range?.first??0,end=range?.end??asset.frames,length=end-first;
+    if(!Number.isSafeInteger(first)||!Number.isSafeInteger(end)||first<0||end>asset.frames||length<1||
+      length>asset.sampleRate*125||length*asset.channels>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-edit-sample-capacity');
+    const file=await pcmLoadLongWav(id,assetId,guard);
+    guard();
+    const channels=Array.from({length:asset.channels},()=>new Float32Array(length));
+    let offset=0;
+    for await(const chunk of pcmDecodeWavStream(file)){
+      guard();
+      const next=offset+chunk.channels[0].length;
+      if(chunk.sampleRate!==asset.sampleRate||chunk.channels.length!==asset.channels||next>asset.frames)
+        throw Error('vocal-pcm-metadata-mismatch');
+      const from=Math.max(first,offset),to=Math.min(end,next);
+      if(to>from)for(let c=0;c<channels.length;c++)channels[c].set(chunk.channels[c].slice(from-offset,to-offset),from-first);
+      offset=next;
+    }
+    guard();
+    if(offset!==asset.frames)throw Error('vocal-pcm-frame-mismatch');
+    return{channels,sampleRate:asset.sampleRate,asset};
   }
   function vocalDetectPitch(samples,rate){
     if(!samples?.length||!Number.isInteger(rate)||rate<8000||rate>192000)throw Error('vocal-analysis-format');
@@ -2667,14 +2689,15 @@
     }return rows;
   }
   async function vocalDetectPitchAsync(samples,rate,guard){const rows=[],block=Math.round(rate),overlap=Math.ceil(rate*.08);if(samples.length/rate>125)throw Error('vocal-analysis-duration');for(let first=0;first<samples.length;first+=block){guard();rows.push(...vocalDetectPitch(samples.subarray(first,Math.min(samples.length,first+block+overlap)),rate).filter(r=>r.first<block).map(r=>({...r,first:r.first+first,end:Math.min(samples.length,r.end+first)})));await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,0):resolve())}guard();return rows}
-  function vocalGrain(samples,rate,semitones,ratio){
+  function vocalGrain(samples,rate,semitones,ratio,pitchAnalysis){
     const frames=Math.round(samples.length*ratio);if(frames<1||frames>rate*125)throw Error('vocal-render-duration');
     if(semitones===0&&ratio===1)return new Float32Array(samples);
     // Short pitch envelopes need local resampling: a 50ms grain otherwise masks a 40ms correction.
     if(ratio===1&&samples.length<rate*.09){const pitch=2**(semitones/12),center=(samples.length-1)/2;return Float32Array.from(samples,(_,i)=>{const x=Math.max(0,Math.min(samples.length-1,center+(i-center)*pitch)),k=Math.floor(x);return samples[k]+(samples[Math.min(k+1,samples.length-1)]-samples[k])*(x-k)})}
 
-    const out=new Float32Array(frames),weights=new Float32Array(frames),size=Math.max(64,Math.round(rate*.05)),hop=Math.floor(size/4),pitch=2**(semitones/12),analysis=vocalDetectPitch(samples,rate);let previousSource=null,previousCenter=null;
-    for(let center=-hop;center<frames+size/2;center+=hop){const nominal=center/ratio,row=analysis.find(r=>nominal>=r.first&&nominal<r.end),period=row?rate/row.frequency:0,expected=previousSource===null?nominal:previousSource+(center-previousCenter)*pitch,source=period?expected+Math.round((nominal-expected)/period)*period:nominal;previousSource=source;previousCenter=center;for(let j=Math.max(0,Math.ceil(center-size/2));j<Math.min(frames,center+size/2);j++){const d=j-center,x=source+d*pitch;if(x<0||x>=samples.length-1)continue;const k=Math.floor(x),w=.5+.5*Math.cos(2*Math.PI*d/size);out[j]+=(samples[k]+(samples[k+1]-samples[k])*(x-k))*w;weights[j]+=w}}
+    const out=new Float32Array(frames),weights=new Float32Array(frames),size=Math.max(64,Math.round(rate*.05)),hop=Math.floor(size/4),pitch=2**(semitones/12),analysis=pitchAnalysis??vocalDetectPitch(samples,rate);let previousSource=null,previousCenter=null,rowIndex=0;
+    for(let center=-hop;center<frames+size/2;center+=hop){const nominal=center/ratio;while(analysis[rowIndex]?.end<=nominal)rowIndex++;
+      const row=analysis[rowIndex]?.first<=nominal?analysis[rowIndex]:null,period=row?rate/row.frequency:0,expected=previousSource===null?nominal:previousSource+(center-previousCenter)*pitch,source=period?expected+Math.round((nominal-expected)/period)*period:nominal;previousSource=source;previousCenter=center;for(let j=Math.max(0,Math.ceil(center-size/2));j<Math.min(frames,center+size/2);j++){const d=j-center,x=source+d*pitch;if(x<0||x>=samples.length-1)continue;const k=Math.floor(x),w=.5+.5*Math.cos(2*Math.PI*d/size);out[j]+=(samples[k]+(samples[k+1]-samples[k])*(x-k))*w;weights[j]+=w}}
     for(let i=0;i<frames;i++)out[i]=weights[i]>1e-6?out[i]/weights[i]:samples[Math.min(samples.length-1,Math.round(i/ratio))];return out;
   }
   function vocalEditedFrames(setting,regions=setting.regions||[]){
@@ -3130,7 +3153,104 @@
   function vocalInputProfilesView(p){const rows=vocalInputProfiles(p),id=escapeHtml(p.projectId);return `<details class="music-vocal-input-profiles"><summary>Input compensation（入力別の手動補正）</summary><p>自動測定ではありません。録音設定で特定のマイクと補正msを選び「Save input」を押してください。既定入力は録音時に実際のdeviceIdが一致した場合だけ保存値を使います。機器IDが変わった場合は再設定してください。</p>${rows.map(r=>`<p>${escapeHtml(r.name)} / ${r.latencyMs} ms / Manual（手動）<button type="button" class="music-secondary" ${vocalBusy()?'disabled':''} onclick="${escapeHtml(`MusicStudio.vocalInputProfileRemove(${JSON.stringify(p.projectId)},${JSON.stringify(r.deviceId)})`)}">Remove（補正設定を削除）</button></p>`).join('')}</details>`}
   function vocalStartForm(event,id){event.preventDefault();const f=new root.FormData(event.target);return vocalCycleStart(id,{countInBeats:Number(f.get('countIn')),transportTick:Number(f.get('transportTick')),accompaniment:f.get('accompaniment')==='on',cycles:Number(f.get('cycles')),gapless:f.get('gapless')==='on',startTick:Number(f.get('tick')),latencyMs:Number(f.get('latency')),useInputProfile:f.get('useInputProfile')==='on',deviceId:String(f.get('device')||''),lyricTrackId:String(f.get('lyricTrackId')||''),endTick:f.get('endTick')?Number(f.get('endTick')):undefined})}
   function vocalEditForm(event,id,assetId){event.preventDefault();const f=new root.FormData(event.target),asset=state.projects.find(x=>x.projectId===id)?.longWavAssets.find(x=>x.id===assetId);const h=vocalHistory(asset),s=h.edits[h.cursor];return vocalEdit(id,assetId,vocalTrimSetting(asset,s,Math.round(Number(f.get('first'))*asset.sampleRate),Math.round(Number(f.get('end'))*asset.sampleRate),Number(f.get('gain')),Number(f.get('tick')),Number(f.get('latency'))))}
-  function vocalView(p,focused=false){const workspace=vocalWorkspace(p),takes=(p.longWavAssets||[]).filter(a=>a.vocalTake),visible=workspace.selectedAssetId?takes.filter(a=>a.id===workspace.selectedAssetId):takes;const preset=[...(p.longWavAssets||[])].reverse().find(a=>a.vocalTake?.recordingPlan)?.vocalTake.recordingPlan||{},id=escapeHtml(p.projectId),disabled=vocalBusy()?'disabled':'';const help=`<details class="music-vocal-help"><summary>Help（録音の使い方）</summary><p>ボーカル専用・PCM最大8分／互換録音最大120秒。PCM・互換録音は小分けに永続保存します。再起動後は未完了録音の「取得済み音声を復旧」を選んでください。保存完了前の末尾、OS・記憶装置で失われたデータ、互換録音の未完了コンテナは復旧できない場合があります。元データは保持します。長いテイクのカット・配置・音量・Mix保存に対応し、音程・長さ補正とCompは既存の容量上限があります。PCM録音対応時は非圧縮WAV、未対応時は圧縮録音をWAVに変換します。Stop後の「保存完了」を確認してください。モニターは既定でOFF。ヘッドホン使用時に録音中の入力音をONにできます。Full WAV Archiveで音声本体をバックアップします。</p></details>`;return `<section class="music-setting-section music-vocal-panel" aria-label="Vocal recording"><h2>Vocal Recording（ボーカル録音）</h2>${focused?'':help}${vocalRecoveryView(p)}<p role="status" aria-live="polite" data-vocal-status>${escapeHtml(vocal.message||vocal.phase)}</p><details class="music-vocal-capture" ${!takes.length||vocalBusy()?'open':''}><summary>Record（録音操作を開く）</summary>${focused?help:''}<meter data-vocal-meter aria-label="Microphone input peak" min="0" max="1" value="0" style="width:100%"></meter><p data-vocal-level>入力音量：録音開始後に測定</p><label><input type="checkbox" onchange="MusicStudio.vocalMonitor(this.checked);if(MusicStudio.vocal.phase!=='recording')this.checked=false" ${vocal.phase!=='recording'?'disabled':''} ${vocal.monitorEnabled?'checked':''}>Monitor（ヘッドホンで入力試聴・-12dB）</label><form data-vocal-project="${id}" onsubmit="MusicStudio.vocalStartForm(event,'${id}')"><details class="music-vocal-record-settings" onkeydown="MusicStudio.vocalDisclosureKey(event,this)"><summary>Recording settings（録音設定）</summary><div class="music-vocal-record-grid"><label>Microphone（マイク）<select name="device" ${disabled}><option value="">Default（既定）</option>${vocalInputChoices(p,preset).map(d=>`<option value="${escapeHtml(d.id)}" ${preset.inputCompensation?.deviceId===d.id?'selected':''}>${escapeHtml(d.name)}</option>`).join('')}</select></label><button type="button" class="music-secondary" onclick="MusicStudio.vocalRefreshInputs()" ${disabled}>Refresh inputs（マイク一覧更新）</button><label>Lyrics track（歌詞トラック）<select name="lyricTrackId" ${disabled}><option value="">Off（表示しない）</option>${(p.midiData?.tracks||[]).filter(t=>lyricsSavedRows(p).some(r=>r.trackId===t.id&&!r.stale)).map(t=>`<option value="${escapeHtml(t.id)}" ${preset.lyricTrackId===t.id?'selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('')}</select></label><label>Start tick（MIDI開始位置）<input name="tick" type="number" min="0" step="1" value="${preset.startTick||0}" ${disabled}></label><label>Latency ms（録音の遅延補正）<input name="latency" type="number" step="any" min="-2000" max="2000" value="${preset.latencyMs??0}" ${disabled}></label><label><input type="checkbox" name="useInputProfile" ${preset.useInputProfile!==false?'checked':''} ${disabled}>Use saved input（同じ入力の保存補正を使う）</label><button type="button" class="music-secondary" onclick="MusicStudio.vocalInputProfileForm(this,'${id}')" ${disabled}>Save input（選択マイクの補正を保存）</button><label>Punch end tick（区間録音の終了・空欄は通常）<input name="endTick" type="number" min="1" step="1" value="${preset.endTick??''}" ${disabled}></label><label>Count-in beats（録音前の拍数）<input name="countIn" type="number" min="0" max="16" step="1" value="${preset.countInBeats||0}" ${disabled}></label><label>Transport tick（伴奏再生の開始位置）<input name="transportTick" type="number" min="0" step="1" value="${preset.transportTick||0}" ${disabled}></label><label><input name="accompaniment" type="checkbox" ${preset.accompaniment?'checked':''} ${disabled}>MIDI accompaniment（録音中の伴奏・ヘッドホン使用）</label><label>Cycles（繰り返し回数・毎回保存）<input name="cycles" type="number" min="1" max="8" step="1" value="${preset.cycles||1}" ${disabled}></label><label><input name="gapless" type="checkbox" ${preset.gapless?'checked':''} ${disabled}>Continuous takes（2回以上・切れ目なく連続収録・PCM合計8分／互換録音120秒以内）</label><p>連続収録は同じマイク接続で全回を録り、停止後に区間ごとのテイクを保存します。途中Stopは収録済み区間も保持します。未選択時は各回保存後に再開します。終了tickが必要です。</p></div>${vocalLoopbackView(disabled)}${vocalInputProfilesView(p)}</details><div class="music-vocal-record-actions"><button class="music-primary" ${disabled}>Record Vocal（録音開始）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalStop()" ${!['permission','armed','recording','paused'].includes(vocal.phase)?'disabled':''}>Stop / Save（停止・保存）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalPause()" ${vocal.phase!=='recording'||vocal.transportEnabled?'disabled':''}>Pause Vocal（録音一時停止）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalResume()" ${vocal.phase!=='paused'?'disabled':''}>Resume Vocal（録音再開）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalSave()" ${vocal.phase!=='pending'?'disabled':''}>Retry Save（保存再試行）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalDiscard()" ${['saving','stopping'].includes(vocal.phase)?'disabled':''}>Discard pending（未保存取消）</button></div></form></details>${vocalLyricView(p,focused)}${vocalWorkspaceView(p)}${visible.map(a=>{try{const h=vocalHistory(a),s=h.edits[h.cursor],key=escapeHtml(a.id);return `<article data-vocal-take="${key}"><h3>${escapeHtml(a.name)}</h3>${a.vocalTake.cycle?`<p data-vocal-cycle>Cycle ${a.vocalTake.cycle.index}/${a.vocalTake.cycle.total} / Group ${escapeHtml(a.vocalTake.cycle.groupId)}</p>`:''}<svg style="touch-action:none" onpointerdown="MusicStudio.vocalWaveDown(event,'${id}','${key}')" role="img" aria-label="Recorded waveform" viewBox="0 0 240 60" width="100%" height="60">${vocalWaveOverlay(p,a)}<path stroke="#ffd966" fill="none" d="${a.vocalTake.waveform.map((x,i)=>`M${i} ${30-x*29}V${30+x*29}`).join(' ')}"/></svg><p>${(a.frames/a.sampleRate).toFixed(2)}s / ${a.sampleRate}Hz / ${a.channels}ch / ${escapeHtml(a.vocalTake.captureMime)} / clipping ${a.vocalTake.clippedSamples} samples</p><form onsubmit="MusicStudio.vocalEditForm(event,'${id}','${key}')"><label>Trim start seconds（カット開始）<input type="number" name="first" step="any" min="0" value="${s.first/a.sampleRate}" ${disabled}></label><label>Trim end seconds（カット終了）<input type="number" name="end" step="any" value="${s.end/a.sampleRate}" ${disabled}></label><label>Gain dB（音量）<input type="number" name="gain" min="-24" max="12" step="any" value="${s.gainDb}" ${disabled}></label><label>Start tick（配置）<input type="number" name="tick" min="0" value="${s.startTick}" ${disabled}></label><label>Latency ms（手動補正）<input type="number" name="latency" min="-2000" max="2000" step="any" value="${s.latencyMs}" ${disabled}></label><button class="music-primary" ${disabled}>Save Vocal Edit（編集保存）</button></form><button type="button" class="music-secondary" onclick="MusicStudio.vocalNormalizePreview('${id}','${key}')" ${disabled}>Peak Normalize（ピークを−1 dBFSに揃える）</button>${vocalReplacementView(p,a)}${vocalAdvancedView(p,a)}<div class="music-form-actions"><button class="music-secondary" onclick="MusicStudio.vocalPlay('${id}','${key}')" ${disabled}>Play Vocal（再生）</button><button class="music-secondary" onclick="MusicStudio.vocalPlay('${id}','${key}',true)" ${disabled}>Play with MIDI（伴奏同期）</button><button class="music-secondary" onclick="MusicStudio.vocalPlaybackStop()">Stop Vocal（再生停止）</button><button class="music-secondary" onclick="MusicStudio.vocalEdit('${id}','${key}',null,-1)" ${disabled||h.cursor===0?'disabled':''}>Undo Vocal（元に戻す）</button><button class="music-secondary" onclick="MusicStudio.vocalEdit('${id}','${key}',null,1)" ${disabled||h.cursor===h.edits.length-1?'disabled':''}>Redo Vocal（やり直す）</button><button class="music-secondary" onclick="MusicStudio.vocalExport('${id}','${key}')" ${disabled}>Export Vocal WAV（音声を書出し）</button><button class="music-secondary" onclick="MusicStudio.vocalTimelineExport('${id}','${key}')" ${disabled}>Timeline WAV（曲先頭から同期書出し）</button><button class="music-secondary" onclick="MusicStudio.vocalPublishForMix('${id}','${key}')" ${disabled}>Prepare Vocal Mix（編集済み音声を保存）</button></div></article>`}catch(e){return `<p>${escapeHtml(e.message)}</p>`}}).join('')}<details class="music-vocal-comp-fold" onkeydown="MusicStudio.vocalDisclosureKey(event,this)" ${vocalCompExpanded.has(p.projectId)?'open':''} ontoggle="${escapeHtml(`if(this.isConnected)MusicStudio.vocalCompToggle(${JSON.stringify(p.projectId)},this.open)`)}"><summary>Take Comp（テイクの組合せ）</summary>${vocalCompView(p)}</details></section>`}
+  const vocalLayers={
+    harmony:{label:'Harmony',voices:[{semitones:4,delay:0}]},
+    double:{label:'Double',voices:[{semitones:-.12,delay:.019}]},
+    chorus:{label:'Chorus',voices:[{semitones:-.19,delay:.014},{semitones:.16,delay:.027},{semitones:.08,delay:.041}]}
+  };
+  function vocalLayerView(p,takes,disabled){
+    if(!takes.length)return '';
+    const handler=escapeHtml(`MusicStudio.vocalLayerSubmit(event,${JSON.stringify(p.projectId)})`);
+    return `<details class="music-vocal-layers"><summary>Harmony / Double / Chorus（録音から別テイクを作成）</summary>
+      <p>録音の保存済み編集を反映し、加工した声部を別テイクに保存します。長いテイクは125秒以内にトリムしてください。Harmonyは曲の調に合わせて半音数を指定できます。</p>
+      <form onsubmit="${handler}">
+        <label>加工元のテイク<select name="source" required ${disabled}>${takes.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.name)}</option>`).join('')}</select></label>
+        <label>加工する声部<select name="kind" ${disabled}>${Object.entries(vocalLayers).map(([key,layer])=>`<option value="${key}">${layer.label}</option>`).join('')}</select></label>
+        <label>Harmonyの移調（半音）<input type="number" name="interval" min="-12" max="12" step="1" value="4" required ${disabled}></label>
+        <button type="submit" class="music-secondary" ${disabled}>声部をレンダーして保存</button>
+      </form>
+    </details>`;
+  }
+  function vocalLayerSubmit(event,id){
+    event.preventDefault();
+    const fields=new root.FormData(event.target);
+    return vocalLayerSave(id,fields.get('source'),fields.get('kind'),Number(fields.get('interval')));
+  }
+  async function vocalLayerSave(id,sourceId,kind,interval=4){
+    if(vocalBusy()||pcmEditor.busy||archiveTransfer.busy||finalExport.busy||state.dirty||
+      midiEditorHasPendingChanges()||shutdownPromise||state.midiInput.recording||state.midiInput.starting)
+      return{ok:false,error:'vocal-layer-busy'};
+    const target=repository,project=state.projects.find(item=>item.projectId===id),baseline=JSON.stringify(project);
+    const token=vocal.generation,guard=()=>{
+      if(target!==repository||token!==vocal.generation||state.dirty||archiveTransfer.busy||shutdownPromise||
+        midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(item=>item.projectId===id))!==baseline)
+        throw Error('vocal-layer-conflict');
+    };
+    vocal.phase='saving';
+    vocalPlaybackStop();
+    vocal.message='声部をレンダーしています。';
+    requestPaint();
+    try{
+      if(!Object.hasOwn(vocalLayers,kind)||(kind==='harmony'&&(!Number.isInteger(interval)||!interval||Math.abs(interval)>12)))
+        throw Error('Harmonyの移調は−12〜12の範囲で0以外の整数を指定してください。');
+      const layer=vocalLayers[kind],source=project?.longWavAssets?.find(asset=>asset.id===sourceId);
+      const settings=vocalHistory(source),edit=settings.edits[settings.cursor];
+      const input=await vocalReadPCM(id,sourceId,guard,edit);
+      const adjusted={...edit,first:0,end:edit.end-edit.first,regions:edit.regions?.map(region=>
+        ({...region,first:region.first-edit.first,end:region.end-edit.first}))};
+      const {channels,sampleRate,frames}=vocalProcessPCM(input,adjusted);
+      const voices=kind==='harmony'?[{semitones:interval,delay:0}]:layer.voices;
+      const delays=voices.map(voice=>Math.round(voice.delay*sampleRate));
+      const length=frames+Math.max(...delays);
+      if(length>sampleRate*125||length*channels.length>VOCAL_EDIT_SAMPLE_LIMIT)throw Error('vocal-layer-capacity');
+      const output=[];
+      for(const samples of channels){
+        const rendered=new Float32Array(length);
+        const pitch=await vocalDetectPitchAsync(samples,sampleRate,guard);
+        for(const [index,voice] of voices.entries()){
+          guard();
+          const shifted=vocalGrain(samples,sampleRate,voice.semitones,1,pitch);
+          for(let i=0;i<shifted.length;i++)rendered[i+delays[index]]+=shifted[i]*(.88/voices.length);
+          await new Promise(resolve=>root.setTimeout(resolve,0));
+        }
+        output.push(rendered);
+      }
+      guard();
+      const wav=vocalWav(output,sampleRate),hashes=await longWavDigest(wav.blob,guard);
+      const start=vocalEditedStart(project,input.asset,edit);
+      // Resolve the printed audio's origin against the same tempo map as live takes.
+      let low=0,high=100000000;
+      while(low<high){
+        const mid=Math.ceil((low+high)/2);
+        if(vocalPosition(project,mid)<=start)low=mid;
+        else high=mid-1;
+      }
+      const nextEdit={first:0,end:wav.frames,gainDb:0,startTick:low,latencyMs:(vocalPosition(project,low)-start)*1000};
+      const assetId=uuid(),createdAt=now(),asset={
+        id:assetId,name:`${input.asset.name.replace(/\.wav$/i,'').slice(0,100)}-${layer.label}.wav`,
+        size:wav.blob.size,frames:wav.frames,sampleRate,channels:wav.channels,hashes,
+        vocalTake:{format:'nova-vocal-take-v1',captureMime:'audio/wav',recordedAt:createdAt,
+          waveform:wav.waveform,clippedSamples:wav.clipped,cursor:0,edits:[nextEdit],
+          layerSource:{kind,sourceHashes:clone(input.asset.hashes),edit,voices,createdAt}}
+      };
+      const updated=clone(project);
+      updated.longWavAssets.push(asset);
+      updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};
+      productionRevision(updated);
+      automaticEditRecord(project,updated,'vocal-editor');
+      guard();
+      await target.putLongWav(updated,{id:assetId,blob:wav.blob,hashes},baseline,guard);
+      if(target===repository)state.projects=state.projects.map(item=>item.projectId===id?updated:item);
+      vocal.phase='saved';
+      vocal.message=`${layer.label}を別テイクに保存しました。`;
+      return{ok:true,assetId};
+    }catch(error){
+      vocal.phase='error';
+      vocal.message=error.message;
+      return{ok:false,error:error.message};
+    }finally{requestPaint();}
+  }
+  function vocalView(p,focused=false){const workspace=vocalWorkspace(p),takes=(p.longWavAssets||[]).filter(a=>a.vocalTake),visible=workspace.selectedAssetId?takes.filter(a=>a.id===workspace.selectedAssetId):takes;const preset=[...(p.longWavAssets||[])].reverse().find(a=>a.vocalTake?.recordingPlan)?.vocalTake.recordingPlan||{},id=escapeHtml(p.projectId),disabled=vocalBusy()?'disabled':'';const help=`<details class="music-vocal-help"><summary>Help（録音の使い方）</summary><p>ボーカル専用・PCM最大8分／互換録音最大120秒。PCM・互換録音は小分けに永続保存します。再起動後は未完了録音の「取得済み音声を復旧」を選んでください。保存完了前の末尾、OS・記憶装置で失われたデータ、互換録音の未完了コンテナは復旧できない場合があります。元データは保持します。長いテイクのカット・配置・音量・Mix保存に対応し、音程・長さ補正とCompは既存の容量上限があります。PCM録音対応時は非圧縮WAV、未対応時は圧縮録音をWAVに変換します。Stop後の「保存完了」を確認してください。モニターは既定でOFF。ヘッドホン使用時に録音中の入力音をONにできます。Full WAV Archiveで音声本体をバックアップします。</p></details>`;return `<section class="music-setting-section music-vocal-panel" aria-label="Vocal recording"><h2>Vocal Recording（ボーカル録音）</h2>${focused?'':help}${vocalRecoveryView(p)}<p role="status" aria-live="polite" data-vocal-status>${escapeHtml(vocal.message||vocal.phase)}</p><details class="music-vocal-capture" ${!takes.length||vocalBusy()?'open':''}><summary>Record（録音操作を開く）</summary>${focused?help:''}<meter data-vocal-meter aria-label="Microphone input peak" min="0" max="1" value="0" style="width:100%"></meter><p data-vocal-level>入力音量：録音開始後に測定</p><label><input type="checkbox" onchange="MusicStudio.vocalMonitor(this.checked);if(MusicStudio.vocal.phase!=='recording')this.checked=false" ${vocal.phase!=='recording'?'disabled':''} ${vocal.monitorEnabled?'checked':''}>Monitor（ヘッドホンで入力試聴・-12dB）</label><form data-vocal-project="${id}" onsubmit="MusicStudio.vocalStartForm(event,'${id}')"><details class="music-vocal-record-settings" onkeydown="MusicStudio.vocalDisclosureKey(event,this)"><summary>Recording settings（録音設定）</summary><div class="music-vocal-record-grid"><label>Microphone（マイク）<select name="device" ${disabled}><option value="">Default（既定）</option>${vocalInputChoices(p,preset).map(d=>`<option value="${escapeHtml(d.id)}" ${preset.inputCompensation?.deviceId===d.id?'selected':''}>${escapeHtml(d.name)}</option>`).join('')}</select></label><button type="button" class="music-secondary" onclick="MusicStudio.vocalRefreshInputs()" ${disabled}>Refresh inputs（マイク一覧更新）</button><label>Lyrics track（歌詞トラック）<select name="lyricTrackId" ${disabled}><option value="">Off（表示しない）</option>${(p.midiData?.tracks||[]).filter(t=>lyricsSavedRows(p).some(r=>r.trackId===t.id&&!r.stale)).map(t=>`<option value="${escapeHtml(t.id)}" ${preset.lyricTrackId===t.id?'selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('')}</select></label><label>Start tick（MIDI開始位置）<input name="tick" type="number" min="0" step="1" value="${preset.startTick||0}" ${disabled}></label><label>Latency ms（録音の遅延補正）<input name="latency" type="number" step="any" min="-2000" max="2000" value="${preset.latencyMs??0}" ${disabled}></label><label><input type="checkbox" name="useInputProfile" ${preset.useInputProfile!==false?'checked':''} ${disabled}>Use saved input（同じ入力の保存補正を使う）</label><button type="button" class="music-secondary" onclick="MusicStudio.vocalInputProfileForm(this,'${id}')" ${disabled}>Save input（選択マイクの補正を保存）</button><label>Punch end tick（区間録音の終了・空欄は通常）<input name="endTick" type="number" min="1" step="1" value="${preset.endTick??''}" ${disabled}></label><label>Count-in beats（録音前の拍数）<input name="countIn" type="number" min="0" max="16" step="1" value="${preset.countInBeats||0}" ${disabled}></label><label>Transport tick（伴奏再生の開始位置）<input name="transportTick" type="number" min="0" step="1" value="${preset.transportTick||0}" ${disabled}></label><label><input name="accompaniment" type="checkbox" ${preset.accompaniment?'checked':''} ${disabled}>MIDI accompaniment（録音中の伴奏・ヘッドホン使用）</label><label>Cycles（繰り返し回数・毎回保存）<input name="cycles" type="number" min="1" max="8" step="1" value="${preset.cycles||1}" ${disabled}></label><label><input name="gapless" type="checkbox" ${preset.gapless?'checked':''} ${disabled}>Continuous takes（2回以上・切れ目なく連続収録・PCM合計8分／互換録音120秒以内）</label><p>連続収録は同じマイク接続で全回を録り、停止後に区間ごとのテイクを保存します。途中Stopは収録済み区間も保持します。未選択時は各回保存後に再開します。終了tickが必要です。</p></div>${vocalLoopbackView(disabled)}${vocalInputProfilesView(p)}</details><div class="music-vocal-record-actions"><button class="music-primary" ${disabled}>Record Vocal（録音開始）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalStop()" ${!['permission','armed','recording','paused'].includes(vocal.phase)?'disabled':''}>Stop / Save（停止・保存）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalPause()" ${vocal.phase!=='recording'||vocal.transportEnabled?'disabled':''}>Pause Vocal（録音一時停止）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalResume()" ${vocal.phase!=='paused'?'disabled':''}>Resume Vocal（録音再開）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalSave()" ${vocal.phase!=='pending'?'disabled':''}>Retry Save（保存再試行）</button><button type="button" class="music-secondary" onclick="MusicStudio.vocalDiscard()" ${['saving','stopping'].includes(vocal.phase)?'disabled':''}>Discard pending（未保存取消）</button></div></form></details>${vocalLyricView(p,focused)}${vocalWorkspaceView(p)}${vocalLayerView(p,takes,disabled)}${visible.map(a=>{try{const h=vocalHistory(a),s=h.edits[h.cursor],key=escapeHtml(a.id);return `<article data-vocal-take="${key}"><h3>${escapeHtml(a.name)}</h3>${a.vocalTake.cycle?`<p data-vocal-cycle>Cycle ${a.vocalTake.cycle.index}/${a.vocalTake.cycle.total} / Group ${escapeHtml(a.vocalTake.cycle.groupId)}</p>`:''}<svg style="touch-action:none" onpointerdown="MusicStudio.vocalWaveDown(event,'${id}','${key}')" role="img" aria-label="Recorded waveform" viewBox="0 0 240 60" width="100%" height="60">${vocalWaveOverlay(p,a)}<path stroke="#ffd966" fill="none" d="${a.vocalTake.waveform.map((x,i)=>`M${i} ${30-x*29}V${30+x*29}`).join(' ')}"/></svg><p>${(a.frames/a.sampleRate).toFixed(2)}s / ${a.sampleRate}Hz / ${a.channels}ch / ${escapeHtml(a.vocalTake.captureMime)} / clipping ${a.vocalTake.clippedSamples} samples</p><form onsubmit="MusicStudio.vocalEditForm(event,'${id}','${key}')"><label>Trim start seconds（カット開始）<input type="number" name="first" step="any" min="0" value="${s.first/a.sampleRate}" ${disabled}></label><label>Trim end seconds（カット終了）<input type="number" name="end" step="any" value="${s.end/a.sampleRate}" ${disabled}></label><label>Gain dB（音量）<input type="number" name="gain" min="-24" max="12" step="any" value="${s.gainDb}" ${disabled}></label><label>Start tick（配置）<input type="number" name="tick" min="0" value="${s.startTick}" ${disabled}></label><label>Latency ms（手動補正）<input type="number" name="latency" min="-2000" max="2000" step="any" value="${s.latencyMs}" ${disabled}></label><button class="music-primary" ${disabled}>Save Vocal Edit（編集保存）</button></form><button type="button" class="music-secondary" onclick="MusicStudio.vocalNormalizePreview('${id}','${key}')" ${disabled}>Peak Normalize（ピークを−1 dBFSに揃える）</button>${vocalReplacementView(p,a)}${vocalAdvancedView(p,a)}<div class="music-form-actions"><button class="music-secondary" onclick="MusicStudio.vocalPlay('${id}','${key}')" ${disabled}>Play Vocal（再生）</button><button class="music-secondary" onclick="MusicStudio.vocalPlay('${id}','${key}',true)" ${disabled}>Play with MIDI（伴奏同期）</button><button class="music-secondary" onclick="MusicStudio.vocalPlaybackStop()">Stop Vocal（再生停止）</button><button class="music-secondary" onclick="MusicStudio.vocalEdit('${id}','${key}',null,-1)" ${disabled||h.cursor===0?'disabled':''}>Undo Vocal（元に戻す）</button><button class="music-secondary" onclick="MusicStudio.vocalEdit('${id}','${key}',null,1)" ${disabled||h.cursor===h.edits.length-1?'disabled':''}>Redo Vocal（やり直す）</button><button class="music-secondary" onclick="MusicStudio.vocalExport('${id}','${key}')" ${disabled}>Export Vocal WAV（音声を書出し）</button><button class="music-secondary" onclick="MusicStudio.vocalTimelineExport('${id}','${key}')" ${disabled}>Timeline WAV（曲先頭から同期書出し）</button><button class="music-secondary" onclick="MusicStudio.vocalPublishForMix('${id}','${key}')" ${disabled}>Prepare Vocal Mix（編集済み音声を保存）</button></div></article>`}catch(e){return `<p>${escapeHtml(e.message)}</p>`}}).join('')}<details class="music-vocal-comp-fold" onkeydown="MusicStudio.vocalDisclosureKey(event,this)" ${vocalCompExpanded.has(p.projectId)?'open':''} ontoggle="${escapeHtml(`if(this.isConnected)MusicStudio.vocalCompToggle(${JSON.stringify(p.projectId)},this.open)`)}"><summary>Take Comp（テイクの組合せ）</summary>${vocalCompView(p)}</details></section>`}
 
   // Long WAV settings are additive project metadata; original authenticated bytes never change.
   const longMix={candidate:null,generation:0,audio:null,url:null};
@@ -6032,6 +6152,62 @@
     }finally{managementBusy=false;}
   }
 
+  const voiceMaterialAnalyses=new Set();
+
+  async function analyzeVoiceMaterial(modelId,materialId){
+    const management=state.settings?.productionManagement;
+    const material=management?.models.find(model=>model.id===modelId)?.materials.find(item=>item.id===materialId);
+    if(!material||voiceMaterialAnalyses.has(materialId))return{ok:false,error:'voice-material-unavailable'};
+    const target=repository,project=state.projects.find(item=>item.projectId===material.projectId);
+    const guard=()=>{
+      if(target!==repository||archiveTransfer.busy||
+        state.projects.find(item=>item.projectId===material.projectId)!==project||
+        !managedVoicePermission(modelId,'train'))throw Error('学習の許諾または録音素材が変更されました。');
+    };
+    voiceMaterialAnalyses.add(materialId);
+    requestPaint();
+    try{
+      guard();
+      if(!managedVoicePermission(modelId,'train',await target.getSettings()))
+        throw Error('学習の許諾がありません。');
+      guard();
+      const {channels,sampleRate,asset}=await vocalReadPCM(material.projectId,material.assetId,guard);
+      const mono=channels.length===1?channels[0]:channels[0].map((sample,i)=>(sample+channels[1][i])/2);
+      const pitch=await vocalDetectPitchAsync(mono,sampleRate,guard);
+      let sumSquares=0,peak=0,clipped=0;
+      for(const channel of channels){
+        for(const value of channel){
+          const magnitude=Math.abs(value);
+          sumSquares+=value*value;
+          peak=Math.max(peak,magnitude);
+          if(magnitude>=32767/32768)clipped++;
+        }
+      }
+      const ordered=pitch.map(row=>row.frequency).sort((a,b)=>a-b);
+      const result={frames:asset.frames,sampleRate,channels:channels.length,
+        rms:Math.sqrt(sumSquares/(asset.frames*channels.length)),peak,clipped,
+        voicedWindows:pitch.length,medianHz:ordered.length?ordered[Math.floor(ordered.length/2)]:null,at:now()};
+      guard();
+      await changeManagement(current=>{
+        guard();
+        if(!managedVoicePermission(modelId,'train',{productionManagement:current}))
+          throw Error('学習の許諾がありません。');
+        const row=current.models.find(model=>model.id===modelId).materials.find(item=>item.id===materialId);
+        if(!row||row.projectId!==material.projectId||row.assetId!==material.assetId)
+          throw Error('学習素材の登録が変更されました。');
+        row.analysis=result;
+      });
+      notice('学習用録音の解析結果を保存しました。','success');
+      return{ok:true,...result};
+    }catch(error){
+      notice(error.message,'error');
+      return{ok:false,error:error.message};
+    }finally{
+      voiceMaterialAnalyses.delete(materialId);
+      requestPaint();
+    }
+  }
+
   function managedVoiceView(management,h){
     const permissionInputs=Object.entries(managementScopes).map(([scope,label])=>
       `<label><input type="checkbox" name="scope" value="${scope}">${label}</label>`).join('');
@@ -6045,7 +6221,7 @@
       ${management.models.map(model=>{
         const id=h(JSON.stringify(model.id));
         const revoked=management.revocations.find(item=>item.id===model.id);
-        const materialOptions=state.projects.flatMap(project=>(project.audioAssets||[]).map(asset=>{
+        const materialOptions=state.projects.flatMap(project=>[...(project.longWavAssets||[]).filter(asset=>asset.vocalTake),...(project.audioAssets||[])].map(asset=>{
           if(!asset.id)return '';
           return `<option value="${h(JSON.stringify([project.projectId,asset.id]))}">${h(project.projectName)} / ${h(asset.name||asset.originalName||asset.id)}</option>`;
         })).join('');
@@ -6068,8 +6244,15 @@
             <label>学習用録音<select name="asset" required><option value="">選択してください</option>${materialOptions}</select></label>
             <button>学習素材に登録</button>
           </form>`:''}
-          <ul>${model.materials.map(material=>`<li>${h(material.name)}
-            <button onclick="MusicStudio.submitManagement(event,'voice-remove-material',${id},${h(JSON.stringify(material.id))})">素材登録を解除</button></li>`).join('')}</ul>
+          <ul>${model.materials.map(material=>{
+            const materialKey=h(JSON.stringify(material.id)),analysis=material.analysis;
+            const take=state.projects.find(p=>p.projectId===material.projectId)?.longWavAssets?.find(a=>a.id===material.assetId&&a.vocalTake);
+            const pending=voiceMaterialAnalyses.has(material.id);
+            return `<li>${h(material.name)}
+            ${take&&managedVoicePermission(model.id,'train')?`<button ${pending?'disabled':''} onclick="MusicStudio.analyzeVoiceMaterial(${id},${materialKey})">${pending?'解析中…':'録音を解析'}</button>`:''}
+            ${analysis?`<p>${(analysis.frames/analysis.sampleRate).toFixed(2)} 秒 · ${analysis.sampleRate} Hz · ${analysis.channels} ch · RMS ${(20*Math.log10(analysis.rms)).toFixed(1)} dBFS · クリップ ${analysis.clipped} · 検出ピッチ中央値 ${analysis.medianHz===null?'検出なし':analysis.medianHz.toFixed(1)+' Hz'}</p>`:''}
+            <button onclick="MusicStudio.submitManagement(event,'voice-remove-material',${id},${h(JSON.stringify(material.id))})">素材登録を解除</button></li>`;
+          }).join('')}</ul>
           <button onclick="MusicStudio.submitManagement(event,'voice-delete',${id})">モデル登録を削除</button>
         </details>`;
       }).join('')}`);
@@ -6078,16 +6261,18 @@
   function managedBillingView(billing,h){
     const month=monthJst();
     const monthly=billing.history.filter(entry=>entry.month===month);
-    const total=monthly.reduce((sum,entry)=>sum+entry.amount,0);
+    const reserved=billing.history.filter(entry=>entry.outcome==='reserved');
+    const held=monthly.filter(entry=>entry.outcome==='reserved').reduce((sum,entry)=>sum+entry.amount,0);
+    const total=monthly.reduce((sum,entry)=>sum+entry.amount,0)-held;
     const q=pendingTestQuote;
     return settingSection('managed-billing','有料AI管理（テスト）',`
-      <p>${month}（日本時間） · テストプロバイダー利用額 ${total} 円 / 上限 ${billing.limit} 円。外部送信・実課金はありません。</p>
+      <p>${month}（日本時間） · テストプロバイダー利用額 ${total} 円 / 予約額 ${held} 円 / 上限 ${billing.limit} 円。外部送信・実課金はありません。</p>
       <form onsubmit="MusicStudio.submitManagement(event,'billing-config')">
         <label>テストプロバイダーの単価（円／回）<input type="number" name="price" min="0" max="100000000" value="${billing.price}" required></label>
         <label>テスト月額上限（円）<input type="number" name="limit" min="0" max="100000000" value="${billing.limit}" required></label>
         ${Object.entries(managedFeatures).map(([key,label])=>`
-          <label>${label}<select name="${key}"><option value="local">端末内</option>
-          <option value="${testProvider}" ${billing.routes[key]===testProvider?'selected':''}>テストプロバイダー</option></select></label>`).join('')}
+          <label for="ms-billing-route-${key}">${label}</label><select id="ms-billing-route-${key}" name="${key}"><option value="local">端末内</option>
+          <option value="${testProvider}" ${billing.routes[key]===testProvider?'selected':''}>テストプロバイダー</option></select>`).join('')}
         <button>料金と機能別設定を保存</button>
       </form>
       <form onsubmit="MusicStudio.submitManagement(event,'billing-quote')">
@@ -6096,9 +6281,14 @@
         <button>テスト料金を見積もる</button>
       </form>
       ${q?`<p role="status">${managedFeatures[q.feature]} · テストプロバイダー · 見積もり ${q.price} 円 · 送信項目なし</p>
-      <button onclick="MusicStudio.submitManagement(event,'billing-approve',${h(JSON.stringify(q.id))})">見積もりを承認して試す</button>
+      <button onclick="MusicStudio.submitManagement(event,'billing-approve',${h(JSON.stringify(q.id))})">見積もりを承認して予約</button>
       <button onclick="MusicStudio.submitManagement(event,'billing-cancel',${h(JSON.stringify(q.id))})">取り消す</button>`:''}
-      <ul aria-label="テスト利用履歴">${billing.history.slice(-20).reverse().map(entry=>
+      <ul aria-label="処理待ちの予算予約">${reserved.map(entry=>`
+        <li>${h(entry.month)} · ${h(managedFeatures[entry.feature])} · ${entry.amount} 円
+          <button onclick="MusicStudio.submitManagement(event,'billing-run',${h(JSON.stringify(entry.id))})">予約済みテストを実行</button>
+          <button onclick="MusicStudio.submitManagement(event,'billing-release',${h(JSON.stringify(entry.id))})">予約を取り消す</button>
+        </li>`).join('')}</ul>
+      <ul aria-label="テスト利用履歴">${billing.history.filter(entry=>entry.outcome!=='reserved').slice(-20).reverse().map(entry=>
         `<li>${h(entry.month)} · ${h(managedFeatures[entry.feature])} · ${entry.outcome==='failed'?'障害（請求なし）':entry.outcome==='cancelled'?'取消':'成功'} · ${entry.amount} 円</li>`).join('')}</ul>`);
   }
 
@@ -6131,8 +6321,21 @@
           if(action==='billing-config'){
             const price=Number(fields.get('price')),limit=Number(fields.get('limit'));
             if(!fields.has('price')||!fields.has('limit')||!yenAmount(price)||!yenAmount(limit))throw Error('料金は整数の円で入力してください。');
+            const committed=billing.history.filter(entry=>entry.month===monthJst()).reduce((sum,entry)=>sum+entry.amount,0);
+            if(limit<committed)throw Error('今月の確定額と予約額の合計以上を上限に設定してください。');
             Object.assign(billing,{price,limit,routes:Object.fromEntries(Object.keys(managedFeatures).map(key=>
               [key,fields.get(key)===testProvider?testProvider:'local']))});
+            return;
+          }
+          if(action==='billing-run'||action==='billing-release'){
+            const entry=billing.history.find(item=>item.id===id);
+            if(entry?.outcome!=='reserved')throw Error('この予約は精算済みか無効です。');
+            const release=action==='billing-release';
+            if(!release&&(entry.month!==monthJst()||billing.routes[entry.feature]!==testProvider))
+              throw Error('この予約は実行できません。取り消して見積もりを作り直してください。');
+            entry.outcome=release?'cancelled':entry.testOutcome;
+            entry.amount=entry.outcome==='completed'?entry.amount:0;
+            entry.at=now();
             return;
           }
           const quote=pendingTestQuote;
@@ -6144,8 +6347,8 @@
             const used=billing.history.filter(entry=>entry.month===quote.month).reduce((sum,entry)=>sum+entry.amount,0);
             if(used+quote.price>billing.limit)throw Error('月額上限を超えるため実行できません。');
           }
-          const outcome=cancelled?'cancelled':quote.outcome;
-          billing.history.push({...quote,provider:testProvider,outcome,amount:outcome==='completed'?quote.price:0,at:now()});
+          billing.history.push({...quote,provider:testProvider,testOutcome:quote.outcome,
+            outcome:cancelled?'cancelled':'reserved',amount:cancelled?0:quote.price,at:now()});
           return;
         }
         const model=management.models.find(item=>item.id===id);
@@ -6172,7 +6375,7 @@
         }else if(action==='voice-material'&&!revoked){
           const [projectId,assetId]=JSON.parse(read('asset',1000));
           const project=state.projects.find(item=>item.projectId===projectId);
-          const asset=project?.audioAssets?.find(item=>item.id===assetId);
+          const asset=project?.longWavAssets?.find(item=>item.id===assetId&&item.vocalTake)||project?.audioAssets?.find(item=>item.id===assetId);
           if(!asset||model.materials.some(item=>item.projectId===projectId&&item.assetId===assetId))
             throw Error('録音が見つからないか、すでに登録されています。');
           model.materials.push({id:uuid(),projectId,assetId,name:asset.name||asset.originalName||assetId});
@@ -6180,7 +6383,7 @@
           model.materials=model.materials.filter(item=>item.id!==materialId);
         }else throw Error('この操作は実行できません。');
       });
-      if(action.startsWith('billing-'))pendingTestQuote=null;
+      if(['billing-config','billing-approve','billing-cancel'].includes(action))pendingTestQuote=null;
       notice('設定を保存しました。','success');
     }catch(error){notice(error.message,'error');}
     requestPaint();
@@ -6189,10 +6392,16 @@
   function validProductionManagement(value){
     const validId=value=>typeof value==='string'&&value.length>0&&value.length<=500;
     const validDate=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
+    const validAnalysis=analysis=>analysis&&Number.isSafeInteger(analysis.frames)&&analysis.frames>0&&
+      Number.isInteger(analysis.sampleRate)&&analysis.sampleRate>=8000&&analysis.sampleRate<=192000&&
+      [1,2].includes(analysis.channels)&&[analysis.rms,analysis.peak].every(n=>Number.isFinite(n)&&n>=0&&n<=1)&&
+      [analysis.clipped,analysis.voicedWindows].every(n=>Number.isSafeInteger(n)&&n>=0)&&
+      (analysis.medianHz===null||(Number.isFinite(analysis.medianHz)&&analysis.medianHz>0))&&validDate(analysis.at);
     const {models,revocations,billing}=value||{};
     return Array.isArray(models)&&Array.isArray(revocations)&&models.every(model=>
       validId(model?.id)&&validId(model.name)&&validId(model.engine)&&Array.isArray(model.materials)&&
-      model.materials.every(item=>validId(item?.id)&&validId(item.projectId)&&validId(item.assetId)&&validId(item.name))&&
+      model.materials.every(item=>validId(item?.id)&&validId(item.projectId)&&validId(item.assetId)&&validId(item.name)&&
+        (item.analysis===undefined||validAnalysis(item.analysis)))&&
       (model.consent===null||(validId(model.consent?.reference)&&validDate(model.consent.recordedAt)&&
         Array.isArray(model.consent.scopes)&&model.consent.scopes.every(scope=>Object.hasOwn(managementScopes,scope)))))&&
       revocations.every(item=>validId(item?.id)&&validDate(item.at))&&
@@ -6200,7 +6409,9 @@
       Array.isArray(billing.history)&&billing.history.every(entry=>validId(entry?.id)&&
         Object.hasOwn(managedFeatures,entry.feature)&&entry.provider===testProvider&&
         typeof entry.month==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(entry.month)&&yenAmount(entry.amount)&&
-        ['completed','failed','cancelled'].includes(entry.outcome)&&validDate(entry.at));
+        (['completed','failed','cancelled'].includes(entry.outcome)||(entry.outcome==='reserved'&&
+          ['completed','failed'].includes(entry.testOutcome)&&entry.amount===entry.price))&&validDate(entry.at))&&
+      new Set(billing.history.map(entry=>entry.id)).size===billing.history.length;
   }
 
   function restoreProductionManagement(next,previous){
@@ -6214,15 +6425,22 @@
     const union=(first,second)=>[...new Map([...second,...first].map(item=>[item.id,item])).values()];
     // A restore can recover models on a clean device. Local consent and cost records
     // take precedence so an old snapshot cannot restore permission or erase usage.
+    const history=union(current.billing.history,incoming.billing.history);
+    const settlements=new Map(incoming.billing.history.filter(entry=>entry.outcome!=='reserved').map(entry=>[entry.id,entry]));
     next.productionManagement={
       models:clone(current.models),
       revocations:union(current.revocations,incoming.revocations),
-      billing:{...clone(current.billing),history:union(current.billing.history,incoming.billing.history)}
+      billing:{...clone(current.billing),history:history.map(entry=>{
+        const completion=settlements.get(entry.id);
+        return entry.outcome==='reserved'&&completion?.outcome==='completed'&&
+          completion.provider===entry.provider&&completion.feature===entry.feature&&
+          completion.month===entry.month&&completion.amount===entry.amount?completion:entry;
+      })}
     };
     return next;
   }
 
-  Object.assign(api,{submitManagement,managedVoicePermission});
+  Object.assign(api,{submitManagement,managedVoicePermission,analyzeVoiceMaterial,vocalLayerSubmit,vocalLayerSave});
   root.MusicStudio=api;
   if(root.document){root.document.addEventListener?.('keydown',event=>{if(event.target?.closest?.('.music-studio-shell'))vocalDisclosureKey(event,event.target.closest('details[open]'))});for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
 })(typeof window!=='undefined'?window:globalThis);

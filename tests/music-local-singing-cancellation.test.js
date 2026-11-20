@@ -18,3 +18,24 @@ test('local singing rejects a storage-only score edit before dispatching synthes
 test('local singing cancellation during storage preflight never launches synthesis',async()=>{
  const f=await fixture(),{a,p,repo}=f,t=transport(f),get=repo.get;let release;repo.get=()=>new Promise(r=>release=r);const pending=a.generateLocalScoreVocal(p.projectId,f.recordId);assert.ok(release);assert.equal(a.cancelLocalScoreVocal(p.projectId).ok,true);release(await get(p.projectId));const r=await pending;assert.equal(r.error,'local-vocal-cancelled');assert.equal(t.calls.some(c=>c.url.endsWith('/sing')),false);assert.equal(f.indexedDB.stores.get('longWavBinaries').size,0);
 });
+
+test('Sinsy saves a take only when the host identifies its configured voice and license',async()=>{
+ const f=await fixture(),{a,p,repo}=f,t=transport(f);
+ const route={engine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001 0.90',license:'CC-BY-3.0'};
+ const samples=Array.from({length:4000},(_,i)=>.25*Math.sin(2*Math.PI*220*i/8000));
+ const wavBase64=Buffer.from(a.pcmEncodeWav({sampleRate:8000,channels:[samples]})).toString('base64');
+ let pending=a.generateLocalScoreVocal(p.projectId,f.recordId);
+ await t.ready();
+ t.response({...route,license:'unknown',wavBase64});
+ assert.match((await pending).error,/ライセンスを確認できません/);
+ assert.equal((await repo.get(p.projectId)).longWavAssets,undefined);
+ const next=transport(f);
+ pending=a.generateLocalScoreVocal(p.projectId,f.recordId);
+ await next.ready();
+ next.response({...route,wavBase64});
+ const result=await pending;
+ assert.equal(result.ok,true,result.error);
+ const take=(await repo.get(p.projectId)).longWavAssets[0];
+ assert.equal(take.vocalTake.scoreSource.voice,'NIT-SONG070-F001');
+ assert.equal(take.name,'Sinsy-NIT-SONG070-F001.wav');
+});

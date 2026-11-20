@@ -827,3 +827,24 @@ html:has(.music-midi-editor-page),body.music-studio-page:has(.music-midi-editor-
  .music-lyrics-focused>:not(.music-project-panel){flex-shrink:0}
  .music-lyrics-focused>.music-project-panel{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin-top:4px}
 }
+
+#ms-setting-managed-voices button,
+#ms-setting-managed-billing button {
+  background: #11616b;
+  color: #fff;
+}
+
+.music-vocal-panel .music-vocal-layers {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #527085;
+  border-radius: 8px;
+  background: #112031;
+  color: #eef6ff;
+}
+
+.music-vocal-layers > summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
