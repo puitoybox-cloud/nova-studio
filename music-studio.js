@@ -1078,10 +1078,18 @@
   function scoreVocalLinkedView(project,record){
     const takes=(project.longWavAssets||[]).filter(a=>a.vocalTake?.scoreSource?.recordId===record.id&&a.vocalTake.scoreSource.trackId===record.trackId);
     if(!takes.length)return '<p>Imported takes（取り込み済み歌声）：なし</p>';
-    let xml;try{xml=lyricsScoreXML(project,record.id).text}catch(_){}
+    const currentScores=new Map();
     return `<div class="music-score-vocal-takes"><p>Imported takes（取り込み済み歌声）：${takes.length}</p>${takes.map(a=>{
-      const current=xml===a.vocalTake.scoreSource.scoreXML,id=JSON.stringify(project.projectId),key=JSON.stringify(a.id),disabled=vocalBusy()?' disabled':'';
-      return `<div><strong>${escapeHtml(a.name)}</strong><span> / ${current?'Current score（現在の楽譜）':'Previous score（以前の楽譜・同期を再確認）'}</span><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPlay(${id},${key},true)`)}">Play with MIDI（同期試聴）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.openScoreVocalTake(${id},${key})`)}">Edit take（この歌声を編集）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPublishForMix(${id},${key})`)}">Save for Mix（編集音声をミックスへ）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalTimelineExport(${id},${key})`)}">Timeline WAV（曲先頭から同期書出し）</button></div>`;
+      const source=a.vocalTake.scoreSource,id=JSON.stringify(project.projectId),key=JSON.stringify(a.id),disabled=vocalBusy()?' disabled':'';
+      const scoreKey=JSON.stringify([source.engine,source.generationRange]);
+      if(!currentScores.has(scoreKey)){
+        let currentXML;
+        try{currentXML=currentScoreVocalXML(project,source)}catch(_){}
+        currentScores.set(scoreKey,currentXML);
+      }
+      const current=typeof source.scoreXML==='string'&&currentScores.get(scoreKey)===scoreVocalMusicalXML(source.scoreXML);
+      const origin=source.engine==='Sinsy-0.92'&&source.voice==='NIT-SONG070-F001'?'端末内合成 · NIT SONG070 F001 · CC BY 3.0':'取り込みWAV · 生成元は未確認';
+      return `<div><strong>${escapeHtml(a.name)}</strong><span> / ${origin} / ${current?'Current score（現在の楽譜）':'Previous score（以前の楽譜・同期を再確認）'}</span><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPlay(${id},${key},true)`)}">Play with MIDI（同期試聴）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.openScoreVocalTake(${id},${key})`)}">Edit take（この歌声を編集）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalPublishForMix(${id},${key})`)}">Save for Mix（編集音声をミックスへ）</button><button type="button" class="music-secondary"${disabled} onclick="${escapeHtml(`MusicStudio.vocalTimelineExport(${id},${key})`)}">Timeline WAV（曲先頭から同期書出し）</button></div>`;
     }).join('')}</div>`;
   }
   async function openScoreVocalTake(id,assetId){
@@ -2676,6 +2684,12 @@
     const steps=scale.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
     return steps.map(semitones=>(scale.pitch+semitones)%12);
   }
+  const scoreVocalMusicalXML=text=>text.replace(/<work-title>[\s\S]*?<\/work-title>/,'<work-title/>');
+  function currentScoreVocalXML(project,source){
+    const scoreProject=vocalRangeProject(project,source.recordId,source.generationRange);
+    const input=source.engine==='Sinsy-0.92'?japaneseVocalProject(scoreProject,source.recordId):scoreProject;
+    return scoreVocalMusicalXML(lyricsScoreXML(input,source.recordId).text);
+  }
   async function vocalCompareReference(id,assetId,referenceId){
     if(vocalBusy()||pcmEditor.busy||state.dirty||midiEditorHasPendingChanges()||archiveTransfer.busy)return{ok:false,error:'vocal-analysis-busy'};
     const p=state.projects.find(x=>x.projectId===id),baseline=JSON.stringify(p),target=repository,generation=++vocalCorrection.generation;
@@ -2684,10 +2698,7 @@
     try{
       const reference=p?.longWavAssets?.find(a=>a.id===referenceId),source=reference?.vocalTake?.scoreSource;
       if(assetId===referenceId||!source)throw Error('vocal-comparison-score-reference-required');
-      const scoreProject=source.generationRange?vocalRangeProject(p,source.recordId,source.generationRange):p;
-      const score=lyricsScoreXML(source.engine==='Sinsy-0.92'?japaneseVocalProject(scoreProject,source.recordId):scoreProject,source.recordId);
-      const musicalXML=text=>text.replace(/<work-title>[\s\S]*?<\/work-title>/,'<work-title/>');
-      if(musicalXML(score.text)!==musicalXML(source.scoreXML))throw Error('vocal-comparison-score-changed');
+      if(currentScoreVocalXML(p,source)!==scoreVocalMusicalXML(source.scoreXML))throw Error('vocal-comparison-score-changed');
       const timeline=vocalTimeline(p,reference,source.trackId);
       const analyze=async key=>{const pcm=await vocalReadPCM(id,key,guard),setting=vocalHistory(pcm.asset).edits[pcm.asset.vocalTake.cursor];
         if(setting.regions?.some(r=>r.ratio!==1))throw Error('vocal-comparison-render-timing-edits-first');
