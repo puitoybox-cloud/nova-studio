@@ -31,7 +31,15 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
         const saved=await MusicStudio.exportLongWavArchive(true);
         if(!saved.ok)throw Error(saved.error);
         const file=await (await folder.getFileHandle(chosenName)).getFile();
-        const preview=await MusicStudio.previewLongWavArchive(file);
+        const occupied=window.showSaveFilePicker;
+        window.showSaveFilePicker=()=>occupied({suggestedName:chosenName});
+        const rejected=await MusicStudio.exportLongWavArchive(true);
+        if(rejected.error!=='archive-destination-exists')throw Error('occupied-archive-destination-not-protected');
+        const kept=await (await folder.getFileHandle(chosenName)).getFile();
+        const originalBytes=new Uint8Array(await file.arrayBuffer());
+        const keptBytes=new Uint8Array(await kept.arrayBuffer());
+        if(keptBytes.length!==originalBytes.length||keptBytes.some((byte,index)=>byte!==originalBytes[index]))throw Error('occupied-archive-destination-changed');
+        const preview=await MusicStudio.previewLongWavArchive(kept);
         MusicStudio.cancelArchiveTransfer();
         return {completion:saved.completion,valid:preview.ok,sizeMatches:file.size===saved.size};
       }finally{

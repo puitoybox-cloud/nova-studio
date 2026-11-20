@@ -804,26 +804,30 @@ test('WAV committed import retains original bytes and cannot overwrite a replace
 
 test('explicit archive destination verifies bytes and reports cancellation before commit',async()=>{
  const {a,w}=await setup();
- let staged,saved,aborted=false,mode='save';
+ let staged,saved,aborted=false,mode='save',committed=false;
  w.showSaveFilePicker=async({suggestedName})=>{
   assert.match(suggestedName,/\.nova$/);
+  committed=false;
   return {
    name:suggestedName,
    createWritable:async(options)=>{
     assert.equal(options.mode,'exclusive');
     return {
      write:async blob=>{staged=blob;if(mode==='cancel')a.cancelArchiveTransfer()},
-     close:async()=>{saved=staged},
+     close:async()=>{saved=staged;committed=true},
      abort:async()=>{aborted=true},
     };
    },
-   getFile:async()=>mode==='corrupt'?new Blob([new Uint8Array(saved.size)]):saved,
+   getFile:async()=>mode==='existing'?saved:!committed?new Blob():mode==='corrupt'?new Blob([new Uint8Array(saved.size)]):saved,
   };
  };
  const first=await a.exportLongWavArchive(true);
  assert.equal(first.completion,'file-written-verified');
  assert.equal((await a.previewLongWavArchive(saved)).ok,true);
  const original=saved;
+ mode='existing';
+ assert.equal((await a.exportLongWavArchive(true)).error,'archive-destination-exists');
+ assert.equal(saved,original);
  mode='cancel';
  assert.equal((await a.exportLongWavArchive(true)).error,'archive-cancelled');
  assert.equal(saved,original);

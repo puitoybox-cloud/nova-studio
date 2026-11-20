@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.232';
+  const ASSET_VERSION='1.4.234';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -2089,8 +2089,10 @@
     return restoreLongWavArchive(preview.file,{settings});
   }
   async function verifySavedFile(handle, expected, errorCode){
-    const actual=await handle.getFile();
-    if(actual.size!==expected.size)throw Error(errorCode);
+    await verifyBackupBytes(await handle.getFile(),expected,errorCode);
+  }
+  async function verifyBackupBytes(actual,expected,errorCode){
+    if(!actual||actual.size!==expected.size)throw Error(errorCode);
     for(let offset=0;offset<actual.size;offset+=65536){
       const [saved,source]=await Promise.all([actual,expected].map(blob=>blob.slice(offset,offset+65536).arrayBuffer()));
       const bytes=new Uint8Array(source);
@@ -2110,6 +2112,8 @@
       if(handle){
         writable=await handle.createWritable({mode:'exclusive'});
         archiveGuard(target,signal);
+        if((await handle.getFile()).size!==0)throw Error('archive-destination-exists');
+        archiveGuard(target,signal);
         await writable.write(blob);
         archiveGuard(target,signal);
         await writable.close();
@@ -2125,7 +2129,7 @@
       notice('元ファイル・プロジェクト・設定を含むアーカイブのダウンロードをブラウザに依頼しました。保存の完了はダウンロード一覧で確認してください。未完了録音の破損・欠落はそのまま保持され、音声修復を保証しません。','success');return{ok:true};
     }catch(e){
       if(writable)try{await writable.abort()}catch(_){}
-      notice(committed?'保存後に内容を確認できません：'+e.message:e.name==='AbortError'?'保存先の選択を取り消しました。':'書き出せません：'+e.message,committed||e.name!=='AbortError'?'error':'info');
+      notice(committed?'保存後に内容を確認できません：'+e.message:e.message==='archive-destination-exists'?'既存ファイルを保護しました。新しいファイル名を選んでください。':e.name==='AbortError'?'保存先の選択を取り消しました。':'書き出せません：'+e.message,committed||e.name!=='AbortError'?'error':'info');
       return{ok:false,error:e.message,...(committed?{fileWritten:true}:{})};
     }finally{archiveTransfer.busy=false;requestPaint()}
   }
@@ -4874,7 +4878,7 @@
     if(hasUnsavedChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.countingIn||state.midiInput.stopping||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)return{ok:false,created:false,reason:'backup-unsaved-or-busy'};
     const target=repository,baseline=JSON.stringify([state.projects,state.settings]),keep=state.settings.backup.maxCopies;
     const intervalMs=state.settings.backup.intervalHours*3600000;
-    const backups=await loadAutoBackups(),latest=backups[0],nowMs=Date.parse(timestamp);
+    const backups=await loadAutoBackups(),nowMs=Date.parse(timestamp);
     const current=()=>repository===target&&JSON.stringify([state.projects,state.settings])===baseline;
     const guard=()=>{if(!current()||hasUnsavedChanges()||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||shutdownPromise)throw Error('backup-state-conflict')};
     async function prune(generations,{published=false}={}){
@@ -4888,6 +4892,18 @@
     async function skipCreation(reason){
       const cleanupWarning=await prune(backups);
       return{ok:true,created:false,reason,...(cleanupWarning?{cleanupWarning,message:'古いバックアップの整理は完了していません。'}:{})};
+    }
+    let latest=backups[0];
+    if(!current())return{ok:false,created:false,reason:'backup-state-conflict'};
+    const notDue=latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs;
+    if(notDue&&backups.length<=keep)return{ok:true,created:false,reason:'not-due'};
+    if(latest?.archiveHashes){
+      try{await verifyAutoBackupArchive(latest,guard)}
+      catch(error){
+        if(!current()||error.message==='backup-state-conflict')return{ok:false,created:false,reason:'backup-state-conflict'};
+        // A corrupt newest copy must not suppress creation or authorize pruning.
+        latest=null;
+      }
     }
     if(!current())return{ok:false,created:false,reason:'backup-state-conflict'};
     if(latest&&Number.isFinite(nowMs)&&nowMs-Date.parse(latest.createdAt)<intervalMs)return skipCreation('not-due');
@@ -4907,18 +4923,34 @@
     if(repository!==target||JSON.stringify([state.projects,state.settings])!==baseline||JSON.stringify(currentHistories)!==JSON.stringify(histories)||JSON.stringify(currentJournals)!==JSON.stringify(journals))return{ok:false,created:false,reason:'backup-state-conflict'};
     const snapshot=backupObject(),text=JSON.stringify(snapshot),bytes=archive?archive.size:typeof root.TextEncoder==='function'?new root.TextEncoder().encode(text).length:text.length*2;
     if(!archive&&bytes>4*1024*1024)return{ok:false,created:false,reason:'too-large',message:'自動バックアップが4MBを超えるため作成しませんでした。手動JSON書き出しをご利用ください。'};
-    const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
-    try{guard();if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');await target.putAutoBackup(record,guard)}catch(error){
-      const saved=await Promise.resolve().then(()=>target.getAutoBackup?.(record.backupId)).catch(()=>null);
-      if(!saved||saved.archive?.size!==archive?.size||JSON.stringify({...saved,archive:undefined})!==JSON.stringify({...record,archive:undefined})){
-        console.warn('Music Studio automatic backup failed',error);
-        return{ok:false,created:false,reason:'storage-error',message:'自動バックアップを作成できませんでした。既存データは変更していません。'};
-      }
+    let archiveHashes;
+    try{if(archive)archiveHashes=await longWavDigest(archive,guard)}
+    catch(error){return{ok:false,created:false,reason:error.message}}
+    const record={backupId:uuid(),createdAt:timestamp,signature,sizeBytes:bytes,sizeLabel:byteLabel(bytes),snapshot,...(archive?{archive,archiveHashes,archiveFormat:LONG_ARCHIVE_FORMAT}:{})};
+    let writeError;
+    try{
+      guard();
+      if(typeof target.putAutoBackup!=='function')throw Error('backup-storage-unavailable');
+      await target.putAutoBackup(record,guard);
+    }catch(error){writeError=error}
+    try{
+      const saved=await target.getAutoBackup(record.backupId);
+      if(!saved||JSON.stringify({...saved,archive:undefined})!==JSON.stringify({...record,archive:undefined}))throw Error('backup-metadata-verification-failed');
+      if(archive)await verifyAutoBackupArchive(saved);
+    }catch(error){
+      console.warn('Music Studio automatic backup verification failed',writeError||error);
+      return{ok:false,created:false,reason:'storage-error',message:'新しい自動バックアップを照合できませんでした。古い世代は整理していません。'};
     }
     const cleanupWarning=await prune([record,...backups].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')),{published:true});
     return{ok:true,created:true,backup:record,...(cleanupWarning?{cleanupWarning}:{}),message:cleanupWarning?'自動バックアップを保存しました。古いコピーの整理は完了していません。':'期限を迎えたため、端末内に自動バックアップを作成しました。'};
   }
   async function checkAutoBackupNow(){const result=await runAutoBackupCheck();notice(result.message||(result.reason==='disabled'?'自動バックアップは無効です。':result.reason==='not-due'?'次の作成期限にはまだ達していません。':'内容に変更がないため重複作成しませんでした。'),result.ok?'info':'error')}
+  async function verifyAutoBackupArchive(record,guard=()=>{}){
+    if(!record.archive||record.archive.size!==record.sizeBytes||
+        JSON.stringify(await longWavDigest(record.archive,guard))!==JSON.stringify(record.archiveHashes)){
+      throw Error('backup-file-verification-failed');
+    }
+  }
   async function restoreAutoBackup(id){
     const target=repository;
     const selected=state.autoBackups.find(item=>item.backupId===id);
@@ -4930,6 +4962,14 @@
     }
     if(repository!==target||!state.autoBackups.includes(selected))return notice('保存先またはバックアップ一覧が変更されました。選び直してください。','error');
     if(!record||record.createdAt!==selected.createdAt||record.signature!==selected.signature)return notice('自動バックアップが変更または削除されました。','error');
+    if(record.archiveFormat===LONG_ARCHIVE_FORMAT&&!record.archive){
+      return notice('自動バックアップのアーカイブ本体がありません。','error');
+    }
+    if(record.archiveHashes){
+      const guard=()=>{if(repository!==target||!state.autoBackups.includes(selected))throw Error('backup-state-conflict')};
+      try{await verifyAutoBackupArchive(record,guard);guard()}
+      catch(error){return notice('自動バックアップを検証できません：'+error.message,'error')}
+    }
     if(record.archive){
       const preview=await previewLongWavArchive(record.archive,{identifyPriorRestores:false});
       notice(preview.ok?'WAVを含む自動バックアップを検証しました。内容を確認して復元してください。':'検証できません：'+preview.error,preview.ok?'info':'error');
@@ -4939,7 +4979,27 @@
     notice(result.message,result.failed?'error':'success');
     return result;
   }
-  function configureAutosave(){if(state.intervalTimer)root.clearInterval?.(state.intervalTimer);state.intervalTimer=null;if(state.settings?.autosave.enabled&&root.setInterval)state.intervalTimer=root.setInterval(()=>{const id=parseEditId(currentRoute());if(id&&state.dirty)saveCurrentProject(id)},state.settings.autosave.intervalSeconds*1000)}
+  let autoBackupTimer=null;
+  function configureAutosave(){
+    if(state.intervalTimer)root.clearInterval?.(state.intervalTimer);
+    state.intervalTimer=null;
+    if(state.settings?.autosave.enabled&&root.setInterval)state.intervalTimer=root.setInterval(()=>{
+      const id=parseEditId(currentRoute());
+      if(id&&state.dirty)saveCurrentProject(id);
+    },state.settings.autosave.intervalSeconds*1000);
+    if(autoBackupTimer!==null)root.clearInterval?.(autoBackupTimer);
+    autoBackupTimer=null;
+    if(state.settings?.backup.automaticEnabled&&root.setInterval){
+      autoBackupTimer=root.setInterval(async()=>{
+        if(!state.loaded)return;
+        try{
+          const result=await runAutoBackupCheck();
+          if(result.created&&currentRoute()===BACKUP_ROUTE)requestPaint();
+        }catch(error){console.warn('Music Studio scheduled backup failed',error)}
+      },5*60*1000);
+      autoBackupTimer?.unref?.();
+    }
+  }
   async function saveCurrentProject(id,force=false){if(!id||(!state.dirty&&!force))return{ok:true,skipped:true};let input;try{input=formValue()}catch(error){return{ok:false,message:error.message}}const target=repository,sequence=++state.saveSequence,generation=state.editGeneration;state.saveStatus='saving';updateSaveIndicator('保存中');try{const current=await target.get(id);if(repository!==target)throw Error('project-repository-changed');if(!current){state.saveStatus='error';updateSaveIndicator('保存に失敗しました');return{ok:false,message:'保存対象が見つかりません。入力内容は維持しています。'}}const bpm=Number(input.bpm),revision=(current.revision||1)+1,updated={...current,...input,revision,musicalSettings:{...current.musicalSettings,bpm,timeSignature:(()=>{const [numerator,denominator]=input.timeSignature.split('/').map(Number);return{numerator,denominator}})(),key:input.key||null},...(current.midiData?{midiData:{...clone(current.midiData),tempo:bpm,tempoMap:normalizeProjectTempoMap(current.midiData.tempoMap,bpm)}}:{}),...(current.aiWorkspace?{aiWorkspace:rebindAIWorkspace(current.aiWorkspace,current.projectId,revision)}:{}),updatedAt:now()};delete updated.bpm;delete updated.timeSignature;delete updated.key;automaticEditRecord(current,updated,'project-editor');const validation=validateProject(updated);if(!validation.valid){state.saveStatus='error';updateSaveIndicator('保存に失敗しました');return{ok:false,message:validation.errors.join(' ')}}const guard=()=>{if(repository!==target)throw Error('project-repository-changed')};if(typeof target.compareAndPut!=='function')throw Error('project-atomic-save-unavailable');await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,JSON.stringify(current),guard));if(repository!==target)return{ok:true,committed:true,stale:true,refreshPending:true,project:updated};if(sequence<state.saveSequence||generation!==state.editGeneration){state.dirty=true;state.saveStatus='dirty';updateSaveIndicator('未保存の変更があります');return{ok:true,stale:true,project:updated}}state.savedSequence=sequence;state.dirty=false;state.saveStatus='saved';setLastProject(id);state.projects=state.projects.map(project=>project.projectId===id?updated:project);updateSaveIndicator('保存しました');return{ok:true,project:updated}}catch(error){console.error('Music Studio autosave failed',error);state.saveStatus='error';state.dirty=true;updateSaveIndicator('保存に失敗しました');notice('自動保存に失敗しました。入力内容は画面に維持されています。手動保存をお試しください。','error');return{ok:false,message:'保存に失敗しました。'}}}
   function updateSaveIndicator(text){const indicator=root.document?.querySelector('.music-save-state');if(indicator){indicator.dataset.status=state.saveStatus;indicator.dataset.dirty=String(state.dirty);indicator.textContent=text}}
   function formatDate(value){try{return new Intl.DateTimeFormat('ja-JP',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value))}catch(_){return String(value||'')}}
