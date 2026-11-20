@@ -113,6 +113,30 @@ async function verify() {
     }
     await page.reload();
     await page.waitForFunction(() => MusicStudio.state.loaded);
+    await page.evaluate(() => MusicStudio.goSettings());
+    await voice.getByLabel('モデル名', {exact: true}).first().fill('録音解析');
+    await voice.getByLabel('モデル識別子', {exact: true}).first().fill('local-analysis');
+    await voice.getByRole('button', {name: 'モデルを登録'}).click();
+    const analysisModel = voice.locator('details').filter({hasText: '録音解析'});
+    const openAnalysis = async () => {
+      const summary = analysisModel.locator('summary');
+      if (!(await summary.evaluate(el => el.parentElement.open))) await summary.click();
+    };
+    await openAnalysis();
+    await analysisModel.getByLabel('同意の証跡').fill('recording-analysis-consent');
+    await analysisModel.getByLabel('学習', {exact: true}).check();
+    await analysisModel.getByLabel('本人の明示同意と上記の許諾範囲を確認した').check();
+    await analysisModel.getByRole('button', {name: '同意を記録'}).click();
+    await page.waitForFunction(() => MusicStudio.state.settings.productionManagement.models.find(m => m.engine === 'local-analysis')?.consent);
+    await openAnalysis();
+    await analysisModel.getByLabel('学習用録音').selectOption(JSON.stringify(['layer-browser', fixture]));
+    await analysisModel.getByRole('button', {name: '学習素材に登録'}).click();
+    await page.waitForFunction(() => MusicStudio.state.settings.productionManagement.models.find(m => m.engine === 'local-analysis')?.materials.length === 1);
+    await openAnalysis();
+    await analysisModel.getByRole('button', {name: '録音を解析'}).click();
+    await page.waitForFunction(() => MusicStudio.state.settings.productionManagement.models.find(m => m.engine === 'local-analysis')?.materials[0]?.analysis?.medianHz > 219);
+    await openAnalysis();
+    await analysisModel.getByText(/検出ピッチ中央値.*Hz/).waitFor();
     const restoredLayers = await page.evaluate(async () => {
       const app = MusicStudio;
       const archive = await app.createLongWavArchive();

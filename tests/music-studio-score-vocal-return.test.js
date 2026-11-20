@@ -209,3 +209,35 @@ test('printed vocal layers have distinct PCM, preserve placement and survive arc
     assert.deepEqual(Buffer.from(await rendered.blob.arrayBuffer()),printed.get(asset.vocalTake.layerSource.kind));
   }
 });
+
+test('registered vocal training material is analyzed locally with consent and refuses analysis after revocation',async()=>{
+  const {a,w,p,repo,recordId}=await scoreSetup();
+  w.FormData=class {
+    constructor(form){this.fields=form?.elements||{}}
+    get(name){const value=this.fields[name];return Array.isArray(value)?value[0]:value}
+    getAll(name){return [].concat(this.fields[name]||[])}
+    has(name){return Object.hasOwn(this.fields,name)}
+  };
+  w.confirm=()=>true;
+  const submit=(action,fields={},id)=>a.submitManagement({preventDefault(){},target:{elements:fields}},action,id);
+  await submit('voice-add',{name:'Singer',engine:'test-reference'});
+  const model=a.state.settings.productionManagement.models[0];
+  const bytes=await wav(8000).arrayBuffer(),pcm=new DataView(bytes);
+  for(let i=0;i<8000;i++)pcm.setInt16(44+i*2,Math.round(8000*Math.sin(2*Math.PI*220*i/8000)),true);
+  const imported=await a.importScoreVocal(Object.assign(new Blob([bytes]),{name:'take.wav'}),p.projectId,recordId,'first-note');
+  assert.equal(imported.ok,true,imported.error);
+  await submit('voice-material',{asset:JSON.stringify([p.projectId,imported.assetId])},model.id);
+  const material=a.state.settings.productionManagement.models[0].materials[0];
+  assert.ok(material);
+  assert.equal((await a.analyzeVoiceMaterial(model.id,material.id)).ok,false);
+  await submit('voice-consent',{reference:'Consent-001',scope:['train'],confirmed:'on'},model.id);
+  const result=await a.analyzeVoiceMaterial(model.id,material.id);
+  assert.equal(result.ok,true,result.error);
+  assert.ok(Math.abs(result.medianHz-220)<1);
+  assert.ok(result.voicedWindows>0);
+  assert.equal(result.clipped,0);
+  await submit('voice-revoke',{},model.id);
+  assert.equal((await a.analyzeVoiceMaterial(model.id,material.id)).ok,false);
+  const saved=(await repo.getSettings()).productionManagement.models[0].materials[0].analysis;
+  assert.equal(saved.medianHz,result.medianHz);
+});

@@ -6125,6 +6125,62 @@
     }finally{managementBusy=false;}
   }
 
+  const voiceMaterialAnalyses=new Set();
+
+  async function analyzeVoiceMaterial(modelId,materialId){
+    const management=state.settings?.productionManagement;
+    const material=management?.models.find(model=>model.id===modelId)?.materials.find(item=>item.id===materialId);
+    if(!material||voiceMaterialAnalyses.has(materialId))return{ok:false,error:'voice-material-unavailable'};
+    const target=repository,project=state.projects.find(item=>item.projectId===material.projectId);
+    const guard=()=>{
+      if(target!==repository||archiveTransfer.busy||
+        state.projects.find(item=>item.projectId===material.projectId)!==project||
+        !managedVoicePermission(modelId,'train'))throw Error('学習の許諾または録音素材が変更されました。');
+    };
+    voiceMaterialAnalyses.add(materialId);
+    requestPaint();
+    try{
+      guard();
+      if(!managedVoicePermission(modelId,'train',await target.getSettings()))
+        throw Error('学習の許諾がありません。');
+      guard();
+      const {channels,sampleRate,asset}=await vocalReadPCM(material.projectId,material.assetId,guard);
+      const mono=channels.length===1?channels[0]:channels[0].map((sample,i)=>(sample+channels[1][i])/2);
+      const pitch=await vocalDetectPitchAsync(mono,sampleRate,guard);
+      let sumSquares=0,peak=0,clipped=0;
+      for(const channel of channels){
+        for(const value of channel){
+          const magnitude=Math.abs(value);
+          sumSquares+=value*value;
+          peak=Math.max(peak,magnitude);
+          if(magnitude>=32767/32768)clipped++;
+        }
+      }
+      const ordered=pitch.map(row=>row.frequency).sort((a,b)=>a-b);
+      const result={frames:asset.frames,sampleRate,channels:channels.length,
+        rms:Math.sqrt(sumSquares/(asset.frames*channels.length)),peak,clipped,
+        voicedWindows:pitch.length,medianHz:ordered.length?ordered[Math.floor(ordered.length/2)]:null,at:now()};
+      guard();
+      await changeManagement(current=>{
+        guard();
+        if(!managedVoicePermission(modelId,'train',{productionManagement:current}))
+          throw Error('学習の許諾がありません。');
+        const row=current.models.find(model=>model.id===modelId).materials.find(item=>item.id===materialId);
+        if(!row||row.projectId!==material.projectId||row.assetId!==material.assetId)
+          throw Error('学習素材の登録が変更されました。');
+        row.analysis=result;
+      });
+      notice('学習用録音の解析結果を保存しました。','success');
+      return{ok:true,...result};
+    }catch(error){
+      notice(error.message,'error');
+      return{ok:false,error:error.message};
+    }finally{
+      voiceMaterialAnalyses.delete(materialId);
+      requestPaint();
+    }
+  }
+
   function managedVoiceView(management,h){
     const permissionInputs=Object.entries(managementScopes).map(([scope,label])=>
       `<label><input type="checkbox" name="scope" value="${scope}">${label}</label>`).join('');
@@ -6138,7 +6194,7 @@
       ${management.models.map(model=>{
         const id=h(JSON.stringify(model.id));
         const revoked=management.revocations.find(item=>item.id===model.id);
-        const materialOptions=state.projects.flatMap(project=>(project.audioAssets||[]).map(asset=>{
+        const materialOptions=state.projects.flatMap(project=>[...(project.longWavAssets||[]).filter(asset=>asset.vocalTake),...(project.audioAssets||[])].map(asset=>{
           if(!asset.id)return '';
           return `<option value="${h(JSON.stringify([project.projectId,asset.id]))}">${h(project.projectName)} / ${h(asset.name||asset.originalName||asset.id)}</option>`;
         })).join('');
@@ -6161,8 +6217,15 @@
             <label>学習用録音<select name="asset" required><option value="">選択してください</option>${materialOptions}</select></label>
             <button>学習素材に登録</button>
           </form>`:''}
-          <ul>${model.materials.map(material=>`<li>${h(material.name)}
-            <button onclick="MusicStudio.submitManagement(event,'voice-remove-material',${id},${h(JSON.stringify(material.id))})">素材登録を解除</button></li>`).join('')}</ul>
+          <ul>${model.materials.map(material=>{
+            const materialKey=h(JSON.stringify(material.id)),analysis=material.analysis;
+            const take=state.projects.find(p=>p.projectId===material.projectId)?.longWavAssets?.find(a=>a.id===material.assetId&&a.vocalTake);
+            const pending=voiceMaterialAnalyses.has(material.id);
+            return `<li>${h(material.name)}
+            ${take&&managedVoicePermission(model.id,'train')?`<button ${pending?'disabled':''} onclick="MusicStudio.analyzeVoiceMaterial(${id},${materialKey})">${pending?'解析中…':'録音を解析'}</button>`:''}
+            ${analysis?`<p>${(analysis.frames/analysis.sampleRate).toFixed(2)} 秒 · ${analysis.sampleRate} Hz · ${analysis.channels} ch · RMS ${(20*Math.log10(analysis.rms)).toFixed(1)} dBFS · クリップ ${analysis.clipped} · 検出ピッチ中央値 ${analysis.medianHz===null?'検出なし':analysis.medianHz.toFixed(1)+' Hz'}</p>`:''}
+            <button onclick="MusicStudio.submitManagement(event,'voice-remove-material',${id},${h(JSON.stringify(material.id))})">素材登録を解除</button></li>`;
+          }).join('')}</ul>
           <button onclick="MusicStudio.submitManagement(event,'voice-delete',${id})">モデル登録を削除</button>
         </details>`;
       }).join('')}`);
@@ -6285,7 +6348,7 @@
         }else if(action==='voice-material'&&!revoked){
           const [projectId,assetId]=JSON.parse(read('asset',1000));
           const project=state.projects.find(item=>item.projectId===projectId);
-          const asset=project?.audioAssets?.find(item=>item.id===assetId);
+          const asset=project?.longWavAssets?.find(item=>item.id===assetId&&item.vocalTake)||project?.audioAssets?.find(item=>item.id===assetId);
           if(!asset||model.materials.some(item=>item.projectId===projectId&&item.assetId===assetId))
             throw Error('録音が見つからないか、すでに登録されています。');
           model.materials.push({id:uuid(),projectId,assetId,name:asset.name||asset.originalName||assetId});
@@ -6302,10 +6365,16 @@
   function validProductionManagement(value){
     const validId=value=>typeof value==='string'&&value.length>0&&value.length<=500;
     const validDate=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
+    const validAnalysis=analysis=>analysis&&Number.isSafeInteger(analysis.frames)&&analysis.frames>0&&
+      Number.isInteger(analysis.sampleRate)&&analysis.sampleRate>=8000&&analysis.sampleRate<=192000&&
+      [1,2].includes(analysis.channels)&&[analysis.rms,analysis.peak].every(n=>Number.isFinite(n)&&n>=0&&n<=1)&&
+      [analysis.clipped,analysis.voicedWindows].every(n=>Number.isSafeInteger(n)&&n>=0)&&
+      (analysis.medianHz===null||(Number.isFinite(analysis.medianHz)&&analysis.medianHz>0))&&validDate(analysis.at);
     const {models,revocations,billing}=value||{};
     return Array.isArray(models)&&Array.isArray(revocations)&&models.every(model=>
       validId(model?.id)&&validId(model.name)&&validId(model.engine)&&Array.isArray(model.materials)&&
-      model.materials.every(item=>validId(item?.id)&&validId(item.projectId)&&validId(item.assetId)&&validId(item.name))&&
+      model.materials.every(item=>validId(item?.id)&&validId(item.projectId)&&validId(item.assetId)&&validId(item.name)&&
+        (item.analysis===undefined||validAnalysis(item.analysis)))&&
       (model.consent===null||(validId(model.consent?.reference)&&validDate(model.consent.recordedAt)&&
         Array.isArray(model.consent.scopes)&&model.consent.scopes.every(scope=>Object.hasOwn(managementScopes,scope)))))&&
       revocations.every(item=>validId(item?.id)&&validDate(item.at))&&
@@ -6334,12 +6403,17 @@
     next.productionManagement={
       models:clone(current.models),
       revocations:union(current.revocations,incoming.revocations),
-      billing:{...clone(current.billing),history:history.map(entry=>entry.outcome==='reserved'&&settlements.get(entry.id)?.outcome==='completed'?settlements.get(entry.id):entry)}
+      billing:{...clone(current.billing),history:history.map(entry=>{
+        const completion=settlements.get(entry.id);
+        return entry.outcome==='reserved'&&completion?.outcome==='completed'&&
+          completion.provider===entry.provider&&completion.feature===entry.feature&&
+          completion.month===entry.month&&completion.amount===entry.amount?completion:entry;
+      })}
     };
     return next;
   }
 
-  Object.assign(api,{submitManagement,managedVoicePermission,vocalLayerSubmit,vocalLayerSave});
+  Object.assign(api,{submitManagement,managedVoicePermission,analyzeVoiceMaterial,vocalLayerSubmit,vocalLayerSave});
   root.MusicStudio=api;
   if(root.document){root.document.addEventListener?.('keydown',event=>{if(event.target?.closest?.('.music-studio-shell'))vocalDisclosureKey(event,event.target.closest('details[open]'))});for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
 })(typeof window!=='undefined'?window:globalThis);
