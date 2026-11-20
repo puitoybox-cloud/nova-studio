@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
 function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{delete:k=>req(()=>{if(fault)throw Error('QuotaExceededError');return map.delete(k)}),get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set(v.projectId||v.id||v.backupId,structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=v.projectId||v.id||v.backupId;if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
-function fixture(indexedDB=idb()){let seq=0;const w={console,setTimeout,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>webcrypto.randomUUID()},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio-meter-map.js','utf8'),w);vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
+function fixture(indexedDB=idb()){let seq=0;const w={console,setTimeout,clearTimeout,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>webcrypto.randomUUID()},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio-meter-map.js','utf8'),w);vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
 function wav(frames=2100000){const b=new ArrayBuffer(44+frames*2),v=new DataView(b),tag=(p,s)=>[...s].forEach((c,i)=>v.setUint8(p+i,c.charCodeAt()));tag(0,'RIFF');v.setUint32(4,b.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,frames*2,true);const file=new Blob([b],{type:'audio/wav'});file.name='long.wav';return file}
 async function setup(){const f=fixture(),a=f.a,repo=a.indexedDbRepository(),p=a.makeProject({projectId:'long-project',projectName:'Long',midiData:{unchanged:true},legacy:{keep:true}});a.setRepository(repo);await repo.put(p);a.state.projects=[p];a.pcmOpen(p.projectId);return{...f,repo,p}}
 
@@ -210,8 +210,7 @@ test('printed vocal layers have distinct PCM, preserve placement and survive arc
   }
 });
 
-test('registered vocal training material is analyzed locally with consent and refuses analysis after revocation',async()=>{
-  const {a,w,p,repo,recordId}=await scoreSetup();
+function managementActions({a,w}){
   w.FormData=class {
     constructor(form){this.fields=form?.elements||{}}
     get(name){const value=this.fields[name];return Array.isArray(value)?value[0]:value}
@@ -219,7 +218,11 @@ test('registered vocal training material is analyzed locally with consent and re
     has(name){return Object.hasOwn(this.fields,name)}
   };
   w.confirm=()=>true;
-  const submit=(action,fields={},id)=>a.submitManagement({preventDefault(){},target:{elements:fields}},action,id);
+  return (action,fields={},id)=>a.submitManagement({preventDefault(){},target:{elements:fields}},action,id);
+}
+
+test('registered vocal training material is analyzed locally with consent and refuses analysis after revocation',async()=>{
+  const fixture=await scoreSetup(),{a,p,repo,recordId}=fixture,submit=managementActions(fixture);
   await submit('voice-add',{name:'Singer',engine:'test-reference'});
   const model=a.state.settings.productionManagement.models[0];
   const bytes=await wav(8000).arrayBuffer(),pcm=new DataView(bytes);
@@ -240,4 +243,31 @@ test('registered vocal training material is analyzed locally with consent and re
   assert.equal((await a.analyzeVoiceMaterial(model.id,material.id)).ok,false);
   const saved=(await repo.getSettings()).productionManagement.models[0].materials[0].analysis;
   assert.equal(saved.medianHz,result.medianHz);
+});
+
+test('test AI reservations survive reopen, enforce the monthly cap and settle each ID once',async()=>{
+  const f=await setup(),submit=managementActions(f),history=async()=>
+    (await f.repo.getSettings()).productionManagement.billing.history;
+  await submit('billing-config',{price:'4',limit:'8',composition:'test-provider'});
+  const reserve=async(outcome='completed')=>{
+    await submit('billing-quote',{feature:'composition',outcome});
+    const match=f.a.renderRoute('music-studio/settings').match(/billing-approve.{0,20}&quot;([^&]+)&quot;/);
+    assert.ok(match);
+    await submit('billing-approve',{},match[1]);
+    return match[1];
+  };
+  const first=await reserve(),second=await reserve('failed');
+  await reserve();
+  assert.deepEqual((await history()).map(row=>[row.outcome,row.amount]),[['reserved',4],['reserved',4]]);
+  const fresh=fixture(f.indexedDB);
+  fresh.a.setRepository(fresh.a.indexedDbRepository());
+  const settle=managementActions(fresh);
+  await settle('billing-run',{},first);
+  await settle('billing-run',{},first);
+  await settle('billing-run',{},second);
+  const release=await reserve();
+  await settle('billing-release',{},release);
+  assert.deepEqual((await history()).map(row=>[row.id,row.outcome,row.amount]),[
+    [first,'completed',4],[second,'failed',0],[release,'cancelled',0]
+  ]);
 });

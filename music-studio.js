@@ -1234,6 +1234,10 @@
     }
     return updated;
   }
+  const localScoreVoice=Object.freeze({
+    engine:'Sinsy 0.92 HMM',voice:'NIT SONG070 F001 0.90',license:'CC-BY-3.0',
+    filename:'Sinsy-NIT-SONG070-F001.wav'
+  });
   let localVocalJob=null;
   function cancelLocalScoreVocal(id){
     const job=localVocalJob;if(!job||job.id!==id||job.phase!=='requesting')return{ok:false,error:'local-vocal-not-cancellable'};
@@ -1262,8 +1266,10 @@
       const result=await localGenerationRequest('sing',{scoreXML:score.text,requestId:job.requestId},{signal:job.controller?.signal});
       if(job.cancelled||localVocalJob!==job)throw Error('local-vocal-cancelled');
       if(repository!==target||state.projects.find(p=>p.projectId===id)!==p||JSON.stringify(p)!==baseline)throw Error('score-changed-during-generation');
+      if(result.engine!==localScoreVoice.engine||result.voice!==localScoreVoice.voice||result.license!==localScoreVoice.license)
+        throw Error('歌声生成ホストの声庫またはライセンスを確認できません。');
       if(typeof result.wavBase64!=='string'||result.wavBase64.length>Math.ceil(VOCAL_MAX_BYTES/3)*4)throw Error('local-vocal-response-size');
-      const bytes=Uint8Array.from(root.atob(result.wavBase64),x=>x.charCodeAt(0)),file=new root.File([bytes],'Sinsy-NIT-SONG070-F001.wav',{type:'audio/wav'});
+      const bytes=Uint8Array.from(root.atob(result.wavBase64),x=>x.charCodeAt(0)),file=new root.File([bytes],localScoreVoice.filename,{type:'audio/wav'});
       job.phase='importing';root.clearTimeout?.(timer);
       return await importScoreVocal(file,id,recordId,'score-zero',{generationRange:range,localSinsy:true,compactRange:range!==undefined});
     }catch(error){
