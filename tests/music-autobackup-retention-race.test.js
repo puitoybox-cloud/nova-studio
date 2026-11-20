@@ -64,3 +64,24 @@ test('generation lookup cannot restore a previous repository snapshot after a sw
  assert.equal((await other.list()).length,0);
  assert.equal(app.archiveTransfer.preview,null);
 });
+
+test('automatic backup checks while Studio stays open and stops when disabled', async()=>{
+ const {app,repo,window}=setup();
+ const timers=new Map();
+ let next=0;
+ window.setInterval=(callback,delay)=>{timers.set(++next,{callback,delay});return next};
+ window.clearInterval=id=>timers.delete(id);
+ app.state.loaded=true;
+ const settings=app.normalizeSettings({autosave:{enabled:false},backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});
+ assert.equal((await app.persistSettings(settings)).ok,true);
+ assert.equal(timers.size,1);
+ const [{callback,delay}]=timers.values();
+ assert.equal(delay,5*60*1000);
+ await callback();
+ assert.equal((await repo.listAutoBackups()).length,1);
+ await callback();
+ assert.equal((await repo.listAutoBackups()).length,1);
+ settings.backup.automaticEnabled=false;
+ assert.equal((await app.persistSettings(settings)).ok,true);
+ assert.equal(timers.size,0);
+});
