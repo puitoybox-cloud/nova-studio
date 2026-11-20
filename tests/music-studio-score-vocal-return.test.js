@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 // Transactional IDB model: binary structured cloning, commit, abort and reopen.
 // Physical browser persistence is a separate acceptance test.
 function idb(){const stores=new Map();let fault=false;const db={close(){},objectStoreNames:{contains:n=>stores.has(n)},createObjectStore(n){stores.set(n,new Map());return{createIndex(){}}},transaction(names,mode){names=Array.isArray(names)?names:[names];const staged=new Map(names.map(n=>[n,new Map(stores.get(n))]));let pending=0,aborted=false,timer;const tx={abort(){if(aborted)return;aborted=true;clearImmediate(timer);setImmediate(()=>tx.onabort?.())},objectStore(n){const map=staged.get(n);function req(op){pending++;const r={};setImmediate(()=>{if(aborted)return;try{r.result=op();r.onsuccess?.()}catch(e){r.error=e;r.onerror?.();tx.abort()}pending--;if(!pending&&!aborted){timer=setImmediate(()=>{if(aborted)return;if(mode==='readwrite')for(const[n,m]of staged)stores.set(n,m);tx.oncomplete?.()})}});return r}return{delete:k=>req(()=>{if(fault)throw Error('QuotaExceededError');return map.delete(k)}),get:k=>req(()=>structuredClone(map.get(k))),getAll:()=>req(()=>structuredClone([...map.values()])),getKey:k=>req(()=>map.has(k)?k:undefined),put:v=>req(()=>{if(fault)throw Error('QuotaExceededError');map.set(v.projectId||v.id||v.backupId,structuredClone(v))}),add:v=>req(()=>{if(fault)throw Error('QuotaExceededError');const key=v.projectId||v.id||v.backupId;if(map.has(key))throw Error('ConstraintError');map.set(key,structuredClone(v))})}}};return tx}};return{stores,fail(){fault=true},open(){const r={};setImmediate(()=>{r.result=db;r.onupgradeneeded?.();r.onsuccess?.()});return r}}}
-function fixture(indexedDB=idb()){let seq=0;const w={console,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>webcrypto.randomUUID()},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio-meter-map.js','utf8'),w);vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
+function fixture(indexedDB=idb()){let seq=0;const w={console,setTimeout,Date,Math,JSON,Intl,Blob,ArrayBuffer,DataView,Float32Array,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=>webcrypto.randomUUID()},indexedDB,location:{hash:'#music-studio'}};w.window=w;vm.runInNewContext(fs.readFileSync('music-studio-meter-map.js','utf8'),w);vm.runInNewContext(fs.readFileSync('music-studio.js','utf8'),w);const a=w.MusicStudio;return{a,indexedDB,w}}
 function wav(frames=2100000){const b=new ArrayBuffer(44+frames*2),v=new DataView(b),tag=(p,s)=>[...s].forEach((c,i)=>v.setUint8(p+i,c.charCodeAt()));tag(0,'RIFF');v.setUint32(4,b.byteLength-8,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,frames*2,true);const file=new Blob([b],{type:'audio/wav'});file.name='long.wav';return file}
 async function setup(){const f=fixture(),a=f.a,repo=a.indexedDbRepository(),p=a.makeProject({projectId:'long-project',projectName:'Long',midiData:{unchanged:true},legacy:{keep:true}});a.setRepository(repo);await repo.put(p);a.state.projects=[p];a.pcmOpen(p.projectId);return{...f,repo,p}}
 
@@ -177,4 +177,35 @@ test('comparison actions create MIDI correction previews and record a separate T
  f.w.MediaRecorder=class{static isTypeSupported(){return true}constructor(){this.state='inactive';this.mimeType='audio/webm'}start(){this.state='recording';this.onstart?.()}stop(){this.state='inactive';this.ondataavailable?.({data:new Blob(['captured'])});setImmediate(()=>this.onstop?.())}};
  const started=await a.vocalComparisonAction(id,f.takeId,'rerecord');assert.equal(started.ok,true,started.error);const stopped=await a.vocalStop();assert.equal(stopped.ok,true,stopped.error);const saved=await f.repo.get(id);assert.equal(saved.longWavAssets.length,3);assert.deepEqual(saved.longWavAssets.slice(0,2).map(x=>JSON.stringify(x)),originals);assert.equal(saved.longWavAssets[2].vocalTake.recordingPlan.startTick,baseline.longWavAssets[1].vocalTake.edits[0].startTick);assert.equal((await a.vocalComparisonAction(id,f.takeId,'correct')).ok,false);
  const fresh=fixture(f.indexedDB);fresh.a.setRepository(fresh.a.indexedDbRepository());await fresh.a.refresh();assert.equal(fresh.a.state.projects[0].longWavAssets.length,3);const restored=await fresh.a.restoreLongWavArchive(await fresh.a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);assert.equal(restored.projects[0].longWavAssets.length,3);
+});
+
+test('printed vocal layers have distinct PCM, preserve placement and survive archive restore',async()=>{
+  const {a,p,repo,recordId}=await scoreSetup(),id=p.projectId;
+  const bytes=await wav(8000).arrayBuffer(),view=new DataView(bytes);
+  for(let i=0;i<8000;i++)view.setInt16(44+2*i,Math.round(9000*Math.sin(2*Math.PI*220*i/8000)),true);
+  const file=Object.assign(new Blob([bytes],{type:'audio/wav'}),{name:'sung-note.wav'});
+  const source=await a.importScoreVocal(file,id,recordId,'first-note',{trimStartSeconds:.1,gainDb:-3,latencyMs:25});
+  assert.equal(source.ok,true,source.error);
+  const dry=await a.vocalRender(id,source.assetId),printed=new Map();
+  for(const [kind,extra] of [['harmony',0],['double',152],['chorus',328]]){
+    const result=await a.vocalLayerSave(id,source.assetId,kind,7);
+    assert.equal(result.ok,true,result.error);
+    const output=await a.vocalRender(id,result.assetId);
+    assert.equal(output.frames,dry.frames+extra);
+    assert.ok(Math.abs(output.startSeconds-dry.startSeconds)<1e-9);
+    const pcm=Buffer.from(await output.blob.arrayBuffer());
+    assert.notDeepEqual(pcm,Buffer.from(await dry.blob.arrayBuffer()));
+    assert.ok(pcm.subarray(44).some(byte=>byte!==0));
+    printed.set(kind,pcm);
+  }
+  const persisted=await repo.get(id);
+  assert.equal(persisted.longWavAssets.length,4);
+  assert.deepEqual(Buffer.from(await(await a.pcmLoadLongWav(id,source.assetId)).arrayBuffer()),Buffer.from(bytes));
+  const restored=await a.restoreLongWavArchive(await a.createLongWavArchive(),{settings:false});
+  assert.equal(restored.ok,true,restored.error);
+  const copy=restored.projects[0];
+  for(const asset of copy.longWavAssets.filter(a=>a.vocalTake.layerSource)){
+    const rendered=await a.vocalRender(copy.projectId,asset.id);
+    assert.deepEqual(Buffer.from(await rendered.blob.arrayBuffer()),printed.get(asset.vocalTake.layerSource.kind));
+  }
 });

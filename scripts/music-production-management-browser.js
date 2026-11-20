@@ -46,25 +46,34 @@ async function verify() {
     await billing.getByRole('button', {name: '料金と機能別設定を保存'}).click();
     await page.waitForFunction(() => MusicStudio.state.settings.productionManagement.billing.limit === 8);
     const quote = () => billing.getByRole('button', {name: 'テスト料金を見積もる'}).click();
-    const approve = () => billing.getByRole('button', {name: '見積もりを承認して試す'}).click();
+    const approve = () => billing.getByRole('button', {name: '見積もりを承認して予約'}).click();
     const waitHistory = size => page.waitForFunction(n =>
       MusicStudio.state.settings.productionManagement.billing.history.length === n, size);
+    const run = () => billing.getByRole('button', {name: '予約済みテストを実行'}).first().click();
     await quote();
     await approve();
     await waitHistory(1);
+    await page.reload();
+    await page.waitForFunction(() => window.MusicStudio?.state.loaded);
+    await page.evaluate(() => MusicStudio.goSettings());
+    await billing.getByText(/予約額 4 円/).waitFor();
     await billing.getByLabel('テスト応答').selectOption('failed');
     await quote();
     await approve();
     await waitHistory(2);
     await quote();
+    await approve();
+    await page.getByText('月額上限を超えるため実行できません。').waitFor();
+    await run();
+    await run();
+    await billing.getByText(/予約額 0 円/).waitFor();
     await billing.getByRole('button', {name: '取り消す', exact: true}).click();
     await waitHistory(3);
     await quote();
     await approve();
     await waitHistory(4);
-    await quote();
-    await approve();
-    await page.getByText('月額上限を超えるため実行できません。').waitFor();
+    await run();
+    await billing.getByText(/利用額 8 円/).waitFor();
     await page.reload();
     await page.waitForFunction(() => window.MusicStudio?.state.loaded);
     assert.deepEqual(await permission(), [false, false]);
@@ -73,8 +82,53 @@ async function verify() {
       ['completed', 4], ['failed', 0], ['cancelled', 0], ['completed', 4]
     ]);
     assert.equal(new Set(history.map(entry => entry.id)).size, history.length);
+    const fixture = await page.evaluate(async () => {
+      const app = MusicStudio;
+      const repo = app.indexedDbRepository();
+      app.setRepository(repo);
+      let project = app.makeProject({projectId: 'layer-browser', projectName: 'Vocal layers',
+        midiData: {ppq: 480, tempo: 120, tracks: [{id: 'lead', part: 'melody',
+          notes: [{id: 'n1', pitch: 57, startTick: 480, durationTicks: 480}]}]}});
+      project = app.adoptLyricsAssignment(project, app.lyricsAssignmentPreview(project,
+        {trackId: 'lead', fromNote: 1, toNote: 1, text: 'あ', reading: 'あ'}));
+      await repo.put(project);
+      app.state.projects = [project];
+      const samples = Array.from({length: 8000}, (_, i) => .3 * Math.sin(2 * Math.PI * 220 * i / 8000));
+      const file = new File([app.pcmEncodeWav({sampleRate: 8000, channels: [samples]})],
+        'vocal-source.wav', {type: 'audio/wav'});
+      const result = await app.importScoreVocal(file, project.projectId, project.syllableAssignments[0].id, 'first-note');
+      if (!result.ok) throw Error(result.error);
+      await app.openScoreVocalTake(project.projectId, result.assetId);
+      return result.assetId;
+    });
+    const layers = page.locator('.music-vocal-layers');
+    for (const kind of ['harmony', 'double', 'chorus']) {
+      const summary = layers.locator('summary');
+      if (!(await summary.evaluate(el => el.parentElement.open))) await summary.click();
+      await layers.getByLabel('加工元のテイク').selectOption(fixture);
+      await layers.getByLabel('加工する声部').selectOption(kind);
+      await layers.getByRole('button', {name: '声部をレンダーして保存'}).click();
+      await page.waitForFunction(key => MusicStudio.state.projects.find(p => p.projectId === 'layer-browser')
+        ?.longWavAssets.some(a => a.vocalTake?.layerSource?.kind === key), kind);
+    }
+    await page.reload();
+    await page.waitForFunction(() => MusicStudio.state.loaded);
+    const restoredLayers = await page.evaluate(async () => {
+      const app = MusicStudio;
+      const archive = await app.createLongWavArchive();
+      const result = await app.restoreLongWavArchive(archive, {settings: false});
+      if (!result.ok) throw Error(result.error);
+      const project = result.projects.find(p => p.longWavAssets?.some(a => a.vocalTake?.layerSource));
+      return Promise.all(project.longWavAssets.filter(a => a.vocalTake.layerSource).map(async asset => {
+        const rendered = await app.vocalRender(project.projectId, asset.id);
+        return [asset.vocalTake.layerSource.kind, rendered.frames, rendered.blob.size, rendered.startSeconds];
+      }));
+    });
+    assert.deepEqual(restoredLayers, [
+      ['harmony', 8000, 16044, .5], ['double', 8152, 16348, .5], ['chorus', 8328, 16700, .5]
+    ]);
     assert.deepEqual(errors, []);
-    console.log('Chromium: consent scopes, revocation across restore/reload, quoting, success, failure, cancellation and monthly cap verified');
+    console.log('Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified');
   } finally {
     await browser.close();
   }
