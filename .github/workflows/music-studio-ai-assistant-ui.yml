@@ -30,6 +30,7 @@ on:
       - 'tests/music-studio-lyrics-score-export.test.js'
       - 'tests/music-candidate-audition-review-stability.test.js'
       - 'scripts/music-studio-ai-assistant-browser-smoke.js'
+      - 'scripts/music-production-management-browser.js'
       - '.github/workflows/music-studio-ai-assistant-ui.yml'
   workflow_dispatch:
 permissions:
@@ -55,6 +56,10 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           google-chrome --version
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/nova-management-http.log 2>&1 &
+          trap 'kill "$!"' EXIT
+          curl --retry 5 --retry-connrefused --fail --silent --output /dev/null http://127.0.0.1:8765/music-studio.html
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-production-management-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-final-export-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-ui-production-browser.js
