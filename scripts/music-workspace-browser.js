@@ -18,6 +18,28 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
     assert.equal(await page.getByRole('button',{name:'Export（最終書き出し）',exact:true}).count(),0);
 
     const saved=await page.evaluate(async()=>{const a=MusicStudio,original=JSON.stringify(a.state.projects[0]),archive=await a.createLongWavArchive(),r=await a.restoreLongWavArchive(archive,{settings:true});if(!r.ok)throw Error(r.error);if(JSON.stringify(a.state.projects[0])!==original)throw Error('song-mutated');return a.state.settings.workspace});
+    // Use a real Chromium file handle while controlling the destination chooser.
+    const destination=await page.evaluate(async()=>{
+      const folder=await navigator.storage.getDirectory();
+      const picker=window.showSaveFilePicker;
+      let chosenName;
+      window.showSaveFilePicker=async({suggestedName})=>{
+        chosenName=suggestedName;
+        return folder.getFileHandle(suggestedName,{create:true});
+      };
+      try{
+        const saved=await MusicStudio.exportLongWavArchive(true);
+        if(!saved.ok)throw Error(saved.error);
+        const file=await (await folder.getFileHandle(chosenName)).getFile();
+        const preview=await MusicStudio.previewLongWavArchive(file);
+        MusicStudio.cancelArchiveTransfer();
+        return {completion:saved.completion,valid:preview.ok,sizeMatches:file.size===saved.size};
+      }finally{
+        window.showSaveFilePicker=picker;
+        if(chosenName)await folder.removeEntry(chosenName);
+      }
+    });
+    assert.deepEqual(destination,{completion:'file-written-verified',valid:true,sizeMatches:true});
     assert.deepEqual(saved,{hidden:['export'],mode:'finish',favorites:['export']});
     await page.close();page=await context.newPage();monitor(page);await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);assert.deepEqual(await page.evaluate(()=>MusicStudio.state.settings.workspace),saved);
     await page.locator('[data-workspace]>summary').click();await page.locator('[data-work-project]').selectOption('workspace-song');
@@ -37,7 +59,7 @@ const deadline=setTimeout(()=>{console.error('workspace browser deadline');proce
       const menu=page.locator('.music-editor-topbar>details').nth(i),summary=menu.locator(':scope>summary');if(!await summary.isVisible()){hiddenMenus++;continue}await summary.click();await page.waitForTimeout(100);const m=await metrics();assert.equal(m.overflow,false);assert.deepEqual(m.small,[],`${width}: popup ${i}`);await page.screenshot({path:`verification/music-workspace-popup-${width}-${i}.png`,fullPage:true});if(await menu.getAttribute('open')!==null)await menu.locator(':scope>summary').click();opened++;
     }
     await page.evaluate(()=>MusicStudio.goHome());await page.waitForSelector('#musicHomeHelp',{state:'attached'});await page.evaluate(()=>MusicStudio.openHelp('musicHomeHelp'));await page.waitForFunction(()=>document.querySelector('#musicHomeHelp').open);await page.screenshot({path:`verification/music-workspace-help-${width}.png`,fullPage:true});await page.evaluate(()=>MusicStudio.closeHelp('musicHomeHelp'));
-    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.push({width,screens,menusOpened:opened,responsiveHiddenMenus:hiddenMenus,fullArchive:true,freshReopen:true,explicitExportNavigation:true,errors,external});await context.close();
+    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.push({width,screens,menusOpened:opened,responsiveHiddenMenus:hiddenMenus,fullArchive:true,verifiedArchiveDestination:true,freshReopen:true,explicitExportNavigation:true,errors,external});await context.close();
   }
   fs.writeFileSync(path.join(root,'verification/music-workspace-browser.json'),JSON.stringify({head:require('node:child_process').execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),report},null,2));console.log(JSON.stringify(report));
 }finally{clearTimeout(deadline);await browser?.close();await new Promise(r=>server.close(r))}})().catch(e=>{console.error(e);process.exitCode=1});
