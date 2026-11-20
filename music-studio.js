@@ -790,7 +790,7 @@
         tx.onabort=()=>reject(failure||tx.error||Error('project-save-aborted'));tx.onerror=()=>abort(tx.error||Error('project-save-failed'));tx.oncomplete=()=>resolve(clone(value));
         const get=store.get(value.projectId);get.onerror=()=>abort(get.error);get.onsuccess=()=>{try{preserveFinishedSnapshots(get.result,value);const put=store.put(value);put.onerror=()=>abort(put.error)}catch(e){abort(e)}};
       }))},async delete(id){await request(STORE_NAME,'readwrite',store=>store.delete(id))},async has(id){return Boolean(await request(STORE_NAME,'readonly',store=>store.getKey(id)))},async getSettings(){return request(SETTINGS_STORE_NAME,'readonly',store=>store.get(SETTINGS_ID))},async putSettings(value,options={}){
-        if(!Object.hasOwn(options,'expected')){
+        if(!Object.hasOwn(options,'expected')&&!options.preserveManagement){
           await request(SETTINGS_STORE_NAME,'readwrite',store=>store.put(clone(value)));return clone(value);
         }
         const db=await database;
@@ -801,7 +801,8 @@
           tx.oncomplete=()=>resolve(clone(value));
           const get=store.get(SETTINGS_ID);
           get.onsuccess=()=>{
-            if(JSON.stringify(get.result)!==options.expected){conflict=true;tx.abort();return;}
+            if(Object.hasOwn(options,'expected')&&JSON.stringify(get.result)!==options.expected){conflict=true;tx.abort();return;}
+            if(options.preserveManagement)restoreProductionManagement(value,get.result);
             store.put(clone(value));
           };
         });
@@ -3587,7 +3588,7 @@
     next.workspace=normalizeWorkspace(change(clone(next.workspace)));next.updatedAt=now();workspaceSaving=true;workspaceMessage='Saving（保存中）';requestPaint();
     try{
       if(typeof target.putSettings!=='function')throw Error('workspace-storage-unavailable');
-      try{const stored=await target.getSettings?.();restoreProductionManagement(next,stored);await target.putSettings(next,{expected:JSON.stringify(stored)})}catch(writeError){
+      try{await target.putSettings(next,{preserveManagement:true})}catch(writeError){
         // A lost completion acknowledgement may follow a durable settings write.
         // Confirm the exact committed value before reporting failure or retrying.
         let committed=false;
