@@ -8,6 +8,7 @@ import secrets
 import ssl
 import time
 import ipaddress
+import io
 from http.cookies import SimpleCookie
 import tempfile
 import threading
@@ -21,6 +22,26 @@ from synthesis_process import run_synthesis
 from package_paths import web_root
 ROOT = web_root(Path(__file__).resolve().parent)
 LOCK = threading.Lock()
+
+
+def sinsy_preroll_seconds(tree):
+    """Sinsy 0.92 adds one measure before a first note that is not a rest."""
+    tempo, numerator, denominator = 100., 4, 4
+    for event in tree.findall('./part/measure/*'):
+        if event.tag == 'note':
+            if event.find('rest') is not None:
+                return 0.
+            if not (20 <= tempo <= 400 and 1 <= numerator <= 32 and denominator in (1, 2, 4, 8, 16, 32)):
+                raise ValueError('invalid Sinsy preroll tempo or meter')
+            return 60 * numerator * 4 / (tempo * denominator)
+        if event.tag == 'attributes':
+            numerator = int(event.findtext('time/beats', str(numerator)))
+            denominator = int(event.findtext('time/beat-type', str(denominator)))
+        sounds = [event] if event.tag == 'sound' else event.findall('sound')
+        for sound in sounds:
+            if 'tempo' in sound.attrib:
+                tempo = float(sound.attrib['tempo'])
+    return 0.
 
 
 def synthesize(xml, executable, dictionary, voice, directory, cancel=None):
@@ -43,14 +64,26 @@ def synthesize(xml, executable, dictionary, voice, directory, cancel=None):
             if duration < 0: raise ValueError('invalid score duration')
             beats += duration / divisions
     if not 0 < beats <= 256: raise ValueError('score exceeds bounded synthesis length')
+    preroll = sinsy_preroll_seconds(tree)
     source, target = Path(directory) / 'score.musicxml', Path(directory) / 'vocal.wav'
     source.write_text(xml, encoding='utf-8')
     run_synthesis([str(executable), '-m', str(voice), '-x', str(dictionary), '-o', str(target), str(source)], cancel=cancel)
     if cancel: cancel()
     if target.stat().st_size > 64 * 1048576: raise ValueError('WAV exceeds import bound')
     with wave.open(str(target), 'rb') as audio:
-        if audio.getnframes() <= 0 or audio.getnframes() / audio.getframerate() > 120 or audio.getsampwidth() != 2:
+        first_frame = round(preroll * audio.getframerate())
+        frames = audio.getnframes() - first_frame
+        if frames <= 0 or frames / audio.getframerate() > 120 or audio.getsampwidth() != 2:
             raise ValueError('generated WAV outside import bounds')
+        if first_frame:
+            audio.setpos(first_frame)
+            result = io.BytesIO()
+            with wave.open(result, 'wb') as aligned:
+                aligned.setnchannels(audio.getnchannels())
+                aligned.setsampwidth(audio.getsampwidth())
+                aligned.setframerate(audio.getframerate())
+                aligned.writeframes(audio.readframes(frames))
+            return result.getvalue()
     return target.read_bytes()
 
 

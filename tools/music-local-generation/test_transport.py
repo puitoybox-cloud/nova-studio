@@ -8,8 +8,21 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from http.server import ThreadingHTTPServer
-from serve import handler
+from serve import handler, sinsy_preroll_seconds
+from xml.etree.ElementTree import fromstring
 from launch import paths
+
+
+class SingerTiming(unittest.TestCase):
+    def test_only_engine_added_preroll_is_compensated(self):
+        def score(note):
+            return fromstring('<score-partwise><part><measure><attributes>'
+                              '<time><beats>3</beats><beat-type>4</beat-type></time>'
+                              '</attributes><direction><sound tempo="120"/></direction>'
+                              f'<note>{note}<duration>1</duration></note>'
+                              '</measure></part></score-partwise>')
+        self.assertEqual(sinsy_preroll_seconds(score('<pitch/>')), 1.5)
+        self.assertEqual(sinsy_preroll_seconds(score('<rest/>')), 0.)
 
 
 class Transport(unittest.TestCase):
