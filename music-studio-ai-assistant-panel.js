@@ -484,12 +484,17 @@
       const context=composition().createContext(p,session,core());
       const span=context.range.endTick-context.range.startTick;
       const sourceNotes=!remake?[]:mode==='replace'?composition().replacementPrompt(remake.source,session,core()):composition().remakePrompt(remake.source,session.midiData.ppq);
-      const timing=root.MusicStudioMeterMap.positionAtTick(session.midiData,context.range.startTick);
-      const tempo=[...(session.midiData.tempoMap||[])].sort((a,b)=>a.tick-b.tick).filter(event=>event.tick<=context.range.startTick).at(-1);
+      const timing=mode==='replace'
+        ?root.MusicStudioMeterMap.positionAtTick(session.midiData,context.range.startTick)
+        :session.midiData.timeSignature||p.musicalSettings?.timeSignature||{numerator:4,denominator:4};
+      const tempo=mode==='replace'
+        ?[...(session.midiData.tempoMap||[])].sort((a,b)=>a.tick-b.tick).filter(event=>event.tick<=context.range.startTick).at(-1)
+        :null;
+      const key=mode==='replace'&&context.source==='midi-key-map'?context.key:p.musicalSettings?.key||null;
       const result=await app().localGenerationRequest('compose',{
         seed,events:64,max_ticks:Math.floor(span*480/(session.midiData.ppq||480)),
         bpm:Math.round(tempo?.bpm||session.midiData.tempo||p.musicalSettings?.bpm||72),
-        key:context.source==='default-local'?null:context.key,numerator:timing.numerator,denominator:timing.denominator,
+        key,numerator:timing.numerator,denominator:timing.denominator,
         pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords,
         ...(sourceNotes.length?{sourceNotes}:{})
       });
