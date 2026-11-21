@@ -75,16 +75,19 @@
   function remakeProposal(request,track,value,session){
     const source=value.remake;
     if(source?.version!==1||(source.destinationTrackId||source.trackId)!==track.id||source.midiSignature!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
-    if(JSON.stringify(source.range)!==JSON.stringify(value.range)||!['revise','layer','delete'].includes(source.mode)||![25,50,100].includes(source.amount))throw Error('invalid-remake-operation');
+    if(JSON.stringify(source.range)!==JSON.stringify(value.range)||!['revise','layer','delete','replace'].includes(source.mode)||![25,50,100].includes(source.amount))throw Error('invalid-remake-operation');
     const sourceTrack=coreTrackForRemake(session,source.trackId);
     const observed=sourceTrack.notes.filter(n=>n.startTick>=source.range.startTick&&n.startTick<source.range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
     if(JSON.stringify(observed)!==JSON.stringify(source.notes))throw Error('stale-remake-notes');
     const editable=new Set(request.targetNoteIds),targets=observed.filter(n=>editable.has(n.id));
+    if(source.mode==='replace'){
+      if(request.lockedNoteIds.length||targets.length!==observed.length||observed.some(note=>note.startTick+note.durationTicks>request.range.endTick))throw Error('replacement-target-protected');
+      return{...importedMidiProposal(request,track,value,session),deleteNoteIds:targets.map(note=>note.id)};
+    }
     if(source.mode!=='layer'&&!targets.length)throw Error('remake-editable-notes-required');
     if(source.mode==='layer')return importedMidiProposal(request,track,value,session);
     if(source.mode==='delete')return{updates:[],adds:[],deleteNoteIds:targets.map(n=>n.id)};
     const generated=importedMidiProposal(request,track,value,session).adds;
-    if(source.mode==='layer')return{updates:[],adds:generated,deleteNoteIds:[]};
     const count=Math.ceil(targets.length*source.amount/100);
     return{updates:targets.filter((_,i)=>Math.floor(i*count/targets.length)!==Math.floor((i-1)*count/targets.length)).map((n,i)=>({...clone(n),pitch:generated[i%generated.length].pitch})),adds:[],deleteNoteIds:[]};
   }
@@ -341,6 +344,7 @@
     // the adopted interval. New proposals can be shortened at the exact end.
     if(updates.some(note=>!contained(note)||!contained(originals.get(note.id)))||deleteNoteIds.some(id=>!contained(originals.get(id))))throw Error('candidate-selection-boundary');
     const proposals={updates,adds:changes.adds.filter(inTicks).map(note=>({...clone(note),durationTicks:Math.min(note.durationTicks,ticks.endTick-note.startTick)})),deleteNoteIds};
+    if(bundle.value.remake?.mode==='replace'&&!proposals.adds.length)throw Error('差し替え先の小節に生成音符がありません。');
     const result=core.createPartialEditResult(bundle.request,proposals),preview=core.createPartialEditPreview(bundle.request,result);
     return{result,preview,selection};
   }
@@ -373,7 +377,13 @@
     if(copy.coordinatedTimeline)core.enableCoordinatedTimeline(copy);
     core.selectTrackById(copy,bundle.targetTrackId);
     applyPreview(copy,core,bundle,measureRange);
-    const range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
+    let range=measureRange?core.measureRangeToTicks(measureRange,copy.midiData):bundle.request.range;
+    if(bundle.value.remake?.mode==='replace'){
+      range=core.measureRangeToTicks({
+        startMeasure:Math.max(1,range.startMeasure-1),
+        endMeasure:Math.min(copy.midiData.editor.measureCount,range.endMeasure+1)
+      },copy.midiData);
+    }
     const data=options.source==='original'?session.midiData:copy.midiData;
     const selected=core.getTrackById(data.tracks,bundle.targetTrackId)||core.getTrackById(data.tracks,bundle.value.remake?.trackId);
     if(!selected)throw Error('audition-source-track-missing');
