@@ -490,12 +490,15 @@
       const tempo=mode==='replace'
         ?[...(session.midiData.tempoMap||[])].sort((a,b)=>a.tick-b.tick).filter(event=>event.tick<=context.range.startTick).at(-1)
         :null;
-      const key=mode==='replace'&&context.source==='midi-key-map'?context.key:p.musicalSettings?.key||null;
+      if(mode==='replace'){
+        remake.harmony=composition().replacementHarmony(p,session,core(),context.range,chords);
+        remake.pitchRange=modelRange;
+      }
       const result=await app().localGenerationRequest('compose',{
         seed,events:64,max_ticks:Math.floor(span*480/(session.midiData.ppq||480)),
         bpm:Math.round(tempo?.bpm||session.midiData.tempo||p.musicalSettings?.bpm||72),
-        key,numerator:timing.numerator,denominator:timing.denominator,
-        pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords,
+        key:mode==='replace'?null:p.musicalSettings?.key||null,numerator:timing.numerator,denominator:timing.denominator,
+        pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords:mode==='replace'?'':chords,
         ...(sourceNotes.length?{sourceNotes}:{})
       });
       if(!current())return;
@@ -729,10 +732,12 @@
       for(let i=0;i<files.length;i++){
         const bytes=await files[i].arrayBuffer();if(!current())return;
         let v=composition().midiCandidate(bytes,files[i],context,i,session.midiData.ppq);
+        if(modelResult?.remake?.harmony)v=composition().fitReplacementHarmony(v,modelResult.remake.harmony,modelResult.remake.pitchRange);
         if(modelResult?.remake)v=modelResult.remake.mode==='ensemble'?composition().bindEnsemble(v,modelResult.remake.source,modelResult.remake.chords||'',modelResult.remake.section||null):composition().bindRemake(v,modelResult.remake.source,modelResult.remake.mode,modelResult.remake.amount,modelResult.remake.destinationTrackId,modelResult.remake.newTrack);
         const bundle=materializer().createPreview(session,core(),{candidateId:v.variant,value:v},{project:p});
         materializer().auditionPlan(session,core(),bundle,null);
         if(modelResult){const source=modelResult.candidates[i];v.modelGeneration={model:modelResult.model,revision:modelResult.revision,seed:source.seed,...(source.samplingTrace?{sampling:{requestedSeed:source.requestedSeed,attempts:source.samplingAttempts,trace:clone(source.samplingTrace),performance:clone(source.performance||{})}}:{}),constraints:clone(source.constraints||{}),adjustedNotes:source.adjustedNotes||0};v.summary+=` / ${source.constraints?.description||''} ${source.constraints?.genre||''} ${(source.constraints?.chords||[]).join(' → ')} / ${source.constraints?.style||'balanced'} / ${source.constraints?.key||'Key自由'} / ${source.constraints?.pitchMin??48}–${source.constraints?.pitchMax??84} / ${v.importedMidi.notes.length}音 / 補正${source.adjustedNotes||0}音`;}
+        if(v.replacementHarmony)v.summary+=` / キー・コード区間 ${v.replacementHarmony.windows.length} / 音高補正 ${v.replacementHarmony.adjusted}音`;
         values.push(v);
       }
       if(!current())return;

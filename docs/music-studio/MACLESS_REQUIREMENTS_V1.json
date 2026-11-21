@@ -50,6 +50,8 @@
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
     ],
+    "music-studio-ai-candidate-preview.js": "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
+    "music-studio-ai-composition.js": "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
     "tests/music-studio-whole-song.test.js": [
       "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
     ],
