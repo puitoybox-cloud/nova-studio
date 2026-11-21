@@ -5,6 +5,7 @@ on:
       - 'tools/music-local-generation/prepare.py'
       - 'tools/music-local-generation/**'
       - 'scripts/music-local-real-generation.js'
+      - 'scripts/music-complete-song-browser.js'
       - 'scripts/music-native-edited-song.js'
       - 'scripts/music-standalone-menu-browser.js'
       - 'tests/music-standalone-menu.test.js'
@@ -81,6 +82,21 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/nova-real-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-standalone-menu-browser.js
+      - name: Complete a Japanese song through Chromium and restore its audio
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          assets="$RUNNER_TEMP/nova-generation-assets"
+          python tools/music-local-generation/serve.py --port 8878 \
+            --sinsy "$assets/runtime/bin/sinsy" --dictionary "$assets/runtime/dic" \
+            --voice "$assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice" \
+            > "$RUNNER_TEMP/music-complete-song-host.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
+            http://127.0.0.1:8878/music-studio.html -o /dev/null
+          node scripts/music-complete-song-browser.js | tee "$RUNNER_TEMP/music-complete-song.json"
       - name: Real long candidates through IndexedDB and browser restart
         env:
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
@@ -104,6 +120,8 @@ jobs:
             ${{ runner.temp }}/music-local-real-whole-song-ci.json
             ${{ runner.temp }}/music-long-indexeddb-browser.json
             ${{ runner.temp }}/music-long-production-browser.json
+            ${{ runner.temp }}/music-complete-song.json
+            ${{ runner.temp }}/music-complete-song-host.log
   intel-mac-generation:
     runs-on: macos-15-intel
     timeout-minutes: 60

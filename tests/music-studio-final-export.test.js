@@ -6,7 +6,7 @@ test('mute excludes only explicit muted source and missing vocal group does not 
 test('ZIP local headers, central directory, actual CRC and file data are interoperable',async()=>{const {a,plan}=fixture(),r=await a.finalPreview('p',plan);assert.equal(r.ok,true,r.error);const b=Buffer.from(await r.candidate.zip.arrayBuffer());let at=0;for(const file of r.candidate.files){assert.equal(b.readUInt32LE(at),0x04034b50);const n=b.readUInt16LE(at+26),size=b.readUInt32LE(at+18),data=b.subarray(at+30+n,at+30+n+size);assert.equal(b.subarray(at+30,at+30+n).toString(),file.name);assert.deepEqual(data,Buffer.from(await file.blob.arrayBuffer()));let crc=0xffffffff;for(const x of data){crc^=x;for(let k=0;k<8;k++)crc=crc>>>1^((crc&1)?0xedb88320:0)}assert.equal(b.readUInt32LE(at+14),(crc^0xffffffff)>>>0);at+=30+n+size}assert.equal(b.readUInt32LE(at),0x02014b50);assert.equal(b.readUInt32LE(b.length-22),0x06054b50);assert.equal(b.readUInt16LE(b.length-12),r.candidate.files.length);assert.equal(b.readUInt32LE(b.length-6),at)});
 test('explicit adoption persists plan/history across fresh reopen, JSON and additive backup recovery',async()=>{const f=fixture();assert.equal((await f.a.finalPreview('p',f.plan)).ok,true);assert.equal((await f.a.finalSave('p')).ok,true);const saved=await f.repo.get('p');assert.deepEqual(plain(saved.pcmMix),plain(f.p.pcmMix));assert.equal(saved.finalExportHistory[0].status,'prepared');assert.deepEqual(plain(f.a.makeProject(saved).finalExportPlan),plain(f.plan));const d=fixture();d.a.setRepository(d.a.memoryRepository());const r=await d.a.restoreBackup(f.a.backupObject(),{settings:false,projects:true});assert.equal(r.ok,true);const restored=d.a.state.projects.find(p=>p.projectId==='p');assert.deepEqual(plain(restored.finalExportHistory),plain(saved.finalExportHistory));assert.equal((await d.a.finalPreview(restored.projectId,restored.finalExportPlan)).ok,true)});
 for(const kind of ['cancel','tamper','dirty','storage-conflict','quota'])test('final '+kind+' protects original project',async()=>{const f=fixture();const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,true);const original=JSON.stringify(await f.repo.get('p'));if(kind==='cancel')f.a.finalCancel();if(kind==='tamper')r.candidate.manifest.frames=1;if(kind==='dirty')f.a.state.dirty=true;if(kind==='storage-conflict')await f.repo.put({...f.p,productionNotes:'another tab'});if(kind==='quota')f.repo.compareAndPut=async()=>{throw Error('quota')};assert.equal((await f.a.finalSave('p')).ok,false);if(kind!=='storage-conflict')assert.equal(JSON.stringify(await f.repo.get('p')),original)});
-test('source rates, duplicate routing, empty routes, invalid role and absent requested MIDI fail closed',async()=>{for(const kind of ['rate','duplicate','empty','role','midi']){const f=fixture();if(kind==='rate'){f.p.pcmMix.assets[0].original.sampleRate=44100;await f.repo.put(f.p)}if(kind==='duplicate')f.plan.routes.push(f.plan.routes[0]);if(kind==='empty')f.plan.routes=[];if(kind==='role')f.plan.routes[0].role='guess';if(kind==='midi')f.plan.includeMidi=true;const original=JSON.stringify(await f.repo.get('p'));const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,false,kind);assert.equal(JSON.stringify(await f.repo.get('p')),original);assert.equal(f.a.finalExport.candidate,null)}});
+test('source rates, duplicate routing, empty routes, invalid role and absent requested MIDI fail closed',async()=>{for(const kind of ['rate','duplicate','empty','role','midi']){const f=fixture();if(kind==='rate'){f.p.pcmMix.assets[0].original.sampleRate=32000;await f.repo.put(f.p)}if(kind==='duplicate')f.plan.routes.push(f.plan.routes[0]);if(kind==='empty')f.plan.routes=[];if(kind==='role')f.plan.routes[0].role='guess';if(kind==='midi')f.plan.includeMidi=true;const original=JSON.stringify(await f.repo.get('p'));const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,false,kind);assert.equal(JSON.stringify(await f.repo.get('p')),original);assert.equal(f.a.finalExport.candidate,null)}});
 test('pre-master clipping rejects without truncating or normalizing stems silently',async()=>{const f=fixture();for(const asset of f.p.pcmMix.assets)asset.original.channels[0]=asset.original.channels[0].map(x=>x*25);f.plan.routes[1].startSeconds=0;f.plan.routes.forEach(r=>r.gainDb=6);await f.repo.put(f.p);const r=await f.a.finalPreview('p',f.plan);assert.equal(r.ok,false);assert.match(r.error,/clipping/)});
 test('save permits output access but changed source invalidates old candidate',async()=>{const f=fixture();assert.equal((await f.a.finalPreview('p',f.plan)).ok,true);assert.equal((await f.a.finalSave('p')).ok,true);assert.match(f.a.finalView(await f.repo.get('p')),/Master.wav/);f.a.state.projects[0].productionNotes='edit';assert.equal((await f.a.finalSave('p')).ok,false)});
 test('view escapes source labels and IDs and selection is opt-in',()=>{const f=fixture();f.p.projectId='\"\'><script>x</script>';f.p.pcmMix.assets[0].name='<img src=x>';const html=f.a.finalView(f.p);assert.doesNotMatch(html,/<script>x|<img src=x/);assert.doesNotMatch(html,/name="enabled" type="checkbox" checked/);assert.match(html,/MIDIは先にExport画面のMIDI Audioで音声化・保存し、Sourcesで選択してください/)});
@@ -234,4 +234,24 @@ test('published delivery survives a lost commit reply and preserves the competin
  assert.equal(saved.finalExportDeliveries.length,1);
  assert.equal(saved.songVersions.edits.length,1);
  assert.equal(saved.songVersions.edits[0].sessionId,saved.songVersions.sessions[0].id);
+});
+
+test('44.1 kHz input retains duration and continuous samples across source chunks in a 48 kHz export',async()=>{
+  const {a,p,repo,plan}=fixture(),asset=p.pcmMix.assets[0];
+  const input=Array.from({length:22050},(_,i)=>Math.round(Math.sin(i*.071)*1800));
+  asset.original={sampleRate:44100,channels:[input.map(sample=>sample/32768)]};
+  await repo.put(p);
+  plan.routes=plan.routes.slice(0,1);
+  const r=await a.finalPreview('p',plan);
+  assert.equal(r.ok,true,r.error);
+  const mix=r.candidate.files.find(file=>file.name==='Mix.wav');
+  const decoded=a.pcmDecodeWav(await mix.blob.arrayBuffer());
+  assert.equal(decoded.sampleRate,48000);
+  assert.equal(decoded.channels[0].length,24000);
+  for(const frame of [0,1,17831,17832,17833,17834,17835,23998,23999]){
+    const position=frame*147/160,left=Math.floor(position);
+    const expected=Math.round(input[left]+(input[Math.min(left+1,input.length-1)]-input[left])*(position-left));
+    assert.ok(Math.abs(decoded.channels[0][frame]*32768-expected)<=1,'frame '+frame);
+  }
+  assert.equal((await repo.get('p')).pcmMix.assets[0].original.sampleRate,44100);
 });

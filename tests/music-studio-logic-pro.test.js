@@ -1741,3 +1741,20 @@ test('localized popup Close names include the final visible text for Melody Drum
   for(const button of buttons){const name=button.match(/aria-label="([^"]*)"/)[1],visible=button.replace(/<[^>]*>/g,'').trim();assert.ok(name.includes(visible),part+': '+name+' must include '+visible)}
  }
 });
+
+test('song playback from the melody editor schedules an added accompaniment track',async()=>{
+  const {app}=load();
+  const p=app.makeProject({projectId:'song-accompaniment',projectName:'Song with piano',midiData:{ppq:480,tracks:[
+    {id:'melody',part:'melody',notes:[{id:'lead',pitch:60,startTick:0,durationTicks:480}]},
+    {id:'piano',roleAssignment:'piano',notes:[{id:'chord',pitch:48,startTick:0,durationTicks:480}]}
+  ]}});
+  app.state.projects=[p];
+  app.renderRoute('music-studio/midi-editor/'+p.projectId);
+  let played=[];
+  app.state.melodyAudio.synth={supported:()=>true,unlock:async()=>true,stopPlayback(){},stopMetronome(){},
+    playTracks(tracks){played=tracks.filter(t=>t.notes.length).map(t=>t.id);return{ok:true,noteCount:2,durationMs:5000}}};
+  try{
+    assert.equal((await app.editorPlayMelody()).ok,true);
+    assert.deepEqual(Array.from(played),['melody','piano']);
+  }finally{app.editorStopMelody(false)}
+});
