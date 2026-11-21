@@ -47,3 +47,48 @@ test('partial adoption cannot change an existing note outside the selected bar',
 test('exact partial adoption coexists with legacy locks new ranges and additive release',()=>{const w=load(),p=project();p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];p.midiData.editor.lockedMeasures=[1];const core=w.MusicStudioEditor,locks=w.MusicStudioMeasureLocks,s=core.createCoordinatedSession(p);locks.unlockRange(s,core,{trackId:'melody',startTick:0,endTick:1000});locks.addRangeLock(s,core,{trackId:'melody',startTick:1000,endTick:1720});const before=plain(s.midiData.editor),ctx=w.MusicStudioAIComposition.createContext(p,s,core),value=w.MusicStudioAIComposition.candidateValues('melody',ctx)[0];value.phraseEvents=[{degree:1,durationUnits:3},{degree:3,durationUnits:2}];const bundle=w.MusicStudioAICandidatePreview.createPreview(s,core,{candidateId:'A',value},{project:p});w.MusicStudioAICandidatePreview.applyPreview(s,core,bundle,{startMeasure:1,endMeasure:1});assert.equal(core.currentTrack(s).notes[0].durationTicks,1000);assert.equal(locks.isProtected(s.midiData,core,'melody',{startTick:999,durationTicks:1}),false);assert.equal(locks.isProtected(s.midiData,core,'melody',{startTick:1000,durationTicks:1}),true);assert.deepEqual(plain(s.midiData.editor.measureLocks),before.measureLocks);assert.deepEqual(plain(s.midiData.editor.lockedMeasures),before.lockedMeasures);assert.deepEqual(plain(s.midiData.timeSignatureMap),p.midiData.timeSignatureMap)});
 
 for(const action of ['delete','extend'])test(`partial adoption rejects crossing-note ${action} before touching Undo`,()=>{const w=load(),p=project();p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];p.midiData.tracks[0].notes=[{id:'edge',pitch:62,startTick:900,durationTicks:action==='delete'?400:50,velocity:90}];const core=w.MusicStudioEditor,s=core.createCoordinatedSession(p),ctx=w.MusicStudioAIComposition.createContext(p,s,core),value=w.MusicStudioAIComposition.candidateValues('melody',ctx)[0],bundle=w.MusicStudioAICandidatePreview.createPreview(s,core,{candidateId:'A',value},{project:p}),note=bundle.request.notes.find(n=>n.id==='edge');bundle.result=core.createPartialEditResult(bundle.request,action==='delete'?{deleteNoteIds:['edge']}:{updates:[{...plain(note),durationTicks:400}]});bundle.preview=core.createPartialEditPreview(bundle.request,bundle.result);const before=plain(s);assert.throws(()=>w.MusicStudioAICandidatePreview.applyPreview(s,core,bundle,{startMeasure:1,endMeasure:1}),/selection-boundary/);assert.deepEqual(plain(s),before)});
+
+test('selected model replacement keeps the other 24 bars and accompaniment intact, compares adjacent bars, and undoes as one edit',()=>{
+  const w=load(),p=project(),core=w.MusicStudioEditor,composition=w.MusicStudioAIComposition,bridge=w.MusicStudioAICandidatePreview;
+  p.midiData.editor={measureCount:32,editRange:{startMeasure:17,endMeasure:24}};
+  const note=(id,pitch,startTick,durationTicks)=>({id,pitch,startTick,durationTicks,velocity:90});
+  p.midiData.tracks[0].notes=Array.from({length:32},(_,bar)=>note('melody-'+bar,60+bar%7,bar*1920,480));
+  p.midiData.tracks[2].notes=Array.from({length:32},(_,bar)=>note('bass-'+bar,36+bar%4,bar*1920,1920));
+  const session=core.createCoordinatedSession(p),before=plain(session.midiData);
+  const source=composition.remakeSource(session,core,{operation:'replace'});
+  assert.deepEqual(plain(composition.replacementPrompt(source,session,core).map(n=>n.pitch)),[61,62,63,64,65,66,60,61]);
+  const modelOutput={kind:'melody',variant:'A',range:source.range,summary:'Model output fixture',importedMidi:{
+    version:1,ppq:480,notes:Array.from({length:16},(_,i)=>({pitch:67+i%5,startTick:i*960,durationTicks:720,velocity:88}))
+  }};
+  const value=composition.bindRemake(modelOutput,source,'replace',100);
+  const bundle=bridge.createPreview(session,core,{value},{project:p});
+  assert.equal(bundle.result.changes.deleteNoteIds.length,8);
+  assert.equal(bundle.result.changes.adds.length,16);
+  const original=bridge.auditionPlan(session,core,bundle,null,{source:'original'});
+  const candidate=bridge.auditionPlan(session,core,bundle);
+  assert.equal(candidate.transport.startTick,15*1920);
+  assert.equal(candidate.transport.endTick,25*1920);
+  assert.equal(original.tracks[0].notes.length,10);
+  assert.equal(candidate.tracks[0].notes.length,18);
+  assert.deepEqual(plain(session.midiData),before);
+  bridge.applyPreview(session,core,bundle);
+  const outside=n=>n.startTick<source.range.startTick||n.startTick>=source.range.endTick;
+  assert.deepEqual(plain(session.midiData.tracks[0].notes.filter(outside)),before.tracks[0].notes.filter(outside));
+  assert.deepEqual(plain(session.midiData.tracks.slice(1)),before.tracks.slice(1));
+  assert.equal(session.undo.length,1);
+  core.undo(session);
+  assert.deepEqual(plain(session.midiData),before);
+});
+
+test('model replacement rejects locked originals and notes that cross the selected end',()=>{
+  const w=load(),core=w.MusicStudioEditor,compose=w.MusicStudioAIComposition;
+  for(const [note,reason] of [
+    [{startTick:0,durationTicks:120,locked:true},/固定音符/],
+    [{startTick:3800,durationTicks:120},/crosses-range/]
+  ]){
+    const p=project();
+    p.midiData.tracks[0].notes=[{id:'edge',pitch:60,velocity:90,...note}];
+    const session=core.createCoordinatedSession(p);
+    assert.throws(()=>compose.remakeSource(session,core,{operation:'replace'}),reason);
+  }
+});
