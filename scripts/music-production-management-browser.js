@@ -86,6 +86,13 @@ async function verify() {
       const app = MusicStudio;
       const repo = app.indexedDbRepository();
       app.setRepository(repo);
+      const putLongWav = repo.putLongWav.bind(repo);
+      repo.putLongWav = async (...args) => {
+        await putLongWav(...args);
+        if (args[0].longWavAssets.at(-1).vocalTake?.layerSource) {
+          throw Error('completion response lost');
+        }
+      };
       let project = app.makeProject({projectId: 'layer-browser', projectName: 'Vocal layers',
         midiData: {ppq: 480, tempo: 120, tracks: [{id: 'lead', part: 'melody',
           notes: [{id: 'n1', pitch: 57, startTick: 480, durationTicks: 480}]}]}});
@@ -111,8 +118,21 @@ async function verify() {
       await page.waitForFunction(key => MusicStudio.state.projects.find(p => p.projectId === 'layer-browser')
         ?.longWavAssets.some(a => a.vocalTake?.layerSource?.kind === key), kind);
     }
+    const layerSnapshot = () => page.evaluate(async () => {
+      const project = MusicStudio.state.projects.find(p => p.projectId === 'layer-browser');
+      const assets = await Promise.all(project.longWavAssets.map(async asset => {
+        const wav = await MusicStudio.pcmLoadLongWav(project.projectId, asset.id);
+        const bytes = await crypto.subtle.digest('SHA-256', await wav.arrayBuffer());
+        return [asset.id, Array.from(new Uint8Array(bytes)), asset.vocalTake.layerSource ?? null];
+      }));
+      return {assets, edits: project.songVersions.edits.map(edit => edit.id)};
+    });
+    const published = await layerSnapshot();
+    assert.equal(published.assets.length, 4);
+    assert.equal(new Set(published.edits).size, published.edits.length);
     await page.reload();
     await page.waitForFunction(() => MusicStudio.state.loaded);
+    assert.deepEqual(await layerSnapshot(), published);
     await page.evaluate(() => MusicStudio.goSettings());
     await voice.getByLabel('モデル名', {exact: true}).first().fill('録音解析');
     await voice.getByLabel('モデル識別子', {exact: true}).first().fill('local-analysis');
