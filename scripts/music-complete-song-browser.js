@@ -37,14 +37,15 @@ async function run() {
     await page.locator('#msProjectName').fill('制作工程テストの作業場');
     await page.getByRole('button', {name: '作成して保存', exact: true}).click();
     await page.waitForFunction(() => MusicStudio.state.projects.some(p => p.projectName === '制作工程テストの作業場'));
-    const seed = await page.evaluate(async () => {
-      await MusicStudio.refresh();
-      const p = MusicStudio.state.projects.find(p => p.projectName === '制作工程テストの作業場');
-      MusicStudio.openMidiEditor(p.projectId);
-      return p.projectId;
+    const seed = await page.evaluate(() =>
+      MusicStudio.state.projects.find(p => p.projectName === '制作工程テストの作業場').projectId);
+    await page.goto(new URL('/music-studio.html#music-studio/ai-editor/'+seed,base).href);
+    const newSong = page.locator('.music-ai-panel').getByRole('button', {name:'New Song（新しい曲）'});
+    await newSong.click({timeout:5000}).catch(async error => {
+      console.error(await page.evaluate(()=>({hash:location.hash,body:document.body.innerText.slice(0,2600),panel:!!window.MusicStudioAIAssistantPanel,
+        editor:MusicStudio.state.midiEditor?.projectId,projects:MusicStudio.state.projects.map(p=>p.projectId)})));
+      throw error;
     });
-    await page.evaluate(async id => {await MusicStudio.productionOpenAction('assistant',id)},seed);
-    await page.locator('.music-ai-panel').getByRole('button', {name:'New Song（新しい曲）'}).click();
     const panel = page.locator('.music-ai-panel');
     await panel.locator('#aiSongTitle').fill(title);
     await panel.locator('#aiSongBpm').fill('120');
@@ -120,7 +121,11 @@ async function run() {
       const record = project().syllableAssignments[0];
       const {assetId} = ok(await app.generateLocalScoreVocal(id,record.id));
       const take = project().longWavAssets.find(a => a.id === assetId);
-      ok(await app.vocalEdit(id,assetId,{...take.vocalTake.edits[0],gainDb:-3}));
+      const source = app.pcmDecodeWav(await (await app.pcmLoadLongWav(id,assetId)).arrayBuffer());
+      const early = source.channels[0].slice(0,Math.round(take.sampleRate*.4));
+      if (!early.some(sample => Math.abs(sample)>.01)) throw Error('vocal starts after the first beat');
+      const end = Math.min(take.frames,Math.round(take.sampleRate*4.15));
+      ok(await app.vocalEdit(id,assetId,{...take.vocalTake.edits[0],gainDb:-3,end}));
       const vocal = await stats((await app.vocalRender(id,assetId)).blob);
       const effects = [];
       for(const kind of ['harmony','double','chorus']){
