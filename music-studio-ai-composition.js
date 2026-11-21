@@ -387,6 +387,48 @@
     const limit=Math.floor((endTick-startTick)*480/session.midiData.ppq);
     return prompt.filter(note=>note.startTick+note.durationTicks<=limit);
   }
+  function replacementHarmony(project,session,core,range,chords){
+    const symbols=chords.split(/[\s,|→]+/).filter(Boolean);
+    if(chords.length>256||symbols.length>32)throw Error('invalid-replacement-chords');
+    const progression=symbols.map(symbol=>{
+      const suspended=/^([A-G](?:#|b)?)sus4$/.exec(symbol);
+      if(!suspended)return ensembleChords(symbol)[0];
+      const {root}=ensembleChords(suspended[1])[0];
+      return{symbol,pcs:[root,(root+5)%12,(root+7)%12]};
+    });
+    const context=createContext(project,session,core);
+    const points=new Map([[0,{key:context.source==='default-local'?null:context.key,chord:null}]]);
+    for(const event of session.midiData.keySignatureMap||[]){
+      const key=keyFromEvent(event);
+      if(key&&event.tick>range.startTick&&event.tick<range.endTick)points.set(event.tick-range.startTick,{key});
+    }
+    if(progression.length){
+      for(let bar=range.startMeasure;bar<=range.endMeasure;bar++){
+        const tick=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData).startTick-range.startTick;
+        points.set(tick,{...points.get(tick),chord:progression[(bar-range.startMeasure)%progression.length]});
+      }
+    }
+    let key=null,chord=null;
+    return [...points].sort(([a],[b])=>a-b).map(([startTick,change])=>{
+      if(Object.hasOwn(change,'key'))key=change.key;
+      if(Object.hasOwn(change,'chord'))chord=change.chord;
+      const parsed=key?parseKey(key):null;
+      return{startTick,key,chord:chord?.symbol??null,pitchClasses:chord?.pcs??(parsed?MODES[parsed.mode].intervals.map(interval=>(parsed.pc+interval)%12):null)};
+    });
+  }
+  function fitReplacementHarmony(value,harmony,[low,high]){
+    const pitches=Array.from({length:high-low+1},(_,i)=>low+i);
+    const windows=harmony.map(window=>({...window,allowed:pitches.filter(pitch=>!window.pitchClasses||window.pitchClasses.includes(pitch%12))}));
+    if(windows.some(window=>!window.allowed.length))throw Error('指定音域にコードまたはキーの音がありません。');
+    let adjusted=0;
+    const notes=value.importedMidi.notes.map(note=>{
+      const {allowed}=windows.findLast(window=>window.startTick<=note.startTick);
+      const pitch=allowed.reduce((closest,next)=>Math.abs(next-note.pitch)<Math.abs(closest-note.pitch)?next:closest);
+      if(pitch!==note.pitch)adjusted++;
+      return{...note,pitch};
+    });
+    return{...value,importedMidi:{...value.importedMidi,notes},replacementHarmony:{windows:clone(harmony),adjusted}};
+  }
   // Instrument selection is explicit GM routing, never claimed as model inference.
   function remakeNewTrack(session,role){
     const presets={piano:{program:0,name:'Piano（ピアノ）'},bass:{program:32,name:'Bass（ベース）'},strings:{program:48,name:'Strings（ストリングス）'}};
@@ -611,5 +653,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

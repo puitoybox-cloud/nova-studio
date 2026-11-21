@@ -12,7 +12,7 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
    id:part+'-'+bar,pitch:pitches[bar%pitches.length],startTick:bar*1920,durationTicks:length,velocity:85
  }));
  const project=app.makeProject({projectId,projectName:'Intro / Verse / Chorus / Outro',key:'C',bpm:96,midiData:{
-   ppq:480,tempo:96,timeSignature:{numerator:4,denominator:4},keySignatureMap:[{tick:16*1920,sharps:1,minor:false}],
+   ppq:480,tempo:96,timeSignature:{numerator:4,denominator:4},keySignatureMap:[{tick:16*1920,sharps:1,minor:false},{tick:16*1920+480,sharps:-2,minor:false}],
    editor:{measureCount:32,editRange:{startMeasure:17,endMeasure:24}},
    tracks:[{id:'melody',part:'melody',notes:notes('melody',[60,64,67,62],480)},
      {id:'bass',part:'bass',notes:notes('bass',[43,40,36,38],1920)}]
@@ -26,10 +26,15 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  const session=app.state.midiEditor,before=JSON.stringify(session.midiData);
  panel.setTab(projectId,'candidates');
  document.querySelector('#aiRemakeMode').value='replace';
- document.querySelector('#aiModelChords').value='G Em C D G Em C D';
+ document.querySelector('#aiModelChords').value='';
  await panel.generateLocalModel(projectId);
  const record=panel._states.get(projectId),set=record.state.workspace.candidateSets.at(-1);
  if(set?.candidates.length!==3||set.candidates.some(c=>c.value.remake?.mode!=='replace'||c.value.key!=='G'))throw Error(record.message);
+ for(const {value} of set.candidates){
+   const windows=value.replacementHarmony?.windows;
+   if(windows?.length!==2||windows[0].key!=='G'||windows[1].key!=='Bb'||windows[1].startTick!==480)throw Error('modulation windows');
+   if(!value.importedMidi.notes.every(note=>windows[note.startTick<480?0:1].pitchClasses.includes(note.pitch%12)))throw Error('modulation pitch class');
+ }
  panel.previewCandidate(projectId,'A');
  for(const source of ['original','candidate']){
    await panel.auditionCandidate(projectId,'A',source);
@@ -49,7 +54,7 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  if(JSON.stringify(session.midiData)!==after)throw Error('section redo');
  if(!(await app.saveMidiEditor({silent:true})).ok||JSON.stringify((await repo.get(projectId)).midiData)!==after)throw Error('section persistence');
  app.state.projects=prior;app.state.midiEditor=null;
- return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,approval:true,undoRedo:true,indexedDB:true};
+ return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,modulation:true,approval:true,undoRedo:true,indexedDB:true};
 });
 const whole=await page.evaluate(async()=>{
  const a=MusicStudio,core=MusicStudioEditor,panel=MusicStudioAIAssistantPanel,bridge=MusicStudioAICandidatePreview,prior=[...a.state.projects],repo=a.indexedDbRepository();

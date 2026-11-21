@@ -92,3 +92,22 @@ test('model replacement rejects locked originals and notes that cross the select
     assert.throws(()=>compose.remakeSource(session,core,{operation:'replace'}),reason);
   }
 });
+
+test('replacement follows exact project modulation and chord boundaries without altering MIDI timing',()=>{
+  const w=load(),p=project(),core=w.MusicStudioEditor,compose=w.MusicStudioAIComposition;
+  p.midiData.timeSignatureMap=[{tick:1000,numerator:3,denominator:8}];
+  p.midiData.keySignatureMap=[{tick:600,sharps:-2,minor:false}];
+  const session=core.createCoordinatedSession(p),context=compose.createContext(p,session,core);
+  const original=plain(session.midiData);
+  const notes=[599,600,999,1000].map(startTick=>({pitch:70,startTick,durationTicks:44,velocity:90}));
+  const value={importedMidi:{notes}};
+  const harmony=compose.replacementHarmony(p,session,core,context.range,'');
+  assert.deepEqual(plain(harmony.map(({startTick,key})=>[startTick,key])),[[0,'C'],[600,'Bb']]);
+  const fitted=compose.fitReplacementHarmony(value,harmony,[60,84]);
+  assert.deepEqual(plain(fitted.importedMidi.notes),notes.map((note,i)=>({...note,pitch:i===0?69:70})));
+  const chords=compose.replacementHarmony(p,session,core,context.range,'Csus4 → Dm');
+  assert.deepEqual(plain(chords.map(({startTick,chord})=>[startTick,chord])),[[0,'Csus4'],[600,'Csus4'],[1000,'Dm']]);
+  assert.deepEqual(plain(compose.fitReplacementHarmony(value,chords,[60,84]).importedMidi.notes.map(n=>n.pitch)),[72,72,72,69]);
+  assert.deepEqual(plain(session.midiData),original);
+  assert.equal(value.importedMidi.notes[0].pitch,70);
+});
