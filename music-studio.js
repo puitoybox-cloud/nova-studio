@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.236';
+  const ASSET_VERSION='1.4.237';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -3181,8 +3181,8 @@
       midiEditorHasPendingChanges()||shutdownPromise||state.midiInput.recording||state.midiInput.starting)
       return{ok:false,error:'vocal-layer-busy'};
     const target=repository,project=state.projects.find(item=>item.projectId===id),baseline=JSON.stringify(project);
-    const token=vocal.generation,guard=()=>{
-      if(target!==repository||token!==vocal.generation||state.dirty||archiveTransfer.busy||shutdownPromise||
+    const storageGeneration=repositoryGeneration,token=vocal.generation,guard=()=>{
+      if(target!==repository||storageGeneration!==repositoryGeneration||token!==vocal.generation||state.dirty||archiveTransfer.busy||shutdownPromise||
         midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(item=>item.projectId===id))!==baseline)
         throw Error('vocal-layer-conflict');
     };
@@ -3239,11 +3239,15 @@
       productionRevision(updated);
       automaticEditRecord(project,updated,'vocal-editor');
       guard();
-      await target.putLongWav(updated,{id:assetId,blob:wav.blob,hashes},baseline,guard);
-      if(target===repository)state.projects=state.projects.map(item=>item.projectId===id?updated:item);
+      const receipt=updated.songVersions.edits.at(-1);
+      const saved=await confirmProjectWrite(target,updated,
+        ()=>target.putLongWav(updated,{id:assetId,blob:wav.blob,hashes},baseline,guard),receipt);
+      let refreshPending=saved!==updated;
+      try{guard()}catch(_){refreshPending=true}
+      if(!refreshPending)state.projects=state.projects.map(item=>item.projectId===id?updated:item);
       vocal.phase='saved';
-      vocal.message=`${layer.label}を別テイクに保存しました。`;
-      return{ok:true,assetId};
+      vocal.message=refreshPending?'声部を保存しました。表示の更新が必要です。':`${layer.label}を別テイクに保存しました。`;
+      return{ok:true,assetId,...(refreshPending?{committed:true,refreshPending:true}:{})};
     }catch(error){
       vocal.phase='error';
       vocal.message=error.message;

@@ -1,20 +1,30 @@
 const assert = require('node:assert/strict');
+const { mkdtemp, rm } = require('node:fs/promises');
+const { tmpdir } = require('node:os');
+const { join } = require('node:path');
 const { chromium } = require('playwright');
 
 async function verify() {
-  const browser = await chromium.launch({
-    executablePath: process.env.CHROME_EXECUTABLE,
-    args: ['--no-sandbox']
-  });
-  try {
-    const page = await browser.newPage();
-    const errors = [];
+  const profile = await mkdtemp(join(tmpdir(), 'nova-production-browser-'));
+  const errors = [];
+  const url = process.env.MUSIC_STUDIO_URL || 'http://127.0.0.1:8765/music-studio.html';
+  let context;
+  async function openProfile() {
+    context = await chromium.launchPersistentContext(profile, {
+      executablePath: process.env.CHROME_EXECUTABLE,
+      args: ['--no-sandbox']
+    });
+    const page = context.pages()[0];
     page.on('pageerror', error => errors.push(error.message));
     page.on('dialog', dialog => dialog.accept());
-    await page.goto(process.env.MUSIC_STUDIO_URL || 'http://127.0.0.1:8765/music-studio.html');
+    await page.goto(url);
     await page.waitForFunction(() => window.MusicStudio?.state.loaded);
+    return page;
+  }
+  try {
+    let page = await openProfile();
     await page.evaluate(() => MusicStudio.goSettings());
-    const voice = page.locator('#ms-setting-managed-voices');
+    let voice = page.locator('#ms-setting-managed-voices');
     const billing = page.locator('#ms-setting-managed-billing');
     await voice.getByLabel('モデル名').fill('本人声テスト');
     await voice.getByLabel('モデル識別子').fill('local-voice-fixture');
@@ -86,6 +96,13 @@ async function verify() {
       const app = MusicStudio;
       const repo = app.indexedDbRepository();
       app.setRepository(repo);
+      const putLongWav = repo.putLongWav.bind(repo);
+      repo.putLongWav = async (...args) => {
+        await putLongWav(...args);
+        if (args[0].longWavAssets.at(-1).vocalTake?.layerSource) {
+          throw Error('completion response lost');
+        }
+      };
       let project = app.makeProject({projectId: 'layer-browser', projectName: 'Vocal layers',
         midiData: {ppq: 480, tempo: 120, tracks: [{id: 'lead', part: 'melody',
           notes: [{id: 'n1', pitch: 57, startTick: 480, durationTicks: 480}]}]}});
@@ -111,9 +128,23 @@ async function verify() {
       await page.waitForFunction(key => MusicStudio.state.projects.find(p => p.projectId === 'layer-browser')
         ?.longWavAssets.some(a => a.vocalTake?.layerSource?.kind === key), kind);
     }
-    await page.reload();
-    await page.waitForFunction(() => MusicStudio.state.loaded);
+    const layerSnapshot = () => page.evaluate(async () => {
+      const project = MusicStudio.state.projects.find(p => p.projectId === 'layer-browser');
+      const assets = await Promise.all(project.longWavAssets.map(async asset => {
+        const wav = await MusicStudio.pcmLoadLongWav(project.projectId, asset.id);
+        const bytes = await crypto.subtle.digest('SHA-256', await wav.arrayBuffer());
+        return [asset.id, Array.from(new Uint8Array(bytes)), asset.vocalTake.layerSource ?? null];
+      }));
+      return {assets, edits: project.songVersions.edits.map(edit => edit.id)};
+    });
+    const published = await layerSnapshot();
+    assert.equal(published.assets.length, 4);
+    assert.equal(new Set(published.edits).size, published.edits.length);
+    await context.close();
+    page = await openProfile();
+    assert.deepEqual(await layerSnapshot(), published);
     await page.evaluate(() => MusicStudio.goSettings());
+    voice = page.locator('#ms-setting-managed-voices');
     await voice.getByLabel('モデル名', {exact: true}).first().fill('録音解析');
     await voice.getByLabel('モデル識別子', {exact: true}).first().fill('local-analysis');
     await voice.getByRole('button', {name: 'モデルを登録'}).click();
@@ -154,7 +185,11 @@ async function verify() {
     assert.deepEqual(errors, []);
     console.log('Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified');
   } finally {
-    await browser.close();
+    try {
+      await context?.close();
+    } finally {
+      await rm(profile, {recursive: true, force: true});
+    }
   }
 }
 

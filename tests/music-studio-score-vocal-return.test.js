@@ -210,6 +210,50 @@ test('printed vocal layers have distinct PCM, preserve placement and survive arc
   }
 });
 
+test('vocal layer publication recognizes a lost commit response and reopens one take per render',async()=>{
+  const {a,p,repo,recordId,indexedDB}=await scoreSetup(),id=p.projectId;
+  const source=await a.importScoreVocal(wav(800),id,recordId,'first-note');
+  assert.equal(source.ok,true,source.error);
+  const put=repo.putLongWav.bind(repo);
+  repo.putLongWav=async (...args)=>{
+    await put(...args);
+    throw Error('completion response lost');
+  };
+  for(const kind of ['harmony','double','chorus']){
+    const result=await a.vocalLayerSave(id,source.assetId,kind);
+    assert.equal(result.ok,true,result.error);
+    assert.equal(a.state.projects[0].longWavAssets.at(-1).id,result.assetId);
+  }
+  const fresh=fixture(indexedDB);
+  fresh.a.setRepository(fresh.a.indexedDbRepository());
+  await fresh.a.refresh();
+  const reopened=fresh.a.state.projects[0];
+  assert.deepEqual(Array.from(reopened.longWavAssets.slice(1),asset=>asset.vocalTake.layerSource.kind),
+    ['harmony','double','chorus']);
+  assert.equal(new Set(Array.from(reopened.songVersions.edits.slice(-3),edit=>edit.id)).size,3);
+  assert.equal(indexedDB.stores.get('longWavBinaries').size,4);
+});
+
+test('failed vocal layer commit can be retried without partial audio or history',async()=>{
+  const {a,p,repo,recordId,indexedDB}=await scoreSetup(),id=p.projectId;
+  const source=await a.importScoreVocal(wav(800),id,recordId,'first-note');
+  assert.equal(source.ok,true,source.error);
+  const before=JSON.stringify(await repo.get(id));
+  const put=repo.putLongWav.bind(repo);
+  repo.putLongWav=async (...args)=>{
+    await assert.rejects(put(...args.slice(0,3),()=>{throw Error('write interrupted')}));
+    throw Error('write interrupted');
+  };
+  assert.equal((await a.vocalLayerSave(id,source.assetId,'chorus')).ok,false);
+  assert.equal(JSON.stringify(await repo.get(id)),before);
+  assert.equal(indexedDB.stores.get('longWavBinaries').size,1);
+  repo.putLongWav=put;
+  const retry=await a.vocalLayerSave(id,source.assetId,'chorus');
+  assert.equal(retry.ok,true,retry.error);
+  assert.equal((await repo.get(id)).longWavAssets.length,2);
+  assert.equal(indexedDB.stores.get('longWavBinaries').size,2);
+});
+
 function managementActions({a,w}){
   w.FormData=class {
     constructor(form){this.fields=form?.elements||{}}
