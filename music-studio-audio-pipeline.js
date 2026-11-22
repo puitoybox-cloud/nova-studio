@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.9';
+  const VERSION='1.0.10';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -160,11 +160,14 @@
     if(options.expectedProjectId!==undefined&&options.expectedProjectId!==project.projectId)return {ok:false,error:'stem-cancelled-or-source-changed'};
     if(localSession||bootstrapState!=='LEGACY_UNVERIFIED')return {ok:false,error:'packaged-stem-receipt-not-supported'};
     if(!isAudioFile(file)||!file.size||file.size>MAX_AUDIO_BYTES)return {ok:false,error:'invalid-audio-input'};
-    const baseline=JSON.stringify(project),id=project.projectId;
+    const baseline=JSON.stringify(project),id=project.projectId,route=root.location?.hash;
+    if(options.signal?.aborted)return {ok:false,cancelled:true};
     if(!root.confirm?.('Demucs htdemucs_6sで6本のStemを生成します。元音声を保持し、結果を確認してから別バージョンへ保存します。実行しますか？'))return {ok:false,cancelled:true};
     processing=true;stemController=new AbortController();
-    const signal=stemController.signal;
-    const check=()=>{if(signal.aborted||options.reason?.()||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
+    const controller=stemController,signal=controller.signal,abort=()=>controller.abort();
+    options.signal?.addEventListener('abort',abort,{once:true});
+    if(options.signal?.aborted)abort();
+    const check=()=>{if(signal.aborted||root.location?.hash!==route||options.reason?.()||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
     try{
       check();
       setStatus('Demucsで分離中です。Cancelで結果の受取と採用を中止できます。');
@@ -191,7 +194,10 @@
       if(!root.confirm?.('Vocals / Drums / Bass / Guitar / Piano / Other の6本を生成しました。元音声と一緒に別バージョンへ保存しますか？'))return {ok:false,cancelled:true};
       check();const result=await api.logicImportStemReturns(entries,id,{signal,separatedAudio:true,model:payload.model,sourceSha256:payload.sourceSha256,sourceFile:file});
       if(!result.ok)throw Error(result.error);setStatus('6本のStemと元音声を別バージョンへ保存しました。音声編集・Mix画面で確認できます。','success');return result;
-    }catch(error){setStatus(error.message,'error');return {ok:false,error:error.message}}finally{processing=false;stemController=null}
+    }catch(error){
+      if(signal.aborted)return {ok:false,cancelled:true};
+      setStatus(error.message,'error');return {ok:false,error:error.message};
+    }finally{options.signal?.removeEventListener('abort',abort);processing=false;stemController=null}
   }
   function cancelSeparatedAudio(){stemController?.abort()}
   function cancelAudioImport(){
