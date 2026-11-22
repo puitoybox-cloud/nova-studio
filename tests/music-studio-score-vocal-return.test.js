@@ -12,6 +12,13 @@ test('WAV preflight reports measured duration and silence without writing audio 
  const f=await scoreSetup(),before=JSON.stringify(await f.repo.get(f.p.projectId)),r=await f.a.inspectScoreVocal(wav(800),f.p,f.recordId,'first-note');
  assert.equal(r.frames,800);assert.equal(r.sampleRate,8000);assert.equal(r.channels,1);assert.equal(r.durationSeconds,.1);assert.equal(r.silent,true);assert.equal(r.clipped,0);assert.ok(r.shortfallSeconds>0);assert.equal(JSON.stringify(await f.repo.get(f.p.projectId)),before);
 });
+test('silent synthesis output leaves the saved score and vocal workspace untouched',async()=>{
+ const f=await scoreSetup(),id=f.p.projectId,before=JSON.stringify(await f.repo.get(id));
+ const result=await f.a.importScoreVocal(wav(800),id,f.recordId,'score-zero',{localSinsy:true});
+ assert.equal(result.error,'local-vocal-silent-output');
+ assert.equal(JSON.stringify(await f.repo.get(id)),before);
+ assert.equal(JSON.stringify(f.a.state.projects[0]),before);
+});
 test('import atomically saves trim gain and delay, undo restores full source and archive retains both',async()=>{
  const f=await scoreSetup(),a=f.a,id=f.p.projectId,file=wav(8000),r=await a.importScoreVocal(file,id,f.recordId,'first-note',{trimStartSeconds:.1,trimEndSeconds:.9,gainDb:-6,latencyMs:25});assert.equal(r.ok,true,r.error);
  const asset=r.project.longWavAssets[0],h=a.vocalHistory(asset);assert.equal(h.cursor,1);assert.equal(h.edits[1].first,800);assert.equal(h.edits[1].end,7200);assert.equal(h.edits[1].gainDb,-6);assert.equal(h.edits[1].latencyMs,25);assert.equal((await a.vocalRender(id,r.assetId)).frames,6400);
@@ -140,7 +147,10 @@ test('late compact Sinsy range inherits tempo, preserves full source binding and
  p=a.adoptLyricsAssignment(p,a.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'あ',reading:'あ'}));await f.repo.put(p);a.state.projects=[p];
  const record=p.syllableAssignments.at(-1).id,range={startMeasure:101,endMeasure:101},selected=a.vocalRangeProject(p,record,range);
  const score=a.lyricsScoreXML(selected,record,range);assert.equal(score.measureCount,1);assert.match(score.text,/<measure number="101"/);assert.doesNotMatch(score.text,/<measure number="1"/);assert.match(score.text,/<sound tempo="90"/);assert.doesNotMatch(score.text,/<sound tempo="120"/);
- const imported=await a.importScoreVocal(wav(24000),p.projectId,record,'score-zero',{localSinsy:true,generationRange:range,compactRange:true});assert.equal(imported.ok,true,imported.error);
+ const bytes=await wav(24000).arrayBuffer();
+ new DataView(bytes).setInt16(44,8192,true);
+ const file=Object.assign(new Blob([bytes],{type:'audio/wav'}),{name:'range.wav'});
+ const imported=await a.importScoreVocal(file,p.projectId,record,'score-zero',{localSinsy:true,generationRange:range,compactRange:true});assert.equal(imported.ok,true,imported.error);
  const asset=imported.project.longWavAssets[0];assert.equal(asset.vocalTake.edits[0].startTick,192000);assert.equal(asset.vocalTake.scoreSource.scoreXML,a.lyricsScoreXML(selected,record).text);
  const rendered=await a.vocalRender(p.projectId,imported.assetId);assert.ok(rendered.startSeconds>120);assert.equal(rendered.frames,24000);
  const fresh=fixture(),repo=fresh.a.indexedDbRepository();fresh.a.setRepository(repo);const restored=await fresh.a.restoreLongWavArchive(await a.createLongWavArchive(),{settings:false});assert.equal(restored.ok,true,restored.error);const copy=restored.projects[0],again=await fresh.a.vocalRender(copy.projectId,copy.vocalWorkspace.selectedAssetId);assert.equal(again.startSeconds,rendered.startSeconds);assert.equal(Buffer.compare(Buffer.from(await again.blob.arrayBuffer()),Buffer.from(await rendered.blob.arrayBuffer())),0);

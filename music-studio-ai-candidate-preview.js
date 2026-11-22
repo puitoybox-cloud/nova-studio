@@ -305,7 +305,7 @@
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
     if(value.ensemble){
-      const plan=ensembleSnapshot(session,core,value);
+      const plan=ensembleSnapshot(session,core,value,options.measureRange??null);
       const ids=new Set(plan.diff.map(row=>row.replacedTrackId||row.trackId));
       const changes={updates:[],adds:[],deleteNoteIds:[]};
       for(const id of ids){
