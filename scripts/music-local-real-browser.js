@@ -14,8 +14,9 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  const project=app.makeProject({projectId,projectName:'Intro / Verse / Chorus / Outro',key:'C',bpm:96,midiData:{
    ppq:480,tempo:96,timeSignature:{numerator:4,denominator:4},keySignatureMap:[{tick:16*1920,sharps:1,minor:false},{tick:16*1920+480,sharps:-2,minor:false}],
    editor:{measureCount:32,editRange:{startMeasure:17,endMeasure:24}},
-   tracks:[{id:'melody',part:'melody',notes:notes('melody',[60,64,67,62],480)},
-     {id:'bass',part:'bass',notes:notes('bass',[43,40,36,38],1920)}]
+   tracks:[{id:'melody',part:'melody',notes:notes('melody',[60,64,67,62],480).filter((_,i)=>i!==24&&i!==25)},
+     {id:'bass',part:'bass',notes:notes('bass',[43,40,36,38],1920)},
+     {id:'strings',name:'Strings',roleAssignment:'strings',trackType:'midi-melodic',channel:5,program:48,notes:notes('strings',[67,64,60,62],960)}]
  }});
  await repo.put(project);app.state.projects=[project];app.openMidiEditor(projectId);
  const deadline=Date.now()+10000;
@@ -53,8 +54,42 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  core.redo(session);
  if(JSON.stringify(session.midiData)!==after)throw Error('section redo');
  if(!(await app.saveMidiEditor({silent:true})).ok||JSON.stringify((await repo.get(projectId)).midiData)!==after)throw Error('section persistence');
+ core.setEditRange(session,{startMeasure:25,endMeasure:26});
+ app.repaintEditor();
+ panel.setTab(projectId,'candidates');
+ document.querySelector('#aiSectionName').value='outro';
+ document.querySelector('#aiSectionDensity').value='normal';
+ for(const role of ['piano','bass','strings','drums'])document.querySelector('#aiSection'+role).checked=['bass','strings'].includes(role);
+ document.querySelector('#aiSectionTargetbass').value='bass';
+ document.querySelector('#aiSectionTargetstrings').value='strings';
+ panel.saveSectionArrangement(projectId);
+ panel.confirmApprovedChange(projectId);
+ document.querySelector('#aiRemakeMode').value='ensemble';
+ document.querySelector('#aiModelChords').value='Bb F';
+ const ensembleBefore=JSON.stringify(session.midiData);
+ await panel.generateLocalModel(projectId);
+ const ensemble=record.state.workspace.candidateSets.at(-1);
+ if(ensemble===set||ensemble?.candidates.length!==3||ensemble.candidates.some(c=>c.value.ensemble?.source.notes.length!==0))throw Error(record.message);
+ panel.previewCandidate(projectId,'A');
+ if(record.candidatePreview?.companion.ensembleDiff?.length!==2)throw Error(record.message);
+ panel.applyCandidatePreview(projectId,'A');
+ if(record.approval?.kind!=='candidate'||JSON.stringify(session.midiData)!==ensembleBefore)throw Error('ensemble approval boundary');
+ panel.confirmApprovedChange(projectId);
+ const ensembleAfter=JSON.stringify(session.midiData),ensembleOld=JSON.parse(ensembleBefore);
+ if(ensembleAfter===ensembleBefore||session.midiData.tracks.length!==ensembleOld.tracks.length)throw Error('ensemble destinations');
+ for(const track of ensembleOld.tracks){
+   const next=core.getTrackById(session.midiData.tracks,track.id);
+   if(!['bass','strings'].includes(track.id)&&JSON.stringify(track)!==JSON.stringify(next))throw Error('ensemble source mutated');
+   if(['bass','strings'].includes(track.id)){
+     const untouched=n=>n.startTick<24*1920||n.startTick>=26*1920;
+     if(JSON.stringify(track.notes.filter(untouched))!==JSON.stringify(next.notes.filter(untouched))||
+        JSON.stringify(track.notes)===JSON.stringify(next.notes))throw Error('ensemble range mutated');
+   }
+ }
+ core.undo(session);
+ if(JSON.stringify(session.midiData)!==ensembleBefore)throw Error('ensemble undo');
  app.state.projects=prior;app.state.midiEditor=null;
- return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,modulation:true,approval:true,undoRedo:true,indexedDB:true};
+ return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,modulation:true,ensembleDestinationTracks:2,approval:true,undoRedo:true,indexedDB:true};
 });
 const whole=await page.evaluate(async()=>{
  const a=MusicStudio,core=MusicStudioEditor,panel=MusicStudioAIAssistantPanel,bridge=MusicStudioAICandidatePreview,prior=[...a.state.projects],repo=a.indexedDbRepository();
