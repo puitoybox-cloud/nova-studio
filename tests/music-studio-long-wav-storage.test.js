@@ -837,3 +837,30 @@ test('explicit archive destination verifies bytes and reports cancellation befor
  assert.equal(corrupt.fileWritten,true);
  assert.equal(corrupt.error,'archive-file-verification-failed');
 });
+
+test('notification loss after an audio commit preserves one edit and authenticates the saved WAV',async()=>{
+ const {a,p,repo}=await setup(),file=wav(100),write=repo.putLongWav.bind(repo);
+ repo.putLongWav=async(...args)=>{await write(...args);throw Error('notification-lost')};
+ const result=await a.pcmImportLongFile(file,p.projectId);
+ assert.equal(result.ok,true,result.error);
+ const saved=await repo.get(p.projectId);
+ assert.equal(saved.longWavAssets.length,1);
+ assert.equal(saved.songVersions.edits.filter(edit=>edit.revision===saved.revision).length,1);
+ assert.deepEqual(Buffer.from(await (await a.pcmLoadLongWav(p.projectId,result.assetId)).arrayBuffer()),Buffer.from(await file.arrayBuffer()));
+});
+
+test('a later revision proves the earlier audio commit without replacing current editor state',async()=>{
+ const {a,p,repo}=await setup(),write=repo.putLongWav.bind(repo);
+ repo.putLongWav=async(...args)=>{
+   await write(...args);
+   const saved=await repo.get(p.projectId);
+   await repo.put({...saved,revision:saved.revision+1,projectName:'Concurrent edit'});
+   throw Error('notification-lost');
+ };
+ const result=await a.pcmImportLongFile(wav(100),p.projectId);
+ assert.equal(result.ok,true,result.error);
+ assert.equal(result.refreshPending,true);
+ assert.equal(result.project.projectName,'Concurrent edit');
+ assert.equal(result.project.longWavAssets.length,1);
+ assert.equal(a.state.projects[0].revision,p.revision);
+});
