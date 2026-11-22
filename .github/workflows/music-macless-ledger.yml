@@ -29,11 +29,17 @@ jobs:
       - run: python3 -m unittest discover -s tools/nova-au/tests -p test_auto_finish_server.py -v
       - run: node --test --test-concurrency=2 tests/*.test.js
       - name: Fetch runtime snapshots referenced by acceptance evidence
+        timeout-minutes: 5
         run: |
           python3 -c 'import json; snapshots=json.load(open("docs/music-studio/MACLESS_REQUIREMENTS_V1.json")).get("historicalRuntimeSnapshots", {}); print(*(sha for value in snapshots.values() for sha in ([value] if isinstance(value, str) else value)), sep=chr(10))' |
             while IFS= read -r sha; do
               if [[ -z "$sha" ]]; then continue; fi
               [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
-              git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch --depth=1 origin "$sha" || exit 1
+              git cat-file -e "$sha^{commit}" 2>/dev/null && continue
+              for attempt in 1 2 3; do
+                timeout 40s git fetch --depth=1 origin "$sha" && break
+                if [[ "$attempt" == 3 ]]; then exit 1; fi
+                sleep "$((attempt * 2))"
+              done
             done
       - run: python3 scripts/music-macless-ledger.py
