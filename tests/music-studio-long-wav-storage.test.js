@@ -840,6 +840,8 @@ test('explicit archive destination verifies bytes and reports cancellation befor
 
 test('notification loss after an audio commit preserves one edit and authenticates the saved WAV',async()=>{
  const {a,p,repo}=await setup(),file=wav(100),write=repo.putLongWav.bind(repo);
+ p.fileReferences=[{name:'Legacy reference without retained bytes'}];
+ await repo.put(p);
  repo.putLongWav=async(...args)=>{await write(...args);throw Error('notification-lost')};
  const result=await a.pcmImportLongFile(file,p.projectId);
  assert.equal(result.ok,true,result.error);

@@ -4752,7 +4752,8 @@
   async function confirmAudioWrite(target,project,record,baseline,guard){
     const receipt=project.songVersions?.edits?.findLast(edit=>edit.revision===project.revision);
     return confirmProjectWrite(target,project,()=>target.putLongWav(project,record,baseline,guard),receipt,async saved=>{
-      if(!archiveBinaries(saved).some(asset=>asset.id===record.id&&asset.size===record.blob.size&&JSON.stringify(asset.hashes)===JSON.stringify(record.hashes)))return false;
+      const descriptors=[...(saved.longWavAssets||[]),...REFERENCE_FIELDS.flatMap(field=>(saved[field]||[]).map(reference=>reference?.binary))];
+      if(!descriptors.some(asset=>asset?.id===record.id&&asset.size===record.blob.size&&JSON.stringify(asset.hashes)===JSON.stringify(record.hashes)))return false;
       const stored=await target.getLongWav(record.id).catch(()=>null);
       return Boolean(stored?.blob&&stored.blob.size===record.blob.size&&
         JSON.stringify(await longWavDigest(stored.blob))===JSON.stringify(record.hashes));
