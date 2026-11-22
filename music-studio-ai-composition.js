@@ -365,13 +365,16 @@
     const track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session));
     if(!track||((core.resolveCoreTrackRole(track)==='drums'||core.resolveTrackCapabilities?.(track)?.supportsDrumLabels)&&options.operation!=='delete'))throw Error('remake-melodic-track-required');
     const range=selectedRange(session,core),notes=track.notes.filter(n=>n.startTick>=range.startTick&&n.startTick<range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
-    if((!notes.length&&options.operation!=='replace')||notes.length>(options.operation==='delete'?4096:256))throw Error(options.operation==='delete'?'削除候補は選択範囲の1〜4096音です。範囲を狭めてください。':'Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
-    if(notes.some(n=>n.startTick+n.durationTicks>range.endTick))throw Error('remake-source-crosses-range');
+    if((!notes.length&&!['replace','ensemble'].includes(options.operation))||notes.length>(options.operation==='delete'?4096:256))throw Error(options.operation==='delete'?'削除候補は選択範囲の1〜4096音です。範囲を狭めてください。':'Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
+    if(options.operation!=='ensemble'&&notes.some(n=>n.startTick+n.durationTicks>range.endTick))throw Error('remake-source-crosses-range');
     if(options.operation==='replace'){
       const request=core.createPartialEditRequest(session,{trackId:track.id,range});
       if(request.lockedNoteIds.length)throw Error('固定音符を含む範囲は差し替えできません。');
     }
-    return{version:1,trackId:track.id,range:clone(range),notes:clone(notes),midiSignature:JSON.stringify(session.midiData)};
+    const promptNotes=options.operation==='ensemble'
+      ?notes.map(note=>({...note,durationTicks:Math.min(note.durationTicks,range.endTick-note.startTick)}))
+      :notes;
+    return{version:1,trackId:track.id,range:clone(range),notes:clone(promptNotes),midiSignature:JSON.stringify(session.midiData)};
   }
   function remakePrompt(source,ppq){
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-remake-ppq');

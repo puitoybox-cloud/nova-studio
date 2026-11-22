@@ -483,22 +483,26 @@
     try{
       const context=composition().createContext(p,session,core());
       const span=context.range.endTick-context.range.startTick;
-      const sourceNotes=!remake?[]:mode==='replace'?composition().replacementPrompt(remake.source,session,core()):composition().remakePrompt(remake.source,session.midiData.ppq);
-      const timing=mode==='replace'
+      const scoped=['replace','ensemble'].includes(mode);
+      const usePrevious=mode==='replace'||(mode==='ensemble'&&!remake.source.notes.length);
+      const sourceNotes=!remake?[]:usePrevious
+        ?composition().replacementPrompt(remake.source,session,core())
+        :composition().remakePrompt(remake.source,session.midiData.ppq);
+      const timing=scoped
         ?root.MusicStudioMeterMap.positionAtTick(session.midiData,context.range.startTick)
         :session.midiData.timeSignature||p.musicalSettings?.timeSignature||{numerator:4,denominator:4};
-      const tempo=mode==='replace'
+      const tempo=scoped
         ?[...(session.midiData.tempoMap||[])].sort((a,b)=>a.tick-b.tick).filter(event=>event.tick<=context.range.startTick).at(-1)
         :null;
-      if(mode==='replace'){
+      if(scoped){
         remake.harmony=composition().replacementHarmony(p,session,core(),context.range,chords);
         remake.pitchRange=modelRange;
       }
       const result=await app().localGenerationRequest('compose',{
         seed,events:64,max_ticks:Math.floor(span*480/(session.midiData.ppq||480)),
         bpm:Math.round(tempo?.bpm||session.midiData.tempo||p.musicalSettings?.bpm||72),
-        key:mode==='replace'?null:p.musicalSettings?.key||null,numerator:timing.numerator,denominator:timing.denominator,
-        pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords:mode==='replace'?'':chords,
+        key:scoped?null:p.musicalSettings?.key||null,numerator:timing.numerator,denominator:timing.denominator,
+        pitch_min:modelRange[0],pitch_max:modelRange[1],style:modelStyle,description,genre,chords:scoped?'':chords,
         ...(sourceNotes.length?{sourceNotes}:{})
       });
       if(!current())return;

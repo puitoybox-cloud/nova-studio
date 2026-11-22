@@ -111,3 +111,40 @@ test('replacement follows exact project modulation and chord boundaries without 
   assert.deepEqual(plain(session.midiData),original);
   assert.equal(value.importedMidi.notes[0].pitch,70);
 });
+
+test('ensemble replaces two destination tracks in an empty melody section as one edit',()=>{
+  const w=load(),p=project(),core=w.MusicStudioEditor,composition=w.MusicStudioAIComposition,bridge=w.MusicStudioAICandidatePreview;
+  const note=(id,pitch,startTick,durationTicks=240)=>({id,pitch,startTick,durationTicks,velocity:80});
+  p.midiData.editor={measureCount:32,editRange:{startMeasure:17,endMeasure:24}};
+  const start=16*1920,end=24*1920;
+  p.midiData.tracks[0].notes=[note('previous',67,start-480),note('following',72,end)];
+  p.midiData.tracks[2].notes=[note('bass-crossing',36,start-120),note('bass-inside',38,start+480),note('bass-after',36,end)];
+  p.midiData.tracks.push({id:'strings',name:'Strings',roleAssignment:'strings',trackType:'midi-melodic',channel:5,program:48,
+    notes:[note('strings-inside',64,start+480),{...note('strings-locked',65,start+1920),locked:true},note('strings-after',67,end)]});
+  const session=core.createCoordinatedSession(p),before=plain(session.midiData);
+  const source=composition.remakeSource(session,core,{operation:'ensemble'});
+  assert.equal(source.notes.length,0);
+  assert.equal(composition.replacementPrompt(source,session,core)[0].pitch,67);
+  const output={kind:'melody',variant:'A',summary:'Model output fixture',range:source.range,importedMidi:{
+    version:1,ppq:480,notes:[{pitch:67,startTick:480,durationTicks:240,velocity:80}]
+  }};
+  const section={name:'chorus',density:'normal',range:source.range,roles:['bass','strings'],targets:{bass:'bass',strings:'strings'}};
+  const value=composition.bindEnsemble(output,source,'C Am F G',section);
+  const bundle=bridge.createPreview(session,core,{value});
+  assert.deepEqual(plain(bundle.result.changes.deleteNoteIds).sort(),['bass-inside','strings-inside']);
+  assert.ok(bundle.result.changes.adds.length>2);
+  assert.ok(bundle.result.changes.adds.every(n=>n.startTick>=start&&n.startTick+n.durationTicks<=end));
+  assert.deepEqual(plain(session.midiData),before);
+  bridge.applyPreview(session,core,bundle);
+  assert.equal(session.midiData.tracks.length,before.tracks.length);
+  for(const id of ['melody','drums'])assert.deepEqual(plain(core.getTrackById(session.midiData.tracks,id)),core.getTrackById(before.tracks,id));
+  for(const id of ['bass','strings']){
+    const beforeTrack=core.getTrackById(before.tracks,id),afterTrack=core.getTrackById(session.midiData.tracks,id);
+    for(const original of beforeTrack.notes.filter(n=>n.startTick<start||n.startTick>=end||n.locked)){
+      assert.deepEqual(plain(afterTrack.notes.find(n=>n.id===original.id)),original);
+    }
+  }
+  assert.equal(session.undo.length,1);
+  core.undo(session);
+  assert.deepEqual(plain(session.midiData),before);
+});

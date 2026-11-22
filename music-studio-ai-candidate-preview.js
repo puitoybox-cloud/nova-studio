@@ -304,7 +304,23 @@
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
-    if(value.ensemble){const plan=ensembleSnapshot(session,core,value),ids=[...new Set(plan.diff.map(d=>d.replacedTrackId||d.trackId))];return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes:{updates:[],adds:ids.flatMap(id=>core.getTrackById(plan.midiData.tracks,id)?.notes||[]),deleteNoteIds:[]}},companion:{ensembleDiff:plan.diff,performance:performanceMetrics(plan)},mutates:false};}
+    if(value.ensemble){
+      const plan=ensembleSnapshot(session,core,value);
+      const ids=new Set(plan.diff.map(row=>row.replacedTrackId||row.trackId));
+      const changes={updates:[],adds:[],deleteNoteIds:[]};
+      for(const id of ids){
+        const before=core.getTrackById(session.midiData.tracks,id)?.notes||[];
+        const after=core.getTrackById(plan.midiData.tracks,id)?.notes||[];
+        const previous=new Map(before.map(note=>[note.id,note]));
+        const remaining=new Set(after.map(note=>note.id));
+        for(const note of after){
+          if(!previous.has(note.id))changes.adds.push(note);
+          else if(JSON.stringify(note)!==JSON.stringify(previous.get(note.id)))changes.updates.push(note);
+        }
+        changes.deleteNoteIds.push(...before.filter(note=>!remaining.has(note.id)).map(note=>note.id));
+      }
+      return{version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId||value.variant,targetTrackId:value.ensemble.source.trackId,value,request:{range:clone(value.range)},result:{changes},companion:{ensembleDiff:plan.diff,performance:performanceMetrics(plan)},mutates:false};
+    }
     if(!kind)throw Error('candidate-kind-required');
     const composition=requireComposition(),context=options.context||composition.createContext(options.project||{},session,core),companion=companionPlan(value,context);
     if(kind==='continuation')companion.sourcePreview=continuationSource(value,session,core);
