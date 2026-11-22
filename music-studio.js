@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.239';
+  const ASSET_VERSION='1.4.240';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1195,9 +1195,11 @@
       const assetId=uuid(),asset={id:assetId,name:file.name,size:blob.size,frames,sampleRate,channels,hashes,vocalTake:{format:'nova-vocal-take-v1',captureMime:'audio/wav',clippedSamples:clipped,waveform,cursor:edits.length-1,edits,scoreSource:{format:'nova-score-vocal-source-v1',recordId,trackId:score.source.trackId,origin,trimOriginFrame:edit.first,scoreXML:score.text,...(options.generationRange?{generationRange:clone(options.generationRange)}:{}),...(options.localSinsy?{engine:'Sinsy-0.92',voice:'NIT-SONG070-F001'}:{})}}};
       vocalHistory(asset);const updated=clone(current);updated.longWavAssets=[...(updated.longWavAssets||[]),asset];updated.vocalWorkspace={...vocalWorkspace(updated),selectedAssetId:assetId};updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(current,updated,'vocal-editor');
       if(!validateProject(updated).valid)throw Error('score-vocal-project-invalid');
-      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,guard);state.projects=state.projects.map(p=>p.projectId===id?updated:p);vocal.phase='saved';
+      const committed=await confirmAudioWrite(target,updated,{id:assetId,blob,hashes},baseline,guard);
+      if(committed!==updated||repository!==target||token!==vocal.generation||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:committed,assetId};
+      state.projects=state.projects.map(p=>p.projectId===id?updated:p);vocal.phase='saved';
       lyricsEditor.message='歌声WAVを保存しました。Vocal（ボーカル編集）で同期位置・音量・カット・試聴を調整できます。Full WAV Archiveに音声本体を保存できます。';vocal.message=lyricsEditor.message;return{ok:true,assetId,project:updated};
-    }catch(e){vocal.phase='error';lyricsEditor.message='歌声WAVを保存できません：'+e.message;vocal.message=lyricsEditor.message;return{ok:false,error:e.message}}finally{requestPaint()}
+    }catch(e){vocal.phase='error';lyricsEditor.message='歌声WAVを保存できません：'+e.message;vocal.message=lyricsEditor.message;return{ok:false,error:e.message}}finally{if(vocal.phase==='saving')vocal.phase='saved';requestPaint()}
   }
   async function importScoreVocalForm(event,id,recordId){
     event?.preventDefault();const form=event?.target,editAfter=form?.elements?.editAfter?.checked;
@@ -1764,7 +1766,8 @@
       else{const old=items[index];if(!old||typeof old!=='object')throw Error('reference-target-invalid');items[index]={...old,binary,missing:false,storage:{...(old.storage||{}),requiresReselection:false}}}
       updated[field]=items;updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,projectId,updated.revision);automaticEditRecord(current,updated,'audio-editor');
       if(!validateProject(updated).valid)throw Error('reference-project-invalid');
-      await target.putLongWav(updated,{id,blob,hashes},baseline,guard);
+      const committed=await confirmAudioWrite(target,updated,{id,blob,hashes},baseline,guard);
+      if(committed!==updated||target!==repository||token!==archiveTransfer.generation||JSON.stringify(state.projects.find(p=>p.projectId===projectId))!==baseline)return{ok:true,committed:true,refreshPending:true,project:committed,binaryId:id};
       state.projects=state.projects.map(p=>p.projectId===projectId?updated:p);notice('選択したファイル本体を保存しました。完全Backupに含まれます。','success');return{ok:true,project:updated,binaryId:id};
     }catch(e){notice('ファイル本体を保存できません：'+e.message,'error');return{ok:false,error:e.message}}finally{archiveTransfer.busy=false;requestPaint()}
   }
@@ -2191,8 +2194,8 @@
       updated.longWavAssets=[...(updated.longWavAssets||[]),{id:assetId,name:file.name,size:blob.size,frames,sampleRate,channels,hashes}];
       updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(current,updated,'audio-editor');
       if(!validateProject(updated).valid)throw Error('invalid-pcm-project');
-      await target.putLongWav(updated,record,baseline,guard);
-      if(repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:updated,assetId};
+      const committed=await confirmAudioWrite(target,updated,record,baseline,guard);
+      if(committed!==updated||repository!==target||pcmEditor.projectId!==id||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:committed,assetId};
       state.projects=state.projects.map(p=>p.projectId===id?updated:p);pcmEditor.preview=null;
       pcmEditor.message='元WAV本体を保存しました。長時間音声のGain・EQ・Compressionの候補、保存履歴、加工済みWAV書出しに対応します。Full WAV Archiveはバックアップ画面で利用できます。';
       return{ok:true,project:updated,assetId};
@@ -4732,18 +4735,29 @@
     midiSaveQueue=result.catch(()=>{});
     return result;
   }
-  async function confirmProjectWrite(target, project, write, receipt) {
+  async function confirmProjectWrite(target, project, write, receipt, verify=()=>true) {
     try {
       await write();
     } catch (error) {
       const saved = await target.get(project.projectId).catch(() => null);
-      if (JSON.stringify(saved) === JSON.stringify(project)) return project;
-      // A unique receipt written atomically with the change also proves commit
-      // when another writer has already advanced the saved revision.
-      if (receipt && saved?.revision>project.revision && [saved?.productionHistory,saved?.specialSaveReceipts,saved?.songVersions?.edits].some(entries=>entries?.some(event=>JSON.stringify(event)===JSON.stringify(receipt)))) return saved;
+      const exact=JSON.stringify(saved)===JSON.stringify(project);
+      // A unique receipt also proves commit after a later revision.
+      const advanced=receipt&&saved?.revision>project.revision&&
+        [saved.productionHistory,saved.specialSaveReceipts,saved.songVersions?.edits].some(entries=>entries?.some(event=>JSON.stringify(event)===JSON.stringify(receipt)));
+      if((exact||advanced)&&await verify(saved))return exact?project:saved;
       throw error;
     }
     return project;
+  }
+  async function confirmAudioWrite(target,project,record,baseline,guard){
+    const receipt=project.songVersions?.edits?.findLast(edit=>edit.revision===project.revision);
+    return confirmProjectWrite(target,project,()=>target.putLongWav(project,record,baseline,guard),receipt,async saved=>{
+      const descriptors=[...(saved.longWavAssets||[]),...REFERENCE_FIELDS.flatMap(field=>(saved[field]||[]).map(reference=>reference?.binary))];
+      if(!descriptors.some(asset=>asset?.id===record.id&&asset.size===record.blob.size&&JSON.stringify(asset.hashes)===JSON.stringify(record.hashes)))return false;
+      const stored=await target.getLongWav(record.id).catch(()=>null);
+      return Boolean(stored?.blob&&stored.blob.size===record.blob.size&&
+        JSON.stringify(await longWavDigest(stored.blob))===JSON.stringify(record.hashes));
+    });
   }
   async function saveMidiEditorSnapshot(session,target,options={}){const aiPending=root.MusicStudioAIAssistantPanel?.hasPending?.(session?.projectId)===true;if(!session?.dirty&&!aiPending&&!root.MusicStudioEditor?.projectSectionsPending?.(session))return{ok:true,skipped:true};try{const project=await target.get(session.projectId);if(repository!==target)throw Error('midi-repository-changed');if(!project)throw Error('保存対象のプロジェクトが見つかりません。');const sectionSnapshot=root.MusicStudioEditor.projectSectionsSnapshot?.(session),sectionSaved=root.MusicStudioEditor.projectSectionsSavedSnapshot?.(session);if(sectionSaved&&JSON.stringify(sectionSaved)!==JSON.stringify({present:Object.hasOwn(project,'sections'),items:Object.hasOwn(project,'sections')?project.sections:[]}))throw Error('project-sections-changed-before-save');const harmony=clone(session.songHarmony),harmonyChanged=root.MusicStudioEditor.songHarmonyPending?.(session);if(harmonyChanged&&JSON.stringify(session.savedSongHarmony)!==JSON.stringify({key:project.musicalSettings?.key??null,chordProgressions:project.chordProgressions||[]}))throw Error('project-harmony-changed-before-save');const bpm=Number(session.midiData.tempo),revision=(project.revision||1)+1,aiWorkspace=root.MusicStudioAIAssistantPanel?.workspaceForSave?.(project,revision),updated={...project,musicalSettings:{...project.musicalSettings,bpm,...(harmonyChanged?{key:harmony.key}:{})},...(harmonyChanged?{chordProgressions:clone(harmony.chordProgressions)}:{}),midiData:root.MusicStudioEditor.clone(session.midiData),revision,updatedAt:now(),...(aiWorkspace?{aiWorkspace}:{})};if(sectionSnapshot){if(sectionSnapshot.present)updated.sections=clone(sectionSnapshot.items);else delete updated.sections;}automaticEditRecord(project,updated);const checked=validateProject(updated);if(!checked.valid)throw Error(checked.errors.join(' '));const guard=()=>{if(repository!==target)throw Error('midi-repository-changed')};
     await confirmProjectWrite(target, updated, async () => {
@@ -5549,7 +5563,8 @@
       updated.longWavAssets=[...(updated.longWavAssets||[]),{id:assetId,name,size:blob.size,frames:result.frames,sampleRate:48000,channels:2,hashes,midiRender:{sourceRevision:p.revision,trackIds:result.trackIds,noteCount:result.noteCount,seconds:result.seconds,tail:result.tail,...(trackId===null?{}:{stemTrackId:trackId})}}];
       updated.revision++;updated.updatedAt=now();if(updated.aiWorkspace)updated.aiWorkspace=rebindAIWorkspace(updated.aiWorkspace,id,updated.revision);automaticEditRecord(p,updated,'audio-editor');
       if(!validateProject(updated).valid)throw Error('midi-render-invalid-project');
-      await target.putLongWav(updated,{id:assetId,blob,hashes},baseline,()=>guard(true));guard(true);
+      const committed=await confirmAudioWrite(target,updated,{id:assetId,blob,hashes},baseline,()=>guard(true));
+      if(committed!==updated||target!==repository||token!==pcmEditor.generation||!snapshot(true)||state.dirty||midiEditorHasPendingChanges())return{ok:true,committed:true,refreshPending:true,project:committed,assetId};
       state.projects=state.projects.map(v=>v.projectId===id?updated:v);finalInvalidate();
       pcmEditor.message='MIDI演奏音を保存しました。Mix・Long Mastering・ExportのSourcesで選択できます。完全復元にはFull WAV Archiveを使ってください。';
       return{ok:true,project:updated,assetId};

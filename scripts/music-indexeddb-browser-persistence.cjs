@@ -291,3 +291,53 @@ test('real IndexedDB durable duplication defers publication into changed context
   assert.equal(await reopened.evaluate(async receipts=>{const repo=MusicStudio.indexedDbRepository();for(const r of receipts){const source=await repo.get(r.source),copy=await repo.get(r.copy);if(!source||copy?.productionHistory?.at(-1)?.sourceProjectId!==r.source||copy.productionHistory.at(-1).sourceRevision!==source.revision)return false}return true},receipts),true);
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 });
+
+test('real IndexedDB recovers audio imports and reference files after commit notification loss',{timeout:60000},async()=>{
+ const server=http.createServer((req,res)=>{
+  const script=req.url==='/music-studio.js';
+  res.setHeader('Content-Type',script?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+  res.end(script?fs.readFileSync('music-studio.js'):'<!doctype html><script src="/music-studio.js"></script>');
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_EXECUTABLE||chromium.executablePath()});
+  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port;
+  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+  await page.goto(origin);
+  await page.waitForFunction(()=>MusicStudio.state.loaded);
+  const proof=await page.evaluate(async()=>{
+   const app=MusicStudio,repo=app.indexedDbRepository(),id='binary-notification-loss';
+   let project=app.makeProject({projectId:id,projectName:'Binary save'});
+   app.setRepository(repo);await repo.put(project);app.state.projects=[project];
+   const session=await app.productionSessionSave(id,'start','Binary edits');
+   if(!session.ok)throw Error(session.error);
+   project=await repo.get(id);
+   const sessionId=project.songVersions.sessions.at(-1).id;
+   const write=repo.putLongWav.bind(repo);
+   repo.putLongWav=async(...args)=>{await write(...args);throw Error('notification-lost')};
+   const file=new File([app.pcmEncodeWav({sampleRate:48000,channels:[[0,.25,-.25,0]]})],'test.wav',{type:'audio/wav'});
+   app.pcmOpen(id);
+   const audio=await app.pcmImportLongFile(file,id);
+   const reference=await app.retainReferenceFile(id,'fileReferences',-1,file);
+   if(!audio.ok||!reference.ok)throw Error(JSON.stringify({audio,reference}));
+   return {id,sessionId,audioId:audio.assetId,referenceId:reference.binaryId,bytes:Array.from(new Uint8Array(await file.arrayBuffer()))};
+  });
+  await page.reload();
+  await page.waitForFunction(()=>MusicStudio.state.loaded);
+  const result=await page.evaluate(async proof=>{
+   const repo=MusicStudio.indexedDbRepository(),project=await repo.get(proof.id);
+   const records=await Promise.all([proof.audioId,proof.referenceId].map(id=>repo.getLongWav(id)));
+   return {
+    edits:project.songVersions.edits.map(({sessionId,source,revision})=>({sessionId,source,revision})),
+    assets:[project.longWavAssets.length,project.fileReferences.length],
+    bytes:await Promise.all(records.map(async record=>Array.from(new Uint8Array(await record.blob.arrayBuffer()))))
+   };
+  },proof);
+  assert.deepEqual(result.assets,[1,1]);
+  assert.equal(result.edits.length,2);
+  assert.equal(new Set(result.edits.map(edit=>edit.revision)).size,2);
+  assert.ok(result.edits.every(edit=>edit.sessionId===proof.sessionId&&edit.source==='audio-editor'));
+  assert.deepEqual(result.bytes,[proof.bytes,proof.bytes]);
+ }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
+});
