@@ -340,3 +340,19 @@ test('vocal layers can print a short trimmed region of a take longer than the re
   assert.equal(printed.startSeconds,dry.startSeconds);
   assert.notDeepEqual(Buffer.from(await printed.blob.arrayBuffer()),Buffer.from(await dry.blob.arrayBuffer()));
 });
+
+test('lost commit notifications preserve one replacement and one Mix publication',async()=>{
+ const {a,repo,p,base,candidate}=await replacementSetup(),id=p.projectId;
+ const before=await repo.get(id),write=repo.putLongWav.bind(repo);
+ repo.putLongWav=async(...args)=>{await write(...args);throw Error('notification-lost')};
+ const applied=await a.vocalReplacementApply(id,base.assetId,candidate.assetId,{fadeMs:0});
+ assert.equal(applied.ok,true,applied.error);
+ const mix=await a.vocalPublishForMix(id,applied.assetId);
+ assert.equal(mix.ok,true,mix.error);
+ const saved=await repo.get(id);
+ assert.equal(saved.revision,before.revision+2);
+ assert.equal(saved.longWavAssets.length,before.longWavAssets.length+2);
+ assert.equal(saved.vocalReplacement.entries.length,1);
+ assert.deepEqual(Array.from(saved.songVersions.edits.slice(-2),edit=>edit.source),['vocal-editor','vocal-editor']);
+ for(const assetId of [applied.assetId,mix.assetId])assert.ok((await a.pcmLoadLongWav(id,assetId)).size>44);
+});
