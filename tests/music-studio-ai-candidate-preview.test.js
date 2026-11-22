@@ -134,6 +134,11 @@ test('ensemble replaces two destination tracks in an empty melody section as one
   assert.deepEqual(plain(bundle.result.changes.deleteNoteIds).sort(),['bass-inside','strings-inside']);
   assert.ok(bundle.result.changes.adds.length>2);
   assert.ok(bundle.result.changes.adds.every(n=>n.startTick>=start&&n.startTick+n.durationTicks<=end));
+  const selection={startMeasure:17,endMeasure:18,roles:['bass']};
+  const scoped=bridge.createPreview(session,core,{value},{measureRange:selection});
+  assert.deepEqual(plain(scoped.companion.ensembleDiff.map(row=>row.replacedTrackId)),['bass']);
+  assert.deepEqual(plain(scoped.result.changes.deleteNoteIds),['bass-inside']);
+  assert.ok(scoped.result.changes.adds.every(n=>n.startTick+n.durationTicks<=start+3840));
   assert.deepEqual(plain(session.midiData),before);
   bridge.applyPreview(session,core,bundle);
   assert.equal(session.midiData.tracks.length,before.tracks.length);

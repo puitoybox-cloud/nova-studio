@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.238';
+  const ASSET_VERSION='1.4.239';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -1186,7 +1186,8 @@
       if(!['score-zero','first-note'].includes(origin))throw Error('score-vocal-origin-required');
       const scoreProject=vocalRangeProject(project,recordId,options.generationRange),score=lyricsScoreXML(options.localSinsy?japaneseVocalProject(scoreProject,recordId):scoreProject,recordId);
       // Copy user-selected bytes once; validation, hashing and commit use this same immutable Blob.
-      const {blob,frames,sampleRate,channels,clipped,edit}=await inspectScoreVocal(file,project,recordId,origin,options,guard),waveform=[];
+      const {blob,frames,sampleRate,channels,clipped,edit,silent}=await inspectScoreVocal(file,project,recordId,origin,options,guard),waveform=[];
+      if(options.localSinsy&&silent)throw Error('local-vocal-silent-output');
       waveform.push(...Array(240).fill(0));let position=0;
       for await(const pcm of pcmDecodeWavStream(blob)){guard();for(let i=0;i<pcm.channels[0].length;i++){const bucket=Math.min(239,Math.floor((position+i)*240/frames));for(const c of pcm.channels)waveform[bucket]=Math.max(waveform[bucket],Math.abs(c[i]))}position+=pcm.channels[0].length}
       const hashes=await longWavDigest(blob,guard);guard();const current=await target.get(id);guard();if(JSON.stringify(current)!==baseline)throw Error('score-vocal-storage-conflict');

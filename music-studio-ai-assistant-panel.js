@@ -238,7 +238,21 @@
   function activeCandidateSet(record){return record.state.workspace.candidateSets.find(item=>item.setId===record.state.activeCandidateSetId)||record.state.workspace.candidateSets.at(-1)||null}
   function captureGeneration(id,strict=false){const record=stateFor(project(id));try{const seed=value('#aiGenerationSeed').trim(),register=value('#aiGenerationRegister')||'mid';record.generation=seed===''?null:composition().generationOptions({seed:Number(seed),register});return record.generation}catch(error){record.message=`生成設定拒否: ${error.message}`;if(strict)throw error;return null}}
   function generationControls(project,record,set){const g=record.generation===undefined?set?.candidates?.[0]?.value?.generation:record.generation;return`<details class="music-ai-generation-controls"><summary>Local recipe（端末内の生成設定）</summary><p>規則によるMelody / Continuation候補です。実モデル作曲は別の「AI model」から実行します。Seedが空欄の場合は従来の候補を使います。</p><div class="music-ai-range"><label>Seed（再現番号）<input id="aiGenerationSeed" type="number" min="0" max="999999" step="1" value="${esc(g?.seed??'')}" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}"></label><label>Register（音域）<select id="aiGenerationRegister" onchange="${esc(`MusicStudioAIAssistantPanel.captureGeneration(${JSON.stringify(project.projectId)})`)}">${[['mid','Mid（中央）'],['mid-high','High（高め）'],['low-mid','Low（低め）']].map(([id,title])=>`<option value="${id}" ${id===(g?.register||'mid')?'selected':''}>${title}</option>`).join('')}</select></label></div></details>`}
-  function candidateSelection(candidateId){const rawFrom=value(`#aiFrom${candidateId}`).trim(),rawTo=value(`#aiTo${candidateId}`).trim();if(!rawFrom&&!rawTo){const picker=root.document?.querySelector?.(`#aiParts${candidateId}`);if(!picker?.value||picker.value==='all')return null;const record=states.get(app()?.state?.midiEditor?.projectId),candidate=record&&activeCandidateSet(record)?.candidates.find(c=>c.candidateId===candidateId);if(!candidate?.value?.ensemble)return null;return{startMeasure:candidate.value.range.startMeasure,endMeasure:candidate.value.range.endMeasure,roles:[picker.value]};}const from=Number(rawFrom),to=Number(rawTo);if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)throw Error('invalid-candidate-selection');const picker=root.document?.querySelector?.(`#aiParts${candidateId}`);return{startMeasure:from,endMeasure:to,...(picker?{roles:picker.value==='all'?['piano','bass','strings','drums']:[picker.value]}:{})}}
+  function candidateSelection(candidateId){
+    const rawFrom=value(`#aiFrom${candidateId}`).trim(),rawTo=value(`#aiTo${candidateId}`).trim();
+    const role=value(`#aiParts${candidateId}`),roles=role&&role!=='all'?[role]:null;
+    if(!rawFrom&&!rawTo){
+      if(!roles)return null;
+      const record=states.get(app()?.state?.midiEditor?.projectId);
+      const candidate=record&&activeCandidateSet(record)?.candidates.find(c=>c.candidateId===candidateId);
+      if(!candidate?.value?.ensemble)return null;
+      const {startMeasure,endMeasure}=candidate.value.range;
+      return {startMeasure,endMeasure,roles};
+    }
+    const from=Number(rawFrom),to=Number(rawTo);
+    if(!Number.isInteger(from)||!Number.isInteger(to)||from<1||to<from)throw Error('invalid-candidate-selection');
+    return {startMeasure:from,endMeasure:to,...(roles?{roles}:{})};
+  }
   function candidatePreviewText(bundle){if(!bundle)return'';if(bundle.value?.ensemble)return 'Ensemble Preview（原本変更なし） / '+(bundle.companion?.ensembleDiff||[]).map(d=>`${d.role} → ${d.replacedTrackId||d.trackId}: +${d.notes} / -${d.removed||0}`).join(' / ')+' / Note metrics（音符分布・聴感評価ではありません）: '+(bundle.companion?.performance||[]).map(m=>`${m.role}: ${m.notes} notes / MIDI ${m.pitchMin}–${m.pitchMax}${m.maxVoiceLeap===null?'':` / onset voice leap ≤${m.maxVoiceLeap} semitones`}`).join(' / ');if(bundle.type==='metadata-preview')return'Metadata Preview / 原本変更なし'+(bundle.companion?.timeline?.segments||[]).map(part=>` / Section ${part.label}: M${part.startMeasure}-${part.endMeasure} / tick ${part.startTick}-${part.endTick}`).join('')+composition().lyricsTimelineRows(bundle.companion?.timeline).map(line=>` / ${line}`).join('');const changes=bundle.result?.changes||{updates:[],adds:[],deleteNoteIds:[]};return`MIDI Preview → ${bundle.targetTrackId} / 更新 ${changes.updates.length}・追加 ${changes.adds.length}・削除 ${changes.deleteNoteIds.length} / 原本変更なし${bundle.companion?.instrumentFit?` / Sample fit（音源の音域・強さ）: ${bundle.companion.instrumentFit.changed?'調整あり':'範囲内'}`:''}`}
   function candidateEditHtml(project,candidate){
     let edits;try{edits=materializer().previewEdits(candidate.value.previewEdits)}catch(error){return`<p role="alert">${esc(error.message)}</p>`}
@@ -251,7 +265,7 @@
       if(!candidate||!['melody','chord','continuation'].includes(set.kind))throw Error('midi-candidate-required');
       const read=selector=>{const raw=value(selector).trim();if(!raw)throw Error('candidate-edit-required');return Number(raw)},edits=reset?null:materializer().previewEdits({transpose:read(`#aiTranspose${candidateId}`),velocity:read(`#aiVelocity${candidateId}`),lengthPercent:read(`#aiLength${candidateId}`)});
       const next=clone(candidate);if(reset)delete next.value.previewEdits;else next.value.previewEdits=edits;
-      const session=app().state.midiEditor,selection=candidateSelection(candidateId),bundle=materializer().createPreview(session,core(),next,{project:p});
+      const session=app().state.midiEditor,selection=candidateSelection(candidateId),bundle=materializer().createPreview(session,core(),next,{project:p,measureRange:selection});
       // Reuse adoption preflight to reject stale/locked targets before persisting edits.
       materializer().auditionPlan(session,core(),bundle,selection);
       touch(id);candidate.value=next.value;rememberCandidatePreview(record,session,set,candidate,bundle,selection);record.familyPreview=null;record.familyApplyPlan=null;record.familyApplyPreflight=null;record.message=reset?'候補の調整をリセットしました。':'調整をPreviewしました。Listenで試聴し、Applyで採用できます。';
@@ -862,14 +876,17 @@
     record.candidatePreview=bundle;
     record.candidateApplySource={session,setId:set.setId,midi:JSON.stringify(session.midiData),selection:JSON.stringify(selection),candidate:JSON.stringify(candidate)};
   }
-  function previewCandidate(id,candidateId){app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor,set=activeCandidateSet(record),candidate=set?.candidates.find(item=>item.candidateId===candidateId);try{if(!candidate)throw Error('candidate-required');const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;if(!materializer())throw Error('candidate-preview-unavailable');const context=composition().createContext(p,session,core());const bundle=materializer().createPreview(session,core(),candidate,{project:p,context,measureRange:['section','lyrics-structure','arrangement'].includes(set.kind)?selection:null});rememberCandidatePreview(record,session,set,candidate,bundle,selection);record.message=candidatePreviewText(record.candidatePreview)}catch(error){record.message=`候補Preview拒否: ${error.message}`;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null}refresh(id)}
+  function previewCandidate(id,candidateId){app()?.editorStopCandidateAudition?.();const p=project(id),record=stateFor(p),session=app().state.midiEditor,set=activeCandidateSet(record),candidate=set?.candidates.find(item=>item.candidateId===candidateId);try{if(!candidate)throw Error('candidate-required');const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;if(!materializer())throw Error('candidate-preview-unavailable');const context=composition().createContext(p,session,core());const bundle=materializer().createPreview(session,core(),candidate,{project:p,context,measureRange:candidate.value.ensemble||['section','lyrics-structure','arrangement'].includes(set.kind)?selection:null});rememberCandidatePreview(record,session,set,candidate,bundle,selection);record.message=candidatePreviewText(record.candidatePreview)}catch(error){record.message=`候補Preview拒否: ${error.message}`;record.arrangementReferencePreview=null;record.lyricsMelodyChoices=null;record.lyricsMelodyPreview=null;record.candidatePreview=null}refresh(id)}
   async function auditionCandidate(id,candidateId,source='candidate'){
     const p=project(id),record=stateFor(p),bundle=record.candidatePreview,session=app().state.midiEditor;
     const generation=record.auditionGeneration=(record.auditionGeneration||0)+1;
     const current=()=>states.get(id)===record&&project(id)===p&&app()?.state.midiEditor===session&&record.candidatePreview===bundle&&record.auditionGeneration===generation;
     try{
       if(!bundle||bundle.candidateId!==candidateId)throw Error('candidate-preview-required');
-      const selection=candidateSelection(candidateId);(record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;const plan=materializer().auditionPlan(session,core(),bundle,selection,{source});
+      const selection=candidateSelection(candidateId);
+      if(bundle.value?.ensemble&&record.candidateApplySource?.selection!==JSON.stringify(selection))throw Error('試聴範囲が変わりました。再Previewしてください。');
+      (record.candidateSelections||(record.candidateSelections={}))[candidateId]=selection;
+      const plan=materializer().auditionPlan(session,core(),bundle,selection,{source});
       if(plan.silent){app().editorStopCandidateAudition();record.message=source==='original'?'Original（元MIDI）の選択範囲は無音です。':'この候補の選択範囲は無音です。削除対象を確認してApplyできます。';refresh(id);return;}
       const result=await app().editorAuditionCandidate(plan,session);
       if(!current())return;
