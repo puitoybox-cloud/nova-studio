@@ -278,7 +278,7 @@ test('missing importer result is not reported as successful Track Review',async(
 test('standalone and embedded entries load the audio pipeline bridge',()=>{
   const standalone=fs.readFileSync(path.join(root,'music-studio.html'),'utf8');
   const embedded=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.11/);
+  for(const source of [standalone,embedded])assert.match(source,/music-studio-audio-pipeline\.js\?v=1\.0\.12/);
 });
 
 test('local helper is loopback-only and protects its POST boundary',()=>{
@@ -310,4 +310,28 @@ test('Japanese audio instructions select explicit model actions and refuse ambig
  assert.equal(bridge.parseAudioInstruction('この音声をボーカルと楽器に分けて').kind,'separate');
  assert.equal(bridge.parseAudioInstruction('このピアノ音声をMIDIにして').kind,'transcribe');
  for(const value of ['いい感じにして','Track 2を消して','この曲をMIDIにして','この音声をMIDIにしてから上書き'])assert.equal(bridge.parseAudioInstruction(value),null);
+});
+
+test('explicit transcription mode requires a matching result and valid detection summary',async()=>{
+  const {createHash}=require('node:crypto');
+  const file=new Blob(['piano fixture'],{type:'audio/wav'});
+  const sourceSha256=createHash('sha256').update('piano fixture').digest('hex');
+  const detection={noteCount:2,minimumVelocity:53,maximumVelocity:99};
+  const response={ok:true,pipelineRevision:2,model:'basic-pitch',localOnly:true,stems:[],
+    sourceSha256,transcriptionMode:'polyphonic',detection,midiBase64:'TVRoZA=='};
+  let sentMode;
+  const bridge=loadBridge(window=>{
+    window.fetch=async(_url,request)=>{
+      sentMode=request.headers['X-Nova-Transcription-Mode'];
+      return{ok:true,json:async()=>response};
+    };
+  });
+  const options={mode:'transcribe',transcriptionMode:'monophonic'};
+  await assert.rejects(bridge.processAudioLocally(file,options),/transcription-mode-mismatch/);
+  assert.equal(sentMode,'monophonic');
+  response.transcriptionMode='monophonic';
+  response.detection={...detection,noteCount:0};
+  await assert.rejects(bridge.processAudioLocally(file,options),/invalid-transcription-detection/);
+  response.detection=detection;
+  assert.equal(await bridge.processAudioLocally(file,options),response);
 });

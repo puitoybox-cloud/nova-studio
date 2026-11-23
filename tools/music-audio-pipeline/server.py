@@ -651,11 +651,35 @@ def file_sha256(path):
     return h.hexdigest()
 
 
-def process_transcription(source, work_dir):
+def monophonic_notes(notes):
+    """Keep the strongest detection when Basic Pitch emits overlapping notes."""
+    selected = []
+    for note in sorted(notes, key=lambda item: (item.start, -item.velocity, item.pitch)):
+        if selected and note.start < selected[-1].end:
+            if note.velocity <= selected[-1].velocity:
+                continue
+            selected.pop()
+        selected.append(note)
+    return selected
+
+
+def process_transcription(source, work_dir, mode="polyphonic"):
     if STRICT_BOOTSTRAP:
         raise ValueError('packaged-direct-transcription-receipt-not-supported')
     midi = work_dir / 'transcribed.mid'
-    transcribe_pitched_stem(source, midi)
+    if mode not in ("monophonic", "polyphonic"):
+        raise ValueError("invalid-transcription-mode")
+    from basic_pitch.inference import predict
+
+    _, prediction, _ = predict(str(source))
+    for instrument in prediction.instruments:
+        if mode == "monophonic":
+            instrument.notes = monophonic_notes(instrument.notes)
+    notes = [note for instrument in prediction.instruments for note in instrument.notes]
+    if not notes:
+        raise ValueError("音符を検出できませんでした。")
+    strengths = [note.velocity for note in notes]
+    prediction.write(str(midi))
     raw = midi.read_bytes()
     if len(raw) > 64 * 1024 * 1024:
         raise ValueError('midi-output-budget')
@@ -664,6 +688,9 @@ def process_transcription(source, work_dir):
             'localOnly': True, 'stems': [], 'model': 'basic-pitch',
             'modelVersion': importlib.metadata.version('basic-pitch'),
             'sourceSha256': file_sha256(source), 'confidenceAvailable': False,
+            'transcriptionMode': mode, 'detection': {
+                'noteCount': len(strengths), 'minimumVelocity': min(strengths),
+                'maximumVelocity': max(strengths)},
             'midiFileName': midi.name, 'midiBase64': base64.b64encode(raw).decode('ascii')}
 
 
@@ -711,7 +738,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request, X-Nova-Transcription-Mode")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Cache-Control", "no-store")
 
@@ -802,6 +829,10 @@ class Handler(BaseHTTPRequestHandler):
         if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
             self._json(415, {"ok": False, "message": "対応する音声形式ではありません。"})
             return
+        transcription_mode = self.headers.get("X-Nova-Transcription-Mode", "polyphonic")
+        if self.path == "/transcribe" and transcription_mode not in ("monophonic", "polyphonic"):
+            self._json(400, {"ok": False, "message": "単音または和音を選択してください。"})
+            return
         if not PROCESS_LOCK.acquire(blocking=False):
             self._json(409, {"ok": False, "busy": True, "message": "別の音声を処理中です。完了後に再試行してください。"})
             return
@@ -828,7 +859,7 @@ class Handler(BaseHTTPRequestHandler):
                         timeout=min(300,float(os.environ['NOVA_LIFECYCLE_DEADLINE'])-__import__('time').monotonic()))
                     REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
                 payload = (process_stems(source, work_dir) if self.path == "/process-stems" else
-                           process_transcription(source, work_dir) if self.path == "/transcribe" else
+                           process_transcription(source, work_dir, transcription_mode) if self.path == "/transcribe" else
                            process_audio(source, work_dir))
                 require_runtime_processing()
                 if STRICT_BOOTSTRAP:
