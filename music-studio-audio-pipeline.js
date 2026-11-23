@@ -543,8 +543,9 @@
     status.textContent='';
     if(!file)return;
     status.textContent='元音声を照合しています。';
+    const menu=review.closest('details');
     const check=()=>{
-      if(!input.isConnected||input.files?.[0]!==file)throw Error('transcription-reference-changed');
+      if(!input.isConnected||input.files?.[0]!==file||(menu&&!menu.open))throw Error('transcription-reference-changed');
     };
     try{
       if(!isAudioFile(file)||!file.size||file.size>MAX_AUDIO_BYTES)throw Error('transcription-reference-size');
@@ -554,15 +555,24 @@
         return;
       }
       const url=root.URL.createObjectURL(file);
-      const menu=review.closest('details');
-      const onToggle=()=>{if(!menu.open)releaseTranscriptionReference()};
+      const onToggle=()=>{
+        if(menu.open)return;
+        input.value='';
+        status.textContent='';
+        releaseTranscriptionReference();
+      };
       menu?.addEventListener('toggle',onToggle);
       transcriptionReference={audio,url,menu,onToggle};
       audio.src=url;
       audio.hidden=false;
       status.textContent='元音声を確認しました。';
     }catch(error){
-      if(error.message!=='transcription-reference-changed')status.textContent='元音声を確認できませんでした。';
+      if(error.message!=='transcription-reference-changed'){
+        status.textContent='元音声を確認できませんでした。';
+      }else if(input.files?.[0]===file){
+        input.value='';
+        status.textContent='';
+      }
     }
   }
 

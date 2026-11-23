@@ -72,6 +72,10 @@ async function main(){
       await page.waitForFunction(()=>document.querySelector('#externalTrackReviewPopover audio')?.currentTime>0);
       await review.evaluate(node=>node.closest('details').open=false);
       await page.waitForFunction(()=>!document.querySelector('#externalTrackReviewPopover audio')?.hasAttribute('src'));
+      assert.equal(await reference.inputValue(),'');
+      await review.evaluate(node=>node.closest('details').open=true);
+      await reference.setInputFiles(input);
+      await review.getByText('元音声を確認しました。').waitFor();
       reports.push(saved);
       await page.evaluate(()=>MusicStudio.openMidiEditor('real-audio-source'));
       await page.waitForFunction(()=>MusicStudio.state.midiEditor?.projectId==='real-audio-source');
