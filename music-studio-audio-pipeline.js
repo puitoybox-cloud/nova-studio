@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.10';
+  const VERSION='1.0.11';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -167,7 +167,9 @@
     const controller=stemController,signal=controller.signal,abort=()=>controller.abort();
     options.signal?.addEventListener('abort',abort,{once:true});
     if(options.signal?.aborted)abort();
-    const check=()=>{if(signal.aborted||root.location?.hash!==route||options.reason?.()||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline)throw Error('stem-cancelled-or-source-changed')};
+    const reason=()=>root.location?.hash!==route||options.reason?.()||api.selectedMidiProject?.()?.projectId!==id||JSON.stringify(api.state.projects.find(p=>p.projectId===id))!==baseline
+      ?'stem-cancelled-or-source-changed':null;
+    const check=()=>{if(signal.aborted||reason())throw Error('stem-cancelled-or-source-changed')};
     try{
       check();
       setStatus('Demucsで分離中です。Cancelで結果の受取と採用を中止できます。');
@@ -192,10 +194,10 @@
         entries.push({file:blob,role:stem.name,trackId:'demucs-'+root.crypto.randomUUID()});check();
       }
       if(!root.confirm?.('Vocals / Drums / Bass / Guitar / Piano / Other の6本を生成しました。元音声と一緒に別バージョンへ保存しますか？'))return {ok:false,cancelled:true};
-      check();const result=await api.logicImportStemReturns(entries,id,{signal,separatedAudio:true,model:payload.model,sourceSha256:payload.sourceSha256,sourceFile:file});
-      if(!result.ok)throw Error(result.error);setStatus('6本のStemと元音声を別バージョンへ保存しました。音声編集・Mix画面で確認できます。','success');return result;
+      check();const result=await api.logicImportStemReturns(entries,id,{signal,reason,separatedAudio:true,model:payload.model,sourceSha256:payload.sourceSha256,sourceFile:file});
+      if(!result.ok)throw Error(result.error);if(!result.refreshPending)setStatus('6本のStemと元音声を別バージョンへ保存しました。音声編集・Mix画面で確認できます。','success');return result;
     }catch(error){
-      if(signal.aborted)return {ok:false,cancelled:true};
+      if(signal.aborted){if(!reason())setStatus('音声処理結果の取り込みを中止しました。');return {ok:false,cancelled:true}}
       setStatus(error.message,'error');return {ok:false,error:error.message};
     }finally{options.signal?.removeEventListener('abort',abort);processing=false;stemController=null}
   }
@@ -443,10 +445,11 @@
     const selected=selectionAvailable?api.selectedMidiProject():null;
     const projectSnapshot=JSON.stringify(selected??null),reviewSnapshot=JSON.stringify(api.state?.externalSongImport??null);
     const routeSnapshot=typeof root.location?.hash==='string'?root.location.hash:null;
+    const sourceChanged=()=>routeSnapshot!==null&&root.location?.hash!==routeSnapshot||
+      selectionAvailable&&JSON.stringify(api.selectedMidiProject()??null)!==projectSnapshot;
     const staleContext=()=>{
       if(JSON.stringify(api.state?.externalSongImport??null)!==reviewSnapshot)return true;
-      if(routeSnapshot!==null&&root.location?.hash!==routeSnapshot)return true;
-      return selectionAvailable&&JSON.stringify(api.selectedMidiProject()??null)!==projectSnapshot;
+      return sourceChanged();
     };
     let importerStarted=false;
     processing=true;
@@ -466,14 +469,13 @@
       if(signal?.aborted)throw Error('Abort');
       setStatus(direct?'MIDIへの変換が完了しました。Track Reviewへ取り込みます。':`分離完了：${Array.isArray(payload.stems)?payload.stems.join(' / ')||'Stem':'Stem'}。Music StudioへTrackとして取り込みます。`);
       importerStarted=true;
-      midiController=null;
-      const result=await originalImport(midiFile);
+      const result=await originalImport(midiFile,{signal,reason:()=>sourceChanged()?'audio-import-context-changed':options.reason?.()});
       const {midiBase64:unusedMidiBytes,...pipelineMetadata}=payload;
-      if(result?.ok){
+      if(result?.ok&&!result.refreshPending){
         setStatus('Stem MIDIをTrack Reviewへ取り込みました。','success');
         const {audioPipelineError:previousError,...reviewState}=api.state.externalSongImport||{};
         api.state.externalSongImport={...reviewState,audioPipeline:{sourceFileName:String(file.name||''),midiFileName:midiName,stems:Array.isArray(payload.stems)?payload.stems.slice():[],bpm:payload.bpm??null,localOnly:true,...(direct?{model:payload.model,sourceSha256:payload.sourceSha256,confidenceAvailable:false}:{})}};
-      }else{
+      }else if(!result?.ok&&!result?.cancelled){
         setStatus(String(result?.message||'Stem MIDIのTrack Reviewへの取り込みを確認できませんでした。'),'error');
       }
       return{...(result||{ok:false,message:'MIDI取り込み結果を確認できませんでした。'}),audioPipeline:pipelineMetadata};
