@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.join(__dirname,'..'),plain=value=>JSON.parse(JSON.stringify(value));
-function load(){const values=new Map(),w={crypto:{randomUUID:(()=>{let n=0;return()=>`ai-integration-${++n}`})()},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio'},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder};w.window=w;w.globalThis=w;for(const file of ['music-studio-meter-map.js','music-studio-measure-locks.js','music-studio-editor.js','music-studio-ai-workflow.js','music-studio-ai-composition.js','music-studio-ai-candidate-preview.js','music-studio-ai-family-preview.js','music-studio-ai-family-apply.js','music-studio-ai-assistant-ui.js','music-studio-ai-assistant-panel.js','music-studio.js'])vm.runInNewContext(fs.readFileSync(path.join(root,file),'utf8'),w,{filename:file});return{window:w,app:w.MusicStudio,core:w.MusicStudioEditor,ai:w.MusicStudioAIWorkflow,composition:w.MusicStudioAIComposition,ui:w.MusicStudioAIAssistantUI,panel:w.MusicStudioAIAssistantPanel}}
+function load(){const values=new Map(),w={crypto:{randomUUID:(()=>{let n=0;return()=>`ai-integration-${++n}`})()},localStorage:{getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)},location:{hash:'#music-studio'},addEventListener(){},setTimeout,clearTimeout,Intl,Date,Math,JSON,console,TextEncoder,AbortController};w.window=w;w.globalThis=w;for(const file of ['music-studio-meter-map.js','music-studio-measure-locks.js','music-studio-editor.js','music-studio-ai-workflow.js','music-studio-ai-composition.js','music-studio-ai-candidate-preview.js','music-studio-ai-family-preview.js','music-studio-ai-family-apply.js','music-studio-ai-assistant-ui.js','music-studio-ai-assistant-panel.js','music-studio.js'])vm.runInNewContext(fs.readFileSync(path.join(root,file),'utf8'),w,{filename:file});return{window:w,app:w.MusicStudio,core:w.MusicStudioEditor,ai:w.MusicStudioAIWorkflow,composition:w.MusicStudioAIComposition,ui:w.MusicStudioAIAssistantUI,panel:w.MusicStudioAIAssistantPanel}}
 function make(app,id='ai-project'){return app.makeProject({projectId:id,projectName:'AI Synthetic',midiData:{version:1,ppq:480,tempo:120,timeSignature:{numerator:4,denominator:4},totalTick:3840,editor:{measureCount:2,editRange:{startMeasure:1,endMeasure:2}},tracks:[{id:'melody',part:'melody',name:'Melody',notes:[{id:'n1',pitch:60,startTick:0,durationTicks:480,velocity:90},{id:'n2',pitch:64,startTick:1920,durationTicks:480,velocity:90}]},{id:'drums',part:'drums',notes:[]},{id:'bass',part:'bass',notes:[]}]}})}
 test('old project render creates no stored AI state and no load-time write',async()=>{const{app,core,panel}=load(),repo=app.memoryRepository(),p=make(app);await repo.put(p);app.setRepository(repo);app.state.projects=[p];app.state.midiEditor=core.createSession(p);const before=JSON.stringify(await repo.get(p.projectId));assert.match(panel.render(p,app.state.midiEditor,core),/AI Assistant/);assert.equal(JSON.stringify(await repo.get(p.projectId)),before);assert.equal(Object.hasOwn((await repo.get(p.projectId)),'aiWorkspace'),false)});
 test('AI state save reopen JSON import and Backup Restore preserve exact supported workspace',async()=>{const{app,core,ui,panel}=load(),repo=app.memoryRepository(),p=make(app);await repo.put(p);app.setRepository(repo);app.state.projects=[p];app.state.midiEditor=core.createSession(p);panel.render(p,app.state.midiEditor,core);const record=panel._states.get(p.projectId);ui.createCandidates(record.state,'chord',{section:'A'},[{summary:'A'},{summary:'B'},{summary:'C'}],{adapter:'synthetic-test'});ui.decideCandidate(record.state,'B','adopt',{measures:[1,2]});record.pending=true;const saved=await app.saveMidiEditor({silent:true}),stored=await repo.get(p.projectId);assert.equal(saved.ok,true);assert.equal(stored.revision,2);assert.equal(stored.aiWorkspace.baseRevision,2);assert.equal(stored.aiWorkspace.candidateSets[0].adopted[0].candidateId,'B');const exported=await app.exportProject(p.projectId),backup=app.backupObject(),fresh=load(),jsonRepo=fresh.app.memoryRepository();fresh.app.setRepository(jsonRepo);const imported=await fresh.app.importText(exported.text),jsonProject=await jsonRepo.get(imported.project.projectId);assert.equal(imported.ok,true);assert.deepEqual(plain(jsonProject.aiWorkspace),plain(stored.aiWorkspace));const restoredLoad=load(),restoreRepo=restoredLoad.app.memoryRepository();restoredLoad.app.setRepository(restoreRepo);const restored=await restoredLoad.app.restoreBackup(backup,{settings:false,projects:true});assert.equal(restored.ok,true);assert.deepEqual(plain((await restoreRepo.get(p.projectId)).aiWorkspace),plain(stored.aiWorkspace))});
@@ -354,4 +354,32 @@ test('AI audio approval refuses a changed separation target before starting proc
  assert.deepEqual(plain(await repo.get(p.projectId)),plain(p));
  selected=p;panel.requestEditApproval(p.projectId);await panel.confirmApprovedChange(p.projectId);
  assert.equal(calls,1);
+});
+
+for(const kind of ['separate','transcribe'])test(`AI Assistant can cancel a pending ${kind} request and retry`,async()=>{
+ const{window:w,app,core,panel}=load(),p=make(app),session=core.createCoordinatedSession(p);
+ app.state.projects=[p];app.state.midiEditor=session;app.selectedMidiProject=()=>p;
+ w.document={querySelector:()=>({value:'対象音声を処理する'})};
+ let calls=0,started;
+ const processing=new Promise(resolve=>{started=resolve});
+ const importAudio=async(_file,{signal})=>{
+   if(++calls===2)return {ok:true};
+   await new Promise(resolve=>{signal.addEventListener('abort',resolve,{once:true});started()});
+   return {ok:false,cancelled:true};
+ };
+ w.MusicStudioAudioPipeline={parseAudioInstruction:()=>({kind,model:'local-fixture'}),importSeparatedAudio:importAudio,importAudioFile:importAudio};
+ panel.render(p,session);panel.captureAudioFile(p.projectId,{name:'take.wav'});
+ async function approve(){
+   await panel.previewEdit(p.projectId);
+   panel.requestEditApproval(p.projectId);
+   return panel.confirmApprovedChange(p.projectId);
+ }
+ const pending=approve();
+ await processing;
+ assert.match(panel.render(p,session),/音声処理の取り込みを中止/);
+ panel.cancelAudioPlan(p.projectId);
+ assert.equal((await pending).cancelled,true);
+ assert.match(panel._states.get(p.projectId).message,/中止しました/);
+ assert.equal((await approve()).ok,true);
+ assert.equal(calls,2);
 });

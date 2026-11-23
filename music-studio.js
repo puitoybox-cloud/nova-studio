@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.241';
+  const ASSET_VERSION='1.4.242';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -388,7 +388,7 @@
   async function versionCommit(id,change,options={}){
     if(versionPanel.busy)return{ok:false,error:'checkpoint-busy'};
     const target=repository,p=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(p),token=versionPanel.generation;
-    const guard=()=>{if(options.signal?.aborted||token!==versionPanel.generation||repository!==target||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.stopping||state.midiInput.countingIn||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||finalExport.busy||shutdownPromise)throw Error('checkpoint-unsaved-busy-or-stale')};
+    const guard=()=>{if(options.signal?.aborted||options.reason?.()||token!==versionPanel.generation||repository!==target||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||midiEditorHasPendingChanges()||state.midiInput.recording||state.midiInput.starting||state.midiInput.stopping||state.midiInput.countingIn||vocalBusy()||pcmEditor.busy||archiveTransfer.busy||finalExport.busy||shutdownPromise)throw Error('checkpoint-unsaved-busy-or-stale')};
     guard.registerAbort=a=>{versionPanel.abort=a};guard.clearAbort=()=>{versionPanel.abort=null};
     versionPanel.open=true;versionPanel.busy=true;requestPaint();const cancel=()=>versionPanel.abort?.(Error('checkpoint-cancelled'));options.signal?.addEventListener?.('abort',cancel,{once:true});
     try{
@@ -427,7 +427,7 @@
       },receipt);
       if(JSON.stringify(committed)!==JSON.stringify(next))return{ok:true,committed:true,refreshPending:true,project:committed};
       // The transaction is durable; a replacement view must keep its own state.
-      if(repository!==target||token!==versionPanel.generation||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:next};
+      if(options.signal?.aborted||options.reason?.()||repository!==target||token!==versionPanel.generation||state.dirty||midiEditorHasPendingChanges()||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline)return{ok:true,committed:true,refreshPending:true,project:next};
       state.projects=options.fork?[...state.projects,next]:state.projects.map(p=>p.projectId===id?next:p);if(state.midiEditor?.projectId===id){state.midiEditor=null;cancelScheduledSave()}
       versionPanel.preview=null;finalInvalidate();versionPanel.message='Checkpoint（保存しました。元データと履歴は保持しています）';return{ok:true,project:next};
     }catch(e){versionPanel.message='Checkpoint：'+e.message;return{ok:false,error:e.message}}finally{options.signal?.removeEventListener?.('abort',cancel);versionPanel.busy=false;versionPanel.abort=null;requestPaint()}
@@ -3931,7 +3931,7 @@
   async function logicImportStemReturns(entries,id=selectedMidiProject()?.projectId,options={}){
     const target=repository,source=state.projects.find(p=>p.projectId===id),baseline=JSON.stringify(source),token=pcmEditor.generation;
     let ownsBusy=false;
-    const guard=()=>{if(options.signal?.aborted||repository!==target||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('logic-stems-cancelled-or-source-changed')};
+    const guard=()=>{if(options.signal?.aborted||options.reason?.()||repository!==target||pcmEditor.generation!==token||JSON.stringify(state.projects.find(p=>p.projectId===id))!==baseline||state.dirty||hasUnsavedChanges()||shutdownPromise)throw Error('logic-stems-cancelled-or-source-changed')};
     try{
       if(!source||target.kind!=='indexeddb'||!target.compareAndFork||!target.getLongWav)throw Error('logic-stems-durable-storage-required');
       if(workspaceBusy()||versionPanel.busy)throw Error('logic-stems-production-busy');
@@ -3972,7 +3972,7 @@
         if(generated){next.fileReferences=[...(next.fileReferences||[]),originalReference];next.midiData.tracks.push(...addedTracks);next.audioSeparationHistory=[...(next.audioSeparationHistory||[]),{model:options.model,sourceSha256:options.sourceSha256,createdAt:timestamp,assetIds:assets.map(a=>a.id),originalRetained:true,strictRuntime:false}];}
         next.longWavAssets=[...(next.longWavAssets||[]),...assets];
         next.integrations={...next.integrations,logicPro:[...(next.integrations?.logicPro||[]),...links.map(link=>({...link,importedAt:timestamp}))]};return next;
-      },{fork:true,binaryRecords:records,signal:options.signal});
+      },{fork:true,binaryRecords:records,signal:options.signal,reason:options.reason});
     }catch(error){notice('Stemを取り込めません：'+error.message,'error');return{ok:false,error:error.message}}
     finally{if(ownsBusy)pcmEditor.busy=false;requestPaint()}
   }
@@ -4099,22 +4099,27 @@
     const s=result.summary;
     return`<div class="music-external-import-result is-success" role="status"><b>Import成功：${escapeHtml(s.fileName)}</b><dl><div><dt>MIDI Type（MIDI形式）</dt><dd>${s.midiType}</dd></div><div><dt>Track（トラック）</dt><dd>${s.trackCount}</dd></div><div><dt>playable Track</dt><dd>${s.playableTrackCount}</dd></div><div><dt>note</dt><dd>${s.noteCount}</dd></div><div><dt>BPM</dt><dd>${Math.round(s.initialBpm*1000)/1000}</dd></div><div><dt>拍子</dt><dd>${escapeHtml(s.initialTimeSignature)}</dd></div></dl><p>Trackの割当はまだ行われていません。</p></div>`
   }
-  async function importExternalSongFile(file){
+  async function importExternalSongFile(file,options={}){
     if(!file)return{ok:false,cancelled:true,message:'ファイル選択をキャンセルしました。'};
     if(state.externalSongImporting)return{ok:false,busy:true,message:'外部楽曲を読み込み中です。'};
-    const intake=root.MusicStudioExternalSongImport,target=repository;
+    const intake=root.MusicStudioExternalSongImport,target=repository,route=root.location?.hash;
+    const invalid=()=>options.signal?.aborted||options.reason?.()||root.location?.hash!==route;
+    const guard=()=>{if(invalid())throw Error('external-song-import-cancelled-or-stale')};
     if(!intake){state.externalSongImport={status:'error',message:'External Song Importモジュールを読み込めません。既存projectは変更していません。'};requestPaint();return{ok:false,message:state.externalSongImport.message}}
-    state.externalSongImporting=true;state.externalSongImport={status:'reading',fileName:String(file.name||'')};requestPaint();
+    const previousReview=state.externalSongImport,reading={status:'reading',fileName:String(file.name||'')};
+    state.externalSongImporting=true;state.externalSongImport=reading;requestPaint();
     try{
-      const bytes=await file.arrayBuffer(),timestamp=now(),prepared=intake.prepareMidiImport(bytes,file,{receivedAt:timestamp,importedAt:timestamp}),s=prepared.summary;
+      guard();const bytes=await file.arrayBuffer();guard();
+      const timestamp=now(),prepared=intake.prepareMidiImport(bytes,file,{receivedAt:timestamp,importedAt:timestamp}),s=prepared.summary;
       if(!s.importable)throw Error('このMIDIはprojectへ取り込めません。');
       const name=root.MusicStudioMidiParser.projectNameFromFile(file.name),project=makeProject({projectName:name,songTitle:name,bpm:prepared.midiData.tempo,timeSignature:`${prepared.midiData.timeSignature.numerator}/${prepared.midiData.timeSignature.denominator}`,key:null,midiData:prepared.midiData,importSource:prepared.midiData.importSource},timestamp),validation=validateProject(project);
       if(!validation.valid)throw Error(validation.errors.join(' '));
-      const saved=await publishNewProject(project,'external-song-import',target);if(repository!==target)return{ok:true,committed:true,refreshPending:true,project:saved,prepared};
+      const saved=await publishNewProject(project,'external-song-import',target,{signal:options.signal,guard});if(repository!==target||invalid()){if(state.externalSongImport===reading)state.externalSongImport=previousReview;return{ok:true,committed:true,refreshPending:true,project:saved,prepared}}
       state.projects=[saved,...state.projects.filter(item=>item.projectId!==project.projectId)];setLastProject(project.projectId);state.midiEditor=null;state.externalSongImport={status:'success',summary:clone(s),projectId:project.projectId};
       notice(`${project.projectName}を外部楽曲として取り込みました。Trackは未割当です。`,'success');routeTo(`${MIDI_EDITOR_ROUTE}/${encodeURIComponent(project.projectId)}`);
       return{ok:true,project:saved,prepared}
     }catch(error){
+      if(invalid()||repository!==target){if(state.externalSongImport===reading)state.externalSongImport=previousReview;return{ok:false,cancelled:true}}
       console.warn('Music Studio external song import rejected',error);state.externalSongImport={status:'error',fileName:String(file.name||''),message:`${error.message} 既存projectは変更していません。`};notice('外部楽曲を取り込めませんでした。既存projectは変更していません。','error');return{ok:false,error}
     }finally{state.externalSongImporting=false;requestPaint()}
   }
@@ -4779,12 +4784,18 @@
     if(repository!==target)return{ok:true,committed:true,stale:true,refreshPending:true,project:updated};
     if(state.midiEditor===session)setLastProject(updated.projectId);state.projects=state.projects.map(item=>item.projectId===updated.projectId?updated:item);root.MusicStudioEditor.markSongHarmonySaved?.(session,harmony);root.MusicStudioEditor.markSaved(session,updated.midiData);root.MusicStudioEditor.markProjectSectionsSaved?.(session,sectionSnapshot);root.MusicStudioAIAssistantPanel?.markSaved?.(updated,aiWorkspace);if(!options.silent)notice(session.dirty?'保存中に新しい変更が加わりました。もう一度保存してください。':'MIDI編集をプロジェクトへ保存しました。',session.dirty?'info':'success');return{ok:true,project:updated,stale:session.dirty||root.MusicStudioEditor?.projectSectionsPending?.(session)||root.MusicStudioAIAssistantPanel?.hasPending?.(session.projectId)===true}}catch(error){console.error(error);if(session)session.dirty=true;notice('MIDI編集を保存できませんでした。ノートは画面に保持されています。','error');return{ok:false,error}}}
   // New projects must never overwrite an existing ID, even after a racing write.
-  async function publishNewProject(project,source,target=repository){
-    const guard=()=>{if(repository!==target)throw Error('project-create-repository-changed')};
+  async function publishNewProject(project,source,target=repository,options={}){
+    const guard=()=>{if(repository!==target)throw Error('project-create-repository-changed');options.guard?.()};
+    let abortTransaction;
+    const cancel=()=>abortTransaction?.(Error('project-create-cancelled'));
+    guard.registerAbort=abort=>{abortTransaction=abort};
+    guard.clearAbort=()=>{abortTransaction=null};
     guard();if(typeof target.compareAndPut!=='function')throw Error('atomic-project-create-required');
     project.productionHistory.push({id:uuid(),type:'project-create',source,createdAt:project.createdAt});
     if(!validateProject(project).valid)throw Error('project-create-invalid');
-    return confirmProjectWrite(target,project,()=>target.compareAndPut(project,undefined,guard),project.productionHistory.at(-1));
+    options.signal?.addEventListener('abort',cancel,{once:true});
+    try{return await confirmProjectWrite(target,project,()=>target.compareAndPut(project,undefined,guard),project.productionHistory.at(-1))}
+    finally{options.signal?.removeEventListener('abort',cancel)}
   }
   async function createAIProject(input){const target=repository,timestamp=now(),project=makeProject({...input.projectInput,midiData:input.midiData,projectId:input.projectInput?.projectId||uuid()},timestamp),checked=validateProject(project);if(!checked.valid)throw Error(checked.errors.join(' '));const saved=await publishNewProject(project,'ai-new-song',target);if(repository!==target)return clone(saved);state.projects=[saved,...state.projects.filter(item=>item.projectId!==saved.projectId)];setLastProject(saved.projectId);return clone(saved)}
   const saveMidiEditorWithoutTempoMap=saveMidiEditor;

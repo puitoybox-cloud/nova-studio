@@ -150,15 +150,15 @@ test('Editor render mounts exactly three review rows for the real six-Track comp
 
 test('production entry cache keys select the Review-capable Editor assets',()=>{
   const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8'),host=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8'),standalone=fs.readFileSync(path.join(__dirname,'..','music-studio.html'),'utf8'),studio=fs.readFileSync(path.join(__dirname,'..','music-studio.js'),'utf8'),entries=`${index}\n${host}\n${standalone}`;
-  assert.match(index,/app\.js\?v=1\.5\.105/);
-  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.162/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.28/);assert.match(source,/music-studio\.js\?v=1\.4\.241/)}
+  assert.match(index,/app\.js\?v=1\.5\.106/);
+  for(const source of [host,standalone]){assert.match(source,/music-studio\.css\?v=1\.4\.162/);assert.match(source,/music-studio-editor\.js\?v=1\.4\.28/);assert.match(source,/music-studio\.js\?v=1\.4\.242/)}
   assert.match(host,/MusicStudioEditor\?\.ASSET_VERSION==='1\.4\.28'&&typeof window\.MusicStudioEditor\.externalReviewTracks==='function'/);
-  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.28/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.241/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
+  assert.equal((entries.match(/music-studio-editor\.js\?v=1\.4\.28/g)||[]).length,2);assert.equal((entries.match(/music-studio\.js\?v=1\.4\.242/g)||[]).length,2);assert.doesNotMatch(studio,/music-studio-editor\.js\?v=/);
 });
 
 test('runtime markers expose only module versions and the Review API type',()=>{
-  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.28');assert.equal(app.ASSET_VERSION,'1.4.241');assert.equal(typeof editor.externalReviewTracks,'function');
-  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.28',studio:'1.4.241',reviewApi:'function'});
+  const{app,editor}=loadApp();assert.equal(editor.ASSET_VERSION,'1.4.28');assert.equal(app.ASSET_VERSION,'1.4.242');assert.equal(typeof editor.externalReviewTracks,'function');
+  const marker={editor:editor.ASSET_VERSION,studio:app.ASSET_VERSION,reviewApi:typeof editor.externalReviewTracks};assert.deepEqual(JSON.parse(JSON.stringify(marker)),{editor:'1.4.28',studio:'1.4.242',reviewApi:'function'});
 });
 
 test('All MIDI round trip mounts three external Review rows into the standalone document target',async()=>{
@@ -228,4 +228,27 @@ test('External Track Review CSS remains compact at desktop tablet and phone boun
 
 test('repository change while reading external MIDI cannot redirect publication',async()=>{
  const{app,writer}=loadApp(),first=app.memoryRepository(),second=app.memoryRepository();app.setRepository(first);let release;const file=midiFile('stale.mid',sourceMidi(writer)),read=file.arrayBuffer;file.arrayBuffer=()=>new Promise(resolve=>{release=async()=>resolve(await read.call(file))});const pending=app.importExternalSongFile(file);app.setRepository(second);await release();const result=await pending;assert.equal(result.ok,false);assert.equal((await first.list()).length,0);assert.equal((await second.list()).length,0);
+});
+
+
+test('cancelling during MIDI reading or publication restores the previous review without creating a project',async()=>{
+  for(const stage of ['read','publish']){
+    const{app,writer}=loadApp(),repo=app.memoryRepository(),controller=new AbortController();
+    app.setRepository(repo);
+    const previous={status:'success',projectId:'previous-review'};
+    app.state.externalSongImport=previous;
+    const file=midiFile('audio-result.mid',sourceMidi(writer));
+    if(stage==='read'){
+      const read=file.arrayBuffer;
+      file.arrayBuffer=async()=>{controller.abort();return read()};
+    }else{
+      const save=repo.compareAndPut;
+      repo.compareAndPut=async(...args)=>{controller.abort();return save(...args)};
+    }
+    const result=await app.importExternalSongFile(file,{signal:controller.signal});
+    assert.equal(result.cancelled,true);
+    assert.equal(app.state.externalSongImport,previous);
+    assert.equal(app.state.externalSongImporting,false);
+    assert.equal((await repo.list()).length,0);
+  }
 });
