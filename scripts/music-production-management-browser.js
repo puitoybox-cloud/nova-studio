@@ -7,12 +7,20 @@ const { chromium } = require('playwright');
 async function verify() {
   const profile = await mkdtemp(join(tmpdir(), 'nova-production-browser-'));
   const errors = [];
+  const external = [];
   const url = process.env.MUSIC_STUDIO_URL || 'http://127.0.0.1:8765/music-studio.html';
+  const origin = new URL(url).origin;
   let context;
   async function openProfile() {
     context = await chromium.launchPersistentContext(profile, {
       executablePath: process.env.CHROME_EXECUTABLE,
       args: ['--no-sandbox']
+    });
+    await context.route('**/*', route => {
+      const target = new URL(route.request().url());
+      if (target.origin === origin || ['blob:', 'data:'].includes(target.protocol)) return route.continue();
+      external.push(target.origin);
+      return route.abort();
     });
     const page = context.pages()[0];
     page.on('pageerror', error => errors.push(error.message));
@@ -118,6 +126,10 @@ async function verify() {
       await app.openScoreVocalTake(project.projectId, result.assetId);
       return result.assetId;
     });
+    const sourceHash = await page.evaluate(async assetId => {
+      const wav = await MusicStudio.pcmLoadLongWav('layer-browser', assetId);
+      return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await wav.arrayBuffer())));
+    }, fixture);
     const layers = page.locator('.music-vocal-layers');
     for (const kind of ['harmony', 'double', 'chorus']) {
       const summary = layers.locator('summary');
@@ -139,6 +151,9 @@ async function verify() {
     });
     const published = await layerSnapshot();
     assert.equal(published.assets.length, 4);
+    assert.deepEqual(published.assets[0][1], sourceHash);
+    assert.equal(new Set(published.assets.map(asset => JSON.stringify(asset[1]))).size, 4);
+    assert.deepEqual(published.assets.slice(1).map(asset => asset[2].kind), ['harmony', 'double', 'chorus']);
     assert.equal(new Set(published.edits).size, published.edits.length);
     await context.close();
     page = await openProfile();
@@ -176,13 +191,18 @@ async function verify() {
       const project = result.projects.find(p => p.longWavAssets?.some(a => a.vocalTake?.layerSource));
       return Promise.all(project.longWavAssets.filter(a => a.vocalTake.layerSource).map(async asset => {
         const rendered = await app.vocalRender(project.projectId, asset.id);
-        return [asset.vocalTake.layerSource.kind, rendered.frames, rendered.blob.size, rendered.startSeconds];
+        const wav = await app.pcmLoadLongWav(project.projectId, asset.id);
+        const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await wav.arrayBuffer())));
+        return [asset.vocalTake.layerSource.kind, rendered.frames, rendered.blob.size, rendered.startSeconds, hash];
       }));
     });
     assert.deepEqual(restoredLayers, [
-      ['harmony', 8000, 16044, .5], ['double', 8152, 16348, .5], ['chorus', 8328, 16700, .5]
+      ['harmony', 8000, 16044, .5, published.assets[1][1]],
+      ['double', 8152, 16348, .5, published.assets[2][1]],
+      ['chorus', 8328, 16700, .5, published.assets[3][1]]
     ]);
     assert.deepEqual(errors, []);
+    assert.deepEqual(external, []);
     console.log('Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified');
   } finally {
     try {

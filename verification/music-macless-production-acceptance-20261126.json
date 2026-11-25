@@ -1,0 +1,127 @@
+{
+  "date": "2026-11-26 JST",
+  "baseHead": "141ea9a004c394dc23c67486aa1fe176660e5425",
+  "nodeVersion": "24.22.3",
+  "chromium": "152.0.7977.0",
+  "passed": 8,
+  "failed": 0,
+  "acceptedCases": [
+    "printed vocal layers have distinct PCM, preserve placement and survive archive restore",
+    "vocal layer publication recognizes a lost commit response and reopens one take per render",
+    "vocal layers can print a short trimmed region of a take longer than the render limit",
+    "Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified",
+    "a complete production ZIP embeds a source-specific, read-only audit and never claims rights clearance",
+    "audit fails closed on every missing, duplicate, unexpected, truncated or mismatched delivery artifact",
+    "unreached loudness target is disclosed without treating a peak-limited master as a corrupt file",
+    "export-audit-loudness-mismatch"
+  ],
+  "sourceHashes": {
+    "tests/music-studio-score-vocal-return.test.js": "c38580fbc6e37316d208a9628d551ee0fb43534319a84040c997ca53dcd05117",
+    "scripts/music-production-management-browser.js": "5834741507e2553d6ea813b73681828635ca2079753a7ee6e8b8d9d33b9db0df",
+    "tests/music-studio-final-package-audit.test.js": "66481814254321be91713a177fd09f05344064c53081cf77840798c8a58ba6da",
+    "scripts/music-final-export-browser.js": "7be4a83258d6a473ff50f874fd2b288e363405872d2ec61e4f98ffef9ae8d44b"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "7886a2ac3dff728d3a5d94f20419b40326e097e4b8310dcea8c2203d7011deae",
+    "music-studio.html": "bc99835b451b0a7277f3b46329c57b0bafafa8c3426978d10b40e50ff9cf6c06"
+  },
+  "coverage": {
+    "vocal": [
+      "UI rendering of three recorded-vocal layers",
+      "one save per layer despite lost response",
+      "unchanged source SHA-256 and distinct outputs",
+      "identical IndexedDB after browser restart",
+      "identical WAV SHA-256 from Archive",
+      "corrected trim of a 126-second take"
+    ],
+    "export": [
+      {
+        "width": 1440,
+        "files": [
+          "Master.wav",
+          "Mix.wav",
+          "Instrumental.wav",
+          "Vocal-Stem.wav",
+          "Instrument-1.wav",
+          "Vocal-2.wav",
+          "Song.mid",
+          "Manifest.json"
+        ],
+        "after": {
+          "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; 4x 32-tap Hann-windowed sinc true-peak estimate with reflected-start guard",
+          "frames": 30000,
+          "channels": 2,
+          "sampleRate": 48000,
+          "lufs": -13.999976323588461,
+          "peak": 0.26287841796875,
+          "peakDb": -11.604901350662733,
+          "truePeak": 0.2631493345291057,
+          "truePeakDb": -11.595954478406442,
+          "clippingSamples": 0,
+          "blocks": 3,
+          "gatedBlocks": 3
+        },
+        "archive": true,
+        "reopenIdentical": true
+      },
+      {
+        "width": 820,
+        "files": [
+          "Master.wav",
+          "Mix.wav",
+          "Instrumental.wav",
+          "Vocal-Stem.wav",
+          "Instrument-1.wav",
+          "Vocal-2.wav",
+          "Song.mid",
+          "Manifest.json"
+        ],
+        "after": {
+          "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; 4x 32-tap Hann-windowed sinc true-peak estimate with reflected-start guard",
+          "frames": 30000,
+          "channels": 2,
+          "sampleRate": 48000,
+          "lufs": -13.999976323588461,
+          "peak": 0.26287841796875,
+          "peakDb": -11.604901350662733,
+          "truePeak": 0.2631493345291057,
+          "truePeakDb": -11.595954478406442,
+          "clippingSamples": 0,
+          "blocks": 3,
+          "gatedBlocks": 3
+        },
+        "archive": true,
+        "reopenIdentical": true
+      },
+      {
+        "width": 390,
+        "files": [
+          "Master.wav",
+          "Mix.wav",
+          "Instrumental.wav",
+          "Vocal-Stem.wav",
+          "Instrument-1.wav",
+          "Vocal-2.wav",
+          "Song.mid",
+          "Manifest.json"
+        ],
+        "after": {
+          "method": "ITU-R BS.1770-5 48kHz mono/stereo K-weighting, 400ms/75% overlap, -70/-10 gates; 4x 32-tap Hann-windowed sinc true-peak estimate with reflected-start guard",
+          "frames": 30000,
+          "channels": 2,
+          "sampleRate": 48000,
+          "lufs": -13.999976323588461,
+          "peak": 0.26287841796875,
+          "peakDb": -11.604901350662733,
+          "truePeak": 0.2631493345291057,
+          "truePeakDb": -11.595954478406442,
+          "clippingSamples": 0,
+          "blocks": 3,
+          "gatedBlocks": 3
+        },
+        "archive": true,
+        "reopenIdentical": true
+      }
+    ]
+  }
+}
