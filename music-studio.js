@@ -2732,6 +2732,12 @@
     }
     return frames;
   }
+  async function vocalProcessTrimmedTake(id,assetId,edit,guard){
+    const pcm=await vocalReadPCM(id,assetId,guard,edit);
+    const trimmed={...edit,first:0,end:edit.end-edit.first,regions:edit.regions?.map(region=>
+      ({...region,first:region.first-edit.first,end:region.end-edit.first}))};
+    return vocalProcessPCM(pcm,trimmed);
+  }
   function vocalProcessPCM(pcm,setting){
     const regions=vocalRegions({frames:pcm.channels[0].length},setting.regions||[]);
     const outputFrames=vocalEditedFrames(setting,regions);
@@ -2985,7 +2991,7 @@
     });
     const startSeconds=vocalEditedStart(p,asset,setting);
     if(setting.regions?.length){
-      const pcm=await vocalReadPCM(id,assetId,guard),processed=vocalProcessPCM(pcm,setting),wav=vocalWav(processed.channels,processed.sampleRate);
+      const processed=await vocalProcessTrimmedTake(id,assetId,setting,guard),wav=vocalWav(processed.channels,processed.sampleRate);
       return{blob:wav.blob,frames:wav.frames,setting,startSeconds,project:p};
     }
     const file=await pcmLoadLongWav(id,assetId,guard);
@@ -3218,10 +3224,7 @@
         throw Error('Harmonyの移調は−12〜12の範囲で0以外の整数を指定してください。');
       const layer=vocalLayers[kind],source=project?.longWavAssets?.find(asset=>asset.id===sourceId);
       const settings=vocalHistory(source),edit=settings.edits[settings.cursor];
-      const input=await vocalReadPCM(id,sourceId,guard,edit);
-      const adjusted={...edit,first:0,end:edit.end-edit.first,regions:edit.regions?.map(region=>
-        ({...region,first:region.first-edit.first,end:region.end-edit.first}))};
-      const {channels,sampleRate,frames}=vocalProcessPCM(input,adjusted);
+      const {channels,sampleRate,frames}=await vocalProcessTrimmedTake(id,sourceId,edit,guard);
       const voices=kind==='harmony'?[{semitones:interval,delay:0}]:layer.voices;
       const delays=voices.map(voice=>Math.round(voice.delay*sampleRate));
       const length=frames+Math.max(...delays);
@@ -3240,7 +3243,7 @@
       }
       guard();
       const wav=vocalWav(output,sampleRate),hashes=await longWavDigest(wav.blob,guard);
-      const start=vocalEditedStart(project,input.asset,edit);
+      const start=vocalEditedStart(project,source,edit);
       // Resolve the printed audio's origin against the same tempo map as live takes.
       let low=0,high=100000000;
       while(low<high){
@@ -3250,11 +3253,11 @@
       }
       const nextEdit={first:0,end:wav.frames,gainDb:0,startTick:low,latencyMs:(vocalPosition(project,low)-start)*1000};
       const assetId=uuid(),createdAt=now(),asset={
-        id:assetId,name:`${input.asset.name.replace(/\.wav$/i,'').slice(0,100)}-${layer.label}.wav`,
+        id:assetId,name:`${source.name.replace(/\.wav$/i,'').slice(0,100)}-${layer.label}.wav`,
         size:wav.blob.size,frames:wav.frames,sampleRate,channels:wav.channels,hashes,
         vocalTake:{format:'nova-vocal-take-v1',captureMime:'audio/wav',recordedAt:createdAt,
           waveform:wav.waveform,clippedSamples:wav.clipped,cursor:0,edits:[nextEdit],
-          layerSource:{kind,sourceHashes:clone(input.asset.hashes),edit,voices,createdAt}}
+          layerSource:{kind,sourceHashes:clone(source.hashes),edit,voices,createdAt}}
       };
       const updated=clone(project);
       updated.longWavAssets.push(asset);
@@ -5849,7 +5852,13 @@
     if(!Number.isSafeInteger(manifest.frames)||manifest.frames<=0||manifest.sampleRate!==48000||manifest.channels!==2||manifest.bitDepth!==16||manifest.encoding!=='PCM')errors.push('package-timeline-or-format-invalid');
     const after=manifest.after;
     if(!after||!Number.isFinite(after.lufs)||!Number.isFinite(after.truePeakDb)||!Number.isFinite(plan.ceilingDb)||after.truePeakDb>plan.ceilingDb+.01||after.clippingSamples!==0)errors.push('package-master-meter-invalid');
-    if(!manifest.targetReached)warnings.push('master-loudness-target-not-reached');
+    if(!Number.isFinite(plan.targetLufs)||!Number.isFinite(after?.lufs)){
+      errors.push('package-master-loudness-invalid');
+    }else{
+      const targetReached=Math.abs(after.lufs-plan.targetLufs)<=.1;
+      if(manifest.targetReached!==targetReached)errors.push('package-master-loudness-inconsistent');
+      if(!targetReached)warnings.push('master-loudness-target-not-reached');
+    }
     // A read-only rights check is intentionally unresolved until explicit source- and
     // dependency-level redistribution terms are defined (formal requirement MS21-C01).
     warnings.push('distribution-rights-not-verified');

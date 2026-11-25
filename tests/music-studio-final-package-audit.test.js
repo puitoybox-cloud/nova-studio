@@ -53,6 +53,9 @@ test('audit fails closed on every missing, duplicate, unexpected, truncated or m
   [m=>m.after.truePeakDb=0,/package-master-meter-invalid/],
   [m=>m.after.clippingSamples=1,/package-master-meter-invalid/],
   [m=>m.after.lufs=null,/package-master-meter-invalid/],
+  [m=>delete m.plan.targetLufs,/package-master-loudness-invalid/],
+  [m=>m.after.lufs=m.plan.targetLufs-1,/package-master-loudness-inconsistent/],
+  [m=>m.targetReached=false,/package-master-loudness-inconsistent/],
  ];
  for(const [change,pattern] of changes){
   const manifest=copy(source);change(manifest);
@@ -79,6 +82,7 @@ test('unreached loudness target is disclosed without treating a peak-limited mas
  const {app,plan}=fixture(),result=await app.finalPreview('audit-song',plan);
  assert.equal(result.ok,true,result.error);
  const manifest=copy(result.candidate.manifest);manifest.targetReached=false;
+ manifest.after.lufs=manifest.plan.targetLufs-1;
  const audit=app.finalPackageAudit(manifest);
  assert.equal(audit.packageValid,true);
  assert.ok(audit.warnings.includes('master-loudness-target-not-reached'));

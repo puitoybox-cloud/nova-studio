@@ -333,10 +333,20 @@ test('vocal layers can print a short trimmed region of a take longer than the re
   const file=Object.assign(new Blob([bytes]),{name:'long-source.wav'});
   const take=await a.importScoreVocal(file,id,recordId,'score-zero',{trimStartSeconds:125});
   assert.equal(take.ok,true,take.error);
-  const result=await a.vocalLayerSave(id,take.assetId,'harmony',7);
-  assert.equal(result.ok,true,result.error);
-  const dry=await a.vocalRender(id,take.assetId),printed=await a.vocalRender(id,result.assetId);
-  assert.equal(printed.frames,8000);
-  assert.equal(printed.startSeconds,dry.startSeconds);
-  assert.notDeepEqual(Buffer.from(await printed.blob.arrayBuffer()),Buffer.from(await dry.blob.arrayBuffer()));
+  const asset=a.state.projects.find(project=>project.projectId===id).longWavAssets.find(asset=>asset.id===take.assetId);
+  const setting=asset.vocalTake.edits[asset.vocalTake.cursor];
+  const edited=await a.vocalEdit(id,take.assetId,{...setting,regions:[
+    {first:start+800,end:start+1600,semitones:2,ratio:1.5}
+  ]});
+  assert.equal(edited.ok,true,edited.error);
+  const dry=await a.vocalRender(id,take.assetId);
+  assert.equal(dry.frames,8400);
+  for(const [kind,tail] of [['harmony',0],['double',152],['chorus',328]]){
+    const result=await a.vocalLayerSave(id,take.assetId,kind,7);
+    assert.equal(result.ok,true,result.error);
+    const printed=await a.vocalRender(id,result.assetId);
+    assert.equal(printed.frames,dry.frames+tail);
+    assert.equal(printed.startSeconds,dry.startSeconds);
+    assert.notDeepEqual(Buffer.from(await printed.blob.arrayBuffer()),Buffer.from(await dry.blob.arrayBuffer()));
+  }
 });

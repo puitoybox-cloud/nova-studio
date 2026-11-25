@@ -4,11 +4,11 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率 **51.85%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **74**、残数 **61**、受入確認率 **54.81%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
-優先順：①既存実装2件の全受入証明（true peak参照・修復transaction・編集状態別遷移・保存再開）、②C依存63件の契約・品質・許諾の確定と共通処理。今回の受入根拠はverification/music-macless-acceptance-batch-20261031.md。要件IDは下表の正本を参照。モデル選定が必要なAは、C解消までopenのまま。
+完了優先順とPR #679時点の未完了65項目の残条件は[正式受入の見直し（2026-11-26 JST）](PRODUCTION_ACCEPTANCE_TRIAGE_20261126.md)を参照。
 
 更新手順：production入口と保存/失敗/取消/再開を確認→具体的受入testを実行→source hashと実行結果を証拠JSONに記録→要件ごとにverifiedへ変更→本CLIを実行。テスト数をそのまま機能数に換算しない。
 
@@ -27,14 +27,14 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 4 | 0 | 1 | 0 |
 | 13 | 4 | 4 | 0 | 1 | 0 |
-| 14 | 5 | 1 | 4 | 1 | 1 |
+| 14 | 5 | 4 | 1 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
 | 17 | 4 | 1 | 3 | 1 | 1 |
 | 18 | 5 | 5 | 0 | 1 | 0 |
 | 19 | 4 | 4 | 0 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
-| 21 | 4 | 1 | 3 | 1 | 1 |
+| 21 | 4 | 2 | 2 | 1 | 1 |
 | 22 | 4 | 3 | 1 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
 | 24 | 4 | 4 | 0 | 1 | 0 |
@@ -129,9 +129,9 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 | MS13-A04 | A | 波形歌詞音符同期の保存再開 | verified | [tests/music-studio-vocal-correction-comp.test.js](../../tests/music-studio-vocal-correction-comp.test.js) — `waveform lyric note synchronization survives failed save fresh reopen and full archive restoration` |
 | MS13-B01 | B | 各音声補正の聴感品質 | open | 未確認 |
 | MS14-A01 | A | harmony produces actual diatonic pitches only in selected note range | verified | [tests/music-studio-harmony-mastering.test.js](../../tests/music-studio-harmony-mastering.test.js) — `harmony produces actual diatonic pitches only in selected note range` |
-| MS14-A02 | A | 歌声Harmonyレンダーと保存 | open | MS14-C01 |
-| MS14-A03 | A | Doubleレンダーと保存 | open | MS14-C01 |
-| MS14-A04 | A | Chorusレンダーと保存 | open | MS14-C01 |
+| MS14-A02 | A | 歌声Harmonyレンダーと保存 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `printed vocal layers have distinct PCM, preserve placement and survive archive restore`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layer publication recognizes a lost commit response and reopens one take per render`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layers can print a short trimmed region of a take longer than the render limit`; [scripts/music-production-management-browser.js](../../scripts/music-production-management-browser.js) — `Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified` |
+| MS14-A03 | A | Doubleレンダーと保存 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `printed vocal layers have distinct PCM, preserve placement and survive archive restore`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layer publication recognizes a lost commit response and reopens one take per render`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layers can print a short trimmed region of a take longer than the render limit`; [scripts/music-production-management-browser.js](../../scripts/music-production-management-browser.js) — `Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified` |
+| MS14-A04 | A | Chorusレンダーと保存 | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `printed vocal layers have distinct PCM, preserve placement and survive archive restore`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layer publication recognizes a lost commit response and reopens one take per render`; [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `vocal layers can print a short trimmed region of a take longer than the render limit`; [scripts/music-production-management-browser.js](../../scripts/music-production-management-browser.js) — `Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified` |
 | MS14-A05 | A | 本人声生成の非破壊統合 | open | MS14-C01 |
 | MS14-B01 | B | Harmony・Double・Chorusの聴感品質 | open | 未確認 |
 | MS14-C01 | C | 本人声モデルと同意・ライセンス | open | 未確認 |
@@ -167,7 +167,7 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 | MS20-C01 | C | Logic直接操作とlogicxの公式方式 | open | 未確認 |
 | MS21-A01 | A | final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master | verified | [tests/music-studio-final-export.test.js](../../tests/music-studio-final-export.test.js) — `final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master` |
 | MS21-A02 | A | MasterとInstrumentalとStemとMIDI一括出力の全経路 | open | MS21-C01 |
-| MS21-A03 | A | 配信前の欠落と音量検査 | open | MS21-C01 |
+| MS21-A03 | A | 配信前の欠落と音量検査 | verified | [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `a complete production ZIP embeds a source-specific, read-only audit and never claims rights clearance`; [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `audit fails closed on every missing, duplicate, unexpected, truncated or mismatched delivery artifact`; [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `unreached loudness target is disclosed without treating a peak-limited master as a corrupt file`; [scripts/music-final-export-browser.js](../../scripts/music-final-export-browser.js) — `export-audit-loudness-mismatch` |
 | MS21-A04 | A | 配信前の権利申告漏れ検査 | open | MS21-C01 |
 | MS21-B01 | B | 完成パッケージの実再生 | open | 未確認 |
 | MS21-C01 | C | 音源と依存物の再配布条件 | open | 未確認 |
@@ -237,7 +237,7 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 2 |
-| 仕様判断待ち | 63 | 63 |
+| 仕様判断待ち | 63 | 59 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
 
@@ -290,9 +290,9 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 | MS13-A02 | 実装が必要 | verified |
 | MS13-A03 | 実装済み・検証不足 | verified |
 | MS13-A04 | 実装済み・検証不足 | verified |
-| MS14-A02 | 仕様判断待ち | open |
-| MS14-A03 | 仕様判断待ち | open |
-| MS14-A04 | 仕様判断待ち | open |
+| MS14-A02 | 仕様判断待ち | verified |
+| MS14-A03 | 仕様判断待ち | verified |
+| MS14-A04 | 仕様判断待ち | verified |
 | MS14-A05 | 仕様判断待ち | open |
 | MS15-A02 | 実装が必要 | verified |
 | MS15-A03 | 実装が必要 | verified |
@@ -310,7 +310,7 @@ A：総数 **135**、証拠付き完了 **70**、残数 **65**、受入確認率
 | MS20-A02 | 仕様判断待ち | open |
 | MS20-A03 | 仕様判断待ち | open |
 | MS21-A02 | 仕様判断待ち | open |
-| MS21-A03 | 仕様判断待ち | open |
+| MS21-A03 | 仕様判断待ち | verified |
 | MS21-A04 | 仕様判断待ち | open |
 | MS22-A02 | 実装が必要 | verified |
 | MS22-A03 | 実装済み・検証不足 | verified |

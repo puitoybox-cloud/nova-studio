@@ -42,7 +42,8 @@
       "a6f803694cbc09907a36bd0568eb19d0b8efaf68",
       "0dc6c34fdad125544fc4811e1355d4e2966f1f0a",
       "d88245560bd216197e5b868df8e54529240b4aa2",
-      "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+      "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+      "141ea9a004c394dc23c67486aa1fe176660e5425"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
@@ -1646,8 +1647,29 @@
       "feature": 14,
       "category": "A",
       "requirement": "歌声Harmonyレンダーと保存",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "printed vocal layers have distinct PCM, preserve placement and survive archive restore",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layer publication recognizes a lost commit response and reopens one take per render",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layers can print a short trimmed region of a take longer than the render limit",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-production-management-browser.js",
+          "acceptance": "Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS14-C01"
       ],
@@ -1667,8 +1689,29 @@
       "feature": 14,
       "category": "A",
       "requirement": "Doubleレンダーと保存",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "printed vocal layers have distinct PCM, preserve placement and survive archive restore",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layer publication recognizes a lost commit response and reopens one take per render",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layers can print a short trimmed region of a take longer than the render limit",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-production-management-browser.js",
+          "acceptance": "Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS14-C01"
       ],
@@ -1688,8 +1731,29 @@
       "feature": 14,
       "category": "A",
       "requirement": "Chorusレンダーと保存",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "printed vocal layers have distinct PCM, preserve placement and survive archive restore",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layer publication recognizes a lost commit response and reopens one take per render",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-score-vocal-return.test.js",
+          "acceptance": "vocal layers can print a short trimmed region of a take longer than the render limit",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-production-management-browser.js",
+          "acceptance": "Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS14-C01"
       ],
@@ -2515,8 +2579,29 @@
       "feature": 21,
       "category": "A",
       "requirement": "配信前の欠落と音量検査",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-final-package-audit.test.js",
+          "acceptance": "a complete production ZIP embeds a source-specific, read-only audit and never claims rights clearance",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-final-package-audit.test.js",
+          "acceptance": "audit fails closed on every missing, duplicate, unexpected, truncated or mismatched delivery artifact",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-final-package-audit.test.js",
+          "acceptance": "unreached loudness target is disclosed without treating a peak-limited master as a corrupt file",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-final-export-browser.js",
+          "acceptance": "export-audit-loudness-mismatch",
+          "run": "verification/music-macless-production-acceptance-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS21-C01"
       ],
@@ -3824,6 +3909,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "Fix MIDI start/count-in cancellation before rejected navigation. Four baseline counterexamples; full local Node 2942 pass and Chrome veto fixtures/form retention passed. Preserve open status for all five priority requirements; no new verified requirements. Rebind prior acceptance evidence only after successful current-runtime executions."
+    },
+    {
+      "date": "2026-11-26 JST",
+      "baselinePR": 679,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "74/135 verified. MS14-A02–A04: additive recorded-vocal Harmony/Double/Chorus rendering uses the existing user-approved recording route. Actual Chromium verifies distinct rendered WAVs, source integrity, lost response reconciliation, restart and Archive restore. MS14-A05 and MS14-B01 remain open. MS21-A03: technical pre-distribution package completeness and measured loudness audit verified. Rights declarations (MS21-A04) remain open."
     }
   ]
 }
