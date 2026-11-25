@@ -56,6 +56,19 @@ def main():
  output += ['', '仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。', '', '| ID | 分類 | 現在の状態 |', '|---|---|---|']
  for r in rows:
   if r.get('triage'): output.append(f"| {r['id']} | {r['triage']['classification']} | {r['status']} |")
+ decisions=[r for r in rows if r.get('decision')]
+ if decisions:
+  output += ['', '## 確定した方針', '']
+  for row in decisions:
+   decision=row['decision']
+   source=decision['source']
+   if source.startswith('https://'):
+    source=f"[決定の出典]({source})"
+   output += [f"### {row['id']}（{decision['date']}）", '',
+              f"{decision['policy']} {decision['status']}。{source}", '']
+   output += [f"- {condition}" for condition in decision['conditions']]
+   output += ['', f"残件　{decision['remaining']}", '']
+  output.pop()
  target=ROOT/'docs/music-studio/MACLESS_REQUIREMENTS_V1.md'; result='\n'.join(output)+'\n'
  if args.write: target.write_text(result)
  else: assert target.read_text()==result,'stale ledger markdown; run --write after evidence validation'

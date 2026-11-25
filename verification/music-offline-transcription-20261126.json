@@ -1,0 +1,384 @@
+{
+  "date": "2026-11-26 JST",
+  "baselinePR": 678,
+  "baselineHead": "b3a6d01b0f4e08519d142d6dd845ed7c8830da32",
+  "runtime": {
+    "basicPitch": "0.4.0",
+    "onnxRuntime": "1.32.0",
+    "provider": "CPUExecutionProvider",
+    "telemetryDisabled": true,
+    "egress": "Linux seccomp denied outbound connection and datagram initiation"
+  },
+  "scoring": {
+    "onsetToleranceMs": 75,
+    "pitchToleranceCents": 50,
+    "offsetScored": false
+  },
+  "controlled": [
+    {
+      "instrument": "piano",
+      "mode": "monophonic",
+      "baseline": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "tuned": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "piano",
+      "mode": "polyphonic",
+      "baseline": {
+        "expected": 9,
+        "detected": 17,
+        "precision": 0.5294,
+        "recall": 1.0,
+        "f1": 0.6923
+      },
+      "tuned": {
+        "expected": 9,
+        "detected": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "voice",
+      "mode": "monophonic",
+      "baseline": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "tuned": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "voice",
+      "mode": "polyphonic",
+      "baseline": {
+        "expected": 9,
+        "detected": 14,
+        "precision": 0.6429,
+        "recall": 1.0,
+        "f1": 0.7826
+      },
+      "tuned": {
+        "expected": 9,
+        "detected": 11,
+        "precision": 0.8182,
+        "recall": 1.0,
+        "f1": 0.9
+      }
+    },
+    {
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "baseline": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "tuned": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "baseline": {
+        "expected": 9,
+        "detected": 16,
+        "precision": 0.5625,
+        "recall": 1.0,
+        "f1": 0.72
+      },
+      "tuned": {
+        "expected": 9,
+        "detected": 12,
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.8571
+      }
+    },
+    {
+      "instrument": "bass",
+      "mode": "monophonic",
+      "baseline": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "tuned": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "bass",
+      "mode": "polyphonic",
+      "baseline": {
+        "expected": 9,
+        "detected": 11,
+        "precision": 0.6364,
+        "recall": 0.7778,
+        "f1": 0.7
+      },
+      "tuned": {
+        "expected": 9,
+        "detected": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    }
+  ],
+  "recordings": {
+    "source": "https://zenodo.org/records/3371780",
+    "selection": "GuitarSet v1.1.0, performer 00, first lexically sorted mono-mic accompaniment and solo per BN, Funk, Jazz, Rock and SS; all strings of matching JAMS note_midi annotations, excluding zero-duration events.",
+    "macroF1": {
+      "comp": {
+        "baseline": 0.7238,
+        "tuned": 0.722
+      },
+      "solo": {
+        "baseline": 0.7563,
+        "tuned": 0.8135
+      },
+      "mic": {
+        "baseline": 0.74,
+        "tuned": 0.7678
+      }
+    },
+    "results": [
+      {
+        "file": "00_BN1-129-Eb_comp_mic.wav",
+        "audioSha256": "59e1e3c9bebdabd48afe28050a2c031e6cf36e5697268301cdf2e74bc66b71f1",
+        "referenceSha256": "cd79564c51d0dec7d04e010d31525e9f7d2b9d41cf6116118a66ac5a8c181007",
+        "baseline": {
+          "expected": 133,
+          "detected": 148,
+          "precision": 0.7095,
+          "recall": 0.7895,
+          "f1": 0.7473
+        },
+        "tuned": {
+          "expected": 133,
+          "detected": 128,
+          "precision": 0.7578,
+          "recall": 0.7293,
+          "f1": 0.7433
+        }
+      },
+      {
+        "file": "00_BN1-129-Eb_solo_mic.wav",
+        "audioSha256": "2a6057d0485d8ee2f4a04175ee085d610c0f7a13194e083b13ce803bec091d43",
+        "referenceSha256": "2258ef6f5dc58437f2807dfc0c05416ad8498cd345f95d6563b13d19283e6d54",
+        "baseline": {
+          "expected": 71,
+          "detected": 95,
+          "precision": 0.6526,
+          "recall": 0.8732,
+          "f1": 0.747
+        },
+        "tuned": {
+          "expected": 71,
+          "detected": 91,
+          "precision": 0.6813,
+          "recall": 0.8732,
+          "f1": 0.7654
+        }
+      },
+      {
+        "file": "00_Funk1-114-Ab_comp_mic.wav",
+        "audioSha256": "15eb54c1249e69e75c69d6611bd332c51735199c8ced22a35b87d662a81e5ba9",
+        "referenceSha256": "ab2372abdefff5b3a67b86a42b3f736da3ed0d882ea722426d449b54bed7e75f",
+        "baseline": {
+          "expected": 307,
+          "detected": 240,
+          "precision": 0.8125,
+          "recall": 0.6352,
+          "f1": 0.713
+        },
+        "tuned": {
+          "expected": 307,
+          "detected": 190,
+          "precision": 0.8895,
+          "recall": 0.5505,
+          "f1": 0.6801
+        }
+      },
+      {
+        "file": "00_Funk1-114-Ab_solo_mic.wav",
+        "audioSha256": "a3de6523399ff052aa54479b72a5584f757f7efdff53f7993c66cfe679e831a0",
+        "referenceSha256": "b85df717d2f28522bfdd6ba645c1e1cc446e63c25c8364a27afa4b8fe76322a6",
+        "baseline": {
+          "expected": 58,
+          "detected": 70,
+          "precision": 0.7,
+          "recall": 0.8448,
+          "f1": 0.7656
+        },
+        "tuned": {
+          "expected": 58,
+          "detected": 56,
+          "precision": 0.8571,
+          "recall": 0.8276,
+          "f1": 0.8421
+        }
+      },
+      {
+        "file": "00_Jazz1-130-D_comp_mic.wav",
+        "audioSha256": "b686a47b0a0a58dbdd818d2ebc9c31da87e4bed1af889dd62b1ffd1d1496f827",
+        "referenceSha256": "e91e087cc46802634052365b9ca98463e09bf75adac69db23d0b13154c37bf1d",
+        "baseline": {
+          "expected": 206,
+          "detected": 191,
+          "precision": 0.7958,
+          "recall": 0.7379,
+          "f1": 0.7657
+        },
+        "tuned": {
+          "expected": 206,
+          "detected": 170,
+          "precision": 0.8471,
+          "recall": 0.699,
+          "f1": 0.766
+        }
+      },
+      {
+        "file": "00_Jazz1-130-D_solo_mic.wav",
+        "audioSha256": "275623936a0f6cf7cb959a7e81ff801c6fcc4d3128a939e1ba7ef89b8dbb413d",
+        "referenceSha256": "e7ac222ef17b572e9b4f8b60ad731d6427ce090afa7a4f9eb7b79a6952ca99a5",
+        "baseline": {
+          "expected": 57,
+          "detected": 96,
+          "precision": 0.5833,
+          "recall": 0.9825,
+          "f1": 0.732
+        },
+        "tuned": {
+          "expected": 57,
+          "detected": 76,
+          "precision": 0.7237,
+          "recall": 0.9649,
+          "f1": 0.8271
+        }
+      },
+      {
+        "file": "00_Rock1-130-A_comp_mic.wav",
+        "audioSha256": "deb5aa62bc4ba99e394574a44bbfb95c22c789f8a4c4b4d8d5eccc0aa5e8392d",
+        "referenceSha256": "b33706653eca2bbcb2811ef6095cda5b7593e7af6cdf20d2e57c1d8715043e69",
+        "baseline": {
+          "expected": 403,
+          "detected": 272,
+          "precision": 0.8456,
+          "recall": 0.5707,
+          "f1": 0.6815
+        },
+        "tuned": {
+          "expected": 403,
+          "detected": 238,
+          "precision": 0.8697,
+          "recall": 0.5136,
+          "f1": 0.6459
+        }
+      },
+      {
+        "file": "00_Rock1-130-A_solo_mic.wav",
+        "audioSha256": "f8811017bcb62a3b08db1a27f3745219c0116abb7e80189445280b578bd2d995",
+        "referenceSha256": "cccc1c58abf78cb6668bac907816ee77f5ad14de31106b6de03e033d1e77254d",
+        "baseline": {
+          "expected": 88,
+          "detected": 112,
+          "precision": 0.6696,
+          "recall": 0.8523,
+          "f1": 0.75
+        },
+        "tuned": {
+          "expected": 88,
+          "detected": 94,
+          "precision": 0.7553,
+          "recall": 0.8068,
+          "f1": 0.7802
+        }
+      },
+      {
+        "file": "00_SS1-100-C#_comp_mic.wav",
+        "audioSha256": "4180689b2d372b7588253f3bf6782e904af04feef4d80726160965387d443662",
+        "referenceSha256": "3906180e46ec49867cde81cc6fd798827206cd65afc00754b959770c27c4ac8b",
+        "baseline": {
+          "expected": 204,
+          "detected": 285,
+          "precision": 0.6105,
+          "recall": 0.8529,
+          "f1": 0.7117
+        },
+        "tuned": {
+          "expected": 204,
+          "detected": 227,
+          "precision": 0.7357,
+          "recall": 0.8186,
+          "f1": 0.7749
+        }
+      },
+      {
+        "file": "00_SS1-100-C#_solo_mic.wav",
+        "audioSha256": "41a3bf8c5cacf65a601b1171e5cbc36787170bcae6d0d1d970a31a5d4e231e0d",
+        "referenceSha256": "69c82b69be5d3c176226baf695b56d6f8f30165a3c2cf98c0f48e3cecc19ef84",
+        "baseline": {
+          "expected": 64,
+          "detected": 86,
+          "precision": 0.686,
+          "recall": 0.9219,
+          "f1": 0.7867
+        },
+        "tuned": {
+          "expected": 64,
+          "detected": 72,
+          "precision": 0.8056,
+          "recall": 0.9062,
+          "f1": 0.8529
+        }
+      }
+    ]
+  },
+  "separationLicense": {
+    "status": "htdemucs_6s weight and acquisition-route permission unconfirmed",
+    "upstreamStatement": "https://github.com/facebookresearch/demucs/issues/327#issuecomment-1134828611",
+    "alternative": "https://github.com/deezer/spleeter",
+    "remaining": "Spleeter five-stem output has no standalone guitar. A six-stem replacement still needs exact weight permission, output mapping, and Intel Mac runtime evidence."
+  },
+  "formalAcceptance": {
+    "verified": 70,
+    "total": 135,
+    "increment": 0
+  }
+}

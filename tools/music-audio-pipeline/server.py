@@ -56,6 +56,19 @@ PROCESSING_RECEIPT = None
 PROCESSING_ATTEMPTS = None
 REQUEST_RECEIPTS = threading.local()
 
+def disable_onnx_telemetry():
+    if importlib.util.find_spec('onnxruntime') is not None:
+        import onnxruntime
+        onnxruntime.disable_telemetry_events()
+
+
+def local_basic_pitch_predict():
+    disable_onnx_telemetry()
+    from basic_pitch.inference import predict
+
+    return predict
+
+
 def initialize_runtime():
     global PROCESSING_ATTEMPTS, PROCESSING_RECEIPT, RUNTIME_INVENTORY, BOOTSTRAP_ERROR, _runtime_module, DEMUCS_SESSION, SCOPED_CLOSURE, INVENTORY_AGGREGATOR, OFFLINE_GUARD, RUNTIME_EVIDENCE_MODULE, RUNTIME_EVIDENCE_CONTRACT
     if not STRICT_BOOTSTRAP:
@@ -129,6 +142,7 @@ def initialize_runtime():
             RUNTIME_INVENTORY.resolve_executable(binding['id'],path)
         for binding in RUNTIME_INVENTORY.bindings['models']:
             if binding['runtimeIdentifier'] == 'basic-pitch':
+                disable_onnx_telemetry()
                 from basic_pitch.inference import Model
                 RUNTIME_INVENTORY.load_model(binding['id'], Model)
             elif binding['runtimeIdentifier'] != 'demucs':
@@ -366,7 +380,7 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
 
 
 def transcribe_pitched_stem(stem_path: Path, midi_path: Path) -> None:
-    from basic_pitch.inference import predict
+    predict = local_basic_pitch_predict()
 
     require_runtime_processing()
     if STRICT_BOOTSTRAP:
@@ -708,26 +722,36 @@ TRANSCRIPTION_PROFILES = {
 }
 
 
+# Experimental thresholds measured on instrument-specific chord fixtures.
+# Leave generic and monophonic detection at the model defaults.
+POLYPHONIC_THRESHOLDS = {
+    'piano': (0.55, 0.40),
+    'voice': (0.55, 0.40),
+    'guitar': (0.55, 0.40),
+    'bass': (0.60, 0.40),
+}
+
+
 def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
     if STRICT_BOOTSTRAP:
         raise ValueError('packaged-direct-transcription-receipt-not-supported')
     midi = work_dir / 'transcribed.mid'
     if mode not in ("monophonic", "polyphonic"):
         raise ValueError("invalid-transcription-mode")
-    if importlib.util.find_spec('onnxruntime') is not None:
-        import onnxruntime
-        onnxruntime.disable_telemetry_events()
-    from basic_pitch.inference import predict
-
     if instrument is not None and instrument not in TRANSCRIPTION_PROFILES:
         raise ValueError('invalid-transcription-instrument')
+    predict = local_basic_pitch_predict()
     profile = TRANSCRIPTION_PROFILES.get(instrument)
     if profile:
         from pretty_midi import note_number_to_hz
 
         low, high, program = profile
+        thresholds = {}
+        if mode == "polyphonic":
+            onset, frame = POLYPHONIC_THRESHOLDS[instrument]
+            thresholds = {'onset_threshold': onset, 'frame_threshold': frame}
         _, prediction, _ = predict(str(source), minimum_frequency=note_number_to_hz(low),
-                                   maximum_frequency=note_number_to_hz(high + 1))
+                                   maximum_frequency=note_number_to_hz(high + 1), **thresholds)
     else:
         _, prediction, _ = predict(str(source))
     for track in prediction.instruments:
