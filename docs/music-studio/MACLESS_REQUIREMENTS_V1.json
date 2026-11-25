@@ -1927,7 +1927,19 @@
       "requirement": "分離モデルweightと再配布許諾",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-23 JST",
+        "status": "導入方針確定・許諾未確認",
+        "policy": "音源分離AIは初期配布に同梱せず、初回利用時に明示操作で任意導入する。",
+        "conditions": [
+          "進捗・取消・再試行・オフラインと利用不可の状態を表示し、ハッシュ検証後のローカルキャッシュを削除可能にする。",
+          "許諾確認までは htdemucs_6s の重みを同梱、ミラー配布、製品管理の配布元から自動取得せず、未導入の場合は利用不可と表示する。",
+          "導入・分離の失敗や取消で原曲と既存レビューを維持する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7101755822",
+        "remaining": "対象重みと取得経路の許諾、配布版の導入・削除と実機受入。"
+      }
     },
     {
       "id": "MS17-A01",
@@ -2023,7 +2035,18 @@
       "requirement": "変換モデルの対象楽器と精度基準",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-25 JST",
+        "status": "対象範囲確定・精度基準未確定",
+        "policy": "ピアノ・歌声・ギター・ベースの単音・和音採譜を開発対象とする。",
+        "conditions": [
+          "元音声の試聴とMIDIの手動修正を提供する。",
+          "代表的な正解音符付き素材で精度を測定できる基準を定め、基準を満たすことが確認できるまで各楽器・方式は実験扱いとする。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7148624680",
+        "remaining": "代表素材による定量検証、数値基準の確定、正式受入。"
+      }
     },
     {
       "id": "MS18-A01",

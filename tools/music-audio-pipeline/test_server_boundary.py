@@ -26,6 +26,55 @@ def bind_stem_output(root, bound, evidence):
     return stems, (root/'demucs', receipt)
 
 
+class SeparationModelTests(unittest.TestCase):
+    def test_missing_or_invalid_cache_never_starts_demucs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / server_module.DEMUCS_CHECKPOINT
+            spec = SimpleNamespace(origin=str(root / '__init__.py'))
+            with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                    patch.object(server_module.importlib.util, 'find_spec', return_value=spec), \
+                    patch.object(server_module, 'legacy_demucs_checkpoint', return_value=cache), \
+                    patch.object(server_module.subprocess, 'run') as run:
+                (root / 'missing').mkdir()
+                (root / 'invalid').mkdir()
+                self.assertEqual(server_module.separation_model_status(), 'license-unavailable')
+                with self.assertRaisesRegex(ValueError, '配布・取得許諾'):
+                    server_module.run_demucs(root / 'in.wav', root / 'missing' / 'output')
+                cache.write_bytes(b'wrong-weights')
+                self.assertEqual(server_module.separation_model_status(), 'invalid-cache')
+                with self.assertRaisesRegex(ValueError, 'ハッシュ'):
+                    server_module.run_demucs(root / 'in.wav', root / 'invalid' / 'output')
+                run.assert_not_called()
+
+    def test_valid_checkpoint_runs_with_verified_local_repository(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec = SimpleNamespace(origin=str(root / 'demucs' / '__init__.py'))
+            bag = root / 'demucs' / 'remote' / 'htdemucs_6s.yaml'
+            bag.parent.mkdir(parents=True)
+            bag.write_text('models: [5c90dfd2]')
+            cache = root / server_module.DEMUCS_CHECKPOINT
+            cache.write_bytes(b'fixture-weights')
+            output = root / 'output'
+
+            def demucs(command, **_):
+                local = Path(command[command.index('--repo') + 1])
+                self.assertEqual((local / cache.name).read_bytes(), cache.read_bytes())
+                self.assertEqual((local / bag.name).read_bytes(), bag.read_bytes())
+                output.mkdir()
+                (output / 'vocals.wav').touch()
+
+            with patch.object(server_module, 'STRICT_BOOTSTRAP', False), \
+                    patch.object(server_module.importlib.util, 'find_spec', return_value=spec), \
+                    patch.object(server_module, 'legacy_demucs_checkpoint', return_value=cache), \
+                    patch.object(server_module, 'DEMUCS_CHECKPOINT_SHA256', hashlib.sha256(cache.read_bytes()).hexdigest()), \
+                    patch.object(server_module.subprocess, 'run', side_effect=demucs) as run:
+                self.assertEqual(server_module.separation_model_status(), 'ready')
+                self.assertEqual(server_module.run_demucs(root / 'in.wav', output), output)
+                run.assert_called_once()
+
+
 class FinalWriterBindingTests(unittest.TestCase):
     def test_cleanup_detaches_all_request_state_before_fallible_abort(self):
         fields = ('bound', 'calls', 'stem_output', 'midi_output')

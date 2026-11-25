@@ -1,0 +1,351 @@
+{
+  "date": "2026-11-25 JST",
+  "baselinePR": 677,
+  "baselineHead": "a4ef094e2e3259ed03a00787c7ffb768624d5a40",
+  "formalAcceptance": {
+    "verified": 70,
+    "total": 135,
+    "increment": 0
+  },
+  "transcription": {
+    "runtime": {
+      "basicPitch": "0.4.0",
+      "onnxRuntime": "1.32.0",
+      "provider": "CPUExecutionProvider",
+      "telemetryDisabled": true
+    },
+    "fixtureScript": "scripts/music-transcription-accuracy.py",
+    "fixtures": "Controlled piano and bass sample renders, and synthesized guitar and vowel-like voice. No live performance recordings.",
+    "scoring": {
+      "onsetToleranceMs": 75,
+      "pitchToleranceCents": 50,
+      "offsetScored": false,
+      "formalThresholdApproved": false
+    },
+    "metrics": [
+      {
+        "instrument": "piano",
+        "mode": "monophonic",
+        "generic": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "instrumentProfile": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      },
+      {
+        "instrument": "piano",
+        "mode": "polyphonic",
+        "generic": {
+          "expected": 9,
+          "detected": 17,
+          "precision": 0.5294,
+          "recall": 1.0,
+          "f1": 0.6923
+        },
+        "instrumentProfile": {
+          "expected": 9,
+          "detected": 17,
+          "precision": 0.5294,
+          "recall": 1.0,
+          "f1": 0.6923
+        }
+      },
+      {
+        "instrument": "voice",
+        "mode": "monophonic",
+        "generic": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "instrumentProfile": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      },
+      {
+        "instrument": "voice",
+        "mode": "polyphonic",
+        "generic": {
+          "expected": 9,
+          "detected": 16,
+          "precision": 0.5625,
+          "recall": 1.0,
+          "f1": 0.72
+        },
+        "instrumentProfile": {
+          "expected": 9,
+          "detected": 14,
+          "precision": 0.6429,
+          "recall": 1.0,
+          "f1": 0.7826
+        }
+      },
+      {
+        "instrument": "guitar",
+        "mode": "monophonic",
+        "generic": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "instrumentProfile": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      },
+      {
+        "instrument": "guitar",
+        "mode": "polyphonic",
+        "generic": {
+          "expected": 9,
+          "detected": 19,
+          "precision": 0.4737,
+          "recall": 1.0,
+          "f1": 0.6429
+        },
+        "instrumentProfile": {
+          "expected": 9,
+          "detected": 16,
+          "precision": 0.5625,
+          "recall": 1.0,
+          "f1": 0.72
+        }
+      },
+      {
+        "instrument": "bass",
+        "mode": "monophonic",
+        "generic": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "instrumentProfile": {
+          "expected": 3,
+          "detected": 3,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      },
+      {
+        "instrument": "bass",
+        "mode": "polyphonic",
+        "generic": {
+          "expected": 9,
+          "detected": 11,
+          "precision": 0.6364,
+          "recall": 0.7778,
+          "f1": 0.7
+        },
+        "instrumentProfile": {
+          "expected": 9,
+          "detected": 11,
+          "precision": 0.6364,
+          "recall": 0.7778,
+          "f1": 0.7
+        }
+      }
+    ],
+    "chromium": [
+      {
+        "edited": {
+          "before": 60,
+          "after": 61,
+          "detected": 3
+        },
+        "transcription": [
+          {
+            "mode": "polyphonic",
+            "pitches": [
+              64,
+              48,
+              60,
+              67,
+              72,
+              50,
+              62,
+              65,
+              69,
+              64,
+              48,
+              60,
+              67,
+              72
+            ],
+            "metadata": {
+              "sourceFileName": "nova-677-piano.wav",
+              "sourceSha256": "9a6c94b8a77d19f0d2f68c00204fc16df72d2e2b69c8233f76fb7d56e2f2bada",
+              "model": "basic-pitch",
+              "mode": "polyphonic",
+              "detection": {
+                "noteCount": 14,
+                "minimumVelocity": 41,
+                "maximumVelocity": 97
+              },
+              "instrument": "piano"
+            },
+            "history": [
+              "project-create"
+            ]
+          },
+          {
+            "mode": "monophonic",
+            "pitches": [
+              60,
+              62,
+              60
+            ],
+            "metadata": {
+              "sourceFileName": "nova-677-piano.wav",
+              "sourceSha256": "9a6c94b8a77d19f0d2f68c00204fc16df72d2e2b69c8233f76fb7d56e2f2bada",
+              "model": "basic-pitch",
+              "mode": "monophonic",
+              "detection": {
+                "noteCount": 3,
+                "minimumVelocity": 94,
+                "maximumVelocity": 97
+              },
+              "instrument": "piano"
+            },
+            "history": [
+              "project-create"
+            ]
+          }
+        ],
+        "restart": true
+      },
+      {
+        "matrix": [
+          {
+            "instrument": "piano",
+            "mode": "monophonic",
+            "noteCount": 3
+          },
+          {
+            "instrument": "piano",
+            "mode": "polyphonic",
+            "noteCount": 17
+          },
+          {
+            "instrument": "voice",
+            "mode": "monophonic",
+            "noteCount": 3
+          },
+          {
+            "instrument": "voice",
+            "mode": "polyphonic",
+            "noteCount": 14
+          },
+          {
+            "instrument": "guitar",
+            "mode": "monophonic",
+            "noteCount": 3
+          },
+          {
+            "instrument": "guitar",
+            "mode": "polyphonic",
+            "noteCount": 16
+          },
+          {
+            "instrument": "bass",
+            "mode": "monophonic",
+            "noteCount": 3
+          },
+          {
+            "instrument": "bass",
+            "mode": "polyphonic",
+            "noteCount": 11
+          }
+        ],
+        "restart": true
+      }
+    ],
+    "remaining": "Live performance and offset accuracy, calibrated note confidence, agreed accuracy criteria, packaged Intel runtime."
+  },
+  "separation": {
+    "chromium": [
+      "offline state",
+      "retry against real local helper",
+      "unavailable picker remains disabled"
+    ],
+    "helperChecks": [
+      "missing cache does not start Demucs",
+      "wrong hash does not start Demucs",
+      "matching fixture hash uses a local-only repository"
+    ],
+    "actualDemucsInference": false,
+    "remaining": "Weight/download permission and supported packaged runtime, followed by download progress, cancellation, removable application cache and real-model acceptance."
+  },
+  "otherChromiumRegression": {
+    "script": "scripts/music-final-export-browser.js",
+    "export": [
+      {
+        "width": 1440,
+        "archive": true,
+        "reopenIdentical": true,
+        "downloadVerified": true,
+        "historyReplayIdenticalAudio": true,
+        "lufs": -13.999976,
+        "clippingSamples": 0
+      },
+      {
+        "width": 820,
+        "archive": true,
+        "reopenIdentical": true,
+        "downloadVerified": true,
+        "historyReplayIdenticalAudio": true,
+        "lufs": -13.999976,
+        "clippingSamples": 0
+      },
+      {
+        "width": 390,
+        "archive": true,
+        "reopenIdentical": true,
+        "downloadVerified": true,
+        "historyReplayIdenticalAudio": true,
+        "lufs": -13.999976,
+        "clippingSamples": 0
+      }
+    ],
+    "mixedSources": {
+      "id": "whole-song-mixed-sources",
+      "frames": 74400,
+      "starts": [
+        0,
+        6000,
+        12000,
+        26400
+      ],
+      "hash": "296a659fedf9c129d5eda772d67f1369a13a256c23f84beaf975365e215101b0",
+      "missingInstrumentRejected": true,
+      "lengthCorrection": true,
+      "autoFinishMixed": true,
+      "cancelled": true,
+      "missingAndCorruptRejected": true,
+      "transferCancelledPreviousSessionPreserved": true,
+      "freshSessionRetried": true
+    }
+  }
+}
