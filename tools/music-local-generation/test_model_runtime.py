@@ -18,7 +18,7 @@ class RuntimeTests(unittest.TestCase):
         for name, data in self.files.items(): (self.root / name).write_bytes(data)
         self.manifest = {'files': {name: {'sha256': hashlib.sha256(data).hexdigest()} for name, data in self.files.items()}}
         self.digest = Mock(side_effect=lambda p: hashlib.sha256(p.read_bytes()).hexdigest())
-        self.rt = SimpleNamespace(SessionOptions=SimpleNamespace, InferenceSession=Mock(side_effect=lambda *a, **k: object()))
+        self.rt = SimpleNamespace(SessionOptions=SimpleNamespace, disable_telemetry_events=Mock(), InferenceSession=Mock(side_effect=lambda *a, **k: object()))
         runtime._cached = None
         self.addCleanup(lambda: setattr(runtime, '_cached', None))
 
@@ -27,6 +27,7 @@ class RuntimeTests(unittest.TestCase):
     def test_reuses_only_models_not_request_state(self):
         first, reused = self.load(); self.assertFalse(reused)
         second, reused = self.load(); self.assertTrue(reused); self.assertIs(first, second)
+        self.rt.disable_telemetry_events.assert_called_once_with()
         self.assertEqual(self.rt.InferenceSession.call_count, 2)
         self.assertEqual(self.digest.call_count, 3)
 

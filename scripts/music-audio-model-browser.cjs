@@ -18,8 +18,16 @@ const upload=(file,page)=>page.evaluate(({data,name})=>{window.audioFixture=new 
 
 async function main(){
   let browser;
+  const external = [];
   async function launch(){
-    browser=await chromium.launchPersistentContext(profile,{executablePath:process.env.CHROME_EXECUTABLE,headless:true});
+    browser=await chromium.launchPersistentContext(profile,{executablePath:process.env.CHROME_EXECUTABLE,headless:true,serviceWorkers:'block'});
+    await browser.route('**/*', route => {
+      const url = new URL(route.request().url());
+      if (url.origin === new URL(studio).origin || url.origin === endpoint ||
+          ['data:', 'blob:'].includes(url.protocol)) return route.continue();
+      external.push(url.origin);
+      return route.abort();
+    });
     const page=await browser.newPage();
     await page.goto(studio+'#music-studio');
     await page.waitForFunction(()=>MusicStudio.state.loaded&&MusicStudio.audioStemMidiPipeline);
@@ -164,7 +172,7 @@ async function main(){
       assert.deepEqual(restored,reports);
       console.log(JSON.stringify({matrix:reports.map(({instrument,mode,noteCount})=>({instrument,mode,noteCount})),restart:true}));
     }
-    if(!stemInput)return;
+    if(!stemInput){assert.deepEqual(external, []);return;}
     await page.evaluate(async()=>{
       const app=MusicStudio,repo=app.indexedDbRepository();
       await app.refresh();app.openMidiEditor('real-audio-source');window.repo=repo;
@@ -199,6 +207,7 @@ async function main(){
     assert.equal(stems.names.length,6);
     assert.equal(stems.original,hash(fs.readFileSync(stemInput)));
     assert.equal(stems.sourceUnchanged,true);
+    assert.deepEqual(external, []);
     console.log(JSON.stringify({demucs:stems,failed,cancelled}));
   }finally{
     await browser?.close();

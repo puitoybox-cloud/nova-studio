@@ -32,6 +32,7 @@ def load_runtime(weights, manifest, digest, rt, cancel=None):
                 if digest(weights / name) != expected['sha256']:
                     raise ValueError('model identity mismatch: ' + name)
             config = json.loads((weights / 'config.json').read_text())
+            rt.disable_telemetry_events()
             options = rt.SessionOptions()
             options.intra_op_num_threads = 2
             options.inter_op_num_threads = 1
