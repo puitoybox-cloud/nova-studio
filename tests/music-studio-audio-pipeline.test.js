@@ -309,6 +309,11 @@ test('Japanese audio instructions select explicit model actions and refuse ambig
  const bridge=loadBridge();
  assert.equal(bridge.parseAudioInstruction('この音声をボーカルと楽器に分けて').kind,'separate');
  assert.equal(bridge.parseAudioInstruction('このピアノ音声をMIDIにして').kind,'transcribe');
+ for(const [name,id] of [['ピアノ','piano'],['歌声','voice'],['ギター','guitar'],['ベース','bass']]){
+  assert.equal(bridge.parseAudioInstruction(`この${name}を単音でMIDIにして`).transcriptionInstrument,id);
+  assert.equal(bridge.parseAudioInstruction(`この${name}を単音でMIDIにして`).transcriptionMode,'monophonic');
+  assert.equal(bridge.parseAudioInstruction(`この${name}を和音でMIDIにして`).transcriptionMode,'polyphonic');
+ }
  for(const value of ['いい感じにして','Track 2を消して','この曲をMIDIにして','この音声をMIDIにしてから上書き'])assert.equal(bridge.parseAudioInstruction(value),null);
 });
 

@@ -87,11 +87,11 @@
       if(record.pending||session.dirty)throw Error('未保存の編集を保存してから音声処理を承認してください。');
       if(audio.kind==='separate'&&app().selectedMidiProject?.()?.projectId!==id)throw Error('音声を分離する対象の曲を選び直してください。');
       if(instruction!==audio.instruction||audio.file!==record.audioFile||JSON.stringify(p)!==audio.baseline)throw Error('音声指示を再Previewしてください。');
-      return {kind:'audio',target:`${target} / ${audio.file.name}`,changes:[audio.kind==='separate'?'音声を分離':'音声をMIDIへ変換'],
+      return {kind:'audio',target:`${target} / ${audio.file.name}`,changes:[audio.kind==='separate'?'音声を分離':audio.description||'音声をMIDIへ変換'],
         impact:audio.kind==='separate'
           ?'選択音声全体を分離します。6本のStemと元音声は別バージョンへの保存を確認してから書き込みます。'
           :'選択音声全体をMIDIに変換し、新しいプロジェクトに保存します。',
-        signature:JSON.stringify({project:p,midi:session.midiData,baseline:audio.baseline,instruction})};
+        signature:JSON.stringify({project:p,midi:session.midiData,baseline:audio.baseline,instruction,mode:audio.transcriptionMode,instrument:audio.transcriptionInstrument})};
     }
     const request=activeRequest(record.state),selected=new Set(noteReviewInputs(id).filter(input=>input.checked).map(input=>input.value));
     const updates=request?.proposal?.result?.changes?.updates?.filter(note=>selected.has(note.id))||[];
@@ -705,7 +705,7 @@
       const bridge=root.MusicStudioAudioPipeline;
       const result=plan.kind==='separate'
         ?await bridge.importSeparatedAudio(plan.file,{...controls,expectedProjectId:id})
-        :await bridge.importAudioFile(plan.file,{...controls,mode:'transcribe'});
+        :await bridge.importAudioFile(plan.file,{...controls,mode:'transcribe',transcriptionMode:plan.transcriptionMode,transcriptionInstrument:plan.transcriptionInstrument});
       if(record.audioContext===context)record.message=result.ok?'実処理の結果を確認してください。':result.cancelled?'音声処理結果の取り込みを中止しました。':'音声処理を採用できません：'+(result.message||result.error||'取消');
       return result;
     }finally{

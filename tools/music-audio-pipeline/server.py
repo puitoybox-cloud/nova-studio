@@ -302,6 +302,28 @@ def estimate_bpm(path: Path) -> float:
     return round(bpm, 3)
 
 
+DEMUCS_CHECKPOINT = '5c90dfd2-34c22ccb.th'
+DEMUCS_CHECKPOINT_SHA256 = '34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd'
+
+
+def legacy_demucs_checkpoint():
+    torch_home = Path(os.environ.get('TORCH_HOME') or
+                      Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'torch')
+    return torch_home / 'hub' / 'checkpoints' / DEMUCS_CHECKPOINT
+
+
+def separation_model_status():
+    if STRICT_BOOTSTRAP:
+        return 'packaged-unavailable'
+    if importlib.util.find_spec('demucs') is None:
+        return 'helper-dependency-unavailable'
+    try:
+        return ('ready' if file_sha256(legacy_demucs_checkpoint()) == DEMUCS_CHECKPOINT_SHA256
+                else 'invalid-cache')
+    except OSError:
+        return 'license-unavailable'
+
+
 def run_demucs(source: Path, output_dir: Path) -> Path:
     require_runtime_processing()
     command = [
@@ -321,6 +343,21 @@ def run_demucs(source: Path, output_dir: Path) -> Path:
         REQUEST_RECEIPTS.stem_output = (output_dir.resolve(), child)
         recheck_stem_output()
     else:
+        spec = importlib.util.find_spec('demucs')
+        if spec is None or not spec.origin:
+            raise ValueError('音源分離用のDemucsがローカルHelperにありません。')
+        model_repo = output_dir.parent / 'demucs-local-model'
+        model_repo.mkdir()
+        snapshot = model_repo / DEMUCS_CHECKPOINT
+        try:
+            shutil.copyfile(legacy_demucs_checkpoint(), snapshot)
+        except OSError as error:
+            raise ValueError('音源分離モデルを導入できません。モデル重みの配布・取得許諾を確認中です。') from error
+        if file_sha256(snapshot) != DEMUCS_CHECKPOINT_SHA256:
+            raise ValueError('音源分離モデルのハッシュが一致しません。')
+        shutil.copyfile(Path(spec.origin).parent / 'remote' / 'htdemucs_6s.yaml',
+                        model_repo / 'htdemucs_6s.yaml')
+        command[3:3] = ['--repo', str(model_repo)]
         subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60 * 60)
     candidates = [path.parent for path in output_dir.rglob("vocals.wav")]
     if not candidates:
@@ -663,19 +700,42 @@ def monophonic_notes(notes):
     return selected
 
 
-def process_transcription(source, work_dir, mode="polyphonic"):
+TRANSCRIPTION_PROFILES = {
+    'piano': (21, 108, 0),
+    'voice': (36, 96, 53),
+    'guitar': (40, 88, 24),
+    'bass': (23, 67, 33),
+}
+
+
+def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
     if STRICT_BOOTSTRAP:
         raise ValueError('packaged-direct-transcription-receipt-not-supported')
     midi = work_dir / 'transcribed.mid'
     if mode not in ("monophonic", "polyphonic"):
         raise ValueError("invalid-transcription-mode")
+    if importlib.util.find_spec('onnxruntime') is not None:
+        import onnxruntime
+        onnxruntime.disable_telemetry_events()
     from basic_pitch.inference import predict
 
-    _, prediction, _ = predict(str(source))
-    for instrument in prediction.instruments:
+    if instrument is not None and instrument not in TRANSCRIPTION_PROFILES:
+        raise ValueError('invalid-transcription-instrument')
+    profile = TRANSCRIPTION_PROFILES.get(instrument)
+    if profile:
+        from pretty_midi import note_number_to_hz
+
+        low, high, program = profile
+        _, prediction, _ = predict(str(source), minimum_frequency=note_number_to_hz(low),
+                                   maximum_frequency=note_number_to_hz(high + 1))
+    else:
+        _, prediction, _ = predict(str(source))
+    for track in prediction.instruments:
+        if profile:
+            track.program = program
         if mode == "monophonic":
-            instrument.notes = monophonic_notes(instrument.notes)
-    notes = [note for instrument in prediction.instruments for note in instrument.notes]
+            track.notes = monophonic_notes(track.notes)
+    notes = [note for track in prediction.instruments for note in track.notes]
     if not notes:
         raise ValueError("音符を検出できませんでした。")
     strengths = [note.velocity for note in notes]
@@ -688,7 +748,7 @@ def process_transcription(source, work_dir, mode="polyphonic"):
             'localOnly': True, 'stems': [], 'model': 'basic-pitch',
             'modelVersion': importlib.metadata.version('basic-pitch'),
             'sourceSha256': file_sha256(source), 'confidenceAvailable': False,
-            'transcriptionMode': mode, 'detection': {
+            'transcriptionMode': mode, 'transcriptionInstrument': instrument, 'detection': {
                 'noteCount': len(strengths), 'minimumVelocity': min(strengths),
                 'maximumVelocity': max(strengths)},
             'midiFileName': midi.name, 'midiBase64': base64.b64encode(raw).decode('ascii')}
@@ -738,7 +798,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request, X-Nova-Transcription-Mode")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Nova-Audio-Pipeline, X-Nova-File-Name, X-Nova-Session, X-Nova-Request, X-Nova-Transcription-Mode, X-Nova-Transcription-Instrument")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Cache-Control", "no-store")
 
@@ -758,6 +818,12 @@ class Handler(BaseHTTPRequestHandler):
         self._json(204, {})
 
     def do_GET(self):
+        if self.path == '/separation-model':
+            if self._origin() and self._origin() not in ALLOWED_ORIGINS:
+                self._json(403, {'ok': False})
+                return
+            self._json(200, {'ok': True, 'state': separation_model_status()})
+            return
         if self.path != "/health":
             self._json(404, {"ok": False, "message": "Not found"})
             return
@@ -830,6 +896,10 @@ class Handler(BaseHTTPRequestHandler):
             self._json(415, {"ok": False, "message": "対応する音声形式ではありません。"})
             return
         transcription_mode = self.headers.get("X-Nova-Transcription-Mode", "polyphonic")
+        transcription_instrument = self.headers.get("X-Nova-Transcription-Instrument")
+        if self.path == "/transcribe" and transcription_instrument is not None and transcription_instrument not in TRANSCRIPTION_PROFILES:
+            self._json(400, {"ok": False, "message": "採譜の対象楽器を選択してください。"})
+            return
         if self.path == "/transcribe" and transcription_mode not in ("monophonic", "polyphonic"):
             self._json(400, {"ok": False, "message": "単音または和音を選択してください。"})
             return
@@ -859,7 +929,7 @@ class Handler(BaseHTTPRequestHandler):
                         timeout=min(300,float(os.environ['NOVA_LIFECYCLE_DEADLINE'])-__import__('time').monotonic()))
                     REQUEST_RECEIPTS.calls = RUNTIME_EVIDENCE_MODULE.ProcessingReceipt(RUNTIME_INVENTORY.root, RUNTIME_EVIDENCE_CONTRACT)
                 payload = (process_stems(source, work_dir) if self.path == "/process-stems" else
-                           process_transcription(source, work_dir, transcription_mode) if self.path == "/transcribe" else
+                           process_transcription(source, work_dir, transcription_mode, transcription_instrument) if self.path == "/transcribe" else
                            process_audio(source, work_dir))
                 require_runtime_processing()
                 if STRICT_BOOTSTRAP:
@@ -1027,7 +1097,7 @@ def main():
     print("Nova Music Studio Audio Pipeline")
     print(f"Local endpoint: http://{HOST}:{PORT}")
     print("Audio never leaves this Mac through this helper.")
-    print("First Demucs processing may download its model if it is not already cached.")
+    print("Demucs requires a verified local model; this helper does not download weights.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

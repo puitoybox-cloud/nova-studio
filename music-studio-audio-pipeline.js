@@ -150,9 +150,25 @@
   function parseAudioInstruction(text){
     const value=String(text||'').normalize('NFKC').trim().replace(/[。.!！]$/,'');
     if(/^(この音声|この曲|選択した音声)を(ボーカルと楽器に分けて|6つのStemに分けて|6ステムに分離して)$/.test(value))return {kind:'separate',model:'htdemucs_6s'};
-    if(/^(この音声|このピアノ音声|選択した音声)をMIDIにして$/i.test(value))return {kind:'transcribe',model:'basic-pitch'};
+    const request=/^(この音声|選択した音声|この(ピアノ|歌声|ギター|ベース)(?:音声)?)を(?:(単音|和音)で)?MIDIにして$/i.exec(value);
+    if(request){
+      const [, ,instrumentLabel,modeLabel]=request;
+      const instrument=Object.keys(TRANSCRIPTION_INSTRUMENTS).find(key=>TRANSCRIPTION_INSTRUMENTS[key]===instrumentLabel);
+      return {kind:'transcribe',model:'basic-pitch',
+        transcriptionMode:modeLabel==='単音'?'monophonic':'polyphonic',
+        ...(instrument?{transcriptionInstrument:instrument}:{}),
+        description:`${instrumentLabel||'音声'}を${modeLabel||'和音'}でMIDIに変換`};
+    }
     return null;
   }
+  const TRANSCRIPTION_INSTRUMENTS={piano:'ピアノ',voice:'歌声',guitar:'ギター',bass:'ベース'};
+  const SEPARATION_MODEL_STATUS={
+    ready:'検証済みのローカルモデルを使用できます。',
+    'license-unavailable':'音源分離モデルの取得・配布許諾を確認中のため、初回導入は現在利用できません。',
+    'invalid-cache':'ローカルモデルのハッシュが一致しません。',
+    'helper-dependency-unavailable':'ローカルAudio HelperにDemucsがありません。',
+    'packaged-unavailable':'この配布版では音源分離モデルを利用できません。'
+  };
   let stemController=null, midiController=null;
   async function importSeparatedAudio(file,options={}){
     const api=root.MusicStudio,project=api?.selectedMidiProject?.();
@@ -223,15 +239,45 @@
       section.appendChild(help);
       const label=root.document.createElement('label');label.textContent='Separate WAV（6 Stemを音声で保存）';
       const picker=root.document.createElement('input');picker.type='file';picker.accept=AUDIO_ACCEPT;picker.setAttribute('aria-label','分離する音声');picker.onchange=()=>{const file=picker.files?.[0];picker.value='';if(file)importSeparatedAudio(file)};label.appendChild(picker);section.appendChild(label);
+      picker.disabled=true;
+      const modelStatus=root.document.createElement('p');
+      modelStatus.setAttribute('role','status');
+      modelStatus.textContent='初回利用時に音源分離モデルの導入状況を確認してください。';
+      const checkModel=root.document.createElement('button');
+      checkModel.type='button';checkModel.textContent='音源分離モデルの導入状況を確認';
+      checkModel.onclick=async()=>{
+        const controller=new AbortController();
+        const timer=root.setTimeout(()=>controller.abort(),5000);
+        checkModel.disabled=true;picker.disabled=true;modelStatus.textContent='ローカルモデルを確認中…';
+        try{
+          const response=await root.fetch(`${ENDPOINT}/separation-model`,{signal:controller.signal});
+          if(!response.ok)throw Error('model-status-unavailable');
+          const result=await response.json();
+          modelStatus.textContent=Object.hasOwn(SEPARATION_MODEL_STATUS,result.state)
+            ?SEPARATION_MODEL_STATUS[result.state]:'音源分離モデルの状態を取得できません。';
+          picker.disabled=result.state!=='ready';
+        }catch(_){
+          modelStatus.textContent='Audio Helperに接続できません。起動後にもう一度確認してください。';
+        }finally{
+          root.clearTimeout(timer);checkModel.disabled=false;
+        }
+      };
+      section.append(checkModel,modelStatus);
       const cancel=root.document.createElement('button');cancel.type='button';cancel.textContent='Cancel audio processing（結果の取り込みを中止）';cancel.onclick=()=>{cancelSeparatedAudio();cancelAudioImport()};section.appendChild(cancel);
-      const modeLabel=root.document.createElement('label');modeLabel.textContent='ピアノの変換方式';
-      const mode=root.document.createElement('select');mode.setAttribute('aria-label','ピアノの変換方式');
+      const instrumentLabel=root.document.createElement('label');instrumentLabel.textContent='採譜する楽器';
+      const instrument=root.document.createElement('select');instrument.setAttribute('aria-label','採譜する楽器');
+      for(const [value,text] of Object.entries(TRANSCRIPTION_INSTRUMENTS)){
+        const option=root.document.createElement('option');option.value=value;option.textContent=text;instrument.appendChild(option);
+      }
+      instrumentLabel.appendChild(instrument);section.appendChild(instrumentLabel);
+      const modeLabel=root.document.createElement('label');modeLabel.textContent='採譜の変換方式';
+      const mode=root.document.createElement('select');mode.setAttribute('aria-label','採譜の変換方式');
       for(const [value,text] of [['polyphonic','和音を保持'],['monophonic','単音に整理']]){
         const option=root.document.createElement('option');option.value=value;option.textContent=text;mode.appendChild(option);
       }
       modeLabel.appendChild(mode);section.appendChild(modeLabel);
-      const directLabel=root.document.createElement('label');directLabel.textContent='Audio to MIDI（Basic Pitchで直接変換）';
-      const direct=root.document.createElement('input');direct.type='file';direct.accept=AUDIO_ACCEPT;direct.setAttribute('aria-label','MIDIに変換する音声');direct.onchange=()=>{const file=direct.files?.[0];direct.value='';if(file&&root.confirm?.('Basic Pitchで音声をMIDI候補へ変換します。Track Reviewで確認・採用してください。和音・複数楽器では誤検出が増える場合があります。'))importAudioFile(file,{mode:'transcribe',transcriptionMode:mode.value})};directLabel.appendChild(direct);section.appendChild(directLabel);
+      const directLabel=root.document.createElement('label');directLabel.textContent='Audio to MIDI（Basic Pitch・実験版）';
+      const direct=root.document.createElement('input');direct.type='file';direct.accept=AUDIO_ACCEPT;direct.setAttribute('aria-label','MIDIに変換する音声');direct.onchange=()=>{const file=direct.files?.[0];direct.value='';if(file&&root.confirm?.('Basic Pitchで音声をMIDI候補へ変換します。Track Reviewで確認・採用してください。和音・複数楽器では誤検出が増える場合があります。'))importAudioFile(file,{mode:'transcribe',transcriptionMode:mode.value,transcriptionInstrument:instrument.value})};directLabel.appendChild(direct);section.appendChild(directLabel);
     }
     return true;
   }
@@ -410,6 +456,8 @@
     if(localSession)upload=consumeBrowserArtifact(file,artifact,artifactContext);
     const transcriptionMode=options.mode==='transcribe'?options.transcriptionMode:null;
     if(transcriptionMode&&!['monophonic','polyphonic'].includes(transcriptionMode))throw Error('invalid-transcription-mode');
+    const transcriptionInstrument=options.mode==='transcribe'?options.transcriptionInstrument:null;
+    if(transcriptionInstrument&&!Object.hasOwn(TRANSCRIPTION_INSTRUMENTS,transcriptionInstrument))throw Error('invalid-transcription-instrument');
     let response;
     try{response=await root.fetch(`${ENDPOINT}/${options.mode==='transcribe'?'transcribe':'process'}`,{
       method:'POST',
@@ -419,6 +467,7 @@
         'X-Nova-Audio-Pipeline':'1',
         'X-Nova-File-Name':encodeURIComponent(String(file.name||'audio-input')),
         ...(transcriptionMode?{'X-Nova-Transcription-Mode':transcriptionMode}:{}),
+        ...(transcriptionInstrument?{'X-Nova-Transcription-Instrument':transcriptionInstrument}:{}),
         ...(localSession?{'X-Nova-Session':localSession,'X-Nova-Request':request,'X-Nova-Authorization':authorization.ticket}:{})
       },
       body:upload
@@ -437,6 +486,7 @@
     if(localSession){const accepted=await root.__NOVA_OWNED_PROCESSING.accept({midiBase64:payload.midiBase64});check();if(accepted?.accepted!==true)throw Error('owned-output-not-accepted')}
     if(options.mode==='transcribe'){
       if(payload.model!=='basic-pitch'||payload.localOnly!==true||!Array.isArray(payload.stems)||payload.stems.length)throw Error('invalid-direct-transcription-result');
+      if(transcriptionInstrument&&payload.transcriptionInstrument!==transcriptionInstrument)throw Error('transcription-instrument-mismatch');
       if(transcriptionMode&&payload.transcriptionMode!==transcriptionMode)throw Error('transcription-mode-mismatch');
       if(payload.transcriptionMode!==undefined){
         const d=payload.detection;
@@ -480,7 +530,7 @@
     const direct=options.mode==='transcribe';
     setStatus(direct?'Basic Pitchで直接MIDIへ変換しています。':'ローカルAudio HelperでStem分離とMIDI変換を実行しています。');
     try{
-      const payload=await processAudioLocally(file,{...options,signal,reason:()=>staleContext()?'audio-import-context-changed':options.reason?.()}),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(direct&&payload.transcriptionMode?`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_${payload.transcriptionMode}.mid`:payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
+      const payload=await processAudioLocally(file,{...options,signal,reason:()=>staleContext()?'audio-import-context-changed':options.reason?.()}),bytes=decodeBase64(payload.midiBase64),midiName=safeMidiName(direct&&payload.transcriptionMode?`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_${options.transcriptionInstrument?options.transcriptionInstrument+'_':''}${payload.transcriptionMode}.mid`:payload.midiFileName||`${String(file.name||'audio').replace(/\.[^.]+$/,'')}_stems.mid`);
       assertMidiHeader(bytes);
       const midiFile=makeMidiFile(bytes,midiName);
       if(staleContext()||options.reason?.())throw Error('audio-import-context-changed');
@@ -489,7 +539,8 @@
       importerStarted=true;
       const transcription=direct&&payload.transcriptionMode?{
         sourceFileName:String(file.name||''),sourceSha256:payload.sourceSha256,model:payload.model,
-        mode:payload.transcriptionMode,detection:payload.detection
+        mode:payload.transcriptionMode,detection:payload.detection,
+        ...(options.transcriptionInstrument?{instrument:options.transcriptionInstrument}:{})
       }:null;
       const result=await originalImport(midiFile,{signal,transcription,reason:()=>sourceChanged()?'audio-import-context-changed':options.reason?.()});
       const {midiBase64:unusedMidiBytes,...pipelineMetadata}=payload;

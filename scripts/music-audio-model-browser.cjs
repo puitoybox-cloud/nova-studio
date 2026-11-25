@@ -9,6 +9,7 @@ const crypto=require('node:crypto');
 const input=process.argv[2];
 if(!input)throw Error('Usage: node scripts/music-audio-model-browser.cjs <piano.wav> [stem-input.wav]');
 const stemInput=process.argv[3];
+const transcriptionFixtures=process.env.NOVA_TRANSCRIPTION_FIXTURES;
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'nova-real-audio-'));
 const endpoint='http://127.0.0.1:8766';
 const studio='http://127.0.0.1:8765/music-studio.html';
@@ -35,9 +36,24 @@ async function main(){
       app.setRepository(repo);await repo.put(source);await app.refresh();app.openMidiEditor(source.projectId);
       window.original=JSON.stringify(await repo.get(source.projectId));
     });
+    await page.locator('.music-editor-transfer').evaluate(node=>node.closest('details').open=true);
+    if(!stemInput){
+      const statusButton=page.getByRole('button',{name:'音源分離モデルの導入状況を確認'});
+      await page.route(endpoint+'/separation-model',route=>route.abort(),{times:1});
+      await statusButton.click();
+      await page.getByText('Audio Helperに接続できません。起動後にもう一度確認してください。').waitFor();
+      assert.equal(await page.getByLabel('分離する音声').isDisabled(),true);
+      const health=page.waitForResponse(r=>r.url()===endpoint+'/separation-model'&&r.ok());
+      await statusButton.click();
+      const status=(await (await health).json()).state;
+      assert.ok(['license-unavailable','helper-dependency-unavailable','invalid-cache','ready'].includes(status));
+      await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(button=>
+        button.textContent==='音源分離モデルの導入状況を確認'&&!button.disabled));
+      assert.equal(await page.getByLabel('分離する音声').isDisabled(),status!=='ready');
+    }
     const reports=[];
     for(const mode of ['polyphonic','monophonic']){
-      const selector=page.getByLabel('ピアノの変換方式');
+      const selector=page.getByLabel('採譜の変換方式');
       await page.locator('.music-editor-transfer').evaluate(node=>node.closest('details').open=true);
       await selector.selectOption(mode);
       const response=page.waitForResponse(r=>r.url()===endpoint+'/transcribe'&&r.request().method()==='POST',{timeout:180000});
@@ -53,6 +69,7 @@ async function main(){
           history:p.productionHistory.map(e=>e.type),
           originalUnchanged:JSON.stringify(await repo.get('real-audio-source'))===window.original};
       },mode);
+      assert.equal(saved.metadata.instrument,'piano');
       assert.equal(saved.notes.length,saved.metadata.detection.noteCount);
       assert.equal(saved.metadata.sourceSha256,hash(fs.readFileSync(input)));
       assert.equal(saved.originalUnchanged,true);
@@ -110,6 +127,43 @@ async function main(){
     assert.equal(edited.after,edited.before+1);
     assert.equal(edited.detected,reports[1].notes.length);
     console.log(JSON.stringify({edited,transcription:reports.map(r=>({mode:r.metadata.mode,pitches:r.notes.map(n=>n.pitch),metadata:r.metadata,history:r.history})),restart:true}));
+    if(transcriptionFixtures){
+      const reports=[];
+      for(const instrument of ['piano','voice','guitar','bass']){
+        for(const mode of ['monophonic','polyphonic']){
+          await page.evaluate(()=>MusicStudio.openMidiEditor('real-audio-source'));
+          await page.locator('.music-editor-transfer').evaluate(node=>node.closest('details').open=true);
+          await page.getByLabel('採譜する楽器').selectOption(instrument);
+          await page.getByLabel('採譜の変換方式').selectOption(mode);
+          const file=path.join(transcriptionFixtures,`${instrument}-${mode}.wav`);
+          const digest=hash(fs.readFileSync(file));
+          const response=page.waitForResponse(r=>r.url()===endpoint+'/transcribe'&&r.request().method()==='POST',{timeout:180000});
+          await page.getByLabel('MIDIに変換する音声').setInputFiles(file);
+          const actual=await response;
+          assert.equal(actual.status(),200);
+          await page.waitForFunction(hash=>MusicStudio.state.projects.some(p=>p.importSource?.transcription?.sourceSha256===hash),digest);
+          const saved=await page.evaluate(async digest=>{
+            const p=(await MusicStudio.indexedDbRepository().list()).find(p=>p.importSource?.transcription?.sourceSha256===digest);
+            return {id:p.projectId,metadata:p.importSource.transcription,notes:p.midiData.tracks.flatMap(t=>t.notes)};
+          },digest);
+          assert.equal(saved.metadata.instrument,instrument);
+          assert.equal(saved.metadata.mode,mode);
+          assert.equal(saved.notes.length,saved.metadata.detection.noteCount);
+          if(mode==='monophonic')assert.equal(overlaps(saved.notes.sort((a,b)=>a.startTick-b.startTick)),false);
+          reports.push({id:saved.id,instrument,mode,noteCount:saved.notes.length});
+        }
+      }
+      await browser.close();page=await launch();
+      const restored=await page.evaluate(async ids=>{
+        const repo=MusicStudio.indexedDbRepository();
+        return Promise.all(ids.map(async id=>{
+          const {instrument,mode,detection}= (await repo.get(id)).importSource.transcription;
+          return {id,instrument,mode,noteCount:detection.noteCount};
+        }));
+      },reports.map(report=>report.id));
+      assert.deepEqual(restored,reports);
+      console.log(JSON.stringify({matrix:reports.map(({instrument,mode,noteCount})=>({instrument,mode,noteCount})),restart:true}));
+    }
     if(!stemInput)return;
     await page.evaluate(async()=>{
       const app=MusicStudio,repo=app.indexedDbRepository();
