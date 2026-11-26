@@ -31,7 +31,13 @@ async function verify() {
   }
   try {
     let page = await openProfile();
-    await page.evaluate(() => MusicStudio.goSettings());
+    await page.evaluate(async () => {
+      const app=MusicStudio,repo=app.indexedDbRepository();
+      const project=app.makeProject({projectId:'layer-browser',projectName:'Vocal layers'});
+      await repo.put(project);
+      await app.refresh();
+      app.goSettings();
+    });
     let voice = page.locator('#ms-setting-managed-voices');
     const billing = page.locator('#ms-setting-managed-billing');
     await voice.getByLabel('モデル名').fill('本人声テスト');
@@ -39,6 +45,7 @@ async function verify() {
     await voice.getByRole('button', {name: 'モデルを登録'}).click();
     const model = voice.locator('details').first();
     await model.locator('summary').click();
+    await model.getByLabel('同意対象の作品').selectOption('layer-browser');
     await model.getByLabel('同意の証跡').fill('consent-fixture-01');
     await model.getByLabel('生成', {exact: true}).check();
     await model.getByLabel('本人の明示同意と上記の許諾範囲を確認した').check();
@@ -47,9 +54,13 @@ async function verify() {
     const oldSettings = await page.evaluate(() => JSON.stringify(MusicStudio.state.settings));
     const permission = () => page.evaluate(() => {
       const id = MusicStudio.state.settings.productionManagement.models[0].id;
-      return ['train', 'generate'].map(scope => MusicStudio.managedVoicePermission(id, scope));
+      return ['train', 'generate'].map(scope => MusicStudio.managedVoicePermission(id, scope, MusicStudio.state.settings, 'layer-browser'));
     });
     assert.deepEqual(await permission(), [false, true]);
+    assert.equal(await page.evaluate(() => {
+      const app=MusicStudio,model=app.state.settings.productionManagement.models[0];
+      return app.managedVoicePermission(model.id,'generate',app.state.settings,'other-project');
+    }),false);
     if (!(await model.locator('summary').evaluate(el => el.parentElement.open))) await model.locator('summary').click();
     await model.getByRole('button', {name: '同意を撤回'}).click();
     await page.waitForFunction(() => MusicStudio.state.settings.productionManagement.revocations.length === 1);
@@ -169,6 +180,7 @@ async function verify() {
       if (!(await summary.evaluate(el => el.parentElement.open))) await summary.click();
     };
     await openAnalysis();
+    await analysisModel.getByLabel('同意対象の作品').selectOption('layer-browser');
     await analysisModel.getByLabel('同意の証跡').fill('recording-analysis-consent');
     await analysisModel.getByLabel('学習', {exact: true}).check();
     await analysisModel.getByLabel('本人の明示同意と上記の許諾範囲を確認した').check();
@@ -201,6 +213,78 @@ async function verify() {
       ['double', 8152, 16348, .5, published.assets[2][1]],
       ['chorus', 8328, 16700, .5, published.assets[3][1]]
     ]);
+    const referenceWave=await page.evaluate(async()=>{
+      const app=MusicStudio,repo=app.indexedDbRepository();
+      const samples=Array.from({length:16000},(_,index)=>.15*Math.sin(2*Math.PI*220*index/8000));
+      const wave=app.pcmEncodeWav({sampleRate:8000,channels:[samples]});
+      const digest=await crypto.subtle.digest('SHA-256',wave);
+      const sourceSha256=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+      const source=app.makeProject({projectId:'transcription-review',projectName:'Transcription review',bpm:120,key:'C',
+        midiData:{ppq:480,tempo:120,totalTick:1920,tempoMap:[{tick:0,bpm:120},{tick:960,bpm:90}],
+          keySignatureMap:[{tick:0,sharps:0,minor:false},{tick:960,sharps:1,minor:false}],
+          tracks:[{id:'detected',roleAssignment:'unassigned',channel:1,name:'Detected',
+            notes:[{id:'note-1',startTick:480,durationTicks:240,pitch:60,velocity:80}]}]},
+        importSource:{transcription:{model:'basic-pitch',mode:'monophonic',sourceSha256,sourceFileName:'reference.wav',
+          detection:{noteCount:1,minimumVelocity:80,maximumVelocity:80}}}});
+      await repo.put(source);
+      await app.refresh();
+      app.openMidiEditor(source.projectId);
+      return Array.from(new Uint8Array(wave));
+    });
+    await page.waitForSelector('.music-external-track-review-menu summary');
+    await page.evaluate(()=>{
+      const session=MusicStudio.state.midiEditor;
+      MusicStudioEditor.selectTrackById(session,'detected');
+      MusicStudioEditor.selectNote(session,'note-1');
+    });
+    await page.locator('.music-external-track-review-menu summary').click();
+    const review=page.locator('#externalTrackReviewPopover');
+    await review.getByLabel('比較する元音声').setInputFiles({name:'reference.wav',mimeType:'audio/wav',buffer:Buffer.from(referenceWave)});
+    await review.getByText('元音声を確認しました。').waitFor();
+    await page.waitForFunction(()=>Number.isFinite(document.querySelector('#externalTrackReviewPopover audio')?.duration));
+    await review.getByRole('button',{name:'選択音符の位置から原音を試聴'}).click();
+    await review.getByText('元音声 0.50 秒から再生しています。').waitFor();
+    await page.waitForFunction(()=>document.querySelector('#externalTrackReviewPopover audio')?.currentTime>=.5);
+    await page.locator('.music-external-track-review-menu summary').click();
+    await page.waitForFunction(()=>!document.querySelector('#externalTrackReviewPopover audio')?.hasAttribute('src'));
+
+    const material=await page.evaluate(async()=>{
+      const app=MusicStudio,id='transcription-review';
+      const result=await app.materialCapture(id,{name:'Tempo and key material',endTick:1920});
+      if(!result.ok)throw Error(result.error);
+      app.openProject(id);
+      return result.material?.id??result.item?.id??app.state.projects.find(p=>p.projectId===id).materialLibrary.at(-1).id;
+    });
+    const inventory=page.locator('details').filter({has:page.getByText('診断・素材・AI料金',{exact:true})});
+    await page.getByText('診断・素材・AI料金',{exact:true}).evaluate(summary=>{
+      for(let node=summary.parentElement;node;node=node.parentElement)if(node.tagName==='DETAILS')node.open=true;
+    });
+    const materialForm=inventory.locator('form').filter({has:page.getByText('別プロジェクトを作成',{exact:true})});
+    await materialForm.getByLabel('BPM（新しい曲のテンポ）').fill('100');
+    await materialForm.getByLabel('合わせるKey（同じ長調・短調のみ）').selectOption('D');
+    await materialForm.getByRole('button',{name:'別プロジェクトを作成'}).click();
+    await page.waitForFunction(materialId=>MusicStudio.state.projects.some(project=>
+      project.productionHistory.at(-1)?.materialId===materialId&&project.productionHistory.at(-1)?.type==='material-create'),material);
+    await context.close();
+    page=await openProfile();
+    const reopened=await page.evaluate(async()=>{
+      const app=MusicStudio,repo=app.indexedDbRepository(),projects=await repo.list();
+      const source=projects.find(item=>item.projectId==='transcription-review');
+      const revised=projects.find(item=>item.productionHistory.at(-1)?.type==='material-create');
+      const output=MusicStudioMidi.createMidiFile(app.midiExportInput(revised));
+      const decoded=MusicStudioMidiParser.parseMidiFile(Uint8Array.from(output.bytes).buffer);
+      return {
+        sourceNotes:source.midiData.tracks.flatMap(track=>track.notes.map(note=>note.pitch)),
+        sourceMaterialNotes:source.materialLibrary[0].midiData.tracks.flatMap(track=>track.notes.map(note=>note.pitch)),
+        notes:revised.midiData.tracks.flatMap(track=>track.notes.map(note=>note.pitch)),
+        tempo:revised.midiData.tempoMap.map(event=>event.bpm),
+        keys:revised.midiData.keySignatureMap.map(event=>event.sharps),
+        exportedKeys:decoded.normalized.keySignatureMap?.map(event=>event.sharps)
+      };
+    });
+    assert.deepEqual(reopened,{sourceNotes:[60],sourceMaterialNotes:[60],notes:[62],tempo:[100,75],keys:[2,3],exportedKeys:[2,3]},
+      'material Key/BPM and modulation survive restart and MIDI export');
+
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log('Chromium: consent scopes, revocation across restore/reload, reservations, settlements, monthly cap and 3 vocal layers across archive restore verified');

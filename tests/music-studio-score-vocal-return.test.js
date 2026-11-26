@@ -287,7 +287,9 @@ test('registered vocal training material is analyzed locally with consent and re
   const material=a.state.settings.productionManagement.models[0].materials[0];
   assert.ok(material);
   assert.equal((await a.analyzeVoiceMaterial(model.id,material.id)).ok,false);
-  await submit('voice-consent',{reference:'Consent-001',scope:['train'],confirmed:'on'},model.id);
+  await submit('voice-consent',{projectId:p.projectId,reference:'Consent-001',scope:['train'],confirmed:'on'},model.id);
+  assert.equal(a.managedVoicePermission(model.id,'train',a.state.settings,'other-project'),false);
+  assert.equal(a.managedVoicePermission(model.id,'generate',a.state.settings,p.projectId),false);
   const result=await a.analyzeVoiceMaterial(model.id,material.id);
   assert.equal(result.ok,true,result.error);
   assert.ok(Math.abs(result.medianHz-220)<1);

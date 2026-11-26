@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-26 JST",
+  "baseHead": "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+  "chromium": "152.0.7977.0",
+  "passed": 4,
+  "failed": 0,
+  "acceptedCases": [
+    "matching a saved minor-key MIDI material creates a tempo/key-adjusted copy and preserves drum pitches",
+    "enharmonic respelling writes the new MIDI signature while retaining exact pitches",
+    "a ranged MIDI material carries active tempo and meter, then preserves later changes",
+    "material Key/BPM and modulation survive restart and MIDI export"
+  ],
+  "sourceHashes": {
+    "tests/music-material-key-follow.test.js": "7c66b4f028ffaf1e7dc20837a3b471ffab3630895c4337007d92af295cd898a1",
+    "scripts/music-production-management-browser.js": "8241760c821d57839ca1b452fa6e4b19d6b816f3622399a644c0a08e493b031a"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "e87021a1654cfa4bdcea185b9ea30eddf12389ce383c311d0dbde4c61a5f7216",
+    "music-studio.html": "a0339c064d0d2c209781f568222c8c56a5d34bf094338899a4132354042cad79",
+    "music-studio-audio-pipeline.js": "09a8e23663c52dba5a0242b3abdcfa6ae3849c9e2c50016d389470368a7e5a1a"
+  },
+  "material": {
+    "sourceBpm": [
+      120,
+      90
+    ],
+    "matchedBpm": [
+      100,
+      75
+    ],
+    "sourcePitch": 60,
+    "matchedPitch": 62,
+    "outputSignatureSharps": [
+      2,
+      3
+    ],
+    "restartAndMidiExport": true,
+    "sourceAndMaterialUnchanged": true
+  },
+  "approvedWorkflows": {
+    "MS14-A05": "Chromium verifies project scope, purpose, revocation, restore and local training-material analysis. Full voice-model training, generation and export enforcement remain open.",
+    "MS17-A03": "Synthetic fixture verifies SHA-256 matched source audio starts from the selected note at 0.50 s. Per-note confidence and paired edit acceptance remain open.",
+    "MS23-A04": "Backup workspace describes the approved operation. iCloud/SSD devices and restore are unverified."
+  },
+  "logHashes": {
+    "browser": "dde6ccdf7910fd7ebe00735e7542437c9accdde55d897e05985e310591d3cf65",
+    "focus": "b9978eabfd31b3fc623c6cbec372808628f2c9f902a578ac28db442d618bda44"
+  }
+}

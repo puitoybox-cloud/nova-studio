@@ -50,7 +50,7 @@ test('enharmonic aliases use the shortest chromatic interval without changing ma
  assert.throws(()=>app.materialKeyShift('H','C'),/material-key-unsupported/);
 });
 
-test('enharmonic respelling clears obsolete MIDI signature while retaining exact pitches',async()=>{
+test('enharmonic respelling writes the new MIDI signature while retaining exact pitches',async()=>{
  const {app,repo,project}=fixture('C#');await repo.put(project);
  const captured=await app.materialCapture(project.projectId,{name:'Enharmonic copy'});assert.equal(captured.ok,true);
  const p=await repo.get(project.projectId);p.materialLibrary[0].midiData.keySignatureMap=[{tick:0,sharps:7,minor:false}];p.materialLibrary[0].midiData.keySignature={tick:0,sharps:7,minor:false};
@@ -59,8 +59,8 @@ test('enharmonic respelling clears obsolete MIDI signature while retaining exact
  assert.equal(result.ok,true,result.error);
  assert.equal(result.project.musicalSettings.key,'Db');
  assert.equal(result.project.midiData.tracks[0].notes[0].pitch,60);
- assert.equal(result.project.midiData.keySignatureMap,undefined);
- assert.equal(result.project.midiData.keySignature,undefined);
+ assert.deepEqual(JSON.parse(JSON.stringify(result.project.midiData.keySignatureMap)),[{tick:0,sharps:-5,minor:false}]);
+ assert.equal(result.project.midiData.keySignature.sharps,-5);
  assert.equal(JSON.stringify(await repo.get(project.projectId)),JSON.stringify(p));
 });
 
