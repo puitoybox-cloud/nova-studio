@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率 **55.56%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率 **56.30%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -42,7 +42,7 @@ A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率
 | 26 | 5 | 1 | 4 | 1 | 1 |
 | 27 | 5 | 1 | 4 | 1 | 1 |
 | 28 | 4 | 4 | 0 | 1 | 0 |
-| 29 | 4 | 1 | 3 | 1 | 1 |
+| 29 | 4 | 2 | 2 | 1 | 1 |
 | 30 | 4 | 3 | 1 | 1 | 0 |
 
 | ID | 分類 | 受入要件 | 状態 | 根拠/依存 |
@@ -179,7 +179,7 @@ A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率
 | MS23-A01 | A | real import route stores >2M samples as Blob and a fresh repository reload verifies every byte | verified | [tests/music-studio-long-wav-storage.test.js](../../tests/music-studio-long-wav-storage.test.js) — `real import route stores >2M samples as Blob and a fresh repository reload verifies every byte` |
 | MS23-A02 | A | 旧依存識別不能時の原本保持 | open | MS23-C01 |
 | MS23-A03 | A | 更新前復元と移行のソフトウェア受入 | open | MS23-C01 |
-| MS23-A04 | A | Cloud Syncの競合とoffline復旧実装 | open | MS23-C01 |
+| MS23-A04 | A | 端末内保存とiCloud・外付けSSDバックアップの運用・復元 | open | MS23-C01 |
 | MS23-B01 | B | 別Mac移行と電源断復旧 | open | 未確認 |
 | MS23-C01 | C | Cloud Sync同期先・暗号化・競合・offline方針 | open | 未確認 |
 | MS24-A01 | A | diagnosis exposes unavailable byte verification without claiming repair or writing project state | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `diagnosis exposes unavailable byte verification without claiming repair or writing project state` |
@@ -214,7 +214,7 @@ A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率
 | MS28-B01 | B | 日本語glyph・touch・Pencil・a11y | open | 未確認 |
 | MS29-A01 | A | MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums | verified | [tests/music-production-tools.test.js](../../tests/music-production-tools.test.js) — `MIDI material range survives backup migration, adjusts tempo/pitch in separate project and preserves source and drums` |
 | MS29-A02 | A | 曲と部分素材の全形式保存 | open | MS29-C01 |
-| MS29-A03 | A | 素材KeyとBPM追従 | open | MS29-C01 |
+| MS29-A03 | A | 素材KeyとBPM追従 | verified | [tests/music-material-key-follow.test.js](../../tests/music-material-key-follow.test.js) — `matching a saved minor-key MIDI material creates a tempo/key-adjusted copy and preserves drum pitches`; [tests/music-material-key-follow.test.js](../../tests/music-material-key-follow.test.js) — `enharmonic respelling writes the new MIDI signature while retaining exact pitches`; [tests/music-material-key-follow.test.js](../../tests/music-material-key-follow.test.js) — `a ranged MIDI material carries active tempo and meter, then preserves later changes`; [scripts/music-production-management-browser.js](../../scripts/music-production-management-browser.js) — `material Key/BPM and modulation survive restart and MIDI export` |
 | MS29-A04 | A | 意味を用いた文章検索 | open | MS29-C01 |
 | MS29-B01 | B | 実素材を用いた作曲受入 | open | 未確認 |
 | MS29-C01 | C | 文章意味検索モデルとライセンス | open | 未確認 |
@@ -237,7 +237,7 @@ A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 2 |
-| 仕様判断待ち | 63 | 58 |
+| 仕様判断待ち | 63 | 57 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
 
@@ -336,7 +336,7 @@ A：総数 **135**、証拠付き完了 **75**、残数 **60**、受入確認率
 | MS28-A03 | 実装が必要 | verified |
 | MS28-A04 | 実装済み・検証不足 | verified |
 | MS29-A02 | 仕様判断待ち | open |
-| MS29-A03 | 仕様判断待ち | open |
+| MS29-A03 | 仕様判断待ち | verified |
 | MS29-A04 | 仕様判断待ち | open |
 | MS30-A02 | 実装済み・検証不足 | open |
 | MS30-A03 | 実装済み・検証不足 | verified |
@@ -364,6 +364,15 @@ AIアシスタントのすべてのデータ・設定変更操作は実行前に
 
 残件　製品採用声庫、品質基準、配布条件、交換可能なエンジンの受入
 
+### MS14-A05（2026-11-26 JST）
+
+作品・用途・モデル版ごとに本人同意を取得する。 確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862)
+
+- 撤回後は新規学習・生成と既存生成物の新規書き出しを停止する。
+- 公開済み素材は本人と個別に取り決める。
+
+残件　実モデルの学習・生成、既存生成物の書き出し制御と非破壊統合を実機で検証する。
+
 ### MS14-C01（2026-11-20 JST）
 
 本人の録音編集と本人の明示同意を得たAI声モデルを併用する。 確定。ユーザー確定仕様（2026-11-20）
@@ -384,6 +393,31 @@ AIアシスタントのすべてのデータ・設定変更操作は実行前に
 
 残件　対象重みと取得経路の許諾、配布版の導入・削除と実機受入。
 
+### MS17-A02（2026-11-26 JST）
+
+ピアノ・歌声・ギター・ベースを単音／和音ごとに評価する。 確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862)
+
+- 評価用の実演素材で音符一致度と手直し時間を測定する。
+- 評価結果を踏まえて合格値を決定する。
+
+残件　代表実演を揃え、手直し時間を含む測定と数値基準の確定が必要。
+
+### MS17-A03（2026-11-26 JST）
+
+低信頼度音符は色とラベルで示し、原音との同期試聴から削除・修正を選択する。 確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862)
+
+- 低信頼度を理由に音符を自動削除しない。
+
+残件　実モデルの音符別信頼度と編集の結合、原音同期試聴を検証する。
+
+### MS17-A04（2026-11-26 JST）
+
+生の採譜結果を保持し、整理の差分を確認・承認後に別MIDIトラックへ保存する。 確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862)
+
+- 再開後も原音と生・整理済みの両版を比較できるようにする。
+
+残件　差分承認、別トラックへの原子的保存、再開時の三者比較を検証する。
+
 ### MS17-C01（2026-11-25 JST）
 
 ピアノ・歌声・ギター・ベースの単音・和音採譜を開発対象とする。 対象範囲確定・精度基準未確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7148624680)
@@ -393,13 +427,21 @@ AIアシスタントのすべてのデータ・設定変更操作は実行前に
 
 残件　代表素材による定量検証、数値基準の確定、正式受入。
 
+### MS23-A04（2026-11-26 JST）
+
+端末内保存とiCloud・SSDバックアップを継続し、今回は双方向同期を採用しない。 確定。[決定の出典](https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862)
+
+- 将来の双方向同期の採用前に、競合時の両版保持・暗号化・鍵の復旧を決める。
+
+残件　iCloud・外付けSSD上の実ファイル保存、オフライン運用、復元をMacで検証する。
+
 ### MS23-C01（2026-11-20 JST）
 
 端末内保存を基盤とし、iCloudへの日常バックアップと外付けSSDへの定期バックアップ、完全復元を優先する。 確定。ユーザー確定仕様（2026-11-20）
 
 - 手動・自動、世代管理、破損検出、保存先切替、オフライン保存と競合防止を検証する
 
-残件　複数端末の双方向同期、暗号化・鍵管理方針、実機での保存と復元
+残件　iCloud・外付けSSDでの保存と復元を実機で確認する。双方向同期は将来の採用判断まで対象外。
 
 ### MS26-C01（2026-11-20 JST）
 

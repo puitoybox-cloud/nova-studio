@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.243';
+  const ASSET_VERSION='1.4.244';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -3863,7 +3863,7 @@
   ${settingSection('appInfo','アプリ情報',`<dl class="music-info-list"><div><dt>アプリ名</dt><dd>Music Studio</dd></div><div><dt>所属</dt><dd>Dream Architect Studio</dd></div><div><dt>現在のバージョン</dt><dd>${APP_VERSION}</dd></div><div><dt>開発段階</dt><dd>Music Studio 0.4 実装完了</dd></div><div><dt>設定形式</dt><dd>${SETTINGS_FORMAT} Version ${SETTINGS_VERSION}</dd></div><div><dt>プロジェクト形式</dt><dd>${FORMAT} Version 1</dd></div><div><dt>バックアップ形式</dt><dd>${BACKUP_FORMAT} Version ${BACKUP_VERSION}</dd></div><div><dt>保存場所</dt><dd>端末内</dd></div><div><dt>外部送信</dt><dd>行いません</dd></div></dl><p>単体アプリ化を前提とし、端末内保存のみを行います。ライセンス情報とCHANGELOGは同梱文書を参照してください。</p><p><a href="./docs/music-studio/MS-00C_LICENSE_REGISTER.md">ライセンス情報</a> · <a href="./CHANGELOG.md">CHANGELOG</a></p>`)}
   ${settingSection('experimental','詳細設定',`<p>将来機能用です。販売版で不安定機能を誤って有効化しないため、すべて無効です。</p>${toggle('experimental.enabled','実験機能',false,'現在は変更できません',true)}`)}
   <div class="music-sticky-actions"><button class="music-primary" type="submit">変更を保存</button><button class="music-secondary" type="button" onclick="MusicStudio.discardSettings()">変更を破棄</button><button class="music-secondary" type="button" onclick="MusicStudio.resetSettings()">初期値に戻す</button><button class="music-secondary" type="button" onclick="MusicStudio.exportSettings()">設定を書き出す</button><input id="musicSettingsImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.importSettingsFile(this.files[0]);this.value=''"><button class="music-secondary" type="button" onclick="document.querySelector('#musicSettingsImport').click()">設定を読み込む</button></div></form>${productionManagementView()}</div></div></main>`}
-  function backupView(){const archive=archiveTransfer.preview;const preview=state.backupPreview;const automatic=state.autoBackups.map(item=>`<article class="music-auto-backup-row"><div><b>${formatDate(item.createdAt)}</b><small>プロジェクト ${item.snapshot?.projects?.length||0}件${item.archive?' · 元ファイル本体を含む':''} · ${escapeHtml(item.sizeLabel||'容量不明')}</small></div><button class="music-secondary" onclick="MusicStudio.restoreAutoBackup('${escapeHtml(item.backupId)}')">この自動バックアップを復元</button></article>`).join('')||'<p class="music-empty">自動バックアップはまだありません。</p>';return `<main class="music-studio-shell music-settings-page" aria-labelledby="musicBackupTitle">${flowNavigation('Music Studio設定','MusicStudio.goSettings()','プロジェクト一覧','MusicStudio.goProjects()')}${noticeView()}<header class="music-page-header"><p class="music-kicker">Local JSON backup（端末内JSONバックアップ）</p><h1 id="musicBackupTitle">Music Studioバックアップ</h1><p>対象：設定1件、プロジェクト${state.projects.length}件、参照ファイルのメタ情報。JSONには外部ファイル本体を含みません。長時間WAVがある場合はWAVアーカイブで保存します。</p></header><section class="music-setting-section"><h2>手動バックアップを書き出す</h2><p>Full WAV Archive（元ファイル・プロジェクト・設定）：外部参照ファイルがある場合は完全性を保証できないため中止します。復元は既存曲を残して追加し、設定を復元します。</p><button class="music-primary" onclick="MusicStudio.exportLongWavArchive()">Full WAV Archive（完全保存）</button>${typeof root.showSaveFilePicker==='function'?'<button type="button" class="music-secondary" onclick="MusicStudio.exportLongWavArchive(true)">iCloud・外付けSSDなどに保存</button>':''}<label>Restore Archive（アーカイブを復元）<input type="file" accept=".nova" onchange="MusicStudio.previewLongWavArchive(this.files[0]);this.value=''"></label>${archiveTransfer.busy?'<p role="status">アーカイブの検証・保存中です。</p><button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button>':''}${archive?`<div class="music-backup-preview" role="status"><h3>Archive Preview（復元前の確認）</h3><p>プロジェクト ${archive.projectCount}件 / 元ファイル ${archive.assetCount}件 / ${(archive.size/1048576).toFixed(2)} MiB</p><label><input id="archiveRestoreSettings" type="checkbox" onchange="MusicStudio.setArchiveRestoreSettings(this.checked)"${archive.restoreSettings===false?'':' checked'}> 設定も復元する</label><p>保存済みWAVを検証済みです。既存曲を残し、新しいIDで追加します。${archive.preservedRecordings?`破損・欠落を保持した未完了録音 ${archive.preservedRecordings}件を含みます。音声修復の保証ではありません。`:""}</p>${archive.priorRestores.length?`<p>同じアーカイブの復元履歴が見つかりました。</p><ul>${archive.priorRestores.map(project=>`<li>${escapeHtml(project.projectName)}</li>`).join('')}</ul><button class="music-primary" onclick="MusicStudio.restorePreviewedArchive(true)">別のコピーを追加して復元</button>`:'<button class="music-primary" onclick="MusicStudio.restorePreviewedArchive()">内容を確認して復元</button>'}<button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button></div>`:''}<p>既存データを変更せず、Music Studio全体をVersion 1 JSONへまとめます。手動ファイルは自動整理の対象外です。</p><button class="music-primary" onclick="MusicStudio.exportBackup()">Backup（曲に合わせて書き出す）</button></section><section class="music-setting-section"><h2>バックアップを検証・復元</h2><input id="musicBackupImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.previewBackupFile(this.files[0]);this.value=''"><button class="music-secondary" onclick="document.querySelector('#musicBackupImport').click()">バックアップJSONを選択</button>${preview?`<div class="music-backup-preview" role="status"><h3>復元前の概要</h3><p>作成：${formatDate(preview.metadata.createdAt)} / プロジェクト ${preview.projects.length}件 / 参照 ${preview.references?.length||0}件</p><label><input id="restoreSettings" type="checkbox" checked> 設定を復元</label><label><input id="restoreProjects" type="checkbox" checked> プロジェクトを追加・統合</label><p>同じIDは新しいIDで追加します。全項目を検査し、不正な項目があれば復元全体を中止します。外部ファイル本体は別途再選択が必要です。既存データは削除・上書きせず、復元前に現在状態を安全コピーとしてダウンロードします。</p><button class="music-primary" onclick="MusicStudio.restorePreviewedBackup()">内容を確認して復元</button><button class="music-secondary" onclick="MusicStudio.clearBackupPreview()">キャンセル</button></div>`:''}</section><section class="music-setting-section"><div class="music-section-heading"><div><h2>端末内の自動バックアップ</h2><p>Music Studioを開いた時だけ期限を確認します。バックグラウンド常駐は行いません。</p></div><button class="music-secondary" onclick="MusicStudio.checkAutoBackupNow()">期限を確認</button></div><div class="music-auto-backup-list">${automatic}</div></section></main>`}
+  function backupView(){const archive=archiveTransfer.preview;const preview=state.backupPreview;const automatic=state.autoBackups.map(item=>`<article class="music-auto-backup-row"><div><b>${formatDate(item.createdAt)}</b><small>プロジェクト ${item.snapshot?.projects?.length||0}件${item.archive?' · 元ファイル本体を含む':''} · ${escapeHtml(item.sizeLabel||'容量不明')}</small></div><button class="music-secondary" onclick="MusicStudio.restoreAutoBackup('${escapeHtml(item.backupId)}')">この自動バックアップを復元</button></article>`).join('')||'<p class="music-empty">自動バックアップはまだありません。</p>';return `<main class="music-studio-shell music-settings-page" aria-labelledby="musicBackupTitle">${flowNavigation('Music Studio設定','MusicStudio.goSettings()','プロジェクト一覧','MusicStudio.goProjects()')}${noticeView()}<header class="music-page-header"><p class="music-kicker">Local JSON backup（端末内JSONバックアップ）</p><h1 id="musicBackupTitle">Music Studioバックアップ</h1><p>制作中は端末内に保存します。日常はiCloudへ、定期的に外付けSSDへFull WAV Archiveを書き出します。</p><p>対象：設定1件、プロジェクト${state.projects.length}件、参照ファイルのメタ情報。JSONには外部ファイル本体を含みません。長時間WAVがある場合はWAVアーカイブで保存します。</p></header><section class="music-setting-section"><h2>手動バックアップを書き出す</h2><p>Full WAV Archive（元ファイル・プロジェクト・設定）：外部参照ファイルがある場合は完全性を保証できないため中止します。復元は既存曲を残して追加し、設定を復元します。</p><button class="music-primary" onclick="MusicStudio.exportLongWavArchive()">Full WAV Archive（完全保存）</button>${typeof root.showSaveFilePicker==='function'?'<button type="button" class="music-secondary" onclick="MusicStudio.exportLongWavArchive(true)">iCloud・外付けSSDなどに保存</button>':''}<label>Restore Archive（アーカイブを復元）<input type="file" accept=".nova" onchange="MusicStudio.previewLongWavArchive(this.files[0]);this.value=''"></label>${archiveTransfer.busy?'<p role="status">アーカイブの検証・保存中です。</p><button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button>':''}${archive?`<div class="music-backup-preview" role="status"><h3>Archive Preview（復元前の確認）</h3><p>プロジェクト ${archive.projectCount}件 / 元ファイル ${archive.assetCount}件 / ${(archive.size/1048576).toFixed(2)} MiB</p><label><input id="archiveRestoreSettings" type="checkbox" onchange="MusicStudio.setArchiveRestoreSettings(this.checked)"${archive.restoreSettings===false?'':' checked'}> 設定も復元する</label><p>保存済みWAVを検証済みです。既存曲を残し、新しいIDで追加します。${archive.preservedRecordings?`破損・欠落を保持した未完了録音 ${archive.preservedRecordings}件を含みます。音声修復の保証ではありません。`:""}</p>${archive.priorRestores.length?`<p>同じアーカイブの復元履歴が見つかりました。</p><ul>${archive.priorRestores.map(project=>`<li>${escapeHtml(project.projectName)}</li>`).join('')}</ul><button class="music-primary" onclick="MusicStudio.restorePreviewedArchive(true)">別のコピーを追加して復元</button>`:'<button class="music-primary" onclick="MusicStudio.restorePreviewedArchive()">内容を確認して復元</button>'}<button class="music-secondary" onclick="MusicStudio.cancelArchiveTransfer()">キャンセル</button></div>`:''}<p>既存データを変更せず、Music Studio全体をVersion 1 JSONへまとめます。手動ファイルは自動整理の対象外です。</p><button class="music-primary" onclick="MusicStudio.exportBackup()">Backup（曲に合わせて書き出す）</button></section><section class="music-setting-section"><h2>バックアップを検証・復元</h2><input id="musicBackupImport" type="file" accept="application/json,.json" hidden onchange="MusicStudio.previewBackupFile(this.files[0]);this.value=''"><button class="music-secondary" onclick="document.querySelector('#musicBackupImport').click()">バックアップJSONを選択</button>${preview?`<div class="music-backup-preview" role="status"><h3>復元前の概要</h3><p>作成：${formatDate(preview.metadata.createdAt)} / プロジェクト ${preview.projects.length}件 / 参照 ${preview.references?.length||0}件</p><label><input id="restoreSettings" type="checkbox" checked> 設定を復元</label><label><input id="restoreProjects" type="checkbox" checked> プロジェクトを追加・統合</label><p>同じIDは新しいIDで追加します。全項目を検査し、不正な項目があれば復元全体を中止します。外部ファイル本体は別途再選択が必要です。既存データは削除・上書きせず、復元前に現在状態を安全コピーとしてダウンロードします。</p><button class="music-primary" onclick="MusicStudio.restorePreviewedBackup()">内容を確認して復元</button><button class="music-secondary" onclick="MusicStudio.clearBackupPreview()">キャンセル</button></div>`:''}</section><section class="music-setting-section"><div class="music-section-heading"><div><h2>端末内の自動バックアップ</h2><p>Music Studioを開いた時だけ期限を確認します。バックグラウンド常駐は行いません。</p></div><button class="music-secondary" onclick="MusicStudio.checkAutoBackupNow()">期限を確認</button></div><div class="music-auto-backup-list">${automatic}</div></section></main>`}
   function selectedMidiProject(){const last=getLastProject();return state.projects.find(project=>project.projectId===last)||state.projects.find(project=>project.midiData)||state.projects[0]||null}
   const MIDI_EXPORT_SCOPES={melody:'Melody',drums:'Drums',bass:'Bass',all:'All'};
   function currentMidiExportProject(projectId=''){const targetId=projectId||state.midiEditor?.projectId||getLastProject(),project=state.projects.find(item=>item.projectId===targetId)||selectedMidiProject();return project&&state.midiEditor?.projectId===project.projectId?{...project,midiData:clone(state.midiEditor.midiData)}:project}
@@ -4425,7 +4425,8 @@
     return `<p>Basic Pitch（${mode}） · 原音 ${escapeHtml(transcription.sourceFileName)} · 変換時 ${escapeHtml(detection.noteCount)} 音 · 検出時のMIDIベロシティ ${escapeHtml(detection.minimumVelocity)}〜${escapeHtml(detection.maximumVelocity)}</p>
       <div data-transcription-reference="${escapeHtml(transcription.sourceSha256)}">
         <label>比較する元音声<input type="file" accept="audio/*,.wav,.aiff,.flac,.m4a,.mp3" onchange="MusicStudio.audioStemMidiPipeline.loadTranscriptionReference(this)"></label>
-        <audio controls hidden style="width:100%" aria-label="変換前の原音"></audio><span role="status"></span>
+        <audio controls hidden style="width:100%" aria-label="変換前の原音"></audio>
+        <button type="button" class="music-secondary" disabled onclick="MusicStudio.audioStemMidiPipeline.playTranscriptionReferenceNote(this)">選択音符の位置から原音を試聴</button><span role="status"></span>
       </div>`;
   }
   function externalTrackReviewHtml(session){const core=root.MusicStudioEditor,tracks=core.externalReviewTracks(session?.midiData||{});if(!tracks.length)return'';const draft=externalAssignmentDraft(session),labels={unassigned:'Unassigned',melody:'Melody',drums:'Drums',bass:'Bass'},rows=tracks.map(track=>`<div class="music-external-track-row" data-track-id="${escapeHtml(track.id)}"><div class="music-external-track-summary"><b>${escapeHtml(track.name)}</b><span>ID ${escapeHtml(track.id)}</span><span>Channel ${escapeHtml(track.channel??'—')}</span>${track.program==null?'':`<span>Program ${track.program}</span>`}<span>${track.noteCount} notes</span><span>Current: ${escapeHtml(track.roleAssignment)}</span></div><label>Assignment（割付）<select aria-label="${escapeHtml(track.name)} assignment" onchange="MusicStudio.editorDraftExternalTrackAssignment(this.closest('[data-track-id]').dataset.trackId,this.value)">${core.EXTERNAL_TRACK_ROLES.map(role=>`<option value="${role}" ${draft.assignments[track.id]===role?'selected':''}>${labels[role]}</option>`).join('')}</select></label></div>`).join('');return`<dialog class="music-editor-popover music-external-track-review" id="externalTrackReviewDialog" aria-labelledby="externalTrackReviewTitle"><header class="music-external-track-review-head"><div><b id="externalTrackReviewTitle">External Track Review / Assignment（外部トラック確認・割付）</b><span>${tracks.length} Tracks · manual only</span></div><button class="music-secondary" type="button" onclick="MusicStudio.editorCancelExternalTrackAssignments()" aria-label="External Track Reviewを閉じる">× Close（閉じる）</button></header><div class="music-external-track-review-body">${transcriptionReviewHtml(editorProject(session.projectId))}<p>Track IDと演奏データを維持したままAssignment metadataだけを変更します。固定Trackへの転記や自動分類は行いません。</p><div class="music-external-track-list">${rows}</div><div class="music-external-track-actions"><button class="music-primary" type="button" onclick="MusicStudio.editorApplyExternalTrackAssignments()">Apply Assignment（割付を採用）</button><button class="music-secondary" type="button" onclick="MusicStudio.editorCancelExternalTrackAssignments()">Cancel（取消）</button></div></div></dialog>`}
@@ -6158,8 +6159,25 @@
       if(targetKey!==null&&(typeof targetKey!=='string'||!targetKey||options.semitones!==undefined&&Number(options.semitones)!==0))throw Error('material-key-adjustment-conflict');
       const shift=targetKey===null?Number(options.semitones??0):materialKeyShift(m.key,targetKey),bpm=Number(options.bpm??m.bpm);if(!Number.isInteger(shift)||Math.abs(shift)>24||!Number.isFinite(bpm)||bpm<20||bpm>400)throw Error('material-adjustment-invalid');
       const midi=clone(m.midiData);for(const t of midi.tracks){t.id=uuid();for(const n of t.notes){n.id=uuid();if(n.channel!==10&&!(n.channel==null&&t.channel===10)&&t.part!=='drums'){n.pitch+=shift;if(n.pitch<0||n.pitch>127)throw Error('material-pitch-range');}}}midi.tempo=bpm;for(const e of midi.tempoMap||[]){e.bpm=(e.bpm??60000000/e.microsecondsPerQuarter)*bpm/m.bpm;if(e.bpm<20||e.bpm>400)throw Error('material-tempo-range');e.microsecondsPerQuarter=Math.round(60000000/e.bpm);}
-      // Transposed key signatures require spelling policy; omit old key declarations rather than retain false ones.
-      if(shift||targetKey!==null&&targetKey!==m.key){delete midi.keySignatureMap;delete midi.keySignature;}
+      if(targetKey!==null){
+        const targetTone=parseTonalKey(targetKey);
+        const signatures=midi.keySignatureMap||[];
+        if(!signatures.some(signature=>signature.tick===0))signatures.unshift({tick:0,minor:targetTone.minor});
+        midi.keySignatureMap=signatures.map(signature=>{
+          const sourceTone=signature.tick>0&&parseTonalKey(materialSourceKey(signature,''));
+          const pitch=sourceTone?(sourceTone.pitch+shift+12)%12:targetTone.pitch;
+          const minor=sourceTone?sourceTone.minor:targetTone.minor;
+          const candidates=Array.from({length:15},(_,i)=>i-7).filter(sharps=>
+            parseTonalKey(materialSourceKey({sharps,minor},'')).pitch===pitch);
+          const requested=signature.tick===0?candidates.find(sharps=>materialSourceKey({sharps,minor},'')===targetKey):undefined;
+          const sharps=requested??candidates.sort((a,b)=>Math.abs(a)-Math.abs(b))[0];
+          return {...signature,sharps,minor};
+        });
+        midi.keySignature={...midi.keySignatureMap.find(signature=>signature.tick===0)};
+      }else if(shift){
+        delete midi.keySignatureMap;
+        delete midi.keySignature;
+      }
       const out=makeProject({projectName:m.name+' — 素材から作成',bpm,key:targetKey??(shift?null:m.key),timeSignature:`${midi.timeSignature?.numerator||4}/${midi.timeSignature?.denominator||4}`,midiData:midi});out.productionHistory.push({id:uuid(),type:'material-create',createdAt:now(),sourceProjectId:owner,materialId,sourceRevision:m.sourceRevision,semitones:shift,bpm,...(targetKey?{targetKey}:{})});if(!validateProject(out).valid||validateRestoredMidi(out).errors.length)throw Error('material-project-invalid');
       const guard=()=>{if(repository!==target||workspaceBusy()||JSON.stringify(state.projects.find(x=>x.projectId===owner))!==baseline)throw Error('material-stale')};guard();const {committed,refreshPending}=await publishMaterialProject(target,out,()=>target.compareAndFork(out,owner,baseline,guard),guard);
       if(refreshPending)return{ok:true,committed:true,refreshPending:true,project:committed};
@@ -6208,7 +6226,7 @@
   function openDiagnosticRepair(){const panel=root.document?.querySelector?.('.music-song-versions');if(!panel)return false;panel.open=true;const input=panel.querySelector('[name=recoveryFile]');if(input){const details=input.closest('details');if(details)details.open=true;input.scrollIntoView?.({block:'center'});}else panel.scrollIntoView?.({block:'start'});return true;}
   function projectCostSummary(p){try{return root.MusicStudioAIWorkflow?.localCostSummary?.(p.aiWorkspace)||{status:'unavailable'}}catch(e){return{status:'unverified',error:e.message}}}
   function productionToolsView(p){const h=escapeHtml,id=JSON.stringify(p.projectId),d=projectDiagnostics.get(p.projectId);return `<details><summary>診断・素材・AI料金</summary>${performanceView(p)}<button type="button" onclick="${h(`MusicStudio.productionDiagnose(${id})`)}">診断する（原本保持）</button>${d?`<pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(d.baseline===JSON.stringify(p)?JSON.stringify(d.report,null,2):'曲が変更されています。再診断してください。')}</pre>`:''}<button type="button" onclick="MusicStudio.openDiagnosticRepair()">元ファイルの復旧画面を開く</button><p>録音の修復・退避はボーカル画面の未完了録音から選択します。欠落した依存ファイルはCheckpoints内の照合復旧を使用します。破損本体は置換しません。</p><p>AI料金：現在のアプリ内ローカル処理のAPI料金は0。有料処理・未確認料金は実行を拒否します。外部サービスでの利用額は確認できません。テスト用の月額上限・見積もり・精算は設定の有料AI管理で確認できます。</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${h(JSON.stringify(projectCostSummary(p),null,2))}</pre><form onsubmit="event.preventDefault();MusicStudio.materialCaptureSubmit(event,${h(id)})"><label>素材名<input name="name" maxlength="120" required></label><label>検索用の説明<input name="description" maxlength="1000"></label><label>開始tick<input name="startTick" type="number" min="0" value="0"></label><label>終了tick（空欄は曲末）<input name="endTick" type="number" min="1"></label><button>現在のMIDIを素材保存</button></form><p>MIDIだけを保存します。音声・歌詞・外部音源設定は含みません。境界をまたぐ音符や途中からの可変テンポ素材は拒否します。</p><form onsubmit="event.preventDefault();MusicStudio.materialSearchSubmit(event)"><label>素材名・説明<input name="query" maxlength="240"></label><label>Key<input name="key" maxlength="8" placeholder="Am"></label><label>最低BPM<input name="minBpm" type="number" min="20" max="400" step="any"></label><label>最高BPM<input name="maxBpm" type="number" min="20" max="400" step="any"></label><button>検索</button></form><button type="button" onclick="${h(`MusicStudio.materialExport(${id})`)}">MIDI素材JSONを書き出す</button><form onsubmit="event.preventDefault();MusicStudio.materialImportSubmit(event,${h(id)})"><label>MIDI素材JSON<input type="file" name="materialFile" accept=".json,application/json" required></label><button>このプロジェクトへ素材を読み込む</button></form><div id="music-material-results">${materialResults('')}</div></details>`;}
-  function materialResults(query,filters){const h=escapeHtml,keys=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B','Cm','C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m','Am','Bbm','Bm'];return materialSearch(query,filters).map(m=>`<form onsubmit="event.preventDefault();MusicStudio.materialCreateSubmit(event,${h(JSON.stringify(m.owner))},${h(JSON.stringify(m.id))})"><p>${h(m.name)} · ${h(m.description)} · ${h(m.key||'Key未設定')} / ${h(m.bpm)} BPM</p><label>BPM（新しい曲のテンポ）<input name="bpm" type="number" min="20" max="400" step="any" value="${h(m.bpm)}"></label><label>合わせるKey（同じ長調・短調のみ）<select name="targetKey" onchange="if(this.value)this.form.elements.semitones.value='0'"><option value="">手動の移調を使う</option>${keys.map(key=>`<option value="${h(key)}">${h(key)}</option>`).join('')}</select></label><label>手動の移調（半音）<input name="semitones" type="number" min="-24" max="24" value="0"></label><p>Keyを選ぶと、素材のKeyから必要な半音数を自動計算します。元素材・元プロジェクトは変更しません。長調から短調への変更は自動変換しません。</p><button>別プロジェクトを作成</button></form>`).join('')||'<p>一致する素材はありません。</p>';}
+  function materialResults(query,filters){const h=escapeHtml,keys=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B','Cm','C#m','Dm','Ebm','Em','Fm','F#m','Gm','G#m','Am','Bbm','Bm'];return materialSearch(query,filters).map(m=>`<form onsubmit="event.preventDefault();MusicStudio.materialCreateSubmit(event,${h(JSON.stringify(m.owner))},${h(JSON.stringify(m.id))})"><p>${h(m.name)} · ${h(m.description)} · ${h(m.key||'Key未設定')} / ${h(m.bpm)} BPM</p><label>BPM（新しい曲のテンポ）<input name="bpm" type="number" min="20" max="400" step="any" value="${h(m.bpm)}"></label><label>合わせるKey（同じ長調・短調のみ）<select name="targetKey" onchange="if(this.value)this.form.elements.semitones.value='0'"><option value="">手動の移調を使う</option>${keys.map(key=>`<option value="${h(key)}">${h(key)}</option>`).join('')}</select></label><label>手動の移調（半音）<input name="semitones" type="number" min="-24" max="24" value="0"></label><p>Keyを選ぶと、素材を移調し、MIDIの調号も更新します。元素材・元プロジェクトは変更しません。長調から短調への変更は自動変換しません。</p><button>別プロジェクトを作成</button></form>`).join('')||'<p>一致する素材はありません。</p>';}
   async function materialCaptureSubmit(event,id){const f=event.target.elements,input={name:f.name.value,description:f.description.value,startTick:Number(f.startTick.value)};if(f.endTick.value)input.endTick=Number(f.endTick.value);const r=await materialCapture(id,input);notice(r.ok?'MIDI素材を保存しました。':r.error,r.ok?'success':'error');requestPaint();return r;}
   async function materialCreateSubmit(event,owner,id){const f=event.target.elements,r=await materialCreate(owner,id,{bpm:Number(f.bpm.value),semitones:Number(f.semitones.value),...(f.targetKey?.value?{targetKey:f.targetKey.value}:{})});notice(r.ok?'別プロジェクトに保存しました。':r.error,r.ok?'success':'error');requestPaint();return r;}
   function materialSearchSubmit(event){
@@ -6226,7 +6244,7 @@
   const emptyManagement=()=>({models:[],revocations:[],billing:{limit:0,price:0,routes:{},history:[]}});
   let managementBusy=false, pendingTestQuote=null;
 
-  function managedVoicePermission(modelId,scope,settings=state.settings){
+  function managedVoicePermission(modelId,scope,settings=state.settings,projectId){
     const management=settings?.productionManagement;
     if(!validProductionManagement(management))return false;
     const model=management.models.find(item=>item?.id===modelId);
@@ -6234,6 +6252,7 @@
     return Boolean(Object.hasOwn(managementScopes,scope)&&model&&consent
       &&typeof consent.reference==='string'&&consent.reference.trim()
       &&Number.isFinite(Date.parse(consent.recordedAt))&&consent.scopes?.includes(scope)
+      &&Boolean(projectId)&&consent.projectId===projectId&&consent.modelVersion===model.engine
       &&!management.revocations?.some(item=>item?.id===modelId));
   }
 
@@ -6270,13 +6289,13 @@
     const guard=()=>{
       if(target!==repository||archiveTransfer.busy||
         state.projects.find(item=>item.projectId===material.projectId)!==project||
-        !managedVoicePermission(modelId,'train'))throw Error('学習の許諾または録音素材が変更されました。');
+        !managedVoicePermission(modelId,'train',state.settings,material.projectId))throw Error('学習の許諾または録音素材が変更されました。');
     };
     voiceMaterialAnalyses.add(materialId);
     requestPaint();
     try{
       guard();
-      if(!managedVoicePermission(modelId,'train',await target.getSettings()))
+      if(!managedVoicePermission(modelId,'train',await target.getSettings(),material.projectId))
         throw Error('学習の許諾がありません。');
       guard();
       const {channels,sampleRate,asset}=await vocalReadPCM(material.projectId,material.assetId,guard);
@@ -6298,7 +6317,7 @@
       guard();
       await changeManagement(current=>{
         guard();
-        if(!managedVoicePermission(modelId,'train',{productionManagement:current}))
+        if(!managedVoicePermission(modelId,'train',{productionManagement:current},material.projectId))
           throw Error('学習の許諾がありません。');
         const row=current.models.find(model=>model.id===modelId).materials.find(item=>item.id===materialId);
         if(!row||row.projectId!==material.projectId||row.assetId!==material.assetId)
@@ -6320,7 +6339,7 @@
     const permissionInputs=Object.entries(managementScopes).map(([scope,label])=>
       `<label><input type="checkbox" name="scope" value="${scope}">${label}</label>`).join('');
     return settingSection('managed-voices','本人声モデル',`
-      <p>同意を得た本人声モデルと録音素材の参照を管理します。証跡には同意書などの識別子を登録してください。</p>
+      <p>同意を得た本人声モデルと録音素材の参照を管理します。作品・用途・モデル版ごとに同意を記録します。識別子にはモデル版を含めてください。</p>
       <form onsubmit="MusicStudio.submitManagement(event,'voice-add')">
         <label>モデル名<input name="name" maxlength="120" required></label>
         <label>モデル識別子<input name="engine" maxlength="160" required></label>
@@ -6339,9 +6358,10 @@
             <label>モデル識別子<input name="engine" maxlength="160" value="${h(model.engine)}" required></label>
             <button>モデル情報を保存</button>
           </form>
-          ${model.consent?`<p>証跡 ${h(model.consent.reference)} · ${h(formatDate(model.consent.recordedAt))} · ${h(model.consent.scopes.map(scope=>managementScopes[scope]).join('、'))}</p>`:''}
+          ${model.consent?`<p>証跡 ${h(model.consent.reference)} · ${h(formatDate(model.consent.recordedAt))} · ${h(model.consent.scopes.map(scope=>managementScopes[scope]).join('、'))} · ${h(model.consent.projectId?state.projects.find(p=>p.projectId===model.consent.projectId)?.projectName||model.consent.projectId:'作品範囲未指定：同意の更新が必要')}</p>`:''}
           ${revoked?`<p>撤回日 ${h(formatDate(revoked.at))}</p>`:`
             <form onsubmit="MusicStudio.submitManagement(event,'voice-consent',${id})">
+              <label>同意対象の作品<select name="projectId" required><option value="">作品を選択</option>${state.projects.map(p=>`<option value="${h(p.projectId)}" ${model.consent?.projectId===p.projectId?'selected':''}>${h(p.projectName)}</option>`).join('')}</select></label>
               <label>同意の証跡<input name="reference" maxlength="240" required></label>
               ${permissionInputs}
               <label><input type="checkbox" name="confirmed" required>本人の明示同意と上記の許諾範囲を確認した</label>
@@ -6357,7 +6377,7 @@
             const take=state.projects.find(p=>p.projectId===material.projectId)?.longWavAssets?.find(a=>a.id===material.assetId&&a.vocalTake);
             const pending=voiceMaterialAnalyses.has(material.id);
             return `<li>${h(material.name)}
-            ${take&&managedVoicePermission(model.id,'train')?`<button ${pending?'disabled':''} onclick="MusicStudio.analyzeVoiceMaterial(${id},${materialKey})">${pending?'解析中…':'録音を解析'}</button>`:''}
+            ${take&&managedVoicePermission(model.id,'train',state.settings,material.projectId)?`<button ${pending?'disabled':''} onclick="MusicStudio.analyzeVoiceMaterial(${id},${materialKey})">${pending?'解析中…':'録音を解析'}</button>`:''}
             ${analysis?`<p>${(analysis.frames/analysis.sampleRate).toFixed(2)} 秒 · ${analysis.sampleRate} Hz · ${analysis.channels} ch · RMS ${(20*Math.log10(analysis.rms)).toFixed(1)} dBFS · クリップ ${analysis.clipped} · 検出ピッチ中央値 ${analysis.medianHz===null?'検出なし':analysis.medianHz.toFixed(1)+' Hz'}</p>`:''}
             <button onclick="MusicStudio.submitManagement(event,'voice-remove-material',${id},${h(JSON.stringify(material.id))})">素材登録を解除</button></li>`;
           }).join('')}</ul>
@@ -6477,9 +6497,9 @@
         }else if(action==='voice-revoke'&&model.consent&&!revoked){
           management.revocations.push({id,at:now()});
         }else if(action==='voice-consent'&&!revoked){
-          const reference=read('reference',240),scopes=Object.keys(managementScopes).filter(scope=>fields.getAll('scope').includes(scope));
-          if(!fields.has('confirmed')||!reference||!scopes.length)throw Error('本人同意の証跡と許諾範囲を確認してください。');
-          model.consent={reference,scopes,recordedAt:now()};
+          const projectId=read('projectId',500),reference=read('reference',240),scopes=Object.keys(managementScopes).filter(scope=>fields.getAll('scope').includes(scope));
+          if(!fields.has('confirmed')||!reference||!scopes.length||!state.projects.some(project=>project.projectId===projectId))throw Error('本人同意の証跡と許諾範囲を確認してください。');
+          model.consent={reference,scopes,projectId,modelVersion:model.engine,recordedAt:now()};
         }else if(action==='voice-material'&&!revoked){
           const [projectId,assetId]=JSON.parse(read('asset',1000));
           const project=state.projects.find(item=>item.projectId===projectId);
@@ -6511,6 +6531,8 @@
       model.materials.every(item=>validId(item?.id)&&validId(item.projectId)&&validId(item.assetId)&&validId(item.name)&&
         (item.analysis===undefined||validAnalysis(item.analysis)))&&
       (model.consent===null||(validId(model.consent?.reference)&&validDate(model.consent.recordedAt)&&
+        ((model.consent.projectId===undefined&&model.consent.modelVersion===undefined)||
+          (validId(model.consent.projectId)&&model.consent.modelVersion===model.engine))&&
         Array.isArray(model.consent.scopes)&&model.consent.scopes.every(scope=>Object.hasOwn(managementScopes,scope)))))&&
       revocations.every(item=>validId(item?.id)&&validDate(item.at))&&
       yenAmount(billing?.limit)&&yenAmount(billing.price)&&billing.routes&&typeof billing.routes==='object'&&

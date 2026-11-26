@@ -15,7 +15,8 @@
     "app.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
-      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -24,14 +25,16 @@
     "music-studio-playback.js": "2907ff2137dfd1d6b0b42ff01095ca7de1a90e72",
     "music-studio-audio-pipeline.js": [
       "8b4172defbc760ed9592ec0626791331af943dd7",
-      "460ebf9f285abefc01c00df0ff5bac8d742574a3"
+      "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "music-studio-midi-parser.js": "c4485e8c5477810703072b5da0aa092ef476e510",
     "music-studio-midi.js": "8871933c41a63a68c2f9035475480b25424ea255",
     "music-studio.html": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
-      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -47,11 +50,13 @@
       "d88245560bd216197e5b868df8e54529240b4aa2",
       "460ebf9f285abefc01c00df0ff5bac8d742574a3",
       "141ea9a004c394dc23c67486aa1fe176660e5425",
-      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
-      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
@@ -62,7 +67,8 @@
       "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
     ],
     "tests/music-studio-scoped-midi-repair.test.js": [
-      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
+      "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "scripts/music-final-export-browser.js": [
       "fb7d426e74f5e9fb946503b511a8c04a8d7b0507",
@@ -75,16 +81,23 @@
     "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-production-tools.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-vocal-correction-comp.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-    "tests/music-studio-audio-pipeline.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+    "tests/music-studio-audio-pipeline.test.js": [
+      "460ebf9f285abefc01c00df0ff5bac8d742574a3",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+    ],
     "tests/music-studio-pcm-mix.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-logic-pro.test.js": [
       "6b4a463fbf2944f0969986b12d63df2445bc670a"
     ],
     "tests/music-studio-score-vocal-return.test.js": [
-      "6b4a463fbf2944f0969986b12d63df2445bc670a"
+      "6b4a463fbf2944f0969986b12d63df2445bc670a",
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ],
     "tests/music-studio-long-wav-storage.test.js": [
       "6b4a463fbf2944f0969986b12d63df2445bc670a"
+    ],
+    "scripts/music-production-management-browser.js": [
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
     ]
   },
   "requirements": [
@@ -1793,6 +1806,17 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "decision": {
+        "date": "2026-11-26 JST",
+        "status": "確定",
+        "policy": "作品・用途・モデル版ごとに本人同意を取得する。",
+        "conditions": [
+          "撤回後は新規学習・生成と既存生成物の新規書き出しを停止する。",
+          "公開済み素材は本人と個別に取り決める。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
+        "remaining": "実モデルの学習・生成、既存生成物の書き出し制御と非破壊統合を実機で検証する。"
       }
     },
     {
@@ -2045,6 +2069,17 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "decision": {
+        "date": "2026-11-26 JST",
+        "status": "確定",
+        "policy": "ピアノ・歌声・ギター・ベースを単音／和音ごとに評価する。",
+        "conditions": [
+          "評価用の実演素材で音符一致度と手直し時間を測定する。",
+          "評価結果を踏まえて合格値を決定する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
+        "remaining": "代表実演を揃え、手直し時間を含む測定と数値基準の確定が必要。"
       }
     },
     {
@@ -2066,6 +2101,16 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "decision": {
+        "date": "2026-11-26 JST",
+        "status": "確定",
+        "policy": "低信頼度音符は色とラベルで示し、原音との同期試聴から削除・修正を選択する。",
+        "conditions": [
+          "低信頼度を理由に音符を自動削除しない。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
+        "remaining": "実モデルの音符別信頼度と編集の結合、原音同期試聴を検証する。"
       }
     },
     {
@@ -2087,6 +2132,16 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "decision": {
+        "date": "2026-11-26 JST",
+        "status": "確定",
+        "policy": "生の採譜結果を保持し、整理の差分を確認・承認後に別MIDIトラックへ保存する。",
+        "conditions": [
+          "再開後も原音と生・整理済みの両版を比較できるようにする。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
+        "remaining": "差分承認、別トラックへの原子的保存、再開時の三者比較を検証する。"
       }
     },
     {
@@ -2871,7 +2926,7 @@
       "id": "MS23-A04",
       "feature": 23,
       "category": "A",
-      "requirement": "Cloud Syncの競合とoffline復旧実装",
+      "requirement": "端末内保存とiCloud・外付けSSDバックアップの運用・復元",
       "status": "open",
       "evidence": [],
       "dependsOn": [
@@ -2886,6 +2941,16 @@
           "music-studio-editor.js",
           "music-studio.js"
         ]
+      },
+      "decision": {
+        "date": "2026-11-26 JST",
+        "status": "確定",
+        "policy": "端末内保存とiCloud・SSDバックアップを継続し、今回は双方向同期を採用しない。",
+        "conditions": [
+          "将来の双方向同期の採用前に、競合時の両版保持・暗号化・鍵の復旧を決める。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
+        "remaining": "iCloud・外付けSSD上の実ファイル保存、オフライン運用、復元をMacで検証する。"
       }
     },
     {
@@ -2913,7 +2978,7 @@
           "手動・自動、世代管理、破損検出、保存先切替、オフライン保存と競合防止を検証する"
         ],
         "source": "ユーザー確定仕様（2026-11-20）",
-        "remaining": "複数端末の双方向同期、暗号化・鍵管理方針、実機での保存と復元"
+        "remaining": "iCloud・外付けSSDでの保存と復元を実機で確認する。双方向同期は将来の採用判断まで対象外。"
       }
     },
     {
@@ -3606,8 +3671,29 @@
       "feature": 29,
       "category": "A",
       "requirement": "素材KeyとBPM追従",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-material-key-follow.test.js",
+          "acceptance": "matching a saved minor-key MIDI material creates a tempo/key-adjusted copy and preserves drum pitches",
+          "run": "verification/music-macless-approved-workflows-20261126.json"
+        },
+        {
+          "path": "tests/music-material-key-follow.test.js",
+          "acceptance": "enharmonic respelling writes the new MIDI signature while retaining exact pitches",
+          "run": "verification/music-macless-approved-workflows-20261126.json"
+        },
+        {
+          "path": "tests/music-material-key-follow.test.js",
+          "acceptance": "a ranged MIDI material carries active tempo and meter, then preserves later changes",
+          "run": "verification/music-macless-approved-workflows-20261126.json"
+        },
+        {
+          "path": "scripts/music-production-management-browser.js",
+          "acceptance": "material Key/BPM and modulation survive restart and MIDI export",
+          "run": "verification/music-macless-approved-workflows-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS29-C01"
       ],
@@ -3950,6 +4036,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "75/135 verified. MS21-A02: full Master, Instrumental, Stem, MIDI and manifest delivery with owned/generated test audio through ZIP download and all individual save targets. Verify 24 kHz vocal conversion to 48 kHz, production Save/Replay, Archive and byte-for-byte readback through Chromium OPFS. Rights and native listening are separate. Extend process-kill evidence to final export settings while retaining MS22-A04 and MS30-A02 open."
+    },
+    {
+      "date": "2026-11-26 JST",
+      "baselinePR": 681,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "76/135 verified. MS29-A03: reuse MIDI material with target Key/BPM and preserve adjusted modulation through actual Chromium IndexedDB restart and MIDI file export. Record five decisions from #681 comment 7193923862; scoped voice consent, source audio note-position audition and local/iCloud/SSD guidance are verified only in the tested scope. The five implementation requirements remain open."
     }
   ]
 }

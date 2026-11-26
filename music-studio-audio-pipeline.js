@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='1.0.12';
+  const VERSION='1.0.13';
   const ENDPOINT='http://127.0.0.1:8766';
   const REQUIRED_PIPELINE_REVISION=2;
   const MAX_AUDIO_BYTES=500*1024*1024;
@@ -575,7 +575,8 @@
 
   function releaseTranscriptionReference(){
     if(!transcriptionReference)return;
-    const {audio,url,menu,onToggle}=transcriptionReference;
+    const {audio,url,menu,onToggle,button}=transcriptionReference;
+    button.disabled=true;
     menu?.removeEventListener('toggle',onToggle);
     audio.pause();
     audio.hidden=true;
@@ -589,7 +590,7 @@
     releaseTranscriptionReference();
     const file=input.files?.[0],review=input.closest('[data-transcription-reference]');
     if(!review)return;
-    const audio=review.querySelector('audio'),status=review.querySelector('[role="status"]');
+    const audio=review.querySelector('audio'),status=review.querySelector('[role="status"]'),button=review.querySelector('button');
     audio.hidden=true;
     status.textContent='';
     if(!file)return;
@@ -613,7 +614,8 @@
         releaseTranscriptionReference();
       };
       menu?.addEventListener('toggle',onToggle);
-      transcriptionReference={audio,url,menu,onToggle};
+      transcriptionReference={audio,url,menu,onToggle,button,review,status};
+      button.disabled=false;
       audio.src=url;
       audio.hidden=false;
       status.textContent='元音声を確認しました。';
@@ -627,13 +629,42 @@
     }
   }
 
+  async function playTranscriptionReferenceNote(button){
+    const reference=transcriptionReference;
+    if(!reference||reference.button!==button||!button.isConnected)return false;
+    const {audio,status,review}=reference,app=root.MusicStudio,session=app.state.midiEditor;
+    const project=app.state.projects.find(item=>item.projectId===session?.projectId);
+    const track=root.MusicStudioEditor?.currentTrack(session);
+    const note=track?.notes.find(item=>item.id===session.selectedNoteId);
+    if(!note||project?.importSource?.transcription?.sourceSha256!==review.dataset.transcriptionReference){
+      status.textContent='MIDIエディターで比較する音符を選択してください。';
+      return false;
+    }
+    const midi=session.midiData;
+    const seconds=root.MusicStudioPlayback.tickDurationSeconds(0,note.startTick,midi.ppq,midi.tempoMap,midi.tempo);
+    if(!Number.isFinite(audio.duration)||seconds>=audio.duration){
+      status.textContent='元音声の読み込み完了と音符の位置を確認してください。';
+      return false;
+    }
+    try{
+      audio.currentTime=seconds;
+      await audio.play();
+      if(reference!==transcriptionReference)return false;
+      status.textContent=`元音声 ${seconds.toFixed(2)} 秒から再生しています。`;
+      return true;
+    }catch(_){
+      if(reference===transcriptionReference)status.textContent='元音声を再生できませんでした。';
+      return false;
+    }
+  }
+
   function install(){
     const api=root.MusicStudio;
     if(installed||!api||typeof api.importExternalSongFile!=='function')return false;
     originalImport=api.importExternalSongFile.bind(api);
     api.importExternalSongFile=function(file){return isAudioFile(file)?importAudioFile(file):originalImport(file)};
     root.addEventListener?.('pagehide',releaseTranscriptionReference);
-    api.audioStemMidiPipeline={VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,cancelAudioImport,loadTranscriptionReference,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader};
+    api.audioStemMidiPipeline={VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,cancelAudioImport,loadTranscriptionReference,playTranscriptionReferenceNote,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader};
     installed=true;
     enhanceExternalInput();
     if(root.MutationObserver&&root.document?.body){
@@ -651,7 +682,7 @@
     if(attempt<240)root.setTimeout?.(()=>installWhenReady(attempt+1),50);
   }
 
-  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,cancelAudioImport,loadTranscriptionReference,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader,install});
+  root.MusicStudioAudioPipeline=Object.freeze({VERSION,ENDPOINT,parseAudioInstruction,importAudioFile,importSeparatedAudio,cancelSeparatedAudio,cancelAudioImport,loadTranscriptionReference,playTranscriptionReferenceNote,hashBrowserArtifact,consumeBrowserArtifact,invalidateArtifactHash,isAudioFile,processAudioLocally,bootstrapIdentity,bootstrapLocal,stopLocal,bootstrapStatus,configureIdentity,connectIdentity,validateIdentity,validateProcessingReceipt,enhanceExternalInput,assertMidiHeader,install});
   if(root.__NOVA_LOCAL_HANDOFF||root.location?.hash?.startsWith('#nova-local=')){
     bootstrapState='BLOCKED';
     try{
