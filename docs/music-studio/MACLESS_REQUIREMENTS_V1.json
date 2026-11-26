@@ -7,7 +7,10 @@
   "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "historicalRuntimeSnapshots": {
-    "scripts/music-indexeddb-browser-persistence.cjs": "1932d8dd2849e77c74674622334aef4a5385a7cc",
+    "scripts/music-indexeddb-browser-persistence.cjs": [
+      "1932d8dd2849e77c74674622334aef4a5385a7cc",
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
+    ],
     "music-studio.css": "ecde209abff6a6b47587f084a7c054744da98601",
     "app.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -43,7 +46,8 @@
       "0dc6c34fdad125544fc4811e1355d4e2966f1f0a",
       "d88245560bd216197e5b868df8e54529240b4aa2",
       "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-      "141ea9a004c394dc23c67486aa1fe176660e5425"
+      "141ea9a004c394dc23c67486aa1fe176660e5425",
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
@@ -61,10 +65,12 @@
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f"
     ],
     "scripts/music-final-export-browser.js": [
-      "fb7d426e74f5e9fb946503b511a8c04a8d7b0507"
+      "fb7d426e74f5e9fb946503b511a8c04a8d7b0507",
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
     ],
     "tests/music-studio-final-export.test.js": [
-      "d889137661f54781e59d74853771566141f92084"
+      "d889137661f54781e59d74853771566141f92084",
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
     ],
     "music-studio-ai-workflow.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-production-tools.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
@@ -2558,8 +2564,29 @@
       "feature": 21,
       "category": "A",
       "requirement": "MasterとInstrumentalとStemとMIDI一括出力の全経路",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "tests/music-studio-final-export.test.js",
+          "acceptance": "ZIP local headers, central directory, actual CRC and file data are interoperable",
+          "run": "verification/music-macless-export-acceptance-20261126.json"
+        },
+        {
+          "path": "tests/music-studio-final-export.test.js",
+          "acceptance": "Save as retains user activation, verifies actual saved bytes, and records only a filename",
+          "run": "verification/music-macless-export-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-final-export-browser.js",
+          "acceptance": "final-file-bytes:",
+          "run": "verification/music-macless-export-acceptance-20261126.json"
+        },
+        {
+          "path": "scripts/music-final-export-browser.js",
+          "acceptance": "downloadVerified:true",
+          "run": "verification/music-macless-export-acceptance-20261126.json"
+        }
+      ],
       "dependsOn": [
         "MS21-C01"
       ],
@@ -3916,6 +3943,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "74/135 verified. MS14-A02–A04: additive recorded-vocal Harmony/Double/Chorus rendering uses the existing user-approved recording route. Actual Chromium verifies distinct rendered WAVs, source integrity, lost response reconciliation, restart and Archive restore. MS14-A05 and MS14-B01 remain open. MS21-A03: technical pre-distribution package completeness and measured loudness audit verified. Rights declarations (MS21-A04) remain open."
+    },
+    {
+      "date": "2026-11-26 JST",
+      "baselinePR": 680,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "75/135 verified. MS21-A02: full Master, Instrumental, Stem, MIDI and manifest delivery with owned/generated test audio through ZIP download and all individual save targets. Verify 24 kHz vocal conversion to 48 kHz, production Save/Replay, Archive and byte-for-byte readback through Chromium OPFS. Rights and native listening are separate. Extend process-kill evidence to final export settings while retaining MS22-A04 and MS30-A02 open."
     }
   ]
 }

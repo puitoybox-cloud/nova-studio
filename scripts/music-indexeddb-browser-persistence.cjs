@@ -126,8 +126,15 @@ test('real Chromium IndexedDB persists production history and backup restore acr
   // request succeeds but before its transaction can commit. Keep the transaction
   // active with real IDB requests; do not replace the repository with a mock.
   let interruptedPage=recoveredPage;
-  for(const entry of ['runAutoBackupCheck','productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject','materialCreate','versionSave','versionApply','versionUndo','versionRedo','pcmApply','pcmImportLongFile','saveLyricsAssignment','productionSessionSave']){
+  for(const entry of ['runAutoBackupCheck','productionDaySave','materialCapture','materialImport','recoverMissingBinary','createAIProject','duplicateProject','materialCreate','versionSave','versionApply','versionUndo','versionRedo','pcmApply','pcmImportLongFile','saveLyricsAssignment','finalSave','productionSessionSave']){
    if(entry==='pcmApply')await interruptedPage.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository();let p=await r.get('chromium-restart-history');p=a.pcmImport(p,{sampleRate:48000,channels:[[0,.5,-.5,0]]},'Crash-safe PCM');await r.put(p);a.state.projects=[p]});
+   if(entry==='finalSave')await interruptedPage.evaluate(async()=>{
+    const app=MusicStudio,repo=app.indexedDbRepository();
+    let project=await repo.get('chromium-restart-history');
+    const samples=Array.from({length:24000},(_,i)=>.1*Math.sin(i*Math.PI/17));
+    project=app.pcmImport(project,{sampleRate:48000,channels:[samples]},'Export source.wav');
+    await repo.put(project);
+   });
    if(entry==='versionApply')await interruptedPage.evaluate(async()=>{const a=MusicStudio,r=a.indexedDbRepository(),p=await r.get('chromium-restart-history');p.productionNotes='Before interrupted adoption';p.revision++;await r.put(p);a.state.projects=[p]});
    if(entry==='recoverMissingBinary')await interruptedPage.evaluate(async()=>{
     const repo=MusicStudio.indexedDbRepository(),p=await repo.get('chromium-restart-history');
@@ -139,7 +146,11 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    const beforeBackups=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().listAutoBackups());
    const beforeIds=await interruptedPage.evaluate(async()=>(await MusicStudio.indexedDbRepository().list()).map(p=>p.projectId).sort());
    const before=await interruptedPage.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history'));
-   const armed=new Promise(resolve=>interruptedPage.on('console',m=>{if(m.text()==='NOVA_TRANSACTION_ACTIVE')resolve()}));
+   const armed=new Promise((resolve,reject)=>interruptedPage.on('console',m=>{
+    const text=m.text();
+    if(text==='NOVA_TRANSACTION_ACTIVE')resolve();
+    if(text.startsWith('NOVA_SAVE_ENDED '))reject(Error(entry+': '+text));
+   }));
    await interruptedPage.evaluate(entry=>{
     for(const method of ['put','add']){const original=IDBObjectStore.prototype[method];
     IDBObjectStore.prototype[method]=function(value,...args){
@@ -154,6 +165,15 @@ test('real Chromium IndexedDB persists production history and backup restore acr
      return request;
     };}
     const app=MusicStudio;app.setRepository(app.indexedDbRepository());
+    window.prepareFinalExport=async project=>{
+     const key='pcm:'+project.pcmMix.assets.at(-1).id;
+     const result=await app.finalPreview(project.projectId,{
+      format:'nova-final-export-plan-v1',targetLufs:-14,ceilingDb:-1,
+      routes:[{key,role:'instrument',startSeconds:0,gainDb:0,muted:false}]
+     });
+     if(!result.ok)throw Error(result.error);
+     return app.finalSave(project.projectId);
+    };
     window.pendingSave=app.indexedDbRepository().get('chromium-restart-history').then(p=>{
      app.state.projects=[p];
      if(entry==='runAutoBackupCheck'){app.state.settings=app.normalizeSettings({backup:{automaticEnabled:true,intervalHours:1,maxCopies:1}});return app.runAutoBackupCheck('2026-11-04T00:00:00Z')}
@@ -166,16 +186,17 @@ test('real Chromium IndexedDB persists production history and backup restore acr
      if(entry==='pcmApply'){app.pcmOpen(p.projectId);app.pcmEditor.preview=app.pcmPreview(p,p.pcmMix.assets.at(-1).id,-6);return app.pcmApply(p.projectId)}
      if(entry==='pcmImportLongFile'){app.pcmOpen(p.projectId);const blob=new Blob([app.pcmEncodeWav({sampleRate:48000,channels:[[0,.25,-.25,0]]})],{type:'audio/wav'});blob.name='Interrupted.wav';return app.pcmImportLongFile(blob,p.projectId)}
      if(entry==='saveLyricsAssignment'){app.lyricsAssignmentView(p.projectId);app.lyricsEditor.preview=app.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'君',reading:'きみ'});return app.saveLyricsAssignment(p.projectId)}
+     if(entry==='finalSave')return window.prepareFinalExport(p);
      if(entry==='productionSessionSave')return app.productionSessionSave(p.projectId,'finish','Interrupted finish');
      if(entry==='recoverMissingBinary')return app.recoverMissingBinary(p.projectId,'crash-recovery-binary',new Blob(['durable-original']));
      if(entry==='materialCapture')return app.materialCapture(p.projectId,{name:'Interrupted material'});
      if(entry==='materialImport'){const text=app.materialExport(p.projectId).text;return app.materialImport(p.projectId,{size:text.length,text:async()=>text})}
      return app.productionDaySave(p.projectId,'2026-11-04','Must not partially publish');
     });
-    window.pendingSave.then(()=>console.log('NOVA_UNEXPECTED_COMMIT'));
+    window.pendingSave.then(result=>console.log('NOVA_SAVE_ENDED '+JSON.stringify(result)),error=>console.log('NOVA_SAVE_ENDED '+error.message));
    },entry);
    let timer;
-   try{await Promise.race([armed,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('write transaction never became active')),10000)})])}finally{clearTimeout(timer)}
+   try{await Promise.race([armed,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(entry+': write transaction never became active')),10000)})])}finally{clearTimeout(timer)}
    await stop('SIGKILL');browser=await launch();
    const resumed=await browser.newPage();await resumed.goto(origin);await resumed.addScriptTag({url:origin+'/music-studio.js'});await resumed.waitForFunction(()=>MusicStudio.state.loaded===true);
    assert.deepEqual(await resumed.evaluate(async()=>await MusicStudio.indexedDbRepository().get('chromium-restart-history')),before,'interrupted transaction must preserve the complete prior project and history');
@@ -193,6 +214,16 @@ test('real Chromium IndexedDB persists production history and backup restore acr
     if(entry==='pcmApply'){const p=app.state.projects.find(p=>p.projectId===id);app.pcmOpen(id);app.pcmEditor.preview=app.pcmPreview(p,p.pcmMix.assets.at(-1).id,-6);return (await app.pcmApply(id)).ok}
     if(entry==='pcmImportLongFile'){app.pcmOpen(id);const blob=new Blob([app.pcmEncodeWav({sampleRate:48000,channels:[[0,.25,-.25,0]]})],{type:'audio/wav'});blob.name='Retried.wav';return (await app.pcmImportLongFile(blob,id)).ok}
     if(entry==='saveLyricsAssignment'){const p=app.state.projects.find(p=>p.projectId===id);app.lyricsAssignmentView(id);app.lyricsEditor.preview=app.lyricsAssignmentPreview(p,{trackId:'lead',fromNote:1,toNote:1,text:'君',reading:'きみ'});return (await app.saveLyricsAssignment(id)).ok}
+    if(entry==='finalSave'){
+     const project=app.state.projects.find(project=>project.projectId===id);
+     const key='pcm:'+project.pcmMix.assets.at(-1).id;
+     const result=await app.finalPreview(id,{
+      format:'nova-final-export-plan-v1',targetLufs:-14,ceilingDb:-1,
+      routes:[{key,role:'instrument',startSeconds:0,gainDb:0,muted:false}]
+     });
+     if(!result.ok)throw Error(result.error);
+     return (await app.finalSave(id)).ok;
+    }
     if(entry==='productionSessionSave')return (await app.productionSessionSave(id,'finish','Retried finish')).ok;
     if(entry==='recoverMissingBinary'){if(await repo.getLongWav('crash-recovery-binary'))throw Error('uncommitted binary survived');return (await app.recoverMissingBinary(id,'crash-recovery-binary',new Blob(['durable-original']))).ok}
     if(entry==='materialCapture')return (await app.materialCapture(id,{name:'Retry material'})).ok;
@@ -207,6 +238,14 @@ test('real Chromium IndexedDB persists production history and backup restore acr
    else if(['versionApply','versionUndo','versionRedo'].includes(entry)){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'checkpoint-history');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.deepEqual(retried.songVersions.days,before.songVersions.days);assert.equal(retried.songVersions.cursor,before.songVersions.cursor+(entry==='versionUndo'?-1:1));if(entry==='versionUndo')assert.equal(retried.productionNotes,'Before interrupted adoption');else assert.equal(retried.productionNotes,before.songVersions.checkpoints.at(-1).snapshot.productionNotes)}
    else if(['pcmApply','pcmImportLongFile'].includes(entry)){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'audio-editor');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.deepEqual(retried.songVersions.days,before.songVersions.days);if(entry==='pcmApply'){assert.deepEqual(retried.pcmMix.assets.at(-1).original,before.pcmMix.assets.at(-1).original);assert.equal(retried.pcmMix.assets.at(-1).cursor,1);assert.equal(retried.pcmMix.assets.at(-1).gains[1],-6)}else{assert.equal(retried.longWavAssets.length,(before.longWavAssets||[]).length+1);assert.deepEqual(await resumed.evaluate(async assetId=>{const a=MusicStudio,r=a.indexedDbRepository(),actual=await r.getLongWav(assetId);return Array.from(new Uint8Array(await actual.blob.arrayBuffer()))},retried.longWavAssets.at(-1).id),await resumed.evaluate(()=>Array.from(new Uint8Array(MusicStudio.pcmEncodeWav({sampleRate:48000,channels:[[0,.25,-.25,0]]})))))} }
    else if(entry==='saveLyricsAssignment'){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'lyrics-editor');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.deepEqual(retried.songVersions.days,before.songVersions.days);assert.deepEqual(retried.midiData,before.midiData);assert.equal(retried.syllableAssignments.length,(before.syllableAssignments||[]).length+1);assert.equal(retried.syllableAssignments.at(-1).assignments[0].token,'きみ')}
+   else if(entry==='finalSave'){
+    assert.equal(retried.finalExportHistory.length,(before.finalExportHistory||[]).length+1);
+    assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);
+    assert.equal(retried.songVersions.edits.at(-1).source,'final-export');
+    assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.edits.at(-1).sessionId);
+    assert.deepEqual(retried.songVersions.days,before.songVersions.days);
+    assert.deepEqual(retried.pcmMix,before.pcmMix);
+   }
    else if(entry==='productionSessionSave'){assert.ok(retried.songVersions.sessions.at(-1).endedAt);assert.equal(retried.songVersions.sessions.at(-1).endNote,'Retried finish')}
    else if(entry==='productionDaySave')assert.equal(retried.songVersions.days.find(d=>d.day==='2026-11-04')?.note,'Retry after crash');
    else if(entry==='recoverMissingBinary'){assert.equal(retried.songVersions.edits.length,before.songVersions.edits.length+1);assert.equal(retried.songVersions.edits.at(-1).source,'dependency-recovery');assert.equal(retried.songVersions.edits.at(-1).sessionId,before.songVersions.sessions[0].id);assert.equal(await resumed.evaluate(async()=>await (await MusicStudio.indexedDbRepository().getLongWav('crash-recovery-binary')).blob.text()),'durable-original')}
