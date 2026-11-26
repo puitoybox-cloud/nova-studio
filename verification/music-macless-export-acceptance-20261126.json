@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-26 JST",
+  "baseHead": "09a58aa30c4e09a3fa2297f7c916375387d0c831",
+  "chromium": "152.0.7977.0",
+  "passed": 4,
+  "failed": 0,
+  "acceptedCases": [
+    "ZIP local headers, central directory, actual CRC and file data are interoperable",
+    "Save as retains user activation, verifies actual saved bytes, and records only a filename",
+    "final-file-bytes:",
+    "downloadVerified:true"
+  ],
+  "sourceHashes": {
+    "tests/music-studio-final-export.test.js": "f31cf2a14c1de8e6c6d49f643c4479d4023271fe98c22ef19410c9fdb29fcb00",
+    "scripts/music-final-export-browser.js": "0682dd841edd83137bd63ccc0d2fb9492b10a617076a0fb1bc04512e269fb763",
+    "scripts/music-indexeddb-browser-persistence.cjs": "094e0536e08e231a9c04b352cd575f531c6a2892aef5b08b734d69407d984341"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "7a581cfff5a3bf6b235b8270122d90fab57be3193eeb67db8eec8847bf234d5a",
+    "music-studio.html": "bc99835b451b0a7277f3b46329c57b0bafafa8c3426978d10b40e50ff9cf6c06"
+  },
+  "export": {
+    "inputVocalHz": 24000,
+    "outputHz": 48000,
+    "widths": [
+      1440,
+      820,
+      390
+    ],
+    "packageFiles": [
+      "Master.wav",
+      "Mix.wav",
+      "Instrumental.wav",
+      "Vocal-Stem.wav",
+      "Instrument-1.wav",
+      "Vocal-2.wav",
+      "Song.mid",
+      "Manifest.json"
+    ],
+    "fileSaveReadbackSha256": [
+      "Package.zip",
+      "Master.wav",
+      "Mix.wav",
+      "Instrumental.wav",
+      "Vocal-Stem.wav",
+      "Instrument-1.wav",
+      "Vocal-2.wav",
+      "Song.mid",
+      "Manifest.json"
+    ],
+    "fileHandleBackend": "Chromium OPFS; picker supplied by test",
+    "peakDbTP": -11.599952729924146,
+    "lufs": -14.000000099985092,
+    "archiveReplayByteEqual": true
+  },
+  "pendingRequirementCoverage": {
+    "MS22-A04": "finalSave actual Chromium SIGKILL before commit, restart and successful retry",
+    "MS30-A02": "finalSave adds one edit linked to active Session and leaves daily and Mix data intact"
+  },
+  "runLogHashes": {
+    "crash": "00b527a69a838767043a3efdb41a1bc50e328c57aec768cd6adc6fedafdccea5",
+    "export": "a7712e05ee4cb102b4510c4d9bd4d549c986f4b58ee858cdb0898616db260d21"
+  }
+}
