@@ -28,6 +28,14 @@ class MonophonicSelectionTests(unittest.TestCase):
                          [first, second, last])
 
 
+    def test_small_model_tail_overlap_does_not_discard_neighboring_note(self):
+        from types import SimpleNamespace
+        first = SimpleNamespace(start=0.0, end=0.512, velocity=90, pitch=60)
+        second = SimpleNamespace(start=0.50, end=1.0, velocity=90, pitch=64)
+        self.assertEqual(server.monophonic_notes([second, first]), [first, second])
+        self.assertEqual(first.end, 0.512)
+
+
 @unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("mido", "soundfile", "numpy")),
                      "audio analysis dependencies are unavailable")
 class SyntheticMelodyAccuracyTests(unittest.TestCase):
