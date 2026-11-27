@@ -13,6 +13,7 @@ import importlib.util
 import importlib.metadata
 import json
 import math
+import collections
 import os
 import shutil
 import subprocess
@@ -750,10 +751,10 @@ def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
         if mode == "polyphonic":
             onset, frame = POLYPHONIC_THRESHOLDS[instrument]
             thresholds = {'onset_threshold': onset, 'frame_threshold': frame}
-        _, prediction, _ = predict(str(source), minimum_frequency=note_number_to_hz(low),
+        _, prediction, note_events = predict(str(source), minimum_frequency=note_number_to_hz(low),
                                    maximum_frequency=note_number_to_hz(high + 1), **thresholds)
     else:
-        _, prediction, _ = predict(str(source))
+        _, prediction, note_events = predict(str(source))
     for track in prediction.instruments:
         if profile:
             track.program = program
@@ -763,6 +764,20 @@ def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
     if not notes:
         raise ValueError("音符を検出できませんでした。")
     strengths = [note.velocity for note in notes]
+    # Bind model activations to the exact SMF positions, never to velocity.
+    # Ambiguous detections are omitted instead of assigning a score to the wrong note.
+    key = lambda start, end, pitch: (prediction.time_to_tick(start), prediction.time_to_tick(end), int(pitch))
+    scores = {}
+    for start, end, pitch, amplitude, *_ in note_events:
+        score = float(amplitude)
+        if math.isfinite(score) and 0 <= score <= 1:
+            identity = key(start, end, pitch)
+            scores[identity] = score if identity not in scores else None
+    surviving = [key(note.start, note.end, note.pitch) for note in notes]
+    duplicates = {identity for identity, count in collections.Counter(surviving).items() if count > 1}
+    review_scores = [[start, end, pitch, scores[(start, end, pitch)]]
+                     for start, end, pitch in surviving
+                     if (start, end, pitch) not in duplicates and scores.get((start, end, pitch)) is not None]
     prediction.write(str(midi))
     raw = midi.read_bytes()
     if len(raw) > 64 * 1024 * 1024:
@@ -771,7 +786,8 @@ def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
             'sourceDigest': SOURCE_DIGEST, 'runtimeIdentity': runtime_health_identity(),
             'localOnly': True, 'stems': [], 'model': 'basic-pitch',
             'modelVersion': importlib.metadata.version('basic-pitch'),
-            'sourceSha256': file_sha256(source), 'confidenceAvailable': False,
+            'sourceSha256': file_sha256(source), 'confidenceAvailable': 0 < len(review_scores) <= 100000,
+            'noteScores': review_scores if len(review_scores) <= 100000 else [],
             'transcriptionMode': mode, 'transcriptionInstrument': instrument, 'detection': {
                 'noteCount': len(strengths), 'minimumVelocity': min(strengths),
                 'maximumVelocity': max(strengths)},

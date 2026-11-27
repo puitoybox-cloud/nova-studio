@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-27 JST",
+  "baseHead": "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+  "passed": 4,
+  "failed": 0,
+  "chromium": "152.0.7977.0",
+  "helper": "Basic Pitch 0.4.0, ONNX Runtime 1.32.0, outbound socket initiation blocked by Linux launcher",
+  "fixture": "Generated from bundled piano WAV with quiet upper notes using scripts/music-audio-piano-fixture.py --quiet-upper",
+  "acceptedCases": [
+    "real helper produced no attributable note scores",
+    "manualDeletePreservedRaw:true",
+    "差分を承認して別MIDIトラックに保存",
+    "cleanupRestart:true"
+  ],
+  "sourceHashes": {
+    "scripts/music-audio-model-browser.cjs": "04a6da5739e9743d253ce37677353dacd6041f143a05c1ce1921ce3e8c976acc"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "10fd42bd55cf65482633902b49e886734f1d2d5a15020a3704271eedc49cfeed",
+    "music-studio.html": "a75c40d1b99011213885609882e641dec9a480e6da17bd855f023c8c9814c7a0",
+    "music-studio-audio-pipeline.js": "335ad54c71a1539cc2e054d6146342f54c25d75ba80846d78bd1eb6c7411bf8c",
+    "music-studio-dynamic-track-selection.css": "809d773b7ad4ede2d2722e056e67c9662e0843fcb34e9e031ce6af143150b418",
+    "tools/music-audio-pipeline/server.py": "51890d3dac31978491710ca8b5c1057dd3c80909de152f2d5ea03ab233625052"
+  },
+  "realModelBrowser": {
+    "realModelNoteScore": 0.48821020126342773,
+    "manualPitchEdit": {
+      "before": 60,
+      "after": 61,
+      "raw": 60,
+      "detected": 3
+    },
+    "manualDeletePreservedRaw": true,
+    "sourceAudioStart": 0.26590909090909093,
+    "cleanupChanges": 9,
+    "cleanupRestart": true,
+    "sourceHash": "f119fb3d14a46c182cf1ea5610a4ad2426bba44e1821b1a062aa5dab5b065980",
+    "noteCount": 9
+  },
+  "cases": [
+    "Reject nonmatching audio; verify matching source and seek from the selected note.",
+    "Render the low-score note with the warning outline and accessible label. Save a manual change and delete a selected note while retaining raw notes.",
+    "Cancel timing changes without a write, approve the same changes and preserve the edited-track separation, source bytes, note pitches and durations.",
+    "Restart Chromium and open the durable source; audition both saved MIDI variants."
+  ],
+  "limits": [
+    "Scores are detection activations, not calibrated confidence probabilities. 50% is the review marker, not the accuracy acceptance threshold.",
+    "Piano single-note/chords fixture only. Representative held-out performance and editing duration are MS17-A02.",
+    "Native helper packaging and Intel Mac are outside this Linux browser run."
+  ],
+  "logHashes": {
+    "browser": "ba85133202bdb9244a371ca3f762575affebe19e4378f8b9bab62191327a938c",
+    "pythonBoundary": "d007668397cfc5fa673afc07290652c84209f46b7b68320538188463a5c4928a"
+  }
+}

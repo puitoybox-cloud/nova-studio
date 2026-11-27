@@ -16,7 +16,8 @@
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -26,7 +27,8 @@
     "music-studio-audio-pipeline.js": [
       "8b4172defbc760ed9592ec0626791331af943dd7",
       "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "music-studio-midi-parser.js": "c4485e8c5477810703072b5da0aa092ef476e510",
     "music-studio-midi.js": "8871933c41a63a68c2f9035475480b25424ea255",
@@ -34,7 +36,8 @@
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -51,12 +54,14 @@
       "460ebf9f285abefc01c00df0ff5bac8d742574a3",
       "141ea9a004c394dc23c67486aa1fe176660e5425",
       "09a58aa30c4e09a3fa2297f7c916375387d0c831",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
@@ -68,7 +73,8 @@
     ],
     "tests/music-studio-scoped-midi-repair.test.js": [
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "scripts/music-final-export-browser.js": [
       "fb7d426e74f5e9fb946503b511a8c04a8d7b0507",
@@ -83,7 +89,8 @@
     "tests/music-studio-vocal-correction-comp.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-audio-pipeline.test.js": [
       "460ebf9f285abefc01c00df0ff5bac8d742574a3",
-      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+      "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "tests/music-studio-pcm-mix.test.js": "460ebf9f285abefc01c00df0ff5bac8d742574a3",
     "tests/music-studio-logic-pro.test.js": [
@@ -98,6 +105,30 @@
     ],
     "scripts/music-production-management-browser.js": [
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56"
+    ],
+    "music-studio-dynamic-track-selection.css": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "scripts/music-audio-model-browser.cjs": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "scripts/music-audio-piano-fixture.py": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "tests/music-studio-dynamic-track-selection.test.js": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "tests/music-studio-external-song-import.test.js": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "tests/music-studio-home.test.js": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "tests/music-studio-ipad-touch.test.js": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "tools/music-audio-pipeline/server.py": [
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ]
   },
   "requirements": [
@@ -2087,8 +2118,19 @@
       "feature": 17,
       "category": "A",
       "requirement": "信頼度と比較修正UIの統合",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-audio-model-browser.cjs",
+          "acceptance": "real helper produced no attributable note scores",
+          "run": "verification/music-macless-transcription-review-20261127.json"
+        },
+        {
+          "path": "scripts/music-audio-model-browser.cjs",
+          "acceptance": "manualDeletePreservedRaw:true",
+          "run": "verification/music-macless-transcription-review-20261127.json"
+        }
+      ],
       "dependsOn": [
         "MS17-C01"
       ],
@@ -2110,7 +2152,7 @@
           "低信頼度を理由に音符を自動削除しない。"
         ],
         "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
-        "remaining": "実モデルの音符別信頼度と編集の結合、原音同期試聴を検証する。"
+        "remaining": "別要件MS17-A02で実演素材による対象楽器・方式別の精度と手直し時間を評価する。"
       }
     },
     {
@@ -2118,8 +2160,19 @@
       "feature": 17,
       "category": "A",
       "requirement": "変換後の自動整理と保存再開",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-audio-model-browser.cjs",
+          "acceptance": "差分を承認して別MIDIトラックに保存",
+          "run": "verification/music-macless-transcription-review-20261127.json"
+        },
+        {
+          "path": "scripts/music-audio-model-browser.cjs",
+          "acceptance": "cleanupRestart:true",
+          "run": "verification/music-macless-transcription-review-20261127.json"
+        }
+      ],
       "dependsOn": [
         "MS17-C01"
       ],
@@ -2141,7 +2194,7 @@
           "再開後も原音と生・整理済みの両版を比較できるようにする。"
         ],
         "source": "https://github.com/puitoybox-cloud/nova-studio/pull/681#issuecomment-7193923862",
-        "remaining": "差分承認、別トラックへの原子的保存、再開時の三者比較を検証する。"
+        "remaining": "別要件MS17-A02で実演素材による対象楽器・方式別の精度と手直し時間を評価する。"
       }
     },
     {
@@ -4043,6 +4096,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "76/135 verified. MS29-A03: reuse MIDI material with target Key/BPM and preserve adjusted modulation through actual Chromium IndexedDB restart and MIDI file export. Record five decisions from #681 comment 7193923862; scoped voice consent, source audio note-position audition and local/iCloud/SSD guidance are verified only in the tested scope. The five implementation requirements remain open."
+    },
+    {
+      "date": "2026-11-27 JST",
+      "baselinePR": 682,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "78/135 verified. MS17-A03 and MS17-A04: real Basic Pitch ONNX scores and selected-position source audition, durable manual pitch/delete preserving raw notes, explicit timing diff approval, separate MIDI track and atomically stored original audio, three-way review after Chromium restart. Pitch/voice/etc accuracy (MS17-A02) and managed voice model execution (MS14-A05) remain open."
     }
   ]
 }
