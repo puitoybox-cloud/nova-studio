@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率 **56.30%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率 **57.78%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -30,7 +30,7 @@ A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率
 | 14 | 5 | 4 | 1 | 1 | 1 |
 | 15 | 4 | 4 | 0 | 1 | 0 |
 | 16 | 3 | 1 | 2 | 1 | 1 |
-| 17 | 4 | 1 | 3 | 1 | 1 |
+| 17 | 4 | 3 | 1 | 1 | 1 |
 | 18 | 5 | 5 | 0 | 1 | 0 |
 | 19 | 4 | 4 | 0 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
@@ -147,8 +147,8 @@ A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率
 | MS16-C01 | C | 分離モデルweightと再配布許諾 | open | 未確認 |
 | MS17-A01 | A | repair only the selected track and measures; preserve input and locked notes | verified | [tests/music-studio-scoped-midi-repair.test.js](../../tests/music-studio-scoped-midi-repair.test.js) — `repair only the selected track and measures; preserve input and locked notes` |
 | MS17-A02 | A | 単音和音設定の実モデル接続 | open | MS17-C01 |
-| MS17-A03 | A | 信頼度と比較修正UIの統合 | open | MS17-C01 |
-| MS17-A04 | A | 変換後の自動整理と保存再開 | open | MS17-C01 |
+| MS17-A03 | A | 信頼度と比較修正UIの統合 | verified | [scripts/music-audio-model-browser.cjs](../../scripts/music-audio-model-browser.cjs) — `real helper produced no attributable note scores`; [scripts/music-audio-model-browser.cjs](../../scripts/music-audio-model-browser.cjs) — `manualDeletePreservedRaw:true` |
+| MS17-A04 | A | 変換後の自動整理と保存再開 | verified | [scripts/music-audio-model-browser.cjs](../../scripts/music-audio-model-browser.cjs) — `差分を承認して別MIDIトラックに保存`; [scripts/music-audio-model-browser.cjs](../../scripts/music-audio-model-browser.cjs) — `cleanupRestart:true` |
 | MS17-B01 | B | Intel実Helperで6音精度と一般作品精度 | open | 未確認 |
 | MS17-C01 | C | 変換モデルの対象楽器と精度基準 | open | 未確認 |
 | MS18-A01 | A | actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input | verified | [tests/music-studio-pcm-mix.test.js](../../tests/music-studio-pcm-mix.test.js) — `actual stereo PCM Gain, peak and clipping matches independent expected samples and protects input` |
@@ -237,7 +237,7 @@ A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 2 |
-| 仕様判断待ち | 63 | 57 |
+| 仕様判断待ち | 63 | 55 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
 
@@ -300,8 +300,8 @@ A：総数 **135**、証拠付き完了 **76**、残数 **59**、受入確認率
 | MS16-A02 | 仕様判断待ち | open |
 | MS16-A03 | 仕様判断待ち | open |
 | MS17-A02 | 仕様判断待ち | open |
-| MS17-A03 | 仕様判断待ち | open |
-| MS17-A04 | 仕様判断待ち | open |
+| MS17-A03 | 仕様判断待ち | verified |
+| MS17-A04 | 仕様判断待ち | verified |
 | MS18-A02 | 実装済み・検証不足 | verified |
 | MS18-A03 | 実装済み・検証不足 | verified |
 | MS19-A02 | 実装済み・検証不足 | verified |
@@ -408,7 +408,7 @@ AIアシスタントのすべてのデータ・設定変更操作は実行前に
 
 - 低信頼度を理由に音符を自動削除しない。
 
-残件　実モデルの音符別信頼度と編集の結合、原音同期試聴を検証する。
+残件　別要件MS17-A02で実演素材による対象楽器・方式別の精度と手直し時間を評価する。
 
 ### MS17-A04（2026-11-26 JST）
 
@@ -416,7 +416,7 @@ AIアシスタントのすべてのデータ・設定変更操作は実行前に
 
 - 再開後も原音と生・整理済みの両版を比較できるようにする。
 
-残件　差分承認、別トラックへの原子的保存、再開時の三者比較を検証する。
+残件　別要件MS17-A02で実演素材による対象楽器・方式別の精度と手直し時間を評価する。
 
 ### MS17-C01（2026-11-25 JST）
 

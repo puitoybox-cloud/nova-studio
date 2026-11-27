@@ -119,21 +119,118 @@ async function main(){
     assert.deepEqual(reopened,reports.map(({notes,metadata})=>({notes,metadata})));
     await page.evaluate(id=>MusicStudio.openMidiEditor(id),reports[1].id);
     await page.waitForFunction(id=>MusicStudio.state.midiEditor?.projectId===id,reports[1].id);
-    const edited=await page.evaluate(async()=>{
-      const app=MusicStudio,editor=MusicStudioEditor,session=app.state.midiEditor;
+    const editedNote=await page.evaluate(()=>{
+      const app=MusicStudio,session=app.state.midiEditor;
       const track=session.midiData.tracks.find(track=>track.notes.length);
-      editor.selectTrackById(session,track.id);
-      const note=track.notes[0],before=note.pitch,id=note.id;
-      app.editorSelectNote(id);
-      app.editorMoveSelected(0,1);
-      const result=await app.saveMidiEditor({silent:true});
-      if(!result.ok)throw Error(JSON.stringify(result));
-      const saved=await app.indexedDbRepository().get(session.projectId);
-      const after=saved.midiData.tracks.find(t=>t.id===track.id).notes.find(n=>n.id===id).pitch;
-      return {before,after,detected:saved.importSource.transcription.detection.noteCount};
+      MusicStudioEditor.selectTrackById(session,track.id);
+      const note=track.notes[0];
+      app.editorSelectNote(note.id);
+      return {id:note.id,before:note.pitch,trackId:track.id,projectId:session.projectId};
     });
+    const editReview=page.locator('#externalTrackReviewPopover');
+    await editReview.waitFor({state:'attached'});
+    await editReview.evaluate(node=>node.closest('details').open=true);
+    await editReview.getByRole('button',{name:'選択音符を半音上げる'}).click();
+    await page.waitForFunction(async ({projectId,trackId,id,before})=>{
+      const saved=await MusicStudio.indexedDbRepository().get(projectId);
+      return saved.midiData.tracks.find(t=>t.id===trackId).notes.find(n=>n.id===id)?.pitch===before+1;
+    },editedNote);
+    const edited=await page.evaluate(async ({projectId,trackId,id,before})=>{
+      const saved=await MusicStudio.indexedDbRepository().get(projectId),transcription=saved.importSource.transcription;
+      return {before,after:saved.midiData.tracks.find(t=>t.id===trackId).notes.find(n=>n.id===id).pitch,
+        raw:transcription.rawTracks.find(t=>t.id===trackId).notes.find(n=>n.id===id).pitch,detected:transcription.detection.noteCount};
+    },editedNote);
+    assert.equal(edited.raw,edited.before);
     assert.equal(edited.after,edited.before+1);
     assert.equal(edited.detected,reports[1].notes.length);
+    const projectId=reports[0].id;
+    await page.evaluate(id=>MusicStudio.openMidiEditor(id),projectId);
+    await page.waitForFunction(id=>MusicStudio.state.midiEditor?.projectId===id,projectId);
+    const selection=await page.evaluate(()=>{
+      const app=MusicStudio,session=app.state.midiEditor,project=app.state.projects.find(p=>p.projectId===session.projectId);
+      const raw=project.importSource.transcription.rawTracks[0];
+      const note=raw.notes.find(note=>note.transcriptionScore<.5)||raw.notes.find(note=>Number.isFinite(note.transcriptionScore));
+      if(!note)throw Error('real helper produced no attributable note scores');
+      MusicStudioEditor.selectTrackById(session,raw.id);
+      app.editorSelectNote(note.id);
+      return {score:note.transcriptionScore,rawId:raw.id,raw:raw.notes,
+        timing:MusicStudioPlayback.tickDurationSeconds(0,note.startTick,session.midiData.ppq,session.midiData.tempoMap,session.midiData.tempo)};
+    });
+    const review=page.locator('#externalTrackReviewPopover');
+    await review.waitFor({state:'attached'});
+    await review.evaluate(node=>node.closest('details').open=true);
+    const scoreLabel=review.locator('[data-transcription-score]');
+    if(selection.score<.5){
+      assert.ok(await page.locator('.music-midi-note[data-transcription-low]').count()>0);
+      assert.match(await page.locator('.music-midi-note[data-transcription-low]').first().getAttribute('aria-label'),/低信頼度/);
+    }
+    assert.match(await scoreLabel.innerText(),new RegExp((selection.score<.5?'低信頼度':'検出スコア')+' '+Math.round(selection.score*100)+'%'));
+    await review.getByLabel('比較する元音声').setInputFiles(input);
+    await review.getByText('元音声を確認しました。').waitFor();
+    await page.waitForFunction(()=>Number.isFinite(document.querySelector('#externalTrackReviewPopover audio')?.duration));
+    await review.getByRole('button',{name:'選択音符の位置から原音を試聴'}).click();
+    await review.getByText('元音声 '+selection.timing.toFixed(2)+' 秒から再生しています。').waitFor();
+    await review.getByLabel('開始位置のグリッド').selectOption('8');
+    const initial=await page.evaluate(async id=>JSON.stringify(await MusicStudio.indexedDbRepository().get(id)),projectId);
+    const diff=review.getByRole('button',{name:'整理の差分を確認'});
+    await diff.click();
+    await review.getByRole('button',{name:'整理を取り消す'}).click();
+    assert.equal(await page.evaluate(async id=>JSON.stringify(await MusicStudio.indexedDbRepository().get(id)),projectId),initial);
+    await diff.click();
+    const changed=await review.locator('[data-transcription-diff] li').count();
+    assert.ok(changed>0);
+    await review.getByRole('button',{name:'差分を承認して別MIDIトラックに保存'}).click();
+    await page.waitForFunction(id=>MusicStudio.state.projects.find(p=>p.projectId===id)?.importSource.transcription.cleanup?.length===1,projectId);
+    await browser.close();
+    page=await launch();
+    await page.evaluate(id=>MusicStudio.openMidiEditor(id),projectId);
+    const after=await page.evaluate(async id=>{
+      const app=MusicStudio,project=await app.indexedDbRepository().get(id),record=project.importSource.transcription;
+      const cleanup=record.cleanup[0],index=project.fileReferences.findIndex(ref=>ref.id===record.referenceId);
+      const file=await app.loadReferenceFile(id,'fileReferences',index);
+      const digest=await crypto.subtle.digest('SHA-256',await file.blob.arrayBuffer());
+      return {raw:record.rawTracks[0].notes,original:project.midiData.tracks.find(t=>t.id===cleanup.rawTrackId).notes,
+        organized:project.midiData.tracks.find(t=>t.id===cleanup.trackId),
+        digest:Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('')};
+    },projectId);
+    assert.deepEqual(after.raw,selection.raw);
+    assert.deepEqual(after.original,reports[0].notes);
+    assert.equal(after.digest,hash(fs.readFileSync(input)));
+    assert.equal(after.organized.notes.length,after.original.length);
+    assert.equal(after.organized.muted,true);
+    for(const [index,note] of after.organized.notes.entries()){
+      assert.equal(note.pitch,after.original[index].pitch);
+      assert.equal(note.durationTicks,after.original[index].durationTicks);
+      assert.notEqual(note.id,after.original[index].id);
+    }
+    const reopenedReview=page.locator('#externalTrackReviewPopover');
+    await reopenedReview.waitFor({state:'attached'});
+    await reopenedReview.evaluate(node=>node.closest('details').open=true);
+    await reopenedReview.getByRole('button',{name:'保存済みの元音声を開く'}).click();
+    await reopenedReview.getByText('元音声を確認しました。').waitFor();
+    await reopenedReview.getByRole('button',{name:'生の採譜を試聴'}).click();
+    await reopenedReview.getByText('生の採譜を再生しています。').waitFor();
+    await reopenedReview.getByRole('button',{name:'整理済みMIDIを試聴'}).click();
+    await reopenedReview.getByText('整理済みMIDIを再生しています。').waitFor();
+    await page.evaluate(id=>MusicStudio.openMidiEditor(id),reports[1].id);
+    await page.waitForFunction(id=>MusicStudio.state.midiEditor?.projectId===id,reports[1].id);
+    await page.evaluate(({trackId,id})=>{
+      const app=MusicStudio;
+      MusicStudioEditor.selectTrackById(app.state.midiEditor,trackId);
+      app.editorSelectNote(id);
+    },editedNote);
+    const deleteReview=page.locator('#externalTrackReviewPopover');
+    await deleteReview.waitFor({state:'attached'});
+    await deleteReview.evaluate(node=>node.closest('details').open=true);
+    await deleteReview.getByRole('button',{name:'選択音符を削除'}).click();
+    await page.waitForFunction(async ({projectId,trackId,id})=>{
+      const original=await MusicStudio.indexedDbRepository().get(projectId);
+      return !original.midiData.tracks.find(track=>track.id===trackId).notes.some(note=>note.id===id)&&
+        original.importSource.transcription.rawTracks.find(track=>track.id===trackId).notes.some(note=>note.id===id);
+    },editedNote);
+    console.log(JSON.stringify({realModelNoteScore:selection.score,manualPitchEdit:edited,manualDeletePreservedRaw:true,sourceAudioStart:selection.timing,
+      cleanupChanges:changed,cleanupRestart:true,sourceHash:after.digest,noteCount:after.organized.notes.length}));
+
     console.log(JSON.stringify({edited,transcription:reports.map(r=>({mode:r.metadata.mode,pitches:r.notes.map(n=>n.pitch),metadata:r.metadata,history:r.history})),restart:true}));
     if(transcriptionFixtures){
       const reports=[];

@@ -15,7 +15,7 @@
   const FORMAT='music-studio-project';
   const SCHEMA_VERSION='1.0';
   const APP_VERSION='1.4.0';
-  const ASSET_VERSION='1.4.244';
+  const ASSET_VERSION='1.4.245';
   const DB_NAME='music-studio-projects';
   const STORE_NAME='projects';
   const SETTINGS_STORE_NAME='settings';
@@ -4116,9 +4116,21 @@
       const timestamp=now(),prepared=intake.prepareMidiImport(bytes,file,{receivedAt:timestamp,importedAt:timestamp}),s=prepared.summary;
       if(!s.importable)throw Error('このMIDIはprojectへ取り込めません。');
       if(options.transcription&&options.transcription.detection.noteCount!==s.noteCount)throw Error('transcription-note-count-mismatch');
-      const importSource=options.transcription
-        ?{...prepared.midiData.importSource,transcription:clone(options.transcription)}
-        :prepared.midiData.importSource;
+      const importSource=prepared.midiData.importSource;
+      if(options.transcription){
+        const {noteScores,...metadata}=options.transcription;
+        const rawTracks=clone(prepared.midiData.tracks.filter(track=>track.notes.length));
+        const scores=new Map();
+        for(const [start,end,pitch,score] of noteScores||[]){
+          const key=`${start}:${end}:${pitch}`;
+          scores.set(key,scores.has(key)?null:score);
+        }
+        for(const track of rawTracks)for(const note of track.notes){
+          const score=scores.get(`${note.startTick}:${note.startTick+note.durationTicks}:${note.pitch}`);
+          if(Number.isFinite(score))note.transcriptionScore=score;
+        }
+        importSource.transcription={...clone(metadata),rawTracks};
+      }
       const name=root.MusicStudioMidiParser.projectNameFromFile(file.name),project=makeProject({projectName:name,songTitle:name,bpm:prepared.midiData.tempo,timeSignature:`${prepared.midiData.timeSignature.numerator}/${prepared.midiData.timeSignature.denominator}`,key:null,midiData:prepared.midiData,importSource},timestamp),validation=validateProject(project);
       if(!validation.valid)throw Error(validation.errors.join(' '));
       const saved=await publishNewProject(project,'external-song-import',target,{signal:options.signal,guard});if(repository!==target||invalid()){if(state.externalSongImport===reading)state.externalSongImport=previousReview;return{ok:true,committed:true,refreshPending:true,project:saved,prepared}}
@@ -4175,7 +4187,11 @@
     view.pitchMin=Math.max(0,Math.min(view.pitchMin??autoMin,126));view.pitchMax=Math.max(view.pitchMin+1,Math.min(view.pitchMax??autoMax,127));
     const pitchSpan=PIANO_PITCH_COUNT,zoom=Math.max(1,Math.min(30,Number(view.zoom)||1)),snap=editorSnapValue(session),initialScroll=pitchScrollTop(session),initialScrollLeft=Math.max(0,Number(view.pitchScrollLeft)||0),beatsPerMeasure=Math.max(1,Number(session.midiData.timeSignature?.numerator)||4),measurePercent=100/measureCount,beatPercent=measurePercent/beatsPerMeasure,subdivisionPercent=beatPercent/4,microPercent=subdivisionPercent/2,playheadPercent=Math.min(100,session.playheadTick/totalTicks*100),initialBarRange=editorVisibleBarRange(session,{scrollLeft:0,clientWidth:1,scrollWidth:zoom}).label;
     const measureLabelStep=editorMeasureLabelStep(measureCount,zoom),measures=Array.from({length:measureCount},(_,index)=>{const measure=index+1,selected=session.selectedMeasures.includes(measure),locked=session.coordinatedTimeline?root.MusicStudioMeasureLocks.protectedRanges(session.midiData,core,trackId).some(r=>r.startTick<core.measureStart(session,measure+1)&&r.endTick>core.measureStart(session,measure)):session.lockedMeasures.includes(measure),showLabel=index%measureLabelStep===0,label=showLabel?`<span class="music-measure-prefix">Bar </span><span>${measure}${locked?' 🔒':''}</span>`:'';return`<button class="music-measure ${showLabel?'has-label':'is-unlabeled'} ${selected?'is-selected':''} ${locked?'is-locked':''}" style="left:${(session.coordinatedTimeline?core.measureStart(session,measure)/totalTicks:index/measureCount)*100}%;width:${session.coordinatedTimeline?(core.measureStart(session,measure+1)-core.measureStart(session,measure))/totalTicks*100:100/measureCount}%" onclick="MusicStudio.editorToggleMeasure(${measure})" aria-label="Bar ${measure}${locked?'・固定中':''}" aria-pressed="${selected}" title="Bar ${measure}・${locked?'固定中':'クリックして選択'}">${label}</button>`}).join('');
-    const notes=displayNotes.map(note=>{const pitchY=pianoPitchY(note.pitch),left=note.startTick/totalTicks*100,width=Math.max(note.durationTicks/totalTicks*100,.45),selected=selectedIds.has(note.id),locked=session.coordinatedTimeline?core.protectedNote(session,track,note):core.isNoteLocked(note),drum=session.part==='drums'?drumNoteName(note.pitch):null,description=`${drum?(drum===`Note ${note.pitch}`?drum:`${drum} · Note ${note.pitch}`):session.part==='bass'?`${noteName(note.pitch)} · Note ${note.pitch}`:`${noteName(note.pitch)} / ${solfegeName(note.pitch)}`}　V${note.velocity} / ${drum?`${drum} / `:''}${noteName(note.pitch)} / Velocity ${note.velocity} / Note ${note.pitch} / ${note.startTick} tick${locked?' / Locked（固定）':''}`,classes=`music-midi-note ${velocityClass(note.velocity)} ${selected?'is-selected':''} ${locked?'is-locked':''} ${correctionPreview&&correctionPreview.viewMode!=='original'?'is-correction-preview':''} ${transposePreview?'is-transpose-preview':''} ${noteLengthPreview?'is-note-length-preview':''} ${session.scopedMidiRepairPreview?.trackId===trackId?'is-correction-preview':''}`;return`<button class="${classes}" data-note-id="${escapeHtml(note.id)}" data-pitch="${note.pitch}" style="--pitch-y:${pitchY}px;top:var(--pitch-y);left:${left}%;width:${width}%" onpointerdown="MusicStudio.editorStartNoteDrag(event,'${escapeHtml(note.id)}')" aria-pressed="${selected}" aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}">${locked?'<span class="music-note-lock-icon" aria-hidden="true">🔒</span>':''}${noteLabelMarkup(note,session.part)}<span class="music-note-resize" onpointerdown="MusicStudio.editorStartNoteResize(event,'${escapeHtml(note.id)}')" aria-label="ノート長を変更"></span></button>`}).join('');
+    const rawTranscription=editorProject(session.projectId)?.importSource?.transcription?.rawTracks;
+    const scoreTrack=Array.isArray(rawTranscription)?rawTranscription.find(item=>item.id===trackId):null;
+    const scoreByNote=new Map((scoreTrack?.notes||[]).filter(note=>Number.isFinite(note.transcriptionScore))
+      .map(note=>[note.id,note.transcriptionScore]));
+    const notes=displayNotes.map(note=>{const score=scoreByNote.get(note.id),low=score<.5,pitchY=pianoPitchY(note.pitch),left=note.startTick/totalTicks*100,width=Math.max(note.durationTicks/totalTicks*100,.45),selected=selectedIds.has(note.id),locked=session.coordinatedTimeline?core.protectedNote(session,track,note):core.isNoteLocked(note),drum=session.part==='drums'?drumNoteName(note.pitch):null,description=`${drum?(drum===`Note ${note.pitch}`?drum:`${drum} · Note ${note.pitch}`):session.part==='bass'?`${noteName(note.pitch)} · Note ${note.pitch}`:`${noteName(note.pitch)} / ${solfegeName(note.pitch)}`}　V${note.velocity} / ${drum?`${drum} / `:''}${noteName(note.pitch)} / Velocity ${note.velocity} / Note ${note.pitch} / ${note.startTick} tick${Number.isFinite(score)?` / ${low?'低信頼度':'検出スコア'} ${Math.round(score*100)}%`:''}${locked?' / Locked（固定）':''}`,classes=`music-midi-note ${velocityClass(note.velocity)} ${selected?'is-selected':''} ${locked?'is-locked':''} ${correctionPreview&&correctionPreview.viewMode!=='original'?'is-correction-preview':''} ${transposePreview?'is-transpose-preview':''} ${noteLengthPreview?'is-note-length-preview':''} ${session.scopedMidiRepairPreview?.trackId===trackId?'is-correction-preview':''}`;return`<button class="${classes}" data-note-id="${escapeHtml(note.id)}"${low?' data-transcription-low="true"':''} data-pitch="${note.pitch}" style="--pitch-y:${pitchY}px;top:var(--pitch-y);left:${left}%;width:${width}%${low?';outline:2px solid #ffce82;outline-offset:-2px':''}" onpointerdown="MusicStudio.editorStartNoteDrag(event,'${escapeHtml(note.id)}')" aria-pressed="${selected}" aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}">${locked?'<span class="music-note-lock-icon" aria-hidden="true">🔒</span>':''}${low?'<span aria-hidden="true">⚠</span>':''}${noteLabelMarkup(note,session.part)}<span class="music-note-resize" onpointerdown="MusicStudio.editorStartNoteResize(event,'${escapeHtml(note.id)}')" aria-label="ノート長を変更"></span></button>`}).join('');
     const liveNoteMarkup=liveNotes.map(note=>liveRecordingNoteHtml(note,totalTicks)).join('');
     const selectedPitchRows=[...selectedPitches].sort((a,b)=>b-a).map(pitch=>`<span data-pitch="${pitch}" style="--pitch-y:${pianoPitchY(pitch)}px"></span>`).join(''),selectedPitchLayer=`<div class="music-selected-pitch-layer" aria-hidden="true">${selectedPitchRows}</div>`;
     const guideSettings=session.correctionSettings||{key:'C',scale:'Major',guideEnabled:true},guidePitchClasses=core.resolveTrackCapabilities(track).supportsPitchCorrection&&guideSettings.guideEnabled!==false?core.correctionScalePitchClasses(guideSettings.key,guideSettings.scale):[],guideSet=new Set(guidePitchClasses),bassRangeGuide=session.part==='bass'?`<div class="music-bass-range-guide" style="--bass-guide-top:${pianoPitchY(55)}px;--bass-guide-height:${(55-28+1)*PIANO_ROW_HEIGHT}px" aria-hidden="true"><span>Bass guide E1–G3 · Note 28–55</span></div>`:'',scaleGuide=(guidePitchClasses.length?`<div class="music-scale-guide" data-key="${escapeHtml(guideSettings.key)}" data-scale="${escapeHtml(guideSettings.scale)}" aria-hidden="true">${Array.from({length:pitchSpan},(_,index)=>{const pitch=127-index;return guideSet.has(pitch%12)?`<span data-pitch="${pitch}" style="top:${index/pitchSpan*100}%;height:${100/pitchSpan}%"></span>`:''}).join('')}</div>`:'')+bassRangeGuide+selectedPitchLayer;
@@ -4418,16 +4434,141 @@
   }
   function editorBottomBar(session,track,selectionCount){const markup=editorBottomBarMarkup(session,track,selectionCount),selected=editorSelectedNotes(session),lockedCount=selected.filter(note=>root.MusicStudioEditor.isNoteLocked(note)).length,unlockedCount=selected.length-lockedCount,controls=`<button class="music-secondary" onclick="MusicStudio.editorLockSelectedNotes()" ${unlockedCount?'':'disabled'} title="選択ノートを編集から保護">🔒 Lock（固定）</button><button class="music-secondary" onclick="MusicStudio.editorUnlockSelectedNotes()" ${lockedCount?'':'disabled'} title="選択ノートの編集保護を解除">🔓 Unlock（固定解除）</button>`,lengthControls=`<span class="music-note-length-label">Note Length（音符の長さ）</span>${noteLengthPresets}`,range=root.MusicStudioEditor.normalizeEditRange(session.editRange,session.midiData.editor.measureCount),rangeNotes=root.MusicStudioEditor.notesInRange(session,range),editableRangeNotes=root.MusicStudioEditor.editableNotesInRange(session,range),rangeControls=`<section class="music-edit-range" aria-label="編集対象の小節"><h2>編集対象の小節</h2><div class="music-edit-range-content"><div class="music-edit-range-fields"><label><span>開始小節</span><input type="number" min="1" max="${session.midiData.editor.measureCount}" step="1" value="${range.startMeasure}" aria-label="編集対象の開始小節" onchange="MusicStudio.editorSetEditRange(this.value,null)"></label><label><span>終了小節</span><input type="number" min="1" max="${session.midiData.editor.measureCount}" step="1" value="${range.endMeasure}" aria-label="編集対象の終了小節" onchange="MusicStudio.editorSetEditRange(null,this.value)"></label></div><p>Edit Range: Measure ${range.startMeasure}–${range.endMeasure}｜${session.part} ${rangeNotes.length}ノート（編集可能 ${editableRangeNotes.length}）</p></div></section>${partialEditControls()}`;return markup.replace('<!--music-lock-controls-->',controls).replace('<!--music-note-length-controls-->',lengthControls).replace('<section><h2>再生</h2>',`${rangeControls}<section><h2>再生</h2>`)}
   function externalAssignmentDraft(session){const tracks=root.MusicStudioEditor.externalReviewTracks(session?.midiData||{});if(!state.externalTrackAssignmentDraft||state.externalTrackAssignmentDraft.projectId!==session?.projectId)state.externalTrackAssignmentDraft={projectId:session?.projectId||'',assignments:Object.fromEntries(tracks.map(track=>[track.id,track.roleAssignment]))};return state.externalTrackAssignmentDraft}
+  const transcriptionCleanupPreviews=new WeakMap();
+  let transcriptionCleanupSaving=false;
+  function previewTranscriptionCleanup(projectId,trackId,grid){
+    const project=editorProject(projectId),session=state.midiEditor,source=project?.importSource?.transcription;
+    if(session?.projectId!==projectId||!['8','16','32'].includes(grid)||
+      source?.model!=='basic-pitch'||!Array.isArray(source.rawTracks)||midiEditorHasPendingChanges())
+      throw Error('採譜を保存してから原本トラックを選択してください。');
+    const raw=source.rawTracks.find(track=>track.id===trackId),midi=project.midiData;
+    if(!raw?.notes.length||!midi.tracks.some(track=>track.id===raw.id))
+      throw Error('変換時の原本トラックを確認できません。');
+    const unit=midi.ppq*4/Number(grid);
+    if(!Number.isFinite(unit)||unit<1)throw Error('採譜のグリッドを確認できません。');
+    const notes=raw.notes.map(note=>({...note,startTick:Math.max(0,Math.min(
+      midi.totalTick-note.durationTicks,Math.round(Math.round(note.startTick/unit)*unit)))}));
+    if(notes.some((note,index)=>note.startTick<0||note.startTick+note.durationTicks>midi.totalTick||
+      !Number.isSafeInteger(note.startTick)||!Number.isSafeInteger(raw.notes[index].startTick)))
+      throw Error('採譜の音符位置を確認できません。');
+    const changes=notes.flatMap((note,index)=>note.startTick===raw.notes[index].startTick?[]:
+      [{id:note.id,pitch:note.pitch,before:raw.notes[index].startTick,after:note.startTick}]);
+    const token={};
+    transcriptionCleanupPreviews.set(token,{project,baseline:JSON.stringify(project),session,target:repository,track:raw,notes,grid});
+    return {token,changes};
+  }
+  async function approveTranscriptionCleanup(token,file){
+    const preview=transcriptionCleanupPreviews.get(token);
+    if(!preview||transcriptionCleanupSaving||archiveTransfer.busy)return {ok:false,error:'transcription-cleanup-unavailable'};
+    const {project,baseline,session,target,track,notes,grid}=preview,id=project.projectId;
+    const source=project.importSource.transcription;
+    const guard=()=>{
+      archiveGuard(target);
+      if(state.midiEditor!==session||editorProject(id)!==project||JSON.stringify(project)!==baseline)
+        throw Error('採譜が変更されました。差分を確認し直してください。');
+    };
+    transcriptionCleanupSaving=true;
+    try{
+      guard();
+      const pipeline=api.audioStemMidiPipeline;
+      if(target.kind!=='indexeddb'||!pipeline||!pipeline.isAudioFile(file)||!file.size)
+        throw Error('照合済みの元音声と永続ストレージが必要です。');
+      const artifact=await pipeline.hashBrowserArtifact(file,{check:guard});
+      if(artifact.digest!==source.sourceSha256)throw Error('元音声が採譜の原本と一致しません。');
+      const updated=versionTouch(clone(project)),newTrackId=uuid();
+      const adjusted={...clone(track),id:newTrackId,name:`${String(track.name||'採譜').slice(0,90)} · 整理 1/${grid}`,
+        roleAssignment:'unassigned',muted:true,notes:notes.map(({transcriptionScore,...note})=>({
+          ...note,id:uuid(),trackId:newTrackId,endTick:note.startTick+note.durationTicks
+        }))};
+      updated.midiData.tracks.push(adjusted);
+      const metadata=updated.importSource.transcription,existing=(updated.fileReferences||[]).find(ref=>ref.id===source.referenceId&&ref.binary);
+      metadata.cleanup=[...(metadata.cleanup||[]),{rawTrackId:track.id,trackId:newTrackId,grid}];
+      const blob=new Blob([file],{type:file.type||'application/octet-stream'});
+      let record=null;
+      if(!existing){
+        const id=uuid(),referenceId=uuid(),hashes=await longWavDigest(blob,guard);
+        const binary={format:'nova-reference-binary-v1',id,size:blob.size,hashes,name:file.name,type:blob.type};
+        updated.fileReferences.push({id:referenceId,name:file.name,binary,
+          storage:{kind:'external-file',reference:file.name,requiresReselection:false}});
+        metadata.referenceId=referenceId;
+        record={id,blob,hashes};
+      }else{
+        const stored=await loadReferenceFile(project.projectId,'fileReferences',project.fileReferences.findIndex(ref=>ref.id===existing.id));
+        if((await pipeline.hashBrowserArtifact(stored.blob,{check:guard})).digest!==source.sourceSha256)
+          throw Error('保存済みの元音声を照合できません。');
+      }
+      automaticEditRecord(project,updated,'midi-editor');guard();
+      if(!validateProject(updated).valid||validateRestoredMidi(updated).errors.length)
+        throw Error('整理済みMIDIを保存できません。');
+      const receipt=updated.songVersions.edits.at(-1);
+      const saved=record?await confirmAudioWrite(target,updated,record,baseline,guard):
+        await confirmProjectWrite(target,updated,()=>target.compareAndPut(updated,baseline,guard),receipt);
+      transcriptionCleanupPreviews.delete(token);
+      if(repository===target&&editorProject(id)===project&&state.midiEditor===session&&saved===updated){
+        state.projects=state.projects.map(item=>item===project?updated:item);
+        state.midiEditor=null;
+        ensureEditor(id);
+        root.MusicStudioEditor.selectTrackById(state.midiEditor,newTrackId);
+        requestPaint();
+      }
+      return {ok:true,trackId:newTrackId};
+    }catch(error){return {ok:false,error:error.message};}
+    finally{transcriptionCleanupSaving=false;}
+  }
+  async function auditionTranscriptionTrack(trackId,raw){
+    try{
+      const session=state.midiEditor,project=editorProject(session?.projectId),midi=project.midiData;
+      const track=(raw?project.importSource.transcription.rawTracks:midi.tracks).find(item=>item.id===trackId);
+      if(!track?.notes.length)throw Error('試聴できる音符がありません。');
+      const startTick=track.notes.reduce((min,n)=>Math.min(min,n.startTick),Infinity);
+      const endTick=track.notes.reduce((max,n)=>Math.max(max,n.startTick+n.durationTicks),0);
+      return await editorAuditionCandidate({tracks:[{...track,muted:false}],transport:{
+        startTick,endTick,ppq:midi.ppq,tempoMap:midi.tempoMap,bpm:midi.tempo}},session);
+    }catch(error){return {ok:false,error:error.message};}
+  }
+  function editTranscriptionSelected(delta){
+    const session=state.midiEditor,note=session&&editorNote(session);
+    if(!note||![-1,0,1].includes(delta)||editorProject(session.projectId)?.importSource?.transcription?.model!=='basic-pitch')return false;
+    root.MusicStudioEditor.selectNote(session,note.id);
+    return delta?editorMoveSelected(0,delta):editorDeleteNote();
+  }
   function transcriptionReviewHtml(project){
     const transcription=project?.importSource?.transcription,detection=transcription?.detection;
     if(transcription?.model!=='basic-pitch'||!detection||!/^[a-f0-9]{64}$/.test(transcription.sourceSha256))return '';
-    const mode=transcription.mode==='monophonic'?'単音':'和音';
+    const mode=transcription.mode==='monophonic'?'単音':'和音',h=escapeHtml;
+    const retained=project.fileReferences.findIndex(ref=>ref.id===transcription.referenceId&&ref.binary);
+    const raw=Array.isArray(transcription.rawTracks)?transcription.rawTracks:[];
+    const rows=(Array.isArray(transcription.cleanup)?transcription.cleanup:[]).filter(row=>
+      project.midiData.tracks.some(track=>track.id===row.trackId)&&raw.some(track=>track.id===row.rawTrackId));
+    const audition=(id,isRaw,label)=>`<button type="button" onclick="MusicStudio.audioStemMidiPipeline.auditionTranscription(this,${h(JSON.stringify(id))},${isRaw})">${label}</button>`;
+    const session=state.midiEditor,selected=root.MusicStudioEditor?.currentTrack(session);
+    const currentNote=selected?.notes.find(note=>note.id===session.selectedNoteId);
+    const detected=raw.find(track=>track.id===selected?.id)?.notes.find(note=>note.id===currentNote?.id);
+    const score=detected?.transcriptionScore;
+    const scoreLabel=Number.isFinite(score)?`${score<.5?'低信頼度':'検出スコア'} ${Math.round(score*100)}%`:'音符の検出スコア未取得';
+    const cleanup=raw.length?`<section data-transcription-cleanup>
+      <h3>採譜の整理</h3>
+      <label>採譜原本<select name="rawTrack" onchange="this.closest('[data-transcription-cleanup]').querySelector('[data-transcription-diff]').replaceChildren()">${raw.map(track=>`<option value="${h(track.id)}">${h(track.name)}</option>`).join('')}</select></label>
+      <label>開始位置のグリッド<select name="grid" onchange="this.closest('[data-transcription-cleanup]').querySelector('[data-transcription-diff]').replaceChildren()"><option value="8">1/8</option><option value="16" selected>1/16</option><option value="32">1/32</option></select></label>
+      <button type="button" onclick="MusicStudio.audioStemMidiPipeline.previewTranscriptionCleanup(this)">整理の差分を確認</button>
+      <div data-transcription-diff></div>
+      ${rows.map(row=>`<div><b>${h(project.midiData.tracks.find(track=>track.id===row.trackId).name)}</b>
+        ${audition(row.rawTrackId,true,'生の採譜を試聴')}${audition(row.trackId,false,'整理済みMIDIを試聴')}</div>`).join('')}
+      <button type="button" onclick="MusicStudio.editorStopCandidateAudition()">MIDI試聴停止</button>
+    </section>`:'<p>整理の差分確認を利用するには、元音声からもう一度採譜してください。</p>';
     return `<p>Basic Pitch（${mode}） · 原音 ${escapeHtml(transcription.sourceFileName)} · 変換時 ${escapeHtml(detection.noteCount)} 音 · 検出時のMIDIベロシティ ${escapeHtml(detection.minimumVelocity)}〜${escapeHtml(detection.maximumVelocity)}</p>
-      <div data-transcription-reference="${escapeHtml(transcription.sourceSha256)}">
+      <div data-transcription-reference="${escapeHtml(transcription.sourceSha256)}" data-project-id="${h(project.projectId)}">
+        ${retained>=0?`<button type="button" onclick="MusicStudio.audioStemMidiPipeline.loadStoredTranscriptionReference(this,${retained})">保存済みの元音声を開く</button>`: ''}
         <label>比較する元音声<input type="file" accept="audio/*,.wav,.aiff,.flac,.m4a,.mp3" onchange="MusicStudio.audioStemMidiPipeline.loadTranscriptionReference(this)"></label>
         <audio controls hidden style="width:100%" aria-label="変換前の原音"></audio>
-        <button type="button" class="music-secondary" disabled onclick="MusicStudio.audioStemMidiPipeline.playTranscriptionReferenceNote(this)">選択音符の位置から原音を試聴</button><span role="status"></span>
-      </div>`;
+        <p data-transcription-score${Number.isFinite(score)&&score<.5?' style="color:#ffce82"':''}>${currentNote?`${h(noteName(currentNote.pitch))} · ` : ''}${scoreLabel}</p>
+        <p>検出スコアはモデルの反応値です。50%未満は要確認の目印で、音符は自動削除されません。</p>
+        ${currentNote?`<button type="button" onclick="MusicStudio.editTranscriptionSelected(-1)">選択音符を半音下げる</button>
+          <button type="button" onclick="MusicStudio.editTranscriptionSelected(1)">選択音符を半音上げる</button>
+          <button type="button" onclick="MusicStudio.editTranscriptionSelected(0)">選択音符を削除</button>`:''}
+        <button type="button" class="music-secondary" disabled data-transcription-play onclick="MusicStudio.audioStemMidiPipeline.playTranscriptionReferenceNote(this)">選択音符の位置から原音を試聴</button><span role="status"></span>
+      </div>
+      ${cleanup}`;
   }
   function externalTrackReviewHtml(session){const core=root.MusicStudioEditor,tracks=core.externalReviewTracks(session?.midiData||{});if(!tracks.length)return'';const draft=externalAssignmentDraft(session),labels={unassigned:'Unassigned',melody:'Melody',drums:'Drums',bass:'Bass'},rows=tracks.map(track=>`<div class="music-external-track-row" data-track-id="${escapeHtml(track.id)}"><div class="music-external-track-summary"><b>${escapeHtml(track.name)}</b><span>ID ${escapeHtml(track.id)}</span><span>Channel ${escapeHtml(track.channel??'—')}</span>${track.program==null?'':`<span>Program ${track.program}</span>`}<span>${track.noteCount} notes</span><span>Current: ${escapeHtml(track.roleAssignment)}</span></div><label>Assignment（割付）<select aria-label="${escapeHtml(track.name)} assignment" onchange="MusicStudio.editorDraftExternalTrackAssignment(this.closest('[data-track-id]').dataset.trackId,this.value)">${core.EXTERNAL_TRACK_ROLES.map(role=>`<option value="${role}" ${draft.assignments[track.id]===role?'selected':''}>${labels[role]}</option>`).join('')}</select></label></div>`).join('');return`<dialog class="music-editor-popover music-external-track-review" id="externalTrackReviewDialog" aria-labelledby="externalTrackReviewTitle"><header class="music-external-track-review-head"><div><b id="externalTrackReviewTitle">External Track Review / Assignment（外部トラック確認・割付）</b><span>${tracks.length} Tracks · manual only</span></div><button class="music-secondary" type="button" onclick="MusicStudio.editorCancelExternalTrackAssignments()" aria-label="External Track Reviewを閉じる">× Close（閉じる）</button></header><div class="music-external-track-review-body">${transcriptionReviewHtml(editorProject(session.projectId))}<p>Track IDと演奏データを維持したままAssignment metadataだけを変更します。固定Trackへの転記や自動分類は行いません。</p><div class="music-external-track-list">${rows}</div><div class="music-external-track-actions"><button class="music-primary" type="button" onclick="MusicStudio.editorApplyExternalTrackAssignments()">Apply Assignment（割付を採用）</button><button class="music-secondary" type="button" onclick="MusicStudio.editorCancelExternalTrackAssignments()">Cancel（取消）</button></div></div></dialog>`}
   function editorDraftExternalTrackAssignment(trackId,role){const session=state.midiEditor,draft=externalAssignmentDraft(session),validation=root.MusicStudioEditor.validateExternalTrackAssignments(session?.midiData||{},{...draft.assignments,[trackId]:role});draft.assignments[trackId]=role;if(!validation.ok&&validation.errors.includes('duplicate-role'))notice('同じAssignmentへ複数のexternal Trackは割り当てられません。Apply前に選択を変更してください。','error');return validation}
@@ -6570,6 +6711,7 @@
     return next;
   }
 
+  Object.assign(api,{previewTranscriptionCleanup,approveTranscriptionCleanup,auditionTranscriptionTrack,editTranscriptionSelected});
   Object.assign(api,{submitManagement,managedVoicePermission,analyzeVoiceMaterial,vocalLayerSubmit,vocalLayerSave});
   root.MusicStudio=api;
   if(root.document){root.document.addEventListener?.('keydown',event=>{if(event.target?.closest?.('.music-studio-shell'))vocalDisclosureKey(event,event.target.closest('details[open]'))});for(const type of ['pointerdown','wheel','touchstart','keydown'])root.addEventListener?.(type,event=>{if(state.midiEditor?.coordinatedTimeline&&isMidiEditorRoute(currentRoute()))state.midiEditor.viewInteractionStarted=true},{capture:true,passive:true});root.addEventListener?.('resize',()=>{scheduleNoteLabelLayout();scheduleEditorPianoPosition();root.requestAnimationFrame?.(()=>alignEditorPitchBottomToC(root.document?.querySelector?.('.music-piano-viewport')))});root.addEventListener?.('pagehide',()=>{finalInvalidate();vocalRelease();vocalPlaybackStop();discardLiveRecordingOnUnload();if(state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('visibilitychange',()=>{if(root.document.visibilityState==='hidden'&&vocal.phase==='recording')vocalStop();if(root.document.visibilityState==='hidden'&&state.midiEditor?.dirty)flushMidiEditorAutosave()});root.document.addEventListener?.('toggle',event=>{if(event.target?.matches?.('.music-editor-topbar > .music-editor-menu'))editorHandlePopupToggle(event.target)},true);root.addEventListener?.('beforeunload',event=>{if(state.midiEditor?.dirty)flushMidiEditorAutosave();if(hasUnsavedChanges()){event.preventDefault?.();event.returnValue=''}});if(root.document.body?.dataset.musicStudioStandalone==='true')mountStandalone();else installHostRoutes();initialize()}
