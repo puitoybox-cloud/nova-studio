@@ -704,15 +704,32 @@ def file_sha256(path):
 
 
 def monophonic_notes(notes):
-    """Keep the strongest detection when Basic Pitch emits overlapping notes."""
+    """Return the non-overlapping note sequence with maximum total detector velocity."""
+    from bisect import bisect_right
+
+    # Basic Pitch can extend a note by a frame or two into the next onset.
+    # Keep both detections and trim only the previous tail at publication.
+    def selection_end(note):
+        return max(math.nextafter(note.start, math.inf), note.end - 0.02)
+
+    ordered = sorted(notes, key=lambda note: (selection_end(note), note.start, -note.velocity, note.pitch))
+    ends = [selection_end(note) for note in ordered]
+    totals = [0]
+    predecessors = []
+    for index, note in enumerate(ordered):
+        before = bisect_right(ends, note.start, 0, index)
+        predecessors.append(before)
+        totals.append(max(totals[-1], totals[before] + note.velocity))
+
     selected = []
-    for note in sorted(notes, key=lambda item: (item.start, -item.velocity, item.pitch)):
-        if selected and note.start < selected[-1].end:
-            if note.velocity <= selected[-1].velocity:
-                continue
-            selected.pop()
-        selected.append(note)
-    return selected
+    index = len(ordered)
+    while index:
+        if totals[index] == totals[index - 1]:
+            index -= 1
+            continue
+        selected.append(ordered[index - 1])
+        index = predecessors[index - 1]
+    return selected[::-1]
 
 
 TRANSCRIPTION_PROFILES = {
@@ -755,11 +772,16 @@ def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
                                    maximum_frequency=note_number_to_hz(high + 1), **thresholds)
     else:
         _, prediction, note_events = predict(str(source))
+    original_ends = {}
     for track in prediction.instruments:
         if profile:
             track.program = program
         if mode == "monophonic":
             track.notes = monophonic_notes(track.notes)
+            for note, following in zip(track.notes, track.notes[1:]):
+                if note.end > following.start:
+                    original_ends[id(note)] = note.end
+                    note.end = following.start
     notes = [note for track in prediction.instruments for note in track.notes]
     if not notes:
         raise ValueError("音符を検出できませんでした。")
@@ -775,9 +797,12 @@ def process_transcription(source, work_dir, mode="polyphonic", instrument=None):
             scores[identity] = score if identity not in scores else None
     surviving = [key(note.start, note.end, note.pitch) for note in notes]
     duplicates = {identity for identity, count in collections.Counter(surviving).items() if count > 1}
-    review_scores = [[start, end, pitch, scores[(start, end, pitch)]]
-                     for start, end, pitch in surviving
-                     if (start, end, pitch) not in duplicates and scores.get((start, end, pitch)) is not None]
+    review_scores = []
+    for note, identity in zip(notes, surviving):
+        original = key(note.start, original_ends.get(id(note), note.end), note.pitch)
+        score = scores.get(original)
+        if identity not in duplicates and score is not None:
+            review_scores.append([*identity, score])
     prediction.write(str(midi))
     raw = midi.read_bytes()
     if len(raw) > 64 * 1024 * 1024:

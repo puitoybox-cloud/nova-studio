@@ -97,13 +97,35 @@ def constrain_score(score, *, key=None, pitch_min=48, pitch_max=84, numerator=4,
     measure_ticks = score[0] * 4 * numerator // denominator
     chord_allowed = [[n for n in range(pitch_min, pitch_max+1) if n % 12 in chord] for chord in chord_sets]
     if any(not notes for notes in chord_allowed): raise ValueError('no-chord-note-in-range')
+    pulse = score[0] * 4 // denominator
+    if denominator == 8 and numerator >= 6 and numerator % 3 == 0:
+        pulse *= 3
     for track in score[1:]:
         track[:] = [e for e in track if e[0] not in ['set_tempo','time_signature','key_signature']]
+        groups = {}
         for event in track:
             if event[0] == 'note':
-                old = event[4]
-                choices = chord_allowed[(event[1] // measure_ticks) % len(chord_allowed)] if chord_allowed else allowed
-                event[4] = min(choices, key=lambda n: (abs(n-old), n))
+                groups.setdefault(event[3], []).append(event)
+        for notes in groups.values():
+            notes.sort(key=lambda event: event[1])
+            original = [event[4] for event in notes]
+            for index, event in enumerate(notes):
+                tick, duration, old = event[1], event[2], original[index]
+                bar = tick // measure_ticks
+                choices = chord_allowed[bar % len(chord_allowed)] if chord_allowed else allowed
+                # Retain an inferred diatonic passing tone between stable chords.
+                # The strict chord projection still covers strong beats and polyphony.
+                if (style == 'varied' and chord_allowed and key is not None and 0 < index < len(notes)-1
+                        and tick % measure_ticks % pulse and 0 < duration <= pulse//2 and old in allowed):
+                    before, after = notes[index-1], notes[index+1]
+                    left, right = original[index-1], original[index+1]
+                    if (before[1]//measure_ticks == after[1]//measure_ticks == bar
+                            and before[1]+before[2] <= tick and tick+duration <= after[1]
+                            and after[1]-before[1] <= pulse*2 and left in choices and right in choices
+                            and 0 < abs(old-left) <= 2 and 0 < abs(right-old) <= 2
+                            and (old-left)*(right-old) > 0):
+                        continue
+                event[4] = min(choices, key=lambda pitch: (abs(pitch-old), pitch))
                 changed += int(old != event[4])
     score[1].extend([['set_tempo',0,round(60000000/bpm)], ['time_signature',0,numerator,denominator.bit_length()-1,24,8]])
     return changed
@@ -228,7 +250,7 @@ def compose(weights, output, seed=72, events=128, bpm=72, max_ticks=7680, key=No
         (data, notes, adjusted, generated_events, range_reached, first_note_offset), used_seed, sampling_attempts = audible_sample(sample, seed, index, cancel)
         name = variant + '.mid'
         (output / name).write_bytes(data)
-        result['candidates'].append({'variant': variant, 'seed': used_seed, 'requestedSeed': seed + index, 'samplingAttempts': sampling_attempts, 'samplingTrace': sampling_trace, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'firstNoteOffsetTicks': first_note_offset, 'shortRangeAlignment': max_ticks <= 1920 and not source, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-and-explicit-chord-or-scale-range-projection'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
+        result['candidates'].append({'variant': variant, 'seed': used_seed, 'requestedSeed': seed + index, 'samplingAttempts': sampling_attempts, 'samplingTrace': sampling_trace, 'file': name, 'sha256': hashlib.sha256(data).hexdigest(), 'byteLength': len(data), 'notes': notes, 'adjustedNotes': adjusted, 'performance': {'generatedEvents': generated_events, 'rangeReached': range_reached, 'firstNoteOffsetTicks': first_note_offset, 'shortRangeAlignment': max_ticks <= 1920 and not source, 'elapsedSeconds': time.perf_counter()-candidate_started, 'onnxCalls': {k: inference_counts[k]-calls_before[k] for k in inference_counts}}, 'constraints': {'key': key, 'pitchMin': pitch_min, 'pitchMax': pitch_max, 'numerator': numerator, 'denominator': denominator, 'bpm': bpm, 'style': style, 'description': description, 'genre': genre, 'chords': chord_names, 'chordTiming': 'one-chord-per-measure-repeat-from-selection-start', 'method': 'model-sampling-with-chord-projection-and-diatonic-passing-tones'}, 'midiBase64': __import__('base64').b64encode(data).decode('ascii')})
     if cancel: cancel()
     result['performance'] = {'memoryBefore': memory_before, 'memoryAfter': memory_snapshot(), 'sessionReused': reused, 'loadSeconds': load_seconds, 'elapsedSeconds': time.perf_counter()-started, 'onnxCalls': inference_counts, 'midiBytes': sum(c['byteLength'] for c in result['candidates'])}
     (output / 'candidates.json').write_text(json.dumps(result, indent=2) + '\n')

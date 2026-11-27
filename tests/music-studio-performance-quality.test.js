@@ -6,3 +6,13 @@ test('inversions minimize ordered voice motion and keep each required pitch clas
 test('sparse drums keep backbeat and downbeat in time, with fewer hats; boundary fills bounded and variants differ',()=>{const f=setup();for(const density of ['sparse','normal','rich']){const c=candidate(f,0,density),first=f.C.drumPerformance(c.value,f.s,f.core,1),last=f.C.drumPerformance(c.value,f.s,f.core,4);assert.ok(first.some(n=>n.pitch===38&&n.startTick===480));assert.ok(first.some(n=>n.pitch===36&&n.startTick===0));assert.ok(last.every(n=>n.startTick+n.durationTicks<=7680));assert.equal(first.some(n=>n.pitch===50),false);assert.equal(last.some(n=>n.pitch===50),density!=='sparse');}const a=f.C.drumPerformance(candidate(f,0).value,f.s,f.core,4),b=f.C.drumPerformance(candidate(f,1).value,f.s,f.core,4),c=f.C.drumPerformance(candidate(f,2).value,f.s,f.core,4);assert.notDeepEqual(plain(a),plain(b));assert.notDeepEqual(plain(a),plain(c));});
 test('diminished bass fifth stays in harmony and expression differs from fixed repeated velocity',()=>{const f=setup(),c=candidate(f,1,'rich','Bdim'),notes=f.C.chordEnsembleNotes(c.value,c.value.ensemble.source,f.s,f.core,'bass');assert.ok(notes.every(n=>[11,5].includes(n.pitch%12)));assert.ok(new Set(notes.map(n=>n.velocity)).size>1);assert.ok(notes.every(n=>n.pitch>=28&&n.pitch<=55));});
 test('preview exposes bounded distribution metrics for each role, preserves original, adopts and undoes exactly',()=>{const f=setup(),before=plain(f.s.midiData),c=candidate(f),b=f.P.createPreview(f.s,f.core,c);assert.equal(b.companion.performance.length,4);for(const m of b.companion.performance){assert.equal(m.method,'note-distribution-only');assert.ok(m.notes>0);assert.ok(m.pitchMin>=0&&m.pitchMax<=127);}assert.deepEqual(plain(f.s.midiData),before);f.P.applyPreview(f.s,f.core,b,{startMeasure:2,endMeasure:3,roles:['strings','drums']});assert.deepEqual(plain(f.s.midiData.tracks.slice(0,3)),before.tracks);f.core.undo(f.s);assert.deepEqual(plain(f.s.midiData),before);});
+test('suspended chords work in model-backed ensembles with arpeggios and 6/8 backbeats',()=>{
+  const f=setup();
+  f.s.midiData.timeSignature={numerator:6,denominator:8};
+  f.s.midiData.timeSignatureMap=[];
+  const c=candidate(f,2,'normal','Csus4');
+  const notes=f.C.chordEnsembleNotes(c.value,c.value.ensemble.source,f.s,f.core,'piano');
+  assert.deepEqual([...new Set(notes.map(note=>note.pitch%12))].sort((a,b)=>a-b),[0,5,7]);
+  const drums=f.C.drumPerformance(c.value,f.s,f.core,1);
+  assert.deepEqual(plain(drums.filter(note=>note.pitch===38).map(note=>note.startTick)),[720]);
+});
