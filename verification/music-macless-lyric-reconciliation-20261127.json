@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-27 JST",
+  "passed": true,
+  "failed": 0,
+  "chromiumWidths": [
+    1440,
+    820,
+    390
+  ],
+  "nodeFocusedPass": 42,
+  "sourceHashes": {
+    "scripts/music-lyrics-note-assignment-browser.js": "977c09698b395910614ef6d44fd4baad882cdb53126784398b59c944b54bc57e",
+    "tests/music-studio-lyrics-note-assignment.test.js": "36e6b4a55f343077c6e0a1e092de320a0cb747ca733be9e7d93f518d6a537633"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "00c2f58e6beaaa2b4e9a653b00e21c03d4a27ed276e0bf732d811132ab3bd3ad",
+    "music-studio.html": "32eb0f1e5199c68929bd8e6066ad3aada473daab724df74399e9a217664ff504",
+    "music-studio-compact-ui.css": "8c6c267df338bcbfabde425c7255de5e30560950b88e711f8a5909f7a3323692",
+    "app.js": "bf64ccafcedb9f8e889e6c0487654dbe0d837f39f042501d4f2f7b07db85b6aa"
+  },
+  "acceptedCases": [
+    "lyricsSlotsAndSustain:true",
+    "lyricsConflictHistory:true",
+    "reconciling a middle lyric retains editable fragments and records displaced tokens"
+  ],
+  "scope": "Supplied reading with explicit sustain slots, overlapping approval and retained editable fragments, original MIDI preserved, prior reading restored from IndexedDB history. Automatic accent and perceived vocal quality are outside this run."
+}

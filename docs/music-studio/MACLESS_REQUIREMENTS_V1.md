@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率 **58.52%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率 **60.00%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -23,7 +23,7 @@ A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率
 | 7 | 6 | 1 | 5 | 1 | 1 |
 | 8 | 5 | 1 | 4 | 1 | 1 |
 | 9 | 4 | 1 | 3 | 1 | 1 |
-| 10 | 8 | 1 | 7 | 1 | 1 |
+| 10 | 8 | 3 | 5 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 4 | 0 | 1 | 0 |
 | 13 | 4 | 4 | 0 | 1 | 0 |
@@ -107,10 +107,10 @@ A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率
 | MS10-A02 | A | 歌詞本文生成 | open | MS10-C01 |
 | MS10-A03 | A | 歌詞本文修正 | open | MS10-C01 |
 | MS10-A04 | A | 読みとアクセント整合 | open | MS10-C01 |
-| MS10-A05 | A | 文字数と音節割付 | open | MS10-C01 |
+| MS10-A05 | A | 文字数と音節割付 | verified | [scripts/music-lyrics-note-assignment-browser.js](../../scripts/music-lyrics-note-assignment-browser.js) — `lyricsSlotsAndSustain:true` |
 | MS10-A06 | A | 固定歌詞再生成 | open | MS10-C01 |
 | MS10-A07 | A | 固定メロディ再生成 | open | MS10-C01 |
-| MS10-A08 | A | 重複歌詞の再結合と競合履歴 | open | MS10-C01 |
+| MS10-A08 | A | 重複歌詞の再結合と競合履歴 | verified | [scripts/music-lyrics-note-assignment-browser.js](../../scripts/music-lyrics-note-assignment-browser.js) — `lyricsConflictHistory:true`; [tests/music-studio-lyrics-note-assignment.test.js](../../tests/music-studio-lyrics-note-assignment.test.js) — `reconciling a middle lyric retains editable fragments and records displaced tokens` |
 | MS10-B01 | B | 日本語歌詞と旋律の歌唱受入 | open | 未確認 |
 | MS10-C01 | C | 歌詞生成モデル・読みアクセント方式 | open | 未確認 |
 | MS11-A01 | A | WAV preflight reports measured duration and silence without writing audio or project | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `WAV preflight reports measured duration and silence without writing audio or project` |
@@ -237,7 +237,7 @@ A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 2 |
-| 仕様判断待ち | 63 | 54 |
+| 仕様判断待ち | 63 | 52 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
 
@@ -278,10 +278,10 @@ A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率
 | MS10-A02 | 仕様判断待ち | open |
 | MS10-A03 | 仕様判断待ち | open |
 | MS10-A04 | 仕様判断待ち | open |
-| MS10-A05 | 仕様判断待ち | open |
+| MS10-A05 | 仕様判断待ち | verified |
 | MS10-A06 | 仕様判断待ち | open |
 | MS10-A07 | 仕様判断待ち | open |
-| MS10-A08 | 仕様判断待ち | open |
+| MS10-A08 | 仕様判断待ち | verified |
 | MS11-A02 | 仕様判断待ち | open |
 | MS11-A03 | 仕様判断待ち | open |
 | MS12-A02 | 実装済み・検証不足 | verified |

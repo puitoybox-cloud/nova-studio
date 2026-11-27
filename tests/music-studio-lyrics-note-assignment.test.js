@@ -73,3 +73,21 @@ test('lyrics Apply recognizes the same edit after notification loss and a later 
  assert.equal(app.lyricsEditor.preview,null);
  assert.deepEqual(plain(app.state.projects[0]),plain(await repo.get(p.projectId)));
 });
+
+test('reconciling a middle lyric retains editable fragments and records displaced tokens',()=>{
+  const {app,p,input}=fixture();
+  const initial={...input,text:'夏の音',reading:'な つ の'};
+  const original=app.adoptLyricsAssignment(p,app.lyricsAssignmentPreview(p,initial));
+  const record=original.syllableAssignments.at(-1);
+  const next={...input,fromNote:2,toNote:2,text:'波',reading:'み'};
+  const candidate=app.lyricsAssignmentPreview(original,next);
+  assert.deepEqual(plain(candidate.conflicts.map(row=>[row.recordId,row.previous[0].token])),[[record.id,'つ']]);
+  const adopted=app.adoptLyricsAssignment(original,candidate);
+  assert.deepEqual(plain(adopted.syllableAssignments.slice(1).map(row=>row.reading)),['な','の','み']);
+  assert.equal(new Set(adopted.syllableAssignments.slice(1).map(row=>row.id)).size,3);
+  const history=adopted.productionHistory.at(-1);
+  assert.equal(history.type,'lyrics-assignment-reconcile');
+  assert.equal(history.assignmentId,adopted.syllableAssignments.at(-1).id);
+  assert.deepEqual(plain(history.replaced),plain(candidate.conflicts));
+  assert.deepEqual(plain(adopted.midiData),plain(original.midiData));
+});

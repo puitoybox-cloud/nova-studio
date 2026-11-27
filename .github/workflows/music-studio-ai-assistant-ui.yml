@@ -13,6 +13,7 @@ on:
       - 'scripts/music-release-review-browser.cjs'
       - 'scripts/music-midi-candidate-import-browser.js'
       - 'scripts/music-lyrics-score-browser.js'
+      - 'scripts/music-lyrics-note-assignment-browser.js'
       - 'scripts/music-score-vocal-return-browser.js'
       - 'scripts/music-vocal-replacement-browser.js'
       - 'tests/music-studio-score-vocal-return.test.js'
@@ -171,6 +172,7 @@ jobs:
           node --test tests/music-studio-lyrics-score-export.test.js tests/music-studio-ai-midi-lyrics-score.test.js tests/music-studio-score-vocal-return.test.js
           npm install --prefix "$RUNNER_TEMP/nova-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-score-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-lyrics-note-assignment-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-score-vocal-return-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-replacement-browser.js
       - uses: actions/upload-artifact@v4

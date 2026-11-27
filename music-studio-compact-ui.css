@@ -364,3 +364,22 @@ body[data-music-studio-standalone] button[data-gemini-bridge="header"] { backgro
 .music-studio-shell .music-lyrics-help :is(p,summary) { background:#0d1725 !important; color:#ecf4ff !important; }
 .music-studio-shell .music-export-files,
 .music-studio-shell .music-export-files > summary { background:#112031 !important; color:#eef6ff !important; }
+
+
+/* The release declaration disclosure can be expanded in Mix and Export. */
+.music-studio-shell .music-final-export .music-release-review {
+  background: #0d1725;
+  color: #ecf4ff;
+}
+.music-studio-shell .music-final-export .music-release-review fieldset {
+  background: #112031;
+  color: #ecf4ff;
+}
+.music-studio-shell .music-final-export .music-release-review :is(p,label,legend,summary) {
+  color: #ecf4ff;
+}
+.music-studio-shell .music-final-export .music-release-review :is(select,input:not([type=checkbox])) {
+  background: #081421;
+  color: #ecf4ff;
+  border-color: #526985;
+}
