@@ -1,0 +1,210 @@
+{
+  "date": "2026-11-27 JST",
+  "model": "Basic Pitch 0.4.0 / ONNX Runtime 1.32.0",
+  "comparison": "Exact MIDI pitch and onset within 75 ms. Note offsets excluded. The same recordings were run with both engine modes.",
+  "humanCorrectionSeconds": null,
+  "acceptanceThreshold": null,
+  "sources": {
+    "piano": {
+      "recordings": "https://maestro.uncommonear.com/",
+      "reference": "Aligned MAESTRO MIDI"
+    },
+    "voice": {
+      "recordings": "https://zenodo.org/records/1442513",
+      "reference": "https://zenodo.org/records/7061507",
+      "conversion": "Sound rows with numeric Ground Truth MIDI code and annotated Start/End time"
+    },
+    "bass": {
+      "recordings": "https://zenodo.org/records/7544099",
+      "conversion": "XML onsetSec, offsetSec and pitch"
+    }
+  },
+  "records": {
+    "piano": [
+      {
+        "recording": "p-786fec6542198ecce004",
+        "instrument": "piano",
+        "mode": "monophonic",
+        "audioSha256": "040e85a32b576074dc3af60fa8175472d6584bd76fb6156808449df66ecfb77e",
+        "referenceSha256": "c72281527ca6588836bd1e109de848a8fd2ac246bbf06e25a58939d3168468fe",
+        "inferenceSeconds": 14.784,
+        "referenceNotes": 629,
+        "detectedNotes": 80,
+        "matchedNotes": 70,
+        "f1": 0.1975,
+        "unmatchedReferenceNotes": 559,
+        "unmatchedDetectedNotes": 10,
+        "matchedMedianOnsetErrorMs": 8.71
+      },
+      {
+        "recording": "p-786fec6542198ecce004",
+        "instrument": "piano",
+        "mode": "polyphonic",
+        "audioSha256": "040e85a32b576074dc3af60fa8175472d6584bd76fb6156808449df66ecfb77e",
+        "referenceSha256": "c72281527ca6588836bd1e109de848a8fd2ac246bbf06e25a58939d3168468fe",
+        "inferenceSeconds": 0.587,
+        "referenceNotes": 629,
+        "detectedNotes": 246,
+        "matchedNotes": 201,
+        "f1": 0.4594,
+        "unmatchedReferenceNotes": 428,
+        "unmatchedDetectedNotes": 45,
+        "matchedMedianOnsetErrorMs": 6.34
+      },
+      {
+        "recording": "p-dbc0202bf456bf8b086e",
+        "instrument": "piano",
+        "mode": "monophonic",
+        "audioSha256": "e57fe6d33ac8026359fc16888ec47e7e26c254dc73a237adc98a2bd23d7d71bd",
+        "referenceSha256": "e2ba82596c757411e06ee2ca182567c02dd2e7ebe2ef7f1b18dc8e40044428eb",
+        "inferenceSeconds": 0.559,
+        "referenceNotes": 129,
+        "detectedNotes": 49,
+        "matchedNotes": 37,
+        "f1": 0.4157,
+        "unmatchedReferenceNotes": 92,
+        "unmatchedDetectedNotes": 12,
+        "matchedMedianOnsetErrorMs": 5.52
+      },
+      {
+        "recording": "p-dbc0202bf456bf8b086e",
+        "instrument": "piano",
+        "mode": "polyphonic",
+        "audioSha256": "e57fe6d33ac8026359fc16888ec47e7e26c254dc73a237adc98a2bd23d7d71bd",
+        "referenceSha256": "e2ba82596c757411e06ee2ca182567c02dd2e7ebe2ef7f1b18dc8e40044428eb",
+        "inferenceSeconds": 0.554,
+        "referenceNotes": 129,
+        "detectedNotes": 138,
+        "matchedNotes": 111,
+        "f1": 0.8315,
+        "unmatchedReferenceNotes": 18,
+        "unmatchedDetectedNotes": 27,
+        "matchedMedianOnsetErrorMs": 4.31
+      }
+    ],
+    "voice": [
+      {
+        "recording": "f9_dona_straight",
+        "instrument": "voice",
+        "mode": "monophonic",
+        "audioSha256": "cfda9ee64305dbd6feb1a606650104c7ef42072fe5e8574ce1aa3b23e90e121f",
+        "referenceSha256": "78453d35533c8722d2289b59ba44b1797cb3ae0e839fc57a92587a2a0a98be99",
+        "inferenceSeconds": 1.344,
+        "referenceNotes": 24,
+        "detectedNotes": 28,
+        "matchedNotes": 14,
+        "f1": 0.5385,
+        "unmatchedReferenceNotes": 10,
+        "unmatchedDetectedNotes": 14,
+        "matchedMedianOnsetErrorMs": 49.78
+      },
+      {
+        "recording": "f9_dona_straight",
+        "instrument": "voice",
+        "mode": "polyphonic",
+        "audioSha256": "cfda9ee64305dbd6feb1a606650104c7ef42072fe5e8574ce1aa3b23e90e121f",
+        "referenceSha256": "78453d35533c8722d2289b59ba44b1797cb3ae0e839fc57a92587a2a0a98be99",
+        "inferenceSeconds": 0.288,
+        "referenceNotes": 24,
+        "detectedNotes": 32,
+        "matchedNotes": 17,
+        "f1": 0.6071,
+        "unmatchedReferenceNotes": 7,
+        "unmatchedDetectedNotes": 15,
+        "matchedMedianOnsetErrorMs": 52.17
+      },
+      {
+        "recording": "m1_row_straight",
+        "instrument": "voice",
+        "mode": "monophonic",
+        "audioSha256": "601f875d9f550b1ac2e6ea95814b0634fcb6d8567b258f0f8522f704500f0911",
+        "referenceSha256": "4580f1c195861d6ee472a8dcb08be03526ce6c0dfbe1d7509c1e98892d8ff869",
+        "inferenceSeconds": 0.221,
+        "referenceNotes": 27,
+        "detectedNotes": 31,
+        "matchedNotes": 10,
+        "f1": 0.3448,
+        "unmatchedReferenceNotes": 17,
+        "unmatchedDetectedNotes": 21,
+        "matchedMedianOnsetErrorMs": 35.76
+      },
+      {
+        "recording": "m1_row_straight",
+        "instrument": "voice",
+        "mode": "polyphonic",
+        "audioSha256": "601f875d9f550b1ac2e6ea95814b0634fcb6d8567b258f0f8522f704500f0911",
+        "referenceSha256": "4580f1c195861d6ee472a8dcb08be03526ce6c0dfbe1d7509c1e98892d8ff869",
+        "inferenceSeconds": 0.218,
+        "referenceNotes": 27,
+        "detectedNotes": 29,
+        "matchedNotes": 10,
+        "f1": 0.3571,
+        "unmatchedReferenceNotes": 17,
+        "unmatchedDetectedNotes": 19,
+        "matchedMedianOnsetErrorMs": 25.48
+      }
+    ],
+    "bass": [
+      {
+        "recording": "001",
+        "instrument": "bass",
+        "mode": "monophonic",
+        "audioSha256": "4185085fb9ee7b8db1ee6e401e9d575b9acc97b67a39e330a06f30f79c1324c4",
+        "referenceSha256": "da2f1e1826f370928452b36cef8895a227670c77e437b4b07a8423052a7a9174",
+        "inferenceSeconds": 1.106,
+        "referenceNotes": 44,
+        "detectedNotes": 35,
+        "matchedNotes": 28,
+        "f1": 0.7089,
+        "unmatchedReferenceNotes": 16,
+        "unmatchedDetectedNotes": 7,
+        "matchedMedianOnsetErrorMs": 12.69
+      },
+      {
+        "recording": "001",
+        "instrument": "bass",
+        "mode": "polyphonic",
+        "audioSha256": "4185085fb9ee7b8db1ee6e401e9d575b9acc97b67a39e330a06f30f79c1324c4",
+        "referenceSha256": "da2f1e1826f370928452b36cef8895a227670c77e437b4b07a8423052a7a9174",
+        "inferenceSeconds": 0.618,
+        "referenceNotes": 44,
+        "detectedNotes": 63,
+        "matchedNotes": 40,
+        "f1": 0.7477,
+        "unmatchedReferenceNotes": 4,
+        "unmatchedDetectedNotes": 23,
+        "matchedMedianOnsetErrorMs": 11.88
+      },
+      {
+        "recording": "002",
+        "instrument": "bass",
+        "mode": "monophonic",
+        "audioSha256": "fd77e7ff93f625a5f6543332b15ff5aeb84043d47f1e73d7f21a6dccdd2ee3e2",
+        "referenceSha256": "f39d7141e9f79cca0793c3f7fe7623cec78f81bbdf5166cc0e4e0939e3574706",
+        "inferenceSeconds": 0.287,
+        "referenceNotes": 48,
+        "detectedNotes": 46,
+        "matchedNotes": 42,
+        "f1": 0.8936,
+        "unmatchedReferenceNotes": 6,
+        "unmatchedDetectedNotes": 4,
+        "matchedMedianOnsetErrorMs": 17.05
+      },
+      {
+        "recording": "002",
+        "instrument": "bass",
+        "mode": "polyphonic",
+        "audioSha256": "fd77e7ff93f625a5f6543332b15ff5aeb84043d47f1e73d7f21a6dccdd2ee3e2",
+        "referenceSha256": "f39d7141e9f79cca0793c3f7fe7623cec78f81bbdf5166cc0e4e0939e3574706",
+        "inferenceSeconds": 0.273,
+        "referenceNotes": 48,
+        "detectedNotes": 62,
+        "matchedNotes": 47,
+        "f1": 0.8545,
+        "unmatchedReferenceNotes": 1,
+        "unmatchedDetectedNotes": 15,
+        "matchedMedianOnsetErrorMs": 15.91
+      }
+    ]
+  }
+}

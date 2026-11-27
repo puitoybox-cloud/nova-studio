@@ -19,7 +19,8 @@
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
-      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8",
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -40,7 +41,8 @@
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
-      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8",
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -59,7 +61,8 @@
       "09a58aa30c4e09a3fa2297f7c916375387d0c831",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
-      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8",
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
@@ -144,6 +147,15 @@
     ],
     "scripts/music-midi-import-atomic-browser.cjs": [
       "fb9a6d21341bd417d5b0252b51455512d925e5f8"
+    ],
+    "music-studio-compact-ui.css": [
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
+    ],
+    "scripts/music-lyrics-note-assignment-browser.js": [
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
+    ],
+    "tests/music-studio-lyrics-note-assignment.test.js": [
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
     ]
   },
   "requirements": [
@@ -1264,8 +1276,14 @@
       "feature": 10,
       "category": "A",
       "requirement": "文字数と音節割付",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-lyrics-note-assignment-browser.js",
+          "acceptance": "lyricsSlotsAndSustain:true",
+          "run": "verification/music-macless-lyric-reconciliation-20261127.json"
+        }
+      ],
       "dependsOn": [
         "MS10-C01"
       ],
@@ -1327,8 +1345,19 @@
       "feature": 10,
       "category": "A",
       "requirement": "重複歌詞の再結合と競合履歴",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-lyrics-note-assignment-browser.js",
+          "acceptance": "lyricsConflictHistory:true",
+          "run": "verification/music-macless-lyric-reconciliation-20261127.json"
+        },
+        {
+          "path": "tests/music-studio-lyrics-note-assignment.test.js",
+          "acceptance": "reconciling a middle lyric retains editable fragments and records displaced tokens",
+          "run": "verification/music-macless-lyric-reconciliation-20261127.json"
+        }
+      ],
       "dependsOn": [
         "MS10-C01"
       ],
@@ -4146,6 +4175,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "79/135 verified. MS21-A04: explicit release preflight catches incomplete or internal-only declarations for active audio sources, selected MIDI and dependencies before rendering. Chromium verifies preserved declarations in the downloaded manifest and requires a renewed release review on replay. Actual redistribution terms remain MS21-C01."
+    },
+    {
+      "date": "2026-11-27 JST",
+      "baselinePR": 684,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "81/135 verified. MS10-A05: explicit supplied reading and sustain assignments with selected-note counts. MS10-A08: approved lyric conflict reconciliation, retained editable fragments and persisted previous readings. Chromium at 1440, 820, and 390 px. Automatic reading/accent model remains MS10-C01."
     }
   ]
 }
