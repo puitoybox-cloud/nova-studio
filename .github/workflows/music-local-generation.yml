@@ -96,7 +96,7 @@ jobs:
           trap 'kill "$host_pid" 2>/dev/null || true' EXIT
           curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
             http://127.0.0.1:8878/music-studio.html -o /dev/null
-          node scripts/music-complete-song-browser.js | tee "$RUNNER_TEMP/music-complete-song.json"
+          NOVA_SONG_OUTPUT="$RUNNER_TEMP/Hikari-no-Mukou-e-Master.wav" node scripts/music-complete-song-browser.js | tee "$RUNNER_TEMP/music-complete-song.json"
       - name: Real long candidates through IndexedDB and browser restart
         env:
           NOVA_MODEL_WEIGHTS: ${{ runner.temp }}/nova-generation-assets/weights
@@ -121,6 +121,7 @@ jobs:
             ${{ runner.temp }}/music-long-indexeddb-browser.json
             ${{ runner.temp }}/music-long-production-browser.json
             ${{ runner.temp }}/music-complete-song.json
+            ${{ runner.temp }}/Hikari-no-Mukou-e-Master.wav
             ${{ runner.temp }}/music-complete-song-host.log
   intel-mac-generation:
     runs-on: macos-15-intel
