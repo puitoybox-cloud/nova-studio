@@ -6,6 +6,7 @@ const http=require('node:http');
 const {chromium}=require('playwright');
 const {spawn}=require('node:child_process');
 const {once}=require('node:events');
+const {waitForDevToolsPort}=require('./music-chromium-devtools-port.cjs');
 test('MIDI project and import history commit or roll back together across SIGKILL and retry',{timeout:120000},async()=>{
  const scripts=new Map(['music-studio.js','music-studio-midi.js','music-studio-midi-parser.js'].map(name=>['/'+name,fs.readFileSync(name)]));
  const server=http.createServer((req,res)=>{if(scripts.has(req.url)){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});res.end(scripts.get(req.url))}else{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body></body></html>')}});
@@ -28,14 +29,7 @@ test('MIDI project and import history commit or roll back together across SIGKIL
   fs.rmSync(dir+'/DevToolsActivePort',{force:true});
   assert.ok(fs.existsSync(executable),'Playwright Chromium must be installed');
   processHandle=spawn(executable,['--headless','--no-sandbox','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{detached:true,stdio:'ignore'});
-  let launchError;processHandle.on('error',error=>{launchError=error});
-  const deadline=Date.now()+15000;
-  while(!fs.existsSync(dir+'/DevToolsActivePort')){
-   if(launchError)throw launchError;
-   if(processHandle.exitCode!==null||Date.now()>deadline)throw Error('Chromium failed to start');
-   await new Promise(resolve=>setTimeout(resolve,25));
-  }
-  const port=fs.readFileSync(dir+'/DevToolsActivePort','utf8').split('\n')[0];
+  const port=await waitForDevToolsPort(dir+'/DevToolsActivePort',processHandle);
   const connection=await chromium.connectOverCDP('http://127.0.0.1:'+port);
   return connection.contexts()[0];
  }

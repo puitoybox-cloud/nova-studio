@@ -9,7 +9,8 @@
   "historicalRuntimeSnapshots": {
     "scripts/music-indexeddb-browser-persistence.cjs": [
       "1932d8dd2849e77c74674622334aef4a5385a7cc",
-      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "music-studio.css": "ecde209abff6a6b47587f084a7c054744da98601",
     "app.js": [
@@ -17,7 +18,8 @@
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -37,7 +39,8 @@
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -55,7 +58,8 @@
       "141ea9a004c394dc23c67486aa1fe176660e5425",
       "09a58aa30c4e09a3fa2297f7c916375387d0c831",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
@@ -74,7 +78,8 @@
     "tests/music-studio-scoped-midi-repair.test.js": [
       "5723a400ef9c7bd3fa1d4ce549ba1c8c5d0cc94f",
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "scripts/music-final-export-browser.js": [
       "fb7d426e74f5e9fb946503b511a8c04a8d7b0507",
@@ -116,19 +121,29 @@
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "tests/music-studio-dynamic-track-selection.test.js": [
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "tests/music-studio-external-song-import.test.js": [
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "tests/music-studio-home.test.js": [
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "tests/music-studio-ipad-touch.test.js": [
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "tools/music-audio-pipeline/server.py": [
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+    ],
+    "scripts/music-delete-crash-browser.cjs": [
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
+    ],
+    "scripts/music-midi-import-atomic-browser.cjs": [
+      "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ]
   },
   "requirements": [
@@ -2756,8 +2771,29 @@
       "feature": 21,
       "category": "A",
       "requirement": "配信前の権利申告漏れ検査",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-release-review-browser.cjs",
+          "acceptance": "releaseMissingBlocked:true",
+          "run": "verification/music-macless-release-review-20261127.json"
+        },
+        {
+          "path": "scripts/music-release-review-browser.cjs",
+          "acceptance": "internalOnlyBlocked:true",
+          "run": "verification/music-macless-release-review-20261127.json"
+        },
+        {
+          "path": "scripts/music-release-review-browser.cjs",
+          "acceptance": "midiAndDependenciesRequired:true",
+          "run": "verification/music-macless-release-review-20261127.json"
+        },
+        {
+          "path": "scripts/music-release-review-browser.cjs",
+          "acceptance": "replayRequiresReview:true",
+          "run": "verification/music-macless-release-review-20261127.json"
+        }
+      ],
       "dependsOn": [
         "MS21-C01"
       ],
@@ -4103,6 +4139,13 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "78/135 verified. MS17-A03 and MS17-A04: real Basic Pitch ONNX scores and selected-position source audition, durable manual pitch/delete preserving raw notes, explicit timing diff approval, separate MIDI track and atomically stored original audio, three-way review after Chromium restart. Pitch/voice/etc accuracy (MS17-A02) and managed voice model execution (MS14-A05) remain open."
+    },
+    {
+      "date": "2026-11-27 JST",
+      "baselinePR": 683,
+      "totalA": 135,
+      "denominatorChanged": false,
+      "reason": "79/135 verified. MS21-A04: explicit release preflight catches incomplete or internal-only declarations for active audio sources, selected MIDI and dependencies before rendering. Chromium verifies preserved declarations in the downloaded manifest and requires a renewed release review on replay. Actual redistribution terms remain MS21-C01."
     }
   ]
 }

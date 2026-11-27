@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-27 JST",
+  "baseHead": "fb9a6d21341bd417d5b0252b51455512d925e5f8",
+  "passed": 4,
+  "failed": 0,
+  "chromium": "152.0.7977.0",
+  "acceptedCases": [
+    "releaseMissingBlocked:true",
+    "internalOnlyBlocked:true",
+    "midiAndDependenciesRequired:true",
+    "replayRequiresReview:true"
+  ],
+  "sourceHashes": {
+    "scripts/music-release-review-browser.cjs": "447e45ad12fa3c7458a35871ca6b8ff19c03fa11fc03fcc7d1226910faae6420"
+  },
+  "runtimeHashes": {
+    "music-studio.js": "59f16261abff586e6c41c1dbe0ae92fb0c7de0a161e013174c275c8ab910db2d",
+    "music-studio.html": "0a58ba331e54027883d93487359449990a7c1c56f02071ff9cb9029431a5e681"
+  },
+  "browser": {
+    "releaseMissingBlocked": true,
+    "internalOnlyBlocked": true,
+    "midiAndDependenciesRequired": true,
+    "manifestDeclarations": 3,
+    "replayRequiresReview": true,
+    "lufs": -14.000000292325089,
+    "truePeakDb": -8.1700569511206
+  },
+  "scope": "User-supplied declarations for selected audio, optional MIDI, and dependencies; declarations are not rights clearance.",
+  "previousFailure": {
+    "workflow": "Music IndexedDB browser persistence",
+    "job": "https://github.com/puitoybox-cloud/nova-studio/actions/runs/45930975790/job/140283267482",
+    "cause": "The crash test connected when Chromium had created but not yet populated its DevTools port file."
+  }
+}

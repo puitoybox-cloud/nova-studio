@@ -1,0 +1,271 @@
+{
+  "dataset": "GuitarSet 1.1.0",
+  "source": "https://zenodo.org/records/3371780",
+  "comparison": "Pitch and onset within 75 ms, note offsets excluded; mono mode on the same recordings is a diagnostic comparison.",
+  "humanCorrectionSeconds": null,
+  "records": [
+    {
+      "recording": "01_BN1-129-Eb_solo",
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "inferenceSeconds": 9.978,
+      "referenceNotes": 61,
+      "detectedNotes": 53,
+      "matchedNotes": 48,
+      "f1": 0.8421,
+      "unmatchedReferenceNotes": 13,
+      "unmatchedDetectedNotes": 5,
+      "matchedMedianOnsetErrorMs": 12.0
+    },
+    {
+      "recording": "01_BN1-129-Eb_solo",
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "inferenceSeconds": 0.911,
+      "referenceNotes": 61,
+      "detectedNotes": 62,
+      "matchedNotes": 57,
+      "f1": 0.9268,
+      "unmatchedReferenceNotes": 4,
+      "unmatchedDetectedNotes": 5,
+      "matchedMedianOnsetErrorMs": 13.33
+    },
+    {
+      "recording": "01_BN1-129-Eb_comp",
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "inferenceSeconds": 0.971,
+      "referenceNotes": 105,
+      "detectedNotes": 41,
+      "matchedNotes": 37,
+      "f1": 0.5068,
+      "unmatchedReferenceNotes": 68,
+      "unmatchedDetectedNotes": 4,
+      "matchedMedianOnsetErrorMs": 11.44
+    },
+    {
+      "recording": "01_BN1-129-Eb_comp",
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "inferenceSeconds": 0.837,
+      "referenceNotes": 105,
+      "detectedNotes": 116,
+      "matchedNotes": 87,
+      "f1": 0.7873,
+      "unmatchedReferenceNotes": 18,
+      "unmatchedDetectedNotes": 29,
+      "matchedMedianOnsetErrorMs": 11.17
+    },
+    {
+      "recording": "01_Jazz1-130-D_solo",
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "inferenceSeconds": 0.949,
+      "referenceNotes": 68,
+      "detectedNotes": 49,
+      "matchedNotes": 46,
+      "f1": 0.7863,
+      "unmatchedReferenceNotes": 22,
+      "unmatchedDetectedNotes": 3,
+      "matchedMedianOnsetErrorMs": 10.97
+    },
+    {
+      "recording": "01_Jazz1-130-D_solo",
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "inferenceSeconds": 0.531,
+      "referenceNotes": 68,
+      "detectedNotes": 63,
+      "matchedNotes": 60,
+      "f1": 0.916,
+      "unmatchedReferenceNotes": 8,
+      "unmatchedDetectedNotes": 3,
+      "matchedMedianOnsetErrorMs": 11.67
+    },
+    {
+      "recording": "01_Jazz1-130-D_comp",
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "inferenceSeconds": 0.596,
+      "referenceNotes": 103,
+      "detectedNotes": 47,
+      "matchedNotes": 40,
+      "f1": 0.5333,
+      "unmatchedReferenceNotes": 63,
+      "unmatchedDetectedNotes": 7,
+      "matchedMedianOnsetErrorMs": 7.12
+    },
+    {
+      "recording": "01_Jazz1-130-D_comp",
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "inferenceSeconds": 0.535,
+      "referenceNotes": 103,
+      "detectedNotes": 116,
+      "matchedNotes": 96,
+      "f1": 0.8767,
+      "unmatchedReferenceNotes": 7,
+      "unmatchedDetectedNotes": 20,
+      "matchedMedianOnsetErrorMs": 7.7
+    }
+  ],
+  "date": "2026-11-27 JST",
+  "implementation": "Basic Pitch 0.4.0, ONNX Runtime 1.32.0, Linux outbound blocked",
+  "controlledFixtures": [
+    {
+      "instrument": "piano",
+      "mode": "monophonic",
+      "generic": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "instrumentProfile": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "piano",
+      "mode": "polyphonic",
+      "generic": {
+        "expected": 9,
+        "detected": 17,
+        "precision": 0.5294,
+        "recall": 1.0,
+        "f1": 0.6923
+      },
+      "instrumentProfile": {
+        "expected": 9,
+        "detected": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "voice",
+      "mode": "monophonic",
+      "generic": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "instrumentProfile": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "voice",
+      "mode": "polyphonic",
+      "generic": {
+        "expected": 9,
+        "detected": 16,
+        "precision": 0.5625,
+        "recall": 1.0,
+        "f1": 0.72
+      },
+      "instrumentProfile": {
+        "expected": 9,
+        "detected": 11,
+        "precision": 0.8182,
+        "recall": 1.0,
+        "f1": 0.9
+      }
+    },
+    {
+      "instrument": "guitar",
+      "mode": "monophonic",
+      "generic": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "instrumentProfile": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "guitar",
+      "mode": "polyphonic",
+      "generic": {
+        "expected": 9,
+        "detected": 19,
+        "precision": 0.4737,
+        "recall": 1.0,
+        "f1": 0.6429
+      },
+      "instrumentProfile": {
+        "expected": 9,
+        "detected": 12,
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.8571
+      }
+    },
+    {
+      "instrument": "bass",
+      "mode": "monophonic",
+      "generic": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "instrumentProfile": {
+        "expected": 3,
+        "detected": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    {
+      "instrument": "bass",
+      "mode": "polyphonic",
+      "generic": {
+        "expected": 9,
+        "detected": 11,
+        "precision": 0.6364,
+        "recall": 0.7778,
+        "f1": 0.7
+      },
+      "instrumentProfile": {
+        "expected": 9,
+        "detected": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    }
+  ],
+  "macroF1": {
+    "monophonic": 0.6671,
+    "polyphonic": 0.8767
+  },
+  "benchmarkSha256": "afac97e87645428d797b40463196b9a53563b5c943ac7c17f9cb8debea5d6c00",
+  "limits": [
+    "The four performance recordings use guitar only; solo/accompaniment labels are not a guarantee of monophony.",
+    "The other instrument-mode combinations were exercised on generated fixtures, not human performances.",
+    "Human correction time was not measured; inference time and unmatched note counts are provided separately.",
+    "Performer 01 differs from the previous repository comparison performer 00. Independence from Basic Pitch training data is unverified."
+  ]
+}
