@@ -101,12 +101,14 @@ const mixedSources = await mixed.evaluate(async()=>{
       {key:'pcm:'+project.pcmMix.assets[0].id,role:'instrument',startSeconds:0,gainDb:0,muted:false},
       {key:'wav:'+imported.assetId,role:'instrument',startSeconds:.125,gainDb:0,muted:false},
       {key:'wav:'+midi.assetId,role:'instrument',startSeconds:.25,gainDb:0,muted:false},
-      {key:'wav:'+take.id,role:'vocal',startSeconds:.125,gainDb:0,muted:false}
+      {key:'wav:'+take.id,role:'vocal',startSeconds:.125,gainDb:0,muted:false,balance:-.5}
     ]};
   const expectedStarts=[0,6000,12000,26400];
   const midiBlob=await app.pcmLoadLongWav(id,midi.assetId);
   const midiAudio=app.pcmDecodeWav(await midiBlob.arrayBuffer()).channels;
   if(!midiAudio.some(channel=>channel.some(sample=>sample!==0)))throw Error('silent-midi-render');
+  const invalidBalance=await app.finalPreview(id,{...plan,routes:plan.routes.map(route=>({...route,balance:1.01}))});
+  if(invalidBalance.ok||invalidBalance.error!=='final-route-invalid')throw Error('accepted invalid stereo balance');
   const candidate=requireOk(await app.finalPreview(id,plan)).candidate;
   if(JSON.stringify(candidate.manifest.handoff.stems.map(s=>s.sourceStartFrame))!==JSON.stringify(expectedStarts))throw Error('mixed-placement');
   const frames=12000+midiAudio[0].length;
@@ -115,9 +117,10 @@ const mixedSources = await mixed.evaluate(async()=>{
   const pcm=new DataView(await mix.arrayBuffer());
   const signal=(index,frames,amplitude)=>index>=0&&index<frames?((index%40<20?1:-1)*amplitude):0;
   for(let i=0;i<frames;i++){
-    const mono=signal(i,24000,240)+signal(i-6000,24000,320)+signal(i-26400,18000,480);
+    const mono=signal(i,24000,240)+signal(i-6000,24000,320);
     for(let c=0;c<2;c++){
-      const reference=mono+(midiAudio[c][i-12000]??0)*32768;
+      const vocal=signal(i-26400,18000,480)*(c===0?1:.5);
+      const reference=mono+vocal+(midiAudio[c][i-12000]??0)*32768;
       if(pcm.getInt16(44+(i*2+c)*2,true)!==reference)throw Error('mixed-sample '+i+' channel '+c);
     }
   }
