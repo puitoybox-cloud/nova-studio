@@ -505,9 +505,9 @@
     if(typeof text!=='string'||text.length>256)throw Error('invalid-ensemble-chords');
     const symbols=text.trim()?text.trim().split(/\s+/):[];
     return symbols.map(symbol=>{
-      const m=/^([A-G](?:#|b)?)(m7|maj7|7|m|dim)?$/.exec(symbol);
+      const m=/^([A-G](?:#|b)?)(m7|maj7|sus4|7|m|dim)?$/.exec(symbol);
       if(!m||NOTE_PCS[m[1]]==null)throw Error('invalid-ensemble-chord: '+symbol);
-      const root=NOTE_PCS[m[1]],quality=m[2]||'',intervals=quality==='dim'?[0,3,6]:quality==='m'?[0,3,7]:quality==='m7'?[0,3,7,10]:quality==='7'?[0,4,7,10]:quality==='maj7'?[0,4,7,11]:[0,4,7];
+      const root=NOTE_PCS[m[1]],quality=m[2]||'',intervals=quality==='sus4'?[0,5,7]:quality==='dim'?[0,3,6]:quality==='m'?[0,3,7]:quality==='m7'?[0,3,7,10]:quality==='7'?[0,4,7,10]:quality==='maj7'?[0,4,7,11]:[0,4,7];
       return{symbol,root,pcs:intervals.map(i=>(root+i)%12)};
     });
   }
@@ -530,13 +530,15 @@
     const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),ppq=session.midiData.ppq;
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-ensemble-timing');
     const density=value.ensemble.section?.density||'normal',variant=value.variant,notes=[],unit=Math.max(1,Math.round(ppq/2));
+    const meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,span.startTick);
+    const compound=meter.denominator===8&&meter.numerator>=6&&meter.numerator%3===0;
     const endSection=value.ensemble.section?.range?.endMeasure,fill=density!=='sparse'&&bar===endSection;
     for(let tick=span.startTick,step=0;tick<span.endTick;tick+=unit,step++){
       const add=(pitch,velocity)=>notes.push({pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
       if(density!=='sparse'||step%2===0)add(42,step%2?48:61);
       // Kick and bass share the quarter/eighth pulse, regardless of hat density.
-      if(step===0||step%4===0||(density==='rich'&&variant==='B'&&step%4===3))add(36,step===0?91:82);
-      if(step%4===2)add(38,80);
+      if(step===0||(!compound&&step%4===0)||(density==='rich'&&variant==='B'&&step%4===3&&!compound))add(36,step===0?91:82);
+      if(compound?step%6===3:step%4===2)add(38,80);
       if(fill&&tick>=Math.max(span.startTick+unit,span.endTick-ppq)&&step%2===1)add(variant==='C'?45:50,68+(step%3)*4);
     }
     return notes;
@@ -555,7 +557,7 @@
       const pitches=performanceVoicing(pcs,low,high,previous);
       previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
-      const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'?ppq:ppq*2)*factor));
+      const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'||(role==='piano'&&value.variant==='C')?ppq:ppq*2)*factor));
       for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
         if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
         const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);

@@ -15,6 +15,19 @@ sys.path.insert(0, str(ROOT))
 import server
 
 
+class MonophonicSelectionTests(unittest.TestCase):
+    def test_global_selection_keeps_two_confident_notes_over_one_overlap(self):
+        from types import SimpleNamespace
+        def note(start, end, velocity, pitch):
+            return SimpleNamespace(start=start, end=end, velocity=velocity, pitch=pitch)
+        first = note(0, 0.25, 65, 60)
+        second = note(0.25, 0.5, 65, 62)
+        overlap = note(0.10, 0.4, 90, 48)
+        last = note(0.5, 0.75, 80, 64)
+        self.assertEqual(server.monophonic_notes([overlap, last, second, first]),
+                         [first, second, last])
+
+
 @unittest.skipUnless(all(importlib.util.find_spec(name) for name in ("mido", "soundfile", "numpy")),
                      "audio analysis dependencies are unavailable")
 class SyntheticMelodyAccuracyTests(unittest.TestCase):

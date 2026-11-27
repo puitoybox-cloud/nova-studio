@@ -7,6 +7,7 @@
   "baselineTree": "0e190ce81ba61f30f58965e4c90c3262c58b702e",
   "scope": "30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。",
   "historicalRuntimeSnapshots": {
+    "tests/music-studio-ai-workflow.test.js": "86227181fce006dd370f62ad443636a5ffb4c80c",
     "scripts/music-indexeddb-browser-persistence.cjs": [
       "1932d8dd2849e77c74674622334aef4a5385a7cc",
       "09a58aa30c4e09a3fa2297f7c916375387d0c831",
@@ -20,7 +21,8 @@
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
       "fb9a6d21341bd417d5b0252b51455512d925e5f8",
-      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
+      "86227181fce006dd370f62ad443636a5ffb4c80c"
     ],
     "music-studio-auto-finish.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -42,7 +44,8 @@
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
       "fb9a6d21341bd417d5b0252b51455512d925e5f8",
-      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
+      "86227181fce006dd370f62ad443636a5ffb4c80c"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -62,7 +65,8 @@
       "d2f62d9faa3aac6220cb27c84cea8d203b7b6a56",
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
       "fb9a6d21341bd417d5b0252b51455512d925e5f8",
-      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
+      "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
+      "86227181fce006dd370f62ad443636a5ffb4c80c"
     ],
     "index.html": [
       "d9866c82704dd996aafc9ec3f9dcda29171c64eb",
@@ -86,7 +90,8 @@
     ],
     "scripts/music-final-export-browser.js": [
       "fb7d426e74f5e9fb946503b511a8c04a8d7b0507",
-      "09a58aa30c4e09a3fa2297f7c916375387d0c831"
+      "09a58aa30c4e09a3fa2297f7c916375387d0c831",
+      "86227181fce006dd370f62ad443636a5ffb4c80c"
     ],
     "tests/music-studio-final-export.test.js": [
       "d889137661f54781e59d74853771566141f92084",
@@ -140,7 +145,8 @@
       "fb9a6d21341bd417d5b0252b51455512d925e5f8"
     ],
     "tools/music-audio-pipeline/server.py": [
-      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
+      "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
+      "cf43bf9fdb147bfd1b02e117ef01521a86e3f09d"
     ],
     "scripts/music-delete-crash-browser.cjs": [
       "fb9a6d21341bd417d5b0252b51455512d925e5f8"
@@ -156,7 +162,8 @@
     ],
     "tests/music-studio-lyrics-note-assignment.test.js": [
       "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
-    ]
+    ],
+    "tests/music-studio-performance-quality.test.js": "cf43bf9fdb147bfd1b02e117ef01521a86e3f09d"
   },
   "requirements": [
     {

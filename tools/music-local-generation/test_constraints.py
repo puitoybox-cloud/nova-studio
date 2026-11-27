@@ -41,6 +41,14 @@ class MoodChords(unittest.TestCase):
   for index,event in enumerate(notes): self.assertIn(event[4]%12,chords[index%2])
   with self.assertRaises(ValueError):constrain_score([480,[['note',0,120,0,61,80]]],pitch_min=61,pitch_max=61,chord_sets=chords)
 
+ def test_diatonic_passing_note_keeps_model_contour_off_the_beat(self):
+  from compose import interpret_request
+  chords = interpret_request(chords='C')[2]
+  notes = [['note',0,200,0,60,80], ['note',240,200,0,62,80],
+           ['note',480,200,0,64,80], ['note',960,200,0,62,80]]
+  constrain_score([480,notes],key='C',style='varied',chord_sets=chords)
+  self.assertEqual([n[4] for n in notes if n[0]=='note'],[60,62,64,60])
+
 class SourcePromptTests(unittest.TestCase):
  def test_source_validation(self):
   from compose import source_notes

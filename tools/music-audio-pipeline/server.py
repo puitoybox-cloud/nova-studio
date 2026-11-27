@@ -704,15 +704,27 @@ def file_sha256(path):
 
 
 def monophonic_notes(notes):
-    """Keep the strongest detection when Basic Pitch emits overlapping notes."""
+    """Return the non-overlapping note sequence with maximum total detector velocity."""
+    from bisect import bisect_right
+
+    ordered = sorted(notes, key=lambda note: (note.end, note.start, -note.velocity, note.pitch))
+    ends = [note.end for note in ordered]
+    totals = [0]
+    predecessors = []
+    for index, note in enumerate(ordered):
+        before = bisect_right(ends, note.start, 0, index)
+        predecessors.append(before)
+        totals.append(max(totals[-1], totals[before] + note.velocity))
+
     selected = []
-    for note in sorted(notes, key=lambda item: (item.start, -item.velocity, item.pitch)):
-        if selected and note.start < selected[-1].end:
-            if note.velocity <= selected[-1].velocity:
-                continue
-            selected.pop()
-        selected.append(note)
-    return selected
+    index = len(ordered)
+    while index:
+        if totals[index] == totals[index - 1]:
+            index -= 1
+            continue
+        selected.append(ordered[index - 1])
+        index = predecessors[index - 1]
+    return selected[::-1]
 
 
 TRANSCRIPTION_PROFILES = {

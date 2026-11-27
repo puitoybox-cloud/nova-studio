@@ -16,7 +16,7 @@ const verses = [
   ],
   [
     "握りしめた地図をひらく",
-    "に ぎ り し め た ち ず を ひ ら く ~"
+    "に ぎ り し め た ち ず お ひ ら く ~"
   ],
   [
     "消えかけた星が呼んでる",
@@ -24,7 +24,7 @@ const verses = [
   ],
   [
     "靴の底で夜を蹴った",
-    "く つ の そ こ で よ る を け っ た ~"
+    "く つ の そ こ で よ る お け っ た ~"
   ],
   [
     "傷だらけのこの両手で",
@@ -32,11 +32,11 @@ const verses = [
   ],
   [
     "こぼれそうな夢を集め",
-    "こ ぼ れ そ う な ゆ め を あ つ め ~ ~"
+    "こ ぼ れ そ う な ゆ め お あ つ め ~ ~"
   ],
   [
     "君の声が届くほうへ",
-    "き み の こ え が と ど く ほ う へ ~"
+    "き み の こ え が と ど く ほ う え ~"
   ],
   [
     "怖いままで走り出すよ",
@@ -44,7 +44,7 @@ const verses = [
   ],
   [
     "光の向こうへ駆けて",
-    "ひ か り の む こ う へ か け て ~ ~"
+    "ひ か り の む こ う え か け て ~ ~"
   ],
   [
     "涙も連れてゆくから",
@@ -52,15 +52,15 @@ const verses = [
   ],
   [
     "ふたりで描いた空を",
-    "ふ た り で え が い た そ ら を ~ ~"
+    "ふ た り で え が い た そ ら お ~ ~"
   ],
   [
     "この手で明日へつなぐよ",
-    "こ の て で あ し た へ つ な ぐ よ ~ ~"
+    "こ の て で あ し た え つ な ぐ よ ~ ~"
   ],
   [
     "光の向こうへ駆けて",
-    "ひ か り の む こ う へ か け て ~ ~"
+    "ひ か り の む こ う え か け て ~ ~"
   ],
   [
     "もう一度君に会うまで",
@@ -68,7 +68,7 @@ const verses = [
   ],
   [
     "何度でも風を追い越す",
-    "な ん ど で も か ぜ を お い こ す ~"
+    "な ん ど で も か ぜ お お い こ す ~"
   ],
   [
     "いま僕らの朝が始まる",
@@ -80,7 +80,7 @@ const verses = [
   ],
   [
     "君の名前を残した",
-    "き み の な ま え を の こ し た ~ ~"
+    "き み の な ま え お の こ し た ~ ~"
   ]
 ];
 const readings = verses.map(([,reading]) => reading);
@@ -189,6 +189,8 @@ async function run() {
         [36,[[0,74],[1,71],[1.5,69],[2,66],[2.5,69],[3,71]],[[0,74],[.5,71],[1,67],[1.5,69],[2,71],[2.5,74],[3,74]]],
         [38,[[0,74],[1,70],[1.5,67],[2,69],[2.5,70],[3,74]],[[0,74],[.5,73],[1,69],[1.5,66],[2,64],[2.5,66],[3,62]]]
       ];
+      const scale=[1,2,4,6,7,9,11];
+      let previousHarmony;
       phrases.forEach(([bar,...measures],i)=>{
         if(measures.flat().length!==readings[i].split(' ').length)throw Error('lyric fixture length at phrase '+(i+1));
         measures.forEach((notes, offset)=>notes.forEach(([beat,pitch],j)=>{
@@ -196,14 +198,26 @@ async function run() {
           const duration=Math.round(((notes[j+1]?.[0]??4)-beat)*480)-(j===notes.length-1?72:28);
           add('melody',pitch,tick,duration,(bar>=20?88:76)+(beat%1===0?6:0));
           if(bar>=20&&bar<36){
-            const majorScale=[1,2,4,6,7,9,11],thirdBelow=majorScale.includes((pitch-3)%12)?pitch-3:pitch-4;
-            add('harmony',thirdBelow,tick,duration,68);
+            const thirdBelow=scale.includes((pitch-3)%12)?pitch-3:pitch-4;
+            const chordTones=chords[progression[bar+offset]].slice(1).map(note=>note%12);
+            const choices=[thirdBelow,pitch-5,pitch-7].filter(note=>scale.includes(note%12));
+            const harmony=choices.reduce((best,note)=>{
+              const cost=n=>Math.abs(n-thirdBelow)*2+Math.abs(n-(previousHarmony??thirdBelow))
+                +(beat%1===0&&!chordTones.includes(n%12)?8:0);
+              return cost(note)<cost(best)?note:best;
+            },thirdBelow);
+            previousHarmony=harmony;
+            add('harmony',harmony,tick+18,Math.max(1,duration-32),beat%1===0?69:62);
           }
         }));
       });
       for(const [bar,name] of progression.entries()){
         const [root,...voicing]=chords[name],tick=bar*1920,chorus=bar>=20&&bar<36,verse=bar>=4&&bar<12;
-        if(chorus){
+        if(bar<2){
+          const hook=phrases[8][bar+1].slice(0,4);
+          for(const [beat,pitch] of hook)add('piano',pitch,tick+beat*480,195,67);
+          add('piano',voicing[0],tick,1440,49);
+        }else if(chorus){
           for(const offset of [0,720,1440])for(const pitch of voicing)
             add('piano',pitch+12,tick+offset,offset===1440?420:580,offset===0?72:61);
         }else{
@@ -307,7 +321,7 @@ async function run() {
       const route = (id,role,gainDb,balance=0) => ({key:'wav:'+id,role,gainDb,balance,startSeconds:0,muted:false});
       const settings = {drums:[-7,0],bass:[-6,0],piano:[-9,-.32],strings:[-12,.38]};
       const plan = {format:'nova-final-export-plan-v1',includeMidi:true,targetLufs:-15,ceilingDb:-1,routes:[
-        route(harmony.assetId,'vocal',-13,.25),route(assetId,'vocal',0),
+        route(harmony.assetId,'vocal',-15,.28),route(assetId,'vocal',0),
         ...stems.map(s => route(s.assetId,'instrument',...settings[s.trackId]))
       ]};
       const candidate = ok(await app.finalPreview(id,plan)).candidate;
