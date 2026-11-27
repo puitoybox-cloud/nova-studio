@@ -10,6 +10,7 @@ on:
       - 'scripts/music-instrument-browser.js'
       - 'scripts/music-multisample-browser.js'
       - 'scripts/music-final-export-browser.js'
+      - 'scripts/music-release-review-browser.cjs'
       - 'scripts/music-midi-candidate-import-browser.js'
       - 'scripts/music-lyrics-score-browser.js'
       - 'scripts/music-score-vocal-return-browser.js'
@@ -62,6 +63,7 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-production-management-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-workspace-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-final-export-browser.js
+          NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-release-review-browser.cjs
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-ui-production-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-transport-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-vocal-edit-browser.js

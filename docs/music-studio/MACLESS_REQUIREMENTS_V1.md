@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率 **57.78%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **79**、残数 **56**、受入確認率 **58.52%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -34,7 +34,7 @@ A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率
 | 18 | 5 | 5 | 0 | 1 | 0 |
 | 19 | 4 | 4 | 0 | 1 | 0 |
 | 20 | 3 | 1 | 2 | 1 | 1 |
-| 21 | 4 | 3 | 1 | 1 | 1 |
+| 21 | 4 | 4 | 0 | 1 | 1 |
 | 22 | 4 | 3 | 1 | 1 | 0 |
 | 23 | 8 | 5 | 3 | 1 | 1 |
 | 24 | 4 | 4 | 0 | 1 | 0 |
@@ -168,7 +168,7 @@ A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率
 | MS21-A01 | A | final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master | verified | [tests/music-studio-final-export.test.js](../../tests/music-studio-final-export.test.js) — `final routing renders offset stereo mix, aligned instrumental/vocal/individual stems and measured master` |
 | MS21-A02 | A | MasterとInstrumentalとStemとMIDI一括出力の全経路 | verified | [tests/music-studio-final-export.test.js](../../tests/music-studio-final-export.test.js) — `ZIP local headers, central directory, actual CRC and file data are interoperable`; [tests/music-studio-final-export.test.js](../../tests/music-studio-final-export.test.js) — `Save as retains user activation, verifies actual saved bytes, and records only a filename`; [scripts/music-final-export-browser.js](../../scripts/music-final-export-browser.js) — `final-file-bytes:`; [scripts/music-final-export-browser.js](../../scripts/music-final-export-browser.js) — `downloadVerified:true` |
 | MS21-A03 | A | 配信前の欠落と音量検査 | verified | [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `a complete production ZIP embeds a source-specific, read-only audit and never claims rights clearance`; [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `audit fails closed on every missing, duplicate, unexpected, truncated or mismatched delivery artifact`; [tests/music-studio-final-package-audit.test.js](../../tests/music-studio-final-package-audit.test.js) — `unreached loudness target is disclosed without treating a peak-limited master as a corrupt file`; [scripts/music-final-export-browser.js](../../scripts/music-final-export-browser.js) — `export-audit-loudness-mismatch` |
-| MS21-A04 | A | 配信前の権利申告漏れ検査 | open | MS21-C01 |
+| MS21-A04 | A | 配信前の権利申告漏れ検査 | verified | [scripts/music-release-review-browser.cjs](../../scripts/music-release-review-browser.cjs) — `releaseMissingBlocked:true`; [scripts/music-release-review-browser.cjs](../../scripts/music-release-review-browser.cjs) — `internalOnlyBlocked:true`; [scripts/music-release-review-browser.cjs](../../scripts/music-release-review-browser.cjs) — `midiAndDependenciesRequired:true`; [scripts/music-release-review-browser.cjs](../../scripts/music-release-review-browser.cjs) — `replayRequiresReview:true` |
 | MS21-B01 | B | 完成パッケージの実再生 | open | 未確認 |
 | MS21-C01 | C | 音源と依存物の再配布条件 | open | 未確認 |
 | MS22-A01 | A | explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation | verified | [tests/music-song-checkpoints.test.js](../../tests/music-song-checkpoints.test.js) — `explicit checkpoint → comparison → partial notes adoption → durable undo/redo; no source mutation` |
@@ -237,7 +237,7 @@ A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率
 |---|---:|---:|
 | 実装が必要 | 12 | 0 |
 | 実装済み・検証不足 | 23 | 2 |
-| 仕様判断待ち | 63 | 55 |
+| 仕様判断待ち | 63 | 54 |
 
 仕様判断待ちはC依存の全受入を指す。共通の非破壊保存・中断処理は改善可能。関連実装の存在を要件全体の受入成功とは扱わない。
 
@@ -311,7 +311,7 @@ A：総数 **135**、証拠付き完了 **78**、残数 **57**、受入確認率
 | MS20-A03 | 仕様判断待ち | open |
 | MS21-A02 | 仕様判断待ち | verified |
 | MS21-A03 | 仕様判断待ち | verified |
-| MS21-A04 | 仕様判断待ち | open |
+| MS21-A04 | 仕様判断待ち | verified |
 | MS22-A02 | 実装が必要 | verified |
 | MS22-A03 | 実装済み・検証不足 | verified |
 | MS22-A04 | 実装済み・検証不足 | open |
