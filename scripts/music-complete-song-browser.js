@@ -107,6 +107,9 @@ async function run() {
     });
     const page = context.pages()[0];
     page.on('pageerror', error => pageErrors.push(error.message));
+    page.on('console', message => {
+      if(message.text().startsWith('Song production:')) console.error(message.text());
+    });
     await page.goto(new URL('/music-studio.html' + hash, base).href);
     await page.waitForFunction(() => MusicStudio.state.loaded);
     return page;
@@ -277,6 +280,7 @@ async function run() {
       const record = project().syllableAssignments.find(row=>row.trackId==='melody');
       const {assetId} = ok(await app.generateLocalScoreVocal(id,record.id));
       const take = project().longWavAssets.find(a => a.id === assetId);
+      console.log('Song production: lead vocal generated');
       const source=await app.pcmLoadLongWav(id,assetId);
       const introFrames = Math.round(take.sampleRate * 4 * 4 * 60 / bpm);
       let vocalFrame=0,verseAudible=false;
@@ -294,9 +298,11 @@ async function run() {
       const vocal = await stats((await app.vocalRender(id,assetId)).blob);
       const harmonyRecord = project().syllableAssignments.find(row=>row.trackId==='harmony');
       const harmony = ok(await app.generateLocalScoreVocal(id,harmonyRecord.id,{startMeasure:21,endMeasure:36}));
+      console.log('Song production: harmony vocal generated');
       const effects = [{kind:'score-harmony',id:harmony.assetId,...await stats((await app.vocalRender(id,harmony.assetId)).blob)}];
       const stems = ok(await app.midiRenderStems(id,['drums','bass','piano','strings'])).completed;
       const instruments = [];
+      console.log('Song production: four instrument stems rendered');
       for (const stem of stems) instruments.push({...stem,...await stats(await app.pcmLoadLongWav(id,stem.assetId))});
       const route = (id,role,gainDb,balance=0) => ({key:'wav:'+id,role,gainDb,balance,startSeconds:0,muted:false});
       const settings = {drums:[-7,0],bass:[-6,0],piano:[-9,-.32],strings:[-12,.38]};
@@ -305,6 +311,7 @@ async function run() {
         ...stems.map(s => route(s.assetId,'instrument',...settings[s.trackId]))
       ]};
       const candidate = ok(await app.finalPreview(id,plan)).candidate;
+      console.log('Song production: Mix, Master and stems packaged');
       const file = name => candidate.files.find(f => f.name === name).blob;
       const master = await stats(file('Master.wav')), mix = await stats(file('Mix.wav'));
       const vocalStem = await stats(file('Vocal-Stem.wav')), instrumental = await stats(file('Instrumental.wav'));
