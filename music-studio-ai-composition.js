@@ -390,15 +390,33 @@
     const limit=Math.floor((endTick-startTick)*480/session.midiData.ppq);
     return prompt.filter(note=>note.startTick+note.durationTicks<=limit);
   }
+  function scopedGenerationChords(session,core,range,text,review){
+    const explicit=text!==''&&text!==review?.chords;
+    const entered=explicit?text.split(/[\s,|→]+/).filter(Boolean).flatMap(ensembleChords):[];
+    const reviewedByMeasure=new Map((review?.rows||[]).map(row=>[row.measure,row]));
+    const symbols=[];
+    let locked=false;
+    for(let bar=range.startMeasure;bar<=range.endMeasure;bar++){
+      const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData);
+      const row=reviewedByMeasure.get(bar);
+      if(row?.locked&&(row.startTick!==span.startTick||row.endTick!==span.endTick))throw Error('拍子変更後の固定コードを確認してください。');
+      locked ||= row?.locked===true;
+      const symbol=entered.length?entered[(bar-range.startMeasure)%entered.length].symbol:row?.symbol;
+      if(row?.locked&&symbol!==row.symbol)throw Error(`${bar}小節の固定コードは変更できません。`);
+      symbols.push(symbol);
+    }
+    if(explicit)return entered.map(chord=>chord.symbol).join(' ');
+    if(text&&symbols.every(Boolean))return symbols.join(' ');
+    if(locked){
+      if(!symbols.every(Boolean))throw Error('固定コードを含む範囲の全小節にコードを指定してください。');
+      return symbols.join(' ');
+    }
+    return '';
+  }
   function replacementHarmony(project,session,core,range,chords){
     const symbols=chords.split(/[\s,|→]+/).filter(Boolean);
     if(chords.length>256||symbols.length>32)throw Error('invalid-replacement-chords');
-    const progression=symbols.map(symbol=>{
-      const suspended=/^([A-G](?:#|b)?)sus4$/.exec(symbol);
-      if(!suspended)return ensembleChords(symbol)[0];
-      const {root}=ensembleChords(suspended[1])[0];
-      return{symbol,pcs:[root,(root+5)%12,(root+7)%12]};
-    });
+    const progression=symbols.flatMap(ensembleChords);
     const context=createContext(project,session,core);
     const points=new Map([[0,{key:context.source==='default-local'?null:context.key,chord:null}]]);
     for(const event of session.midiData.keySignatureMap||[]){
@@ -477,7 +495,7 @@
     const range=selectedRange(session,core),roles=analyzeInstrumentRoles(session,core);
     if(range.endMeasure-range.startMeasure>=64)throw Error('chord-analysis-limit-64-bars');
     const names=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-    const vocabulary=names.flatMap(name=>['','m','7','m7','maj7','dim'].map(q=>ensembleChords(name+q)[0]));
+    const vocabulary=names.flatMap(name=>['','m','7','m7','maj7','dim','sus4'].map(q=>ensembleChords(name+q)[0]));
     const rows=[];
     for(let bar=range.startMeasure;bar<=range.endMeasure;bar++){
       const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),weights=Array(12).fill(0);
@@ -513,13 +531,16 @@
   }
   // Ordered voicings minimize total voice motion without crossing voices.
   // This is deterministic orchestration, not additional model inference.
-  function performanceVoicing(pcs,low,high,previous){
+  function performanceVoicing(pcs,low,high,previous,spread=false){
     const size=pcs.length,choices=Array.from({length:high-low+1},(_,i)=>low+i).filter(n=>pcs.includes(n%12));
     let best=null,bestCost=Infinity;
     function visit(start,pitches){
       if(pitches.length===size){
         if(new Set(pitches.map(n=>n%12)).size!==size)return;
-        const cost=pitches.reduce((sum,n,i)=>sum+Math.abs(n-(previous[i]??(size===1?36:52+i*5))),0)+(pitches.at(-1)-pitches[0]>19?12:0);
+        const span=pitches.at(-1)-pitches[0];
+        const motion=pitches.reduce((sum,n,i)=>sum+Math.abs(n-(previous[i]??(size===1?36:52+i*5))),0);
+        const spacing=spread?Math.abs(span-16)*2:span>19?12:0;
+        const cost=motion+spacing;
         if(cost<bestCost){bestCost=cost;best=pitches.slice();}return;
       }
       for(let i=start;i<choices.length;i++)visit(i+1,[...pitches,choices[i]]);
@@ -529,17 +550,24 @@
   function drumPerformance(value,session,core,bar){
     const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),ppq=session.midiData.ppq;
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-ensemble-timing');
-    const density=value.ensemble.section?.density||'normal',variant=value.variant,notes=[],unit=Math.max(1,Math.round(ppq/2));
+    const density=value.ensemble.section?.density||'normal',variant=value.variant,notes=[];
     const meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,span.startTick);
-    const compound=meter.denominator===8&&meter.numerator>=6&&meter.numerator%3===0;
+    const compound=meter.denominator>=8&&meter.numerator>=6&&meter.numerator%3===0;
+    const subdivisions=compound?1:2;
+    const unit=Math.max(1,meter.ticksPerBeat/subdivisions);
+    const pulse=compound?3:subdivisions;
     const endSection=value.ensemble.section?.range?.endMeasure,fill=density!=='sparse'&&bar===endSection;
-    for(let tick=span.startTick,step=0;tick<span.endTick;tick+=unit,step++){
-      const add=(pitch,velocity)=>notes.push({pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(ppq/8)),span.endTick-tick),velocity});
-      if(density!=='sparse'||step%2===0)add(42,step%2?48:61);
-      // Kick and bass share the quarter/eighth pulse, regardless of hat density.
-      if(step===0||(!compound&&step%4===0)||(density==='rich'&&variant==='B'&&step%4===3&&!compound))add(36,step===0?91:82);
-      if(compound?step%6===3:step%4===2)add(38,80);
-      if(fill&&tick>=Math.max(span.startTick+unit,span.endTick-ppq)&&step%2===1)add(variant==='C'?45:50,68+(step%3)*4);
+    for(let step=0;step<meter.numerator*subdivisions;step++){
+      const tick=span.startTick+Math.round(step*unit);
+      if(tick>=span.endTick)break;
+      const nextTick=span.startTick+Math.round((step+1)*unit);
+      const add=(pitch,velocity)=>notes.push({pitch,startTick:tick,durationTicks:Math.min(Math.max(1,Math.round(unit/4)),span.endTick-tick),velocity});
+      const onPulse=step%pulse===0,beat=Math.floor(step/pulse);
+      if(density!=='sparse'||onPulse)add(42,onPulse?61:48);
+      if(onPulse&&beat%2===0)add(36,beat===0?91:82);
+      if(!compound&&density==='rich'&&variant==='B'&&step%4===3&&nextTick<span.endTick)add(36,82);
+      if(onPulse&&beat%2===1)add(38,80);
+      if(fill&&tick>=Math.max(span.startTick+unit,span.endTick-meter.ticksPerBeat*pulse/subdivisions)&&!onPulse)add(variant==='C'?45:50,68+(step%3)*4);
     }
     return notes;
   }
@@ -554,18 +582,34 @@
       const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(59,melodyPitches[0]-3):84;
       const low=role==='bass'?28:48,high=role==='bass'?55:Math.min(role==='strings'?79:84,ceiling);
       const pcs=role==='bass'?[chord.root]:chord.pcs;
-      const pitches=performanceVoicing(pcs,low,high,previous);
+      const pitches=performanceVoicing(pcs,low,high,previous,role!=='bass'&&value.variant==='B');
       previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
-      const step=role==='strings'?span.endTick-span.startTick:Math.max(1,Math.round((role==='bass'||(role==='piano'&&value.variant==='C')?ppq:ppq*2)*factor));
-      for(let tick=span.startTick;tick<span.endTick;tick+=step)for(const [voice,pitch] of pitches.entries()){
-        if(role==='piano'&&value.variant==='C'&&voice!==Math.floor((tick-span.startTick)/step)%pitches.length)continue;
-        const offset=role==='piano'&&value.variant==='B'?Math.min(step-1,Math.floor(voice*step/(pitches.length*2))):0,onset=Math.min(span.endTick-1,tick+offset);
-        const baseVelocity=(role==='strings'?58:role==='bass'?82:68)+(density==='sparse'?-12:density==='rich'?8:0),blend=role==='strings'?0.35:Math.min(1,(tick-span.startTick)/Math.max(1,ppq*2)),velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+(role==='strings'?voice*2:Math.floor((tick-span.startTick)/step)%2===0?2:-4);
-        // Rich bass alternates chord root and fifth; first beat always anchors root.
-        let rendered=pitch;if(role==='bass'&&(density==='rich'||value.variant==='B')&&Math.round((tick-span.startTick)/step)%2===1){rendered=pitch+((chord.pcs[2]-chord.root+12)%12);if(rendered>55)rendered-=12;}
-        notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:role==='piano'&&value.variant==='C'?0.7:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
-        if(notes.length>4096)throw Error('ensemble-note-limit');
+      const meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,span.startTick);
+      const compound=meter.denominator>=8&&meter.numerator>=6&&meter.numerator%3===0;
+      const pulse=meter.ticksPerBeat*(compound?3:1);
+      const arpeggio=role==='piano'&&value.variant==='C';
+      const stride=role==='strings'?span.endTick-span.startTick:Math.max(1,(arpeggio&&compound?meter.ticksPerBeat:role==='bass'||arpeggio?pulse:pulse*2)*factor);
+      for(let index=0;span.startTick+Math.round(index*stride)<span.endTick;index++){
+        const tick=span.startTick+Math.round(index*stride);
+        const step=Math.min(span.endTick-tick,Math.round((index+1)*stride)-Math.round(index*stride));
+        for(const [voice,pitch] of pitches.entries()){
+          if(arpeggio&&voice!==index%pitches.length)continue;
+          const offset=role==='piano'&&value.variant==='B'?Math.floor(voice*step/(pitches.length*2)):0;
+          const onset=tick+offset;
+          const baseVelocity=(role==='strings'?58:role==='bass'?82:68)+(density==='sparse'?-12:density==='rich'?8:0);
+          const blend=Math.min(1,(tick-source.range.startTick)/Math.max(1,ppq*2));
+          const accent=role==='strings'?voice*2:index%2===0?2:-4;
+          const velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+accent;
+          // Rich bass alternates chord root and fifth; the downbeat stays on the root.
+          let rendered=pitch;
+          if(role==='bass'&&(density==='rich'||value.variant==='B')&&index%2===1){
+            rendered=pitch+((chord.pcs[2]-chord.root+12)%12);
+            if(rendered>55)rendered-=12;
+          }
+          notes.push({pitch:rendered,startTick:onset-source.range.startTick,durationTicks:Math.max(1,Math.min(Math.round(step*(role==='strings'?1:arpeggio?0.7:0.9)),span.endTick-onset)),velocity:Math.max(1,Math.min(127,velocity))});
+          if(notes.length>4096)throw Error('ensemble-note-limit');
+        }
       }
     }
     return notes;
@@ -658,5 +702,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

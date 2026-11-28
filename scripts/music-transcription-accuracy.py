@@ -1,8 +1,9 @@
-"""Measure Basic Pitch note precision/recall on controlled, generated fixtures."""
+"""Measure Basic Pitch note accuracy on generated fixtures or scored performances."""
 import argparse
 import json
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 
 import mir_eval
 import numpy as np
@@ -60,35 +61,71 @@ def fixture(folder, instrument, mode):
 
 def metrics(expected, midi):
     detected = [(n.start, n.end, n.pitch) for track in midi.instruments for n in track.notes]
-    reference = np.array(expected)
-    estimates = np.array(detected)
-    values = mir_eval.transcription.precision_recall_f1_overlap(
-        reference[:, :2], pretty_midi.note_number_to_hz(reference[:, 2]),
-        estimates[:, :2], pretty_midi.note_number_to_hz(estimates[:, 2]),
-        onset_tolerance=.075, pitch_tolerance=50, offset_ratio=None)
-    return dict(expected=len(expected), detected=len(detected), precision=round(values[0], 4),
-                recall=round(values[1], 4), f1=round(values[2], 4))
+    reference = np.asarray(expected).reshape(-1, 3)
+    estimates = np.asarray(detected).reshape(-1, 3)
+    inputs = (reference[:, :2], pretty_midi.note_number_to_hz(reference[:, 2]),
+              estimates[:, :2], pretty_midi.note_number_to_hz(estimates[:, 2]))
+    onset = mir_eval.transcription.precision_recall_f1_overlap(
+        *inputs, onset_tolerance=.075, pitch_tolerance=50, offset_ratio=None)
+    timed = mir_eval.transcription.precision_recall_f1_overlap(
+        *inputs, onset_tolerance=.075, pitch_tolerance=50, offset_ratio=.2)
+    return dict(expected=len(expected), detected=len(detected), precision=round(onset[0], 4),
+                recall=round(onset[1], 4), f1=round(onset[2], 4), onsetOffsetF1=round(timed[2], 4))
+
+
+def performance_cases(manifest):
+    cases = json.loads(manifest.read_text(encoding='utf-8'))
+    if not isinstance(cases, list) or not cases:
+        raise ValueError('The performance manifest must be a nonempty JSON array.')
+    for case in cases:
+        instrument, mode = case['instrument'], case['mode']
+        if instrument not in PITCHES or mode not in ('monophonic', 'polyphonic'):
+            raise ValueError('Unsupported instrument or transcription mode.')
+        audio = manifest.parent / case['audio']
+        score = pretty_midi.PrettyMIDI(str(manifest.parent / case['referenceMidi']))
+        expected = [(note.start, note.end, note.pitch) for track in score.instruments
+                    if not track.is_drum for note in track.notes]
+        if not expected:
+            raise ValueError(f'No reference notes for {audio.name}.')
+        correction = case.get('correctionSeconds')
+        if correction is not None and (type(correction) not in (int, float)
+                                       or not np.isfinite(correction) or correction < 0):
+            raise ValueError('correctionSeconds must be a nonnegative measured duration.')
+        yield audio, expected, instrument, mode, correction
+
+
+def synthetic_cases(directory):
+    for instrument in PITCHES:
+        for mode in ('monophonic', 'polyphonic'):
+            audio, expected = fixture(directory, instrument, mode)
+            yield audio, expected, instrument, mode, None
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', type=Path)
+    parser.add_argument('--performance-manifest', type=Path,
+                        help='JSON array of audio, referenceMidi, instrument, mode, and optional correctionSeconds')
     args = parser.parse_args()
     args.directory.mkdir(parents=True, exist_ok=True)
-    for instrument in PITCHES:
-        for mode in ('monophonic', 'polyphonic'):
-            audio, expected = fixture(args.directory, instrument, mode)
+    cases = (performance_cases(args.performance_manifest) if args.performance_manifest
+             else synthetic_cases(args.directory))
+    with TemporaryDirectory(dir=args.directory) as work_dir:
+        work_dir = Path(work_dir)
+        for audio, expected, instrument, mode, correction in cases:
             reports = {}
             for variant, profile in [('generic', None), ('instrumentProfile', instrument)]:
                 try:
-                    process_transcription(audio, args.directory, mode, profile)
+                    process_transcription(audio, work_dir, mode, profile)
                 except ValueError as error:
                     if str(error) != '音符を検出できませんでした。':
                         raise
-                    reports[variant] = dict(expected=len(expected), detected=0, precision=0, recall=0, f1=0)
+                    reports[variant] = metrics(expected, pretty_midi.PrettyMIDI())
                 else:
-                    reports[variant] = metrics(expected, pretty_midi.PrettyMIDI(str(args.directory / 'transcribed.mid')))
-            print(json.dumps(dict(instrument=instrument, mode=mode, **reports)), flush=True)
+                    reports[variant] = metrics(expected, pretty_midi.PrettyMIDI(str(work_dir / 'transcribed.mid')))
+            print(json.dumps(dict(audio=audio.name, source='performance' if args.performance_manifest else 'synthetic',
+                                  instrument=instrument, mode=mode, correctionSeconds=correction,
+                                  **reports)), flush=True)
 
 
 if __name__ == '__main__':

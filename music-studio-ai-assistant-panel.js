@@ -500,14 +500,25 @@
     const modelStyle=value('#aiModelStyle')||'balanced',modelRange=remake?.newTrack?.roleAssignment==='bass'?[28,55]:(value('#aiModelRange')||'48:84').split(':').map(Number);
     const seedText=value('#aiGenerationSeed').trim(),seed=seedText===''?72:Number(seedText);
     const description=value('#aiModelMood').trim(),genre=value('#aiModelGenre'),chords=value('#aiModelChords').trim();
-    if(remake?.mode==='ensemble'){try{composition().ensembleChords(chords);remake.chords=chords;const currentRange=composition().createContext(p,session,core()).range;remake.section=clone(record.state.workspace.sectionArrangements?.find(item=>JSON.stringify(item.range)===JSON.stringify(currentRange))||null);}catch(error){record.message=error.message;refresh(id);return;}}
+    const scoped=['replace','ensemble'].includes(mode);
+    let scopedChords=chords;
+    if(scoped){
+      try{
+        if(chords.length>256)throw Error('コード入力は256文字までです。');
+        const currentRange=remake.source.range;
+        scopedChords=composition().scopedGenerationChords(session,core(),currentRange,chords,record.state.workspace.harmonyReview);
+        if(mode==='ensemble'){
+          remake.chords=scopedChords;
+          remake.section=clone(record.state.workspace.sectionArrangements?.find(item=>JSON.stringify(item.range)===JSON.stringify(currentRange))||null);
+        }
+      }catch(error){record.message=error.message;refresh(id);return;}
+    }
     record.modelMood=description;record.modelGenre=genre;record.modelChords=chords;
     record.modelStyle=modelStyle;record.modelRange=modelRange.join(':');
     record.localModelBusy=true;record.message='実モデル推論中です。';refresh(id);
     try{
       const context=composition().createContext(p,session,core());
       const span=context.range.endTick-context.range.startTick;
-      const scoped=['replace','ensemble'].includes(mode);
       const usePrevious=mode==='replace'||(mode==='ensemble'&&!remake.source.notes.length);
       const sourceNotes=!remake?[]:usePrevious
         ?composition().replacementPrompt(remake.source,session,core())
@@ -519,7 +530,7 @@
         ?[...(session.midiData.tempoMap||[])].sort((a,b)=>a.tick-b.tick).filter(event=>event.tick<=context.range.startTick).at(-1)
         :null;
       if(scoped){
-        remake.harmony=composition().replacementHarmony(p,session,core(),context.range,chords);
+        remake.harmony=composition().replacementHarmony(p,session,core(),context.range,scopedChords);
         remake.pitchRange=modelRange;
       }
       const result=await app().localGenerationRequest('compose',{

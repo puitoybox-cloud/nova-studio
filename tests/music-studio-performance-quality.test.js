@@ -16,3 +16,38 @@ test('suspended chords work in model-backed ensembles with arpeggios and 6/8 bac
   const drums=f.C.drumPerformance(c.value,f.s,f.core,1);
   assert.deepEqual(plain(drums.filter(note=>note.pitch===38).map(note=>note.startTick)),[720]);
 });
+
+test('strummed voicing opens the register while retaining the chord tones',()=>{
+  const {C}=setup();
+  const closed=C.performanceVoicing([0,4,7],48,79,[60,64,67]);
+  const open=C.performanceVoicing([0,4,7],48,79,[60,64,67],true);
+  assert.ok(open.at(-1)-open[0]>closed.at(-1)-closed[0]);
+  assert.deepEqual([...open.map(pitch=>pitch%12)].sort((a,b)=>a-b),[0,4,7]);
+});
+
+test('drum backbeat and bass use the meter pulse across a change from 2/2 to 6/8',()=>{
+  const f=setup();
+  f.s.midiData.timeSignature={numerator:2,denominator:2};
+  f.s.midiData.timeSignatureMap=[{tick:1920,numerator:6,denominator:8}];
+  const c=candidate(f,0,'normal','C');
+  const snare=bar=>f.C.drumPerformance(c.value,f.s,f.core,bar)
+    .filter(note=>note.pitch===38).map(note=>note.startTick);
+  assert.deepEqual(plain(snare(1)),[960]);
+  assert.deepEqual(plain(snare(2)),[2640]);
+  const bass=f.C.chordEnsembleNotes(c.value,c.value.ensemble.source,f.s,f.core,'bass');
+  assert.deepEqual(plain(bass.filter(note=>note.startTick<3360).map(note=>note.startTick)),[0,960,1920,2640]);
+});
+
+test('confirmed progression follows selected measures and protects locked chords',()=>{
+  const {C,s,core}=setup();
+  const review={chords:'C F G7 C',rows:['C','F','G7','C'].map((symbol,index)=>({
+    ...core.measureRangeToTicks({startMeasure:index+1,endMeasure:index+1},s.midiData),
+    measure:index+1,symbol,locked:index===2
+  }))};
+  const range={startMeasure:2,endMeasure:3};
+  assert.equal(C.scopedGenerationChords(s,core,range,review.chords,review),'F G7');
+  assert.equal(C.scopedGenerationChords(s,core,range,'',review),'F G7');
+  assert.equal(C.scopedGenerationChords(s,core,range,'Dm → G7',review),'Dm G7');
+  assert.throws(()=>C.scopedGenerationChords(s,core,range,'F',review),/3小節の固定コード/);
+  assert.throws(()=>C.scopedGenerationChords(s,core,{startMeasure:3,endMeasure:5},'',review),/全小節/);
+});
