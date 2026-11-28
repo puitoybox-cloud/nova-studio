@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-28 JST",
+  "baselineHead": "c9fd95244d7993ccfed04ec332aa62d20460ae7b",
+  "passed": 3,
+  "failed": 0,
+  "acceptedCases": [
+    "melody and range locks both survive arrangement",
+    "chord-follow correction survives Chromium restart",
+    "voicings must differ"
+  ],
+  "sourceHashes": {
+    "scripts/music-harmony-follow-browser.cjs": "6d01cad48906254f6982d4a03f7f21ddc2766e460babee0ea2822ff57fbee0d4"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "637fbeac4048991eceee4d681b84d4ca31c3586ccddbda5366a20fb9874a3f47",
+    "music-studio-editor.js": "503b92be2b94f3bdd3e68e1f32ceee65565f99568806eba15cf5602714a29355",
+    "music-studio-ai-composition.js": "c0f30282bff52a95e1e311dcfea210e0bac8caf673241f915cfce2164e870944",
+    "music-studio-ai-candidate-preview.js": "a5900ed47c9355e246b291762f8111c89d37481165a0db83d663e8d39bfc3ed7",
+    "music-studio-ai-assistant-panel.js": "8972510897367943134177f76f6539bc76bee4fbe31d01c97634d3c43ff978b7",
+    "tools/music-local-generation/model-lock.json": "db3e026ef0857d0284e1544a152d680e1f98d691e7e4f6fc21d917ebae4174c6"
+  },
+  "observed": {
+    "pitchOptions": [
+      60,
+      62
+    ],
+    "voicings": [
+      [
+        [
+          52,
+          1920
+        ],
+        [
+          55,
+          1920
+        ],
+        [
+          60,
+          1920
+        ],
+        [
+          62,
+          1920
+        ]
+      ],
+      [
+        [
+          40,
+          1920
+        ],
+        [
+          55,
+          2040
+        ],
+        [
+          60,
+          2160
+        ],
+        [
+          62,
+          2280
+        ]
+      ]
+    ],
+    "external": 0,
+    "restart": true
+  }
+}

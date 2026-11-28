@@ -305,6 +305,11 @@
   function createPreview(session,core,candidate,options={}){
     if(!candidate||typeof candidate!=='object'||!candidate.value||typeof candidate.value!=='object')throw Error('candidate-required');
     const value=clone(candidate.value),kind=value.kind||candidate.kind;
+    if(value.harmonyFollow){
+      const plan=requireComposition().harmonyFollowPlan(session,core,value,options.measureRange);
+      return {version:VERSION,type:'midi-preview',kind,candidateId:candidate.candidateId,targetTrackId:value.harmonyFollow.trackIds[0],
+        value,request:{range:plan.range},result:{changes:{updates:plan.updates,adds:[],deleteNoteIds:[]}},companion:{},mutates:false};
+    }
     if(value.ensemble){
       const plan=ensembleSnapshot(session,core,value,options.measureRange??null);
       const ids=new Set(plan.diff.map(row=>row.replacedTrackId||row.trackId));
@@ -367,6 +372,12 @@
   }
   function applyPreview(session,core,bundle,measureRange=null){
     if(!bundle||bundle.type!=='midi-preview'||bundle.mutates===true)throw Error('midi-preview-required');
+    if(bundle.value?.harmonyFollow){
+      const plan=requireComposition().harmonyFollowPlan(session,core,bundle.value,measureRange);
+      const applied=core.applyAtomicMidiSnapshot(session,session.midiData,plan.midiData);
+      if(!applied.applied)throw Error(applied.reason);
+      return {ok:true,applied,targetTrackId:bundle.targetTrackId};
+    }
     if(bundle.value?.ensemble){const plan=ensembleSnapshot(session,core,bundle.value,measureRange),applied=core.applyAtomicMidiSnapshot(session,session.midiData,plan.midiData);if(!applied.applied)throw Error(`ensemble-apply-rejected:${applied.reason}`);return{ok:true,applied,targetTrackId:bundle.targetTrackId,diff:plan.diff};}
     if(bundle.value?.remake?.newTrack){
       if(JSON.stringify(bundle.newTrackBaseline)!==JSON.stringify(session.midiData))throw Error('stale-remake-source');
@@ -404,7 +415,7 @@
     const data=options.source==='original'?session.midiData:copy.midiData;
     const selected=core.getTrackById(data.tracks,bundle.targetTrackId)||core.getTrackById(data.tracks,bundle.value.remake?.trackId);
     if(!selected)throw Error('audition-source-track-missing');
-    const tracks=(bundle.value.remake||bundle.value.ensemble?data.tracks:[selected]).map(track=>{
+    const tracks=(bundle.value.remake||bundle.value.ensemble||bundle.value.harmonyFollow?data.tracks:[selected]).map(track=>{
       const notes=track.notes.filter(n=>n.startTick<range.endTick&&n.startTick+n.durationTicks>range.startTick).map(n=>{
         const startTick=Math.max(n.startTick,range.startTick);
         return{...clone(n),startTick,durationTicks:Math.min(n.startTick+n.durationTicks,range.endTick)-startTick};

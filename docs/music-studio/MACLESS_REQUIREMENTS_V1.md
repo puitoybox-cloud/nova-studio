@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **86**、残数 **49**、受入確認率 **63.70%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **89**、残数 **46**、受入確認率 **65.93%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -21,8 +21,8 @@ A：総数 **135**、証拠付き完了 **86**、残数 **49**、受入確認率
 | 5 | 4 | 1 | 3 | 1 | 1 |
 | 6 | 4 | 4 | 0 | 1 | 0 |
 | 7 | 6 | 6 | 0 | 1 | 1 |
-| 8 | 5 | 1 | 4 | 1 | 1 |
-| 9 | 4 | 1 | 3 | 1 | 1 |
+| 8 | 5 | 2 | 3 | 1 | 1 |
+| 9 | 4 | 3 | 1 | 1 | 1 |
 | 10 | 8 | 3 | 5 | 1 | 1 |
 | 11 | 3 | 1 | 2 | 1 | 1 |
 | 12 | 4 | 4 | 0 | 1 | 0 |
@@ -94,13 +94,13 @@ A：総数 **135**、証拠付き完了 **86**、残数 **49**、受入確認率
 | MS08-A02 | A | 複数Sectionアレンジの実生成 | open | MS08-C01 |
 | MS08-A03 | A | 単一Track再生成 | open | MS08-C01 |
 | MS08-A04 | A | 複数Track再生成 | open | MS08-C01 |
-| MS08-A05 | A | メロディ固定と範囲固定の保存往復 | open | MS08-C01 |
+| MS08-A05 | A | メロディ固定と範囲固定の保存往復 | verified | [scripts/music-harmony-follow-browser.cjs](../../scripts/music-harmony-follow-browser.cjs) — `melody and range locks both survive arrangement` |
 | MS08-B01 | B | 音色と演奏表現の聴取 | open | 未確認 |
 | MS08-C01 | C | Destinationと音源生成モデルの契約 | open | 未確認 |
 | MS09-A01 | A | MIDI harmonic analysis weights sounding durations, excludes drums, preserves source and exposes silence | verified | [tests/music-studio-ai-composition.test.js](../../tests/music-studio-ai-composition.test.js) — `MIDI harmonic analysis weights sounding durations, excludes drums, preserves source and exposes silence` |
 | MS09-A02 | A | 実音声のコード解析 | open | MS09-C01 |
-| MS09-A03 | A | コード追従補正 | open | MS09-C01 |
-| MS09-A04 | A | 別Voicing候補生成と採用保存 | open | MS09-C01 |
+| MS09-A03 | A | コード追従補正 | verified | [scripts/music-harmony-follow-browser.cjs](../../scripts/music-harmony-follow-browser.cjs) — `chord-follow correction survives Chromium restart` |
+| MS09-A04 | A | 別Voicing候補生成と採用保存 | verified | [scripts/music-harmony-follow-browser.cjs](../../scripts/music-harmony-follow-browser.cjs) — `voicings must differ` |
 | MS09-B01 | B | 解析と別案の音楽的妥当性聴取 | open | 未確認 |
 | MS09-C01 | C | 実音声コード解析モデルと品質基準 | open | 未確認 |
 | MS10-A01 | A | Explicit reading assigns exact chronological note IDs, melisma and real timing without MIDI mutation | verified | [tests/music-studio-lyrics-note-assignment.test.js](../../tests/music-studio-lyrics-note-assignment.test.js) — `Explicit reading assigns exact chronological note IDs, melisma and real timing without MIDI mutation` |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **86**、残数 **49**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 34 | 17 |
+| 実装が必要 | 34 | 14 |
 | 実装済み・検証不足 | 23 | 2 |
 | 仕様判断待ち | 41 | 30 |
 
@@ -271,10 +271,10 @@ A：総数 **135**、証拠付き完了 **86**、残数 **49**、受入確認率
 | MS08-A02 | 実装が必要 | open |
 | MS08-A03 | 実装が必要 | open |
 | MS08-A04 | 実装が必要 | open |
-| MS08-A05 | 実装が必要 | open |
+| MS08-A05 | 実装が必要 | verified |
 | MS09-A02 | 実装が必要 | open |
-| MS09-A03 | 実装が必要 | open |
-| MS09-A04 | 実装が必要 | open |
+| MS09-A03 | 実装が必要 | verified |
+| MS09-A04 | 実装が必要 | verified |
 | MS10-A02 | 仕様判断待ち | open |
 | MS10-A03 | 仕様判断待ち | open |
 | MS10-A04 | 仕様判断待ち | open |
