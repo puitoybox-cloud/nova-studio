@@ -47,7 +47,7 @@ def midi_bytes(score):
     return b'MThd' + struct.pack('>IHHH', 6, 1, len(tracks), score[0]) + b''.join(tracks), notes
 
 
-KEYS = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11}
+KEYS = {'Cb':11,'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11}
 STYLES = {'balanced': (1.0, .98, 20), 'gentle': (.8, .9, 12), 'varied': (1.15, .99, 32)}
 
 
@@ -55,8 +55,12 @@ STYLES = {'balanced': (1.0, .98, 20), 'gentle': (.8, .9, 12), 'varied': (1.15, .
 MOODS = {'優しい': 'gentle', '切ない': 'gentle', '明るい': 'varied',
          'gentle': 'gentle', 'sad': 'gentle', 'bright': 'varied'}
 GENRES = {'ballad': 'gentle', 'バラード': 'gentle', 'pop': 'balanced', 'ポップ': 'balanced'}
-CHORDS = {'': (0,4,7), 'm': (0,3,7), '7': (0,4,7,10),
-          'maj7': (0,4,7,11), 'm7': (0,3,7,10), 'dim': (0,3,6), 'sus4': (0,5,7)}
+CHORDS = {
+    '': (0,4,7), 'm': (0,3,7), 'dim': (0,3,6), 'aug': (0,4,8), 'sus2': (0,2,7), 'sus4': (0,5,7),
+    '7': (0,4,7,10), 'm7': (0,3,7,10), 'maj7': (0,4,7,11), 'm7b5': (0,3,6,10), 'dim7': (0,3,6,9),
+    'add9': (0,4,7,14), 'madd9': (0,3,7,14), '9': (0,4,7,10,14), 'm9': (0,3,7,10,14), 'maj9': (0,4,7,11,14),
+    '7b9': (0,4,7,10,13), '7#9': (0,4,7,10,15), '7#11': (0,4,7,10,18), '13': (0,4,7,10,14,21),
+}
 
 def interpret_request(description='', genre='', style='balanced', chords=''):
     if not isinstance(description, str) or len(description) > 120: raise ValueError('invalid-description')
@@ -72,9 +76,11 @@ def interpret_request(description='', genre='', style='balanced', chords=''):
     if len(names) > 32: raise ValueError('too-many-chords')
     parsed = []
     for name in names:
-        match = re.fullmatch(r'([A-G](?:#|b)?)(maj7|m7|sus4|dim|m|7)?', name)
-        if not match or match[1] not in KEYS: raise ValueError('unsupported-chord: ' + name)
-        parsed.append({(KEYS[match[1]] + n) % 12 for n in CHORDS[match[2] or '']})
+        match = re.fullmatch(r'([A-G][#b]?)([a-z0-9#]*)(?:/([A-G][#b]?))?', name)
+        if not match or match[1] not in KEYS or match[2] not in CHORDS or (match[3] and match[3] not in KEYS):
+            raise ValueError('unsupported-chord: ' + name)
+        tones = {(KEYS[match[1]] + interval) % 12 for interval in CHORDS[match[2]]}
+        parsed.append(tones)
     return selected, names, parsed
 
 

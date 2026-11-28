@@ -518,34 +518,43 @@
     }
     return{method:'duration-pitch-class-rules-v1',range:clone(range),midiSignature:JSON.stringify(session.midiData),rows};
   }
-  // Explicit chord symbols drive local orchestration, never additional AI inference.
+  const CHORD_INTERVALS={
+    '':[0,4,7],m:[0,3,7],dim:[0,3,6],aug:[0,4,8],sus2:[0,2,7],sus4:[0,5,7],
+    '7':[0,4,7,10],m7:[0,3,7,10],maj7:[0,4,7,11],m7b5:[0,3,6,10],dim7:[0,3,6,9],
+    add9:[0,4,7,14],madd9:[0,3,7,14], '9':[0,4,7,10,14],m9:[0,3,7,10,14],maj9:[0,4,7,11,14],
+    '7b9':[0,4,7,10,13],'7#9':[0,4,7,10,15],'7#11':[0,4,7,10,18],'13':[0,4,7,10,14,21]
+  };
   function ensembleChords(text){
     if(typeof text!=='string'||text.length>256)throw Error('invalid-ensemble-chords');
-    const symbols=text.trim()?text.trim().split(/\s+/):[];
+    const symbols=text.trim().split(/[\s,|→]+/).filter(Boolean);
     return symbols.map(symbol=>{
-      const m=/^([A-G](?:#|b)?)(m7|maj7|sus4|7|m|dim)?$/.exec(symbol);
-      if(!m||NOTE_PCS[m[1]]==null)throw Error('invalid-ensemble-chord: '+symbol);
-      const root=NOTE_PCS[m[1]],quality=m[2]||'',intervals=quality==='sus4'?[0,5,7]:quality==='dim'?[0,3,6]:quality==='m'?[0,3,7]:quality==='m7'?[0,3,7,10]:quality==='7'?[0,4,7,10]:quality==='maj7'?[0,4,7,11]:[0,4,7];
-      return{symbol,root,pcs:intervals.map(i=>(root+i)%12)};
+      const match=/^([A-G][#b]?)([a-z0-9#]*)(?:\/([A-G][#b]?))?$/.exec(symbol);
+      if(!match||!Object.hasOwn(NOTE_PCS,match[1])||!Object.hasOwn(CHORD_INTERVALS,match[2])||(match[3]&&!Object.hasOwn(NOTE_PCS,match[3])))
+        throw Error('invalid-ensemble-chord: '+symbol);
+      const root=NOTE_PCS[match[1]],pcs=CHORD_INTERVALS[match[2]].map(interval=>(root+interval)%12);
+      return match[3]?{symbol,root,pcs,bass:NOTE_PCS[match[3]]}:{symbol,root,pcs};
     });
   }
   // Ordered voicings minimize total voice motion without crossing voices.
   // This is deterministic orchestration, not additional model inference.
-  function performanceVoicing(pcs,low,high,previous,spread=false){
+  function performanceVoicing(pcs,low,high,previous,spread=false,bass=null){
     const size=pcs.length,choices=Array.from({length:high-low+1},(_,i)=>low+i).filter(n=>pcs.includes(n%12));
     let best=null,bestCost=Infinity;
-    function visit(start,pitches){
+    function visit(start,pitches,used){
       if(pitches.length===size){
-        if(new Set(pitches.map(n=>n%12)).size!==size)return;
         const span=pitches.at(-1)-pitches[0];
         const motion=pitches.reduce((sum,n,i)=>sum+Math.abs(n-(previous[i]??(size===1?36:52+i*5))),0);
         const spacing=spread?Math.abs(span-16)*2:span>19?12:0;
         const cost=motion+spacing;
         if(cost<bestCost){bestCost=cost;best=pitches.slice();}return;
       }
-      for(let i=start;i<choices.length;i++)visit(i+1,[...pitches,choices[i]]);
+      for(let i=start;i<=choices.length-(size-pitches.length);i++){
+        const pc=choices[i]%12,bit=1<<pc;
+        if((used&bit)||(!pitches.length&&bass!==null&&pc!==bass))continue;
+        visit(i+1,[...pitches,choices[i]],used|bit);
+      }
     }
-    visit(0,[]);if(!best)throw Error('ensemble-voicing-range');return best;
+    visit(0,[],0);if(!best)throw Error('ensemble-voicing-range');return best;
   }
   function drumPerformance(value,session,core,bar){
     const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),ppq=session.midiData.ppq;
@@ -580,9 +589,11 @@
     for(let bar=source.range.startMeasure;bar<=source.range.endMeasure;bar++){
       const span=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData),chord=chords[(bar-source.range.startMeasure)%chords.length];
       const melodyPitches=(melody?.notes||[]).filter(n=>n.startTick<span.endTick&&n.startTick+n.durationTicks>span.startTick).map(n=>n.pitch).sort((a,b)=>a-b),ceiling=melodyPitches.length?Math.max(59,melodyPitches[0]-3):84;
-      const low=role==='bass'?28:48,high=role==='bass'?55:Math.min(role==='strings'?79:84,ceiling);
-      const pcs=role==='bass'?[chord.root]:chord.pcs;
-      const pitches=performanceVoicing(pcs,low,high,previous,role!=='bass'&&value.variant==='B');
+      const bass=chord.bass??chord.root;
+      const pcs=role==='bass'?[bass]:chord.bass===undefined?chord.pcs:[...new Set([bass,...chord.pcs])];
+      const low=role==='bass'?28:chord.bass===undefined?48:40;
+      const high=role==='bass'?55:Math.min(role==='strings'?79:84,Math.max(ceiling,pcs.length>4||chord.bass!==undefined?low+23:low));
+      const pitches=performanceVoicing(pcs,low,high,previous,role!=='bass'&&value.variant==='B',chord.bass??null);
       previous.splice(0,previous.length,...pitches);
       const density=value.ensemble.section?.density||'normal',factor=density==='sparse'?2:density==='rich'?0.5:1;
       const meter=root.MusicStudioMeterMap.positionAtTick(session.midiData,span.startTick);
@@ -603,7 +614,7 @@
           const velocity=Math.round(prior.length?prior[0].velocity*(1-blend)+baseVelocity*blend:baseVelocity)+accent;
           // Rich bass alternates chord root and fifth; the downbeat stays on the root.
           let rendered=pitch;
-          if(role==='bass'&&(density==='rich'||value.variant==='B')&&index%2===1){
+          if(role==='bass'&&chord.bass===undefined&&(density==='rich'||value.variant==='B')&&index%2===1){
             rendered=pitch+((chord.pcs[2]-chord.root+12)%12);
             if(rendered>55)rendered-=12;
           }

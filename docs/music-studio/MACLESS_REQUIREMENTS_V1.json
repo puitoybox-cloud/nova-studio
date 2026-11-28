@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "date": "2026-11-08 JST",
+  "date": "2026-11-28 JST",
   "source": "docs/music-studio/COMPLETION_MASTER_PLAN_V1.md",
   "baselinePR": 607,
   "baselineHead": "376a26419f7c7dfd18deb5ec9a5b2eac4effbfa9",
@@ -549,8 +549,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。文章と歌詞からBPMとKeyを提案のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -570,8 +570,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。文章と歌詞からコードとメロディを生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -591,8 +591,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。構成と編成を生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -612,8 +612,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。生成物をPreviewから新曲保存へ統合のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -636,7 +636,17 @@
       "requirement": "文章理解・作曲モデルとライセンス・品質基準",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "ローカルAIと外部AIを選択できるようにし、商用利用可能なモデルを優先する。",
+        "conditions": [
+          "文章・歌詞からの提案、生成、試聴、新曲保存を確認する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "文章に対応するローカル・外部モデルの採用、利用条件、品質評価、新曲保存の再起動照合"
+      }
     },
     {
       "id": "MS05-A01",
@@ -877,8 +887,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。続きと2番の実生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -898,8 +908,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。ラスサビとIntroの実生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -919,8 +929,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。InterludeとOutroの実生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -940,8 +950,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。時間指定生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -961,8 +971,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。部分再生成と固定範囲保護のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -985,7 +995,17 @@
       "requirement": "生成モデルとSection配置方針",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "任意の小節・時間・セクションを指定して生成し、選択範囲外を変更しない。",
+        "conditions": [
+          "範囲内の候補比較・試聴・採用・Undo/Redo、既存の固定範囲とコードの保持を確認する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "採用モデル、全セクション種別、秒指定、境界をまたぐ音符、保存・再起動の照合"
+      }
     },
     {
       "id": "MS08-A01",
@@ -1015,8 +1035,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。複数Sectionアレンジの実生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1036,8 +1056,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。単一Track再生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1057,8 +1077,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。複数Track再生成のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1078,8 +1098,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。メロディ固定と範囲固定の保存往復のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1102,7 +1122,17 @@
       "requirement": "Destinationと音源生成モデルの契約",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "MIDI・WAVの双方で編曲し、追加と差し替えを選べるようにする。",
+        "conditions": [
+          "複数セクション、単一・複数Trackを対象にできる。メロディと固定範囲は保存後も保持する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "WAVを含む適用先と非破壊の追加・差し替え、モデル・音源の利用条件"
+      }
     },
     {
       "id": "MS09-A01",
@@ -1132,8 +1162,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。実音声のコード解析のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1153,8 +1183,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。コード追従補正のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1174,8 +1204,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。別Voicing候補生成と採用保存のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1198,7 +1228,17 @@
       "requirement": "実音声コード解析モデルと品質基準",
       "status": "open",
       "evidence": [],
-      "dependsOn": []
+      "dependsOn": [],
+      "decision": {
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "メジャー、マイナー、セブンス、テンション、分数コード等に対応し、手動修正を提供する。",
+        "conditions": [
+          "推定と確定を区別し、固定済みコードを保護する。"
+        ],
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "実音源でのコード推定、追従補正と別Voicingの試聴・採用・保存の評価"
+      }
     },
     {
       "id": "MS10-A01",
@@ -1425,8 +1465,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。試聴中の日本語部分修正のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1446,8 +1486,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。メロディ歌詞変更後の仮歌再生成と非破壊保存のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1472,15 +1512,27 @@
       "evidence": [],
       "dependsOn": [],
       "decision": {
-        "date": "2026-11-20 JST",
-        "status": "確定",
-        "policy": "人間の録音と許諾済みAI歌声合成を併用する。",
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "日本語対応の商用利用可能な声庫と、複数の歌声エンジンに対応する。",
         "conditions": [
           "MIDI・日本語歌詞から端末内で合成し、録音と同じテイク編集で扱う",
-          "声庫ごとに商用利用・再配布・表示義務とIntel Macでの動作を確認する"
+          "声庫ごとに商用利用・再配布・表示義務とIntel Macでの動作を確認する",
+          "声庫とエンジンを個別に確認する。"
         ],
-        "source": "ユーザー確定仕様（2026-11-20）",
-        "remaining": "製品採用声庫、品質基準、配布条件、交換可能なエンジンの受入"
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "採用声庫、表示と配布条件、エンジン切替、試聴中の部分修正と非破壊再生成の評価",
+        "priorDecision": {
+          "date": "2026-11-20 JST",
+          "status": "確定",
+          "policy": "人間の録音と許諾済みAI歌声合成を併用する。",
+          "conditions": [
+            "MIDI・日本語歌詞から端末内で合成し、録音と同じテイク編集で扱う",
+            "声庫ごとに商用利用・再配布・表示義務とIntel Macでの動作を確認する"
+          ],
+          "source": "ユーザー確定仕様（2026-11-20）",
+          "remaining": "製品採用声庫、品質基準、配布条件、交換可能なエンジンの受入"
+        }
       }
     },
     {
@@ -1882,8 +1934,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。本人声生成の非破壊統合のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1919,16 +1971,30 @@
       "evidence": [],
       "dependsOn": [],
       "decision": {
-        "date": "2026-11-20 JST",
-        "status": "確定",
-        "policy": "本人の録音編集と本人の明示同意を得たAI声モデルを併用する。",
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "本人の明示許諾に基づいて学習・生成し、同意撤回を扱う。",
         "conditions": [
           "学習、生成、公開、再配布の許諾範囲を記録する",
           "同意未確認・撤回済みのモデルで新規学習・生成を行わない",
-          "モデル・素材を削除でき、生成履歴を管理する"
+          "モデル・素材を削除でき、生成履歴を管理する",
+          "作品・用途・モデル版ごとに実行時の許諾を確認する。",
+          "撤回後の新規学習・生成と既存生成物の新規書き出しを停止する。公開済み素材は本人と個別に取り決める。"
         ],
-        "source": "ユーザー確定仕様（2026-11-20）",
-        "remaining": "同意を取得・撤回する方法と既存生成物の扱い"
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "許諾済み実モデルによる学習・生成、撤回をまたぐ処理と書き出し全経路、再起動後の拒否を実機検証",
+        "priorDecision": {
+          "date": "2026-11-20 JST",
+          "status": "確定",
+          "policy": "本人の録音編集と本人の明示同意を得たAI声モデルを併用する。",
+          "conditions": [
+            "学習、生成、公開、再配布の許諾範囲を記録する",
+            "同意未確認・撤回済みのモデルで新規学習・生成を行わない",
+            "モデル・素材を削除でき、生成履歴を管理する"
+          ],
+          "source": "ユーザー確定仕様（2026-11-20）",
+          "remaining": "同意を取得・撤回する方法と既存生成物の扱い"
+        }
       }
     },
     {
@@ -2058,8 +2124,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。6音声Stemの保存再開と移行の統合のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -2079,8 +2145,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。実モデル分離の失敗取消と原音保持のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -2105,16 +2171,29 @@
       "evidence": [],
       "dependsOn": [],
       "decision": {
-        "date": "2026-11-23 JST",
-        "status": "導入方針確定・許諾未確認",
-        "policy": "音源分離AIは初期配布に同梱せず、初回利用時に明示操作で任意導入する。",
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "許諾済み音源分離モデルを初回利用時に任意導入する。",
         "conditions": [
           "進捗・取消・再試行・オフラインと利用不可の状態を表示し、ハッシュ検証後のローカルキャッシュを削除可能にする。",
           "許諾確認までは htdemucs_6s の重みを同梱、ミラー配布、製品管理の配布元から自動取得せず、未導入の場合は利用不可と表示する。",
-          "導入・分離の失敗や取消で原曲と既存レビューを維持する。"
+          "導入・分離の失敗や取消で原曲と既存レビューを維持する。",
+          "コード・重み・依存の商用利用と再配布条件を個別に確認する。"
         ],
-        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7101755822",
-        "remaining": "対象重みと取得経路の許諾、配布版の導入・削除と実機受入。"
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "6 Stem対象重みと取得経路の明示許諾、実分離の失敗・取消・保存・移行",
+        "priorDecision": {
+          "date": "2026-11-23 JST",
+          "status": "導入方針確定・許諾未確認",
+          "policy": "音源分離AIは初期配布に同梱せず、初回利用時に明示操作で任意導入する。",
+          "conditions": [
+            "進捗・取消・再試行・オフラインと利用不可の状態を表示し、ハッシュ検証後のローカルキャッシュを削除可能にする。",
+            "許諾確認までは htdemucs_6s の重みを同梱、ミラー配布、製品管理の配布元から自動取得せず、未導入の場合は利用不可と表示する。",
+            "導入・分離の失敗や取消で原曲と既存レビューを維持する。"
+          ],
+          "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7101755822",
+          "remaining": "対象重みと取得経路の許諾、配布版の導入・削除と実機受入。"
+        }
       }
     },
     {
@@ -2145,8 +2224,8 @@
       "triage": {
         "date": "2026-10-31 JST",
         "baselinePR": 550,
-        "classification": "仕様判断待ち",
-        "note": "C依存の全受入は未決定。モデル非依存の共通保存・中断経路は改善可能。",
+        "classification": "実装が必要",
+        "note": "2026-11-28の基本方針確定済み。単音和音設定の実モデル接続のproduction受入と、依存するC01の残件を照合する。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -2266,15 +2345,27 @@
       "evidence": [],
       "dependsOn": [],
       "decision": {
-        "date": "2026-11-25 JST",
-        "status": "対象範囲確定・精度基準未確定",
-        "policy": "ピアノ・歌声・ギター・ベースの単音・和音採譜を開発対象とする。",
+        "date": "2026-11-28 JST",
+        "status": "基本方針確定・採用条件確認中",
+        "policy": "楽器別の実演採譜精度と人による手直し時間を評価する。",
         "conditions": [
           "元音声の試聴とMIDIの手動修正を提供する。",
-          "代表的な正解音符付き素材で精度を測定できる基準を定め、基準を満たすことが確認できるまで各楽器・方式は実験扱いとする。"
+          "代表的な正解音符付き素材で精度を測定できる基準を定め、基準を満たすことが確認できるまで各楽器・方式は実験扱いとする。",
+          "ピアノ・歌声・ギター・ベースを単音・和音別に評価する。元音声の試聴と手動修正を提供する。"
         ],
-        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7148624680",
-        "remaining": "代表素材による定量検証、数値基準の確定、正式受入。"
+        "source": "https://github.com/puitoybox-cloud/nova-studio/pull/688#issuecomment-7232332794",
+        "remaining": "正解付き実演でオンセット、音程、音長、和音、修正時間を測定して数値合格基準を決める。",
+        "priorDecision": {
+          "date": "2026-11-25 JST",
+          "status": "対象範囲確定・精度基準未確定",
+          "policy": "ピアノ・歌声・ギター・ベースの単音・和音採譜を開発対象とする。",
+          "conditions": [
+            "元音声の試聴とMIDIの手動修正を提供する。",
+            "代表的な正解音符付き素材で精度を測定できる基準を定め、基準を満たすことが確認できるまで各楽器・方式は実験扱いとする。"
+          ],
+          "source": "https://github.com/puitoybox-cloud/nova-studio/pull/677#issuecomment-7148624680",
+          "remaining": "代表素材による定量検証、数値基準の確定、正式受入。"
+        }
       }
     },
     {
@@ -4189,6 +4280,10 @@
       "totalA": 135,
       "denominatorChanged": false,
       "reason": "81/135 verified. MS10-A05: explicit supplied reading and sustain assignments with selected-note counts. MS10-A08: approved lyric conflict reconciliation, retained editable fragments and persisted previous readings. Chromium at 1440, 820, and 390 px. Automatic reading/accent model remains MS10-C01."
+    },
+    {
+      "date": "2026-11-28 JST",
+      "reason": "PR #688の承認コメントを8件のC01に反映。依存する未完了AはMS04 4、MS07 5、MS08 4、MS09 3、MS11 2、MS14 1、MS16 2、MS17 1の22件。モデル採用・配布許諾・品質基準と受入状態は個別に検証する。"
     }
   ]
 }
