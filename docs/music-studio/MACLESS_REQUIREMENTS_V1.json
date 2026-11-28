@@ -47,7 +47,8 @@
       "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
       "86227181fce006dd370f62ad443636a5ffb4c80c",
       "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
-      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b",
+      "ac3b8c04c922e6d43075613108376994bb33f197"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -79,7 +80,8 @@
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315",
       "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
-      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b",
+      "ac3b8c04c922e6d43075613108376994bb33f197"
     ],
     "music-studio-ai-candidate-preview.js": [
       "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
@@ -88,7 +90,8 @@
     "music-studio-ai-composition.js": [
       "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
       "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
-      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b",
+      "ac3b8c04c922e6d43075613108376994bb33f197"
     ],
     "tests/music-studio-whole-song.test.js": [
       "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
@@ -1204,8 +1207,14 @@
       "feature": 9,
       "category": "A",
       "requirement": "実音声のコード解析",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-wav-harmony-browser.cjs",
+          "acceptance": "corrected WAV harmony survives Chromium restart",
+          "run": "verification/music-wav-harmony-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS09-C01"
       ],
@@ -1213,7 +1222,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。実音声のコード解析のproduction受入と、依存するC01の残件を照合する。",
+        "note": "正解付き録音サンプルWAVで長短・セブンス・テンション・転回・無音・小節途中の切替を実Chromiumで検証。推定誤差を記録し、手動修正、コード追従候補への反映、再起動保存を確認。実演での一般化と聴感評価はB/Cに残る。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -4358,6 +4367,10 @@
     {
       "date": "2026-11-28 JST",
       "reason": "89/135 verified。MS08-A05、MS09-A03・A04を実Chromiumで比較・承認・採用・完全再起動まで照合。"
+    },
+    {
+      "date": "2026-11-28 JST",
+      "reason": "90/135 verified。MS09-A02をWAVコード解析・手動修正・追従候補連携・保存再起動の証拠で受入。"
     }
   ]
 }

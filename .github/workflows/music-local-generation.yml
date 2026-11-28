@@ -16,6 +16,8 @@ on:
       - 'scripts/music-local-real-browser.js'
       - 'scripts/music-melody-sections-browser.cjs'
       - 'scripts/music-harmony-follow-browser.cjs'
+      - 'scripts/music-wav-harmony-browser.cjs'
+      - 'scripts/music-wav-harmony-fixture.py'
       - 'scripts/music-long-indexeddb-browser.js'
       - 'scripts/music-long-production-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
@@ -108,6 +110,18 @@ jobs:
           curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
             http://127.0.0.1:8776/music-studio.html -o /dev/null
           node scripts/music-harmony-follow-browser.cjs
+      - name: Local WAV chord analysis, manual review and restart
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          python scripts/music-wav-harmony-fixture.py "$RUNNER_TEMP/music-wav-harmony.wav"
+          python tools/music-local-generation/serve.py --port 8779 > "$RUNNER_TEMP/music-wav-harmony-host.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
+            http://127.0.0.1:8779/music-studio.html -o /dev/null
+          node scripts/music-wav-harmony-browser.cjs "$RUNNER_TEMP/music-wav-harmony.wav"
       - name: Complete a Japanese song through Chromium and restore its audio
         env:
           NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules

@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-28 JST",
+  "baselineHead": "ac3b8c04c922e6d43075613108376994bb33f197",
+  "passed": 1,
+  "failed": 0,
+  "acceptedCases": [
+    "corrected WAV harmony survives Chromium restart"
+  ],
+  "sourceHashes": {
+    "scripts/music-wav-harmony-browser.cjs": "ce5f71d6c855beb34a1c3843ce60e1de0d4bace42cd92adc3a98590368a1503d"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "23d5b4e972a046028d44c45ed21e3b4170f6dc7b0a0cd7d0c984d8841143219c",
+    "music-studio.js": "a024f590c8bd9475aaa429c56be7d4977f0b5a4367d84cde4809225ca6c69d86",
+    "music-studio-playback.js": "5fd2a8951a58117bffcf425ca4ad2638f55a2c10ae87d109632bf3111d4d645e",
+    "music-studio-ai-composition.js": "453b277318749277265debeb58d6eef4c1370be4c3df7bd0ba01c4d9d7f5b15a",
+    "music-studio-ai-assistant-panel.js": "5d809d27a6edfc66e8ff832b4db8d9d616d64d25391c579cad1ff0a8cb6ad7b9",
+    "scripts/music-wav-harmony-fixture.py": "137cb175ae06499b70d8e8dcef07a3a74fedf6dbda8197637bc1be4c27b254e5"
+  },
+  "fixture": "PCM rendered from the repository piano recording sample with known pitch, chord and silence timestamps",
+  "observed": {
+    "id": "wav-chord-fixture",
+    "symbols": [
+      "C",
+      "Am",
+      "G7",
+      null
+    ],
+    "segments": [
+      {
+        "startSeconds": 4,
+        "endSeconds": 4.8,
+        "symbol": "G7"
+      },
+      {
+        "startSeconds": 4.8,
+        "endSeconds": 5.2,
+        "symbol": "Cadd9/D"
+      },
+      {
+        "startSeconds": 5.2,
+        "endSeconds": 6,
+        "symbol": "Cadd9/E"
+      }
+    ],
+    "accuracy": {
+      "correct": 640,
+      "expected": 800
+    },
+    "restart": true,
+    "external": 0
+  }
+}
