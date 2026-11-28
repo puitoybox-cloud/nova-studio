@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-28 JST",
+  "baselineHead": "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
+  "passed": 6,
+  "failed": 0,
+  "acceptedCases": [
+    "'continuation',8,null],['verse2',4,2]",
+    "'final-chorus',6,3],['intro',1,2]",
+    "'interlude',5,3],['outro',7,6]"
+  ],
+  "sourceHashes": {
+    "scripts/music-melody-sections-browser.cjs": "018bc935fb3fc5f2aa076ff343bd68fec4a74da231e874a5d6f9cf867e677369"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "a43916977c314722c4a757a36a8f749a987446bc3c73a1a62ed6a45b89e41d75",
+    "music-studio-editor.js": "503b92be2b94f3bdd3e68e1f32ceee65565f99568806eba15cf5602714a29355",
+    "music-studio-ai-composition.js": "d885e3636fb9078ba82961ab634501005c66b1983559a91270c50568b043e29b",
+    "music-studio-ai-candidate-preview.js": "5c9f09a45a5e0957b734efaca7281cb10035ab4601d97462ab922555bd0ff802",
+    "music-studio-ai-assistant-panel.js": "16a5902407eb385ede91d307a51cbc5645ec674fb6c2fb9e18910cced58b9f75",
+    "tools/music-local-generation/model-lock.json": "db3e026ef0857d0284e1544a152d680e1f98d691e7e4f6fc21d917ebae4174c6"
+  },
+  "observed": [
+    {
+      "id": "section-continuation",
+      "name": "continuation",
+      "reference": null,
+      "variants": 3,
+      "notes": 6,
+      "restart": true,
+      "external": 0
+    },
+    {
+      "id": "section-verse2",
+      "name": "verse2",
+      "reference": 2,
+      "variants": 3,
+      "notes": 4,
+      "restart": true,
+      "external": 0
+    },
+    {
+      "id": "section-final-chorus",
+      "name": "final-chorus",
+      "reference": 3,
+      "variants": 3,
+      "notes": 9,
+      "restart": true,
+      "external": 0
+    },
+    {
+      "id": "section-intro",
+      "name": "intro",
+      "reference": 2,
+      "variants": 3,
+      "notes": 4,
+      "restart": true,
+      "external": 0
+    },
+    {
+      "id": "section-interlude",
+      "name": "interlude",
+      "reference": 3,
+      "variants": 3,
+      "notes": 9,
+      "restart": true,
+      "external": 0
+    },
+    {
+      "id": "section-outro",
+      "name": "outro",
+      "reference": 6,
+      "variants": 3,
+      "notes": 9,
+      "restart": true,
+      "external": 0
+    }
+  ]
+}

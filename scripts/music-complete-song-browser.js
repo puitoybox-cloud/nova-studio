@@ -183,7 +183,7 @@ async function run() {
         [24,[[0,78],[1,76],[1.5,74],[2,73],[2.5,74],[3,76]],[[0,81],[.5,78],[1,76],[1.5,73],[2,76],[2.5,78],[3,76]]],
         [26,[[0,74],[.5,71],[1,67],[1.5,69],[2,71],[2.5,74],[3,76]],[[0,76],[.5,74],[1,73],[1.5,71],[2,73],[2.5,76],[3,78]]],
         [28,[[0,78],[1.25,76],[1.75,74],[2.25,73],[2.75,74],[3.25,76]],[[0,76],[.5,73],[1,69],[1.5,71],[2,73],[2.5,74],[3,76]]],
-        [30,[[0,78],[1,76],[1.5,74],[2,71],[2.5,74],[3,76]],[[0,74],[.5,71],[1,67],[1.5,69],[2,71],[2.5,74],[3,76]]],
+        [30,[[0,78],[1,76],[1.5,74],[2,71],[2.5,74],[3,76]],[[0,74],[.5,71],[1,69],[1.5,71],[2,74],[2.5,76],[3,78]]],
         [32,[[0,79],[1,78],[1.5,76],[2,74],[2.5,76],[3,78]],[[0,81],[.5,78],[1,76],[1.5,73],[2,76],[2.5,78],[3,81]]],
         [34,[[0,79],[.5,78],[1,74],[1.5,71],[2,74],[2.5,76],[3,78]],[[0,76],[.5,74],[1,73],[1.5,71],[2,69],[2.5,71],[3,73]]],
         [36,[[0,74],[1,71],[1.5,69],[2,66],[2.5,69],[3,71]],[[0,74],[.5,71],[1,67],[1.5,69],[2,71],[2.5,74],[3,74]]],
@@ -229,16 +229,20 @@ async function run() {
           add('piano',voicing[0],tick,1440,49);
         }else if(chorus){
           for(const offset of [0,720,1440])for(const [voice,pitch] of voicing.entries()){
-            const delay=voice*13;
-            add('piano',pitch+12,tick+offset+delay,(offset===1440?420:580)-delay,offset===0?72:61);
+            const delay=voice*(bar>=28?9:17);
+            add('piano',pitch+12,tick+offset+delay,(offset===1440?420:580)-delay,offset===0?(bar>=28?76:69):61);
           }
         }else{
           const arpeggio=[0,1,2,1,0,2,1,2];
           for(let step=0;step<(bar===39?4:8);step++)
             add('piano',voicing[arpeggio[step]]+12,tick+step*240,300,step%2?47:59);
         }
-        if(bar>=12&&bar<38) for(const [voice,pitch] of voicing.entries())
-          add('strings',pitch,tick+48+voice*14,1790-voice*14,chorus?56+Math.floor((bar-20)/4)*2:38+Math.min(12,bar-12)*2);
+        if(bar>=12&&bar<38) for(const [voice,pitch] of voicing.entries()){
+          const onset=48+voice*14;
+          add('strings',pitch,tick+onset,1790-voice*14,chorus?56+Math.floor((bar-20)/4)*2:38+Math.min(12,bar-12)*2);
+          if(bar>=28&&bar<36&&voice===voicing.length-1&&bar%2===1)
+            add('strings',pitch+12,tick+1200,600,53);
+        }
         for(const offset of chorus?[0,720,960,1440,1680]:bar<4||bar>=38?[0]:[0,960,1440])
           add('bass',offset===1680?root+12:root,tick+offset,chorus?210:offset===0?820:400,chorus?84:68);
         if(bar>=4&&bar<38){
