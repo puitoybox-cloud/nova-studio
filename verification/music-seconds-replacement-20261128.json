@@ -14,7 +14,6 @@
   },
   "runtimeHashes": {
     "music-studio.html": "33e9197ec4d0801b3366538378201e936d682314a87731798cda4b38335f43d1",
-    "app.js": "d1c706a340725602524cbf4e84da5c8f5f70ee32208c0636faebe9aeffde789d",
     "music-studio-editor.js": "503b92be2b94f3bdd3e68e1f32ceee65565f99568806eba15cf5602714a29355",
     "music-studio-ai-composition.js": "e1436d962af0223c584578a80b31ba95b1f374f9709cf0acfc324fa4a23ded21",
     "music-studio-ai-candidate-preview.js": "5c9f09a45a5e0957b734efaca7281cb10035ab4601d97462ab922555bd0ff802",
