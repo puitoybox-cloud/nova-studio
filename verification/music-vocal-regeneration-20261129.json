@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-29 JST",
+  "baselineHead": "9c707fc4f2a718936c231d3e3e9f6a693181e71d",
+  "passed": 1,
+  "failed": 0,
+  "acceptedCases": [
+    "edited Japanese vocal and untouched original survive Chromium restart and Archive restore"
+  ],
+  "sourceHashes": {
+    "scripts/music-vocal-regeneration-browser.cjs": "0ecbae94faf824c055573ca77d8844f173088c2339fbe16deb3e2e41ca4537bb"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "bfb0032d3df73817523400f4fdc716607df65dbacbcdd082b7e68fcebb9f1150",
+    "music-studio.js": "a024f590c8bd9475aaa429c56be7d4977f0b5a4367d84cde4809225ca6c69d86",
+    "music-studio-editor.js": "503b92be2b94f3bdd3e68e1f32ceee65565f99568806eba15cf5602714a29355",
+    "tools/music-local-generation/serve.py": "b84705c129b07fb64f9eae4f5754c96525bacb2bcb3c3a5fff451db9006fef38"
+  },
+  "observed": {
+    "originalHash": "8514d01f269806dba07c81d2d47986f2ccb2580d136c38a9239fe883d6cccf42",
+    "candidateHash": "dc4d8ba60d495527e1144dc4b7dddba7251d09d0ec17e3157e5d9cdfaf3ee7ef",
+    "first": 256044,
+    "end": 512044,
+    "restart": true,
+    "archive": true,
+    "external": 0
+  }
+}
