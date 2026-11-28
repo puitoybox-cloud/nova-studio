@@ -40,3 +40,19 @@ for(const role of ['piano','strings','drums'])test(`explicit ${role} replacement
 test('reusing an ensemble variant for existing-part regeneration allocates distinct note identities',()=>{const f=setup(),first=ensembleCandidate(f);first.value=f.C.bindEnsemble(first.value,first.value.ensemble.source,'C Am');f.P.applyPreview(f.s,f.core,f.P.createPreview(f.s,f.core,first),{startMeasure:2,endMeasure:2});const target=f.s.midiData.tracks.find(t=>t.roleAssignment==='strings'),before=plain(f.s.midiData),next=ensembleCandidate(f);next.value=f.C.bindEnsemble(next.value,next.value.ensemble.source,'Dm G7',{name:'chorus',density:'rich',roles:['strings'],targets:{strings:target.id}});const bundle=f.P.createPreview(f.s,f.core,next);f.P.auditionPlan(f.s,f.core,bundle,{startMeasure:2,endMeasure:2});assert.deepEqual(plain(f.s.midiData),before);f.P.applyPreview(f.s,f.core,bundle,{startMeasure:2,endMeasure:2});assert.equal(f.s.midiData.tracks.length,before.tracks.length);f.core.undo(f.s);assert.deepEqual(plain(f.s.midiData),before)});
 
 test('multiple existing-part regeneration passes avoid both target and other-track note ID collisions',()=>{const f=setup(),first=ensembleCandidate(f);first.value=f.C.bindEnsemble(first.value,first.value.ensemble.source,'C Am');f.P.applyPreview(f.s,f.core,f.P.createPreview(f.s,f.core,first));const target=f.s.midiData.tracks.find(t=>t.roleAssignment==='strings');for(let i=0;i<3;i++){const before=plain(f.s.midiData),next=ensembleCandidate(f);next.value=f.C.bindEnsemble(next.value,next.value.ensemble.source,'Dm G7',{name:'chorus',density:'rich',roles:['strings'],targets:{strings:target.id}});const b=f.P.createPreview(f.s,f.core,next);f.P.applyPreview(f.s,f.core,b,{startMeasure:2,endMeasure:2});const ids=f.s.midiData.tracks.flatMap(t=>t.notes.map(n=>n.id));assert.equal(new Set(ids).size,ids.length);for(const t of before.tracks)if(t.id!==target.id)assert.deepEqual(plain(f.core.getTrackById(f.s.midiData.tracks,t.id)),t);f.core.undo(f.s);assert.deepEqual(plain(f.s.midiData),before);f.core.redo(f.s)}});
+
+test('tempo changes convert second endpoints without rounding to bars, and empty locks prevent replacement',()=>{
+  const f=setup();
+  new Function('window',fs.readFileSync('music-studio-playback.js','utf8'))(f.w);
+  f.s.midiData.tempo=120;
+  f.s.midiData.tempoMap=[{tick:0,bpm:120},{tick:1920,bpm:60}];
+  const range=f.C.secondsRange(f.s,f.core,'1.5','3');
+  assert.deepEqual(plain(range),{startMeasure:1,endMeasure:2,startTick:1440,endTick:2400,unit:'ticks'});
+  const lock=f.w.MusicStudioMeasureLocks.addRangeLock(f.s,f.core,{trackId:'melody',startTick:1600,endTick:1700});
+  assert.equal(lock.changed,true);
+  const before=plain(f.s);
+  assert.throws(()=>f.C.remakeSource(f.s,f.core,{operation:'replace',range}),/固定区間/);
+  assert.deepEqual(plain(f.s),before);
+  assert.throws(()=>f.C.secondsRange(f.s,f.core,'','3'),/開始秒/);
+  assert.throws(()=>f.C.secondsRange(f.s,f.core,'3','3.00001'),/秒範囲/);
+});

@@ -163,7 +163,10 @@
     "tests/music-studio-lyrics-note-assignment.test.js": [
       "891637a2483af76f55b9c0680e7f1ef4be3e7e7f"
     ],
-    "tests/music-studio-performance-quality.test.js": "cf43bf9fdb147bfd1b02e117ef01521a86e3f09d"
+    "tests/music-studio-performance-quality.test.js": "cf43bf9fdb147bfd1b02e117ef01521a86e3f09d",
+    "music-studio-editor.js": [
+      "fdf0847ce478c801fe92dc9dbdb5eb66bee933b4"
+    ]
   },
   "requirements": [
     {
@@ -942,8 +945,14 @@
       "feature": 7,
       "category": "A",
       "requirement": "時間指定生成",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-local-real-browser.js",
+          "acceptance": "seconds replacement crossed the operation boundary",
+          "run": "verification/music-seconds-replacement-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS07-C01"
       ],
@@ -951,7 +960,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。時間指定生成のproduction受入と、依存するC01の残件を照合する。",
+        "note": "固定されたApache-2.0表記のローカルモデルで、秒指定境界、候補比較と承認、原本と固定区間の保護、Undo/Redo、IndexedDBとChromium再起動を照合。Section全種類の聴感評価はMS07-B01、残る生成方式はMS07-C01で扱う。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -963,8 +972,14 @@
       "feature": 7,
       "category": "A",
       "requirement": "部分再生成と固定範囲保護",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-local-real-browser.js",
+          "acceptance": "protected empty range must block inference",
+          "run": "verification/music-seconds-replacement-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS07-C01"
       ],
@@ -972,7 +987,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。部分再生成と固定範囲保護のproduction受入と、依存するC01の残件を照合する。",
+        "note": "固定されたApache-2.0表記のローカルモデルで、秒指定境界、候補比較と承認、原本と固定区間の保護、Undo/Redo、IndexedDBとChromium再起動を照合。Section全種類の聴感評価はMS07-B01、残る生成方式はMS07-C01で扱う。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -4284,6 +4299,10 @@
     {
       "date": "2026-11-28 JST",
       "reason": "PR #688の承認コメントを8件のC01に反映。依存する未完了AはMS04 4、MS07 5、MS08 4、MS09 3、MS11 2、MS14 1、MS16 2、MS17 1の22件。モデル採用・配布許諾・品質基準と受入状態は個別に検証する。"
+    },
+    {
+      "date": "2026-11-28 JST",
+      "reason": "83/135 verified。MS07-A05とMS07-A06を実モデル・実Chromiumの範囲差し替え、無推論での固定区間拒否、再起動保持の証拠で受入。"
     }
   ]
 }

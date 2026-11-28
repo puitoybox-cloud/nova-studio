@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率 **60.00%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **83**、残数 **52**、受入確認率 **61.48%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -20,7 +20,7 @@ A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率
 | 4 | 5 | 1 | 4 | 1 | 1 |
 | 5 | 4 | 1 | 3 | 1 | 1 |
 | 6 | 4 | 4 | 0 | 1 | 0 |
-| 7 | 6 | 1 | 5 | 1 | 1 |
+| 7 | 6 | 3 | 3 | 1 | 1 |
 | 8 | 5 | 1 | 4 | 1 | 1 |
 | 9 | 4 | 1 | 3 | 1 | 1 |
 | 10 | 8 | 3 | 5 | 1 | 1 |
@@ -86,8 +86,8 @@ A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率
 | MS07-A02 | A | 続きと2番の実生成 | open | MS07-C01 |
 | MS07-A03 | A | ラスサビとIntroの実生成 | open | MS07-C01 |
 | MS07-A04 | A | InterludeとOutroの実生成 | open | MS07-C01 |
-| MS07-A05 | A | 時間指定生成 | open | MS07-C01 |
-| MS07-A06 | A | 部分再生成と固定範囲保護 | open | MS07-C01 |
+| MS07-A05 | A | 時間指定生成 | verified | [scripts/music-local-real-browser.js](../../scripts/music-local-real-browser.js) — `seconds replacement crossed the operation boundary` |
+| MS07-A06 | A | 部分再生成と固定範囲保護 | verified | [scripts/music-local-real-browser.js](../../scripts/music-local-real-browser.js) — `protected empty range must block inference` |
 | MS07-B01 | B | 各Sectionの音楽品質聴取 | open | 未確認 |
 | MS07-C01 | C | 生成モデルとSection配置方針 | open | 未確認 |
 | MS08-A01 | A | Arrangement exact changing-meter entry is an anchor and leaves source MIDI and workspace unchanged | verified | [tests/music-studio-ai-arrangement-entry.test.js](../../tests/music-studio-ai-arrangement-entry.test.js) — `Arrangement exact changing-meter entry is an anchor and leaves source MIDI and workspace unchanged` |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 34 | 22 |
+| 実装が必要 | 34 | 20 |
 | 実装済み・検証不足 | 23 | 2 |
 | 仕様判断待ち | 41 | 30 |
 
@@ -266,8 +266,8 @@ A：総数 **135**、証拠付き完了 **81**、残数 **54**、受入確認率
 | MS07-A02 | 実装が必要 | open |
 | MS07-A03 | 実装が必要 | open |
 | MS07-A04 | 実装が必要 | open |
-| MS07-A05 | 実装が必要 | open |
-| MS07-A06 | 実装が必要 | open |
+| MS07-A05 | 実装が必要 | verified |
+| MS07-A06 | 実装が必要 | verified |
 | MS08-A02 | 実装が必要 | open |
 | MS08-A03 | 実装が必要 | open |
 | MS08-A04 | 実装が必要 | open |

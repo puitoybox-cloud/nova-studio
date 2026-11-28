@@ -1,7 +1,7 @@
 /* MS-RESTART-02: shared, dependency-free MIDI note editing model. */
 (function(root){
   'use strict';
-  const ASSET_VERSION='1.4.28';
+  const ASSET_VERSION='1.4.29';
   const coordinatedData=new WeakSet(),failures=new WeakMap();
   function editFailureCount(session){return failures.get(session)||0}
   function snapTick(session,tick,resolution='1/16'){const value=Math.max(0,Number(tick)||0);if(resolution==='off')return Math.round(value);if(!session.coordinatedTimeline){const step=resolution==='measure'?measureTicks(session):session.midiData.ppq*4/Number(resolution.split('/')[1]);return Math.round(value/step)*step}const pos=meterPosition(session.midiData,value),step=resolution==='measure'?pos.ticksPerMeasure:session.midiData.ppq*4/Number(resolution.split('/')[1]),nearest=resolution==='measure'?(value-pos.measureStartTick<pos.measureEndTick-value?pos.measureStartTick:pos.measureEndTick):pos.measureStartTick+Math.round((value-pos.measureStartTick)/step)*step;return Math.round(Math.max(pos.measureStartTick,Math.min(pos.measureEndTick,nearest)))}
@@ -31,13 +31,23 @@
   function editableNotes(notes=[]){return notes.filter(note=>!isNoteLocked(note))}
   function normalizeEditRange(range={},totalMeasures=1){const total=int(totalMeasures,1,10000,1),rawStart=Number(range?.startMeasure),rawEnd=Number(range?.endMeasure),start=Number.isFinite(rawStart)?Math.round(rawStart):1,end=Number.isFinite(rawEnd)?Math.round(rawEnd):start,clampedStart=Math.max(1,Math.min(total,start)),clampedEnd=Math.max(1,Math.min(total,end));return{startMeasure:Math.min(clampedStart,clampedEnd),endMeasure:Math.max(clampedStart,clampedEnd)}}
   function measureRangeToTicks(range={},midiData={}){if(coordinatedData.has(midiData)){const normalized=normalizeEditRange(range,midiData.editor?.measureCount||1),span=root.MusicStudioMeterMap.rangeToTicks(midiData,normalized.startMeasure,normalized.endMeasure);return{...span,measureTicks:span.endTick-span.startTick}}const ppq=int(midiData?.ppq,24,9600,480),signature=midiData?.timeSignature||{numerator:4,denominator:4},numerator=int(signature.numerator,1,16,4),denominator=[1,2,4,8,16,32].includes(Number(signature.denominator))?Number(signature.denominator):4,totalMeasures=int(midiData?.editor?.measureCount,1,10000,1),normalized=normalizeEditRange(range,totalMeasures),measureTicks=ppq*4/denominator*numerator;return{...normalized,startTick:(normalized.startMeasure-1)*measureTicks,endTick:normalized.endMeasure*measureTicks,measureTicks}}
-  function notesInRange(session,range=session?.midiData?.editor?.editRange,part,trackId){const track=trackId?getTrackById(session?.midiData?.tracks,trackId):arguments.length>=3?session?.midiData?.tracks?.find(item=>item.part===part):currentTrack(session),ticks=measureRangeToTicks(range,session?.midiData||{});return(track?.notes||[]).filter(note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick)}
+  function partialRange(range,data){
+    const bounds=measureRangeToTicks(range,data);
+    if(range?.unit!=='ticks')return bounds;
+    const first=measureRangeToTicks({startMeasure:bounds.startMeasure,endMeasure:bounds.startMeasure},data);
+    const last=measureRangeToTicks({startMeasure:bounds.endMeasure,endMeasure:bounds.endMeasure},data);
+    if(!Number.isSafeInteger(range.startTick)||!Number.isSafeInteger(range.endTick)||
+       range.startTick<first.startTick||range.startTick>=first.endTick||
+       range.endTick<=last.startTick||range.endTick>last.endTick||range.startTick>=range.endTick)return null;
+    return {...bounds,startTick:range.startTick,endTick:range.endTick,unit:'ticks'};
+  }
+  function notesInRange(session,range=session?.midiData?.editor?.editRange,part,trackId){const track=trackId?getTrackById(session?.midiData?.tracks,trackId):arguments.length>=3?session?.midiData?.tracks?.find(item=>item.part===part):currentTrack(session),ticks=partialRange(range,session?.midiData||{});return ticks?(track?.notes||[]).filter(note=>note.startTick>=ticks.startTick&&note.startTick<ticks.endTick):[]}
   function editableNotesInRange(session,range=session?.midiData?.editor?.editRange,part,trackId){const notes=arguments.length>=3?notesInRange(session,range,part,trackId):notesInRange(session,range),track=trackId?getTrackById(session.midiData.tracks,trackId):currentTrack(session);return notes.filter(note=>!protectedNote(session,track,note))}
   function compareRequestNotes(a,b){return a.startTick-b.startTick||a.pitch-b.pitch||String(a.id).localeCompare(String(b.id))}
   function validatePartialEditRequest(session,request){
     const errors=[],track=getTrackById(session?.midiData?.tracks,request?.trackId),semanticPart=track?resolveCoreTrackRole(track):null;
     if(!track||request?.part!==(semanticPart||null)||resolveTrackCapabilities(track).supportsPartialEdit!==true)errors.push('track');
-    const range=request?.range||{},ticks=measureRangeToTicks(range,session?.midiData||{}),validRange=Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick&&range.startMeasure===ticks.startMeasure&&range.endMeasure===ticks.endMeasure&&range.startTick===ticks.startTick&&range.endTick===ticks.endTick;
+    const range=request?.range||{},ticks=partialRange(range,session?.midiData||{}),validRange=Boolean(ticks)&&Number.isFinite(range.startTick)&&Number.isFinite(range.endTick)&&range.startTick<range.endTick&&range.startMeasure===ticks.startMeasure&&range.endMeasure===ticks.endMeasure&&range.startTick===ticks.startTick&&range.endTick===ticks.endTick;
     if(!validRange)errors.push('range');
     const targetIds=Array.isArray(request?.targetNoteIds)?request.targetNoteIds:[],lockedIds=Array.isArray(request?.lockedNoteIds)?request.lockedNoteIds:[],requestNotes=Array.isArray(request?.notes)?request.notes:[];
     if(!Array.isArray(request?.targetNoteIds)||!Array.isArray(request?.lockedNoteIds)||!Array.isArray(request?.notes))errors.push('shape');
@@ -56,7 +66,9 @@
   function createPartialEditRequest(session,options={}){if(session.coordinatedTimeline)coordinatedData.add(session.midiData);
     const track=options.trackId?getTrackById(session?.midiData?.tracks,options.trackId):currentTrack(session),part=track?resolveCoreTrackRole(track):null;
     if(!track||resolveTrackCapabilities(track).supportsPartialEdit!==true)throw Error('Partial edit request requires a valid track.');
-    const ticks=measureRangeToTicks(options.range??session?.editRange??session?.midiData?.editor?.editRange,session.midiData),range={startMeasure:ticks.startMeasure,endMeasure:ticks.endMeasure,startTick:ticks.startTick,endTick:ticks.endTick},source=notesInRange(session,range,part,track.id);
+    const ticks=partialRange(options.range??session?.editRange??session?.midiData?.editor?.editRange,session.midiData);
+    if(!ticks)throw Error('Invalid partial edit range.');
+    const range={startMeasure:ticks.startMeasure,endMeasure:ticks.endMeasure,startTick:ticks.startTick,endTick:ticks.endTick,...(ticks.unit?{unit:ticks.unit}:{})},source=notesInRange(session,range,part,track.id);
     if(new Set(source.map(note=>note.id)).size!==source.length)throw Error('Partial edit request contains duplicate note IDs.');
     const notes=source.map(clone).sort(compareRequestNotes),request={version:1,trackId:String(track.id),part,range,targetNoteIds:notes.filter(note=>!protectedNote(session,track,note)).map(note=>note.id),lockedNoteIds:notes.filter(note=>protectedNote(session,track,note)).map(note=>note.id),notes},validation=validatePartialEditRequest(session,request);
     if(!validation.ok)throw Error(`Invalid partial edit request: ${validation.errors.join(', ')}`);
@@ -343,7 +355,7 @@
     if(!previewValidation.ok)return{applied:false,reason:'invalid-preview',errors:clone(previewValidation.errors)};
     const track=getTrackById(session?.midiData?.tracks,request.trackId),currentRange=measureRangeToTicks(session?.editRange??session?.midiData?.editor?.editRange,session?.midiData||{}),range=request.range;
     if(currentTrackId(session)!==request.trackId||!track||resolveTrackCapabilities(track).supportsPartialEdit!==true)return{applied:false,reason:'stale-track'};
-    if(currentRange.startMeasure!==range.startMeasure||currentRange.endMeasure!==range.endMeasure||currentRange.startTick!==range.startTick||currentRange.endTick!==range.endTick)return{applied:false,reason:'stale-range'};
+    if(range.unit!=='ticks'&&(currentRange.startMeasure!==range.startMeasure||currentRange.endMeasure!==range.endMeasure||currentRange.startTick!==range.startTick||currentRange.endTick!==range.endTick))return{applied:false,reason:'stale-range'};
     const currentBefore=notesInRange(session,range,request.part,request.trackId).map(clone).sort(compareRequestNotes);
     if(JSON.stringify(currentBefore)!==JSON.stringify(preview.beforeNotes))return{applied:false,reason:'stale-project'};
     const addIds=new Set(result.changes.adds.map(note=>note.id));
