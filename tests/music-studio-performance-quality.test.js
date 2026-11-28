@@ -51,3 +51,13 @@ test('confirmed progression follows selected measures and protects locked chords
   assert.throws(()=>C.scopedGenerationChords(s,core,range,'F',review),/3小節の固定コード/);
   assert.throws(()=>C.scopedGenerationChords(s,core,{startMeasure:3,endMeasure:5},'',review),/全小節/);
 });
+
+test('altered extensions and slash chords preserve chord tones and lowest bass',()=>{
+  const {C}=setup();
+  const [chord,extended]=C.ensembleChords('G7b9/B → Cadd9');
+  assert.deepEqual(plain(chord),{symbol:'G7b9/B',root:7,pcs:[7,11,2,5,8],bass:11});
+  assert.deepEqual(plain(extended.pcs),[0,4,7,2]);
+  const voicing=C.performanceVoicing(chord.pcs,40,72,[],true,chord.bass);
+  assert.equal(voicing[0]%12,11);
+  assert.deepEqual(plain(voicing.map(pitch=>pitch%12).sort((a,b)=>a-b)),[2,5,7,8,11]);
+});

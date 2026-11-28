@@ -163,9 +163,9 @@ async function run() {
       const progression = [
         'D','A','Bm','G',
         'Bm','G','D','A','Bm','G','Em','A',
-        'G','A','Fsm','Bm','Em','G','Asus','A',
-        'D','A','Bm','G','D','A','G','A',
-        'D','A','Bm','G','Em','Fsm','G','A',
+        'Gadd9','A/G','F#m7','Bm','Em7','Gadd9','Asus','A',
+        'Dadd9','A/C#','Bm','Gadd9','D','A/C#','G','A',
+        'Dadd9','A/C#','Bm','G','Em7','F#m7','Gadd9','A',
         'Bm','G','Gm','D'
       ];
       // Each pair is [beat within the bar, MIDI pitch]. Motif returns in the second chorus.
@@ -189,6 +189,16 @@ async function run() {
         [36,[[0,74],[1,71],[1.5,69],[2,66],[2.5,69],[3,71]],[[0,74],[.5,71],[1,67],[1.5,69],[2,71],[2.5,74],[3,74]]],
         [38,[[0,74],[1,70],[1.5,67],[2,69],[2.5,70],[3,74]],[[0,74],[.5,73],[1,69],[1.5,66],[2,64],[2.5,66],[3,62]]]
       ];
+      // Keep the existing melody and build a descending bass into both chorus entries.
+      const bassOverrides={'A/G':43,'A/C#':37};
+      let previousKeys=[54,57,62,66];
+      for(const name of progression){
+        if(chords[name])continue;
+        const parsed=MusicStudioAIComposition.ensembleChords(name)[0];
+        const root=bassOverrides[name]??(36+parsed.root);
+        previousKeys=MusicStudioAIComposition.performanceVoicing(parsed.pcs,51,73,previousKeys);
+        chords[name]=[root,...previousKeys];
+      }
       const scale=[1,2,4,6,7,9,11];
       let previousHarmony;
       phrases.forEach(([bar,...measures],i)=>{
@@ -218,8 +228,10 @@ async function run() {
           for(const [beat,pitch] of hook)add('piano',pitch,tick+beat*480,195,67);
           add('piano',voicing[0],tick,1440,49);
         }else if(chorus){
-          for(const offset of [0,720,1440])for(const pitch of voicing)
-            add('piano',pitch+12,tick+offset,offset===1440?420:580,offset===0?72:61);
+          for(const offset of [0,720,1440])for(const [voice,pitch] of voicing.entries()){
+            const delay=voice*13;
+            add('piano',pitch+12,tick+offset+delay,(offset===1440?420:580)-delay,offset===0?72:61);
+          }
         }else{
           const arpeggio=[0,1,2,1,0,2,1,2];
           for(let step=0;step<(bar===39?4:8);step++)

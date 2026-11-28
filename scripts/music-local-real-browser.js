@@ -65,7 +65,7 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  panel.saveSectionArrangement(projectId);
  panel.confirmApprovedChange(projectId);
  document.querySelector('#aiRemakeMode').value='ensemble';
- document.querySelector('#aiModelChords').value='Bb F';
+ document.querySelector('#aiModelChords').value='Bbadd9/D F7b9/A';
  const ensembleBefore=JSON.stringify(session.midiData);
  await panel.generateLocalModel(projectId);
  const ensemble=record.state.workspace.candidateSets.at(-1);
@@ -77,6 +77,10 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  panel.confirmApprovedChange(projectId);
  const ensembleAfter=JSON.stringify(session.midiData),ensembleOld=JSON.parse(ensembleBefore);
  if(ensembleAfter===ensembleBefore||session.midiData.tracks.length!==ensembleOld.tracks.length)throw Error('ensemble destinations');
+ const arrangedBass=session.midiData.tracks.find(track=>track.id==='bass').notes;
+ const range=record.candidatePreview?.range||ensemble.candidates[0].value.ensemble.source.range;
+ const firstBass=arrangedBass.find(note=>note.startTick===range.startTick);
+ if(firstBass?.pitch%12!==2)throw Error('slash chord bass must start on D');
  for(const track of ensembleOld.tracks){
    const next=core.getTrackById(session.midiData.tracks,track.id);
    if(!['bass','strings'].includes(track.id)&&JSON.stringify(track)!==JSON.stringify(next))throw Error('ensemble source mutated');

@@ -29,7 +29,8 @@ class MoodChords(unittest.TestCase):
   from compose import interpret_request
   self.assertEqual(interpret_request('優しい','ballad','balanced','C Am F G7')[:2],('gentle',['C','Am','F','G7']))
   self.assertEqual(interpret_request('明るい')[0],'varied')
-  for args in [('unknown',),('優しい 明るい',),('', 'jazz'),('','','balanced','C/E')]:
+  self.assertEqual(interpret_request(chords='G7b9/B → Cadd9')[2],[{7,11,2,5,8},{0,4,7,2}])
+  for args in [('unknown',),('優しい 明るい',),('', 'jazz'),('','','balanced','C/H')]:
    with self.assertRaises(ValueError):interpret_request(*args)
  def test_chord_timeline_and_source_durations(self):
   from compose import interpret_request
