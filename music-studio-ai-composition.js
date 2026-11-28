@@ -430,12 +430,13 @@
       const row=reviewedByMeasure.get(bar);
       if(row?.locked&&(row.startTick!==span.startTick||row.endTick!==span.endTick))throw Error('拍子変更後の固定コードを確認してください。');
       locked ||= row?.locked===true;
-      const symbol=entered.length?entered[(bar-range.startMeasure)%entered.length].symbol:row?.symbol;
+      const currentRow=row?.startTick===span.startTick&&row?.endTick===span.endTick;
+      const symbol=entered.length?entered[(bar-range.startMeasure)%entered.length].symbol:currentRow?row.symbol:null;
       if(row?.locked&&symbol!==row.symbol)throw Error(`${bar}小節の固定コードは変更できません。`);
       symbols.push(symbol);
     }
     if(explicit)return entered.map(chord=>chord.symbol).join(' ');
-    if(text&&symbols.every(Boolean))return symbols.join(' ');
+    if((text||review?.analysis?.method==='wav-pitch-class-v1')&&symbols.every(Boolean))return symbols.join(' ');
     if(locked){
       if(!symbols.every(Boolean))throw Error('固定コードを含む範囲の全小節にコードを指定してください。');
       return symbols.join(' ');
@@ -581,6 +582,93 @@
       rows.push({measure:bar,startTick:span.startTick,endTick:span.endTick,symbol:known?best.symbol:null,root:known?best.root:null,confidence:known&&margin>=0.15?'high':known?'medium':'unknown',score:best.score,margin,candidates:total?ranked.slice(0,3):[],method:'duration-pitch-class-rules-v1'});
     }
     return{method:'duration-pitch-class-rules-v1',range:clone(range),midiSignature:JSON.stringify(session.midiData),rows};
+  }
+  function audioChordFrame(channels,from,to,rate,vocabulary){
+    const stride=Math.max(1,Math.floor(rate/8000)),size=Math.min(4096,Math.floor((to-from)/stride));
+    if(size<256)return null;
+    const samples=new Float64Array(size);
+    let energy=0;
+    for(let i=0;i<size;i++){
+      let value=0;
+      for(const channel of channels)for(let j=0;j<stride;j++)value+=channel[from+i*stride+j];
+      value/=channels.length*stride;
+      energy+=value*value;
+      samples[i]=value*(.5-.5*Math.cos(2*Math.PI*i/(size-1)));
+    }
+    if(energy/size<1e-7)return null;
+    const pitches=[];
+    for(let pitch=36;pitch<=88;pitch++){
+      const coefficient=2*Math.cos(2*Math.PI*440*2**((pitch-69)/12)*stride/rate);
+      let a=0,b=0;
+      for(const sample of samples){const next=sample+coefficient*a-b;b=a;a=next;}
+      pitches.push(Math.sqrt(Math.max(0,a*a+b*b-coefficient*a*b)));
+    }
+    const peak=Math.max(...pitches),weights=Array(12).fill(0);
+    let bass=null;
+    pitches.forEach((power,i)=>{
+      if(power<peak*.16||power<(pitches[i-1]||0)||power<(pitches[i+1]||0))return;
+      const pitch=i+36;
+      const fundamental=pitches[i-12]||0;
+      if(fundamental>power*1.7)return;
+      bass??=pitch%12;
+      weights[pitch%12]=Math.max(weights[pitch%12],power);
+    });
+    const distinct=weights.filter(Boolean).length,total=weights.reduce((a,b)=>a+b,0);
+    if(distinct<3)return null;
+    const ranked=vocabulary.map(chord=>{
+      const covered=chord.pcs.reduce((sum,pc)=>sum+weights[pc],0)/total;
+      const missing=chord.pcs.filter(pc=>!weights[pc]).length;
+      const score=covered-.2*missing-.018*(chord.pcs.length-3)+(bass===chord.root?.035:0);
+      const symbol=chord.pcs.includes(bass)&&bass!==chord.root?chord.symbol+'/'+FLAT_NAMES[bass]:chord.symbol;
+      return {...chord,symbol,score};
+    }).sort((a,b)=>b.score-a.score||a.symbol.localeCompare(b.symbol)).slice(0,3);
+    return ranked[0]?.score>=.66?ranked:null;
+  }
+  async function analyzeWavChords(file,session,core){
+    if(!file||file.size>32*1024*1024)throw Error('32 MB以内のPCM WAVを指定してください。');
+    const range=selectedRange(session,core),data=session.midiData,midiSignature=JSON.stringify(data);
+    if(range.endMeasure-range.startMeasure>=64)throw Error('chord-analysis-limit-64-bars');
+    const playback=root.MusicStudioPlayback;
+    const seconds=tick=>playback.tickDurationSeconds(0,tick,data.ppq,data.tempoMap,data.tempo);
+    const spans=Array.from({length:range.endMeasure-range.startMeasure+1},(_,i)=>{
+      const measure=range.startMeasure+i;
+      const span=core.measureRangeToTicks({startMeasure:measure,endMeasure:measure},data);
+      return {measure,startTick:span.startTick,endTick:span.endTick};
+    });
+    const endTime=seconds(range.endTick);
+    if(endTime>120)throw Error('WAVコード解析は曲の開始から120秒までです。');
+    let rate,channels,offset=0;
+    for await(const chunk of root.MusicStudio.pcmDecodeWavStream(file)){
+      if(!rate){rate=chunk.sampleRate;channels=Array.from({length:chunk.channels.length},()=>new Float32Array(Math.min(Math.ceil(endTime*rate),Math.floor(file.size/(2*chunk.channels.length)))));}
+      const count=Math.min(chunk.channels[0].length,channels[0].length-offset);
+      chunk.channels.forEach((channel,i)=>channels[i].set(channel.slice(0,count),offset));
+      offset+=count;
+      if(offset>=channels[0].length)break;
+    }
+    if(!offset)throw Error('WAVに音声がありません。');
+    const vocabulary=FLAT_NAMES.flatMap(name=>['','m','7','m7','maj7','dim','sus4','add9','madd9','9','m9','maj9','7b9','7#11','13'].map(q=>ensembleChords(name+q)[0]));
+    const method='wav-pitch-class-v1';
+    const rows=[];
+    for(const span of spans){
+      const startSeconds=seconds(span.startTick),endSeconds=seconds(span.endTick),segments=[],votes=new Map();
+      const windows=Math.max(1,Math.ceil((endSeconds-startSeconds)/.40));
+      for(let i=0;i<windows;i++){
+        const from=startSeconds+(endSeconds-startSeconds)*i/windows,to=startSeconds+(endSeconds-startSeconds)*(i+1)/windows;
+        const candidates=audioChordFrame(channels,Math.round(from*rate),Math.min(offset,Math.round(to*rate)),rate,vocabulary);
+        const symbol=candidates?.[0].symbol??null;
+        if(symbol){
+          const prev=votes.get(symbol);
+          votes.set(symbol,{count:(prev?.count||0)+1,candidates});
+        }
+        if(segments.at(-1)?.symbol===symbol)segments.at(-1).endSeconds=to;
+        else segments.push({startSeconds:from,endSeconds:to,symbol});
+      }
+      const best=[...votes.values()].sort((a,b)=>b.count-a.count||b.candidates[0].score-a.candidates[0].score)[0];
+      const candidates=best?.candidates??[],winner=candidates[0],margin=winner?winner.score-candidates[1].score:0;
+      rows.push({...span,symbol:winner?.symbol??null,root:winner?.root??null,confidence:winner?'medium':'unknown',score:winner?.score??0,margin,candidates,segments,method});
+      await new Promise(resolve=>root.setTimeout(resolve,0));
+    }
+    return {method,range,midiSignature,rows};
   }
   const CHORD_INTERVALS={
     '':[0,4,7],m:[0,3,7],dim:[0,3,6],aug:[0,4,8],sus2:[0,2,7],sus4:[0,5,7],
@@ -778,5 +866,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,harmonyFollowPlan,MELODY_SECTIONS:Object.freeze(MELODY_SECTIONS),melodySection,secondsRange,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,analyzeWavChords,harmonyFollowPlan,MELODY_SECTIONS:Object.freeze(MELODY_SECTIONS),melodySection,secondsRange,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);
