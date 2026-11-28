@@ -1,11 +1,52 @@
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn}=require('node:child_process'),{chromium}=require('playwright');
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn}=require('node:child_process'),{chromium}=require('playwright');
 const base='http://127.0.0.1:8768',packageApp=process.env.NOVA_PACKAGE_APP;
 const host=spawn(packageApp?path.join(fs.realpathSync(packageApp),'Contents/Helpers/MusicStudioEngine'):(process.env.PYTHON||'python'),packageApp?['--port','8768']:['tools/music-local-generation/serve.py','--port','8768','--weights',process.env.NOVA_MODEL_WEIGHTS,'--sinsy',process.env.NOVA_SINSY,'--dictionary',process.env.NOVA_SINSY_DICTIONARY,'--voice',process.env.NOVA_SINSY_VOICE],{stdio:['ignore','pipe','pipe']});
 let hostFailure;host.once('error',error=>{hostFailure=error});host.stdout.on('data',data=>process.stdout.write(data));host.stderr.on('data',data=>process.stderr.write(data));
 (async()=>{let browser;try{const deadline=Date.now()+240000;while(true){if(hostFailure)throw hostFailure;if(host.exitCode!==null||host.signalCode!==null)throw Error('host exited before readiness');try{if((await fetch(base+'/__nova_generation/status',{signal:AbortSignal.timeout(1000)})).ok)break}catch{}if(Date.now()>deadline)throw Error('host readiness timeout');await new Promise(resolve=>setTimeout(resolve,200));}browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});const report=[];
 for(const width of [1440,820,390,1180]){const page=await browser.newPage({viewport:{width,height:820}}),messages=[],external=[];page.on('console',m=>{if(['error','warning'].includes(m.type()))messages.push(m.text())});page.on('pageerror',e=>messages.push(e.message));await page.route('**/*',r=>{if(r.request().url().startsWith(base+'/')||/^(blob:|data:)/.test(r.request().url()))return r.continue();external.push(r.request().url());return r.abort()});await page.goto(base+'/music-studio.html');await page.waitForFunction(()=>MusicStudio.state.loaded);
 const result=await page.evaluate(async()=>{const a=MusicStudio,core=MusicStudioEditor,repo=a.indexedDbRepository();a.setRepository(repo);const p=a.makeProject({projectId:'real-model-browser',projectName:'Real model',key:'Dm',bpm:90,midiData:{ppq:480,tempo:90,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:4}},tracks:[{id:'melody',part:'melody',notes:[{id:'original',pitch:60,startTick:480,durationTicks:480,velocity:80}]},{id:'bass',part:'bass',notes:[]},{id:'drums',part:'drums',notes:[]}]}});await repo.put(p);a.state.projects=[p];a.openMidiEditor(p.projectId);await new Promise((resolve,reject)=>{const start=Date.now();function poll(){if(a.state.midiEditor?.projectId===p.projectId)return resolve();if(Date.now()-start>10000)return reject(Error('MIDI route not ready'));setTimeout(poll,20)}poll()});MusicStudioAIAssistantPanel.setTab(p.projectId,'candidates');document.querySelector('#aiRemakeMode').value='revise';document.querySelector('#aiRemakeAmount').value='100';document.querySelector('#aiModelStyle').value='gentle';document.querySelector('#aiModelRange').value='57:77';document.querySelector('#aiModelMood').value='優しい';document.querySelector('#aiModelGenre').value='ballad';const harmonyBefore=JSON.stringify(a.state.midiEditor.midiData);MusicStudioAIAssistantPanel.analyzeHarmony(p.projectId);const harmonicReview=MusicStudioAIAssistantPanel._states.get(p.projectId).harmonyAnalysis;if(!harmonicReview||harmonicReview.rows.length!==4||harmonicReview.rows.some(row=>row.symbol!==null))throw Error('ambiguous melody was confirmed');['Dm','Gm','A7','Dm'].forEach((symbol,i)=>document.querySelector('#aiHarmony'+i).value=symbol);MusicStudioAIAssistantPanel.useHarmony(p.projectId);MusicStudioAIAssistantPanel.confirmApprovedChange(p.projectId);if(document.querySelector('#aiModelChords').value!=='Dm Gm A7 Dm'||JSON.stringify(a.state.midiEditor.midiData)!==harmonyBefore)throw Error('harmonic confirmation mismatch');document.querySelector('#aiRemakeMode').value='revise';document.querySelector('#aiRemakeAmount').value='100';document.querySelector('#aiModelStyle').value='gentle';document.querySelector('#aiModelRange').value='57:77';document.querySelector('#aiModelMood').value='優しい';document.querySelector('#aiModelGenre').value='ballad';await MusicStudioAIAssistantPanel.generateLocalModel(p.projectId);const r=MusicStudioAIAssistantPanel._states.get(p.projectId),set=r.state.workspace.candidateSets.at(-1);if(!set||set.candidates.length!==3)throw Error(r.message);if(!set.candidates.every(c=>c.value.importedMidi.notes.every(n=>n.pitch>=57&&n.pitch<=77&&([[2,5,9],[7,10,2],[9,1,4,7],[2,5,9]][Math.floor(n.startTick/1920)%4]).includes(n.pitch%12))))throw Error('key/range mismatch');if(!set.candidates.every(c=>c.value.remake?.mode==='revise'))throw Error('missing source binding');const original=JSON.stringify(a.state.midiEditor.midiData);const bridge=MusicStudioAICandidatePreview,bundle=bridge.createPreview(a.state.midiEditor,core,set.candidates[0],{project:p});const audition=bridge.auditionPlan(a.state.midiEditor,core,bundle);const heard=await a.editorAuditionCandidate(audition);if(!heard.ok)throw Error('remake audition failed');a.editorStopCandidateAudition();bridge.applyPreview(a.state.midiEditor,core,bundle,{startMeasure:1,endMeasure:1});core.undo(a.state.midiEditor);if(JSON.stringify(a.state.midiEditor.midiData)!==original)throw Error('remake undo mismatch');core.redo(a.state.midiEditor);const baseline=JSON.stringify(a.state.midiEditor.midiData),instrument=MusicStudioAIComposition.remakeNewTrack(a.state.midiEditor,'strings'),layerValue=MusicStudioAIComposition.bindRemake(set.candidates[1].value,MusicStudioAIComposition.remakeSource(a.state.midiEditor,core),'layer',100,instrument.id,instrument),layer=bridge.createPreview(a.state.midiEditor,core,{candidateId:'B',value:layerValue},{project:p});if(JSON.stringify(a.state.midiEditor.midiData)!==baseline)throw Error('track created before adoption');const layered=await a.editorAuditionCandidate(bridge.auditionPlan(a.state.midiEditor,core,layer,{startMeasure:1,endMeasure:2}));if(!layered.ok)throw Error('new instrument audition failed');a.editorStopCandidateAudition();bridge.applyPreview(a.state.midiEditor,core,layer,{startMeasure:1,endMeasure:2});const added=a.state.midiEditor.midiData.tracks.at(-1);if(added.id!==instrument.id||!added.notes.length||added.program!==48||JSON.stringify(a.state.midiEditor.midiData.tracks.slice(0,-1))!==JSON.stringify(JSON.parse(baseline).tracks))throw Error('new instrument adoption mismatch');core.undo(a.state.midiEditor);if(JSON.stringify(a.state.midiEditor.midiData)!==baseline)throw Error('new instrument undo mismatch');core.redo(a.state.midiEditor);core.selectTrackById(a.state.midiEditor,'melody');const ensembleBaseline=JSON.stringify(a.state.midiEditor.midiData),ensembleValue=MusicStudioAIComposition.bindEnsemble(set.candidates[2].value,MusicStudioAIComposition.remakeSource(a.state.midiEditor,core),'Dm Gm A7 Dm'),ensemble=bridge.createPreview(a.state.midiEditor,core,{candidateId:'C',value:ensembleValue},{project:p});const ensembleHeard=await a.editorAuditionCandidate(bridge.auditionPlan(a.state.midiEditor,core,ensemble,{startMeasure:1,endMeasure:2}));if(!ensembleHeard.ok)throw Error('ensemble audition');a.editorStopCandidateAudition();bridge.applyPreview(a.state.midiEditor,core,ensemble,{startMeasure:1,endMeasure:2});const ensembleAdded=a.state.midiEditor.midiData.tracks.slice(JSON.parse(ensembleBaseline).tracks.length);if(ensembleAdded.length!==4||!ensembleAdded.every(t=>t.notes.length)||ensembleAdded.at(-1).channel!==10||JSON.stringify(a.state.midiEditor.midiData.tracks.slice(0,-4))!==JSON.stringify(JSON.parse(ensembleBaseline).tracks))throw Error('ensemble adoption mismatch');for(const t of ensembleAdded.filter(t=>t.roleAssignment!=='drums'))for(const n of t.notes){const pcs=n.startTick<1920?[2,5,9]:[7,10,2];if(!pcs.includes(n.pitch%12)||(t.roleAssignment==='bass'&&n.pitch%12!==(n.startTick<1920?2:7)))throw Error('chord ensemble mismatch');}core.undo(a.state.midiEditor);if(JSON.stringify(a.state.midiEditor.midiData)!==ensembleBaseline)throw Error('ensemble undo');core.redo(a.state.midiEditor);const sectionBefore=JSON.stringify(a.state.midiEditor.midiData);MusicStudioAIAssistantPanel.setTab(p.projectId,'candidates');document.querySelector('#aiSectionName').value='chorus';document.querySelector('#aiSectionDensity').value='rich';for(const role of ['piano','bass','strings','drums'])document.querySelector('#aiSection'+role).checked=role==='strings';document.querySelector('#aiSectionTargetstrings').value=instrument.id;MusicStudioAIAssistantPanel.saveSectionArrangement(p.projectId);MusicStudioAIAssistantPanel.confirmApprovedChange(p.projectId);const sectionSetting=r.state.workspace.sectionArrangements?.at(-1);if(sectionSetting?.targets.strings!==instrument.id)throw Error('section settings missing');const replacementValue=MusicStudioAIComposition.bindEnsemble(set.candidates[2].value,MusicStudioAIComposition.remakeSource(a.state.midiEditor,core),'Dm Gm A7 Dm',sectionSetting),replacement=bridge.createPreview(a.state.midiEditor,core,{candidateId:'C',value:replacementValue},{project:p});if(!(await a.editorAuditionCandidate(bridge.auditionPlan(a.state.midiEditor,core,replacement,{startMeasure:1,endMeasure:2}))).ok)throw Error('section replacement audition');a.editorStopCandidateAudition();bridge.applyPreview(a.state.midiEditor,core,replacement,{startMeasure:1,endMeasure:2});if(a.state.midiEditor.midiData.tracks.length!==JSON.parse(sectionBefore).tracks.length)throw Error('replacement added tracks');for(const track of JSON.parse(sectionBefore).tracks)if(track.id!==instrument.id&&JSON.stringify(core.getTrackById(a.state.midiEditor.midiData.tracks,track.id))!==JSON.stringify(track))throw Error('replacement touched another track');const replaced=JSON.stringify(a.state.midiEditor.midiData);core.undo(a.state.midiEditor);if(JSON.stringify(a.state.midiEditor.midiData)!==sectionBefore)throw Error('replacement undo');core.redo(a.state.midiEditor);if(JSON.stringify(a.state.midiEditor.midiData)!==replaced)throw Error('replacement redo');const saved=await a.saveMidiEditor({silent:true});if(!saved.ok)throw Error('MIDI save');a.openWorkAction('export',p.projectId);await new Promise(resolve=>setTimeout(resolve,100));const audio=await a.midiRenderForMix(p.projectId);if(!audio.ok)throw Error(audio.error);const asset=audio.project.longWavAssets.find(x=>x.id===audio.assetId),sourceBytes=new Uint8Array(await(await a.pcmLoadLongWav(p.projectId,asset.id)).arrayBuffer()),midi=JSON.stringify(audio.project.midiData);const output=await a.finalPreview(p.projectId,{format:'nova-final-export-plan-v1',routes:[{key:'wav:'+asset.id,role:'instrument',startSeconds:0,gainDb:0,muted:false}],targetLufs:-18,ceilingDb:-1,includeMidi:true});if(!output.ok)throw Error(output.error);if(!(await a.finalSave(p.projectId)).ok)throw Error('remake final save');const recovered=await a.restoreLongWavArchive(await a.createLongWavArchive());if(!recovered.ok)throw Error(recovered.error);const copy=recovered.projects.find(x=>x.projectId!==p.projectId),bytes=new Uint8Array(await(await a.pcmLoadLongWav(copy.projectId,copy.longWavAssets[0].id)).arrayBuffer());if(copy.aiWorkspace.harmonyReview.chords!=='Dm Gm A7 Dm'||copy.aiWorkspace.sectionArrangements.at(-1).targets.strings!==instrument.id)throw Error('harmony/section archive metadata');if(JSON.stringify(copy.midiData)!==midi||bytes.length!==sourceBytes.length||!bytes.every((v,i)=>v===sourceBytes[i]))throw Error('remake export recovery mismatch');return{notes:set.candidates.map(c=>c.value.importedMidi.notes.length),remakeRendered:true,sectionReplacement:true,harmonyPersisted:true,ensembleTracks:ensembleAdded.map(t=>({role:t.roleAssignment,notes:t.notes.length})),newInstrumentTrack:true,newInstrumentNotes:added.notes.length,finalFiles:output.candidate.files.map(f=>f.name),archiveAudioBytesEqual:true}});assert.ok(result.notes.every(n=>n>0));
-if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
+if(width===1180){
+ const profile=fs.mkdtempSync(path.join(os.tmpdir(),'nova-seconds-'));
+ let context,requests=0;
+ async function openSecondsProject(){
+   context=await chromium.launchPersistentContext(profile,{headless:true,viewport:{width,height:820},...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});
+   const target=context.pages()[0];
+   await target.route('**/*',r=>{
+     const url=r.request().url();
+     if(url===base+'/__nova_generation/compose')requests++;
+     if(url.startsWith(base+'/')||/^(blob:|data:)/.test(url))return r.continue();
+     external.push(url);return r.abort();
+   });
+   await target.goto(base+'/music-studio.html');
+   await target.waitForFunction(()=>MusicStudio.state.loaded);
+   return target;
+ }
+ try{
+ const exactPage=await openSecondsProject();
+ const locked=await exactPage.evaluate(async()=>{
+   const a=MusicStudio,core=MusicStudioEditor,panel=MusicStudioAIAssistantPanel,id='seconds-lock';
+   const p=a.makeProject({projectId:id,projectName:'Empty locked range',midiData:{ppq:480,tempo:120,tracks:[{id:'melody',part:'melody',notes:[]}]}});
+   await a.indexedDbRepository().put(p);
+   a.state.projects=[p];a.openMidiEditor(id);
+   const ready=Date.now()+10000;
+   while(a.state.midiEditor?.projectId!==id&&Date.now()<ready)await new Promise(resolve=>setTimeout(resolve,20));
+   const session=a.state.midiEditor;
+   if(session?.projectId!==id)throw Error('locked editor not open');
+   MusicStudioMeasureLocks.addRangeLock(session,core,{trackId:'melody',startTick:240,endTick:360});
+   const before=JSON.stringify(session.midiData);
+   panel.setTab(id,'candidates');
+   document.querySelector('#aiRemakeMode').value='replace';
+   document.querySelector('#aiReplaceStartSeconds').value='0.125';
+   document.querySelector('#aiReplaceEndSeconds').value='0.75';
+   await panel.generateLocalModel(id);
+   const record=panel._states.get(id);
+   const refused=record.message.includes('固定区間')&&!record.state.workspace.candidateSets.length&&before===JSON.stringify(session.midiData);
+   a.state.midiEditor=null;
+   return refused;
+ });
+ assert.equal(locked,true);
+ assert.equal(requests,0,'protected empty range must block inference');
+ const secondsResult=await exactPage.evaluate(async()=>{
  const app=MusicStudio,core=MusicStudioEditor,panel=MusicStudioAIAssistantPanel,repo=app.indexedDbRepository();
  const prior=[...app.state.projects],projectId='section-melody-browser';
  const notes=(part,pitches,length)=>Array.from({length:32},(_,bar)=>({
@@ -28,13 +69,16 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  panel.setTab(projectId,'candidates');
  document.querySelector('#aiRemakeMode').value='replace';
  document.querySelector('#aiModelChords').value='';
+ // 96 BPM and 480 PPQ. These endpoints are both inside a measure.
+ document.querySelector('#aiReplaceStartSeconds').value='40.15625';
+ document.querySelector('#aiReplaceEndSeconds').value='59.84375';
  await panel.generateLocalModel(projectId);
  const record=panel._states.get(projectId),set=record.state.workspace.candidateSets.at(-1);
  if(set?.candidates.length!==3||set.candidates.some(c=>c.value.remake?.mode!=='replace'||c.value.key!=='G'))throw Error(record.message);
  for(const {value} of set.candidates){
    const windows=value.replacementHarmony?.windows;
-   if(windows?.length!==2||windows[0].key!=='G'||windows[1].key!=='Bb'||windows[1].startTick!==480)throw Error('modulation windows');
-   if(!value.importedMidi.notes.every(note=>windows[note.startTick<480?0:1].pitchClasses.includes(note.pitch%12)))throw Error('modulation pitch class');
+   if(windows?.length!==2||windows[0].key!=='G'||windows[1].key!=='Bb'||windows[1].startTick!==360)throw Error('modulation windows');
+   if(!value.importedMidi.notes.every(note=>windows[note.startTick<360?0:1].pitchClasses.includes(note.pitch%12)))throw Error('modulation pitch class');
  }
  panel.previewCandidate(projectId,'A');
  for(const source of ['original','candidate']){
@@ -46,7 +90,12 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  if(record.approval?.kind!=='candidate'||JSON.stringify(session.midiData)!==before)throw Error('approval boundary');
  panel.confirmApprovedChange(projectId);
  const after=JSON.stringify(session.midiData),old=JSON.parse(before),tracks=session.midiData.tracks;
- const outside=note=>note.startTick<16*1920||note.startTick>=24*1920;
+ const cutStart=16*1920+120,cutEnd=24*1920-120;
+ if(set.candidates.some(c=>c.value.range.startTick!==cutStart||c.value.range.endTick!==cutEnd||c.value.range.unit!=='ticks'))throw Error('seconds range rounded to measures');
+ const outside=note=>note.startTick<cutStart||note.startTick>=cutEnd;
+ const originalNotes=new Set(old.tracks[0].notes.map(n=>n.id));
+ const generated=tracks[0].notes.filter(n=>!originalNotes.has(n.id));
+ if(!generated.length||generated.some(note=>outside(note)||note.startTick+note.durationTicks>cutEnd))throw Error('seconds replacement crossed the operation boundary');
  if(after===before||JSON.stringify(tracks[0].notes.filter(outside))!==JSON.stringify(old.tracks[0].notes.filter(outside))
    ||JSON.stringify(tracks.slice(1))!==JSON.stringify(old.tracks.slice(1)))throw Error('section scope');
  core.undo(session);
@@ -93,8 +142,23 @@ if(width===1180)result.sectionMelody=await page.evaluate(async()=>{
  core.undo(session);
  if(JSON.stringify(session.midiData)!==ensembleBefore)throw Error('ensemble undo');
  app.state.projects=prior;app.state.midiEditor=null;
- return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,modulation:true,ensembleDestinationTracks:2,approval:true,undoRedo:true,indexedDB:true};
-});
+ return{bars:32,bpm:96,replacedBars:8,variants:3,compared:true,modulation:true,ensembleDestinationTracks:2,approval:true,undoRedo:true,indexedDB:true,cutStart,cutEnd,after};
+ });
+ await context.close();
+ const reopened=await openSecondsProject();
+ const same=await reopened.evaluate(async expected=>{
+   const a=MusicStudio,p=await a.indexedDbRepository().get('section-melody-browser');
+   const range=p?.aiWorkspace?.candidateSets?.find(s=>s.candidates.some(c=>c.value.range.unit==='ticks'))?.candidates[0].value.range;
+   return JSON.stringify(p?.midiData)===expected.after&&range?.startTick===expected.cutStart&&range.endTick===expected.cutEnd;
+ },secondsResult);
+ assert.equal(same,true,'exact seconds adoption and candidate range survive Chromium restart');
+ const {after,...seconds}=secondsResult;
+ result.sectionMelody={...seconds,emptyRangeLock:true,realRestart:true};
+ } finally {
+   await context?.close();
+   fs.rmSync(profile,{recursive:true,force:true});
+ }
+}
 const whole=await page.evaluate(async()=>{
  const a=MusicStudio,core=MusicStudioEditor,panel=MusicStudioAIAssistantPanel,bridge=MusicStudioAICandidatePreview,prior=[...a.state.projects],repo=a.indexedDbRepository();
  const p=a.makeProject({projectId:'whole-song-browser',projectName:'Whole song',key:'C',bpm:90,midiData:{ppq:480,tempo:90,timeSignature:{numerator:4,denominator:4},editor:{measureCount:4,editRange:{startMeasure:1,endMeasure:2}},tracks:[{id:'melody',part:'melody',notes:[0,1,2,3].map(i=>({id:'whole-source-'+i,pitch:60+i*2,startTick:i*1920,durationTicks:480,velocity:80}))},{id:'bass',part:'bass',notes:[]},{id:'drums',part:'drums',notes:[]}]}});

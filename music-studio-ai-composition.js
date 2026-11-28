@@ -34,8 +34,8 @@
     }
     return{startMeasure:integer(range.startMeasure,1,10000,1),endMeasure:integer(range.endMeasure,1,10000,4),startTick:0,endTick:0};
   }
-  function createContext(project,session,core){
-    const range=selectedRange(session,core),events=Array.isArray(session?.midiData?.keySignatureMap)?session.midiData.keySignatureMap:[];
+  function createContext(project,session,core,range=selectedRange(session,core)){
+    const events=Array.isArray(session?.midiData?.keySignatureMap)?session.midiData.keySignatureMap:[];
     const active=[...events].filter(item=>Number.isFinite(item?.tick)&&item.tick<=range.startTick).sort((a,b)=>a.tick-b.tick).at(-1);
     const fromEvent=keyFromEvent(active),projectKey=project?.musicalSettings?.key||project?.key||project?.songKey||null,parsed=parseKey(fromEvent||projectKey||'C');
     const tracks=session?.midiData?.tracks||[],roles=[...new Set(tracks.map(track=>core?.resolveCoreTrackRole?.(track)||track.roleAssignment||track.part||null).filter(Boolean))];
@@ -361,15 +361,29 @@
   }
   // Immutable source binding: all notes and metadata remain in the project;
   // only a bounded phrase is sent to the offline model.
+  function secondsRange(session,core,startText,endText){
+    const start=Number(startText),end=Number(endText),data=session.midiData;
+    if(!startText.trim()||!endText.trim()||!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start)
+      throw Error('開始秒と終了秒を正しい順序で指定してください。');
+    const playback=root.MusicStudioPlayback;
+    const at=seconds=>playback.tickAtSeconds(0,seconds,data.ppq,data.tempoMap,data.tempo);
+    const startTick=Math.round(at(start)),endTick=Math.round(at(end));
+    const limit=core.measureRangeToTicks({startMeasure:1,endMeasure:data.editor.measureCount},data).endTick;
+    if(startTick>=endTick||endTick>limit)throw Error('秒範囲を曲の範囲内に指定してください。');
+    const meter=root.MusicStudioMeterMap;
+    return {startMeasure:meter.positionAtTick(data,startTick).measure,endMeasure:meter.positionAtTick(data,endTick-1).measure,startTick,endTick,unit:'ticks'};
+  }
   function remakeSource(session,core,options={}){
     const track=core.getTrackById(session.midiData.tracks,core.currentTrackId(session));
     if(!track||((core.resolveCoreTrackRole(track)==='drums'||core.resolveTrackCapabilities?.(track)?.supportsDrumLabels)&&options.operation!=='delete'))throw Error('remake-melodic-track-required');
-    const range=selectedRange(session,core),notes=track.notes.filter(n=>n.startTick>=range.startTick&&n.startTick<range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
+    const range=options.range||selectedRange(session,core),notes=track.notes.filter(n=>n.startTick>=range.startTick&&n.startTick<range.endTick).sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch);
     if((!notes.length&&!['replace','ensemble'].includes(options.operation))||notes.length>(options.operation==='delete'?4096:256))throw Error(options.operation==='delete'?'削除候補は選択範囲の1〜4096音です。範囲を狭めてください。':'Remakeは選択範囲の1〜256音です。範囲を狭めてください。');
     if(options.operation!=='ensemble'&&notes.some(n=>n.startTick+n.durationTicks>range.endTick))throw Error('remake-source-crosses-range');
     if(options.operation==='replace'){
       const request=core.createPartialEditRequest(session,{trackId:track.id,range});
-      if(request.lockedNoteIds.length)throw Error('固定音符を含む範囲は差し替えできません。');
+      const lockedRange=session.coordinatedTimeline&&root.MusicStudioMeasureLocks.isProtected(
+        session.midiData,core,track.id,{startTick:range.startTick,durationTicks:range.endTick-range.startTick});
+      if(request.lockedNoteIds.length||lockedRange)throw Error('固定音符・固定区間を含む範囲は差し替えできません。');
     }
     const promptNotes=options.operation==='ensemble'
       ?notes.map(note=>({...note,durationTicks:Math.min(note.durationTicks,range.endTick-note.startTick)}))
@@ -417,7 +431,7 @@
     const symbols=chords.split(/[\s,|→]+/).filter(Boolean);
     if(chords.length>256||symbols.length>32)throw Error('invalid-replacement-chords');
     const progression=symbols.flatMap(ensembleChords);
-    const context=createContext(project,session,core);
+    const context=createContext(project,session,core,range);
     const points=new Map([[0,{key:context.source==='default-local'?null:context.key,chord:null}]]);
     for(const event of session.midiData.keySignatureMap||[]){
       const key=keyFromEvent(event);
@@ -425,7 +439,7 @@
     }
     if(progression.length){
       for(let bar=range.startMeasure;bar<=range.endMeasure;bar++){
-        const tick=core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData).startTick-range.startTick;
+        const tick=Math.max(0,core.measureRangeToTicks({startMeasure:bar,endMeasure:bar},session.midiData).startTick-range.startTick);
         points.set(tick,{...points.get(tick),chord:progression[(bar-range.startMeasure)%progression.length]});
       }
     }
@@ -713,5 +727,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,secondsRange,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

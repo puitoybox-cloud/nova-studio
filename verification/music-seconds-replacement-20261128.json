@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-28 JST",
+  "baselineHead": "fdf0847ce478c801fe92dc9dbdb5eb66bee933b4",
+  "chromiumWidth": 1180,
+  "engine": "SkyTNT locked ONNX CPU model",
+  "passed": 2,
+  "failed": 0,
+  "acceptedCases": [
+    "seconds replacement crossed the operation boundary",
+    "protected empty range must block inference"
+  ],
+  "sourceHashes": {
+    "scripts/music-local-real-browser.js": "aa7f5b3c764349ede34b3367b3aaed45cd23a979da5b1dc6aaaca5a6f18abf4d"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "33e9197ec4d0801b3366538378201e936d682314a87731798cda4b38335f43d1",
+    "app.js": "d1c706a340725602524cbf4e84da5c8f5f70ee32208c0636faebe9aeffde789d",
+    "music-studio-editor.js": "503b92be2b94f3bdd3e68e1f32ceee65565f99568806eba15cf5602714a29355",
+    "music-studio-ai-composition.js": "e1436d962af0223c584578a80b31ba95b1f374f9709cf0acfc324fa4a23ded21",
+    "music-studio-ai-candidate-preview.js": "5c9f09a45a5e0957b734efaca7281cb10035ab4601d97462ab922555bd0ff802",
+    "music-studio-ai-assistant-panel.js": "54048f5f736bd0bd8bfefdeaa58aaccbeb948becda82686ce2fd7408e11fc0b1",
+    "music-studio-measure-locks.js": "dcf6f40ee6466bf4555d58d3f22bd0e96152b7d847e09ea2deff967c2c19de28",
+    "music-studio-playback.js": "5fd2a8951a58117bffcf425ca4ad2638f55a2c10ae87d109632bf3111d4d645e",
+    "tools/music-local-generation/model-lock.json": "db3e026ef0857d0284e1544a152d680e1f98d691e7e4f6fc21d917ebae4174c6"
+  },
+  "observed": {
+    "bars": 32,
+    "bpm": 96,
+    "replacedBars": 8,
+    "variants": 3,
+    "compared": true,
+    "modulation": true,
+    "ensembleDestinationTracks": 2,
+    "approval": true,
+    "undoRedo": true,
+    "indexedDB": true,
+    "cutStart": 30840,
+    "cutEnd": 45960,
+    "emptyRangeLock": true,
+    "realRestart": true
+  }
+}
