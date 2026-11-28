@@ -651,7 +651,7 @@
     const rows=[];
     for(const span of spans){
       const startSeconds=seconds(span.startTick),endSeconds=seconds(span.endTick),segments=[],votes=new Map();
-      const windows=Math.max(1,Math.ceil((endSeconds-startSeconds)/.40));
+      const windows=Math.max(1,Math.ceil((endSeconds-startSeconds)/.25));
       for(let i=0;i<windows;i++){
         const from=startSeconds+(endSeconds-startSeconds)*i/windows,to=startSeconds+(endSeconds-startSeconds)*(i+1)/windows;
         const candidates=audioChordFrame(channels,Math.round(from*rate),Math.min(offset,Math.round(to*rate)),rate,vocabulary);

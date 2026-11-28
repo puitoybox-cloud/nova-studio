@@ -11,7 +11,7 @@ const root=path.resolve(__dirname,'..'),server=http.createServer((req,res)=>{con
     const open=async selector=>{const el=page.locator(selector);if(await el.getAttribute('open')===null)await el.locator(':scope > summary').click()};
     await open('.music-ai-focus');await page.getByText('MIDI output（生成済み候補を読み込む）',{exact:true}).click();
     const events=[120,144,60,90,120,128,60,0,120,144,64,80,120,128,64,0,0,255,47,0],buffer=Buffer.from([77,84,104,100,0,0,0,6,0,0,0,1,0,240,77,84,114,107,0,0,0,events.length,...events]);
-    await page.locator('.music-ai-panel input[type=file]').setInputFiles([{name:'A.mid',mimeType:'audio/midi',buffer},{name:'B.mid',mimeType:'audio/midi',buffer},{name:'C.mid',mimeType:'audio/midi',buffer}]);
+    await page.locator('.music-ai-panel input[type=file][accept*=".mid"]').setInputFiles([{name:'A.mid',mimeType:'audio/midi',buffer},{name:'B.mid',mimeType:'audio/midi',buffer},{name:'C.mid',mimeType:'audio/midi',buffer}]);
     await page.waitForFunction(()=>MusicStudioAIAssistantPanel._states.get('import-browser').state.workspace.candidateSets.at(-1)?.candidates.length===3);
     await page.fill('#aiFromA','1');await page.fill('#aiToA','1');
     const original=await page.evaluate(()=>JSON.stringify(MusicStudio.state.midiEditor));

@@ -4,7 +4,7 @@
 
 30機能の初版受入台帳。verifiedは記載した狭い自動受入だけ。openは未実装と証拠未照合を含む。全体実装量の割合ではない。追加要件発見時はIDを追記し分母変更を履歴化する。旧マスターのA完成等級とは別分類。
 
-A：総数 **135**、証拠付き完了 **90**、残数 **45**、受入確認率 **66.67%**。B：30。C：18。
+A：総数 **135**、証拠付き完了 **91**、残数 **44**、受入確認率 **67.41%**。B：30。C：18。
 
 この数字は初版台帳の受入確認率であり、製品の実装量・30機能の最終完成率ではない。既存コードにあるが全受入を照合していない項目もopenに残す。C依存の実装作業はAから除外せずdependsOnで保持する。B/Cを完了に読み替えない。追加発見時は既存IDを変えず追記し、分母の変更理由を記録する。
 
@@ -24,7 +24,7 @@ A：総数 **135**、証拠付き完了 **90**、残数 **45**、受入確認率
 | 8 | 5 | 2 | 3 | 1 | 1 |
 | 9 | 4 | 4 | 0 | 1 | 1 |
 | 10 | 8 | 3 | 5 | 1 | 1 |
-| 11 | 3 | 1 | 2 | 1 | 1 |
+| 11 | 3 | 2 | 1 | 1 | 1 |
 | 12 | 4 | 4 | 0 | 1 | 0 |
 | 13 | 4 | 4 | 0 | 1 | 0 |
 | 14 | 5 | 4 | 1 | 1 | 1 |
@@ -115,7 +115,7 @@ A：総数 **135**、証拠付き完了 **90**、残数 **45**、受入確認率
 | MS10-C01 | C | 歌詞生成モデル・読みアクセント方式 | open | 未確認 |
 | MS11-A01 | A | WAV preflight reports measured duration and silence without writing audio or project | verified | [tests/music-studio-score-vocal-return.test.js](../../tests/music-studio-score-vocal-return.test.js) — `WAV preflight reports measured duration and silence without writing audio or project` |
 | MS11-A02 | A | 試聴中の日本語部分修正 | open | MS11-C01 |
-| MS11-A03 | A | メロディ歌詞変更後の仮歌再生成と非破壊保存 | open | MS11-C01 |
+| MS11-A03 | A | メロディ歌詞変更後の仮歌再生成と非破壊保存 | verified | [scripts/music-vocal-regeneration-browser.cjs](../../scripts/music-vocal-regeneration-browser.cjs) — `edited Japanese vocal and untouched original survive Chromium restart and Archive restore` |
 | MS11-B01 | B | 日本語仮歌の聴感品質 | open | 未確認 |
 | MS11-C01 | C | 歌唱モデルの配布ライセンスと品質基準 | open | 未確認 |
 | MS12-A01 | A | selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes | verified | [tests/music-studio-vocal-recording.test.js](../../tests/music-studio-vocal-recording.test.js) — `selected take saves, reopens, edits, exports and full archive remaps identity without changing source bytes` |
@@ -235,7 +235,7 @@ A：総数 **135**、証拠付き完了 **90**、残数 **45**、受入確認率
 
 | 分類 | 開始時点 | 現在の未完了 |
 |---|---:|---:|
-| 実装が必要 | 34 | 13 |
+| 実装が必要 | 34 | 12 |
 | 実装済み・検証不足 | 23 | 2 |
 | 仕様判断待ち | 41 | 30 |
 
@@ -283,7 +283,7 @@ A：総数 **135**、証拠付き完了 **90**、残数 **45**、受入確認率
 | MS10-A07 | 仕様判断待ち | open |
 | MS10-A08 | 仕様判断待ち | verified |
 | MS11-A02 | 実装が必要 | open |
-| MS11-A03 | 実装が必要 | open |
+| MS11-A03 | 実装が必要 | verified |
 | MS12-A02 | 実装済み・検証不足 | verified |
 | MS12-A03 | 実装済み・検証不足 | verified |
 | MS12-A04 | 実装済み・検証不足 | verified |

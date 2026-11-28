@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-29 JST",
+  "baselineHead": "9c707fc4f2a718936c231d3e3e9f6a693181e71d",
+  "passed": 1,
+  "failed": 0,
+  "acceptedCases": [
+    "corrected WAV harmony survives Chromium restart"
+  ],
+  "sourceHashes": {
+    "scripts/music-wav-harmony-browser.cjs": "ce5f71d6c855beb34a1c3843ce60e1de0d4bace42cd92adc3a98590368a1503d"
+  },
+  "runtimeHashes": {
+    "music-studio.html": "bfb0032d3df73817523400f4fdc716607df65dbacbcdd082b7e68fcebb9f1150",
+    "music-studio.js": "a024f590c8bd9475aaa429c56be7d4977f0b5a4367d84cde4809225ca6c69d86",
+    "music-studio-playback.js": "5fd2a8951a58117bffcf425ca4ad2638f55a2c10ae87d109632bf3111d4d645e",
+    "music-studio-ai-composition.js": "bb793435a7ccacad83c9278acdf78fa2657524306e2ed3c2f82cafdd0a012e1a",
+    "music-studio-ai-assistant-panel.js": "0457821316dabbaee7a0f86e530a5feffdaf220d57812bf68c0e484db58cfed6",
+    "scripts/music-wav-harmony-fixture.py": "137cb175ae06499b70d8e8dcef07a3a74fedf6dbda8197637bc1be4c27b254e5"
+  },
+  "observed": {
+    "id": "wav-chord-fixture",
+    "symbols": [
+      "C",
+      "Am",
+      "G7",
+      null
+    ],
+    "segments": [
+      {
+        "startSeconds": 4,
+        "endSeconds": 5,
+        "symbol": "G7"
+      },
+      {
+        "startSeconds": 5,
+        "endSeconds": 6,
+        "symbol": "Cadd9/E"
+      }
+    ],
+    "accuracy": {
+      "correct": 700,
+      "expected": 800
+    },
+    "restart": true,
+    "external": 0
+  }
+}

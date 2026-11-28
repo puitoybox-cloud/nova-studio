@@ -17,6 +17,7 @@ on:
       - 'scripts/music-melody-sections-browser.cjs'
       - 'scripts/music-harmony-follow-browser.cjs'
       - 'scripts/music-wav-harmony-browser.cjs'
+      - 'scripts/music-vocal-regeneration-browser.cjs'
       - 'scripts/music-wav-harmony-fixture.py'
       - 'scripts/music-long-indexeddb-browser.js'
       - 'scripts/music-long-production-browser.js'
@@ -122,6 +123,21 @@ jobs:
           curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
             http://127.0.0.1:8779/music-studio.html -o /dev/null
           node scripts/music-wav-harmony-browser.cjs "$RUNNER_TEMP/music-wav-harmony.wav"
+      - name: Regenerate an edited Japanese vocal and restore original and adopted takes
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          assets="$RUNNER_TEMP/nova-generation-assets"
+          python tools/music-local-generation/serve.py --port 8790 \
+            --sinsy "$assets/runtime/bin/sinsy" --dictionary "$assets/runtime/dic" \
+            --voice "$assets/hts_voice_nitech_jp_song070_f001-0.90/nitech_jp_song070_f001.htsvoice" \
+            > "$RUNNER_TEMP/music-vocal-regeneration-host.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
+            http://127.0.0.1:8790/music-studio.html -o /dev/null
+          node scripts/music-vocal-regeneration-browser.cjs
       - name: Complete a Japanese song through Chromium and restore its audio
         env:
           NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
