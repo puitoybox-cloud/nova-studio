@@ -45,7 +45,8 @@
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97",
       "fb9a6d21341bd417d5b0252b51455512d925e5f8",
       "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
-      "86227181fce006dd370f62ad443636a5ffb4c80c"
+      "86227181fce006dd370f62ad443636a5ffb4c80c",
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -75,10 +76,14 @@
       "f76fbfc3d8aee9b5b5d1e13386029450f23d8e97"
     ],
     "music-studio-ai-assistant-panel.js": [
-      "26faf61600c2fcb0fd58b96edbbeeee7ce62e315"
+      "26faf61600c2fcb0fd58b96edbbeeee7ce62e315",
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
     ],
     "music-studio-ai-candidate-preview.js": "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
-    "music-studio-ai-composition.js": "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
+    "music-studio-ai-composition.js": [
+      "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
+    ],
     "tests/music-studio-whole-song.test.js": [
       "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
     ],
@@ -882,8 +887,14 @@
       "feature": 7,
       "category": "A",
       "requirement": "続きと2番の実生成",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-melody-sections-browser.cjs",
+          "acceptance": "'continuation',8,null],['verse2',4,2]",
+          "run": "verification/music-melody-sections-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS07-C01"
       ],
@@ -891,7 +902,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。続きと2番の実生成のproduction受入と、依存するC01の残件を照合する。",
+        "note": "実モデルで各2種類を3案生成し、参照旋律・コードに基づいた候補、比較試聴、承認、選択範囲外保持、Undo/Redo、Chromium完全終了後の採用MIDIと候補情報を照合。音楽品質聴取はMS07-B01に残る。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -903,8 +914,14 @@
       "feature": 7,
       "category": "A",
       "requirement": "ラスサビとIntroの実生成",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-melody-sections-browser.cjs",
+          "acceptance": "'final-chorus',6,3],['intro',1,2]",
+          "run": "verification/music-melody-sections-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS07-C01"
       ],
@@ -912,7 +929,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。ラスサビとIntroの実生成のproduction受入と、依存するC01の残件を照合する。",
+        "note": "実モデルで各2種類を3案生成し、参照旋律・コードに基づいた候補、比較試聴、承認、選択範囲外保持、Undo/Redo、Chromium完全終了後の採用MIDIと候補情報を照合。音楽品質聴取はMS07-B01に残る。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -924,8 +941,14 @@
       "feature": 7,
       "category": "A",
       "requirement": "InterludeとOutroの実生成",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-melody-sections-browser.cjs",
+          "acceptance": "'interlude',5,3],['outro',7,6]",
+          "run": "verification/music-melody-sections-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS07-C01"
       ],
@@ -933,7 +956,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。InterludeとOutroの実生成のproduction受入と、依存するC01の残件を照合する。",
+        "note": "実モデルで各2種類を3案生成し、参照旋律・コードに基づいた候補、比較試聴、承認、選択範囲外保持、Undo/Redo、Chromium完全終了後の採用MIDIと候補情報を照合。音楽品質聴取はMS07-B01に残る。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -4303,6 +4326,10 @@
     {
       "date": "2026-11-28 JST",
       "reason": "83/135 verified。MS07-A05とMS07-A06を実モデル・実Chromiumの範囲差し替え、無推論での固定区間拒否、再起動保持の証拠で受入。"
+    },
+    {
+      "date": "2026-11-28 JST",
+      "reason": "86/135 verified。MS07-A02〜A04の6種類を実モデルと実Chromiumで生成・比較・承認・採用・完全再起動まで照合。"
     }
   ]
 }

@@ -394,15 +394,30 @@
     if(!Number.isSafeInteger(ppq)||ppq<1)throw Error('invalid-remake-ppq');
     return source.notes.slice(0,64).map(n=>({pitch:n.pitch,velocity:n.velocity,startTick:Math.round((n.startTick-source.range.startTick)*480/ppq),durationTicks:Math.max(1,Math.round(n.durationTicks*480/ppq))}));
   }
-  function replacementPrompt(source,session,core){
-    const {startTick,endTick}=source.range;
+  const MELODY_SECTIONS=['continuation','verse2','final-chorus','intro','interlude','outro'];
+  function replacementPrompt(source,session,core,section='',reference=null){
+    const range=source.range,span=range.endTick-range.startTick;
     const track=core.getTrackById(session.midiData.tracks,source.trackId);
-    const start=Math.max(0,startTick-(endTick-startTick));
-    const notes=track.notes.filter(note=>note.startTick>=start&&note.startTick+note.durationTicks<=startTick)
-      .sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(-64);
+    const start=reference?.startTick??Math.max(0,range.startTick-span);
+    const end=Math.min(reference?.endTick??range.startTick,start+span);
+    const notes=track.notes.filter(note=>note.startTick>=start&&note.startTick+note.durationTicks<=end)
+      .sort((a,b)=>a.startTick-b.startTick||a.pitch-b.pitch).slice(reference?0:-64);
     const prompt=remakePrompt({range:{startTick:start},notes},session.midiData.ppq);
-    const limit=Math.floor((endTick-startTick)*480/session.midiData.ppq);
-    return prompt.filter(note=>note.startTick+note.durationTicks<=limit);
+    const limit=Math.floor(span*480/session.midiData.ppq);
+    const bounded=prompt.filter(note=>note.startTick+note.durationTicks<=limit);
+    if(section&&!bounded.length)throw Error('参照範囲に収まる旋律音符を指定してください。');
+    return bounded;
+  }
+  function melodySection(session,core,target,name,first,last){
+    if(!name)return null;
+    if(!MELODY_SECTIONS.includes(name))throw Error('無効なセクションです。');
+    const startMeasure=Number(first),endMeasure=Number(last),measureCount=session.midiData.editor.measureCount;
+    if(!first&&!last&&name==='continuation')return {name,reference:null};
+    if(!first||!last||!Number.isInteger(startMeasure)||!Number.isInteger(endMeasure)||startMeasure<1||endMeasure<startMeasure||endMeasure>measureCount)
+      throw Error('参照する旋律の開始・終了小節を指定してください。');
+    const span=core.measureRangeToTicks({startMeasure,endMeasure},session.midiData);
+    if(span.startTick<target.endTick&&target.startTick<span.endTick)throw Error('参照小節は生成範囲の外に指定してください。');
+    return {name,reference:{startMeasure,endMeasure,startTick:span.startTick,endTick:span.endTick}};
   }
   function scopedGenerationChords(session,core,range,text,review){
     const explicit=text!==''&&text!==review?.chords;
@@ -727,5 +742,5 @@
     if(value.kind==='continuation')return[`Method ${value.method}`,`Source notes ${value.sourcePhrase?.noteCount||0}`,`Variation ${value.variation}`,`Cadence ${value.cadence}`,family];
     return[`Section ${value.section}`,`${value.lineCount} lines / ${value.lines?.map(line=>line.syllableCount).join('-')} syllables`,`Stress ${value.stressPolicy}`,`Linked melody ${value.linkedMelodyCandidate}`,family];
   }
-  root.MusicStudioAIComposition=Object.freeze({VERSION,secondsRange,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
+  root.MusicStudioAIComposition=Object.freeze({VERSION,MELODY_SECTIONS:Object.freeze(MELODY_SECTIONS),melodySection,secondsRange,performanceVoicing,drumPerformance,japaneseArrangement,wholeSongPlan,wholeSongCandidate,analyzeChords,ensembleChords,chordEnsembleNotes,analyzeInstrumentRoles,bindEnsemble,remakeNewTrack,remakeSource,remakePrompt,replacementPrompt,scopedGenerationChords,replacementHarmony,fitReplacementHarmony,bindRemake,defaultContext,midiCandidate,generationOptions,keyFromEvent,parseKey,chordsForKey,createContext,candidateValues,sectionTimeline,lyricsTimeline,lyricsTimelineRows,lyricsMelodyReferenceChoices,lyricsMelodyReferencePreview,lyricsMelodyReferenceRows,arrangementTimeline,arrangementTimelineRows,arrangementReferencePreview,arrangementTrackPreview,arrangementDestinationPreview,arrangementReferenceRows,detailLines});
 })(typeof window!=='undefined'?window:globalThis);

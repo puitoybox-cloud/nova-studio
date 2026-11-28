@@ -14,6 +14,7 @@ on:
       - 'scripts/music-native-edited-song.py'
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
+      - 'scripts/music-melody-sections-browser.cjs'
       - 'scripts/music-long-indexeddb-browser.js'
       - 'scripts/music-long-production-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
@@ -82,6 +83,18 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/nova-real-browser" playwright
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-local-real-browser.js
           NODE_PATH="$RUNNER_TEMP/nova-real-browser/node_modules" CHROME_EXECUTABLE=/usr/bin/google-chrome node scripts/music-standalone-menu-browser.js
+      - name: Six source-conditioned melody sections and Chromium restart
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          python tools/music-local-generation/serve.py --port 8775 \
+            --weights "$RUNNER_TEMP/nova-generation-assets/weights" > "$RUNNER_TEMP/music-sections-host.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
+            http://127.0.0.1:8775/music-studio.html -o /dev/null
+          node scripts/music-melody-sections-browser.cjs
       - name: Complete a Japanese song through Chromium and restore its audio
         env:
           NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
