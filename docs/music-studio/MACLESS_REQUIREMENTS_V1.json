@@ -46,7 +46,8 @@
       "fb9a6d21341bd417d5b0252b51455512d925e5f8",
       "891637a2483af76f55b9c0680e7f1ef4be3e7e7f",
       "86227181fce006dd370f62ad443636a5ffb4c80c",
-      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
     ],
     "music-studio.js": [
       "6abb49fe63d310a2e1f13fdff5a3717b1221352c",
@@ -77,12 +78,17 @@
     ],
     "music-studio-ai-assistant-panel.js": [
       "26faf61600c2fcb0fd58b96edbbeeee7ce62e315",
-      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
     ],
-    "music-studio-ai-candidate-preview.js": "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
+    "music-studio-ai-candidate-preview.js": [
+      "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
+    ],
     "music-studio-ai-composition.js": [
       "02a9f411c26c4b0719f65b56c0e33a6010dd4eef",
-      "ca6b499e716724ca40f03f5aa1631147f6ee4d19"
+      "ca6b499e716724ca40f03f5aa1631147f6ee4d19",
+      "c9fd95244d7993ccfed04ec332aa62d20460ae7b"
     ],
     "tests/music-studio-whole-song.test.js": [
       "0d6d04e9d8056579d61539d96a3a2d92e2cc8abc"
@@ -1128,8 +1134,14 @@
       "feature": 8,
       "category": "A",
       "requirement": "メロディ固定と範囲固定の保存往復",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-harmony-follow-browser.cjs",
+          "acceptance": "melody and range locks both survive arrangement",
+          "run": "verification/music-harmony-follow-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS08-C01"
       ],
@@ -1137,7 +1149,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。メロディ固定と範囲固定の保存往復のproduction受入と、依存するC01の残件を照合する。",
+        "note": "旋律と伴奏の固定範囲を同時設定し、実モデルの編曲候補の採用、Undo/Redo、IndexedDB保存とChromium完全再起動後の固定範囲・範囲外・各トラックを照合。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1213,8 +1225,14 @@
       "feature": 9,
       "category": "A",
       "requirement": "コード追従補正",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-harmony-follow-browser.cjs",
+          "acceptance": "chord-follow correction survives Chromium restart",
+          "run": "verification/music-harmony-follow-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS09-C01"
       ],
@@ -1222,7 +1240,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。コード追従補正のproduction受入と、依存するC01の残件を照合する。",
+        "note": "確定コードに選択した旋律・ベースを追従させ、比較試聴、事前承認と固定・範囲外・未選択トラックの保持を確認。Undo/Redoと完全再起動後の保存を照合。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -1234,8 +1252,14 @@
       "feature": 9,
       "category": "A",
       "requirement": "別Voicing候補生成と採用保存",
-      "status": "open",
-      "evidence": [],
+      "status": "verified",
+      "evidence": [
+        {
+          "path": "scripts/music-harmony-follow-browser.cjs",
+          "acceptance": "voicings must differ",
+          "run": "verification/music-harmony-follow-20261128.json"
+        }
+      ],
       "dependsOn": [
         "MS09-C01"
       ],
@@ -1243,7 +1267,7 @@
         "date": "2026-10-31 JST",
         "baselinePR": 550,
         "classification": "実装が必要",
-        "note": "2026-11-28の基本方針確定済み。別Voicing候補生成と採用保存のproduction受入と、依存するC01の残件を照合する。",
+        "note": "Cadd9/EとG7/Bの候補で音配置の異なるVoicingを生成・試聴・比較・承認・採用し、固定範囲と他トラックを保持。保存後のChromium完全再起動でMIDIとコード表記を照合。",
         "reviewedSource": [
           "music-studio-editor.js",
           "music-studio.js"
@@ -4330,6 +4354,10 @@
     {
       "date": "2026-11-28 JST",
       "reason": "86/135 verified。MS07-A02〜A04の6種類を実モデルと実Chromiumで生成・比較・承認・採用・完全再起動まで照合。"
+    },
+    {
+      "date": "2026-11-28 JST",
+      "reason": "89/135 verified。MS08-A05、MS09-A03・A04を実Chromiumで比較・承認・採用・完全再起動まで照合。"
     }
   ]
 }

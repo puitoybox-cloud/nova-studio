@@ -15,6 +15,7 @@ on:
       - 'scripts/music-local-real-whole-song.js'
       - 'scripts/music-local-real-browser.js'
       - 'scripts/music-melody-sections-browser.cjs'
+      - 'scripts/music-harmony-follow-browser.cjs'
       - 'scripts/music-long-indexeddb-browser.js'
       - 'scripts/music-long-production-browser.js'
       - 'tests/music-ai-landscape-focus.test.js'
@@ -95,6 +96,18 @@ jobs:
           curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
             http://127.0.0.1:8775/music-studio.html -o /dev/null
           node scripts/music-melody-sections-browser.cjs
+      - name: Chord follow, alternative voicings, and locked arrangement
+        env:
+          NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
+          CHROME_EXECUTABLE: /usr/bin/google-chrome
+        run: |
+          python tools/music-local-generation/serve.py --port 8776 \
+            --weights "$RUNNER_TEMP/nova-generation-assets/weights" > "$RUNNER_TEMP/music-harmony-host.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS \
+            http://127.0.0.1:8776/music-studio.html -o /dev/null
+          node scripts/music-harmony-follow-browser.cjs
       - name: Complete a Japanese song through Chromium and restore its audio
         env:
           NODE_PATH: ${{ runner.temp }}/nova-real-browser/node_modules
